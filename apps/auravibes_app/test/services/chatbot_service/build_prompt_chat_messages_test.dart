@@ -62,7 +62,10 @@ void main() {
       expect(resultMessage.role.name, 'tool');
       expect(resultMessage.parts.whereType<ToolResponsePart>(), hasLength(1));
       expect(
-        resultMessage.parts.whereType<ToolResponsePart>().single.toolResponse
+        resultMessage.parts
+            .whereType<ToolResponsePart>()
+            .single
+            .toolResponse
             .ref,
         'tool-1',
       );
@@ -110,9 +113,9 @@ void main() {
       expect(resultMessage.role.name, 'tool');
       expect(resultMessage.parts.whereType<ToolResponsePart>(), hasLength(2));
       expect(
-        resultMessage.parts
-            .whereType<ToolResponsePart>()
-            .map((part) => part.toolResponse.ref),
+        resultMessage.parts.whereType<ToolResponsePart>().map(
+          (part) => part.toolResponse.ref,
+        ),
         ['tool-1', 'tool-2'],
       );
     });
@@ -153,7 +156,10 @@ void main() {
         );
         expect(resultMessage.role.name, 'tool');
         expect(
-          resultMessage.parts.whereType<ToolResponsePart>().single.toolResponse
+          resultMessage.parts
+              .whereType<ToolResponsePart>()
+              .single
+              .toolResponse
               .output,
           ToolCallResultStatus.toolNotFound.toResponseString(),
         );

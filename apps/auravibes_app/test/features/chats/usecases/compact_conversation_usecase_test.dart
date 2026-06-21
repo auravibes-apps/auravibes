@@ -666,12 +666,9 @@ void main() {
             .firstOrNull;
         final toolResultMessage = captured
             .where(
-              (message) => message.parts
-                  .whereType<ToolResponsePart>()
-                  .any(
-                    (part) =>
-                        part.toolResponse.output == '{"temperature":"18C"}',
-                  ),
+              (message) => message.parts.whereType<ToolResponsePart>().any(
+                (part) => part.toolResponse.output == '{"temperature":"18C"}',
+              ),
             )
             .firstOrNull;
 
@@ -690,7 +687,9 @@ void main() {
         expect(
           toolResultMessage?.parts
               .whereType<ToolResponsePart>()
-              .firstOrNull?.toolResponse.output,
+              .firstOrNull
+              ?.toolResponse
+              .output,
           '{"temperature":"18C"}',
         );
       },
