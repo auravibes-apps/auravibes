@@ -32,18 +32,6 @@ class ChatMessageToolCall {
   String get argumentsRaw => jsonEncode(request.input);
 }
 
-class ChatMessageToolResult {
-  ChatMessageToolResult(this.response);
-  final ToolResponse response;
-  String get callId => response.ref ?? '';
-  String get result {
-    return switch (response.output) {
-      final String raw => raw,
-      final raw => jsonEncode(raw),
-    };
-  }
-}
-
 @freezed
 abstract class ChatMessage with _$ChatMessage {
   const factory ChatMessage({
@@ -75,10 +63,6 @@ abstract class ChatMessage with _$ChatMessage {
   List<ChatMessageToolCall> get toolCalls => parts
       .whereType<ToolRequestPart>()
       .map((p) => ChatMessageToolCall(p.toolRequest))
-      .toList();
-  List<ChatMessageToolResult> get toolResults => parts
-      .whereType<ToolResponsePart>()
-      .map((p) => ChatMessageToolResult(p.toolResponse))
       .toList();
   String get text => content.isNotEmpty
       ? content

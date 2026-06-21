@@ -528,7 +528,6 @@ void main() {
 
       expect(messages.single.role, ChatMessageRole.user);
       expect(messages.single.metadata['kind'], skillContextMetadataKind);
-      expect(messages.single.toolResults, isEmpty);
       expect(messages.single.text, contains('<name>Example Services'));
       expect(
         messages.single.text,
