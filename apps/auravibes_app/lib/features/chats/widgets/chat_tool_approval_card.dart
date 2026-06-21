@@ -94,7 +94,6 @@ class _ApprovalCardContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auraColors = context.auraColors;
-    final spacing = context.auraTheme.spacing;
     final toolCall = current.toolCall;
 
     final displayNameAsync = ref.watch(
@@ -108,18 +107,18 @@ class _ApprovalCardContent extends ConsumerWidget {
     );
 
     return Container(
-      padding: EdgeInsets.all(spacing.md),
+      padding: const EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
         color: auraColors.warning.withValues(alpha: 0.08),
         border: Border.all(
           color: auraColors.warning.withValues(alpha: 0.3),
         ),
-        borderRadius: BorderRadius.circular(
-          context.auraTheme.borderRadius.lg,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.lg),
         ),
       ),
       width: double.infinity,
-      margin: EdgeInsets.all(spacing.md),
+      margin: const EdgeInsets.all(DesignSpacing.md),
       child: AuraColumn(
         children: [
           _NavigationHeader(
@@ -174,7 +173,7 @@ class _NavigationHeader extends StatelessWidget {
           size: 16,
           color: auraColors.warning,
         ),
-        SizedBox(width: context.auraTheme.spacing.xs),
+        const SizedBox(width: DesignSpacing.xs),
         Expanded(
           child: Text(
             LocaleKeys.tool_approval_pending_count.tr(
@@ -191,7 +190,7 @@ class _NavigationHeader extends StatelessWidget {
           icon: Icons.chevron_left,
           onPressed: hasPrev ? onPrev : null,
         ),
-        SizedBox(width: context.auraTheme.spacing.xs),
+        const SizedBox(width: DesignSpacing.xs),
         _NavButton(
           icon: Icons.chevron_right,
           onPressed: hasNext ? onNext : null,
@@ -260,10 +259,12 @@ class _ToolCallInfo extends StatelessWidget {
     );
 
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+      padding: const EdgeInsets.all(DesignSpacing.sm),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.sm),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(DesignBorderRadius.sm),
+        ),
       ),
       width: double.infinity,
       child: Column(
@@ -278,7 +279,7 @@ class _ToolCallInfo extends StatelessWidget {
             ),
           ),
           if (decodedArgs != null) ...[
-            SizedBox(height: context.auraTheme.spacing.xs),
+            const SizedBox(height: DesignSpacing.xs),
             Text(
               decodedArgs,
               style: TextStyle(

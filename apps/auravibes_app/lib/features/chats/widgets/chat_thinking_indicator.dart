@@ -16,7 +16,7 @@ class ChatThinkingIndicator extends StatelessWidget {
             size: AuraTypingIndicatorSize.small,
             showContainer: false,
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const SizedBox(width: DesignSpacing.sm),
           Flexible(
             child: AuraText(
               child: Text(

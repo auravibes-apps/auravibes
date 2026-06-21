@@ -313,7 +313,7 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
       child: Row(
         children: [
           const AuraSpinner(size: AuraSpinnerSize.small),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const SizedBox(width: DesignSpacing.sm),
           Flexible(
             child: AuraText(
               child: Text(

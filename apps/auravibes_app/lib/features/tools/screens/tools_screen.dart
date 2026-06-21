@@ -85,8 +85,8 @@ class ToolsScreen extends ConsumerWidget {
             ),
           ),
           Positioned(
-            right: context.auraTheme.spacing.md,
-            bottom: context.auraTheme.spacing.md,
+            right: DesignSpacing.md,
+            bottom: DesignSpacing.md,
             child: AuraFloatingActionButton(
               onPressed: () =>
                   AddToolModal.show(context, workspaceId: workspaceId),

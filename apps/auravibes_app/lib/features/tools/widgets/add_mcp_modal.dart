@@ -33,8 +33,10 @@ class AddMcpModal extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(DesignBorderRadius.xl),
+        ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
@@ -51,7 +53,7 @@ class AddMcpModal extends ConsumerWidget {
             // Scrollable form content.
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(context.auraTheme.spacing.md),
+                padding: const EdgeInsets.all(DesignSpacing.md),
                 child: Stack(
                   children: [
                     AuraColumn(
@@ -118,7 +120,7 @@ class _AddMcpModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.md),
+      padding: const EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -194,9 +196,9 @@ class _ErrorBanner extends ConsumerWidget {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.sm,
-        horizontal: context.auraTheme.spacing.md,
+      padding: const EdgeInsets.symmetric(
+        vertical: DesignSpacing.sm,
+        horizontal: DesignSpacing.md,
       ),
       color: context.auraColors.error.withValues(alpha: 0.1),
       child: Row(
@@ -206,7 +208,7 @@ class _ErrorBanner extends ConsumerWidget {
             size: AuraIconSize.small,
             color: AuraColorVariant.error,
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const SizedBox(width: DesignSpacing.sm),
           Expanded(
             child: Text(
               errorMessage,
@@ -233,7 +235,7 @@ class _Footer extends ConsumerWidget {
     );
 
     return Container(
-      padding: EdgeInsets.all(context.auraTheme.spacing.md),
+      padding: const EdgeInsets.all(DesignSpacing.md),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
@@ -250,7 +252,7 @@ class _Footer extends ConsumerWidget {
               variant: AuraButtonVariant.outlined,
             ),
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const SizedBox(width: DesignSpacing.sm),
           Expanded(
             child: AuraButton(
               onPressed: () => unawaited(_submit(context, ref, workspaceId)),

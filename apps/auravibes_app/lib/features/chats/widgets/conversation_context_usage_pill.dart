@@ -68,7 +68,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
               vertical: AuraSpacing.xs,
             ),
             backgroundColor: AuraColorVariant.surfaceVariant,
-            borderRadius: context.auraTheme.borderRadius.full,
+            borderRadius: DesignBorderRadius.full,
             border: Border.fromBorderSide(
               BorderSide(color: auraColors.outlineVariant),
             ),

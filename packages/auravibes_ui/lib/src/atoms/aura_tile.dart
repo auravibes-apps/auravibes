@@ -79,17 +79,17 @@ class AuraTile extends StatelessWidget {
         children: [
           if (leading != null) ...[
             leading,
-            SizedBox(width: auraTheme.spacing.sm),
+            const SizedBox(width: DesignSpacing.sm),
           ],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
-              style: _getTextStyle(auraColors, auraTheme.typography),
+              style: _getTextStyle(auraColors),
               child: child,
             ),
           ),
           if (trailing != null) ...[
-            SizedBox(width: auraTheme.spacing.sm),
+            const SizedBox(width: DesignSpacing.sm),
             trailing,
           ],
         ],
@@ -102,18 +102,22 @@ class AuraTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           child: AnimatedContainer(
-            padding: _getPadding(auraTheme.spacing),
+            padding: _getPadding(),
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
               border: _getBorder(auraColors),
-              borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+              borderRadius: const BorderRadius.all(
+                Radius.circular(DesignBorderRadius.lg),
+              ),
               boxShadow: _getBoxShadow(),
             ),
             child: content,
             duration: auraTheme.animation.normal,
           ),
           onTap: enabled && !isLoading ? onTap : null,
-          borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(DesignBorderRadius.lg),
+          ),
         ),
       ),
     );
@@ -169,20 +173,17 @@ class AuraTile extends StatelessWidget {
     };
   }
 
-  TextStyle _getTextStyle(
-    AuraColorScheme colors,
-    AuraTypographyTheme typography,
-  ) {
+  TextStyle _getTextStyle(AuraColorScheme colors) {
     final fontSize = switch (size) {
-      AuraTileSize.small => typography.sizes.sm,
-      AuraTileSize.medium => typography.sizes.base,
-      AuraTileSize.large => typography.sizes.lg,
+      AuraTileSize.small => DesignTypography.fontSizeSm,
+      AuraTileSize.medium => DesignTypography.fontSizeBase,
+      AuraTileSize.large => DesignTypography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraTileSize.small => typography.weights.medium,
-      AuraTileSize.medium => typography.weights.medium,
-      AuraTileSize.large => typography.weights.semibold,
+      AuraTileSize.small => DesignTypography.fontWeightMedium,
+      AuraTileSize.medium => DesignTypography.fontWeightMedium,
+      AuraTileSize.large => DesignTypography.fontWeightSemibold,
     };
 
     final textColor = !enabled
@@ -204,23 +205,23 @@ class AuraTile extends StatelessWidget {
       color: textColor,
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: typography.lineHeights.base,
+      height: DesignTypography.lineHeightBase,
     );
   }
 
-  EdgeInsets _getPadding(AuraSpacingTheme spacing) {
+  EdgeInsets _getPadding() {
     return switch (size) {
-      AuraTileSize.small => EdgeInsets.symmetric(
-        vertical: spacing.sm,
-        horizontal: spacing.md,
+      AuraTileSize.small => const EdgeInsets.symmetric(
+        vertical: DesignSpacing.sm,
+        horizontal: DesignSpacing.md,
       ),
-      AuraTileSize.medium => EdgeInsets.symmetric(
-        vertical: spacing.md,
-        horizontal: spacing.lg,
+      AuraTileSize.medium => const EdgeInsets.symmetric(
+        vertical: DesignSpacing.md,
+        horizontal: DesignSpacing.lg,
       ),
-      AuraTileSize.large => EdgeInsets.symmetric(
-        vertical: spacing.lg,
-        horizontal: spacing.xl,
+      AuraTileSize.large => const EdgeInsets.symmetric(
+        vertical: DesignSpacing.lg,
+        horizontal: DesignSpacing.xl,
       ),
     };
   }

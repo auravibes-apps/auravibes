@@ -18,16 +18,16 @@ void main() {
 
     test('copyWith replaces values', () {
       final theme = AuraTheme.light.copyWith(
-        spacing: const AuraSpacingTheme(xs: 99),
+        animation: AuraTheme.dark.animation,
       );
-      expect(theme.spacing.xs, 99);
+      expect(theme.animation, AuraTheme.dark.animation);
       expect(theme.colors, AuraTheme.light.colors);
     });
 
     test('copyWith keeps original values when null', () {
       final theme = AuraTheme.light.copyWith();
       expect(theme.colors, AuraTheme.light.colors);
-      expect(theme.spacing, AuraTheme.light.spacing);
+      expect(theme.animation, AuraTheme.light.animation);
     });
 
     test('lerp returns this when other is null', () {
@@ -44,14 +44,14 @@ void main() {
     test('fromSpacing returns correct values', () {
       final theme = AuraTheme.light;
       expect(theme.fromSpacing(AuraSpacing.none), 0);
-      expect(theme.fromSpacing(AuraSpacing.base), theme.spacing.md);
-      expect(theme.fromSpacing(AuraSpacing.xs), theme.spacing.xs);
-      expect(theme.fromSpacing(AuraSpacing.sm), theme.spacing.sm);
-      expect(theme.fromSpacing(AuraSpacing.md), theme.spacing.md);
-      expect(theme.fromSpacing(AuraSpacing.lg), theme.spacing.lg);
-      expect(theme.fromSpacing(AuraSpacing.xl), theme.spacing.xl);
-      expect(theme.fromSpacing(AuraSpacing.xl2), theme.spacing.xl2);
-      expect(theme.fromSpacing(AuraSpacing.xl3), theme.spacing.xl3);
+      expect(theme.fromSpacing(AuraSpacing.base), DesignSpacing.base);
+      expect(theme.fromSpacing(AuraSpacing.xs), DesignSpacing.xs);
+      expect(theme.fromSpacing(AuraSpacing.sm), DesignSpacing.sm);
+      expect(theme.fromSpacing(AuraSpacing.md), DesignSpacing.md);
+      expect(theme.fromSpacing(AuraSpacing.lg), DesignSpacing.lg);
+      expect(theme.fromSpacing(AuraSpacing.xl), DesignSpacing.xl);
+      expect(theme.fromSpacing(AuraSpacing.xl2), DesignSpacing.xl2);
+      expect(theme.fromSpacing(AuraSpacing.xl3), DesignSpacing.xl3);
     });
   });
 
@@ -111,116 +111,6 @@ void main() {
     test('getColorOrNull returns color for non-null variant', () {
       final colors = AuraTheme.light.colors;
       expect(colors.getColorOrNull(AuraColorVariant.primary), colors.primary);
-    });
-  });
-
-  group('AuraTypographyTheme', () {
-    test('standard theme has font families', () {
-      final typography = AuraTheme.light.typography;
-      expect(typography.fontFamily, isNotEmpty);
-      expect(typography.monoFontFamily, isNotEmpty);
-    });
-
-    test('lerp returns this when t < 0.5', () {
-      final typography = AuraTheme.light.typography;
-      final other = AuraTheme.dark.typography;
-      expect(typography.lerp(other, 0.3), typography);
-    });
-
-    test('lerp returns other when t >= 0.5', () {
-      final typography = AuraTheme.light.typography;
-      final other = AuraTheme.dark.typography;
-      expect(typography.lerp(other, 0.5), other);
-    });
-  });
-
-  group('AuraFontSizes', () {
-    test('has all size values', () {
-      final sizes = AuraTheme.light.typography.sizes;
-      expect(sizes.xs, greaterThan(0));
-      expect(sizes.sm, greaterThan(sizes.xs));
-      expect(sizes.base, greaterThan(0));
-      expect(sizes.lg, greaterThan(sizes.base));
-      expect(sizes.xl, greaterThan(sizes.lg));
-      expect(sizes.xl2, greaterThan(sizes.xl));
-      expect(sizes.xl3, greaterThan(sizes.xl2));
-      expect(sizes.xl4, greaterThan(sizes.xl3));
-      expect(sizes.xl5, greaterThan(sizes.xl4));
-    });
-  });
-
-  group('AuraFontWeights', () {
-    test('has all weight values', () {
-      final weights = AuraTheme.light.typography.weights;
-      expect(weights.light, FontWeight.w300);
-      expect(weights.regular, FontWeight.w400);
-      expect(weights.medium, FontWeight.w500);
-      expect(weights.semibold, FontWeight.w600);
-      expect(weights.bold, FontWeight.w700);
-    });
-  });
-
-  group('AuraLineHeights', () {
-    test('has all line height values', () {
-      final heights = AuraTheme.light.typography.lineHeights;
-      expect(heights.xs, greaterThan(0));
-      expect(heights.sm, greaterThan(0));
-      expect(heights.base, greaterThan(0));
-      expect(heights.lg, greaterThan(0));
-      expect(heights.xl, greaterThan(0));
-      expect(heights.xl2, greaterThan(0));
-      expect(heights.xl3, greaterThan(0));
-      expect(heights.xl4, greaterThan(0));
-      expect(heights.xl5, greaterThan(0));
-    });
-  });
-
-  group('AuraLetterSpacings', () {
-    test('has all letter spacing values', () {
-      final spacings = AuraTheme.light.typography.letterSpacings;
-      expect(spacings.tight, lessThan(spacings.normal));
-      expect(spacings.normal, lessThan(spacings.wide));
-    });
-  });
-
-  group('AuraSpacingTheme', () {
-    test('standard theme has spacing values', () {
-      final spacing = AuraTheme.light.spacing;
-      expect(spacing.xs, greaterThan(0));
-      expect(spacing.sm, greaterThan(spacing.xs));
-      expect(spacing.md, greaterThan(spacing.sm));
-      expect(spacing.lg, greaterThan(spacing.md));
-      expect(spacing.xl, greaterThan(spacing.lg));
-      expect(spacing.xl2, greaterThan(spacing.xl));
-      expect(spacing.xl3, greaterThan(spacing.xl2));
-    });
-
-    test('lerp interpolates spacing', () {
-      final a = AuraTheme.light.spacing;
-      const b = AuraSpacingTheme(xs: 99);
-      final result = a.lerp(b, 0.5);
-      expect(result.xs, greaterThan(a.xs));
-      expect(result.xs, lessThan(b.xs));
-    });
-  });
-
-  group('AuraBorderRadiusTheme', () {
-    test('standard theme has radius values', () {
-      final radii = AuraTheme.light.borderRadius;
-      expect(radii.none, 0);
-      expect(radii.sm, greaterThan(0));
-      expect(radii.md, greaterThan(radii.sm));
-      expect(radii.lg, greaterThan(radii.md));
-      expect(radii.xl, greaterThan(radii.lg));
-      expect(radii.full, greaterThan(radii.xl));
-    });
-
-    test('lerp interpolates border radius', () {
-      final a = AuraTheme.light.borderRadius;
-      const b = AuraBorderRadiusTheme(sm: 99);
-      final result = a.lerp(b, 0.5);
-      expect(result.sm, greaterThan(a.sm));
-      expect(result.sm, lessThan(b.sm));
     });
   });
 
@@ -296,32 +186,6 @@ void main() {
           ),
         ),
       );
-    });
-  });
-
-  group('lerpDouble', () {
-    test('interpolates between two values', () {
-      expect(lerpDouble(0, 10, 0.5), 5);
-    });
-
-    test('returns null when both are null', () {
-      expect(lerpDouble(null, null, 0.5), isNull);
-    });
-
-    test('uses 0 when a is null', () {
-      expect(lerpDouble(null, 10, 0.5), 5);
-    });
-
-    test('uses 0 when b is null', () {
-      expect(lerpDouble(10, null, 0.5), 5);
-    });
-
-    test('returns a when t is 0', () {
-      expect(lerpDouble(5, 10, 0), 5);
-    });
-
-    test('returns b when t is 1', () {
-      expect(lerpDouble(5, 10, 1), 10);
     });
   });
 }

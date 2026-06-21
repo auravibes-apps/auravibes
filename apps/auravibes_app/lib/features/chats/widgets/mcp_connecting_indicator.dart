@@ -40,7 +40,7 @@ class McpConnectingIndicator extends ConsumerWidget {
               strokeWidth: 2,
             ),
           ),
-          SizedBox(width: context.auraTheme.spacing.sm),
+          const SizedBox(width: DesignSpacing.sm),
           Flexible(
             child: Text(
               pendingServerNames.isEmpty

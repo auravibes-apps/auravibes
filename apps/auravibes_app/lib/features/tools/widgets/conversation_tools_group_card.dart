@@ -49,7 +49,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
     final isExpanded = useState(initiallyExpanded);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: context.auraTheme.spacing.md),
+      padding: const EdgeInsets.only(bottom: DesignSpacing.md),
       child: AuraCard(
         child: AuraColumn(
           children: [
@@ -148,9 +148,9 @@ class _ToolsList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (groupWithTools.tools.isEmpty) {
       return Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: context.auraTheme.spacing.md,
-          horizontal: context.auraTheme.spacing.sm,
+        padding: const EdgeInsets.symmetric(
+          vertical: DesignSpacing.md,
+          horizontal: DesignSpacing.sm,
         ),
         child: Center(
           child: AuraText(
@@ -163,7 +163,7 @@ class _ToolsList extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.all(context.auraTheme.spacing.sm),
+      padding: const EdgeInsets.all(DesignSpacing.sm),
       child: AuraColumn(
         children: groupWithTools.tools.map((toolState) {
           return ConversationToolTile(

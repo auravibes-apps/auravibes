@@ -76,19 +76,19 @@ class SidebarConversationsWidget extends ConsumerWidget {
           ],
         );
       }(),
-      AsyncLoading() => Center(
+      AsyncLoading() => const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            vertical: context.auraTheme.spacing.md,
+            vertical: DesignSpacing.md,
           ),
-          child: const AuraSpinner(),
+          child: AuraSpinner(),
         ),
       ),
       AsyncError(:final error, stackTrace: _) => Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: context.auraTheme.spacing.md,
-            horizontal: context.auraTheme.spacing.sm,
+          padding: const EdgeInsets.symmetric(
+            vertical: DesignSpacing.md,
+            horizontal: DesignSpacing.sm,
           ),
           child: AuraText(
             child: TextLocale(
@@ -117,12 +117,12 @@ class _SidebarConversationsSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return const Padding(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.xs,
-        horizontal: context.auraTheme.spacing.sm,
+        vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
-      child: const AuraText(
+      child: AuraText(
         child: TextLocale(
           LocaleKeys.sidebar_recent_chats,
         ),
@@ -138,12 +138,12 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return const Padding(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.md,
-        horizontal: context.auraTheme.spacing.sm,
+        vertical: DesignSpacing.md,
+        horizontal: DesignSpacing.sm,
       ),
-      child: const AuraText(
+      child: AuraText(
         child: TextLocale(
           LocaleKeys.sidebar_no_recent_chats,
         ),
@@ -163,11 +163,11 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        left: context.auraTheme.spacing.sm,
-        top: context.auraTheme.spacing.xs,
-        right: context.auraTheme.spacing.sm,
-        bottom: context.auraTheme.spacing.md,
+      padding: const EdgeInsets.only(
+        left: DesignSpacing.sm,
+        top: DesignSpacing.xs,
+        right: DesignSpacing.sm,
+        bottom: DesignSpacing.md,
       ),
       child: AuraButton(
         onPressed: () => ChatsRoute(workspaceId: workspaceId).go(context),
@@ -220,9 +220,9 @@ class _SidebarConversationTileState
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.xs,
-        horizontal: context.auraTheme.spacing.sm,
+      padding: const EdgeInsets.symmetric(
+        vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
       child: AuraTile(
         child: AuraText(
@@ -278,12 +278,12 @@ class _CompactingRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
+    return const Padding(
       padding: EdgeInsets.symmetric(
-        vertical: context.auraTheme.spacing.xs,
-        horizontal: context.auraTheme.spacing.sm,
+        vertical: DesignSpacing.xs,
+        horizontal: DesignSpacing.sm,
       ),
-      child: const AuraTile(
+      child: AuraTile(
         child: AuraText(
           child: TextLocale(
             LocaleKeys.compaction_compacting_row_label,

@@ -138,7 +138,6 @@ class _AuraDialogShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
 
     return Center(
       child: Material(
@@ -146,7 +145,9 @@ class _AuraDialogShell extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: auraColors.surface,
-            borderRadius: BorderRadius.circular(auraTheme.borderRadius.lg),
+            borderRadius: const BorderRadius.all(
+              Radius.circular(DesignBorderRadius.lg),
+            ),
             boxShadow: const [DesignShadows.lg],
           ),
           constraints: const BoxConstraints(maxWidth: 400),
@@ -157,16 +158,16 @@ class _AuraDialogShell extends StatelessWidget {
             children: [
               // Title.
               Padding(
-                padding: EdgeInsets.only(
-                  left: auraTheme.spacing.md,
-                  top: auraTheme.spacing.lg,
-                  right: auraTheme.spacing.md,
+                padding: const EdgeInsets.only(
+                  left: DesignSpacing.md,
+                  top: DesignSpacing.lg,
+                  right: DesignSpacing.md,
                 ),
                 child: DefaultTextStyle(
                   style: TextStyle(
                     color: auraColors.onSurface,
-                    fontSize: auraTheme.typography.sizes.lg,
-                    fontWeight: auraTheme.typography.weights.semibold,
+                    fontSize: DesignTypography.fontSizeLg,
+                    fontWeight: DesignTypography.fontWeightSemibold,
                   ),
                   child: title,
                 ),
@@ -174,23 +175,23 @@ class _AuraDialogShell extends StatelessWidget {
               // Message (scrollable if too long).
               Flexible(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    vertical: auraTheme.spacing.sm,
-                    horizontal: auraTheme.spacing.md,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: DesignSpacing.sm,
+                    horizontal: DesignSpacing.md,
                   ),
                   child: DefaultTextStyle(
                     style: TextStyle(
                       color: auraColors.onSurfaceVariant,
-                      fontSize: auraTheme.typography.sizes.base,
-                      fontWeight: auraTheme.typography.weights.regular,
-                      height: auraTheme.typography.lineHeights.base,
+                      fontSize: DesignTypography.fontSizeBase,
+                      fontWeight: DesignTypography.fontWeightRegular,
+                      height: DesignTypography.lineHeightBase,
                     ),
                     child: message,
                   ),
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(auraTheme.spacing.md),
+                padding: const EdgeInsets.all(DesignSpacing.md),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: actions,
