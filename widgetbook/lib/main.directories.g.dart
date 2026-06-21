@@ -19,6 +19,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_button_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_button_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_card_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_card_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_checkbox_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_checkbox_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_container_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_container_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_dialog_stories.dart'
@@ -221,6 +223,31 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Basic Card',
             builder: _widgetbook_workspace_aura_ui_auravibes_card_stories
                 .basicCardUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraCheckbox',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Focus States',
+            builder: _widgetbook_workspace_aura_ui_auravibes_checkbox_stories
+                .checkboxFocusStatesUseCase,
+          ),
+          _widgetbook.WidgetbookUseCase(
+            name: 'Single Checkbox',
+            builder: _widgetbook_workspace_aura_ui_auravibes_checkbox_stories
+                .singleCheckboxUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraCheckboxListTile',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Checkbox List Tile',
+            builder: _widgetbook_workspace_aura_ui_auravibes_checkbox_stories
+                .checkboxListTileUseCase,
           ),
         ],
       ),
