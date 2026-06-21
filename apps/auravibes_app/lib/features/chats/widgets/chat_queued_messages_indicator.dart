@@ -39,7 +39,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                 variant: AuraBadgeVariant.neutral,
                 size: AuraBadgeSize.small,
               ),
-              SizedBox(width: context.auraTheme.spacing.sm),
+              const SizedBox(width: DesignSpacing.sm),
               AuraText(
                 child: Text(
                   LocaleKeys
@@ -82,7 +82,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                           style: AuraTextStyle.caption,
                         ),
                       ),
-                      SizedBox(width: context.auraTheme.spacing.xs),
+                      const SizedBox(width: DesignSpacing.xs),
                       IconButton(
                         padding: const EdgeInsets.all(14),
                         onPressed: () => notifier.remove(

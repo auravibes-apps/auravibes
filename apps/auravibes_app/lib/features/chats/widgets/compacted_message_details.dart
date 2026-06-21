@@ -37,7 +37,7 @@ class CompactedMessageDetails extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: context.auraTheme.spacing.md),
+          const SizedBox(height: DesignSpacing.md),
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_origin.tr(),
             value: originLabel,
@@ -64,7 +64,7 @@ class CompactedMessageDetails extends StatelessWidget {
             label: LocaleKeys.compaction_compacted_details_messages.tr(),
             value: '${metadata?.compactedMessageIds.length ?? 0}',
           ),
-          SizedBox(height: context.auraTheme.spacing.md),
+          const SizedBox(height: DesignSpacing.md),
           TextLocale(
             LocaleKeys.compaction_compacted_details_content_label,
             style: TextStyle(
@@ -73,7 +73,7 @@ class CompactedMessageDetails extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: context.auraTheme.spacing.xs),
+          const SizedBox(height: DesignSpacing.xs),
           SelectableText(
             message.content,
             style: const TextStyle(
@@ -97,7 +97,7 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: context.auraTheme.spacing.xs),
+      padding: const EdgeInsets.only(bottom: DesignSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -51,7 +51,6 @@ class AuraButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
@@ -67,7 +66,7 @@ class AuraButton extends StatelessWidget {
                     ),
                   )
                 : DefaultTextStyle(
-                    style: _getTextStyle(auraColors, auraTheme.typography),
+                    style: _getTextStyle(auraColors),
                     child: child,
                   ),
           ),
@@ -77,7 +76,9 @@ class AuraButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
-          borderRadius: BorderRadius.circular(auraTheme.borderRadius.xl),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(DesignBorderRadius.xl),
+          ),
           boxShadow: _getBoxShadow(),
         ),
         onPressed: (disabled || isLoading) ? null : onPressed,
@@ -182,27 +183,24 @@ class AuraButton extends StatelessWidget {
     return [];
   }
 
-  TextStyle _getTextStyle(
-    AuraColorScheme colors,
-    AuraTypographyTheme typography,
-  ) {
+  TextStyle _getTextStyle(AuraColorScheme colors) {
     final fontSize = switch (size) {
-      AuraButtonSize.small => typography.sizes.sm,
-      AuraButtonSize.medium => typography.sizes.base,
-      AuraButtonSize.large => typography.sizes.lg,
+      AuraButtonSize.small => DesignTypography.fontSizeSm,
+      AuraButtonSize.medium => DesignTypography.fontSizeBase,
+      AuraButtonSize.large => DesignTypography.fontSizeLg,
     };
 
     final fontWeight = switch (size) {
-      AuraButtonSize.small => typography.weights.medium,
-      AuraButtonSize.medium => typography.weights.medium,
-      AuraButtonSize.large => typography.weights.semibold,
+      AuraButtonSize.small => DesignTypography.fontWeightMedium,
+      AuraButtonSize.medium => DesignTypography.fontWeightMedium,
+      AuraButtonSize.large => DesignTypography.fontWeightSemibold,
     };
 
     return TextStyle(
       color: _getForegroundColor(colors),
       fontSize: fontSize,
       fontWeight: fontWeight,
-      height: typography.lineHeights.base,
+      height: DesignTypography.lineHeightBase,
     );
   }
 }

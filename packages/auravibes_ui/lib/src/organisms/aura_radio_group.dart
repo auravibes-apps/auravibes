@@ -70,7 +70,6 @@ class AuraRadioGroup<T> extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final spacing = context.auraTheme.spacing;
     final optionsWidget = _AuraRadioOptions<T>(
       value: value,
       onChanged: onChanged,
@@ -85,7 +84,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           label,
-          SizedBox(height: spacing.sm),
+          const SizedBox(height: DesignSpacing.sm),
           optionsWidget,
         ],
       );
@@ -112,47 +111,43 @@ class _AuraRadioOptions<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spacing = context.auraTheme.spacing;
-
     return switch (direction) {
       Axis.vertical => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int i = 0; i < options.length; i++) ...[
-            _buildVerticalOption(options[i], spacing),
-            if (i < options.length - 1) SizedBox(height: spacing.sm),
+            _buildVerticalOption(options[i]),
+            if (i < options.length - 1)
+              const SizedBox(height: DesignSpacing.sm),
           ],
         ],
       ),
       Axis.horizontal => Wrap(
-        spacing: spacing.md,
-        runSpacing: spacing.sm,
+        spacing: DesignSpacing.md,
+        runSpacing: DesignSpacing.sm,
         children: [
           for (int i = 0; i < options.length; i++)
-            _buildHorizontalOption(options[i], spacing),
+            _buildHorizontalOption(options[i]),
         ],
       ),
     };
   }
 
-  Widget _buildVerticalOption(
-    AuraRadioOption<T> option,
-    AuraSpacingTheme spacing,
-  ) {
+  Widget _buildVerticalOption(AuraRadioOption<T> option) {
     final subtitle = option.subtitle;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          child: _buildOptionRow(option, spacing),
+          child: _buildOptionRow(option),
           onTap: _buildOptionTap(option),
           behavior: HitTestBehavior.opaque,
         ),
         if (subtitle != null)
           Padding(
-            padding: EdgeInsets.only(
-              left: AuraRadioGroup._kRadioVisualSize + spacing.sm,
+            padding: const EdgeInsets.only(
+              left: AuraRadioGroup._kRadioVisualSize + DesignSpacing.sm,
             ),
             child: subtitle,
           ),
@@ -160,22 +155,15 @@ class _AuraRadioOptions<T> extends StatelessWidget {
     );
   }
 
-  Widget _buildHorizontalOption(
-    AuraRadioOption<T> option,
-    AuraSpacingTheme spacing,
-  ) {
+  Widget _buildHorizontalOption(AuraRadioOption<T> option) {
     return GestureDetector(
-      child: _buildOptionRow(option, spacing, shrinkWrap: true),
+      child: _buildOptionRow(option, shrinkWrap: true),
       onTap: _buildOptionTap(option),
       behavior: HitTestBehavior.opaque,
     );
   }
 
-  Widget _buildOptionRow(
-    AuraRadioOption<T> option,
-    AuraSpacingTheme spacing, {
-    bool shrinkWrap = false,
-  }) {
+  Widget _buildOptionRow(AuraRadioOption<T> option, {bool shrinkWrap = false}) {
     return Row(
       mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
       children: [
@@ -185,7 +173,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
           onChanged: onChanged,
           colorVariant: colorVariant,
         ),
-        SizedBox(width: spacing.sm),
+        const SizedBox(width: DesignSpacing.sm),
         Flexible(child: option.label),
       ],
     );

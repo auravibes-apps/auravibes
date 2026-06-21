@@ -106,7 +106,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
-    final borderRadius = auraTheme.borderRadius.md;
+    const borderRadius = DesignBorderRadius.md;
 
     final children = <Widget>[];
 
@@ -264,7 +264,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
                   style: TextStyle(
                     color: foregroundColor,
                     fontSize: _getFontSize(),
-                    fontWeight: widget.auraTheme.typography.weights.medium,
+                    fontWeight: DesignTypography.fontWeightMedium,
                   ),
                   child: IconTheme(
                     data: IconThemeData(
@@ -412,9 +412,9 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
 
   double _getFontSize() {
     return switch (widget.size) {
-      AuraButtonGroupSize.sm => widget.auraTheme.typography.sizes.sm,
-      AuraButtonGroupSize.base => widget.auraTheme.typography.sizes.base,
-      AuraButtonGroupSize.lg => widget.auraTheme.typography.sizes.lg,
+      AuraButtonGroupSize.sm => DesignTypography.fontSizeSm,
+      AuraButtonGroupSize.base => DesignTypography.fontSizeBase,
+      AuraButtonGroupSize.lg => DesignTypography.fontSizeLg,
     };
   }
 

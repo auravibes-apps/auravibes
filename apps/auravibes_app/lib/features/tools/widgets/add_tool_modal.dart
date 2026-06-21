@@ -51,8 +51,10 @@ class AddToolModal extends HookConsumerWidget {
     );
 
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(context.auraTheme.borderRadius.xl),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(
+          Radius.circular(DesignBorderRadius.xl),
+        ),
       ),
       child: Container(
         width: MediaQuery.sizeOf(context).width * 0.9,
@@ -64,7 +66,7 @@ class AddToolModal extends HookConsumerWidget {
           children: [
             // Header with close button.
             Container(
-              padding: EdgeInsets.all(context.auraTheme.spacing.md),
+              padding: const EdgeInsets.all(DesignSpacing.md),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -92,7 +94,7 @@ class AddToolModal extends HookConsumerWidget {
 
             // Search input.
             Padding(
-              padding: EdgeInsets.all(context.auraTheme.spacing.md),
+              padding: const EdgeInsets.all(DesignSpacing.md),
               child: AuraInput(
                 controller: searchController,
                 placeholder: const TextLocale(
@@ -123,7 +125,7 @@ class AddToolModal extends HookConsumerWidget {
             ),
 
             // Bottom padding.
-            SizedBox(height: context.auraTheme.spacing.md),
+            const SizedBox(height: DesignSpacing.md),
           ],
           mainAxisSize: MainAxisSize.min,
         ),
@@ -156,7 +158,7 @@ class _AvailableToolsList extends StatelessWidget {
 
     if (filteredTools.isEmpty) {
       return Padding(
-        padding: EdgeInsets.all(context.auraTheme.spacing.lg),
+        padding: const EdgeInsets.all(DesignSpacing.lg),
         child: Center(
           child: AuraColumn(
             children: [
@@ -183,8 +185,8 @@ class _AvailableToolsList extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.spacing.md,
+      padding: const EdgeInsets.symmetric(
+        horizontal: DesignSpacing.md,
       ),
       itemBuilder: (context, index) {
         final toolType = filteredTools[index];
@@ -195,7 +197,7 @@ class _AvailableToolsList extends StatelessWidget {
         );
       },
       separatorBuilder: (context, index) =>
-          SizedBox(height: context.auraTheme.spacing.sm),
+          const SizedBox(height: DesignSpacing.sm),
       itemCount: filteredTools.length,
     );
   }
@@ -233,8 +235,8 @@ class _AvailableToolTile extends ConsumerWidget {
       leading: Container(
         decoration: BoxDecoration(
           color: context.auraColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(
-            context.auraTheme.borderRadius.md,
+          borderRadius: const BorderRadius.all(
+            Radius.circular(DesignBorderRadius.md),
           ),
         ),
         width: 40,
