@@ -104,7 +104,7 @@ class WorkspaceRepository {
     return _database.workspaceDao.deleteWorkspace(id);
   }
 
-  Future<bool> workspaceExists(String id) async {
+  Future<bool> workspaceExists(String id) {
     return _database.workspaceDao.workspaceExists(id);
   }
 
@@ -116,11 +116,11 @@ class WorkspaceRepository {
     return workspaceTables.map(_mapToWorkspace).toList();
   }
 
-  Future<int> getWorkspaceCount() async {
+  Future<int> getWorkspaceCount() {
     return _database.workspaceDao.getWorkspaceCount();
   }
 
-  Future<int> getWorkspaceCountByType(WorkspaceType type) async {
+  Future<int> getWorkspaceCountByType(WorkspaceType type) {
     return _database.workspaceDao.getWorkspaceCountByType(type);
   }
 

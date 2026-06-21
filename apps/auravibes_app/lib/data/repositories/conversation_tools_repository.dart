@@ -102,14 +102,14 @@ class ConversationToolsRepository {
   Future<bool> toggleConversationTool(
     String conversationId,
     String toolId,
-  ) async {
+  ) {
     return _dao.toggleConversationTool(conversationId, toolId);
   }
 
   Future<bool> isConversationToolEnabled(
     String conversationId,
     String toolId,
-  ) async {
+  ) {
     return _dao.isConversationToolEnabled(
       conversationId,
       toolId,
@@ -119,11 +119,11 @@ class ConversationToolsRepository {
   Future<bool> removeConversationTool(
     String conversationId,
     String toolId,
-  ) async {
+  ) {
     return _dao.deleteConversationTool(conversationId, toolId);
   }
 
-  Future<int> getConversationToolsCount(String conversationId) async {
+  Future<int> getConversationToolsCount(String conversationId) {
     return _dao.getConversationToolsCount(conversationId);
   }
 
@@ -156,9 +156,8 @@ class ConversationToolsRepository {
 
   Future<bool> validateConversationToolSetting(
     String conversationId,
-    String toolId, {
-    required bool isEnabled,
-  }) async {
+    String toolId,
+  ) async {
     // Check if conversation exists.
     final conversation = await _database.conversationDao.getConversationById(
       conversationId,

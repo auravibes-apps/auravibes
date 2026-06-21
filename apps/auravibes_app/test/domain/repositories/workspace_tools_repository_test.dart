@@ -127,20 +127,10 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<void> copyWorkspaceToolsToConversation(
-    String workspaceId,
-    String conversationId,
-  ) async {
-    final _ = Object();
-  }
-
-  @override
   Future<bool> validateWorkspaceToolSetting(
     String workspaceId,
-    String toolType, {
-    required bool isEnabled,
-    String? config,
-  }) async {
+    String toolType,
+  ) async {
     return validateResult;
   }
 
@@ -280,14 +270,6 @@ void main() {
       expect(await repo.getEnabledWorkspaceToolsCount('ws-1'), 3);
     });
 
-    test('copyWorkspaceToolsToConversation completes', () async {
-      final repo = _StubWorkspaceToolsRepository();
-
-      await repo.copyWorkspaceToolsToConversation('ws-1', 'c-1');
-
-      expect(true, true);
-    });
-
     test('validateWorkspaceToolSetting returns bool', () async {
       final repo = _StubWorkspaceToolsRepository();
 
@@ -295,7 +277,6 @@ void main() {
         await repo.validateWorkspaceToolSetting(
           'ws-1',
           'search',
-          isEnabled: true,
         ),
         true,
       );

@@ -858,7 +858,6 @@ void main() {
         () => fixture.repository.validateConversationToolSetting(
           'nonexistent',
           'calculator',
-          isEnabled: true,
         ),
         throwsA(isA<ConversationToolsValidationException>()),
       );
@@ -869,7 +868,6 @@ void main() {
         () => fixture.repository.validateConversationToolSetting(
           'nonexistent-conversation',
           'invalid_tool_type_that_does_not_exist',
-          isEnabled: true,
         ),
         throwsA(isA<ConversationToolsValidationException>()),
       );

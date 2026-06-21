@@ -147,20 +147,10 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<void> copyWorkspaceToolsToConversation(
-    String workspaceId,
-    String conversationId,
-  ) {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<bool> validateWorkspaceToolSetting(
     String workspaceId,
-    String toolType, {
-    required bool isEnabled,
-    String? config,
-  }) {
+    String toolType,
+  ) {
     throw UnimplementedError();
   }
 }

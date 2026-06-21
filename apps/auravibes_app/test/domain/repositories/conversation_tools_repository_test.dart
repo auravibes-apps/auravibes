@@ -120,9 +120,8 @@ class _StubConversationToolsRepository implements ConversationToolsRepository {
   @override
   Future<bool> validateConversationToolSetting(
     String conversationId,
-    String toolId, {
-    required bool isEnabled,
-  }) async {
+    String toolId,
+  ) async {
     return validateResult;
   }
 
@@ -275,7 +274,6 @@ void main() {
         await repo.validateConversationToolSetting(
           'c-1',
           't-1',
-          isEnabled: true,
         ),
         true,
       );

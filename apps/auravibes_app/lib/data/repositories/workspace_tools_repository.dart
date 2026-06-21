@@ -94,7 +94,7 @@ class WorkspaceToolsRepository {
   Future<bool> isWorkspaceToolEnabled(
     String workspaceId,
     String toolType,
-  ) async {
+  ) {
     return _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
   }
 
@@ -108,34 +108,22 @@ class WorkspaceToolsRepository {
     return _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
   }
 
-  Future<bool> removeWorkspaceToolById(String id) async {
+  Future<bool> removeWorkspaceToolById(String id) {
     return _dao.deleteWorkspaceToolById(id);
   }
 
-  Future<int> getWorkspaceToolsCount(String workspaceId) async {
+  Future<int> getWorkspaceToolsCount(String workspaceId) {
     return _dao.getWorkspaceToolsCount(workspaceId);
   }
 
-  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) async {
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) {
     return _dao.getEnabledWorkspaceToolsCount(workspaceId);
-  }
-
-  Future<void> copyWorkspaceToolsToConversation(
-    String workspaceId,
-    String conversationId,
-  ) async {
-    // This method is no longer needed since we use disabled tools approach.
-    // Copying workspace tools to conversation is handled by the conversation
-    // tools repository.
-    return;
   }
 
   Future<bool> validateWorkspaceToolSetting(
     String workspaceId,
-    String toolType, {
-    required bool isEnabled,
-    String? config,
-  }) async {
+    String toolType,
+  ) async {
     // Check if workspace exists.
     final workspace = await _database.workspaceDao.getWorkspaceById(
       workspaceId,
@@ -159,7 +147,7 @@ class WorkspaceToolsRepository {
   Future<String?> getWorkspaceToolConfig(
     String workspaceId,
     String toolType,
-  ) async {
+  ) {
     return _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
   }
 
