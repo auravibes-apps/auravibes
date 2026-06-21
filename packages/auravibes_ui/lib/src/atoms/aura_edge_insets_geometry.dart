@@ -92,8 +92,8 @@ class AuraEdgeInsetsGeometry {
   int get hashCode => Object.hashAll([
     left,
     top,
+    right,
     bottom,
-    top,
   ]); // Combine hash codes.
 }
 

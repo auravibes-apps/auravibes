@@ -106,6 +106,12 @@ void main() {
       const b = AuraEdgeInsetsGeometry.medium;
       expect(a.hashCode, b.hashCode);
     });
+
+    test('hashCode includes right padding', () {
+      const a = AuraEdgeInsetsGeometry.only(right: .sm);
+      const b = AuraEdgeInsetsGeometry.only(bottom: .sm);
+      expect(a.hashCode, isNot(b.hashCode));
+    });
   });
 
   group('AuraPadding', () {
