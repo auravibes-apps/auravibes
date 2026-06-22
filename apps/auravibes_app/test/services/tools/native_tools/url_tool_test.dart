@@ -371,9 +371,7 @@ void main() {
           ..httpClientAdapter = _SuccessAdapter(body: 'ok', statusCode: 200);
         final tool = UrlTool(urlService: UrlService(dio: dio));
 
-        final result = await tool
-            .runner('http://[::ffff:8.8.8.8]/')
-            .value;
+        final result = await tool.runner('http://[::ffff:8.8.8.8]/').value;
 
         expect(result, contains('Status: 200'));
       });

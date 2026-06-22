@@ -357,7 +357,8 @@ final class UrlTool extends NativeToolEntity<String, String> {
     }
 
     if (address.type == InternetAddressType.IPv6 && raw.length == 16) {
-      final isMapped = const ListEquality<int>().equals(
+      final isMapped =
+          const ListEquality<int>().equals(
             raw.sublist(0, 10),
             const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
           ) &&
