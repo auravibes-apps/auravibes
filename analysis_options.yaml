@@ -1,11 +1,27 @@
 include: package:very_good_analysis/analysis_options.yaml
 
+dart_code_linter:
+  metrics:
+    cyclomatic-complexity: 38
+    halstead-volume: 92035
+    lines-of-code: 2511
+    maximum-nesting-level: 8
+    number-of-methods: 49
+    number-of-parameters: 12
+    source-lines-of-code: 2392
+    maintainability-index: 0
+    weight-of-class: 0
+    technical-debt:
+      threshold: 0
+
 plugins:
   dart_code_linter:
     version: ^4.1.2
     diagnostics:
       always-remove-listener: true
       arguments-ordering: true
+      avoid-banned-imports:
+        entries: []
       avoid-cascade-after-if-null: true
       avoid-collection-methods-with-unrelated-types: true
       avoid-creating-vector-in-update: true
@@ -37,6 +53,8 @@ plugins:
       avoid-unrelated-type-assertions: true
       avoid-unused-parameters: true
       avoid-wrapping-in-padding: true
+      ban-name:
+        entries: []
       check-for-equals-in-render-object-setters: true
       consistent-update-render-object: true
       format-comment:
