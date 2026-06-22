@@ -2,8 +2,6 @@
 // ignore_for_file: public_member_api_docs
 // Required: Genkit plugin API exposes top-level helpers.
 
-import 'dart:async';
-
 import 'package:auravibes_genkit_providers/src/chat_completions_provider.dart';
 import 'package:auravibes_genkit_providers/src/openai_compat_chat_options.dart';
 import 'package:genkit/plugin.dart';
@@ -11,7 +9,6 @@ import 'package:http/http.dart' as http;
 
 const openRouter = OpenRouterPluginHandle();
 
-typedef OpenRouterApiKeyProvider = FutureOr<String> Function();
 typedef OpenRouterModelDefinition = ChatCompletionsModelDefinition;
 
 class OpenRouterPluginHandle {
@@ -21,7 +18,7 @@ class OpenRouterPluginHandle {
     String name = 'openrouter',
     String baseUrl = 'https://openrouter.ai/api/v1',
     String? apiKey,
-    OpenRouterApiKeyProvider? apiKeyProvider,
+    ApiKeyProvider? apiKeyProvider,
     List<OpenRouterModelDefinition> models = const [],
     Map<String, String>? headers,
     http.Client? httpClient,

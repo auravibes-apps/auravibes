@@ -11,6 +11,8 @@ import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
+typedef ApiKeyProvider = FutureOr<String> Function();
+
 class ChatCompletionsModelDefinition {
   const ChatCompletionsModelDefinition({required this.name, this.info});
 
@@ -82,7 +84,7 @@ class ChatCompletionsPlugin extends GenkitPlugin {
   customize;
 
   final String? apiKey;
-  final FutureOr<String> Function()? apiKeyProvider;
+  final ApiKeyProvider? apiKeyProvider;
   final List<ChatCompletionsModelDefinition> models;
   final Map<String, String>? headers;
   final http.Client? httpClient;
