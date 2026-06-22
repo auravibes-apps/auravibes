@@ -211,6 +211,7 @@ class _WorkspaceManagementBody extends ConsumerWidget {
 
     return mode == ManagementMode.create
         ? _CreateWorkspaceForm(
+            validateName: ref.read(validateWorkspaceNameUseCaseProvider),
             onCancel: () => ref
                 .read(workspaceManagementModeProvider.notifier)
                 .setMode(ManagementMode.list),
@@ -380,10 +381,12 @@ class _CreateButton extends StatelessWidget {
 
 class _CreateWorkspaceForm extends StatefulWidget {
   const _CreateWorkspaceForm({
+    required this.validateName,
     required this.onCancel,
     required this.onSubmit,
   });
 
+  final ValidateWorkspaceNameUseCase validateName;
   final VoidCallback onCancel;
   final void Function(String) onSubmit;
 
@@ -403,26 +406,31 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
 
   void _submit() {
     final name = _controller.text.trim();
-    if (name.length < 3) {
-      setState(() {
-        _errorText = LocaleKeys.workspace_management_name_too_short_error.tr(
-          namedArgs: {'min': '3'},
-        );
-      });
-
-      return;
-    }
-    if (name.length > 20) {
-      setState(() {
-        _errorText = LocaleKeys.workspace_management_name_too_long_error.tr(
-          namedArgs: {'max': '20'},
-        );
-      });
+    try {
+      widget.validateName(name: name);
+    } on WorkspaceValidationException catch (e) {
+      setState(() => _errorText = _errorMessageFor(e));
 
       return;
     }
     setState(() => _errorText = null);
     widget.onSubmit(name);
+  }
+
+  String _errorMessageFor(WorkspaceValidationException e) {
+    final key = e.localizationKey;
+    switch (key) {
+      case LocaleKeys.workspace_management_name_too_short_error:
+        return LocaleKeys.workspace_management_name_too_short_error.tr(
+          namedArgs: {'min': '${ValidateWorkspaceNameUseCase.minLength}'},
+        );
+      case LocaleKeys.workspace_management_name_too_long_error:
+        return LocaleKeys.workspace_management_name_too_long_error.tr(
+          namedArgs: {'max': '${ValidateWorkspaceNameUseCase.maxLength}'},
+        );
+      default:
+        return key?.tr() ?? e.message;
+    }
   }
 
   @override
