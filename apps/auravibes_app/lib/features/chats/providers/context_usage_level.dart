@@ -4,6 +4,7 @@
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';
@@ -90,8 +91,8 @@ class ContextUsageData {
     final progress = percent.clamp(0, 100) / 100;
 
     final usageLabel = hasLimit
-        ? '${_formatCompactTokens(usedTokens)}/${_formatCompactTokens(normalizedLimit)}'
-        : '${_formatCompactTokens(usedTokens)}/--';
+        ? '${_compactFormat.format(usedTokens)}/${_compactFormat.format(normalizedLimit)}'
+        : '${_compactFormat.format(usedTokens)}/--';
 
     if (!hasLimit) {
       return ContextUsageData(
@@ -151,32 +152,7 @@ class ContextUsageData {
   };
 }
 
-String _formatCompactTokens(int value) {
-  if (value >= 1000000) {
-    final formatted = value % 1000000 == 0
-        ? (value / 1000000).toStringAsFixed(0)
-        : (value / 1000000).toStringAsFixed(1);
-
-    return '${formatted}m';
-  }
-
-  if (value >= 1000) {
-    final k = value / 1000;
-    final formatted = value % 1000 == 0
-        ? k.toStringAsFixed(0)
-        : k.toStringAsFixed(1);
-    final roundedK = double.tryParse(formatted);
-    if (roundedK != null && roundedK >= 1000) {
-      final m = roundedK / 1000;
-      final mFormatted = m.truncateToDouble() == m
-          ? m.toStringAsFixed(0)
-          : m.toStringAsFixed(1);
-
-      return '${mFormatted}m';
-    }
-
-    return '${formatted}k';
-  }
-
-  return '$value';
-}
+// ponytail: top-level compact format; default locale follows
+// Intl.systemLocale. Upgrade path: thread app locale via a provider
+// if device locale != app locale.
+final NumberFormat _compactFormat = NumberFormat.compact();
