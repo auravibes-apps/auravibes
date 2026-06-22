@@ -33,7 +33,9 @@ class AuraSnackBarHost extends StatefulWidget {
 }
 
 class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
-  OverlayEntry? _activeEntry;
+  var _nextSnackBarId = 0;
+  int? _activeSnackBarId;
+  Widget? _activeSnackBar;
 
   @override
   void dispose() {
@@ -42,7 +44,6 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
   }
 
   AuraSnackBarController show({
-    required BuildContext context,
     required Widget content,
     required Color backgroundColor,
     required Color foregroundColor,
@@ -50,27 +51,17 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
-    _removeActiveSnackBarImmediately();
-
-    final overlayState = Overlay.maybeOf(context);
-    if (overlayState == null) {
-      throw FlutterError(
-        'showAuraSnackBar requires an Overlay in the widget tree.\n'
-        'Ensure the provided BuildContext is below MaterialApp, '
-        'CupertinoApp, Navigator, or an Overlay widget.',
-      );
-    }
-
-    OverlayEntry? entry;
+    final snackBarId = _nextSnackBarId++;
     var isDismissing = false;
 
     void dismissWithCleanup() {
       if (isDismissing) return;
       isDismissing = true;
-      if (entry != _activeEntry) return;
-      entry?.remove();
-      entry = null;
-      _activeEntry = null;
+      if (snackBarId != _activeSnackBarId || !mounted) return;
+      setState(() {
+        _activeSnackBarId = null;
+        _activeSnackBar = null;
+      });
     }
 
     final snackbarWidget = _AuraSnackBarOverlayEntry(
@@ -82,11 +73,11 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
       actionLabel: actionLabel,
       onAction: onAction,
     );
-    final overlayEntry = OverlayEntry(builder: (context) => snackbarWidget);
-    entry = overlayEntry;
 
-    overlayState.insert(overlayEntry);
-    _activeEntry = overlayEntry;
+    setState(() {
+      _activeSnackBarId = snackBarId;
+      _activeSnackBar = snackbarWidget;
+    });
 
     return AuraSnackBarController(
       dismissCallback: dismissWithCleanup,
@@ -94,18 +85,26 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
   }
 
   void _removeActiveSnackBarImmediately() {
-    final activeEntry = _activeEntry;
-    if (activeEntry == null) return;
+    if (_activeSnackBar == null) return;
 
-    _activeEntry = null;
-    activeEntry.remove();
+    _activeSnackBarId = null;
+    _activeSnackBar = null;
   }
 
   @override
   Widget build(BuildContext context) {
+    final activeSnackBar = _activeSnackBar;
+
     return _AuraSnackBarHostScope(
       state: this,
-      child: widget.child,
+      child: Stack(
+        alignment: Alignment.topLeft,
+        fit: StackFit.passthrough,
+        children: [
+          widget.child,
+          ?activeSnackBar,
+        ],
+      ),
     );
   }
 }
@@ -160,14 +159,15 @@ class AuraSnackBarController {
   }
 }
 
-/// Shows an Aura-styled snackbar notification using custom OverlayEntry.
+/// Shows an Aura-styled snackbar notification in the nearest
+/// [AuraSnackBarHost].
 ///
 /// Displays a custom snackbar overlay with Aura theming based on the provided
 /// [variant]. The snackbar auto-dismisses after [duration] and can include
 /// an optional action button.
 ///
-/// This implementation uses [OverlayEntry] instead of Material's [SnackBar]
-/// to remove Material visual styling while keeping notification behavior.
+/// This implementation avoids Material's [SnackBar] visual styling while
+/// keeping notification behavior scoped to the nearest host surface.
 AuraSnackBarController showAuraSnackBar({
   required BuildContext context,
   required Widget content,
@@ -195,7 +195,6 @@ AuraSnackBarController showAuraSnackBar({
   );
 
   return host.show(
-    context: context,
     backgroundColor: backgroundColor,
     foregroundColor: foregroundColor,
     content: content,
