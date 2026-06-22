@@ -1,12 +1,10 @@
 // Required: Existing thresholds and limits use numeric values.
-// Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:convert';
 import 'dart:math';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
-import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
@@ -156,18 +154,18 @@ class OAuthAuthenticate {
     final returnedUri = Uri.parse(urlResult);
 
     final queryParams = returnedUri.queryParameters;
-    final error = queryParams.get<String?>('error');
+    final error = queryParams['error'];
 
     if (error != null) {
-      final errorDescription = queryParams.get<String?>('error_description');
+      final errorDescription = queryParams['error_description'];
       throw Exception('OAuth error: $error - $errorDescription');
     }
 
-    if (queryParams.get<String?>('state') != stateParam) {
+    if (queryParams['state'] != stateParam) {
       throw Exception('OAuth state mismatch');
     }
 
-    final code = queryParams.get<String?>('code');
+    final code = queryParams['code'];
 
     if (code == null || code.isEmpty) {
       throw Exception('OAuth code not found in redirect URL');

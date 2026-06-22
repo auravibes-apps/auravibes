@@ -1,6 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-
-import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'model_providers_type.freezed.dart';
@@ -40,16 +37,16 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
 
   factory ApiModelProviderEntity.fromJson(Map<String, dynamic> json) =>
       ApiModelProviderEntity(
-        id: json.get('id'),
-        name: json.get('name'),
+        id: json['id'] as String,
+        name: json['name'] as String,
         type: _getType(json),
-        url: json.get('api'),
-        doc: json.get('doc'),
+        url: json['api'] as String?,
+        doc: json['doc'] as String?,
       );
   const ApiModelProviderEntity._();
 
   static ModelProvidersType? _getType(Map<String, dynamic> json) {
-    final npm = json.get<String?>('npm');
+    final npm = json['npm'] as String?;
 
     switch (npm) {
       case '@ai-sdk/openai':

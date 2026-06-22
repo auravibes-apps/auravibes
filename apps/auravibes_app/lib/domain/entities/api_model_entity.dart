@@ -1,6 +1,4 @@
 // Required: Existing thresholds and limits use numeric values.
-// Required: Existing test and UI helpers keep compact return flow.
-import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'api_model_entity.freezed.dart';
@@ -64,31 +62,31 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     Map<String, dynamic> json, [
     Set<String> canonicalModelIds = const {},
   ]) {
-    final cost = json.get<Map<String, dynamic>?>('cost');
-    final limit = json.get<Map<String, dynamic>>('limit');
-    final modalities = json.get<Map<String, dynamic>>('modalities');
+    final cost = json['cost'] as Map<String, dynamic>?;
+    final limit = json['limit'] as Map<String, dynamic>;
+    final modalities = json['modalities'] as Map<String, dynamic>;
 
     return ApiModelEntity(
       modelProvider: modelProvider,
-      id: json.get('id'),
-      name: json.get('name'),
-      limitContext: limit.get('context'),
-      limitOutput: limit.get('output'),
-      modalitiesInput: (modalities.get<List<dynamic>?>('input') ?? []).cast(),
-      modalitiesOuput: (modalities.get<List<dynamic>?>('output') ?? []).cast(),
-      family: json.get<String?>('family'),
-      costInput: cost?.get<num?>('input')?.toDouble(),
-      costCacheRead: cost?.get<num?>('cache_read')?.toDouble(),
-      costOutput: cost?.get<num?>('output')?.toDouble(),
-      openWeights: json.get('open_weights'),
-      supportsReasoning: json.get<bool?>('reasoning') ?? false,
+      id: json['id'] as String,
+      name: json['name'] as String,
+      limitContext: limit['context'] as int,
+      limitOutput: limit['output'] as int,
+      modalitiesInput: ((modalities['input'] as List<dynamic>?) ?? []).cast(),
+      modalitiesOuput: ((modalities['output'] as List<dynamic>?) ?? []).cast(),
+      family: json['family'] as String?,
+      costInput: (cost?['input'] as num?)?.toDouble(),
+      costCacheRead: (cost?['cache_read'] as num?)?.toDouble(),
+      costOutput: (cost?['output'] as num?)?.toDouble(),
+      openWeights: json['open_weights'] as bool?,
+      supportsReasoning: (json['reasoning'] as bool?) ?? false,
       isCanonical:
           canonicalModelIds.isEmpty ||
           canonicalModelIds.contains(
-            '$modelProvider/${json.get<String>('id')}',
+            '$modelProvider/${json['id'] as String}',
           ),
       supportsPriorityMode: _supportsPriorityMode(json),
-      supportsToolCalls: json.get<bool?>('tool_call') ?? false,
+      supportsToolCalls: (json['tool_call'] as bool?) ?? false,
     );
   }
 
@@ -125,11 +123,11 @@ abstract class ApiModelEntity with _$ApiModelEntity {
 }
 
 bool _supportsPriorityMode(Map<String, dynamic> json) {
-  final experimental = json.get<Map<String, dynamic>?>('experimental');
-  final modes = experimental?.get<Map<String, dynamic>?>('modes');
-  final fast = modes?.get<Map<String, dynamic>?>('fast');
-  final provider = fast?.get<Map<String, dynamic>?>('provider');
-  final body = provider?.get<Map<String, dynamic>?>('body');
+  final experimental = json['experimental'] as Map<String, dynamic>?;
+  final modes = experimental?['modes'] as Map<String, dynamic>?;
+  final fast = modes?['fast'] as Map<String, dynamic>?;
+  final provider = fast?['provider'] as Map<String, dynamic>?;
+  final body = provider?['body'] as Map<String, dynamic>?;
 
-  return body?.get<String?>('service_tier') == 'priority';
+  return (body?['service_tier'] as String?) == 'priority';
 }

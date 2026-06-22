@@ -1,6 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-
-import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'mcp_transport_type.freezed.dart';
@@ -10,7 +7,7 @@ sealed class McpTransportType {
   const McpTransportType();
 
   factory McpTransportType.fromJson(Map<String, dynamic> json) {
-    final type = json.get<String>('type');
+    final type = json['type'] as String;
     switch (type) {
       case 'sse':
         return McpTransportTypeSSE.fromJson(json);
@@ -46,7 +43,7 @@ class McpTransportTypeStreamableHttp extends McpTransportType {
 
   factory McpTransportTypeStreamableHttp.fromJson(Map<String, dynamic> json) {
     return McpTransportTypeStreamableHttp(
-      useHttp2: json.get('useHttp2'),
+      useHttp2: json['useHttp2'] as bool,
     );
   }
 
