@@ -251,9 +251,9 @@ class ChatCompletionsPlugin extends GenkitPlugin {
   }
 
   Uri _chatCompletionsUri() {
-    final normalized = baseUrl.replaceFirst(RegExp(r'/$'), '');
+    final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
 
-    return Uri.parse('$normalized/chat/completions');
+    return Uri.parse(normalized).resolve('chat/completions');
   }
 
   Future<String?> _resolveApiKey() async {
