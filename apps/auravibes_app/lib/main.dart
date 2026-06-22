@@ -4,7 +4,7 @@ import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/services/app_log_buffer.dart';
+import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'

@@ -1,47 +1,25 @@
 import 'dart:ui';
 
-import 'package:auravibes_app/services/app_log_buffer.dart';
+import 'package:auravibes_app/services/app_logging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 
 void main() {
-  group('AppLogBuffer', () {
-    setUp(AppLogBuffer.instance.clear);
-
-    test('stores and dumps log entries', () {
-      AppLogBuffer.instance
-        ..add('first')
-        ..add('second');
-
-      expect(AppLogBuffer.instance.dump(), 'first\nsecond');
-    });
-
-    test('keeps only the latest entries', () {
-      for (var i = 0; i < 301; i++) {
-        AppLogBuffer.instance.add('entry $i');
-      }
-
-      final dump = AppLogBuffer.instance.dump();
-      expect(dump, isNot(contains('entry 0')));
-      expect(dump, contains('entry 1'));
-      expect(dump, contains('entry 300'));
-    });
-  });
-
   group('AppLogging', () {
+    final logs = <String>[];
     var previousDebugPrint = debugPrint;
     FlutterExceptionHandler? previousFlutterError;
     ErrorCallback? previousPlatformError;
 
     setUp(() {
-      AppLogBuffer.instance.clear();
+      logs.clear();
       AppLogging.resetForTesting();
       previousDebugPrint = debugPrint;
       previousFlutterError = FlutterError.onError;
       previousPlatformError = PlatformDispatcher.instance.onError;
-      debugPrint = (_, {wrapWidth}) {
-        final _ = Object();
+      debugPrint = (message, {wrapWidth}) {
+        if (message != null) logs.add(message);
       };
     });
 
@@ -49,14 +27,13 @@ void main() {
       debugPrint = previousDebugPrint;
       FlutterError.onError = previousFlutterError;
       PlatformDispatcher.instance.onError = previousPlatformError;
-      AppLogBuffer.instance.clear();
     });
 
     test('does not configure logging when disabled', () {
       AppLogging.configure(enabled: false);
       Logger('test.disabled').info('hidden');
 
-      expect(AppLogBuffer.instance.dump(), isEmpty);
+      expect(logs, isEmpty);
     });
 
     test('records log messages with error and stack trace', () async {
@@ -67,10 +44,9 @@ void main() {
       ).severe('failed', StateError('bad'), StackTrace.current);
       await Future<void>.delayed(Duration.zero);
 
-      final dump = AppLogBuffer.instance.dump();
-      expect(dump, contains('[SEVERE] test.logger: failed'));
-      expect(dump, contains('Error: Bad state: bad'));
-      expect(dump, contains('StackTrace:'));
+      expect(logs, anyElement(contains('[SEVERE] test.logger: failed')));
+      expect(logs, anyElement(contains('Error: Bad state: bad')));
+      expect(logs, anyElement(contains('StackTrace:')));
     });
 
     test('logs Flutter errors and forwards to previous handler', () async {
@@ -94,10 +70,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(forwarded, isTrue);
-      expect(
-        AppLogBuffer.instance.dump(),
-        contains('Flutter error: Exception: boom'),
-      );
+      expect(logs, anyElement(contains('Flutter error: Exception: boom')));
     });
 
     test('logs platform errors and keeps them unhandled', () async {
@@ -115,7 +88,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(handled, isFalse);
-      expect(AppLogBuffer.instance.dump(), contains('Uncaught platform error'));
+      expect(logs, anyElement(contains('Uncaught platform error')));
     });
   });
 }

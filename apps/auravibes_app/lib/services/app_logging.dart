@@ -7,28 +7,6 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('app_logging');
 
-class AppLogBuffer {
-  AppLogBuffer._();
-
-  static final AppLogBuffer instance = AppLogBuffer._();
-
-  static const _maxEntries = 300;
-
-  final List<String> _entries = [];
-
-  void add(String entry) {
-    _entries.add(entry);
-    if (_entries.length > _maxEntries) {
-      _entries.removeRange(0, _entries.length - _maxEntries);
-    }
-  }
-
-  String dump() => _entries.join('\n');
-
-  @visibleForTesting
-  void clear() => _entries.clear();
-}
-
 class AppLogging {
   AppLogging._();
 
@@ -68,19 +46,14 @@ class AppLogging {
     final line =
         '[$timestamp] [${record.level.name}] ${record.loggerName}: '
         '${record.message}';
-    AppLogBuffer.instance.add(line);
     debugPrint(line);
 
     if (record.error != null) {
-      final errorLine = 'Error: ${record.error}';
-      AppLogBuffer.instance.add(errorLine);
-      debugPrint(errorLine);
+      debugPrint('Error: ${record.error}');
     }
 
     if (record.stackTrace != null) {
-      final stackLine = 'StackTrace: ${record.stackTrace}';
-      AppLogBuffer.instance.add(stackLine);
-      debugPrint(stackLine);
+      debugPrint('StackTrace: ${record.stackTrace}');
     }
   }
 
