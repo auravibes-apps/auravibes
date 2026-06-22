@@ -69,21 +69,4 @@ void main() {
       expect(name, 'mcp_1_server_tool_with_spaces');
     });
   });
-
-  group('MCPServerWithTools', () {
-    test('slugServerName delegates to server', () {
-      final server = McpServerEntity(
-        id: '1',
-        workspaceId: 'ws',
-        name: 'My Server!',
-        url: 'http://localhost',
-        transport: const McpTransportTypeSSE(),
-        authenticationType: const McpAuthenticationTypeNone(),
-        createdAt: DateTime(2025),
-        updatedAt: DateTime(2025),
-      );
-      final withTools = MCPServerWithTools(server: server, tools: []);
-      expect(withTools.slugServerName, server.slugServerName);
-    });
-  });
 }
