@@ -179,7 +179,7 @@ void main() {
           usedTokens: 1500,
           limitTokens: 10000,
         );
-        expect(data.usageLabel, contains('k'));
+        expect(data.usageLabel, contains('K'));
       });
 
       test('formats compact tokens for millions', () {
@@ -187,7 +187,7 @@ void main() {
           usedTokens: 1500000,
           limitTokens: 2000000,
         );
-        expect(data.usageLabel, contains('m'));
+        expect(data.usageLabel, contains('M'));
       });
 
       test('formats compact tokens for exact thousands', () {
@@ -195,7 +195,7 @@ void main() {
           usedTokens: 1000,
           limitTokens: 10000,
         );
-        expect(data.usageLabel, '1k/10k');
+        expect(data.usageLabel, '1K/10K');
       });
 
       test('formats compact tokens for exact millions', () {
@@ -203,7 +203,7 @@ void main() {
           usedTokens: 1000000,
           limitTokens: 2000000,
         );
-        expect(data.usageLabel, '1m/2m');
+        expect(data.usageLabel, '1M/2M');
       });
 
       test('formats compact tokens for values under 1000', () {
