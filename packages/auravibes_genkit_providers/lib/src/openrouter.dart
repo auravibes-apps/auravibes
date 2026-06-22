@@ -36,7 +36,8 @@ class OpenRouterPluginHandle {
           model: modelName,
           extraBody: {
             ...options.toSamplingBody(),
-            'reasoning': ?options.reasoning?.toJson(),
+            if (options.reasoningMaxTokens != null)
+              'reasoning': {'max_tokens': options.reasoningMaxTokens},
           },
         );
       },
@@ -66,12 +67,11 @@ class OpenRouterOptions extends OpenAICompatChatOptions {
     super.frequencyPenalty,
     super.seed,
     super.user,
-    this.reasoning,
+    this.reasoningMaxTokens,
   });
 
   factory OpenRouterOptions.fromJson(Map<String, dynamic>? json) {
     final shared = OpenAICompatChatOptions.fromJson(json);
-    final reasoningJson = json?['reasoning'];
 
     return OpenRouterOptions(
       temperature: shared.temperature,
@@ -82,33 +82,15 @@ class OpenRouterOptions extends OpenAICompatChatOptions {
       frequencyPenalty: shared.frequencyPenalty,
       seed: shared.seed,
       user: shared.user,
-      reasoning: reasoningJson is Map<String, dynamic>
-          ? OpenRouterReasoningConfig.fromJson(reasoningJson)
-          : null,
+      reasoningMaxTokens: json?['reasoningMaxTokens'] as int?,
     );
   }
 
-  final OpenRouterReasoningConfig? reasoning;
+  final int? reasoningMaxTokens;
 
   @override
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
-    'reasoning': ?reasoning?.toJson(),
-  };
-}
-
-class OpenRouterReasoningConfig {
-  const OpenRouterReasoningConfig({this.maxTokens});
-
-  factory OpenRouterReasoningConfig.fromJson(Map<String, dynamic> json) {
-    return OpenRouterReasoningConfig(
-      maxTokens: json['max_tokens'] as int?,
-    );
-  }
-
-  final int? maxTokens;
-
-  Map<String, dynamic> toJson() => {
-    'max_tokens': ?maxTokens,
+    'reasoningMaxTokens': ?reasoningMaxTokens,
   };
 }
