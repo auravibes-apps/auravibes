@@ -353,8 +353,13 @@ void main() {
       for (final entry in {
         '127.0.0.1': 'http://[::ffff:127.0.0.1]/',
         '10.0.0.1': 'http://[::ffff:10.0.0.1]/',
+        '172.16.0.1': 'http://[::ffff:172.16.0.1]/',
         '192.168.1.1': 'http://[::ffff:192.168.1.1]/',
         '169.254.1.1': 'http://[::ffff:169.254.1.1]/',
+        '0.0.0.0': 'http://[::ffff:0.0.0.0]/',
+        '100.64.0.1': 'http://[::ffff:100.64.0.1]/',
+        '224.0.0.1': 'http://[::ffff:224.0.0.1]/',
+        '240.0.0.1': 'http://[::ffff:240.0.0.1]/',
       }.entries) {
         test('rejects mapped private IPv4 ${entry.key}', () {
           final tool = UrlTool();
