@@ -230,6 +230,8 @@ void main() {
     });
 
     testWidgets('replaces the active snackbar', (tester) async {
+      final controllers = <AuraSnackBarController>[];
+
       await tester.pumpWidget(
         _SnackBarTestApp(
           home: Scaffold(
@@ -239,18 +241,22 @@ void main() {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        final _ = showAuraSnackBar(
-                          context: context,
-                          content: const Text('First message'),
+                        controllers.add(
+                          showAuraSnackBar(
+                            context: context,
+                            content: const Text('First message'),
+                          ),
                         );
                       },
                       child: const Text('Show first'),
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        final _ = showAuraSnackBar(
-                          context: context,
-                          content: const Text('Second message'),
+                        controllers.add(
+                          showAuraSnackBar(
+                            context: context,
+                            content: const Text('Second message'),
+                          ),
                         );
                       },
                       child: const Text('Show second'),
@@ -275,42 +281,61 @@ void main() {
       expect(find.text('Second message'), findsOneWidget);
       expect(find.byType(Positioned), findsOneWidget);
       expect(find.byType(SnackBar), findsNothing);
+
+      controllers.removeAt(0).close();
+      await tester.pump();
+
+      expect(find.text('Second message'), findsOneWidget);
+
+      controllers.single.close();
+      await tester.pump();
+
+      expect(find.text('Second message'), findsNothing);
     });
 
     testWidgets('keeps separate hosts independent', (tester) async {
+      tester.view.physicalSize = const Size(800, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
         _SnackBarTestApp(
           home: Scaffold(
             body: Row(
               children: [
-                AuraSnackBarHost(
-                  child: Builder(
-                    builder: (context) {
-                      return ElevatedButton(
-                        onPressed: () {
-                          final _ = showAuraSnackBar(
-                            context: context,
-                            content: const Text('Left message'),
-                          );
-                        },
-                        child: const Text('Show left'),
-                      );
-                    },
+                Expanded(
+                  child: AuraSnackBarHost(
+                    child: Builder(
+                      builder: (context) {
+                        return ElevatedButton(
+                          onPressed: () {
+                            final _ = showAuraSnackBar(
+                              context: context,
+                              content: const Text('Left message'),
+                            );
+                          },
+                          child: const Text('Show left'),
+                        );
+                      },
+                    ),
                   ),
                 ),
-                AuraSnackBarHost(
-                  child: Builder(
-                    builder: (context) {
-                      return ElevatedButton(
-                        onPressed: () {
-                          final _ = showAuraSnackBar(
-                            context: context,
-                            content: const Text('Right message'),
-                          );
-                        },
-                        child: const Text('Show right'),
-                      );
-                    },
+                Expanded(
+                  child: AuraSnackBarHost(
+                    child: Builder(
+                      builder: (context) {
+                        return ElevatedButton(
+                          onPressed: () {
+                            final _ = showAuraSnackBar(
+                              context: context,
+                              content: const Text('Right message'),
+                            );
+                          },
+                          child: const Text('Show right'),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -331,6 +356,12 @@ void main() {
       expect(find.text('Right message'), findsOneWidget);
       expect(find.byType(Positioned), findsNWidgets(2));
       expect(find.byType(SnackBar), findsNothing);
+
+      final leftRect = tester.getRect(find.text('Left message'));
+      final rightRect = tester.getRect(find.text('Right message'));
+
+      expect(leftRect.center.dx, lessThan(400));
+      expect(rightRect.center.dx, greaterThan(400));
     });
 
     testWidgets('animates in with slide and fade', (tester) async {
@@ -449,11 +480,12 @@ class _SnackBarTestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AuraSnackBarHost(
-      child: MaterialApp(
-        home: home,
-        theme: theme,
+    return MaterialApp(
+      home: home,
+      builder: (context, child) => AuraSnackBarHost(
+        child: child ?? const SizedBox.shrink(),
       ),
+      theme: theme,
     );
   }
 }
