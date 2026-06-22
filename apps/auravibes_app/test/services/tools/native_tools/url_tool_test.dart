@@ -349,6 +349,39 @@ void main() {
       expect(result, contains('Status: 200'));
     });
 
+    group('SSRF IPv6-mapped IPv4 detection', () {
+      for (final entry in {
+        '127.0.0.1': 'http://[::ffff:127.0.0.1]/',
+        '10.0.0.1': 'http://[::ffff:10.0.0.1]/',
+        '172.16.0.1': 'http://[::ffff:172.16.0.1]/',
+        '192.168.1.1': 'http://[::ffff:192.168.1.1]/',
+        '169.254.1.1': 'http://[::ffff:169.254.1.1]/',
+        '0.0.0.0': 'http://[::ffff:0.0.0.0]/',
+        '100.64.0.1': 'http://[::ffff:100.64.0.1]/',
+        '224.0.0.1': 'http://[::ffff:224.0.0.1]/',
+        '240.0.0.1': 'http://[::ffff:240.0.0.1]/',
+      }.entries) {
+        test('rejects mapped private IPv4 ${entry.key}', () {
+          final tool = UrlTool();
+
+          expect(
+            tool.runner(entry.value).value,
+            throwsA(isA<FormatException>()),
+          );
+        });
+      }
+
+      test('allows mapped public IPv4', () async {
+        final dio = Dio()
+          ..httpClientAdapter = _SuccessAdapter(body: 'ok', statusCode: 200);
+        final tool = UrlTool(urlService: UrlService(dio: dio));
+
+        final result = await tool.runner('http://[::ffff:8.8.8.8]/').value;
+
+        expect(result, contains('Status: 200'));
+      });
+    });
+
     test('transforms HTML response to markdown with format header', () async {
       final dio = Dio()
         ..httpClientAdapter = _SuccessAdapter(
