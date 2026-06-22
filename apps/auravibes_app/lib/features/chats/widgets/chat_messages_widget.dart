@@ -330,7 +330,7 @@ class _AiMessageContent extends StatelessWidget {
         ),
         const AuraSizedBox(height: .xs),
         Text(
-          const RelativeTimeFormatter().format(timestamp),
+          formatRelativeTime(timestamp),
           style: TextStyle(
             color: auraColors.onSurfaceVariant,
             fontSize: context.auraTheme.typography.fontSizeXs,

@@ -4,42 +4,37 @@ import 'package:easy_localization/easy_localization.dart';
 
 typedef TranslateFunc = String Function(String key, {List<String>? args});
 
-class RelativeTimeFormatter {
-  const RelativeTimeFormatter();
+String _defaultTranslate(String key, {List<String>? args}) =>
+    key.tr(args: args ?? const []);
 
-  String format(
-    DateTime timestamp, {
-    DateTime? now,
-    TranslateFunc? translate,
-  }) {
-    final diff = (now ?? DateTime.now()).difference(timestamp);
-    final tr = translate ?? _defaultTranslate;
+String formatRelativeTime(
+  DateTime timestamp, {
+  DateTime? now,
+  TranslateFunc translate = _defaultTranslate,
+}) {
+  final diff = (now ?? DateTime.now()).difference(timestamp);
 
-    if (diff.isNegative) {
-      return tr(LocaleKeys.home_screen_date_formatting_just_now);
-    }
-    if (diff.inMinutes < 1) {
-      return tr(LocaleKeys.home_screen_date_formatting_just_now);
-    }
-    if (diff.inHours < 1) {
-      return tr(
-        LocaleKeys.home_screen_date_formatting_minutes_ago,
-        args: [diff.inMinutes.toString()],
-      );
-    }
-    if (diff.inDays < 1) {
-      return tr(
-        LocaleKeys.home_screen_date_formatting_hours_ago,
-        args: [diff.inHours.toString()],
-      );
-    }
-
-    return tr(
-      LocaleKeys.home_screen_date_formatting_days_ago,
-      args: [diff.inDays.toString()],
+  if (diff.isNegative) {
+    return translate(LocaleKeys.home_screen_date_formatting_just_now);
+  }
+  if (diff.inMinutes < 1) {
+    return translate(LocaleKeys.home_screen_date_formatting_just_now);
+  }
+  if (diff.inHours < 1) {
+    return translate(
+      LocaleKeys.home_screen_date_formatting_minutes_ago,
+      args: [diff.inMinutes.toString()],
+    );
+  }
+  if (diff.inDays < 1) {
+    return translate(
+      LocaleKeys.home_screen_date_formatting_hours_ago,
+      args: [diff.inHours.toString()],
     );
   }
 
-  static String _defaultTranslate(String key, {List<String>? args}) =>
-      key.tr(args: args ?? const []);
+  return translate(
+    LocaleKeys.home_screen_date_formatting_days_ago,
+    args: [diff.inDays.toString()],
+  );
 }
