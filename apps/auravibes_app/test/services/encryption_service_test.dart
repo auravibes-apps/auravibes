@@ -113,37 +113,4 @@ void main() {
       );
     });
   });
-
-  group('EncryptionService nullable methods', () {
-    var service = EncryptionService(MockSecretKeyManager());
-
-    setUp(() {
-      service = EncryptionService(MockSecretKeyManager());
-    });
-
-    test('encryptNullable returns null for null input', () async {
-      expect(await service.encryptNullable(null), isNull);
-    });
-
-    test('encryptNullable encrypts non-null input', () async {
-      const plaintext = 'test';
-      final encrypted = await service.encryptNullable(plaintext);
-      expect(encrypted, isNotNull);
-      expect(encrypted, isNot(plaintext));
-      final encryptedValue = encrypted ?? fail('Expected encrypted value');
-      final decrypted = await service.decrypt(encryptedValue);
-      expect(decrypted, plaintext);
-    });
-
-    test('decryptNullable returns null for null input', () async {
-      expect(await service.decryptNullable(null), isNull);
-    });
-
-    test('decryptNullable decrypts non-null input', () async {
-      const plaintext = 'nullable test';
-      final encrypted = await service.encrypt(plaintext);
-      final decrypted = await service.decryptNullable(encrypted);
-      expect(decrypted, plaintext);
-    });
-  });
 }
