@@ -45,16 +45,12 @@ class GroupedToolsViewItem {
       };
     }
 
-    if (mcpConnection?.status == McpConnectionViewStatus.error) {
-      return 2;
-    }
-    if (mcpConnection?.status == McpConnectionViewStatus.disconnected) {
-      return 3;
-    }
-    if (mcpConnection?.status == McpConnectionViewStatus.connecting) {
-      return 4;
-    }
-
-    return 5;
+    return switch (mcpConnection?.status) {
+      McpConnectionViewStatus.error => 2,
+      McpConnectionViewStatus.disconnected => 3,
+      McpConnectionViewStatus.connecting => 4,
+      McpConnectionViewStatus.connected => 5,
+      null => 5,
+    };
   }
 }

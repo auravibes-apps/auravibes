@@ -260,13 +260,15 @@ class ChatbotService {
 
   String _processGeneratedTitle(String title, String firstMessage) {
     var processedTitle = title.trim();
-    if (processedTitle.startsWith('"') && processedTitle.endsWith('"')) {
-      processedTitle = processedTitle.withoutEdgeCharacters();
-    }
-    if (processedTitle.length > 1 &&
-        processedTitle.startsWith(String.fromCharCode(39)) &&
-        processedTitle.endsWith(String.fromCharCode(39))) {
-      processedTitle = processedTitle.withoutEdgeCharacters();
+    // Both quote chars must be expressible; prefer-single-quotes forces
+    // escaping the apostrophe inside the single-quoted literal.
+    // ignore: avoid_escaping_inner_quotes
+    for (final quote in const ['"', '\'']) {
+      if (processedTitle.length > 1 &&
+          processedTitle.startsWith(quote) &&
+          processedTitle.endsWith(quote)) {
+        processedTitle = processedTitle.withoutEdgeCharacters();
+      }
     }
     if (processedTitle.startsWith('Title:')) {
       processedTitle = processedTitle.replaceFirst('Title:', '').trim();

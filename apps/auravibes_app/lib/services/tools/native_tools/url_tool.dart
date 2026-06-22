@@ -13,6 +13,7 @@ import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/url_content_transformer.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
+import 'package:collection/collection.dart';
 
 const _privateNetworkUrlError =
     'Private or local network URLs are not allowed.';
@@ -357,16 +358,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     if (address.type == InternetAddressType.IPv6 && raw.length == 16) {
       final isMapped =
-          raw.firstOrNull == 0 &&
-          raw[1] == 0 &&
-          raw[2] == 0 &&
-          raw[3] == 0 &&
-          raw[4] == 0 &&
-          raw[5] == 0 &&
-          raw[6] == 0 &&
-          raw[7] == 0 &&
-          raw[8] == 0 &&
-          raw[9] == 0 &&
+          const ListEquality<int>().equals(
+            raw.sublist(0, 10),
+            const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          ) &&
           raw[10] == 0xff &&
           raw[11] == 0xff;
       if (isMapped) {

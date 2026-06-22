@@ -172,7 +172,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 const SizedBox(height: 4),
                 AuraText(
                   child: Text(
-                    const RelativeTimeFormatter().format(widget.chat.updatedAt),
+                    formatRelativeTime(widget.chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,
