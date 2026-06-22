@@ -40,7 +40,7 @@ class ProviderFactory {
             apiKey: apiKey,
             baseUrl: baseUrl ?? 'https://openrouter.ai/api/v1',
             models: [
-              OpenRouterModelDefinition(
+              ChatCompletionsModelDefinition(
                 name: config.workspaceModelSelection.modelId,
               ),
             ],
@@ -58,7 +58,7 @@ class ProviderFactory {
             apiKey: apiKey,
             baseUrl: baseUrl,
             models: [
-              OpenAICompatModelDefinition(
+              ChatCompletionsModelDefinition(
                 name: config.workspaceModelSelection.modelId,
               ),
             ],

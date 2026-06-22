@@ -12,7 +12,6 @@ import 'package:http/http.dart' as http;
 const openRouter = OpenRouterPluginHandle();
 
 typedef OpenRouterApiKeyProvider = FutureOr<String> Function();
-typedef OpenRouterModelDefinition = ChatCompletionsModelDefinition;
 
 class OpenRouterPluginHandle {
   const OpenRouterPluginHandle();
@@ -22,7 +21,7 @@ class OpenRouterPluginHandle {
     String baseUrl = 'https://openrouter.ai/api/v1',
     String? apiKey,
     OpenRouterApiKeyProvider? apiKeyProvider,
-    List<OpenRouterModelDefinition> models = const [],
+    List<ChatCompletionsModelDefinition> models = const [],
     Map<String, String>? headers,
     http.Client? httpClient,
   }) {

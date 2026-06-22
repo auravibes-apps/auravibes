@@ -39,7 +39,7 @@ void main() {
         openAICompatReasoning(
           apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
       ],
@@ -91,7 +91,7 @@ void main() {
         openAICompatReasoning(
           apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
       ],
@@ -130,7 +130,7 @@ void main() {
         openAICompatReasoning(
           apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
       ],
@@ -198,7 +198,7 @@ void main() {
         openAICompatReasoning(
           apiKeyProvider: () => ' key ',
           baseUrl: 'https://api.z.ai/api/paas/v4/',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
       ],
@@ -287,7 +287,7 @@ void main() {
         openAICompatReasoning(
           apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
       ],
@@ -374,7 +374,7 @@ void main() {
         openAICompatReasoning(
           apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
       ],
@@ -424,7 +424,7 @@ void main() {
         openAICompatReasoning(
           apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
-          models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
+          models: const [ChatCompletionsModelDefinition(name: 'glm-4.5')],
           httpClient: _FakeClient((request) async {
             return _jsonResponse({'error': 'bad'}, statusCode: 400);
           }),
