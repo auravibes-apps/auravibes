@@ -412,6 +412,47 @@ void main() {
       expect(titles.last, 'Deep Focus');
     });
 
+    test('strips wrapping double quotes via streamTitle', () async {
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          chunks: [
+            genkit.ModelResponseChunk(
+              content: [genkit.TextPart(text: '"Deep Focus"')],
+            ),
+          ],
+          response: _modelResponse(genkit.FinishReason.stop),
+        ),
+      );
+
+      final titles = await service.streamTitle(_makeConfig(), 'hi').toList();
+
+      expect(titles.last, 'Deep Focus');
+    });
+
+    test('strips wrapping single quotes via streamTitle', () async {
+      // Apostrophe literal; prefer-single-quotes forces the escape.
+      // ignore: avoid_escaping_inner_quotes
+      const singleQuote = '\'';
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          chunks: [
+            genkit.ModelResponseChunk(
+              content: [
+                genkit.TextPart(
+                  text: '${singleQuote}Deep Focus$singleQuote',
+                ),
+              ],
+            ),
+          ],
+          response: _modelResponse(genkit.FinishReason.stop),
+        ),
+      );
+
+      final titles = await service.streamTitle(_makeConfig(), 'hi').toList();
+
+      expect(titles.last, 'Deep Focus');
+    });
+
     test('falls back when title generation throws', () async {
       final service = _createService(
         providerFactory: _FakeProviderFactory(throwsOnGenerate: true),
