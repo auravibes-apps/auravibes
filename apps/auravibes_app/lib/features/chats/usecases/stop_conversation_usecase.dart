@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:riverpod/riverpod.dart';
 
 class StopConversationUsecase {
@@ -29,13 +30,7 @@ class StopConversationUsecase {
     final messages = await _messageRepository.getMessagesByConversation(
       conversationId,
     );
-    MessageEntity? latestAssistantMessage;
-    for (final message in messages.reversed) {
-      if (!message.isUser) {
-        latestAssistantMessage = message;
-        break;
-      }
-    }
+    final latestAssistantMessage = findLatestAssistantMessage(messages);
     if (latestAssistantMessage == null) return;
 
     final metadata =

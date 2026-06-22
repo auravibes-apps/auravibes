@@ -40,7 +40,7 @@ class GetConversationBusyStateUsecase {
       conversationId,
     );
 
-    final latestAssistantMessage = _findLatestAssistantMessage(messages);
+    final latestAssistantMessage = findLatestAssistantMessage(messages);
     final hasPendingTools =
         latestAssistantMessage?.metadata?.toolCalls.any(
           (toolCall) => toolCall.isPending,
@@ -53,16 +53,16 @@ class GetConversationBusyStateUsecase {
       isCompacting: isCompacting,
     );
   }
+}
 
-  MessageEntity? _findLatestAssistantMessage(List<MessageEntity> messages) {
-    for (final message in messages.reversed) {
-      if (!message.isUser) {
-        return message;
-      }
+MessageEntity? findLatestAssistantMessage(List<MessageEntity> messages) {
+  for (final message in messages.reversed) {
+    if (!message.isUser) {
+      return message;
     }
-
-    return null;
   }
+
+  return null;
 }
 
 final getConversationBusyStateUsecaseProvider =
