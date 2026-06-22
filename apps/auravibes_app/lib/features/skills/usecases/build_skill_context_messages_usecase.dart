@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:riverpod/riverpod.dart';
 
 const skillContextMetadataKind = 'skill_context';
+
+const _xmlEscape = HtmlEscape();
 
 class BuildSkillContextMessagesUsecase {
   const BuildSkillContextMessagesUsecase(this._listAvailableSkillsUsecase);
@@ -31,17 +35,8 @@ class BuildSkillContextMessagesUsecase {
   }
 
   String _skillXml(AvailableSkill skill) {
-    return '<skill><name>${_escapeXml(skill.title)}</name>'
-        '<content>${_escapeXml(skill.content)}</content></skill>';
-  }
-
-  String _escapeXml(String value) {
-    return value
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll(String.fromCharCode(39), '&apos;');
+    return '<skill><name>${_xmlEscape.convert(skill.title)}</name>'
+        '<content>${_xmlEscape.convert(skill.content)}</content></skill>';
   }
 }
 
