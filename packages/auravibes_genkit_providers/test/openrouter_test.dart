@@ -45,7 +45,7 @@ void main() {
         openRouter(
           apiKey: 'key',
           models: const [
-            OpenRouterModelDefinition(name: 'anthropic/claude-sonnet-4'),
+            ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
           ],
           httpClient: client,
         ),
@@ -118,7 +118,7 @@ void main() {
         openRouter(
           apiKeyProvider: () => ' key ',
           models: const [
-            OpenRouterModelDefinition(name: 'anthropic/claude-sonnet-4'),
+            ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
           ],
           httpClient: client,
         ),
@@ -247,7 +247,7 @@ void main() {
         openRouter(
           apiKey: 'key',
           models: const [
-            OpenRouterModelDefinition(name: 'anthropic/claude-sonnet-4'),
+            ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
           ],
           httpClient: client,
         ),
@@ -299,7 +299,7 @@ void main() {
         openRouter(
           apiKey: 'key',
           models: const [
-            OpenRouterModelDefinition(name: 'anthropic/claude-sonnet-4'),
+            ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
           ],
           httpClient: _FakeClient((request) async {
             return _jsonResponse({'error': 'bad'}, statusCode: 400);
@@ -328,7 +328,7 @@ void main() {
         openRouter(
           apiKey: 'key',
           models: const [
-            OpenRouterModelDefinition(name: 'anthropic/claude-sonnet-4'),
+            ChatCompletionsModelDefinition(name: 'anthropic/claude-sonnet-4'),
           ],
           httpClient: _FakeClient((request) async {
             return http.StreamedResponse(
