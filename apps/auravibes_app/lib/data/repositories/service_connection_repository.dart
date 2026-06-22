@@ -40,7 +40,7 @@ class ServiceConnectionRepository {
     }
     final value = await _encryptionService.decrypt(encrypted);
 
-    return ServiceConnectionAuthCodec.decodeSecret(value);
+    return decodeServiceConnectionSecret(value);
   }
 
   Future<String?> createMcpServiceConnection({
@@ -91,7 +91,7 @@ class ServiceConnectionRepository {
           ServiceConnectionsCompanion(
             encryptedAuthValue: Value(
               await _encryptionService.encrypt(
-                ServiceConnectionAuthCodec.encodeSecret(secret),
+                encodeServiceConnectionSecret(secret),
               ),
             ),
             keySuffix: Value(_suffix(token.accessToken)),
@@ -136,7 +136,7 @@ class ServiceConnectionRepository {
       bearerToken: bearerToken,
     );
     final encrypted = await _encryptionService.encrypt(
-      ServiceConnectionAuthCodec.encodeSecret(secret),
+      encodeServiceConnectionSecret(secret),
     );
     final row = await _database
         .into(_database.serviceConnections)
@@ -185,12 +185,12 @@ class ServiceConnectionRepository {
             authenticationType: ServiceAuthenticationTypeTable.oauth2,
             encryptedAuthValue: Value(
               await _encryptionService.encrypt(
-                ServiceConnectionAuthCodec.encodeSecret(secret),
+                encodeServiceConnectionSecret(secret),
               ),
             ),
             keySuffix: Value(_suffix(token.accessToken)),
             metadataJson: Value(
-              ServiceConnectionAuthCodec.encodeMetadata(metadata),
+              encodeServiceConnectionMetadata(metadata),
             ),
             expiresAt: Value(_expiresAt(token)),
             lastRefreshedAt: Value(token.issuedAt),

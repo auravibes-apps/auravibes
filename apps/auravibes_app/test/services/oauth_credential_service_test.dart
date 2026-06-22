@@ -80,7 +80,7 @@ void main() {
         final encrypted = credential.encryptedAuthValue;
         if (encrypted == null) fail('Bearer credential was not encrypted.');
         final decrypted = await fixture.encryption.decrypt(encrypted);
-        final secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+        final secret = decodeServiceConnectionSecret(decrypted);
 
         expect(credential.kind, ServiceConnectionKindTable.mcpServer);
         expect(
@@ -156,7 +156,7 @@ void main() {
       )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
       final encrypted = row.encryptedAuthValue;
       if (encrypted == null) fail('OAuth credential was not encrypted.');
-      final secret = ServiceConnectionAuthCodec.decodeSecret(
+      final secret = decodeServiceConnectionSecret(
         await fixture.encryption.decrypt(encrypted),
       );
       expect(secret, isA<ServiceConnectionSecretOAuth2>());
@@ -206,7 +206,7 @@ void main() {
       )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
       final encrypted = row.encryptedAuthValue;
       if (encrypted == null) fail('OAuth credential was not encrypted.');
-      final secret = ServiceConnectionAuthCodec.decodeSecret(
+      final secret = decodeServiceConnectionSecret(
         await fixture.encryption.decrypt(encrypted),
       );
 
@@ -529,7 +529,7 @@ Future<String> _insertOAuthCredential(
   DateTime? expiresAt,
 }) async {
   final encrypted = await fixture.encryption.encrypt(
-    ServiceConnectionAuthCodec.encodeSecret(secret),
+    encodeServiceConnectionSecret(secret),
   );
   final row = await fixture.database
       .into(fixture.database.serviceConnections)
@@ -541,7 +541,7 @@ Future<String> _insertOAuthCredential(
           authenticationType: ServiceAuthenticationTypeTable.oauth2,
           encryptedAuthValue: Value(encrypted),
           metadataJson: Value(
-            ServiceConnectionAuthCodec.encodeMetadata(metadata),
+            encodeServiceConnectionMetadata(metadata),
           ),
           expiresAt: Value(expiresAt),
           workspaceId: fixture.workspaceId,

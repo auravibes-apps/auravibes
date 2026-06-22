@@ -66,13 +66,13 @@ void main() {
     });
 
     final now = DateTime(2026);
-    final testKeyPayload = ServiceConnectionAuthCodec.encodeSecret(
+    final testKeyPayload = encodeServiceConnectionSecret(
       const ServiceConnectionSecretApiKey(apiKey: 'sk-test-api-key-123456'),
     );
-    final newKeyPayload = ServiceConnectionAuthCodec.encodeSecret(
+    final newKeyPayload = encodeServiceConnectionSecret(
       const ServiceConnectionSecretApiKey(apiKey: 'new-api-key-123456'),
     );
-    final existingKeyPayload = ServiceConnectionAuthCodec.encodeSecret(
+    final existingKeyPayload = encodeServiceConnectionSecret(
       const ServiceConnectionSecretApiKey(apiKey: 'plain-existing-key'),
     );
 
@@ -230,7 +230,7 @@ void main() {
           authenticationType: ServiceAuthenticationTypeTable.oauth2,
           encryptedAuthValue: 'encrypted-token',
           keySuffix: 'access',
-          metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+          metadataJson: encodeServiceConnectionMetadata(
             const ServiceConnectionMetadata(accountId: 'account-1'),
           ),
           workspaceId: 'ws-1',

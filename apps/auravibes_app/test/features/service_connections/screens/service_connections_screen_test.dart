@@ -172,7 +172,7 @@ void main() {
               '{"access_token":"secret-token"}',
             ),
             metadataJson: Value(
-              ServiceConnectionAuthCodec.encodeMetadata(
+              encodeServiceConnectionMetadata(
                 const ServiceConnectionMetadata(
                   clientId: 'notion-client-id',
                   issuer: 'https://api.notion.com',

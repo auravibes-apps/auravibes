@@ -57,7 +57,7 @@ class ModelConnectionRepository {
     final keySuffix = key.lastCharacters(6);
 
     final encryptedApiKey = await _encryptionService.encrypt(
-      ServiceConnectionAuthCodec.encodeSecret(
+      encodeServiceConnectionSecret(
         ServiceConnectionSecretApiKey(apiKey: key),
       ),
     );
@@ -114,7 +114,7 @@ class ModelConnectionRepository {
       );
     }
     final encryptedToken = await _encryptionService.encrypt(
-      ServiceConnectionAuthCodec.encodeSecret(
+      encodeServiceConnectionSecret(
         ServiceConnectionSecretOAuth2(
           accessToken: token.accessToken,
           refreshToken: token.refreshToken,
@@ -140,7 +140,7 @@ class ModelConnectionRepository {
           encryptedAuthValue: Value(encryptedToken),
           keySuffix: Value(_keySuffix(token.accessToken)),
           metadataJson: Value(
-            ServiceConnectionAuthCodec.encodeMetadata(metadata),
+            encodeServiceConnectionMetadata(metadata),
           ),
           authStatus: const Value(ServiceConnectionAuthStatus.connected),
           expiresAt: Value(_expiresAt(token)),
@@ -250,7 +250,7 @@ class ModelConnectionRepository {
     final encryptedKey = key == null
         ? existing.encryptedAuthValue
         : await _encryptionService.encrypt(
-            ServiceConnectionAuthCodec.encodeSecret(
+            encodeServiceConnectionSecret(
               ServiceConnectionSecretApiKey(apiKey: key),
             ),
           );
@@ -330,7 +330,7 @@ class ModelConnectionRepository {
   String _decodeApiKey(String decrypted) {
     ServiceConnectionSecret secret;
     try {
-      secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+      secret = decodeServiceConnectionSecret(decrypted);
     } on FormatException {
       return decrypted;
     }

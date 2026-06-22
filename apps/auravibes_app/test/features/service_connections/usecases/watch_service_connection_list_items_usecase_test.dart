@@ -61,7 +61,7 @@ void main() {
           );
       await _insertMcpCredential(
         fixture,
-        metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+        metadataJson: encodeServiceConnectionMetadata(
           const ServiceConnectionMetadata(
             clientId: 'notion-client-id',
             issuer: 'https://api.notion.com',
@@ -127,7 +127,7 @@ void main() {
         addTearDown(fixture.close);
         await _insertMcpCredential(
           fixture,
-          metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+          metadataJson: encodeServiceConnectionMetadata(
             const ServiceConnectionMetadata(clientId: 'client-id'),
           ),
           expiresAt: DateTime(2026, 1, 1, 12, 4),
@@ -151,7 +151,7 @@ void main() {
       addTearDown(fixture.close);
       await _insertMcpCredential(
         fixture,
-        metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+        metadataJson: encodeServiceConnectionMetadata(
           const ServiceConnectionMetadata(clientId: 'client-id'),
         ),
         expiresAt: DateTime(2026, 1, 1, 12, 30),

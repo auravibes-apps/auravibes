@@ -88,7 +88,7 @@ class ProviderFactory {
     final decrypted = await encryptionService.decrypt(encrypted);
     ServiceConnectionSecret secret;
     try {
-      secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
+      secret = decodeServiceConnectionSecret(decrypted);
     } on FormatException {
       secret = ServiceConnectionSecretApiKey(apiKey: decrypted);
     }

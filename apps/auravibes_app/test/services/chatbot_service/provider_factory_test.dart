@@ -339,7 +339,7 @@ class _FakeEncryptionService extends EncryptionService {
     final decrypted = _decrypted;
     if (decrypted != null) return decrypted;
 
-    return ServiceConnectionAuthCodec.encodeSecret(
+    return encodeServiceConnectionSecret(
       const ServiceConnectionSecretApiKey(apiKey: 'test-api-key'),
     );
   }

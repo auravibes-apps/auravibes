@@ -114,7 +114,7 @@ class WatchServiceConnectionListItemsUsecase {
   ) {
     try {
       return (
-        metadata: ServiceConnectionAuthCodec.decodeMetadata(
+        metadata: decodeServiceConnectionMetadata(
           credential.metadataJson,
         ),
         hasError: false,

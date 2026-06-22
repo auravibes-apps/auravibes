@@ -56,7 +56,7 @@ class OAuthCredentialService {
         );
       case ServiceConnectionAuthenticationType.oauth2:
         final token = await refreshIfNeeded(serviceConnectionId);
-        final metadata = ServiceConnectionAuthCodec.decodeMetadata(
+        final metadata = decodeServiceConnectionMetadata(
           row.metadataJson,
         );
 
@@ -81,7 +81,7 @@ class OAuthCredentialService {
     if (secret is! ServiceConnectionSecretOAuth2) {
       throw const FormatException('Credential is not OAuth2.');
     }
-    final metadata = ServiceConnectionAuthCodec.decodeMetadata(
+    final metadata = decodeServiceConnectionMetadata(
       row.metadataJson,
     );
     final expiresAt = row.expiresAt;
@@ -93,7 +93,7 @@ class OAuthCredentialService {
     if (!shouldRefresh) {
       final issuedAt = row.lastRefreshedAt ?? row.updatedAt;
 
-      return ServiceConnectionAuthCodec.tokenFromSecret(
+      return serviceConnectionTokenFromSecret(
         secret: secret,
         issuedAt: issuedAt,
         expiresIn: expiresAt.difference(issuedAt).inSeconds,
@@ -143,7 +143,7 @@ class OAuthCredentialService {
     if (secret is! ServiceConnectionSecretOAuth2) {
       throw const FormatException('Credential is not OAuth2.');
     }
-    final metadata = ServiceConnectionAuthCodec.decodeMetadata(
+    final metadata = decodeServiceConnectionMetadata(
       row.metadataJson,
     );
     final refreshToken = secret.refreshToken;

@@ -151,53 +151,49 @@ class ServiceConnectionMetadata {
   String toString() => 'ServiceConnectionMetadata(${jsonEncode(toJson())})';
 }
 
-class ServiceConnectionAuthCodec {
-  const ServiceConnectionAuthCodec._();
+String encodeServiceConnectionSecret(ServiceConnectionSecret secret) {
+  return jsonEncode(secret.toJson());
+}
 
-  static String encodeSecret(ServiceConnectionSecret secret) {
-    return jsonEncode(secret.toJson());
+ServiceConnectionSecret decodeServiceConnectionSecret(String value) {
+  final decoded = jsonDecode(value);
+  if (decoded is! Map<String, dynamic>) {
+    throw const FormatException('Invalid service credential secret JSON.');
   }
 
-  static ServiceConnectionSecret decodeSecret(String value) {
-    final decoded = jsonDecode(value);
-    if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('Invalid service credential secret JSON.');
-    }
+  return ServiceConnectionSecret.fromJson(decoded);
+}
 
-    return ServiceConnectionSecret.fromJson(decoded);
+ServiceConnectionMetadata decodeServiceConnectionMetadata(String? value) {
+  if (value == null || value.isEmpty) {
+    return const ServiceConnectionMetadata();
+  }
+  final decoded = jsonDecode(value);
+  if (decoded is! Map<String, dynamic>) {
+    throw const FormatException('Invalid service credential metadata JSON.');
   }
 
-  static ServiceConnectionMetadata decodeMetadata(String? value) {
-    if (value == null || value.isEmpty) {
-      return const ServiceConnectionMetadata();
-    }
-    final decoded = jsonDecode(value);
-    if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('Invalid service credential metadata JSON.');
-    }
+  return ServiceConnectionMetadata.fromJson(decoded);
+}
 
-    return ServiceConnectionMetadata.fromJson(decoded);
-  }
+String encodeServiceConnectionMetadata(ServiceConnectionMetadata metadata) {
+  return jsonEncode(metadata.toJson());
+}
 
-  static String encodeMetadata(ServiceConnectionMetadata metadata) {
-    return jsonEncode(metadata.toJson());
-  }
-
-  static OAuthTokenEntity tokenFromSecret({
-    required ServiceConnectionSecretOAuth2 secret,
-    required DateTime issuedAt,
-    required int expiresIn,
-    required List<String> scopes,
-  }) {
-    return OAuthTokenEntity(
-      accessToken: secret.accessToken,
-      issuedAt: issuedAt,
-      refreshToken: secret.refreshToken,
-      idToken: secret.idToken,
-      expiresIn: expiresIn,
-      scopes: scopes,
-    );
-  }
+OAuthTokenEntity serviceConnectionTokenFromSecret({
+  required ServiceConnectionSecretOAuth2 secret,
+  required DateTime issuedAt,
+  required int expiresIn,
+  required List<String> scopes,
+}) {
+  return OAuthTokenEntity(
+    accessToken: secret.accessToken,
+    issuedAt: issuedAt,
+    refreshToken: secret.refreshToken,
+    idToken: secret.idToken,
+    expiresIn: expiresIn,
+    scopes: scopes,
+  );
 }
 
 String _requiredSecretValue(

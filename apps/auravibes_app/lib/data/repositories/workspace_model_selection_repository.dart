@@ -107,7 +107,7 @@ class WorkspaceModelSelectionRepository {
         authMode: _authMode(withProvider.modelConnection.authenticationType),
         url: withProvider.modelConnection.url,
         keySuffix: withProvider.modelConnection.keySuffix,
-        oauthMetadata: ServiceConnectionAuthCodec.decodeMetadata(
+        oauthMetadata: decodeServiceConnectionMetadata(
           withProvider.modelConnection.metadataJson,
         ),
       ),
