@@ -55,7 +55,7 @@ void main() {
         ),
       ],
       config: OpenAICompatReasoningOptions(
-        reasoning: const OpenAICompatReasoningConfig(),
+        reasoningType: 'enabled',
       ),
     );
 
@@ -303,7 +303,7 @@ void main() {
         ),
       ],
       config: OpenAICompatReasoningOptions(
-        reasoning: const OpenAICompatReasoningConfig(),
+        reasoningType: 'enabled',
       ),
     );
 

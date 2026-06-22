@@ -63,7 +63,7 @@ void main() {
       ],
       config: OpenRouterOptions(
         temperature: 0.2,
-        reasoning: const OpenRouterReasoningConfig(maxTokens: 10),
+        reasoningMaxTokens: 10,
       ),
     );
 
