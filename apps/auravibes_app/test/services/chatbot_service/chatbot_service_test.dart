@@ -435,6 +435,13 @@ void main() {
       expect(stripped, 'My Title');
     });
 
+    test('does not strip mismatched quote characters', () {
+      const mixedA = '"My Title\u0027';
+      const mixedB = '\u0027My Title"';
+      expect(_stripQuotes(mixedA), mixedA);
+      expect(_stripQuotes(mixedB), mixedB);
+    });
+
     test('strips Title: prefix', () {
       final stripped = _stripPrefixes('Title: My Conversation');
       expect(stripped, 'My Conversation');
@@ -467,13 +474,14 @@ void main() {
 
 String _stripQuotes(String title) {
   var processed = title.trim();
-  if (processed.startsWith('"') && processed.endsWith('"')) {
-    processed = processed.withoutEdgeCharacters();
-  }
-  if (processed.length > 1 &&
-      processed.startsWith(String.fromCharCode(39)) &&
-      processed.endsWith(String.fromCharCode(39))) {
-    processed = processed.withoutEdgeCharacters();
+  // Mirror service helper: prefer-single-quotes forces escape here.
+  // ignore: avoid_escaping_inner_quotes
+  for (final quote in const ['"', '\'']) {
+    if (processed.length > 1 &&
+        processed.startsWith(quote) &&
+        processed.endsWith(quote)) {
+      processed = processed.withoutEdgeCharacters();
+    }
   }
 
   return processed;
@@ -493,13 +501,14 @@ String _stripPrefixes(String title) {
 
 String _processTitle(String title) {
   var processed = title.trim();
-  if (processed.startsWith('"') && processed.endsWith('"')) {
-    processed = processed.withoutEdgeCharacters();
-  }
-  if (processed.length > 1 &&
-      processed.startsWith(String.fromCharCode(39)) &&
-      processed.endsWith(String.fromCharCode(39))) {
-    processed = processed.withoutEdgeCharacters();
+  // Mirror service helper: prefer-single-quotes forces escape here.
+  // ignore: avoid_escaping_inner_quotes
+  for (final quote in const ['"', '\'']) {
+    if (processed.length > 1 &&
+        processed.startsWith(quote) &&
+        processed.endsWith(quote)) {
+      processed = processed.withoutEdgeCharacters();
+    }
   }
   if (processed.startsWith('Title:')) {
     processed = processed.replaceFirst('Title:', '').trim();
