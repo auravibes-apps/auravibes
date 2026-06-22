@@ -37,8 +37,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
+          apiKey: 'key',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
@@ -46,7 +46,7 @@ void main() {
     );
 
     final response = await ai.generate<OpenAICompatReasoningOptions, Object?>(
-      model: openAICompatReasoning.model('glm-4.5'),
+      model: openAICompatReasoningModel('glm-4.5'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -89,8 +89,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
+          apiKey: 'key',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
@@ -98,7 +98,7 @@ void main() {
     );
 
     final _ = await ai.generate<OpenAICompatReasoningOptions, Object?>(
-      model: openAICompatReasoning.model('glm-4.5'),
+      model: openAICompatReasoningModel('glm-4.5'),
       messages: [
         Message(
           role: Role.user,
@@ -128,8 +128,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
+          apiKey: 'key',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
@@ -137,7 +137,7 @@ void main() {
     );
 
     final _ = await ai.generate<OpenAICompatReasoningOptions, Object?>(
-      model: openAICompatReasoning.model('glm-4.5'),
+      model: openAICompatReasoningModel('glm-4.5'),
       messages: [
         Message(
           role: Role.tool,
@@ -196,8 +196,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKeyProvider: () => ' key ',
           baseUrl: 'https://api.z.ai/api/paas/v4/',
+          apiKeyProvider: () => ' key ',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
@@ -205,7 +205,7 @@ void main() {
     );
 
     final response = await ai.generate<OpenAICompatReasoningOptions, Object?>(
-      model: openAICompatReasoning.model('glm-4.5'),
+      model: openAICompatReasoningModel('glm-4.5'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -285,8 +285,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
+          apiKey: 'key',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
@@ -294,7 +294,7 @@ void main() {
     );
 
     final stream = ai.generateStream<OpenAICompatReasoningOptions, Object?>(
-      model: openAICompatReasoning.model('glm-4.5'),
+      model: openAICompatReasoningModel('glm-4.5'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -372,8 +372,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
+          apiKey: 'key',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: client,
         ),
@@ -381,7 +381,7 @@ void main() {
     );
 
     final stream = ai.generateStream<OpenAICompatReasoningOptions, Object?>(
-      model: openAICompatReasoning.model('glm-4.5'),
+      model: openAICompatReasoningModel('glm-4.5'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -407,14 +407,14 @@ void main() {
 
   test('throws for invalid plugin configuration and API failures', () async {
     expect(
-      () => openAICompatReasoning(apiKey: 'key', baseUrl: '', name: 'bad/name'),
+      () => openAICompatReasoning(baseUrl: '', name: 'bad/name', apiKey: 'key'),
       throwsA(isA<GenkitException>()),
     );
     expect(
       () => openAICompatReasoning(
+        baseUrl: '',
         apiKey: 'key',
         apiKeyProvider: () => 'key',
-        baseUrl: '',
       ),
       throwsA(isA<GenkitException>()),
     );
@@ -422,8 +422,8 @@ void main() {
     final ai = Genkit(
       plugins: [
         openAICompatReasoning(
-          apiKey: 'key',
           baseUrl: 'https://api.z.ai/api/paas/v4',
+          apiKey: 'key',
           models: const [OpenAICompatModelDefinition(name: 'glm-4.5')],
           httpClient: _FakeClient((request) async {
             return _jsonResponse({'error': 'bad'}, statusCode: 400);
@@ -434,7 +434,7 @@ void main() {
 
     expect(
       () => ai.generate<OpenAICompatReasoningOptions, Object?>(
-        model: openAICompatReasoning.model('glm-4.5'),
+        model: openAICompatReasoningModel('glm-4.5'),
         messages: [
           Message(
             role: Role.user,

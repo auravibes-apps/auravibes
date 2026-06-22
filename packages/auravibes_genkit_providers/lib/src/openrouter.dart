@@ -9,52 +9,46 @@ import 'package:auravibes_genkit_providers/src/openai_compat_chat_options.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
-const openRouter = OpenRouterPluginHandle();
-
 typedef OpenRouterApiKeyProvider = FutureOr<String> Function();
 typedef OpenRouterModelDefinition = ChatCompletionsModelDefinition;
 
-class OpenRouterPluginHandle {
-  const OpenRouterPluginHandle();
+GenkitPlugin openRouter({
+  String name = 'openrouter',
+  String baseUrl = 'https://openrouter.ai/api/v1',
+  String? apiKey,
+  OpenRouterApiKeyProvider? apiKeyProvider,
+  List<OpenRouterModelDefinition> models = const [],
+  Map<String, String>? headers,
+  http.Client? httpClient,
+}) {
+  return ChatCompletionsPlugin(
+    name: name,
+    baseUrl: baseUrl,
+    errorLabel: 'OpenRouter',
+    customize: (modelName, config) {
+      final options = OpenRouterOptions.fromJson(config);
 
-  GenkitPlugin call({
-    String name = 'openrouter',
-    String baseUrl = 'https://openrouter.ai/api/v1',
-    String? apiKey,
-    OpenRouterApiKeyProvider? apiKeyProvider,
-    List<OpenRouterModelDefinition> models = const [],
-    Map<String, String>? headers,
-    http.Client? httpClient,
-  }) {
-    return ChatCompletionsPlugin(
-      name: name,
-      baseUrl: baseUrl,
-      errorLabel: 'OpenRouter',
-      customize: (modelName, config) {
-        final options = OpenRouterOptions.fromJson(config);
+      return (
+        model: modelName,
+        extraBody: {
+          ...options.toSamplingBody(),
+          'reasoning': ?options.reasoning?.toJson(),
+        },
+      );
+    },
+    apiKey: apiKey,
+    apiKeyProvider: apiKeyProvider,
+    models: models,
+    headers: headers,
+    httpClient: httpClient,
+  );
+}
 
-        return (
-          model: modelName,
-          extraBody: {
-            ...options.toSamplingBody(),
-            'reasoning': ?options.reasoning?.toJson(),
-          },
-        );
-      },
-      apiKey: apiKey,
-      apiKeyProvider: apiKeyProvider,
-      models: models,
-      headers: headers,
-      httpClient: httpClient,
-    );
-  }
-
-  ModelRef<OpenRouterOptions> model(
-    String name, {
-    String namespace = 'openrouter',
-  }) {
-    return modelRef('$namespace/$name');
-  }
+ModelRef<OpenRouterOptions> openRouterModel(
+  String name, {
+  String namespace = 'openrouter',
+}) {
+  return modelRef('$namespace/$name');
 }
 
 class OpenRouterOptions extends OpenAICompatChatOptions {

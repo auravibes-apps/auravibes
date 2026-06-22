@@ -53,7 +53,7 @@ void main() {
     );
 
     final response = await ai.generate<OpenRouterOptions, Object?>(
-      model: openRouter.model('anthropic/claude-sonnet-4'),
+      model: openRouterModel('anthropic/claude-sonnet-4'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -126,7 +126,7 @@ void main() {
     );
 
     final response = await ai.generate<OpenRouterOptions, Object?>(
-      model: openRouter.model('anthropic/claude-sonnet-4'),
+      model: openRouterModel('anthropic/claude-sonnet-4'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -255,7 +255,7 @@ void main() {
     );
 
     final stream = ai.generateStream<OpenRouterOptions, Object?>(
-      model: openRouter.model('anthropic/claude-sonnet-4'),
+      model: openRouterModel('anthropic/claude-sonnet-4'),
       returnToolRequests: true,
       messages: [
         Message(
@@ -286,7 +286,7 @@ void main() {
 
   test('throws for invalid plugin configuration and API failures', () async {
     expect(
-      () => openRouter(apiKey: 'key', name: 'bad/name'),
+      () => openRouter(name: 'bad/name', apiKey: 'key'),
       throwsA(isA<GenkitException>()),
     );
     expect(
@@ -310,7 +310,7 @@ void main() {
 
     expect(
       () => ai.generate<OpenRouterOptions, Object?>(
-        model: openRouter.model('anthropic/claude-sonnet-4'),
+        model: openRouterModel('anthropic/claude-sonnet-4'),
         messages: [
           Message(
             role: Role.user,
@@ -342,7 +342,7 @@ void main() {
 
     expect(
       () => ai.generate<OpenRouterOptions, Object?>(
-        model: openRouter.model('anthropic/claude-sonnet-4'),
+        model: openRouterModel('anthropic/claude-sonnet-4'),
         messages: [
           Message(
             role: Role.user,
@@ -361,7 +361,7 @@ void main() {
 
     expect(
       () => ai.generate<OpenRouterOptions, Object?>(
-        model: openRouter.model('anthropic/claude-sonnet-4'),
+        model: openRouterModel('anthropic/claude-sonnet-4'),
         messages: [
           Message(
             role: Role.user,
@@ -379,7 +379,7 @@ void main() {
     );
 
     final stream = ai.generateStream<OpenRouterOptions, Object?>(
-      model: openRouter.model('anthropic/claude-sonnet-4'),
+      model: openRouterModel('anthropic/claude-sonnet-4'),
       messages: [
         Message(
           role: Role.user,

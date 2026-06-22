@@ -37,8 +37,8 @@ class ProviderFactory {
           anthropic(apiKey: apiKey, baseUrl: baseUrl)
         else if (type == ModelProvidersType.openrouter)
           openRouter(
-            apiKey: apiKey,
             baseUrl: baseUrl ?? 'https://openrouter.ai/api/v1',
+            apiKey: apiKey,
             models: [
               OpenRouterModelDefinition(
                 name: config.workspaceModelSelection.modelId,
@@ -54,9 +54,9 @@ class ProviderFactory {
           )
         else if (shouldUseReasoningOpenAI && baseUrl != null)
           openAICompatReasoning(
+            baseUrl: baseUrl,
             name: _openAIReasoningNamespace,
             apiKey: apiKey,
-            baseUrl: baseUrl,
             models: [
               OpenAICompatModelDefinition(
                 name: config.workspaceModelSelection.modelId,
@@ -111,7 +111,7 @@ class ProviderFactory {
     }
 
     if (type == ModelProvidersType.openrouter) {
-      return openRouter.model(modelId);
+      return openRouterModel(modelId);
     }
 
     if (_shouldUseCodexOAuth(config)) {
@@ -119,7 +119,7 @@ class ProviderFactory {
     }
 
     if (_shouldUseOpenAICompatReasoning(config)) {
-      return openAICompatReasoning.model(
+      return openAICompatReasoningModel(
         modelId,
         namespace: _openAIReasoningNamespace,
       );

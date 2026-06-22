@@ -9,52 +9,46 @@ import 'package:auravibes_genkit_providers/src/openai_compat_chat_options.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
-const openAICompatReasoning = OpenAICompatReasoningPluginHandle();
-
 typedef OpenAICompatApiKeyProvider = FutureOr<String> Function();
 typedef OpenAICompatModelDefinition = ChatCompletionsModelDefinition;
 
-class OpenAICompatReasoningPluginHandle {
-  const OpenAICompatReasoningPluginHandle();
+GenkitPlugin openAICompatReasoning({
+  required String baseUrl,
+  String name = 'openai_compat_reasoning',
+  String? apiKey,
+  OpenAICompatApiKeyProvider? apiKeyProvider,
+  List<OpenAICompatModelDefinition> models = const [],
+  Map<String, String>? headers,
+  http.Client? httpClient,
+}) {
+  return ChatCompletionsPlugin(
+    name: name,
+    baseUrl: baseUrl,
+    errorLabel: 'OpenAI-compatible',
+    customize: (modelName, config) {
+      final options = OpenAICompatReasoningOptions.fromJson(config);
 
-  GenkitPlugin call({
-    required String baseUrl,
-    String name = 'openai_compat_reasoning',
-    String? apiKey,
-    OpenAICompatApiKeyProvider? apiKeyProvider,
-    List<OpenAICompatModelDefinition> models = const [],
-    Map<String, String>? headers,
-    http.Client? httpClient,
-  }) {
-    return ChatCompletionsPlugin(
-      name: name,
-      baseUrl: baseUrl,
-      errorLabel: 'OpenAI-compatible',
-      customize: (modelName, config) {
-        final options = OpenAICompatReasoningOptions.fromJson(config);
+      return (
+        model: options.version ?? modelName,
+        extraBody: {
+          ...options.toSamplingBody(),
+          'thinking': ?options.reasoning?.toJson(),
+        },
+      );
+    },
+    apiKey: apiKey,
+    apiKeyProvider: apiKeyProvider,
+    models: models,
+    headers: headers,
+    httpClient: httpClient,
+  );
+}
 
-        return (
-          model: options.version ?? modelName,
-          extraBody: {
-            ...options.toSamplingBody(),
-            'thinking': ?options.reasoning?.toJson(),
-          },
-        );
-      },
-      apiKey: apiKey,
-      apiKeyProvider: apiKeyProvider,
-      models: models,
-      headers: headers,
-      httpClient: httpClient,
-    );
-  }
-
-  ModelRef<OpenAICompatReasoningOptions> model(
-    String name, {
-    String namespace = 'openai_compat_reasoning',
-  }) {
-    return modelRef('$namespace/$name');
-  }
+ModelRef<OpenAICompatReasoningOptions> openAICompatReasoningModel(
+  String name, {
+  String namespace = 'openai_compat_reasoning',
+}) {
+  return modelRef('$namespace/$name');
 }
 
 class OpenAICompatReasoningOptions extends OpenAICompatChatOptions {
