@@ -4,7 +4,6 @@
 // ============================================================.
 
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
-import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'mcp_tool_info.freezed.dart';
@@ -40,22 +39,5 @@ abstract class McpToolInfo with _$McpToolInfo {
     );
 
     return 'mcp_${server.id}_${server.slugServerName}_$sanitizedToolName';
-  }
-}
-
-/// Information about a tool provided by an MCP server.
-@freezed
-abstract class MCPServerWithTools with _$MCPServerWithTools {
-  const factory MCPServerWithTools({
-    required McpServerEntity server,
-
-    required List<WorkspaceToolEntity> tools,
-  }) = _MCPServerWithTools;
-
-  const MCPServerWithTools._();
-
-  /// Convert a name to a URL-safe slug.
-  String get slugServerName {
-    return server.slugServerName;
   }
 }
