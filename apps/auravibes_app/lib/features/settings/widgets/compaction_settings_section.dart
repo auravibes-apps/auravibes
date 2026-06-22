@@ -196,10 +196,12 @@ class _CompactionSettingsSectionState
         settings: settings,
       );
       if (mounted) {
-        final _ = ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: TextLocale(LocaleKeys.compaction_settings_save_success),
+        final _ = showAuraSnackBar(
+          context: context,
+          content: const TextLocale(
+            LocaleKeys.compaction_settings_save_success,
           ),
+          variant: AuraSnackBarVariant.success,
         );
       }
     } on CompactionSettingsValidationException catch (e) {
@@ -207,10 +209,10 @@ class _CompactionSettingsSectionState
       setState(() => _validationError = e.localeKey.tr());
     } on Exception {
       if (mounted) {
-        final _ = ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: TextLocale(LocaleKeys.compaction_settings_save_error),
-          ),
+        final _ = showAuraSnackBar(
+          context: context,
+          content: const TextLocale(LocaleKeys.compaction_settings_save_error),
+          variant: AuraSnackBarVariant.error,
         );
       }
     }
@@ -223,10 +225,10 @@ class _CompactionSettingsSectionState
           .resetOverrides(widget.workspaceId);
     } on Exception {
       if (mounted) {
-        final _ = ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: TextLocale(LocaleKeys.compaction_settings_reset_error),
-          ),
+        final _ = showAuraSnackBar(
+          context: context,
+          content: const TextLocale(LocaleKeys.compaction_settings_reset_error),
+          variant: AuraSnackBarVariant.error,
         );
       }
 
@@ -241,10 +243,10 @@ class _CompactionSettingsSectionState
       _validationError = null;
     });
     if (mounted) {
-      final _ = ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: TextLocale(LocaleKeys.compaction_settings_reset_success),
-        ),
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(LocaleKeys.compaction_settings_reset_success),
+        variant: AuraSnackBarVariant.success,
       );
     }
   }

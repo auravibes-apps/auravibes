@@ -63,8 +63,10 @@ class MyApp extends ConsumerWidget {
     return Portal(
       child: MaterialApp.router(
         routerConfig: routerConfig,
-        builder: (context, child) => AuraText(
-          child: child ?? const SizedBox.shrink(),
+        builder: (context, child) => AuraSnackBarHost(
+          child: AuraText(
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
         title: AppFlavorConfig.title,
         theme: _auraMaterialTheme(AuraTheme.light, Brightness.light),

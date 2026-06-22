@@ -6,6 +6,124 @@ import 'dart:async';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 
+/// Owns Aura snackbar lifecycle for a visual surface.
+///
+/// Place one host near each app window, navigator, or pane that should manage
+/// its own active snackbar.
+class AuraSnackBarHost extends StatefulWidget {
+  /// Creates a snackbar host for [child].
+  const AuraSnackBarHost({
+    required this.child,
+    super.key,
+  });
+
+  /// The subtree that can show Aura snackbars.
+  final Widget child;
+
+  static _AuraSnackBarHostState? _maybeOf(BuildContext context) {
+    final element = context
+        .getElementForInheritedWidgetOfExactType<_AuraSnackBarHostScope>();
+    final scope = element?.widget as _AuraSnackBarHostScope?;
+
+    return scope?.state;
+  }
+
+  @override
+  State<AuraSnackBarHost> createState() => _AuraSnackBarHostState();
+}
+
+class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
+  OverlayEntry? _activeEntry;
+
+  @override
+  void dispose() {
+    _removeActiveSnackBarImmediately();
+    super.dispose();
+  }
+
+  AuraSnackBarController show({
+    required BuildContext context,
+    required Widget content,
+    required Color backgroundColor,
+    required Color foregroundColor,
+    required Duration duration,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    _removeActiveSnackBarImmediately();
+
+    final overlayState = Overlay.maybeOf(context);
+    if (overlayState == null) {
+      throw FlutterError(
+        'showAuraSnackBar requires an Overlay in the widget tree.\n'
+        'Ensure the provided BuildContext is below MaterialApp, '
+        'CupertinoApp, Navigator, or an Overlay widget.',
+      );
+    }
+
+    OverlayEntry? entry;
+    var isDismissing = false;
+
+    void dismissWithCleanup() {
+      if (isDismissing) return;
+      isDismissing = true;
+      if (entry != _activeEntry) return;
+      entry?.remove();
+      entry = null;
+      _activeEntry = null;
+    }
+
+    final snackbarWidget = _AuraSnackBarOverlayEntry(
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      content: content,
+      dismissCallback: dismissWithCleanup,
+      duration: duration,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    );
+    final overlayEntry = OverlayEntry(builder: (context) => snackbarWidget);
+    entry = overlayEntry;
+
+    overlayState.insert(overlayEntry);
+    _activeEntry = overlayEntry;
+
+    return AuraSnackBarController(
+      dismissCallback: dismissWithCleanup,
+    );
+  }
+
+  void _removeActiveSnackBarImmediately() {
+    final activeEntry = _activeEntry;
+    if (activeEntry == null) return;
+
+    _activeEntry = null;
+    activeEntry.remove();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _AuraSnackBarHostScope(
+      state: this,
+      child: widget.child,
+    );
+  }
+}
+
+class _AuraSnackBarHostScope extends InheritedWidget {
+  const _AuraSnackBarHostScope({
+    required this.state,
+    required super.child,
+  });
+
+  final _AuraSnackBarHostState state;
+
+  @override
+  bool updateShouldNotify(_AuraSnackBarHostScope oldWidget) {
+    return false;
+  }
+}
+
 /// Semantic variants for snackbar notifications.
 enum AuraSnackBarVariant {
   /// Default appearance using surface colors.
@@ -58,6 +176,15 @@ AuraSnackBarController showAuraSnackBar({
   String? actionLabel,
   VoidCallback? onAction,
 }) {
+  final host = AuraSnackBarHost._maybeOf(context);
+  if (host == null) {
+    throw FlutterError(
+      'showAuraSnackBar requires an AuraSnackBarHost ancestor.\n'
+      'Wrap the app, window, navigator, or pane that owns snackbar behavior '
+      'with AuraSnackBarHost.',
+    );
+  }
+
   final colors = context.auraColors;
   final backgroundColor = _getBackgroundColor(variant, colors);
   final foregroundColor = _getForegroundColor(variant, colors);
@@ -67,49 +194,14 @@ AuraSnackBarController showAuraSnackBar({
     seconds: duration.inSeconds.clamp(1, 60),
   );
 
-  // Get overlay state - use maybeOf with rootOverlay.
-  // To avoid appearing under dialogs.
-  final overlayState = Overlay.maybeOf(context, rootOverlay: true);
-  if (overlayState == null) {
-    throw FlutterError(
-      'showAuraSnackBar requires an Overlay in the widget tree.\n'
-      'Ensure your app uses MaterialApp, CupertinoApp, or has an '
-      'Overlay widget above the provided BuildContext.',
-    );
-  }
-
-  // Track overlay entry for removal.
-  OverlayEntry? entry;
-
-  // Guard flag to prevent double-removal.
-  var isDismissing = false;
-
-  // Create dismiss callback that removes the overlay.
-  void dismissWithCleanup() {
-    if (isDismissing) return;
-    isDismissing = true;
-    entry?.remove();
-  }
-
-  // Create the snackbar widget with internal state management.
-  final snackbarWidget = _AuraSnackBarOverlayEntry(
+  return host.show(
+    context: context,
     backgroundColor: backgroundColor,
     foregroundColor: foregroundColor,
     content: content,
-    dismissCallback: dismissWithCleanup,
     duration: validatedDuration,
     actionLabel: actionLabel,
     onAction: onAction,
-  );
-
-  // Create overlay entry.
-  entry = OverlayEntry(builder: (context) => snackbarWidget);
-
-  // Insert the overlay entry.
-  overlayState.insert(entry);
-
-  return AuraSnackBarController(
-    dismissCallback: dismissWithCleanup,
   );
 }
 
@@ -244,69 +336,73 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
         position: slideAnimation,
         child: FadeTransition(
           opacity: fadeAnimation,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: widget.backgroundColor,
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
-                    offset: const Offset(0, 4),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      // Content.
-                      Expanded(
-                        child: DefaultTextStyle(
-                          style: TextStyle(
-                            color: widget.foregroundColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          child: widget.content,
-                        ),
-                      ),
-                      // Action button.
-                      if (actionLabel != null) ...[
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 4,
-                              horizontal: 8,
+          child: Semantics(
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: widget.backgroundColor,
+                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      offset: const Offset(0, 4),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 16,
+                    ),
+                    child: Row(
+                      children: [
+                        // Content.
+                        Expanded(
+                          child: DefaultTextStyle(
+                            style: TextStyle(
+                              color: widget.foregroundColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                            child: Text(
-                              actionLabel,
-                              style: TextStyle(
-                                color: widget.foregroundColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                            child: widget.content,
+                          ),
+                        ),
+                        // Action button.
+                        if (actionLabel != null) ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 8,
+                              ),
+                              child: Text(
+                                actionLabel,
+                                style: TextStyle(
+                                  color: widget.foregroundColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
+                            onTap: () {
+                              widget.onAction?.call();
+                              dismiss();
+                            },
                           ),
-                          onTap: () {
-                            widget.onAction?.call();
-                            dismiss();
-                          },
-                        ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
+            container: true,
+            liveRegion: true,
           ),
         ),
       ),

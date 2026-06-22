@@ -72,6 +72,9 @@ class _Subject extends StatelessWidget {
                   data: ThemeData(extensions: [AuraTheme.light]),
                   child: const Scaffold(body: SizedBox.shrink()),
                 ),
+                builder: (context, child) => AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -203,6 +206,9 @@ void main() {
                       data: ThemeData(extensions: [AuraTheme.light]),
                       child: const Scaffold(body: SizedBox.shrink()),
                     ),
+                    builder: (context, child) => AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
                     supportedLocales: context.supportedLocales,
@@ -249,6 +255,9 @@ void main() {
                       data: ThemeData(extensions: [AuraTheme.light]),
                       child: const Scaffold(body: SizedBox.shrink()),
                     ),
+                    builder: (context, child) => AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,
                     supportedLocales: context.supportedLocales,
@@ -290,6 +299,9 @@ void main() {
                     home: Theme(
                       data: ThemeData(extensions: [AuraTheme.light]),
                       child: const Scaffold(body: SizedBox.shrink()),
+                    ),
+                    builder: (context, child) => AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
                     ),
                     locale: context.locale,
                     localizationsDelegates: context.localizationDelegates,

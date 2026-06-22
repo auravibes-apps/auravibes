@@ -20,7 +20,7 @@ void main() {
   group('showAuraSnackBar', () {
     testWidgets('displays snackbar with custom implementation', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -54,7 +54,7 @@ void main() {
 
     testWidgets('displays snackbar with success variant', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -87,7 +87,7 @@ void main() {
 
     testWidgets('displays snackbar with error variant', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -119,7 +119,7 @@ void main() {
 
     testWidgets('displays snackbar with warning variant', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -151,7 +151,7 @@ void main() {
 
     testWidgets('displays snackbar with info variant', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -188,7 +188,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -216,6 +216,7 @@ void main() {
 
       await tester.tap(find.text('Show'));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('UNDO'), findsOneWidget);
 
@@ -228,9 +229,113 @@ void main() {
       expect(find.byType(SnackBar), findsNothing);
     });
 
+    testWidgets('replaces the active snackbar', (tester) async {
+      await tester.pumpWidget(
+        _SnackBarTestApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        final _ = showAuraSnackBar(
+                          context: context,
+                          content: const Text('First message'),
+                        );
+                      },
+                      child: const Text('Show first'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        final _ = showAuraSnackBar(
+                          context: context,
+                          content: const Text('Second message'),
+                        );
+                      },
+                      child: const Text('Show second'),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show first'));
+      await tester.pump();
+      await tester.tap(find.text('Show second'));
+      await tester.pump();
+
+      expect(find.text('First message'), findsNothing);
+      expect(find.text('Second message'), findsOneWidget);
+      expect(find.byType(Positioned), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('keeps separate hosts independent', (tester) async {
+      await tester.pumpWidget(
+        _SnackBarTestApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                AuraSnackBarHost(
+                  child: Builder(
+                    builder: (context) {
+                      return ElevatedButton(
+                        onPressed: () {
+                          final _ = showAuraSnackBar(
+                            context: context,
+                            content: const Text('Left message'),
+                          );
+                        },
+                        child: const Text('Show left'),
+                      );
+                    },
+                  ),
+                ),
+                AuraSnackBarHost(
+                  child: Builder(
+                    builder: (context) {
+                      return ElevatedButton(
+                        onPressed: () {
+                          final _ = showAuraSnackBar(
+                            context: context,
+                            content: const Text('Right message'),
+                          );
+                        },
+                        child: const Text('Show right'),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          theme: ThemeData(
+            extensions: [AuraTheme.light],
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show left'));
+      await tester.pump();
+      await tester.tap(find.text('Show right'));
+      await tester.pump();
+
+      expect(find.text('Left message'), findsOneWidget);
+      expect(find.text('Right message'), findsOneWidget);
+      expect(find.byType(Positioned), findsNWidgets(2));
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
     testWidgets('animates in with slide and fade', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -266,7 +371,7 @@ void main() {
 
     testWidgets('uses Aura colors correctly', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -299,7 +404,7 @@ void main() {
 
     testWidgets('positions at bottom of screen with padding', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        _SnackBarTestApp(
           home: Scaffold(
             body: Builder(
               builder: (context) {
@@ -331,4 +436,24 @@ void main() {
       expect(find.byType(Positioned), findsOneWidget);
     });
   });
+}
+
+class _SnackBarTestApp extends StatelessWidget {
+  const _SnackBarTestApp({
+    required this.home,
+    required this.theme,
+  });
+
+  final Widget home;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraSnackBarHost(
+      child: MaterialApp(
+        home: home,
+        theme: theme,
+      ),
+    );
+  }
 }
