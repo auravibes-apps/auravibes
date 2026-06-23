@@ -142,14 +142,6 @@ class ContextUsageData {
     'limit': '$normalizedLimit',
     'percent': '$percent',
   };
-
-  Color progressColor(AuraColorScheme colors) => switch (level) {
-    ContextUsageLevel.normal => colors.success,
-    ContextUsageLevel.elevated => colors.info,
-    ContextUsageLevel.warning => colors.warning,
-    ContextUsageLevel.overflow => colors.error,
-    ContextUsageLevel.unknown => colors.onSurfaceVariant,
-  };
 }
 
 // ponytail: top-level compact format; default locale follows

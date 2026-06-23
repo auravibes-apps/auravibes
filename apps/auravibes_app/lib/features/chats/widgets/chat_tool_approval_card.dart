@@ -217,30 +217,11 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final isEnabled = onPressed != null;
-
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        onPressed: onPressed,
-        constraints: const BoxConstraints(
-          minWidth: 32,
-          minHeight: 32,
-        ),
-        style: IconButton.styleFrom(
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        icon: Icon(
-          icon,
-          size: 18,
-          color: isEnabled
-              ? auraColors.onSurface
-              : auraColors.onSurfaceVariant.withValues(alpha: 0.3),
-        ),
-      ),
+    return AuraIconButton(
+      icon: icon,
+      onPressed: onPressed,
+      disabled: onPressed == null,
+      size: AuraIconSize.small,
     );
   }
 }

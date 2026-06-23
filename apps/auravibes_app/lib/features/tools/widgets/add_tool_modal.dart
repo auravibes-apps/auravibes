@@ -85,12 +85,10 @@ class AddToolModal extends HookConsumerWidget {
                     style: AuraTextStyle.heading6,
                   ),
                   const Spacer(),
-                  IconButton(
+                  AuraIconButton(
+                    icon: Icons.close,
                     onPressed: () => Navigator.of(context).pop(),
-                    style: IconButton.styleFrom(
-                      foregroundColor: context.auraColors.onSurfaceVariant,
-                    ),
-                    icon: const AuraIcon(Icons.close),
+                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
               ),

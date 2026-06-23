@@ -96,18 +96,33 @@ class _CompactionSettingsSectionState
             style: AuraTextStyle.bodySmall,
             color: AuraColorVariant.onSurfaceVariant,
           ),
-          Material(
-            color: Colors.transparent,
-            child: SwitchListTile(
-              value: _autoEnabled,
-              onChanged: (value) => setState(() => _autoEnabled = value),
-              title: const TextLocale(
-                LocaleKeys.compaction_settings_auto_enabled,
+          AuraRow(
+            children: [
+              const Expanded(
+                child: AuraColumn(
+                  children: [
+                    AuraText(
+                      child: TextLocale(
+                        LocaleKeys.compaction_settings_auto_enabled,
+                      ),
+                    ),
+                    AuraText(
+                      child: TextLocale(
+                        LocaleKeys.compaction_settings_auto_enabled_hint,
+                      ),
+                      style: AuraTextStyle.bodySmall,
+                      color: AuraColorVariant.onSurfaceVariant,
+                    ),
+                  ],
+                  spacing: .xs,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                ),
               ),
-              subtitle: const TextLocale(
-                LocaleKeys.compaction_settings_auto_enabled_hint,
+              AuraSwitch(
+                value: _autoEnabled,
+                onChanged: (value) => setState(() => _autoEnabled = value),
               ),
-            ),
+            ],
           ),
           if (_validationError case final validationError?)
             Padding(
@@ -120,24 +135,23 @@ class _CompactionSettingsSectionState
                 ),
               ),
             ),
-          TextField(
+          AuraInput(
             controller: _requiredUsageController,
-            decoration: InputDecoration(
-              labelText: LocaleKeys.compaction_settings_usage_threshold.tr(),
-              hintText: LocaleKeys.compaction_settings_usage_threshold_hint
-                  .tr(),
-              border: const OutlineInputBorder(),
+            placeholder: Text(
+              LocaleKeys.compaction_settings_usage_threshold_hint.tr(),
+            ),
+            label: Text(
+              LocaleKeys.compaction_settings_usage_threshold.tr(),
             ),
             keyboardType: TextInputType.number,
           ),
-          TextField(
+          AuraInput(
             controller: _requiredRemainingController,
-            decoration: InputDecoration(
-              labelText: LocaleKeys.compaction_settings_remaining_threshold
-                  .tr(),
-              hintText: LocaleKeys.compaction_settings_remaining_threshold_hint
-                  .tr(),
-              border: const OutlineInputBorder(),
+            placeholder: Text(
+              LocaleKeys.compaction_settings_remaining_threshold_hint.tr(),
+            ),
+            label: Text(
+              LocaleKeys.compaction_settings_remaining_threshold.tr(),
             ),
             keyboardType: TextInputType.number,
           ),

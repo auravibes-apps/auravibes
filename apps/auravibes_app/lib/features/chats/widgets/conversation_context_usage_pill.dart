@@ -5,7 +5,7 @@ import 'package:auravibes_app/features/chats/providers/context_usage_level.dart'
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
@@ -37,22 +37,11 @@ class ConversationContextUsagePill extends ConsumerWidget {
                 ),
                 SizedBox(
                   width: 26,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(
-                        context.auraTheme.fromBorderRadius(
-                          .full,
-                        ),
-                      ),
-                    ),
-                    child: LinearProgressIndicator(
-                      value: data.progress.clamp(0.0, 1.0),
-                      backgroundColor: auraColors.onSurfaceVariant.withValues(
-                        alpha: 0.25,
-                      ),
-                      color: data.progressColor(auraColors),
-                      minHeight: 4,
-                    ),
+                  child: AuraLinearProgressIndicator(
+                    value: data.progress,
+                    color: data.level.iconColor,
+                    backgroundColor: AuraColorVariant.onSurfaceVariant,
+                    backgroundAlpha: 0.25,
                   ),
                 ),
                 AuraText(

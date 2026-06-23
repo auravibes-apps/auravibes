@@ -63,11 +63,8 @@ class ConversationGroupHeader extends StatelessWidget {
                 style: AuraTextStyle.heading6,
               ),
             ),
-            IconButton(
-              padding: EdgeInsets.zero,
-              onPressed: onToggleExpand,
-              constraints: const BoxConstraints(),
-              icon: AnimatedRotation(
+            AuraIconButton.custom(
+              child: AnimatedRotation(
                 child: const AuraIcon(
                   Icons.keyboard_arrow_down,
                   color: AuraColorVariant.onSurfaceVariant,
@@ -75,6 +72,7 @@ class ConversationGroupHeader extends StatelessWidget {
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
               ),
+              onPressed: onToggleExpand,
             ),
           ],
         ),
@@ -272,18 +270,11 @@ class _DisconnectedBadge extends StatelessWidget {
           size: AuraBadgeSize.small,
         ),
         if (onReconnect != null)
-          IconButton(
-            padding: EdgeInsets.zero,
+          AuraIconButton(
+            icon: Icons.refresh,
             onPressed: onReconnect,
+            size: AuraIconSize.small,
             tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            icon: const AuraIcon(
-              Icons.refresh,
-              size: AuraIconSize.small,
-            ),
           ),
       ],
       spacing: .xs,

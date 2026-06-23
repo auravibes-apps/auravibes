@@ -322,6 +322,79 @@ void main() {
       expect(iconButton.onPressed, isNull);
     });
 
+    testWidgets('custom constructor renders child and handles tap', (
+      tester,
+    ) async {
+      var wasPressed = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraIconButton.custom(
+              child: const AnimatedRotation(
+                child: AuraIcon(Icons.keyboard_arrow_down),
+                turns: 0.5,
+                duration: Duration(milliseconds: 200),
+              ),
+              onPressed: () => wasPressed = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(AnimatedRotation), findsOneWidget);
+      expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+
+      await tester.tap(find.byType(AuraIconButton));
+      expect(wasPressed, isTrue);
+    });
+
+    testWidgets('custom constructor shows tooltip when provided', (
+      tester,
+    ) async {
+      const tooltipMessage = 'Expand';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraIconButton.custom(
+              child: const AuraIcon(Icons.keyboard_arrow_down),
+              onPressed: () {
+                final _ = Object();
+              },
+              tooltip: tooltipMessage,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Tooltip), findsOneWidget);
+
+      final tooltip = tester.widget<Tooltip>(find.byType(Tooltip));
+      expect(tooltip.message, tooltipMessage);
+    });
+
+    testWidgets('custom constructor disables inner icon button', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraIconButton.custom(
+              child: const AuraIcon(Icons.keyboard_arrow_down),
+              onPressed: () {
+                final _ = Object();
+              },
+              disabled: true,
+            ),
+          ),
+        ),
+      );
+
+      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+      expect(iconButton.onPressed, isNull);
+    });
+
     group('AuraIconButtonVariant enum', () {
       test('has all expected values', () {
         expect(AuraIconButtonVariant.values, hasLength(4));

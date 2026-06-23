@@ -326,26 +326,10 @@ class _SkillChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final chipTextStyle = auraResolveTextStyle(
-      style: AuraTextStyle.caption,
-      colors: auraColors,
-      typography: context.auraTheme.typography,
-    ).copyWith(color: auraColors.onSurfaceVariant);
-
-    return Chip(
-      label: Text(label, style: chipTextStyle),
-      side: BorderSide(color: auraColors.outline),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.lg),
-          ),
-        ),
-      ),
-      backgroundColor: auraColors.surfaceVariant,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return AuraBadge.text(
+      child: Text(label),
+      variant: AuraBadgeVariant.neutral,
+      size: AuraBadgeSize.small,
     );
   }
 }

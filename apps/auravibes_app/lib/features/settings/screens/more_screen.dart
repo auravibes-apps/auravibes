@@ -85,12 +85,23 @@ class _SectionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon),
-      title: TextLocale(titleKey),
-      subtitle: TextLocale(subtitleKey),
-      trailing: const Icon(Icons.chevron_right),
+    return AuraTile(
+      child: AuraColumn(
+        children: [
+          TextLocale(titleKey),
+          AuraText(
+            child: TextLocale(subtitleKey),
+            style: AuraTextStyle.bodySmall,
+            color: AuraColorVariant.onSurfaceVariant,
+          ),
+        ],
+        spacing: .xs,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
       onTap: onTap,
+      variant: AuraTileVariant.ghost,
+      leading: AuraIcon(icon),
+      trailing: const AuraIcon(Icons.chevron_right),
     );
   }
 }

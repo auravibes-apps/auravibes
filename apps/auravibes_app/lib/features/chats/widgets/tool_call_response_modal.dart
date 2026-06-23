@@ -117,12 +117,10 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
               style: AuraTextStyle.heading6,
             ),
           ),
-          IconButton(
+          AuraIconButton(
+            icon: Icons.close,
             onPressed: () => Navigator.of(context).pop(),
-            style: IconButton.styleFrom(
-              foregroundColor: context.auraColors.onSurfaceVariant,
-            ),
-            icon: const AuraIcon(Icons.close),
+            color: AuraColorVariant.onSurfaceVariant,
           ),
         ],
       ),
