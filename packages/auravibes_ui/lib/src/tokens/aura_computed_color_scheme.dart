@@ -50,9 +50,6 @@ class AuraComputedColorScheme extends AuraColorScheme {
       );
     }
 
-    // Brand. Light scheme: dark tones (white text). Dark scheme: light (dark
-    // text). Inverts naive "light=light" so `on*` clears Lc 60 with the natural
-    // polarity.
     AuraComputedColor brand(double lightL, double darkL, double chroma) =>
         color(
           primaryHue,
@@ -74,7 +71,6 @@ class AuraComputedColorScheme extends AuraColorScheme {
     final secondary = brandSecondary(0.4, 0.78, 0.17);
     final secondaryVariant = brandSecondary(0.3, 0.68, 0.15);
 
-    // Neutrals stay achromatic; add tint later if a real setting needs it.
     AuraComputedColor neutral(double lightL, double darkL) => color(
       primaryHue,
       l(lightL, darkL),
@@ -86,18 +82,14 @@ class AuraComputedColorScheme extends AuraColorScheme {
     final outline = neutral(0.65, 0.45);
     final outlineVariant = neutral(0.8, 0.3);
 
-    // Semantic (fixed hues). Light/dark L chosen so `on*` clears APCA + WCAG.
     AuraComputedColor semantic(double hue) => color(hue, l(0.3, 0.82), 0.2);
     final error = semantic(HueColorValues.error);
     final warning = semantic(HueColorValues.warning);
     final success = semantic(HueColorValues.success);
     final info = semantic(HueColorValues.info);
 
-    // ponytail: one Lc target for every on* color. Add a per-role map if
-    // onSurfaceVariant needs lower contrast.
     Color on(AuraComputedColor c) => c.onColor();
 
-    // shadow/scrim carry alpha — not expressible on the OKLCH L axis alone.
     const shadow = Color(0xFF000000);
     final scrim = isLight ? const Color(0x80000000) : const Color(0xB3000000);
 

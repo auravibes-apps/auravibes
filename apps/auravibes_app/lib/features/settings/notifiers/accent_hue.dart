@@ -25,7 +25,8 @@ class AccentHueNotifier extends _$AccentHueNotifier {
   }
 
   Future<void> setHue(double hue) async {
-    final clamped = hue.clamp(0.0, 360.0);
+    final clamped = hue.isFinite ? hue.clamp(0.0, 360.0) : defaultAccentHue;
+    final _ = await future;
     state = AsyncData(clamped);
     final prefs = await ref.read(sharedPreferencesProvider.future);
     final _ = await prefs.setDouble(_key, clamped);

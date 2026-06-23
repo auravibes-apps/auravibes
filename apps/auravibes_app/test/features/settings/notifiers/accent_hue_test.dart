@@ -70,5 +70,32 @@ void main() {
 
       expect(container.read(accentHueProvider).value, 360);
     });
+
+    test('setHue clamps below 0', () async {
+      SharedPreferences.setMockInitialValues({});
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      expect(await container.read(accentHueProvider.future), defaultAccentHue);
+      await container.read(accentHueProvider.notifier).setHue(-50);
+
+      expect(container.read(accentHueProvider).value, 0);
+    });
+
+    test('setHue falls back to default for non-finite hues', () async {
+      for (final hue in [double.nan, double.infinity]) {
+        SharedPreferences.setMockInitialValues({});
+        final container = ProviderContainer();
+        addTearDown(container.dispose);
+
+        expect(
+          await container.read(accentHueProvider.future),
+          defaultAccentHue,
+        );
+        await container.read(accentHueProvider.notifier).setHue(hue);
+
+        expect(container.read(accentHueProvider).value, defaultAccentHue);
+      }
+    });
   });
 }

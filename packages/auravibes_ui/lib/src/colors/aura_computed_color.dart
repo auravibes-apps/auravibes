@@ -2,6 +2,15 @@ import 'package:auravibes_ui/src/colors/contrast.dart';
 import 'package:auravibes_ui/src/colors/value_color.dart';
 import 'package:flutter/widgets.dart';
 
+typedef _OnColorCandidates = ({
+  Color bestDark,
+  Color bestLight,
+  double maxPos,
+  double minNeg,
+  Color? passingDark,
+  Color? passingLight,
+});
+
 /// Surface-lightness presets that drive the OKLCH `L` axis for computed colors.
 ///
 /// `light` is a near-white surface; `dark` is a near-black surface. The presets
@@ -59,6 +68,20 @@ class AuraComputedColor extends OKLCHColor {
   /// candidate.
   Color onColor({double targetLc = 60, double targetWcagRatio = 4.5}) {
     final background = toColor();
+    final candidates = _scanOnColorCandidates(
+      background: background,
+      targetLc: targetLc,
+      targetWcagRatio: targetWcagRatio,
+    );
+
+    return _selectOnColor(candidates);
+  }
+
+  _OnColorCandidates _scanOnColorCandidates({
+    required Color background,
+    required double targetLc,
+    required double targetWcagRatio,
+  }) {
     var bestDark = const Color(0xFF000000);
     var bestLight = const Color(0xFFFFFFFF);
     Color? passingDark;
@@ -87,21 +110,33 @@ class AuraComputedColor extends OKLCHColor {
       check(copyWith(lightness: l).toColor());
     }
 
+    return (
+      bestDark: bestDark,
+      bestLight: bestLight,
+      maxPos: maxPos,
+      minNeg: minNeg,
+      passingDark: passingDark,
+      passingLight: passingLight,
+    );
+  }
+
+  Color _selectOnColor(_OnColorCandidates candidates) {
     final surfaceLight = lightness >= 0.5;
     if (surfaceLight) {
-      final color = passingDark;
+      final color = candidates.passingDark;
       if (color != null) return color;
     }
     if (!surfaceLight) {
-      final color = passingLight;
+      final color = candidates.passingLight;
       if (color != null) return color;
     }
-    final dark = passingDark;
+    final dark = candidates.passingDark;
     if (dark != null) return dark;
-    final light = passingLight;
+    final light = candidates.passingLight;
     if (light != null) return light;
 
-    // ponytail: neither polarity meets target — return the stronger one.
-    return maxPos.abs() >= minNeg.abs() ? bestDark : bestLight;
+    return candidates.maxPos.abs() >= candidates.minNeg.abs()
+        ? candidates.bestDark
+        : candidates.bestLight;
   }
 }

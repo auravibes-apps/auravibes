@@ -15,7 +15,7 @@ double hueDelta(double a, double b) {
 
 void main() {
   group('AuraComputedColorScheme', () {
-    test('is-an AuraColorScheme with all 24 fields populated', () {
+    test('constructs AuraColorScheme and exposes key color roles', () {
       final s = AuraComputedColorScheme(
         primaryHue: 180,
         brightness: AuraBrightness.light,
