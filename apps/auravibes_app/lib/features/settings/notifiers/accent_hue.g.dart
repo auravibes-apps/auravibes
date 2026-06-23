@@ -10,22 +10,22 @@ part of 'accent_hue.dart';
 // ignore_for_file: type=lint, type=warning
 /// Persists the user's accent hue (OKLCH hue degrees, 0–360).
 ///
-/// Drives [AuraComputedColorScheme] so the whole palette recomputes from one
-/// value. Kept separate from [ThemeNotifier] so theme-mode state is untouched.
+/// Drives AuraComputedColorScheme so the whole palette recomputes from one
+/// value. Kept separate from ThemeNotifier so theme-mode state is untouched.
 
 @ProviderFor(AccentHueNotifier)
 final accentHueProvider = AccentHueNotifierProvider._();
 
 /// Persists the user's accent hue (OKLCH hue degrees, 0–360).
 ///
-/// Drives [AuraComputedColorScheme] so the whole palette recomputes from one
-/// value. Kept separate from [ThemeNotifier] so theme-mode state is untouched.
+/// Drives AuraComputedColorScheme so the whole palette recomputes from one
+/// value. Kept separate from ThemeNotifier so theme-mode state is untouched.
 final class AccentHueNotifierProvider
     extends $AsyncNotifierProvider<AccentHueNotifier, double> {
   /// Persists the user's accent hue (OKLCH hue degrees, 0–360).
   ///
-  /// Drives [AuraComputedColorScheme] so the whole palette recomputes from one
-  /// value. Kept separate from [ThemeNotifier] so theme-mode state is untouched.
+  /// Drives AuraComputedColorScheme so the whole palette recomputes from one
+  /// value. Kept separate from ThemeNotifier so theme-mode state is untouched.
   AccentHueNotifierProvider._()
     : super(
         from: null,
@@ -49,8 +49,8 @@ String _$accentHueNotifierHash() => r'a589a84ea82808d6bf7b01e17cf04ea40527d689';
 
 /// Persists the user's accent hue (OKLCH hue degrees, 0–360).
 ///
-/// Drives [AuraComputedColorScheme] so the whole palette recomputes from one
-/// value. Kept separate from [ThemeNotifier] so theme-mode state is untouched.
+/// Drives AuraComputedColorScheme so the whole palette recomputes from one
+/// value. Kept separate from ThemeNotifier so theme-mode state is untouched.
 
 abstract class _$AccentHueNotifier extends $AsyncNotifier<double> {
   FutureOr<double> build();
