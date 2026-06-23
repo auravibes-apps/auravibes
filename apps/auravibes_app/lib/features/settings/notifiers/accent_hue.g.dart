@@ -45,7 +45,7 @@ final class AccentHueNotifierProvider
   AccentHueNotifier create() => AccentHueNotifier();
 }
 
-String _$accentHueNotifierHash() => r'a589a84ea82808d6bf7b01e17cf04ea40527d689';
+String _$accentHueNotifierHash() => r'dd80f7728ecc72c0a1016661fde186923047f341';
 
 /// Persists the user's accent hue (OKLCH hue degrees, 0–360).
 ///
