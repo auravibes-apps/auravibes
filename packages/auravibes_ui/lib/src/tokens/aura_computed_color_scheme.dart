@@ -8,9 +8,9 @@ import 'package:flutter/widgets.dart';
 ///
 /// Brand colors follow `primaryHue`; the secondary hue is the complement
 /// (`primaryHue + 180`). Semantic hues default to HueColorValues. Surfaces
-/// stay achromatic unless `surfaceTint` > 0. Every `on*` color is searched on
-/// the OKLCH `L` axis to meet APCA Lc 60 (body-text minimum) against its
-/// surface, picking the polarity that achieves it.
+/// stay achromatic. Every `on*` color is searched on the OKLCH `L` axis to meet
+/// APCA Lc 60 (body-text minimum) against its surface, picking the polarity
+/// that achieves it.
 ///
 /// Lives alongside the base light/dark factories; those and AuraTheme.light /
 /// AuraTheme.dark are unchanged.
@@ -23,17 +23,11 @@ import 'package:flutter/widgets.dart';
 /// ```
 class AuraComputedColorScheme extends AuraColorScheme {
   /// Computes a full 24-field scheme from [primaryHue] and [brightness].
-  ///
-  /// [surfaceTint] blends [primaryHue] into the neutral roles: 0.0 = pure gray
-  /// (default), 1.0 = fully tinted (OKLCH chroma 0.04). M3-style cohesion.
   factory AuraComputedColorScheme({
     required double primaryHue,
     required AuraBrightness brightness,
-    double surfaceTint = 0.0,
   }) {
     final isLight = brightness == AuraBrightness.light;
-    // ponytail: global neutral-chroma ceiling; expose as param if needed.
-    final neutralChroma = surfaceTint.clamp(0.0, 1.0) * 0.04;
 
     double l(double lightL, double darkL) => isLight ? lightL : darkL;
 
@@ -80,11 +74,11 @@ class AuraComputedColorScheme extends AuraColorScheme {
     final secondary = brandSecondary(0.4, 0.78, 0.17);
     final secondaryVariant = brandSecondary(0.3, 0.68, 0.15);
 
-    // Neutrals — tinted with primaryHue when surfaceTint > 0.
+    // Neutrals stay achromatic; add tint later if a real setting needs it.
     AuraComputedColor neutral(double lightL, double darkL) => color(
       primaryHue,
       l(lightL, darkL),
-      neutralChroma,
+      0,
     );
     final surface = neutral(0.98, 0.18);
     final surfaceVariant = neutral(0.96, 0.22);

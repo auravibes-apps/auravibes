@@ -140,25 +140,13 @@ void main() {
       );
     });
 
-    test('surfaceTint 0.0 keeps surfaces achromatic', () {
+    test('surfaces stay achromatic', () {
       final s = AuraComputedColorScheme(
         primaryHue: 180,
         brightness: AuraBrightness.light,
       );
       expect(OKLCHColor.fromColor(s.surface).chroma, lessThan(0.001));
       expect(OKLCHColor.fromColor(s.background).chroma, lessThan(0.001));
-    });
-
-    test('surfaceTint 1.0 tints surfaces with primaryHue', () {
-      const hue = 180.0;
-      final s = AuraComputedColorScheme(
-        primaryHue: hue,
-        brightness: AuraBrightness.light,
-        surfaceTint: 1,
-      );
-      final surfaceChroma = OKLCHColor.fromColor(s.surface).chroma;
-      expect(surfaceChroma, greaterThan(0.01));
-      expect(hueDelta(OKLCHColor.fromColor(s.surface).hue, hue), lessThan(10));
     });
 
     test('lerp from base AuraColorScheme still works (subclass unchanged)', () {
@@ -173,39 +161,6 @@ void main() {
       final mid = a.lerp(b, 0.5);
       expect(mid, isA<AuraColorScheme>());
       expect(mid.primary, isA<Color>());
-    });
-  });
-
-  group('AuraComputedColorScheme defaults', () {
-    test('existing AuraColorScheme._light still constructs (unchanged)', () {
-      // The base factories must remain usable alongside the subclass.
-      final light = AuraColorScheme(
-        primary: Colors.teal,
-        primaryVariant: Colors.teal.shade700,
-        onPrimary: Colors.white,
-        secondary: Colors.pink,
-        secondaryVariant: Colors.pink.shade700,
-        onSecondary: Colors.white,
-        surface: Colors.white,
-        surfaceVariant: Colors.grey.shade100,
-        onSurface: Colors.black,
-        onSurfaceVariant: Colors.grey.shade700,
-        background: Colors.white,
-        onBackground: Colors.black,
-        error: Colors.red,
-        onError: Colors.white,
-        warning: Colors.orange,
-        onWarning: Colors.white,
-        success: Colors.green,
-        onSuccess: Colors.white,
-        info: Colors.blue,
-        onInfo: Colors.white,
-        outline: Colors.grey,
-        outlineVariant: Colors.grey.shade300,
-        shadow: Colors.black,
-        scrim: Colors.black54,
-      );
-      expect(light.primary, Colors.teal);
     });
   });
 }

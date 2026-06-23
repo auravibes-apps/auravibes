@@ -104,12 +104,4 @@ class AuraComputedColor extends OKLCHColor {
     // ponytail: neither polarity meets target — return the stronger one.
     return maxPos.abs() >= minNeg.abs() ? bestDark : bestLight;
   }
-
-  /// APCA Lc score of [foreground] painted over this color.
-  double apcaAgainst(Color foreground) =>
-      apcaLc(foreground: foreground, background: toColor());
-
-  /// WCAG 2.x contrast ratio between [foreground] and this color.
-  double wcagRatioWith(Color foreground) =>
-      wcagContrastRatio(foreground, toColor());
 }

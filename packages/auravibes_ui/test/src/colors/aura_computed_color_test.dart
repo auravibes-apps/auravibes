@@ -84,24 +84,5 @@ void main() {
       ).abs();
       expect(lc90, greaterThanOrEqualTo(lc60));
     });
-
-    test(
-      'apcaAgainst and wcagRatioWith are consistent with free functions',
-      () {
-        const foreground = Color(0xFFFFFFFF);
-        final surface = AuraComputedColor(
-          hue: 0,
-          brightness: AuraBrightness.dark,
-        );
-        expect(
-          surface.apcaAgainst(foreground),
-          apcaLc(foreground: foreground, background: surface.toColor()),
-        );
-        expect(
-          surface.wcagRatioWith(foreground),
-          wcagContrastRatio(foreground, surface.toColor()),
-        );
-      },
-    );
   });
 }
