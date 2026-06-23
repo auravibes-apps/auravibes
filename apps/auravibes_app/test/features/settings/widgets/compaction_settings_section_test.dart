@@ -90,7 +90,7 @@ void main() {
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
       expect(find.byType(CompactionSettingsSection), findsOneWidget);
-      expect(find.byType(SwitchListTile), findsOneWidget);
+      expect(find.byType(AuraSwitch), findsOneWidget);
       expect(find.byType(AuraButton), findsNWidgets(2));
     });
   });
@@ -112,8 +112,8 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      final tile = tester.widget<SwitchListTile>(find.byType(SwitchListTile));
-      expect(tile.value, isFalse);
+      final toggle = tester.widget<AuraSwitch>(find.byType(AuraSwitch));
+      expect(toggle.value, isFalse);
 
       final textFields = find.byType(TextField);
       final usageField = tester.widget<TextField>(textFields.first);

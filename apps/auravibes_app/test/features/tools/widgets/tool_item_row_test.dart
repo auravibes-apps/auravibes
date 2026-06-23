@@ -10,8 +10,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../helpers/test_provider_scope.dart';
+import '../../../helpers/test_app.dart';
 
 const _workspaceId = 'ws-1';
 
@@ -52,43 +53,43 @@ class _Subject extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return EasyLocalization(
-      child: TestProviderScope(
-        overrides: [
-          workspaceToolsProvider(_workspaceId).overrideWith(
-            () => _MockWorkspaceToolsNotifier([_tool()]),
-          ),
-          groupedToolsProvider(
-            _workspaceId,
-          ).overrideWith(() => _MockGroupedNotifier([])),
-        ],
-        child: MaterialApp(
-          home: Theme(
-            data: ThemeData(extensions: [AuraTheme.light]),
-            child: Material(child: child),
-          ),
-        ),
+    return TestableApp(
+      child: Theme(
+        data: ThemeData(extensions: [AuraTheme.light]),
+        child: Material(child: child),
       ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
+      overrides: [
+        workspaceToolsProvider(_workspaceId).overrideWith(
+          () => _MockWorkspaceToolsNotifier([_tool()]),
+        ),
+        groupedToolsProvider(
+          _workspaceId,
+        ).overrideWith(() => _MockGroupedNotifier([])),
+      ],
     );
   }
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await EasyLocalization.ensureInitialized();
+  });
+
+  Future<void> pumpSubject(WidgetTester tester, Widget child) async {
+    await tester.runAsync(() async {
+      await tester.pumpWidget(_Subject(child: child));
+    });
+    final _ = await tester.pumpAndSettle();
+  }
+
   testWidgets('renders tool name and toggle', (tester) async {
     final tool = _tool();
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
@@ -97,12 +98,10 @@ void main() {
   testWidgets('renders expand icon button', (tester) async {
     final tool = _tool();
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(IconButton), findsWidgets);
   });
@@ -112,12 +111,10 @@ void main() {
   ) async {
     final tool = _tool(isEnabled: false);
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.text('custom_tool'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
@@ -126,12 +123,10 @@ void main() {
   testWidgets('expands to show options on chevron tap', (tester) async {
     final tool = _tool(isEnabled: false);
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
     final _ = await tester.pumpAndSettle();
@@ -142,12 +137,10 @@ void main() {
   testWidgets('does not show options when collapsed', (tester) async {
     final tool = _tool();
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     expect(find.byType(AuraButtonGroup<ToolPermissionMode>), findsNothing);
   });
@@ -157,16 +150,14 @@ void main() {
   ) async {
     final tool = _tool(isEnabled: false);
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(
-          tool: tool,
-          workspaceId: _workspaceId,
-          showDeleteButton: false,
-        ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(
+        tool: tool,
+        workspaceId: _workspaceId,
+        showDeleteButton: false,
       ),
     );
-    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
     final _ = await tester.pumpAndSettle();
@@ -179,15 +170,13 @@ void main() {
   ) async {
     final tool = _tool(isEnabled: false);
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(
-          tool: tool,
-          workspaceId: _workspaceId,
-        ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(
+        tool: tool,
+        workspaceId: _workspaceId,
       ),
     );
-    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
     final _ = await tester.pumpAndSettle();
@@ -198,12 +187,10 @@ void main() {
   testWidgets('renders tool icon container', (tester) async {
     final tool = _tool();
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     final container = tester.widget<Container>(
       find.ancestor(
@@ -217,12 +204,10 @@ void main() {
   testWidgets('permission selector only shows when enabled', (tester) async {
     final tool = _tool(isEnabled: false);
 
-    await tester.pumpWidget(
-      _Subject(
-        child: ToolItemRow(tool: tool, workspaceId: _workspaceId),
-      ),
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
-    final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byType(IconButton).last);
     final _ = await tester.pumpAndSettle();

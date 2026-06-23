@@ -116,6 +116,6 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(find.byType(AuraLinearProgressIndicator), findsOneWidget);
   });
 }
