@@ -481,6 +481,11 @@
       "system": "Sistema",
       "system_default": "Predeterminado del Sistema"
     },
+    "accent_color": {
+      "title": "Color de acento",
+      "subtitle": "Elige el tono que define la paleta de la app",
+      "dialog_title": "Tono de acento"
+    },
     "actions": {
       "cancel": "Cancelar",
       "save": "Guardar"
