@@ -17,6 +17,11 @@ dev_dependencies:
   riverpod_lint: 3.1.4
   very_good_analysis: ^10.3.0
 
+dependency_overrides:
+  # melos 8 needs cli_util ^0.5.0; flutter_launcher_icons 0.14.4 pins ^0.4.1 (no newer release).
+  # 0.5.0 only deprecates applicationConfigHome (still present), safe override.
+  cli_util: ^0.5.0
+
 melos:
   sdkPath: .fvm/flutter_sdk
   categories:
