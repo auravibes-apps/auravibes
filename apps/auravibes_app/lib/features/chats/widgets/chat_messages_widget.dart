@@ -468,17 +468,13 @@ class _ToolCallWidget extends ConsumerWidget {
 void _showCompactionDetails(BuildContext context, MessageEntity message) {
   showDialog<void>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      content: SizedBox(
-        width: MediaQuery.sizeOf(dialogContext).width * 0.8,
+    builder: (_) => AuraAlertDialog(
+      title: const SizedBox.shrink(),
+      message: SizedBox(
+        width: MediaQuery.sizeOf(context).width * 0.8,
         child: CompactedMessageDetails(message: message),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(),
-          child: const TextLocale(LocaleKeys.common_close),
-        ),
-      ],
+      dismissLabel: const TextLocale(LocaleKeys.common_close),
     ),
   );
 }

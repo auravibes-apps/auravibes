@@ -442,7 +442,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
             style: AuraTextStyle.bodyLarge,
           ),
           const AuraSizedBox(height: .sm),
-          SelectableText(deviceCode.verificationUrl),
+          AuraSelectableText(deviceCode.verificationUrl),
           const AuraSizedBox(height: .sm),
           AuraText(
             child: Text(deviceCode.userCode),

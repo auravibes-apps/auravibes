@@ -103,16 +103,12 @@ class ToolsGroupHeader extends StatelessWidget {
         AuraRow(
           children: [
             if (groupWithTools.isMcpGroup && onDelete != null)
-              IconButton(
-                padding: EdgeInsets.zero,
+              AuraIconButton(
+                icon: Icons.delete_outline,
                 onPressed: onDelete,
+                size: AuraIconSize.small,
+                color: AuraColorVariant.error,
                 tooltip: LocaleKeys.common_delete.tr(),
-                constraints: const BoxConstraints(),
-                icon: const AuraIcon(
-                  Icons.delete_outline,
-                  size: AuraIconSize.small,
-                  color: AuraColorVariant.error,
-                ),
               ),
             if (!groupWithTools.isDefaultGroup && onToggleEnabled != null)
               AuraSwitch(
@@ -120,11 +116,8 @@ class ToolsGroupHeader extends StatelessWidget {
                 onChanged: onToggleEnabled,
                 size: AuraSwitchSize.sm,
               ),
-            IconButton(
-              padding: EdgeInsets.zero,
-              onPressed: onToggleExpand,
-              constraints: const BoxConstraints(),
-              icon: AnimatedRotation(
+            AuraIconButton.custom(
+              child: AnimatedRotation(
                 child: const AuraIcon(
                   Icons.keyboard_arrow_down,
                   color: AuraColorVariant.onSurfaceVariant,
@@ -132,6 +125,7 @@ class ToolsGroupHeader extends StatelessWidget {
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
               ),
+              onPressed: onToggleExpand,
             ),
           ],
           spacing: .xs,
@@ -289,18 +283,11 @@ class _DisconnectedBadge extends StatelessWidget {
           size: AuraBadgeSize.small,
         ),
         if (onReconnect != null)
-          IconButton(
-            padding: EdgeInsets.zero,
+          AuraIconButton(
+            icon: Icons.refresh,
             onPressed: onReconnect,
+            size: AuraIconSize.small,
             tooltip: LocaleKeys.tools_screen_mcp_reconnect.tr(),
-            constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            icon: const AuraIcon(
-              Icons.refresh,
-              size: AuraIconSize.small,
-            ),
           ),
       ],
       spacing: .xs,

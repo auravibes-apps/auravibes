@@ -49,7 +49,7 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
           onEditWorkspace: _editWorkspace,
           onDeleteWorkspace: _confirmDelete,
         ),
-        AsyncLoading() => const Center(child: CircularProgressIndicator()),
+        AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
           child: AuraText(
             child: TextLocale(LocaleKeys.workspace_management_load_error),
@@ -330,11 +330,21 @@ class _WorkspaceListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(workspace.name),
-      subtitle: isActive
-          ? const TextLocale(LocaleKeys.workspace_management_active_label)
-          : null,
+    return AuraTile(
+      child: AuraColumn(
+        children: [
+          Text(workspace.name),
+          if (isActive)
+            const AuraText(
+              child: TextLocale(LocaleKeys.workspace_management_active_label),
+              style: AuraTextStyle.bodySmall,
+              color: AuraColorVariant.onSurfaceVariant,
+            ),
+        ],
+        spacing: .xs,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      variant: AuraTileVariant.ghost,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -435,6 +445,8 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
 
   @override
   Widget build(BuildContext context) {
+    final errorText = _errorText;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -445,13 +457,17 @@ class _CreateWorkspaceFormState extends State<_CreateWorkspaceForm> {
             style: AuraTextStyle.heading6,
           ),
           const SizedBox(height: 16),
-          TextField(
+          AuraInput(
             controller: _controller,
-            decoration: InputDecoration(
-              labelText: LocaleKeys.workspace_management_name_label.tr(),
-              helperText: LocaleKeys.workspace_management_name_placeholder.tr(),
-              errorText: _errorText,
+            placeholder: Text(
+              LocaleKeys.workspace_management_name_placeholder.tr(),
             ),
+            label: Text(LocaleKeys.workspace_management_name_label.tr()),
+            hint: Text(LocaleKeys.workspace_management_name_placeholder.tr()),
+            error: errorText == null ? null : Text(errorText),
+            state: errorText == null
+                ? AuraInputState.normal
+                : AuraInputState.error,
             textInputAction: TextInputAction.done,
             autofocus: true,
             onSubmitted: (_) => _submit(),
@@ -530,11 +546,13 @@ class _EditWorkspaceTileState extends State<_EditWorkspaceTile> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
+            child: AuraInput(
               controller: _requiredController,
-              decoration: InputDecoration(
-                helperText: LocaleKeys.workspace_management_name_placeholder
-                    .tr(),
+              placeholder: Text(
+                LocaleKeys.workspace_management_name_placeholder.tr(),
+              ),
+              hint: Text(
+                LocaleKeys.workspace_management_name_placeholder.tr(),
               ),
               textInputAction: TextInputAction.done,
               autofocus: true,

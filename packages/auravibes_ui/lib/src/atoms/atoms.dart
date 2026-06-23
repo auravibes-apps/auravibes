@@ -19,6 +19,7 @@ library;
 export 'aura_column.dart';
 export 'aura_edge_insets_geometry.dart';
 export 'aura_icon.dart';
+export 'aura_linear_progress_indicator.dart';
 export 'aura_message_status.dart';
 export 'aura_pressable.dart' show AuraPressable;
 export 'aura_selectable_text.dart';
