@@ -481,6 +481,11 @@
       "system": "System",
       "system_default": "System Default"
     },
+    "accent_color": {
+      "title": "Accent Color",
+      "subtitle": "Choose the hue that drives the app palette",
+      "dialog_title": "Accent Hue"
+    },
     "actions": {
       "cancel": "Cancel",
       "save": "Save"

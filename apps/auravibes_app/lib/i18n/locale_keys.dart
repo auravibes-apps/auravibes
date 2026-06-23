@@ -553,6 +553,12 @@ abstract class LocaleKeys {
   static const settings_screen_theme_system = 'settings_screen.theme.system';
   static const settings_screen_theme_system_default =
       'settings_screen.theme.system_default';
+  static const settings_screen_accent_color_title =
+      'settings_screen.accent_color.title';
+  static const settings_screen_accent_color_subtitle =
+      'settings_screen.accent_color.subtitle';
+  static const settings_screen_accent_color_dialog_title =
+      'settings_screen.accent_color.dialog_title';
   static const settings_screen_actions_cancel =
       'settings_screen.actions.cancel';
   static const settings_screen_actions_save = 'settings_screen.actions.save';
