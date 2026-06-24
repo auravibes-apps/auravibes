@@ -73,9 +73,9 @@ class NewChatScreen extends ConsumerWidget {
             modelControl: CompactWorkspaceModelSelector(
               workspaceId: workspaceId,
               workspaceModelSelectionId: state.modelId,
-              onChanged: ref
+              onChanged: (modelId) => ref
                   .read(newChatProvider(workspaceId).notifier)
-                  .setModelId,
+                  .setModelId(modelId),
             ),
             disabledHint: state.modelId == null
                 ? const TextLocale(
