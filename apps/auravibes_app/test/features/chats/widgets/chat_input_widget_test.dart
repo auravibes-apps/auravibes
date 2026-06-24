@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -22,12 +23,14 @@ void main() {
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
-                  child: ChatInputWidget(
-                    onSendMessage: onSendMessage,
-                    onToolsPress: onToolsPress,
-                    disabled: disabled,
-                    isBusy: isBusy,
-                    onStop: onStop,
+                  child: Portal(
+                    child: ChatInputWidget(
+                      onSendMessage: onSendMessage,
+                      onToolsPress: onToolsPress,
+                      disabled: disabled,
+                      isBusy: isBusy,
+                      onStop: onStop,
+                    ),
                   ),
                 ),
               ),
@@ -83,6 +86,9 @@ void main() {
       ),
     );
 
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
   });
 
@@ -95,6 +101,9 @@ void main() {
         },
       ),
     );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
   });
@@ -148,6 +157,31 @@ void main() {
     );
 
     expect(find.byIcon(Icons.stop_rounded), findsNothing);
+  });
+
+  testWidgets('tabs from input to more button and opens with enter', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    await tester.tap(find.byType(EditableText));
+    await tester.pump();
+
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+    await tester.pump();
+    expect(find.byIcon(Icons.build_circle_outlined), findsNothing);
+
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+    await tester.pump();
+
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
   });
 }
 

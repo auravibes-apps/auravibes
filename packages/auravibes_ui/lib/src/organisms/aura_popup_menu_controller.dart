@@ -102,21 +102,45 @@ class AuraPopupMenu extends StatefulWidget {
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
   FocusNode? _focusNode;
+  FocusScopeNode? _menuFocusScopeNode;
   bool _visible = false;
 
   FocusNode get _requiredFocusNode {
-    final focusNode = _focusNode;
-    if (focusNode == null) {
-      throw StateError('_focusNode is not initialized');
+    final node = _focusNode;
+    if (node == null) {
+      throw StateError('Focus node not initialized');
     }
 
-    return focusNode;
+    return node;
+  }
+
+  FocusScopeNode get _requiredMenuFocusScopeNode {
+    final node = _menuFocusScopeNode;
+    if (node == null) {
+      throw StateError('Menu focus scope node not initialized');
+    }
+
+    return node;
   }
 
   @override
   void initState() {
     super.initState();
     _focusNode = widget.focusNode ?? FocusNode();
+    _menuFocusScopeNode = FocusScopeNode(
+      debugLabel: 'AuraPopupMenu menu',
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _visible) {
+          close();
+
+          return KeyEventResult.handled;
+        }
+
+        return KeyEventResult.ignored;
+      },
+    );
     widget.controller._state = this;
   }
 
@@ -130,19 +154,34 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   void dispose() {
     widget.controller._state = null;
     if (widget.focusNode == null) {
-      _focusNode?.dispose();
+      _requiredFocusNode.dispose();
     }
+    _requiredMenuFocusScopeNode.dispose();
     super.dispose();
   }
 
   void open() {
+    if (_visible) {
+      return;
+    }
+
     setState(() {
       _visible = true;
     });
-    FocusScope.of(context).requestFocus(_requiredFocusNode);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_visible) {
+        return;
+      }
+
+      _requiredMenuFocusScopeNode.requestFocus();
+    });
   }
 
   void close() {
+    if (!_visible) {
+      return;
+    }
+
     setState(() {
       _visible = false;
     });
@@ -150,7 +189,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   }
 
   void toggle() {
-    if (_requiredFocusNode.hasFocus) {
+    if (_visible) {
       close();
     } else {
       open();
@@ -159,8 +198,13 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return FocusScope(
-      child: Focus(
+    return Focus(
+      child: PortalTarget(
+        visible: _visible,
+        portalFollower: GestureDetector(
+          onTap: close,
+          behavior: HitTestBehavior.opaque,
+        ),
         child: PortalTarget(
           visible: _visible,
           anchor: const Aligned(
@@ -169,38 +213,40 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
             portal: .bottomCenter,
             shiftToWithinBound: .new(x: true, y: true),
           ),
-          portalFollower: SizedBox(
-            width: 200,
-            child: AuraCard(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: .start,
-                children: widget.items
-                    .map((e) => Builder(builder: e.build))
-                    .toList(),
+          portalFollower: TapRegion(
+            child: FocusScope(
+              node: _requiredMenuFocusScopeNode,
+              child: SizedBox(
+                width: 200,
+                child: AuraCard(
+                  child: _AuraPopupMenuCloseScope(
+                    close: close,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: .start,
+                      children: widget.items
+                          .map((e) => Builder(builder: e.build))
+                          .toList(),
+                    ),
+                  ),
+                  padding: .none,
+                  style: AuraCardStyle.border,
+                ),
               ),
-              padding: .none,
             ),
+            groupId: this,
           ),
-          fit: .passthrough,
-          child: widget.child,
+          child: TapRegion(
+            child: widget.child,
+            groupId: this,
+          ),
         ),
-        focusNode: _requiredFocusNode,
-        onFocusChange: (hasFocus) {
-          if (hasFocus && !_visible) {
-            setState(() {
-              _visible = true;
-            });
-          } else if (!hasFocus && _visible) {
-            setState(() {
-              _visible = false;
-            });
-          }
-        },
-        descendantsAreFocusable: true,
       ),
-      onKey: (node, event) {
-        if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
+      focusNode: _requiredFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _visible) {
           close();
 
           return KeyEventResult.handled;
@@ -208,7 +254,29 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
         return KeyEventResult.ignored;
       },
+      skipTraversal: true,
+      descendantsAreFocusable: true,
     );
+  }
+}
+
+class _AuraPopupMenuCloseScope extends InheritedWidget {
+  const _AuraPopupMenuCloseScope({
+    required this.close,
+    required super.child,
+  });
+
+  final VoidCallback close;
+
+  static VoidCallback? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<_AuraPopupMenuCloseScope>()
+        ?.close;
+  }
+
+  @override
+  bool updateShouldNotify(_AuraPopupMenuCloseScope oldWidget) {
+    return close != oldWidget.close;
   }
 }
 
@@ -281,7 +349,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
       child: title,
       onTap: () {
         onTap?.call();
-        context.findAncestorStateOfType<_AuraPopupMenuState>()?.close();
+        _AuraPopupMenuCloseScope.maybeOf(context)?.call();
       },
       variant: variant,
       leading: leading,

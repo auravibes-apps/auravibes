@@ -192,6 +192,10 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.stop_error';
   static const chats_screens_chat_conversation_send_error =
       'chats_screens.chat_conversation.send_error';
+  static const chats_screens_chat_conversation_continue_agent =
+      'chats_screens.chat_conversation.continue_agent';
+  static const chats_screens_chat_conversation_continue_error =
+      'chats_screens.chat_conversation.continue_error';
   static const chats_screens_chat_conversation_rate_limit_retry =
       'chats_screens.chat_conversation.rate_limit_retry';
   static const chats_screens_chat_conversation_waiting_for_tools =

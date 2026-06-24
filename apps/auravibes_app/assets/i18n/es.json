@@ -156,6 +156,8 @@
       "stop_generation": "Detener generación",
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+      "continue_agent": "Continuar agente",
+      "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
