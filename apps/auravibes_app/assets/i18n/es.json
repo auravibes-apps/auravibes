@@ -516,7 +516,7 @@
   },
   "sidebar": {
     "recent_chats": "Chats Recientes",
-    "no_recent_chats": "No hay chats recientes",
+    "no_recent_chats": "Los chats aparecerán aquí",
     "view_all_chats": "Ver Todos"
   },
   "mcp_modal": {
