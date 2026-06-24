@@ -26,6 +26,7 @@ class AuraFieldWrapper extends StatefulWidget {
     this.isReadOnly = false,
     this.isFocused = false,
     this.onTap,
+    this.onFocusChange,
     this.semanticLabel,
     this.semanticDescription,
   });
@@ -59,6 +60,9 @@ class AuraFieldWrapper extends StatefulWidget {
 
   /// Callback when the field is tapped.
   final VoidCallback? onTap;
+
+  /// Called when keyboard focus changes.
+  final ValueChanged<bool>? onFocusChange;
 
   /// A semantic label for the field for accessibility.
   final String? semanticLabel;
@@ -116,6 +120,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
               // Color: auraColors.primary,.
             ),
             onPressed: widget.isEnabled ? widget.onTap : null,
+            onFocusChange: widget.onFocusChange,
           ),
           if (widget.hint != null || widget.error != null)
             const AuraSizedBox(height: .xs),

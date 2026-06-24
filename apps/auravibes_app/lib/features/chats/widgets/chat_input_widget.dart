@@ -13,7 +13,9 @@ class ChatInputWidget extends HookConsumerWidget {
   const ChatInputWidget({
     required this.onSendMessage,
     required this.onToolsPress,
+    required this.modelControl,
     this.onSkillsPress,
+    this.onContinueAgent,
     this.disabledHint,
     this.disabled = false,
     this.isBusy = false,
@@ -28,6 +30,8 @@ class ChatInputWidget extends HookConsumerWidget {
   final void Function(String message) onSendMessage;
   final VoidCallback onToolsPress;
   final VoidCallback? onSkillsPress;
+  final VoidCallback? onContinueAgent;
+  final Widget modelControl;
   final Widget? disabledHint;
   final VoidCallback? onStop;
   final VoidCallback? onCompact;
@@ -51,22 +55,6 @@ class ChatInputWidget extends HookConsumerWidget {
       [controller, onSendMessage, isEmpty],
     );
 
-    final compact = onCompact;
-    final stop = onStop;
-    final stopButton = stop == null
-        ? null
-        : AuraTooltip(
-            message: LocaleKeys.chats_screens_chat_conversation_stop_generation
-                .tr(),
-            child: AuraButton(
-              onPressed: stop,
-              child: const AuraIcon(Icons.stop_rounded),
-              variant: AuraButtonVariant.outlined,
-              colorVariant: AuraColorVariant.error,
-              size: AuraButtonSize.small,
-            ),
-          );
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: AuraInput(
@@ -84,27 +72,51 @@ class ChatInputWidget extends HookConsumerWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AuraTooltip(
-                  message: LocaleKeys.menu_tools.tr(),
-                  child: AuraButton(
-                    onPressed: onToolsPress,
-                    child: const AuraIcon(Icons.build_circle_outlined),
-                    variant: AuraButtonVariant.secondary,
-                    size: AuraButtonSize.small,
-                  ),
-                ),
-                if (onSkillsPress case final onSkillsPress?) ...[
-                  const AuraSizedBox(width: .xs),
-                  AuraTooltip(
-                    message: LocaleKeys.skills_selector_title.tr(),
-                    child: AuraButton(
-                      onPressed: onSkillsPress,
-                      child: const AuraIcon(Icons.psychology_alt_outlined),
-                      variant: AuraButtonVariant.secondary,
-                      size: AuraButtonSize.small,
+                modelControl,
+                const AuraSizedBox(width: .xs),
+                AuraPopupMenuButton(
+                  items: [
+                    AuraPopupMenuItem(
+                      title: const TextLocale(LocaleKeys.menu_tools),
+                      onTap: onToolsPress,
+                      leading: const AuraIcon(Icons.build_circle_outlined),
                     ),
-                  ),
-                ],
+                    if (onSkillsPress case final onSkillsPress?)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.skills_selector_title,
+                        ),
+                        onTap: onSkillsPress,
+                        leading: const AuraIcon(
+                          Icons.psychology_alt_outlined,
+                        ),
+                      ),
+                    if (onContinueAgent != null)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys
+                              .chats_screens_chat_conversation_continue_agent,
+                        ),
+                        onTap: onContinueAgent,
+                        leading: const AuraIcon(Icons.play_circle_outline),
+                      ),
+                    if (onCompact != null &&
+                        !disabled &&
+                        !isBusy &&
+                        !isCompacting)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.compaction_manual_button_tooltip,
+                        ),
+                        onTap: onCompact,
+                        leading: const AuraIcon(Icons.compress_outlined),
+                      ),
+                  ],
+                  icon: Icons.tune_rounded,
+                  tooltip: LocaleKeys
+                      .chats_screens_chat_conversation_options_tooltip
+                      .tr(),
+                ),
               ],
             ),
 
@@ -136,24 +148,20 @@ class ChatInputWidget extends HookConsumerWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (compact != null) ...[
-                  AuraTooltip(
-                    message: LocaleKeys.compaction_manual_button_tooltip.tr(),
-                    child: AuraButton(
-                      onPressed: compact,
-                      child: isCompacting
-                          ? const AuraSpinner(size: AuraSpinnerSize.small)
-                          : const AuraIcon(Icons.compress_outlined),
-                      variant: AuraButtonVariant.secondary,
-                      size: AuraButtonSize.small,
-                      disabled: disabled || isBusy || isCompacting,
-                    ),
-                  ),
-                  const AuraSizedBox(width: .xs),
-                ],
-                if (stopButton != null) ...[
+                if (onStop case final onStop?) ...[
                   Visibility(
-                    child: stopButton,
+                    child: AuraTooltip(
+                      message: LocaleKeys
+                          .chats_screens_chat_conversation_stop_generation
+                          .tr(),
+                      child: AuraButton(
+                        onPressed: onStop,
+                        child: const AuraIcon(Icons.stop_rounded),
+                        variant: AuraButtonVariant.outlined,
+                        colorVariant: AuraColorVariant.error,
+                        size: AuraButtonSize.small,
+                      ),
+                    ),
                     visible: isBusy,
                     maintainState: true,
                     maintainAnimation: true,

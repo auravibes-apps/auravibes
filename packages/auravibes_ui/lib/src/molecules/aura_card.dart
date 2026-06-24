@@ -34,7 +34,7 @@ class AuraCard extends StatelessWidget {
   final String? semanticLabel;
 
   /// Style of card.
-  final AuraCardStyle? style;
+  final AuraCardStyle style;
 
   @override
   Widget build(BuildContext context) {

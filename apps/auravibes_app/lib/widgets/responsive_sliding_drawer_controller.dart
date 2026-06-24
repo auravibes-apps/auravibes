@@ -360,7 +360,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     return Stack(
       children: [
         _buildDesktopBody(drawerWidth),
-        _buildDesktopDrawer(drawerWidth),
+        _buildDesktopDrawer(drawerWidth, drawerFullyOpen),
         _buildDesktopDragArea(drawerWidth),
         if (drawerFullyOpen) _buildDesktopDivider(drawerWidth),
       ],
@@ -384,7 +384,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  Widget _buildDesktopDrawer(double drawerWidth) {
+  Widget _buildDesktopDrawer(double drawerWidth, bool drawerFullyOpen) {
     return AnimatedBuilder(
       animation: _requiredController,
       builder: (context, child) {
@@ -396,7 +396,12 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             child: SizedBox(
               width: drawerWidth,
               height: MediaQuery.sizeOf(context).height,
-              child: widget.drawer,
+              child: FocusScope(
+                child: widget.drawer,
+                canRequestFocus: drawerFullyOpen,
+                descendantsAreFocusable: drawerFullyOpen,
+                descendantsAreTraversable: drawerFullyOpen,
+              ),
             ),
             onHorizontalDragStart: _handleDragStart,
             onHorizontalDragUpdate: _handleDragUpdate,
@@ -486,7 +491,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
       children: [
         _buildMobileBody(drawerWidth, drawerFullyOpen, enableGestures),
         _buildMobileScrim(drawerWidth, drawerFullyOpen, enableGestures),
-        _buildMobileDrawer(drawerWidth, enableGestures),
+        _buildMobileDrawer(drawerWidth, drawerFullyOpen, enableGestures),
       ],
     );
   }
@@ -570,7 +575,11 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
-  Widget _buildMobileDrawer(double drawerWidth, bool enableGestures) {
+  Widget _buildMobileDrawer(
+    double drawerWidth,
+    bool drawerFullyOpen,
+    bool enableGestures,
+  ) {
     return AnimatedBuilder(
       animation: _requiredController,
       builder: (context, child) {
@@ -582,7 +591,12 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             child: SizedBox(
               width: drawerWidth,
               height: MediaQuery.sizeOf(context).height,
-              child: widget.drawer,
+              child: FocusScope(
+                child: widget.drawer,
+                canRequestFocus: drawerFullyOpen,
+                descendantsAreFocusable: drawerFullyOpen,
+                descendantsAreTraversable: drawerFullyOpen,
+              ),
             ),
             onHorizontalDragStart: enableGestures ? _handleDragStart : null,
             onHorizontalDragUpdate: enableGestures ? _handleDragUpdate : null,

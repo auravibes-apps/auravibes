@@ -1,7 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Component callbacks stay colocated with UI state.
-// Required: UI components keep related private widgets together.
-
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -87,56 +83,111 @@ class AuraDropdownSelector<T> extends StatefulWidget {
 
 class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   FocusNode? _focusNode;
+  FocusScopeNode? _menuFocusScopeNode;
+  bool _ownsFocusNode = false;
   bool _isDropdownOpen = false;
+  bool _isTriggerFocused = false;
 
   FocusNode get _requiredFocusNode {
-    final focusNode = _focusNode;
-    if (focusNode == null) {
-      throw StateError('_focusNode is not initialized');
+    final node = _focusNode;
+    if (node == null) {
+      throw StateError('Focus node not initialized');
     }
 
-    return focusNode;
+    return node;
+  }
+
+  FocusScopeNode get _requiredMenuFocusScopeNode {
+    final node = _menuFocusScopeNode;
+    if (node == null) {
+      throw StateError('Menu focus scope node not initialized');
+    }
+
+    return node;
   }
 
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
-    // Listen for focus changes.
-    _focusNode?.addListener(_onFocusChange);
+    _initFocusNode(widget.focusNode);
+    _menuFocusScopeNode = FocusScopeNode(
+      debugLabel: 'AuraDropdownSelector menu',
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          _closeDropdown();
+
+          return KeyEventResult.handled;
+        }
+
+        return KeyEventResult.ignored;
+      },
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant AuraDropdownSelector<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) {
+      return;
+    }
+
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
+    }
+    _initFocusNode(widget.focusNode);
   }
 
   @override
   void dispose() {
-    final focusNode = _focusNode;
-    if (focusNode != null) {
-      focusNode.removeListener(_onFocusChange);
-      if (widget.focusNode == null) {
-        focusNode.dispose();
-      }
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
     }
-    // Ensure overlay is removed before widget is disposed.
+    _requiredMenuFocusScopeNode.dispose();
     super.dispose();
   }
 
-  void _onFocusChange() {
-    // Close dropdown when losing focus.
-    if (!_requiredFocusNode.hasFocus && _isDropdownOpen) {
-      setState(() {
-        _isDropdownOpen = false;
-      });
-    }
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
   }
 
   void _toggleDropdown() {
-    if (_requiredFocusNode.hasFocus) {
-      _unfocus();
-    } else {
-      FocusScope.of(context).requestFocus(_requiredFocusNode);
+    if (_isDropdownOpen) {
+      _closeDropdown();
+
+      return;
     }
+
+    _openDropdown();
   }
 
-  void _unfocus() => _requiredFocusNode.unfocus();
+  void _openDropdown() {
+    if (!widget.isEnabled || _isDropdownOpen) {
+      return;
+    }
+
+    setState(() {
+      _isDropdownOpen = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isDropdownOpen) return;
+
+      _requiredMenuFocusScopeNode.requestFocus();
+    });
+  }
+
+  void _closeDropdown() {
+    if (!_isDropdownOpen) {
+      return;
+    }
+
+    setState(() {
+      _isDropdownOpen = false;
+    });
+    FocusScope.of(context).unfocus();
+    _requiredFocusNode.unfocus();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,28 +216,36 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       displayText = const Text('');
     }
 
-    return FocusScope(
-      child: Focus(
+    return Focus(
+      child: PortalTarget(
+        visible: _isDropdownOpen,
+        portalFollower: GestureDetector(
+          onTap: _closeDropdown,
+          behavior: HitTestBehavior.opaque,
+        ),
         child: PortalTarget(
           visible: _isDropdownOpen,
           anchor: const Aligned(
             follower: Alignment.topCenter,
             target: Alignment.bottomCenter,
+            portal: Alignment.bottomCenter,
+            shiftToWithinBound: AxisFlag(x: true, y: true),
             widthFactor: 1,
           ),
           portalFollower: TapRegion(
-            child: _DropdownMenu<T>(
-              options: widget.options,
-              selectedValue: widget.value,
-              onOptionSelected: (option) {
-                _unfocus();
-                if (mounted) {
+            child: FocusScope(
+              node: _requiredMenuFocusScopeNode,
+              child: _DropdownMenu<T>(
+                options: widget.options,
+                selectedValue: widget.value,
+                onOptionSelected: (option) {
+                  _closeDropdown();
                   widget.onChanged?.call(option);
-                }
-              },
-              header: widget.header,
-              footer: widget.footer,
-              optionBuilder: widget.optionBuilder,
+                },
+                header: widget.header,
+                footer: widget.footer,
+                optionBuilder: widget.optionBuilder,
+              ),
             ),
             groupId: this,
           ),
@@ -217,40 +276,38 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
               isRequired: widget.isRequired,
               state: state,
               isEnabled: widget.isEnabled,
-              isFocused: _isDropdownOpen,
+              isFocused: _isDropdownOpen || _isTriggerFocused,
               onTap: _toggleDropdown,
+              onFocusChange: (value) {
+                setState(() {
+                  _isTriggerFocused = value;
+                });
+              },
               semanticLabel: widget.semanticLabel,
             ),
-            onTapOutside: (_) {
-              if (_isDropdownOpen) {
-                _unfocus();
-              }
-            },
             groupId: this,
           ),
         ),
-        focusNode: _focusNode,
-        onFocusChange: (hasFocus) {
-          setState(() {
-            _isDropdownOpen = hasFocus;
-          });
-        },
-        descendantsAreFocusable: true,
       ),
-      onKey: (node, event) {
-        if (event.logicalKey == LogicalKeyboardKey.escape && _isDropdownOpen) {
-          _unfocus();
+      focusNode: _requiredFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _isDropdownOpen) {
+          _closeDropdown();
 
           return KeyEventResult.handled;
         }
 
         return KeyEventResult.ignored;
       },
+      skipTraversal: true,
+      descendantsAreFocusable: true,
     );
   }
 }
 
-class _DropdownMenu<T> extends StatefulWidget {
+class _DropdownMenu<T> extends StatelessWidget {
   const _DropdownMenu({
     required this.options,
     required this.selectedValue,
@@ -269,15 +326,8 @@ class _DropdownMenu<T> extends StatefulWidget {
   final Widget Function(BuildContext, AuraDropdownOption<T>)? optionBuilder;
 
   @override
-  State<_DropdownMenu<T>> createState() => _DropdownMenuState<T>();
-}
-
-class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
-  @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final header = widget.header;
-    final footer = widget.footer;
 
     return Container(
       decoration: BoxDecoration(
@@ -285,7 +335,7 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.all(
           Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
+            context.auraTheme.fromBorderRadius(.xl),
           ),
         ),
       ),
@@ -294,16 +344,17 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
         mainAxisSize: MainAxisSize.min,
         children: [
           ?header,
-          Expanded(
+          Flexible(
             child: ListView.builder(
+              padding: EdgeInsets.zero,
               itemBuilder: (context, index) {
-                final option = widget.options[index];
-                final isSelected = option.value == widget.selectedValue;
+                final option = options[index];
+                final isSelected = option.value == selectedValue;
                 final leading = option.leading;
                 final trailing = option.trailing;
                 final child = option.child ?? const Text('');
 
-                return widget.optionBuilder?.call(context, option) ??
+                return optionBuilder?.call(context, option) ??
                     AuraPressable(
                       child: Padding(
                         padding: EdgeInsets.symmetric(
@@ -361,12 +412,14 @@ class _DropdownMenuState<T> extends State<_DropdownMenu<T>> {
                           ),
                         ),
                       ),
-                      onPressed: () {
-                        widget.onOptionSelected(option.value);
-                      },
+                      onPressed: option.isEnabled
+                          ? () {
+                              onOptionSelected(option.value);
+                            }
+                          : null,
                     );
               },
-              itemCount: widget.options.length,
+              itemCount: options.length,
             ),
           ),
           ?footer,

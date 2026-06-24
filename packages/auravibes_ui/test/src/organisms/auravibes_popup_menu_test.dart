@@ -1,5 +1,6 @@
 import 'package:auravibes_ui/src/organisms/aura_popup_menu_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -162,6 +163,77 @@ void main() {
       expect(find.text('Item 1'), findsNothing);
     });
 
+    testWidgets('closes when tapping outside menu', (tester) async {
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Center(
+                child: AuraPopupMenu(
+                  child: const Text('Open Menu'),
+                  items: const [
+                    AuraPopupMenuItem(title: Text('Item 1')),
+                  ],
+                  controller: controller,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      controller.open();
+      await tester.pump();
+      expect(controller.isShowing, isTrue);
+      expect(find.text('Item 1'), findsOneWidget);
+
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pump();
+
+      expect(controller.isShowing, isFalse);
+      expect(find.text('Item 1'), findsNothing);
+    });
+
+    testWidgets('menu item tap works while outside dismissal is active', (
+      tester,
+    ) async {
+      var wasTapped = false;
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Center(
+                child: AuraPopupMenu(
+                  child: const Text('Open Menu'),
+                  items: [
+                    AuraPopupMenuItem(
+                      title: const Text('Item 1'),
+                      onTap: () => wasTapped = true,
+                    ),
+                  ],
+                  controller: controller,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      controller.open();
+      await tester.pump();
+
+      await tester.tap(find.text('Item 1'));
+      await tester.pump();
+
+      expect(wasTapped, isTrue);
+      expect(controller.isShowing, isFalse);
+      expect(find.text('Item 1'), findsNothing);
+    });
+
     testWidgets('divider renders correctly', (tester) async {
       final controller = AuraPopupMenuController();
 
@@ -206,6 +278,126 @@ void main() {
       await tester.pump();
 
       expect(find.text('Edit'), findsOneWidget);
+    });
+
+    testWidgets('tab from popup trigger moves to next visible button', (
+      tester,
+    ) async {
+      var nextPressed = false;
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () => fail('Before should not be pressed'),
+                    child: const Text('Before'),
+                  ),
+                  AuraPopupMenu(
+                    child: TextButton(
+                      onPressed: controller.toggle,
+                      child: const Text('Menu'),
+                    ),
+                    items: const [
+                      AuraPopupMenuItem(title: Text('Item 1')),
+                    ],
+                    controller: controller,
+                  ),
+                  TextButton(
+                    onPressed: () => nextPressed = true,
+                    child: const Text('Next'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(controller.isShowing, isFalse);
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      await tester.pump();
+
+      expect(nextPressed, isTrue);
+    });
+
+    testWidgets('tab loops inside open popup menu', (tester) async {
+      String? selectedItem;
+      var nextPressed = false;
+      final controller = AuraPopupMenuController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Portal(
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () => fail('Before should not be pressed'),
+                    child: const Text('Before'),
+                  ),
+                  AuraPopupMenu(
+                    child: TextButton(
+                      onPressed: controller.toggle,
+                      child: const Text('Menu'),
+                    ),
+                    items: [
+                      AuraPopupMenuItem(
+                        title: const Text('Item 1'),
+                        onTap: () => selectedItem = 'Item 1',
+                      ),
+                      AuraPopupMenuItem(
+                        title: const Text('Item 2'),
+                        onTap: () => selectedItem = 'Item 2',
+                      ),
+                    ],
+                    controller: controller,
+                  ),
+                  TextButton(
+                    onPressed: () => nextPressed = true,
+                    child: const Text('Next'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      await tester.pump();
+      await tester.pump();
+      expect(controller.isShowing, isTrue);
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      await tester.pump();
+
+      expect(selectedItem, isNotNull);
+      expect(nextPressed, isFalse);
     });
   });
 

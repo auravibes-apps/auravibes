@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
-import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
+import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -64,40 +64,28 @@ class NewChatScreen extends ConsumerWidget {
     }
 
     return AuraScreen(
-      child: Column(
-        children: [
-          SelectWorkspaceModelSelectionWidget(
-            workspaceId: workspaceId,
-            selectWorkspaceModelSelectionId: (value) {
-              ref.read(newChatProvider(workspaceId).notifier).setModelId(value);
-            },
-            onProviderChanged: (provider) {
-              ref
+      child: AuraLoadingOverlay(
+        isLoading: state.isLoading,
+        child: Center(
+          child: ChatInputWidget(
+            onSendMessage: handleSendMessage,
+            onToolsPress: onToolsPress,
+            modelControl: CompactWorkspaceModelSelector(
+              workspaceId: workspaceId,
+              workspaceModelSelectionId: state.modelId,
+              onChanged: (modelId) => ref
                   .read(newChatProvider(workspaceId).notifier)
-                  .setProvider(provider);
-            },
-            workspaceModelSelectionId: state.modelId,
-            selectedProviderId: state.providerId,
-          ),
-          Expanded(
-            child: AuraLoadingOverlay(
-              isLoading: state.isLoading,
-              child: Center(
-                child: ChatInputWidget(
-                  onSendMessage: handleSendMessage,
-                  onToolsPress: onToolsPress,
-                  disabledHint: state.modelId == null
-                      ? const TextLocale(
-                          LocaleKeys.chats_screens_new_chat_no_model_selected,
-                        )
-                      : null,
-                  disabled: state.isLoading || state.modelId == null,
-                ),
-              ),
-              message: LocaleKeys.chats_screens_new_chat_starting.tr(),
+                  .setModelId(modelId),
             ),
+            disabledHint: state.modelId == null
+                ? const TextLocale(
+                    LocaleKeys.chats_screens_new_chat_no_model_selected,
+                  )
+                : null,
+            disabled: state.isLoading || state.modelId == null,
           ),
-        ],
+        ),
+        message: LocaleKeys.chats_screens_new_chat_starting.tr(),
       ),
       appBar: const AuraAppBarWithDrawer(
         title: TextLocale(LocaleKeys.home_screen_actions_start_new_chat),

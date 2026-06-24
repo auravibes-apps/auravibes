@@ -14,7 +14,9 @@ import 'package:auravibes_app/features/chats/providers/compaction_execution.dart
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -23,7 +25,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indica
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
-import 'package:auravibes_app/features/models/widgets/select_workspace_model_selection_widget.dart';
+import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -162,21 +164,13 @@ class _ChatConversationScreen extends HookConsumerWidget {
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
+    final isInputBusy =
+        (busyState?.isBusy ?? false) || rateLimitRetryAt != null;
 
     return AuraScreen(
       child: AuraColumn(
         children: [
-          _ChatControlsBar(
-            workspaceId: workspaceId,
-            workspaceModelSelectionId: conversation.modelId,
-            onModelSelected: (modelId) {
-              unawaited(
-                ref
-                    .read(conversationChatProvider(workspaceId).notifier)
-                    .setModel(modelId),
-              );
-            },
-          ),
+          const _ChatControlsBar(),
           Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
           if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
           if (rateLimitRetryAt != null)
@@ -189,12 +183,28 @@ class _ChatConversationScreen extends HookConsumerWidget {
             child: ChatInputWidget(
               onSendMessage: onSendMessage,
               onToolsPress: onToolsPress,
+              modelControl: CompactWorkspaceModelSelector(
+                workspaceId: workspaceId,
+                workspaceModelSelectionId: conversation.modelId,
+                onChanged: (modelId) {
+                  unawaited(
+                    ref
+                        .read(conversationChatProvider(workspaceId).notifier)
+                        .setModel(modelId),
+                  );
+                },
+              ),
               onSkillsPress: () => _showSkillsModal(
                 context: context,
                 workspaceId: workspaceId,
                 conversationId: conversation.id,
               ),
-              isBusy: (busyState?.isBusy ?? false) || rateLimitRetryAt != null,
+              onContinueAgent: isInputBusy
+                  ? null
+                  : () => unawaited(
+                      _continueAgent(context, ref, conversation.id),
+                    ),
+              isBusy: isInputBusy,
               onStop: onStop,
               onCompact: onCompact,
               isCompacting: isCompacting,
@@ -211,15 +221,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
 @Dependencies([contextUsage])
 class _ChatControlsBar extends StatelessWidget {
-  const _ChatControlsBar({
-    required this.workspaceId,
-    required this.workspaceModelSelectionId,
-    required this.onModelSelected,
-  });
-
-  final String workspaceId;
-  final String? workspaceModelSelectionId;
-  final ValueChanged<String?> onModelSelected;
+  const _ChatControlsBar();
 
   @override
   Widget build(BuildContext context) {
@@ -235,34 +237,19 @@ class _ChatControlsBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         bottom: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(
-                top: context.auraTheme.fromSpacing(.sm),
-                right: context.auraTheme.fromSpacing(.sm),
-              ),
-              child: const Align(
-                alignment: Alignment.centerRight,
-                child: ConversationContextUsagePill(),
-              ),
-            ),
-            SelectWorkspaceModelSelectionWidget(
-              workspaceId: workspaceId,
-              selectWorkspaceModelSelectionId: onModelSelected,
-              onProviderChanged: _ignoreProviderChange,
-              workspaceModelSelectionId: workspaceModelSelectionId,
-            ),
-          ],
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: context.auraTheme.fromSpacing(.sm),
+            right: context.auraTheme.fromSpacing(.sm),
+          ),
+          child: const Align(
+            alignment: Alignment.centerRight,
+            child: ConversationContextUsagePill(),
+          ),
         ),
       ),
     );
   }
-}
-
-void _ignoreProviderChange(String? _) {
-  return;
 }
 
 class _RateLimitRetryIndicator extends StatefulWidget {
@@ -378,6 +365,51 @@ void _showToolsModal({
       ),
     ),
   );
+}
+
+@Dependencies([conversationBusyState])
+Future<void> _continueAgent(
+  BuildContext context,
+  WidgetRef ref,
+  String conversationId,
+) async {
+  final busyState = ref.read(conversationBusyStateProvider).asData?.value;
+  final rateLimitRetryAt = ref.read(
+    conversationRateLimitRetryProvider,
+  )[conversationId];
+  if ((busyState?.isBusy ?? false) || rateLimitRetryAt != null) return;
+
+  try {
+    final _ = await ref.read(runAgentIterationUsecaseProvider)(
+      conversationId: conversationId,
+      context: const AgentIterationContext(
+        origin: AgentIterationOrigin.manualContinue,
+      ),
+    );
+  } on Exception catch (error, stackTrace) {
+    _logger.severe(
+      'Failed to continue agent for conversation $conversationId',
+      error,
+      stackTrace,
+    );
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'chat_conversation_screen',
+        context: ErrorDescription('while manually continuing a conversation'),
+      ),
+    );
+    if (!context.mounted) return;
+
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(
+        LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
+      ),
+      variant: AuraSnackBarVariant.error,
+    );
+  }
 }
 
 @Dependencies([conversationSelected])
