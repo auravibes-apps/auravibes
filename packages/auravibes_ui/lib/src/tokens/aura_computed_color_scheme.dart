@@ -78,7 +78,7 @@ class AuraComputedColorScheme extends AuraColorScheme {
     );
     final surface = neutral(0.98, 0.18);
     final surfaceVariant = neutral(0.96, 0.22);
-    final background = neutral(0.97, 0.12);
+    final background = neutral(0.97, 0.15);
     final outline = neutral(0.65, 0.45);
     final outlineVariant = neutral(0.8, 0.3);
 
