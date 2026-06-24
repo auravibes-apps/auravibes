@@ -183,16 +183,6 @@ class _ChatConversationScreen extends HookConsumerWidget {
             child: ChatInputWidget(
               onSendMessage: onSendMessage,
               onToolsPress: onToolsPress,
-              onSkillsPress: () => _showSkillsModal(
-                context: context,
-                workspaceId: workspaceId,
-                conversationId: conversation.id,
-              ),
-              onContinueAgent: isInputBusy
-                  ? null
-                  : () => unawaited(
-                      _continueAgent(context, ref, conversation.id),
-                    ),
               modelControl: CompactWorkspaceModelSelector(
                 workspaceId: workspaceId,
                 workspaceModelSelectionId: conversation.modelId,
@@ -204,6 +194,16 @@ class _ChatConversationScreen extends HookConsumerWidget {
                   );
                 },
               ),
+              onSkillsPress: () => _showSkillsModal(
+                context: context,
+                workspaceId: workspaceId,
+                conversationId: conversation.id,
+              ),
+              onContinueAgent: isInputBusy
+                  ? null
+                  : () => unawaited(
+                      _continueAgent(context, ref, conversation.id),
+                    ),
               isBusy: isInputBusy,
               onStop: onStop,
               onCompact: onCompact,

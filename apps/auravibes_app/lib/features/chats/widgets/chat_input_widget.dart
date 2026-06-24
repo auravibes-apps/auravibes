@@ -13,9 +13,9 @@ class ChatInputWidget extends HookConsumerWidget {
   const ChatInputWidget({
     required this.onSendMessage,
     required this.onToolsPress,
+    required this.modelControl,
     this.onSkillsPress,
     this.onContinueAgent,
-    this.modelControl,
     this.disabledHint,
     this.disabled = false,
     this.isBusy = false,
@@ -31,7 +31,7 @@ class ChatInputWidget extends HookConsumerWidget {
   final VoidCallback onToolsPress;
   final VoidCallback? onSkillsPress;
   final VoidCallback? onContinueAgent;
-  final Widget? modelControl;
+  final Widget modelControl;
   final Widget? disabledHint;
   final VoidCallback? onStop;
   final VoidCallback? onCompact;
@@ -72,10 +72,8 @@ class ChatInputWidget extends HookConsumerWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (modelControl case final modelControl?) ...[
-                  modelControl,
-                  const AuraSizedBox(width: .xs),
-                ],
+                modelControl,
+                const AuraSizedBox(width: .xs),
                 AuraPopupMenuButton(
                   items: [
                     AuraPopupMenuItem(

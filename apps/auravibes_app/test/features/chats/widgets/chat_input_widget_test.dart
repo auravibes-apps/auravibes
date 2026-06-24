@@ -27,6 +27,7 @@ void main() {
                     child: ChatInputWidget(
                       onSendMessage: onSendMessage,
                       onToolsPress: onToolsPress,
+                      modelControl: const SizedBox.shrink(),
                       disabled: disabled,
                       isBusy: isBusy,
                       onStop: onStop,
