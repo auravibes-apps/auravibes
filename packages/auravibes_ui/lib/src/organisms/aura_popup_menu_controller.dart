@@ -1,5 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Component callbacks stay colocated with UI state.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -103,6 +101,7 @@ class AuraPopupMenu extends StatefulWidget {
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
   FocusNode? _focusNode;
   FocusScopeNode? _menuFocusScopeNode;
+  bool _ownsFocusNode = false;
   bool _visible = false;
 
   FocusNode get _requiredFocusNode {
@@ -126,7 +125,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
+    _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraPopupMenu menu',
       onKeyEvent: (node, event) {
@@ -147,17 +146,28 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   @override
   void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      if (_ownsFocusNode) {
+        _requiredFocusNode.dispose();
+      }
+      _initFocusNode(widget.focusNode);
+    }
     widget.controller._state = this;
   }
 
   @override
   void dispose() {
     widget.controller._state = null;
-    if (widget.focusNode == null) {
+    if (_ownsFocusNode) {
       _requiredFocusNode.dispose();
     }
     _requiredMenuFocusScopeNode.dispose();
     super.dispose();
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
   }
 
   void open() {

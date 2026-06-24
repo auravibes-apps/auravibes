@@ -1,7 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Component callbacks stay colocated with UI state.
-// Required: UI components keep related private widgets together.
-
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_sized_box.dart';
@@ -88,6 +84,7 @@ class AuraDropdownSelector<T> extends StatefulWidget {
 class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   FocusNode? _focusNode;
   FocusScopeNode? _menuFocusScopeNode;
+  bool _ownsFocusNode = false;
   bool _isDropdownOpen = false;
   bool _isTriggerFocused = false;
 
@@ -112,7 +109,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
+    _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraDropdownSelector menu',
       onKeyEvent: (node, event) {
@@ -129,13 +126,30 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   }
 
   @override
+  void didUpdateWidget(covariant AuraDropdownSelector<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode == widget.focusNode) {
+      return;
+    }
+
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
+    }
+    _initFocusNode(widget.focusNode);
+  }
+
+  @override
   void dispose() {
-    if (widget.focusNode == null) {
+    if (_ownsFocusNode) {
       _requiredFocusNode.dispose();
     }
     _requiredMenuFocusScopeNode.dispose();
-    // Ensure overlay is removed before widget is disposed.
     super.dispose();
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
   }
 
   void _toggleDropdown() {
@@ -398,9 +412,11 @@ class _DropdownMenu<T> extends StatelessWidget {
                           ),
                         ),
                       ),
-                      onPressed: () {
-                        onOptionSelected(option.value);
-                      },
+                      onPressed: option.isEnabled
+                          ? () {
+                              onOptionSelected(option.value);
+                            }
+                          : null,
                     );
               },
               itemCount: options.length,

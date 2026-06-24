@@ -77,13 +77,15 @@ class ChatInputWidget extends HookConsumerWidget {
                 AuraPopupMenuButton(
                   items: [
                     AuraPopupMenuItem(
-                      title: Text(LocaleKeys.menu_tools.tr()),
+                      title: const TextLocale(LocaleKeys.menu_tools),
                       onTap: onToolsPress,
                       leading: const AuraIcon(Icons.build_circle_outlined),
                     ),
                     if (onSkillsPress case final onSkillsPress?)
                       AuraPopupMenuItem(
-                        title: Text(LocaleKeys.skills_selector_title.tr()),
+                        title: const TextLocale(
+                          LocaleKeys.skills_selector_title,
+                        ),
                         onTap: onSkillsPress,
                         leading: const AuraIcon(
                           Icons.psychology_alt_outlined,
@@ -91,10 +93,9 @@ class ChatInputWidget extends HookConsumerWidget {
                       ),
                     if (onContinueAgent != null)
                       AuraPopupMenuItem(
-                        title: Text(
+                        title: const TextLocale(
                           LocaleKeys
-                              .chats_screens_chat_conversation_continue_agent
-                              .tr(),
+                              .chats_screens_chat_conversation_continue_agent,
                         ),
                         onTap: onContinueAgent,
                         leading: const AuraIcon(Icons.play_circle_outline),
@@ -104,8 +105,8 @@ class ChatInputWidget extends HookConsumerWidget {
                         !isBusy &&
                         !isCompacting)
                       AuraPopupMenuItem(
-                        title: Text(
-                          LocaleKeys.compaction_manual_button_tooltip.tr(),
+                        title: const TextLocale(
+                          LocaleKeys.compaction_manual_button_tooltip,
                         ),
                         onTap: onCompact,
                         leading: const AuraIcon(Icons.compress_outlined),

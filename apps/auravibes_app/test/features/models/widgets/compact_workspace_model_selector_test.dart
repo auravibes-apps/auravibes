@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
+import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,31 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  testWidgets('shows loading placeholder', (tester) async {
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        _buildSubject(groupedModelsStream: const Stream.empty()),
+      );
+    });
+    await tester.pump();
+
+    expect(find.byType(AuraSpinner), findsOneWidget);
+  });
+
+  testWidgets('shows error fallback', (tester) async {
+    await _pumpSubject(
+      tester,
+      _buildSubject(
+        groupedModelsStream: Stream.error(
+          StateError('model error'),
+          StackTrace.current,
+        ),
+      ),
+    );
+
+    expect(find.byType(AppErrorWidget), findsOneWidget);
+  });
+
   testWidgets('shows selected model name', (tester) async {
     await _pumpSubject(
       tester,
@@ -93,11 +119,18 @@ Future<void> _pumpSubject(WidgetTester tester, Widget subject) async {
 }
 
 Widget _buildSubject({
-  required Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels,
+  Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>? groupedModels,
+  Stream<Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>>?
+  groupedModelsStream,
   String? selectedId,
   ValueChanged<String?>? onChanged,
 }) {
+  assert(
+    groupedModels != null || groupedModelsStream != null,
+    'Provide groupedModels or groupedModelsStream.',
+  );
+  final stream = groupedModelsStream ?? Stream.value(groupedModels ?? const {});
+
   return TestableApp(
     child: Theme(
       data: ThemeData(extensions: [AuraTheme.light]),
@@ -113,7 +146,7 @@ Widget _buildSubject({
     ),
     overrides: [
       listModelsGroupedByProviderProvider.overrideWith(
-        (ref, workspaceId) => Stream.value(groupedModels),
+        (ref, workspaceId) => stream,
       ),
     ],
   );

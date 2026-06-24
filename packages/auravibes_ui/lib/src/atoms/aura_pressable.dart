@@ -69,7 +69,6 @@ class AuraPressableState extends State<AuraPressable> {
   }
 
   void _onFocusChange(bool value) {
-    setState(() => _focused = value);
     widget.onFocusChange?.call(value);
   }
 
@@ -108,6 +107,7 @@ class AuraPressableState extends State<AuraPressable> {
           },
         ),
       },
+      onShowFocusHighlight: (value) => setState(() => _focused = value),
       onShowHoverHighlight: (value) => setState(() => _hovering = value),
       onFocusChange: _onFocusChange,
       mouseCursor: SystemMouseCursors.click,
