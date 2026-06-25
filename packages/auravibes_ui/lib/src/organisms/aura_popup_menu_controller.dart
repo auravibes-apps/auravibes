@@ -1,5 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Component callbacks stay colocated with UI state.
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -102,105 +100,38 @@ class AuraPopupMenu extends StatefulWidget {
 
 class _AuraPopupMenuState extends State<AuraPopupMenu> {
   FocusNode? _focusNode;
+  FocusScopeNode? _menuFocusScopeNode;
+  bool _ownsFocusNode = false;
   bool _visible = false;
 
   FocusNode get _requiredFocusNode {
-    final focusNode = _focusNode;
-    if (focusNode == null) {
-      throw StateError('_focusNode is not initialized');
+    final node = _focusNode;
+    if (node == null) {
+      throw StateError('Focus node not initialized');
     }
 
-    return focusNode;
+    return node;
+  }
+
+  FocusScopeNode get _requiredMenuFocusScopeNode {
+    final node = _menuFocusScopeNode;
+    if (node == null) {
+      throw StateError('Menu focus scope node not initialized');
+    }
+
+    return node;
   }
 
   @override
   void initState() {
     super.initState();
-    _focusNode = widget.focusNode ?? FocusNode();
-    widget.controller._state = this;
-  }
-
-  @override
-  void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    widget.controller._state = this;
-  }
-
-  @override
-  void dispose() {
-    widget.controller._state = null;
-    if (widget.focusNode == null) {
-      _focusNode?.dispose();
-    }
-    super.dispose();
-  }
-
-  void open() {
-    setState(() {
-      _visible = true;
-    });
-    FocusScope.of(context).requestFocus(_requiredFocusNode);
-  }
-
-  void close() {
-    setState(() {
-      _visible = false;
-    });
-    _requiredFocusNode.unfocus();
-  }
-
-  void toggle() {
-    if (_requiredFocusNode.hasFocus) {
-      close();
-    } else {
-      open();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FocusScope(
-      child: Focus(
-        child: PortalTarget(
-          visible: _visible,
-          anchor: const Aligned(
-            follower: .topCenter,
-            target: .bottomCenter,
-            portal: .bottomCenter,
-            shiftToWithinBound: .new(x: true, y: true),
-          ),
-          portalFollower: SizedBox(
-            width: 200,
-            child: AuraCard(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: .start,
-                children: widget.items
-                    .map((e) => Builder(builder: e.build))
-                    .toList(),
-              ),
-              padding: .none,
-            ),
-          ),
-          fit: .passthrough,
-          child: widget.child,
-        ),
-        focusNode: _requiredFocusNode,
-        onFocusChange: (hasFocus) {
-          if (hasFocus && !_visible) {
-            setState(() {
-              _visible = true;
-            });
-          } else if (!hasFocus && _visible) {
-            setState(() {
-              _visible = false;
-            });
-          }
-        },
-        descendantsAreFocusable: true,
-      ),
-      onKey: (node, event) {
-        if (event.logicalKey == LogicalKeyboardKey.escape && _visible) {
+    _initFocusNode(widget.focusNode);
+    _menuFocusScopeNode = FocusScopeNode(
+      debugLabel: 'AuraPopupMenu menu',
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _visible) {
           close();
 
           return KeyEventResult.handled;
@@ -209,6 +140,153 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
         return KeyEventResult.ignored;
       },
     );
+    widget.controller._state = this;
+  }
+
+  @override
+  void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      if (_ownsFocusNode) {
+        _requiredFocusNode.dispose();
+      }
+      _initFocusNode(widget.focusNode);
+    }
+    widget.controller._state = this;
+  }
+
+  @override
+  void dispose() {
+    widget.controller._state = null;
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
+    }
+    _requiredMenuFocusScopeNode.dispose();
+    super.dispose();
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
+  }
+
+  void open() {
+    if (_visible) {
+      return;
+    }
+
+    setState(() {
+      _visible = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_visible) {
+        return;
+      }
+
+      _requiredMenuFocusScopeNode.requestFocus();
+    });
+  }
+
+  void close() {
+    if (!_visible) {
+      return;
+    }
+
+    setState(() {
+      _visible = false;
+    });
+    _requiredFocusNode.unfocus();
+  }
+
+  void toggle() {
+    if (_visible) {
+      close();
+    } else {
+      open();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      child: PortalTarget(
+        visible: _visible,
+        portalFollower: GestureDetector(
+          onTap: close,
+          behavior: HitTestBehavior.opaque,
+        ),
+        child: PortalTarget(
+          visible: _visible,
+          anchor: const Aligned(
+            follower: .topCenter,
+            target: .bottomCenter,
+            portal: .bottomCenter,
+            shiftToWithinBound: .new(x: true, y: true),
+          ),
+          portalFollower: TapRegion(
+            child: FocusScope(
+              node: _requiredMenuFocusScopeNode,
+              child: SizedBox(
+                width: 200,
+                child: AuraCard(
+                  child: _AuraPopupMenuCloseScope(
+                    close: close,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: .start,
+                      children: widget.items
+                          .map((e) => Builder(builder: e.build))
+                          .toList(),
+                    ),
+                  ),
+                  padding: .none,
+                  style: AuraCardStyle.border,
+                ),
+              ),
+            ),
+            groupId: this,
+          ),
+          child: TapRegion(
+            child: widget.child,
+            groupId: this,
+          ),
+        ),
+      ),
+      focusNode: _requiredFocusNode,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape &&
+            _visible) {
+          close();
+
+          return KeyEventResult.handled;
+        }
+
+        return KeyEventResult.ignored;
+      },
+      skipTraversal: true,
+      descendantsAreFocusable: true,
+    );
+  }
+}
+
+class _AuraPopupMenuCloseScope extends InheritedWidget {
+  const _AuraPopupMenuCloseScope({
+    required this.close,
+    required super.child,
+  });
+
+  final VoidCallback close;
+
+  static VoidCallback? maybeOf(BuildContext context) {
+    return context
+        .dependOnInheritedWidgetOfExactType<_AuraPopupMenuCloseScope>()
+        ?.close;
+  }
+
+  @override
+  bool updateShouldNotify(_AuraPopupMenuCloseScope oldWidget) {
+    return close != oldWidget.close;
   }
 }
 
@@ -281,7 +359,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
       child: title,
       onTap: () {
         onTap?.call();
-        context.findAncestorStateOfType<_AuraPopupMenuState>()?.close();
+        _AuraPopupMenuCloseScope.maybeOf(context)?.call();
       },
       variant: variant,
       leading: leading,

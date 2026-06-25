@@ -194,6 +194,16 @@ void main() {
       expect(colors.background, isA<Color>());
     });
 
+    test('dark background is gray and below surface elevation', () {
+      final colors = AuraTheme.dark.colors;
+
+      expect(colors.background, isNot(Colors.black));
+      expect(
+        colors.background.computeLuminance(),
+        lessThan(colors.surface.computeLuminance()),
+      );
+    });
+
     test('lerp interpolates colors', () {
       final light = AuraTheme.light.colors;
       final dark = AuraTheme.dark.colors;

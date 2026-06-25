@@ -156,6 +156,8 @@
       "stop_generation": "Stop generation",
       "stop_error": "Could not stop the conversation. Please try again.",
       "send_error": "Could not send the message. Please try again.",
+      "continue_agent": "Continue agent",
+      "continue_error": "Could not continue the agent. Please try again.",
       "rate_limit_retry": "Rate limit reached. Retrying in {seconds}s.",
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
@@ -516,7 +518,7 @@
   },
   "sidebar": {
     "recent_chats": "Recent Chats",
-    "no_recent_chats": "No recent chats",
+    "no_recent_chats": "Chats will appear here",
     "view_all_chats": "View All"
   },
   "mcp_modal": {

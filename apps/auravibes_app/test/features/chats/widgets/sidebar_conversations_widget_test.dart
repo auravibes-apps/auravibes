@@ -275,6 +275,59 @@ void main() {
     expect(find.byType(AuraSpinner), findsOneWidget);
   });
 
+  testWidgets('shows quiet empty state when there are no recent chats', (
+    tester,
+  ) async {
+    final repository = _SeededConversationRepository(const []);
+    addTearDown(repository.close);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  conversationRepositoryProvider.overrideWithValue(repository),
+                  routerPathSegmentsProvider.overrideWithValue(const []),
+                ],
+                child: MaterialApp(
+                  home: Theme(
+                    data: ThemeData(extensions: [AuraTheme.light]),
+                    child: const Material(
+                      child: SizedBox(
+                        width: 300,
+                        height: 800,
+                        child: SidebarConversationsWidget(
+                          workspaceId: 'workspace-1',
+                        ),
+                      ),
+                    ),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Recent Chats'), findsOneWidget);
+    expect(find.text('Chats will appear here'), findsOneWidget);
+    expect(find.text('View All'), findsNothing);
+  });
+
   testWidgets(
     'renders conversations with compacting row when compaction is running',
     (

@@ -113,8 +113,8 @@ class SettingsScreen extends ConsumerWidget {
         value: currentTheme,
         onChanged: (value) {
           if (value != null) {
+            Navigator.of(context, rootNavigator: true).pop();
             ref.read(themeProvider.notifier).setTheme(value);
-            Navigator.pop(context);
           }
         },
         options: const [

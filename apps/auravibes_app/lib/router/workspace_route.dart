@@ -156,9 +156,12 @@ class MyShellRouteData extends StatefulShellRouteData {
       );
     }
 
-    return AuraSidebarWrapper(
-      navigationShell: navigationShell,
-      workspaceId: workspaceId,
+    return PopScope(
+      child: AuraSidebarWrapper(
+        navigationShell: navigationShell,
+        workspaceId: workspaceId,
+      ),
+      canPop: false,
     );
   }
 }

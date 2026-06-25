@@ -149,6 +149,19 @@ void main() {
       expect(OKLCHColor.fromColor(s.background).chroma, lessThan(0.001));
     });
 
+    test('dark background is gray and below surface elevation', () {
+      final s = AuraComputedColorScheme(
+        primaryHue: 180,
+        brightness: AuraBrightness.dark,
+      );
+      final background = OKLCHColor.fromColor(s.background);
+      final surface = OKLCHColor.fromColor(s.surface);
+
+      expect(s.background, isNot(Colors.black));
+      expect(background.lightness, greaterThan(0.12));
+      expect(background.lightness, lessThan(surface.lightness));
+    });
+
     test('lerp from base AuraColorScheme still works (subclass unchanged)', () {
       final a = AuraComputedColorScheme(
         primaryHue: 180,

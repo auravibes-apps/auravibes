@@ -7,6 +7,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -122,14 +123,16 @@ void main() {
     Widget buildDrawer({
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
+      Widget drawer = const Text('Drawer'),
+      Widget body = const Text('Body'),
     }) {
       return EasyLocalization(
         child: Builder(
           builder: (context) {
             return MaterialApp(
               home: ResponsiveSlidingDrawer(
-                drawer: const Text('Drawer'),
-                body: const Text('Body'),
+                drawer: drawer,
+                body: body,
                 isDarkMode: isDarkMode,
                 controller: controller,
               ),
@@ -153,12 +156,16 @@ void main() {
       WidgetTester tester, {
       required ResponsiveSlidingDrawerController controller,
       bool isDarkMode = false,
+      Widget drawer = const Text('Drawer'),
+      Widget body = const Text('Body'),
     }) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           buildDrawer(
             controller: controller,
             isDarkMode: isDarkMode,
+            drawer: drawer,
+            body: body,
           ),
         );
       });
@@ -417,6 +424,50 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.text('Drawer'), findsOneWidget);
+    });
+
+    testWidgets('closed drawer descendants are skipped during tab traversal', (
+      tester,
+    ) async {
+      final controller = ResponsiveSlidingDrawerController();
+      var firstBodyPressCount = 0;
+      var secondBodyPressCount = 0;
+      var drawerPressCount = 0;
+
+      await pumpDrawer(
+        tester,
+        controller: controller,
+        body: Column(
+          children: [
+            TextButton(
+              onPressed: () => firstBodyPressCount++,
+              child: const Text('First body action'),
+            ),
+            TextButton(
+              onPressed: () => secondBodyPressCount++,
+              child: const Text('Second body action'),
+            ),
+          ],
+        ),
+        drawer: TextButton(
+          onPressed: () => drawerPressCount++,
+          child: const Text('Drawer action'),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      await tester.pump();
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      await tester.pump();
+
+      expect(firstBodyPressCount, 1);
+      expect(secondBodyPressCount, 1);
+      expect(drawerPressCount, 0);
     });
   });
 }

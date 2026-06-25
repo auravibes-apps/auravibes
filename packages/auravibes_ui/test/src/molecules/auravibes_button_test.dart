@@ -2,6 +2,7 @@ import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -52,7 +53,7 @@ void main() {
           (animatedContainer.decoration ??
                   fail('Expected animatedContainer.decoration to be non-null'))
               as BoxDecoration;
-      expect(decoration.color, Colors.transparent);
+      expect(decoration.color?.a, 0);
       expect(decoration.border, isNull);
     });
 
@@ -92,6 +93,63 @@ void main() {
 
       await tester.tap(find.byType(AuraButton));
       expect(wasPressed, isFalse);
+    });
+
+    testWidgets('activates focused button with enter and space', (
+      tester,
+    ) async {
+      var pressCount = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraButton(
+              onPressed: () => pressCount++,
+              child: const Text('Keyboard'),
+            ),
+          ),
+        ),
+      );
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+      expect(pressCount, 0);
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.enter), isTrue);
+      await tester.pump();
+      expect(pressCount, 1);
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.space), isTrue);
+      await tester.pump();
+      expect(pressCount, 2);
+    });
+
+    testWidgets('shows focus ring when focused', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraButton(
+              onPressed: () {
+                final _ = Object();
+              },
+              child: const Text('Keyboard'),
+            ),
+          ),
+        ),
+      );
+
+      final focusRing = find.descendant(
+        of: find.byType(AuraButton),
+        matching: find.byType(CustomPaint),
+      );
+      final beforeFocus = tester.widget<CustomPaint>(focusRing);
+      expect(beforeFocus.foregroundPainter, isNull);
+
+      expect(await tester.sendKeyEvent(LogicalKeyboardKey.tab), isTrue);
+      await tester.pump();
+
+      final afterFocus = tester.widget<CustomPaint>(focusRing);
+      expect(afterFocus.foregroundPainter, isNotNull);
     });
 
     testWidgets('applies full width when isFullWidth is true', (tester) async {

@@ -78,7 +78,7 @@ class AuraButton extends StatelessWidget {
           ),
           padding: _getPadding(),
         ),
-        color: DesignColors.transparent,
+        color: _getForegroundColor(auraColors).withValues(alpha: 0.16),
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),

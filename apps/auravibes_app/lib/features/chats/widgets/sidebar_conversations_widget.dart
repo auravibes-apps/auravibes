@@ -58,7 +58,12 @@ class SidebarConversationsWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return const _SidebarConversationsEmptyState();
+          return const Column(
+            children: [
+              _SidebarConversationsSectionHeader(),
+              _SidebarConversationsEmptyState(),
+            ],
+          );
         }
 
         return Column(

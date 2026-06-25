@@ -479,6 +479,64 @@ void main() {
     },
   );
 
+  testWidgets('workspace shell blocks root pop', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId',
+          builder: (context, state) => const SizedBox.shrink(),
+          routes: [
+            StatefulShellRoute.indexedStack(
+              branches: [
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'chat/new',
+                      builder: (context, state) => const Text('New chat'),
+                    ),
+                  ],
+                ),
+              ],
+              builder: (context, state, navigationShell) {
+                final workspaceId = state.pathParameters['workspaceId'];
+
+                if (workspaceId == null || workspaceId.isEmpty) {
+                  throw StateError(
+                    'workspaceId must be present in route pathParameters',
+                  );
+                }
+
+                return PopScope(
+                  child: Text('workspaceId: $workspaceId'),
+                  canPop: false,
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      initialLocation: '/workspaces/ws-test/chat/new',
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('workspaceId: ws-test'), findsOneWidget);
+
+    final didPop = await Navigator.of(
+      tester.element(find.text('workspaceId: ws-test')),
+    ).maybePop();
+    await tester.pump();
+
+    expect(didPop, isTrue);
+    expect(find.text('workspaceId: ws-test'), findsOneWidget);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      '/workspaces/ws-test/chat/new',
+    );
+  });
+
   group('AuraSidebarWrapper rendering', () {
     ({Widget app, GoRouter router}) _buildTestApp({
       required String initialLocation,
