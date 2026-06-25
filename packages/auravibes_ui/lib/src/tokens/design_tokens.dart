@@ -353,31 +353,19 @@ enum AuraBorderRadius {
   full,
 }
 
-/// Options for colors.
-enum AuraColorVariant {
+/// User-selectable tint options.
+enum AuraTint {
   /// Primary.
   primary,
 
-  /// On surface option.
-  onSurface,
+  /// Secondary option.
+  secondary,
 
-  /// On surface variant option.
-  onSurfaceVariant,
-
-  /// Surface variant option.
-  surfaceVariant,
+  /// Tertiary option.
+  tertiary,
 
   /// Error option.
   error,
-
-  /// On error option.
-  onError,
-
-  /// On primary option.
-  onPrimary,
-
-  /// Secondary option.
-  secondary,
 
   /// Success option (semantic).
   success,

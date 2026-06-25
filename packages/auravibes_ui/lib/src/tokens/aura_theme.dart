@@ -507,6 +507,9 @@ class AuraColorScheme {
     required this.secondary,
     required this.secondaryVariant,
     required this.onSecondary,
+    required this.tertiary,
+    required this.tertiaryVariant,
+    required this.onTertiary,
     required this.surface,
     required this.surfaceVariant,
     required this.onSurface,
@@ -535,6 +538,9 @@ class AuraColorScheme {
       secondary = DesignColors.secondaryBase,
       secondaryVariant = DesignColors.secondaryDark,
       onSecondary = DesignColors.secondaryContrast,
+      tertiary = DesignColors.accentBase,
+      tertiaryVariant = DesignColors.accentDark,
+      onTertiary = DesignColors.accentContrast,
       surface = DesignColors.neutral50,
       surfaceVariant = const Color(0xFFFFFFFF),
       onSurface = DesignColors.neutral900,
@@ -578,6 +584,9 @@ class AuraColorScheme {
       secondary = DesignColors.secondaryLight,
       secondaryVariant = DesignColors.secondaryBase,
       onSecondary = Colors.black,
+      tertiary = DesignColors.accentLight,
+      tertiaryVariant = DesignColors.accentBase,
+      onTertiary = Colors.black,
       surface = DesignColors.neutral800,
       surfaceVariant = DesignColors.neutral700,
       onSurface = DesignColors.neutral100,
@@ -630,6 +639,15 @@ class AuraColorScheme {
 
   /// Color for text/icons on secondary color.
   final Color onSecondary;
+
+  /// Tertiary color for accents.
+  final Color tertiary;
+
+  /// Variant of the tertiary color.
+  final Color tertiaryVariant;
+
+  /// Color for text/icons on tertiary color.
+  final Color onTertiary;
 
   /// Background color for cards, sheets.
   final Color surface;
@@ -698,6 +716,9 @@ class AuraColorScheme {
         t,
       ),
       onSecondary: _lerpColor(onSecondary, other.onSecondary, t),
+      tertiary: _lerpColor(tertiary, other.tertiary, t),
+      tertiaryVariant: _lerpColor(tertiaryVariant, other.tertiaryVariant, t),
+      onTertiary: _lerpColor(onTertiary, other.onTertiary, t),
       surface: _lerpColor(surface, other.surface, t),
       surfaceVariant: _lerpColor(surfaceVariant, other.surfaceVariant, t),
       onSurface: _lerpColor(onSurface, other.onSurface, t),
@@ -727,27 +748,38 @@ class AuraColorScheme {
     return Color.lerp(begin, end, t) ?? begin;
   }
 
-  /// Get color by variant nullable.
-  Color? getColorOrNull(AuraColorVariant? variant) {
-    if (variant == null) return null;
+  /// Default foreground color.
+  Color get foreground => onBackground;
 
-    return getColor(variant);
+  /// Default foreground color for surface elements.
+  Color get foregroundOnSurface => onSurface;
+
+  /// Muted foreground color for secondary text and icons.
+  Color get mutedForeground => onSurfaceVariant;
+
+  /// Resolve a user-selectable tint.
+  Color colorFor(AuraTint tint) {
+    return switch (tint) {
+      AuraTint.primary => primary,
+      AuraTint.secondary => secondary,
+      AuraTint.tertiary => tertiary,
+      AuraTint.error => error,
+      AuraTint.warning => warning,
+      AuraTint.success => success,
+      AuraTint.info => info,
+    };
   }
 
-  /// Get color by variant.
-  Color getColor(AuraColorVariant variant) {
-    return switch (variant) {
-      AuraColorVariant.primary => primary,
-      AuraColorVariant.onSurface => onSurface,
-      AuraColorVariant.error => error,
-      AuraColorVariant.onError => onError,
-      AuraColorVariant.onSurfaceVariant => onSurfaceVariant,
-      AuraColorVariant.surfaceVariant => surfaceVariant,
-      AuraColorVariant.onPrimary => onPrimary,
-      AuraColorVariant.secondary => secondary,
-      AuraColorVariant.success => success,
-      AuraColorVariant.warning => warning,
-      AuraColorVariant.info => info,
+  /// Resolve readable foreground for a user-selectable tint.
+  Color onTint(AuraTint tint) {
+    return switch (tint) {
+      AuraTint.primary => onPrimary,
+      AuraTint.secondary => onSecondary,
+      AuraTint.tertiary => onTertiary,
+      AuraTint.error => onError,
+      AuraTint.warning => onWarning,
+      AuraTint.success => onSuccess,
+      AuraTint.info => onInfo,
     };
   }
 }

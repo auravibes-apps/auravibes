@@ -180,7 +180,6 @@ class _SkillsScreenBody extends ConsumerWidget {
             const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
               textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraButton(
               onPressed: () => unawaited(onCreateSkill(context)),
@@ -239,12 +238,10 @@ class _SkillTile extends StatelessWidget {
             if (skill.descriptionKey case final descriptionKey?)
               AuraText(
                 child: TextLocale(descriptionKey),
-                color: AuraColorVariant.onSurfaceVariant,
               )
             else if (skill.description.isNotEmpty)
               AuraText(
                 child: Text(skill.description),
-                color: AuraColorVariant.onSurfaceVariant,
               ),
             Wrap(
               spacing: 8,

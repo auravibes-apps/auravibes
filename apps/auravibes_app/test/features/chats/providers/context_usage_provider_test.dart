@@ -65,13 +65,13 @@ void main() {
       });
     });
 
-    group('iconColor', () {
-      test('maps each level to expected color variant', () {
-        expect(ContextUsageLevel.normal.iconColor.name, 'success');
-        expect(ContextUsageLevel.elevated.iconColor.name, 'info');
-        expect(ContextUsageLevel.warning.iconColor.name, 'warning');
-        expect(ContextUsageLevel.overflow.iconColor.name, 'error');
-        expect(ContextUsageLevel.unknown.iconColor.name, 'onSurfaceVariant');
+    group('iconTint', () {
+      test('maps each level to expected tint', () {
+        expect(ContextUsageLevel.normal.iconTint?.name, 'success');
+        expect(ContextUsageLevel.elevated.iconTint?.name, 'info');
+        expect(ContextUsageLevel.warning.iconTint?.name, 'warning');
+        expect(ContextUsageLevel.overflow.iconTint?.name, 'error');
+        expect(ContextUsageLevel.unknown.iconTint, isNull);
       });
     });
   });

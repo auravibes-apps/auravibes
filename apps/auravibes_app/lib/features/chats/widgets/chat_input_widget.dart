@@ -62,7 +62,7 @@ class ChatInputWidget extends HookConsumerWidget {
               onPressed: stop,
               child: const AuraIcon(Icons.stop_rounded),
               variant: AuraButtonVariant.outlined,
-              colorVariant: AuraColorVariant.error,
+              tint: AuraTint.error,
               size: AuraButtonSize.small,
             ),
           );
@@ -119,14 +119,12 @@ class ChatInputWidget extends HookConsumerWidget {
                         const AuraIcon(
                           Icons.info_outline,
                           size: AuraIconSize.small,
-                          color: AuraColorVariant.onSurfaceVariant,
                         ),
                         const SizedBox(width: 6),
                         Flexible(child: disabledHint),
                       ],
                     ),
                     style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ),
               )

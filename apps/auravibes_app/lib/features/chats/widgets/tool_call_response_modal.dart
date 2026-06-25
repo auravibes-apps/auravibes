@@ -108,7 +108,7 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
         children: [
           const AuraIcon(
             Icons.terminal,
-            color: AuraColorVariant.primary,
+            tint: AuraTint.primary,
           ),
           const AuraSizedBox(width: .sm),
           Expanded(
@@ -120,7 +120,6 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
           AuraIconButton(
             icon: Icons.close,
             onPressed: () => Navigator.of(context).pop(),
-            color: AuraColorVariant.onSurfaceVariant,
           ),
         ],
       ),

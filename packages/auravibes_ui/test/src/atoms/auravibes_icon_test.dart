@@ -19,14 +19,14 @@ void main() {
     });
 
     testWidgets('applies custom color correctly', (tester) async {
-      const customColor = AuraColorVariant.error;
+      const customColor = AuraTint.error;
 
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
             body: AuraIcon(
               Icons.star,
-              color: customColor,
+              tint: customColor,
             ),
           ),
           theme: ThemeData.light().copyWith(
@@ -212,7 +212,7 @@ void main() {
     });
 
     testWidgets('applies custom color correctly', (tester) async {
-      const customColor = AuraColorVariant.error;
+      const customColor = AuraTint.error;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -222,18 +222,18 @@ void main() {
               onPressed: () {
                 final _ = Object();
               },
-              color: customColor,
+              tint: customColor,
             ),
           ),
         ),
       );
 
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.color, customColor);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.star));
+      expect(icon.color, AuraTheme.light.colors.error);
     });
 
-    testWidgets('applies custom background color correctly', (tester) async {
-      const customBackgroundColor = AuraColorVariant.primary;
+    testWidgets('applies custom tint to filled background', (tester) async {
+      const customTint = AuraTint.error;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -243,7 +243,8 @@ void main() {
               onPressed: () {
                 final _ = Object();
               },
-              backgroundColor: customBackgroundColor,
+              tint: customTint,
+              variant: AuraIconButtonVariant.filled,
             ),
           ),
           theme: ThemeData.light().copyWith(
@@ -254,9 +255,11 @@ void main() {
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       final resolvedColor = iconButton.style?.backgroundColor?.resolve({});
-      // In const-first design, backgroundColor is resolved to the theme color.
       expect(resolvedColor, isNotNull);
-      expect(resolvedColor, AuraTheme.light.colors.primary);
+      expect(resolvedColor, AuraTheme.light.colors.error);
+
+      final icon = tester.widget<Icon>(find.byIcon(Icons.star));
+      expect(icon.color, AuraTheme.light.colors.onError);
     });
 
     testWidgets('shows tooltip when provided', (tester) async {
@@ -299,8 +302,8 @@ void main() {
         ),
       );
 
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.semanticLabel, semanticLabel);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.star));
+      expect(icon.semanticLabel, semanticLabel);
     });
 
     testWidgets('disables button when disabled is true', (tester) async {

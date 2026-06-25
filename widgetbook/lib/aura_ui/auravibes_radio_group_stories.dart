@@ -14,9 +14,9 @@ Widget radioGroupUseCase(BuildContext context) {
       labelBuilder: (value) =>
           value == Axis.vertical ? 'vertical' : 'horizontal',
     ),
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -31,13 +31,13 @@ Widget radioGroupUseCase(BuildContext context) {
 class _RadioGroupDemo extends StatefulWidget {
   const _RadioGroupDemo({
     required this.direction,
-    required this.colorVariant,
+    required this.tint,
     required this.showLabel,
     required this.showSubtitles,
   });
 
   final Axis direction;
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
   final bool showLabel;
   final bool showSubtitles;
 
@@ -86,7 +86,7 @@ class _RadioGroupDemoState extends State<_RadioGroupDemo> {
                     .toList(),
           label: widget.showLabel ? const Text('Select Theme') : null,
           direction: widget.direction,
-          colorVariant: widget.colorVariant,
+          tint: widget.tint,
         ),
       ),
     );

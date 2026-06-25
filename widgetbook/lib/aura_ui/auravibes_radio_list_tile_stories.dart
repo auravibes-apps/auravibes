@@ -7,9 +7,9 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'Radio List Tile', type: AuraRadioListTile)
 Widget radioListTileUseCase(BuildContext context) {
   return _RadioListTileDemo(
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -23,12 +23,12 @@ Widget radioListTileUseCase(BuildContext context) {
 
 class _RadioListTileDemo extends StatefulWidget {
   const _RadioListTileDemo({
-    required this.colorVariant,
+    required this.tint,
     required this.disabled,
     required this.showSubtitle,
   });
 
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
   final bool disabled;
   final bool showSubtitle;
 
@@ -57,7 +57,7 @@ class _RadioListTileDemoState extends State<_RadioListTileDemo> {
               subtitle: widget.showSubtitle
                   ? const Text('Follow system settings')
                   : null,
-              colorVariant: widget.colorVariant,
+              tint: widget.tint,
               disabled: widget.disabled,
             ),
             AuraRadioListTile<String>(
@@ -70,7 +70,7 @@ class _RadioListTileDemoState extends State<_RadioListTileDemo> {
               subtitle: widget.showSubtitle
                   ? const Text('Use light color scheme')
                   : null,
-              colorVariant: widget.colorVariant,
+              tint: widget.tint,
               disabled: widget.disabled,
             ),
             AuraRadioListTile<String>(
@@ -83,7 +83,7 @@ class _RadioListTileDemoState extends State<_RadioListTileDemo> {
               subtitle: widget.showSubtitle
                   ? const Text('Use dark color scheme')
                   : null,
-              colorVariant: widget.colorVariant,
+              tint: widget.tint,
               disabled: widget.disabled,
             ),
           ],

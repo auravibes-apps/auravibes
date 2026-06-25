@@ -67,7 +67,6 @@ class ConversationGroupHeader extends StatelessWidget {
               child: AnimatedRotation(
                 child: const AuraIcon(
                   Icons.keyboard_arrow_down,
-                  color: AuraColorVariant.onSurfaceVariant,
                 ),
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
@@ -100,7 +99,6 @@ class ConversationGroupHeader extends StatelessWidget {
                       ),
                     ),
                     style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
                 spacing: .xs,
@@ -149,9 +147,7 @@ class _GroupIcon extends StatelessWidget {
       child: Center(
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,
-          color: hasEnabledTools
-              ? AuraColorVariant.primary
-              : AuraColorVariant.onSurfaceVariant,
+          tint: hasEnabledTools ? AuraTint.primary : null,
         ),
       ),
     );

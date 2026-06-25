@@ -7,9 +7,9 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'Single Radio', type: AuraRadio)
 Widget singleRadioUseCase(BuildContext context) {
   return _SingleRadioDemo(
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -18,9 +18,9 @@ Widget singleRadioUseCase(BuildContext context) {
 }
 
 class _SingleRadioDemo extends StatefulWidget {
-  const _SingleRadioDemo({required this.colorVariant, required this.disabled});
+  const _SingleRadioDemo({required this.tint, required this.disabled});
 
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
   final bool disabled;
 
   @override
@@ -42,7 +42,7 @@ class _SingleRadioDemoState extends State<_SingleRadioDemo> {
             onChanged: widget.disabled
                 ? null
                 : (value) => setState(() => _selectedValue = value),
-            colorVariant: widget.colorVariant,
+            tint: widget.tint,
             disabled: widget.disabled,
           ),
           const SizedBox(height: 16),

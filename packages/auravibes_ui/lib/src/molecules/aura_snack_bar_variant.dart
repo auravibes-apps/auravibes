@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Owns Aura snackbar lifecycle for a visual surface.
@@ -337,14 +338,14 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
           opacity: fadeAnimation,
           child: Semantics(
             child: Material(
-              color: Colors.transparent,
+              color: DesignColors.transparent,
               child: Container(
                 decoration: BoxDecoration(
                   color: widget.backgroundColor,
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
+                      color: context.auraColors.shadow.withValues(alpha: 0.15),
                       offset: const Offset(0, 4),
                       blurRadius: 10,
                     ),

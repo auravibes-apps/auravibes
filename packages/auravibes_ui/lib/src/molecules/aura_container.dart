@@ -3,7 +3,7 @@ import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart'
 import 'package:auravibes_ui/src/tokens/aura_theme.dart'
     show AuraThemeExtension;
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraColorVariant, DesignShadows;
+    show DesignColors, DesignShadows;
 import 'package:flutter/material.dart';
 
 /// A customizable layout container component following the Aura design system.
@@ -17,7 +17,7 @@ class AuraContainer extends StatelessWidget {
     super.key,
     this.padding,
     this.margin,
-    this.backgroundColor,
+    this.variant = AuraContainerVariant.surface,
     this.borderRadius,
     this.shadow = AuraContainerShadow.none,
     this.border,
@@ -36,8 +36,8 @@ class AuraContainer extends StatelessWidget {
   /// The margin outside the container.
   final AuraEdgeInsetsGeometry? margin;
 
-  /// The background color variant of the container.
-  final AuraColorVariant? backgroundColor;
+  /// The structural surface variant of the container.
+  final AuraContainerVariant variant;
 
   /// The border radius of the container.
   final double? borderRadius;
@@ -79,9 +79,12 @@ class AuraContainer extends StatelessWidget {
     container = Container(
       alignment: alignment,
       decoration: BoxDecoration(
-        color:
-            auraTheme.colors.getColorOrNull(backgroundColor) ??
-            auraTheme.colors.surface,
+        color: switch (variant) {
+          AuraContainerVariant.surface => auraTheme.colors.surface,
+          AuraContainerVariant.surfaceVariant =>
+            auraTheme.colors.surfaceVariant,
+          AuraContainerVariant.transparent => DesignColors.transparent,
+        },
         border: border,
         borderRadius: borderRadius != null
             ? BorderRadius.circular(borderRadius)
@@ -146,4 +149,16 @@ enum AuraContainerShadow {
 
   /// Glass morphism shadow.
   glass,
+}
+
+/// Structural background variants for [AuraContainer].
+enum AuraContainerVariant {
+  /// Default surface background.
+  surface,
+
+  /// Alternate surface background.
+  surfaceVariant,
+
+  /// Transparent background.
+  transparent,
 }

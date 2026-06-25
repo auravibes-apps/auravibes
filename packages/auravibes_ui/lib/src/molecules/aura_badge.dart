@@ -155,20 +155,20 @@ class AuraBadge extends StatelessWidget {
       AuraBadgeVariant.error => colors.error,
       AuraBadgeVariant.info => colors.info,
       AuraBadgeVariant.neutral => colors.onSurfaceVariant,
-      AuraBadgeVariant.outlined => Colors.transparent,
+      AuraBadgeVariant.outlined => DesignColors.transparent,
       AuraBadgeVariant.soft => _getSoftBackgroundColor(colors),
     };
   }
 
   Color _getForegroundColor(AuraColorScheme colors) {
     return switch (variant) {
-      AuraBadgeVariant.primary => colors.onPrimary,
-      AuraBadgeVariant.secondary => colors.onSecondary,
-      AuraBadgeVariant.success => colors.onSuccess,
-      AuraBadgeVariant.warning => colors.onWarning,
-      AuraBadgeVariant.error => colors.onError,
-      AuraBadgeVariant.info => colors.onInfo,
-      AuraBadgeVariant.neutral => colors.onSurface,
+      AuraBadgeVariant.primary => colors.onTint(AuraTint.primary),
+      AuraBadgeVariant.secondary => colors.onTint(AuraTint.secondary),
+      AuraBadgeVariant.success => colors.onTint(AuraTint.success),
+      AuraBadgeVariant.warning => colors.onTint(AuraTint.warning),
+      AuraBadgeVariant.error => colors.onTint(AuraTint.error),
+      AuraBadgeVariant.info => colors.onTint(AuraTint.info),
+      AuraBadgeVariant.neutral => colors.foregroundOnSurface,
       AuraBadgeVariant.outlined => _getOutlinedForegroundColor(colors),
       AuraBadgeVariant.soft => _getSoftForegroundColor(colors),
     };
@@ -184,7 +184,7 @@ class AuraBadge extends StatelessWidget {
       AuraBadgeVariant.info => colors.info,
       AuraBadgeVariant.neutral => colors.onSurfaceVariant,
       AuraBadgeVariant.outlined => colors.outline,
-      AuraBadgeVariant.soft => Colors.transparent,
+      AuraBadgeVariant.soft => DesignColors.transparent,
     };
   }
 
@@ -195,11 +195,11 @@ class AuraBadge extends StatelessWidget {
   }
 
   Color _getSoftForegroundColor(AuraColorScheme colors) {
-    return colors.onSurfaceVariant;
+    return colors.mutedForeground;
   }
 
   Color _getOutlinedForegroundColor(AuraColorScheme colors) {
-    return colors.onSurfaceVariant;
+    return colors.mutedForeground;
   }
 }
 

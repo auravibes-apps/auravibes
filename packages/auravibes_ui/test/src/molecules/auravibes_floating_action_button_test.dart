@@ -1,4 +1,3 @@
-import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/molecules/aura_floating_action_button.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -24,7 +23,7 @@ void main() {
       );
 
       expect(find.byIcon(testIcon), findsOneWidget);
-      expect(find.byType(AuraIcon), findsOneWidget);
+      expect(find.byType(Icon), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
       await tester.tap(find.byType(FloatingActionButton));
@@ -50,7 +49,7 @@ void main() {
 
       expect(find.byIcon(testIcon), findsOneWidget);
       expect(find.text(testText), findsOneWidget);
-      expect(find.byType(AuraIcon), findsOneWidget);
+      expect(find.byType(Icon), findsOneWidget);
       expect(find.byType(AuraText), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
 
@@ -83,8 +82,8 @@ void main() {
       expect(sizedBox.width, 40.0);
       expect(sizedBox.height, 40.0);
 
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.size, AuraIconSize.small);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
+      expect(icon.size, 16);
     });
 
     testWidgets('applies regular size correctly', (tester) async {
@@ -101,8 +100,8 @@ void main() {
         ),
       );
 
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.size, AuraIconSize.medium);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
+      expect(icon.size, 20);
     });
 
     testWidgets('applies large size correctly', (tester) async {
@@ -130,12 +129,12 @@ void main() {
       expect(sizedBox.width, 72.0);
       expect(sizedBox.height, 72.0);
 
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      expect(auraIcon.size, AuraIconSize.large);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
+      expect(icon.size, 24);
     });
 
-    testWidgets('applies custom background color correctly', (tester) async {
-      const customColor = AuraColorVariant.error;
+    testWidgets('applies custom tint correctly', (tester) async {
+      const customColor = AuraTint.error;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -145,7 +144,7 @@ void main() {
                 final _ = Object();
               },
               icon: Icons.add,
-              backgroundColor: customColor,
+              tint: customColor,
             ),
           ),
           theme: ThemeData.light().copyWith(
@@ -159,37 +158,7 @@ void main() {
       );
       // Verify the resolved color matches the theme's error color.
       expect(fab.backgroundColor, AuraTheme.light.colors.error);
-    });
-
-    testWidgets('applies custom foreground color correctly', (tester) async {
-      const customColor = AuraColorVariant.onPrimary;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: AuraFloatingActionButton(
-              onPressed: () {
-                final _ = Object();
-              },
-              icon: Icons.add,
-              foregroundColor: customColor,
-            ),
-          ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
-        ),
-      );
-
-      final fab = tester.widget<FloatingActionButton>(
-        find.byType(FloatingActionButton),
-      );
-      // Verify the resolved color matches the theme's onPrimary color.
-      expect(fab.foregroundColor, AuraTheme.light.colors.onPrimary);
-
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      // AuraIcon now receives AuraColorVariant, not Color.
-      expect(auraIcon.color, customColor);
+      expect(fab.foregroundColor, AuraTheme.light.colors.onError);
     });
 
     testWidgets('applies default colors correctly', (tester) async {
@@ -216,9 +185,8 @@ void main() {
       expect(fab.backgroundColor, isNotNull);
       expect(fab.foregroundColor, isNotNull);
 
-      final auraIcon = tester.widget<AuraIcon>(find.byType(AuraIcon));
-      // Default foreground color for icon is onPrimary.
-      expect(auraIcon.color, AuraColorVariant.onPrimary);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.add));
+      expect(icon.color, AuraTheme.light.colors.onPrimary);
     });
 
     testWidgets('handles null onPressed correctly', (tester) async {

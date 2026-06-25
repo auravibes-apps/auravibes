@@ -202,35 +202,22 @@ void main() {
       expect(result.surface, isA<Color>());
     });
 
-    test('getColor returns correct color for variant', () {
+    test('colorFor returns correct color for tint', () {
       final colors = AuraTheme.light.colors;
-      expect(colors.getColor(AuraColorVariant.primary), colors.primary);
-      expect(colors.getColor(AuraColorVariant.onSurface), colors.onSurface);
-      expect(colors.getColor(AuraColorVariant.error), colors.error);
-      expect(colors.getColor(AuraColorVariant.onError), colors.onError);
-      expect(
-        colors.getColor(AuraColorVariant.onSurfaceVariant),
-        colors.onSurfaceVariant,
-      );
-      expect(
-        colors.getColor(AuraColorVariant.surfaceVariant),
-        colors.surfaceVariant,
-      );
-      expect(colors.getColor(AuraColorVariant.onPrimary), colors.onPrimary);
-      expect(colors.getColor(AuraColorVariant.secondary), colors.secondary);
-      expect(colors.getColor(AuraColorVariant.success), colors.success);
-      expect(colors.getColor(AuraColorVariant.warning), colors.warning);
-      expect(colors.getColor(AuraColorVariant.info), colors.info);
+      expect(colors.colorFor(AuraTint.primary), colors.primary);
+      expect(colors.colorFor(AuraTint.secondary), colors.secondary);
+      expect(colors.colorFor(AuraTint.tertiary), colors.tertiary);
+      expect(colors.colorFor(AuraTint.error), colors.error);
+      expect(colors.colorFor(AuraTint.success), colors.success);
+      expect(colors.colorFor(AuraTint.warning), colors.warning);
+      expect(colors.colorFor(AuraTint.info), colors.info);
     });
 
-    test('getColorOrNull returns null for null variant', () {
+    test('onTint returns foreground for tint', () {
       final colors = AuraTheme.light.colors;
-      expect(colors.getColorOrNull(null), isNull);
-    });
-
-    test('getColorOrNull returns color for non-null variant', () {
-      final colors = AuraTheme.light.colors;
-      expect(colors.getColorOrNull(AuraColorVariant.primary), colors.primary);
+      for (final tint in AuraTint.values) {
+        expect(colors.onTint(tint), isA<Color>());
+      }
     });
   });
 

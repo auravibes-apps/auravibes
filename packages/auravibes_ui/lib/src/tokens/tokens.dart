@@ -21,8 +21,8 @@ export 'aura_theme.dart'
 export 'design_tokens.dart'
     show
         AuraBorderRadius,
-        AuraColorVariant,
         AuraSpacing,
+        AuraTint,
         DesignBreakpoints,
         DesignColors,
         DesignShadows,

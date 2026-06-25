@@ -294,7 +294,7 @@ class _ReasoningSummary extends StatelessWidget {
       ),
       padding: .medium,
       margin: .small,
-      backgroundColor: AuraColorVariant.surfaceVariant,
+      variant: AuraContainerVariant.surfaceVariant,
       borderRadius: 10,
     );
   }
@@ -412,7 +412,7 @@ class _ToolCallWidget extends ConsumerWidget {
       ),
       padding: .medium,
       margin: .small,
-      backgroundColor: AuraColorVariant.surfaceVariant,
+      variant: AuraContainerVariant.surfaceVariant,
       borderRadius: 10,
     );
   }
@@ -538,7 +538,7 @@ class _CompactedMessageWidget extends StatelessWidget {
         ),
         padding: .medium,
         margin: .small,
-        backgroundColor: AuraColorVariant.surfaceVariant,
+        variant: AuraContainerVariant.surfaceVariant,
         borderRadius: 10,
       ),
       onTap: () => _showCompactionDetails(context, message),
@@ -571,8 +571,9 @@ class _ErrorMessageWidget extends StatelessWidget {
       ),
       padding: .medium,
       margin: .small,
-      backgroundColor: AuraColorVariant.error,
+      variant: AuraContainerVariant.surfaceVariant,
       borderRadius: 10,
+      border: Border.fromBorderSide(BorderSide(color: auraColors.error)),
     );
   }
 }
@@ -643,7 +644,7 @@ class _CompactingIndicator extends StatelessWidget {
       ),
       padding: .medium,
       margin: .small,
-      backgroundColor: AuraColorVariant.surfaceVariant,
+      variant: AuraContainerVariant.surfaceVariant,
       borderRadius: 10,
     );
   }

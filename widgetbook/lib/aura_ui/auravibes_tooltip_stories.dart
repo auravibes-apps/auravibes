@@ -22,10 +22,10 @@ Widget defaultTooltipUseCase(BuildContext context) {
         },
         icon: const Icon(Icons.info_outline),
       ),
-      colorVariant: context.knobs.object.dropdown(
-        label: 'colorVariant',
-        options: AuraColorVariant.values,
-        initialOption: AuraColorVariant.onSurface,
+      tint: context.knobs.object.dropdown(
+        label: 'tint',
+        options: AuraTint.values,
+        initialOption: AuraTint.primary,
         labelBuilder: (value) => value.name,
       ),
       showDuration: Duration(

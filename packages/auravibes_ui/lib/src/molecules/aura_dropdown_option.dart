@@ -94,13 +94,13 @@ class AuraDropdownOption<T> extends StatelessWidget {
               const AuraIcon(
                 Icons.check,
                 size: AuraIconSize.small,
-                color: AuraColorVariant.primary,
+                tint: AuraTint.primary,
               ),
             ],
           ],
         ),
       ),
-      color: Colors.blue,
+      color: auraColors.primary,
       onPressed: isEnabled ? onTap : null,
     );
 
@@ -115,9 +115,9 @@ class AuraDropdownOption<T> extends StatelessWidget {
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    if (!isEnabled) return Colors.transparent;
+    if (!isEnabled) return DesignColors.transparent;
     if (isSelected) return colors.primary.withValues(alpha: 0.08);
 
-    return Colors.transparent;
+    return DesignColors.transparent;
   }
 }

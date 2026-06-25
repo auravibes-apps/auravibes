@@ -7,9 +7,9 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 @widgetbook.UseCase(name: 'Single Checkbox', type: AuraCheckbox)
 Widget singleCheckboxUseCase(BuildContext context) {
   return _SingleCheckboxDemo(
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -21,9 +21,9 @@ Widget singleCheckboxUseCase(BuildContext context) {
 @widgetbook.UseCase(name: 'Checkbox List Tile', type: AuraCheckboxListTile)
 Widget checkboxListTileUseCase(BuildContext context) {
   return _CheckboxListTileDemo(
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -61,12 +61,12 @@ Widget checkboxFocusStatesUseCase(BuildContext context) {
 
 class _SingleCheckboxDemo extends StatefulWidget {
   const _SingleCheckboxDemo({
-    required this.colorVariant,
+    required this.tint,
     required this.disabled,
     required this.autofocus,
   });
 
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
   final bool disabled;
   final bool autofocus;
 
@@ -85,7 +85,7 @@ class _SingleCheckboxDemoState extends State<_SingleCheckboxDemo> {
         onChanged: widget.disabled
             ? null
             : (value) => setState(() => _value = value),
-        colorVariant: widget.colorVariant,
+        tint: widget.tint,
         disabled: widget.disabled,
         autofocus: widget.autofocus,
       ),
@@ -95,13 +95,13 @@ class _SingleCheckboxDemoState extends State<_SingleCheckboxDemo> {
 
 class _CheckboxListTileDemo extends StatefulWidget {
   const _CheckboxListTileDemo({
-    required this.colorVariant,
+    required this.tint,
     required this.disabled,
     required this.showSubtitle,
     required this.autofocus,
   });
 
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
   final bool disabled;
   final bool showSubtitle;
   final bool autofocus;
@@ -127,7 +127,7 @@ class _CheckboxListTileDemoState extends State<_CheckboxListTileDemo> {
           subtitle: widget.showSubtitle
               ? const Text('Use this for optional settings')
               : null,
-          colorVariant: widget.colorVariant,
+          tint: widget.tint,
           disabled: widget.disabled,
           autofocus: widget.autofocus,
         ),

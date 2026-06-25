@@ -56,7 +56,6 @@ class AuraTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
-    final loadingColorVariant = _getLoadingColorVariant();
     final leading = this.leading;
     final trailing = this.trailing;
     final tileChild = child;
@@ -65,8 +64,15 @@ class AuraTile extends StatelessWidget {
     final Widget content;
     if (isLoading) {
       content = Center(
-        child: AuraLoadingCircle.compact(
-          colorVariant: loadingColorVariant,
+        child: AuraLoadingCircle(
+          tint: AuraTint.primary,
+          size: 20,
+          itemBuilder: (context, _) => DecoratedBox(
+            decoration: BoxDecoration(
+              color: _getTextColor(auraColors),
+              shape: BoxShape.circle,
+            ),
+          ),
         ),
       );
     } else if (isChildEmpty && leading != null && trailing == null) {
@@ -99,7 +105,7 @@ class AuraTile extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: Colors.transparent,
+        color: DesignColors.transparent,
         child: InkWell(
           child: AnimatedContainer(
             padding: _getPadding(spacing: context.auraTheme.spacing),
@@ -132,7 +138,7 @@ class AuraTile extends StatelessWidget {
     return switch (variant) {
       AuraTileVariant.primary => colors.primary,
       AuraTileVariant.surface => colors.surface,
-      AuraTileVariant.ghost => Colors.transparent,
+      AuraTileVariant.ghost => DesignColors.transparent,
       AuraTileVariant.selected => colors.primary.withValues(alpha: 0.1),
       AuraTileVariant.error => colors.error,
     };
@@ -144,16 +150,6 @@ class AuraTile extends StatelessWidget {
     }
 
     return [];
-  }
-
-  AuraColorVariant _getLoadingColorVariant() {
-    return switch (variant) {
-      AuraTileVariant.primary => AuraColorVariant.onPrimary,
-      AuraTileVariant.surface => AuraColorVariant.onSurface,
-      AuraTileVariant.ghost => AuraColorVariant.primary,
-      AuraTileVariant.selected => AuraColorVariant.primary,
-      AuraTileVariant.error => AuraColorVariant.onError,
-    };
   }
 
   TextStyle _getTextStyle(
@@ -172,22 +168,24 @@ class AuraTile extends StatelessWidget {
       AuraTileSize.large => typography.fontWeightSemibold,
     };
 
-    final textColor = !enabled
-        ? colors.onSurfaceVariant
-        : switch (variant) {
-            AuraTileVariant.primary => colors.onPrimary,
-            AuraTileVariant.surface => colors.onSurface,
-            AuraTileVariant.ghost => colors.primary,
-            AuraTileVariant.selected => colors.primary,
-            AuraTileVariant.error => colors.onError,
-          };
-
     return TextStyle(
-      color: textColor,
+      color: _getTextColor(colors),
       fontSize: fontSize,
       fontWeight: fontWeight,
       height: typography.lineHeightBase,
     );
+  }
+
+  Color _getTextColor(AuraColorScheme colors) {
+    if (!enabled) return colors.mutedForeground;
+
+    return switch (variant) {
+      AuraTileVariant.primary => colors.onTint(AuraTint.primary),
+      AuraTileVariant.surface => colors.foregroundOnSurface,
+      AuraTileVariant.ghost => colors.primary,
+      AuraTileVariant.selected => colors.primary,
+      AuraTileVariant.error => colors.onTint(AuraTint.error),
+    };
   }
 
   EdgeInsets _getPadding({required AuraSpacingScale spacing}) {
