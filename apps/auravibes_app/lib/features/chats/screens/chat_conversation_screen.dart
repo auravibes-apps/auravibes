@@ -125,6 +125,17 @@ class _ChatConversationScreen extends HookConsumerWidget {
   }
 }
 
+@Dependencies([
+  ConversationChatNotifier,
+  chatMessages,
+  contextUsage,
+  conversationCompactionExecutionState,
+  conversationBusyState,
+  conversationQueuedDrafts,
+  conversationSelected,
+  messageConversationById,
+  pendingToolCalls,
+])
 class _LoadedChatConversation extends HookConsumerWidget {
   const _LoadedChatConversation({
     required this.workspaceId,
