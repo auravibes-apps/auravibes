@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_streaming_ru
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
@@ -150,7 +151,9 @@ class _ChatConversationScreen extends HookConsumerWidget {
       [ref, conversation.id],
     );
 
-    final busyState = ref.watch(conversationBusyStateProvider).asData?.value;
+    final busyState = _conversationBusyStateValue(
+      ref.watch(conversationBusyStateProvider),
+    );
     final rateLimitRetryAt = ref.watch(
       conversationRateLimitRetryProvider.select(
         (retries) => retries[conversation.id],
@@ -331,6 +334,16 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 }
 
+ConversationBusyState? _conversationBusyStateValue(
+  AsyncValue<ConversationBusyState> state,
+) {
+  return switch (state) {
+    AsyncData(:final value) => value,
+    AsyncLoading(:final value?, hasValue: true) => value,
+    _ => null,
+  };
+}
+
 void _showSkillsModal({
   required BuildContext context,
   required String workspaceId,
@@ -373,7 +386,9 @@ Future<void> _continueAgent(
   WidgetRef ref,
   String conversationId,
 ) async {
-  final busyState = ref.read(conversationBusyStateProvider).asData?.value;
+  final busyState = _conversationBusyStateValue(
+    ref.read(conversationBusyStateProvider),
+  );
   final rateLimitRetryAt = ref.read(
     conversationRateLimitRetryProvider,
   )[conversationId];
