@@ -582,7 +582,7 @@ class AuraColorScheme {
       surfaceVariant = DesignColors.neutral700,
       onSurface = DesignColors.neutral100,
       onSurfaceVariant = DesignColors.neutral300,
-      background = Colors.black,
+      background = DesignColors.neutral900,
       onBackground = DesignColors.neutral100,
       error = OKLCHColor(
         hue: HueColorValues.error,

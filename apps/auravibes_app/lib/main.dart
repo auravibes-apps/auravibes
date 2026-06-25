@@ -1,4 +1,5 @@
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/main/main_locale.dart';
@@ -59,6 +60,19 @@ class MyApp extends ConsumerWidget {
     final themeAsync = ref.watch(themeProvider);
     final routerConfig = ref.watch(routerProvider);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
+    final hue = ref.watch(accentHueProvider).asData?.value ?? defaultAccentHue;
+    final lightTheme = AuraTheme.light.copyWith(
+      colors: AuraComputedColorScheme(
+        primaryHue: hue,
+        brightness: AuraBrightness.light,
+      ),
+    );
+    final darkTheme = AuraTheme.dark.copyWith(
+      colors: AuraComputedColorScheme(
+        primaryHue: hue,
+        brightness: AuraBrightness.dark,
+      ),
+    );
 
     return Portal(
       child: MaterialApp.router(
@@ -69,8 +83,8 @@ class MyApp extends ConsumerWidget {
           ),
         ),
         title: AppFlavorConfig.title,
-        theme: _auraMaterialTheme(AuraTheme.light, Brightness.light),
-        darkTheme: _auraMaterialTheme(AuraTheme.dark, Brightness.dark),
+        theme: _auraMaterialTheme(lightTheme, Brightness.light),
+        darkTheme: _auraMaterialTheme(darkTheme, Brightness.dark),
         themeMode: themeMode,
         locale: context.locale,
         localizationsDelegates: context.localizationDelegates,

@@ -62,7 +62,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
               ),
             ],
           ),
-          const Divider(height: 1),
+          const AuraDivider(height: 1),
           for (final (index, draft) in queuedDrafts.indexed)
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -85,23 +85,20 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                         ),
                       ),
                       const AuraSizedBox(width: .xs),
-                      IconButton(
-                        padding: const EdgeInsets.all(14),
+                      AuraIconButton(
+                        icon: Icons.close,
                         onPressed: () => notifier.remove(
                           conversationId: conversationId,
                           draftId: draft.id,
                         ),
+                        size: AuraIconSize.large,
                         tooltip: LocaleKeys.common_remove.tr(),
-                        constraints: const BoxConstraints(
-                          minWidth: 48,
-                          minHeight: 48,
-                        ),
-                        icon: const Icon(Icons.close, size: 20),
                       ),
                     ],
                   ),
                 ),
-                if (index < queuedDrafts.length - 1) const Divider(height: 1),
+                if (index < queuedDrafts.length - 1)
+                  const AuraDivider(height: 1),
               ],
             ),
         ],

@@ -96,11 +96,8 @@ class ToolItemRow extends HookConsumerWidget {
                 },
                 size: AuraSwitchSize.sm,
               ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => isExpanded.value = !isExpanded.value,
-                constraints: const BoxConstraints(),
-                icon: AnimatedRotation(
+              AuraIconButton.custom(
+                child: AnimatedRotation(
                   child: const AuraIcon(
                     Icons.keyboard_arrow_down,
                     size: AuraIconSize.small,
@@ -109,6 +106,8 @@ class ToolItemRow extends HookConsumerWidget {
                   turns: isExpanded.value ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
                 ),
+                onPressed: () => isExpanded.value = !isExpanded.value,
+                size: AuraIconSize.small,
               ),
             ],
           ),
@@ -194,20 +193,23 @@ class _ToolOptions extends HookConsumerWidget {
         if (showDeleteButton && !workspaceTool.isNative)
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton.icon(
+            child: AuraButton(
               onPressed: () => _confirmDelete(context, ref, workspaceTool),
-              icon: const AuraIcon(
-                Icons.delete_outline,
-                size: AuraIconSize.small,
-                color: AuraColorVariant.error,
+              child: const AuraRow(
+                children: [
+                  AuraIcon(
+                    Icons.delete_outline,
+                    size: AuraIconSize.small,
+                    color: AuraColorVariant.error,
+                  ),
+                  TextLocale(LocaleKeys.common_remove),
+                ],
+                spacing: .xs,
+                mainAxisSize: MainAxisSize.min,
               ),
-              label: AuraText(
-                child: Text(
-                  'Remove',
-                  style: TextStyle(color: context.auraColors.error),
-                ),
-                style: AuraTextStyle.bodySmall,
-              ),
+              variant: AuraButtonVariant.text,
+              colorVariant: AuraColorVariant.error,
+              size: AuraButtonSize.small,
             ),
           ),
       ],

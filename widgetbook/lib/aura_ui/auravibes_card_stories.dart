@@ -30,7 +30,7 @@ Widget basicCardUseCase(BuildContext context) {
           }
         : null,
     semanticLabel: context.knobs.stringOrNull(label: 'Semantic Label'),
-    style: context.knobs.objectOrNull.dropdown(
+    style: context.knobs.object.dropdown(
       label: 'style',
       options: AuraCardStyle.values,
       labelBuilder: (value) => value.name,

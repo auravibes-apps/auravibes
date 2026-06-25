@@ -84,10 +84,29 @@ class AuraIconButton extends StatelessWidget {
     this.variant = AuraIconButtonVariant.ghost,
     this.semanticLabel,
     this.tooltip,
-  });
+  }) : child = null;
+
+  /// Creates an Aura icon button with custom icon content.
+  // Null follows Flutter button semantics and disables the interaction.
+  // ignore: unnecessary-nullable
+  const AuraIconButton.custom({
+    required this.child,
+    this.onPressed,
+    super.key,
+    this.disabled = false,
+    this.size = AuraIconSize.medium,
+    this.color,
+    this.backgroundColor,
+    this.variant = AuraIconButtonVariant.ghost,
+    this.semanticLabel,
+    this.tooltip,
+  }) : icon = null;
 
   /// The icon to display.
-  final IconData icon;
+  final IconData? icon;
+
+  /// Custom icon content to display.
+  final Widget? child;
 
   /// The callback that is called when the button is pressed.
   final VoidCallback? onPressed;
@@ -121,6 +140,15 @@ class AuraIconButton extends StatelessWidget {
     final buttonSize = _getButtonSize();
     final iconSize = _getIconSize();
 
+    final iconContent =
+        child ??
+        AuraIcon(
+          icon ?? (throw StateError('AuraIconButton requires icon or child')),
+          size: size,
+          color: color,
+          semanticLabel: semanticLabel,
+        );
+
     Widget button = SizedBox(
       width: buttonSize,
       height: buttonSize,
@@ -148,12 +176,7 @@ class AuraIconButton extends StatelessWidget {
             ),
           ),
         ),
-        icon: AuraIcon(
-          icon,
-          size: size,
-          color: color,
-          semanticLabel: semanticLabel,
-        ),
+        icon: iconContent,
       ),
     );
 

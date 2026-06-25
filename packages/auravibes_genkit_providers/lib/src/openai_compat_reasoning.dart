@@ -32,7 +32,8 @@ class OpenAICompatReasoningPluginHandle {
           model: options.version ?? modelName,
           extraBody: {
             ...options.toSamplingBody(),
-            'thinking': ?options.reasoning?.toJson(),
+            if (options.reasoningType != null)
+              'thinking': {'type': options.reasoningType},
           },
         );
       },
@@ -63,12 +64,11 @@ class OpenAICompatReasoningOptions extends OpenAICompatChatOptions {
     super.seed,
     super.user,
     this.version,
-    this.reasoning,
+    this.reasoningType,
   });
 
   factory OpenAICompatReasoningOptions.fromJson(Map<String, dynamic>? json) {
     final shared = OpenAICompatChatOptions.fromJson(json);
-    final reasoningJson = json?['reasoning'];
 
     return OpenAICompatReasoningOptions(
       temperature: shared.temperature,
@@ -80,33 +80,17 @@ class OpenAICompatReasoningOptions extends OpenAICompatChatOptions {
       seed: shared.seed,
       user: shared.user,
       version: json?['version'] as String?,
-      reasoning: reasoningJson is Map<String, dynamic>
-          ? OpenAICompatReasoningConfig.fromJson(reasoningJson)
-          : null,
+      reasoningType: json?['reasoningType'] as String?,
     );
   }
 
   final String? version;
-  final OpenAICompatReasoningConfig? reasoning;
+  final String? reasoningType;
 
   @override
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'version': ?version,
-    'reasoning': ?reasoning?.toJson(),
+    'reasoningType': ?reasoningType,
   };
-}
-
-class OpenAICompatReasoningConfig {
-  const OpenAICompatReasoningConfig({this.type = 'enabled'});
-
-  factory OpenAICompatReasoningConfig.fromJson(Map<String, dynamic> json) {
-    return OpenAICompatReasoningConfig(
-      type: json['type'] as String? ?? 'enabled',
-    );
-  }
-
-  final String type;
-
-  Map<String, dynamic> toJson() => {'type': type};
 }

@@ -2,6 +2,7 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
+import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -80,6 +81,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             CompactionSettingsSection(workspaceId: workspaceId),
+            const AccentColorSection(),
           ],
           crossAxisAlignment: CrossAxisAlignment.start,
         ),
@@ -113,8 +115,8 @@ class SettingsScreen extends ConsumerWidget {
         value: currentTheme,
         onChanged: (value) {
           if (value != null) {
+            Navigator.of(context, rootNavigator: true).pop();
             ref.read(themeProvider.notifier).setTheme(value);
-            Navigator.pop(context);
           }
         },
         options: const [

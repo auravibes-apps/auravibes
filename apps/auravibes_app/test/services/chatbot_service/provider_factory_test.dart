@@ -296,7 +296,7 @@ void main() {
       expect(
         _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
         {
-          'reasoning': {'type': 'enabled'},
+          'reasoningType': 'enabled',
         },
       );
     });

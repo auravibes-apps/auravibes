@@ -72,12 +72,9 @@ class CompactedMessageDetails extends StatelessWidget {
             ),
           ),
           const AuraSizedBox(height: .xs),
-          SelectableText(
+          AuraSelectableText(
             message.content,
-            style: TextStyle(
-              fontSize: context.auraTheme.typography.fontSizeSm,
-              fontFamily: context.auraTheme.typography.monoFontFamily,
-            ),
+            style: AuraTextStyle.bodySmall,
           ),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -137,7 +137,7 @@ class ProviderFactory {
     )) {
       if (_shouldUseOpenAICompatReasoning(config)) {
         return OpenAICompatReasoningOptions(
-              reasoning: const OpenAICompatReasoningConfig(),
+              reasoningType: 'enabled',
             )
             as T;
       }

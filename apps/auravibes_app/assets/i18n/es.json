@@ -156,6 +156,8 @@
       "stop_generation": "Detener generación",
       "stop_error": "No se pudo detener la conversación. Inténtalo de nuevo.",
       "send_error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+      "continue_agent": "Continuar agente",
+      "continue_error": "No se pudo continuar el agente. Inténtalo de nuevo.",
       "rate_limit_retry": "Se alcanzó el límite de uso. Reintentando en {seconds}s.",
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
@@ -481,6 +483,11 @@
       "system": "Sistema",
       "system_default": "Predeterminado del Sistema"
     },
+    "accent_color": {
+      "title": "Color de acento",
+      "subtitle": "Elige el tono que define la paleta de la app",
+      "dialog_title": "Tono de acento"
+    },
     "actions": {
       "cancel": "Cancelar",
       "save": "Guardar"
@@ -511,7 +518,7 @@
   },
   "sidebar": {
     "recent_chats": "Chats Recientes",
-    "no_recent_chats": "No hay chats recientes",
+    "no_recent_chats": "Los chats aparecerán aquí",
     "view_all_chats": "Ver Todos"
   },
   "mcp_modal": {
