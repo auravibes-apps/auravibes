@@ -7,6 +7,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
@@ -117,7 +118,24 @@ class _ChatConversationScreen extends HookConsumerWidget {
       );
     }
 
-    final conversation = conversationResult.conversation;
+    return _LoadedChatConversation(
+      workspaceId: workspaceId,
+      conversation: conversationResult.conversation,
+    );
+  }
+}
+
+class _LoadedChatConversation extends HookConsumerWidget {
+  const _LoadedChatConversation({
+    required this.workspaceId,
+    required this.conversation,
+  });
+
+  final String workspaceId;
+  final ConversationEntity conversation;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final stopRequested = useState(false);
 
     final onToolsPress = useCallback(
