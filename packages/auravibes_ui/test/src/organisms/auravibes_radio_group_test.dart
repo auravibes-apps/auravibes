@@ -195,7 +195,7 @@ void main() {
       expect(find.byType(Wrap), findsOneWidget);
     });
 
-    testWidgets('applies colorVariant to all radios', (tester) async {
+    testWidgets('applies tint to all radios', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -207,7 +207,7 @@ void main() {
               options: const [
                 AuraRadioOption(value: 'option1', label: Text('Option 1')),
               ],
-              colorVariant: AuraColorVariant.secondary,
+              tint: AuraTint.secondary,
             ),
           ),
           theme: ThemeData(
@@ -219,7 +219,7 @@ void main() {
       final radio = tester.widget<AuraRadio<String>>(
         find.byType(AuraRadio<String>),
       );
-      expect(radio.colorVariant, AuraColorVariant.secondary);
+      expect(radio.tint, AuraTint.secondary);
     });
 
     testWidgets('does not call onChanged for disabled option', (
@@ -411,7 +411,7 @@ void main() {
       expect(radio.disabled, isTrue);
     });
 
-    testWidgets('applies colorVariant', (tester) async {
+    testWidgets('applies tint', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -422,7 +422,7 @@ void main() {
                 final _ = Object();
               },
               title: const Text('Option 1'),
-              colorVariant: AuraColorVariant.secondary,
+              tint: AuraTint.secondary,
             ),
           ),
           theme: ThemeData(
@@ -434,7 +434,7 @@ void main() {
       final radio = tester.widget<AuraRadio<String>>(
         find.byType(AuraRadio<String>),
       );
-      expect(radio.colorVariant, AuraColorVariant.secondary);
+      expect(radio.tint, AuraTint.secondary);
     });
   });
 }

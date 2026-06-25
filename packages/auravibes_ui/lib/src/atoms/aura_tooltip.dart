@@ -22,7 +22,7 @@ class AuraTooltip extends StatelessWidget {
     required this.message,
     required this.child,
     super.key,
-    this.colorVariant = AuraColorVariant.onSurface,
+    this.tint = AuraTint.primary,
     this.showDuration = const Duration(seconds: 2),
     this.waitDuration = Duration.zero,
     this.preferBelow = true,
@@ -34,9 +34,9 @@ class AuraTooltip extends StatelessWidget {
   /// The widget that triggers the tooltip.
   final Widget child;
 
-  /// The color variant for the tooltip background.
-  /// Defaults to [AuraColorVariant.onSurface].
-  final AuraColorVariant colorVariant;
+  /// The tint for the tooltip background.
+  /// Defaults to [AuraTint.primary].
+  final AuraTint tint;
 
   /// The length of time that the tooltip is shown.
   /// Defaults to 2 seconds.
@@ -69,7 +69,7 @@ class AuraTooltip extends StatelessWidget {
         borderRadius: const BorderRadius.all(Radius.circular(8)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
+            color: auraColors.shadow.withValues(alpha: 0.15),
             offset: const Offset(0, 2),
             blurRadius: 8,
           ),
@@ -87,22 +87,8 @@ class AuraTooltip extends StatelessWidget {
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    return colors.getColor(colorVariant);
+    return colors.colorFor(tint);
   }
 
-  Color _getForegroundColor(AuraColorScheme colors) {
-    return switch (colorVariant) {
-      AuraColorVariant.primary => colors.onPrimary,
-      AuraColorVariant.secondary => colors.onSecondary,
-      AuraColorVariant.success => colors.onSuccess,
-      AuraColorVariant.error => colors.onError,
-      AuraColorVariant.onError => colors.error,
-      AuraColorVariant.warning => colors.onWarning,
-      AuraColorVariant.info => colors.onInfo,
-      AuraColorVariant.surfaceVariant => colors.onSurface,
-      AuraColorVariant.onSurface => colors.surface,
-      AuraColorVariant.onSurfaceVariant => colors.surface,
-      AuraColorVariant.onPrimary => colors.onPrimary,
-    };
-  }
+  Color _getForegroundColor(AuraColorScheme colors) => colors.onTint(tint);
 }

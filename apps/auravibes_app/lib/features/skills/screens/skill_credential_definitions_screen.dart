@@ -42,7 +42,6 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                             AuraText(child: Text(definition.title)),
                             AuraText(
                               child: Text(definition.slug),
-                              color: AuraColorVariant.onSurfaceVariant,
                             ),
                           ],
                           spacing: AuraSpacing.xs,
@@ -71,7 +70,6 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                     AuraText(child: Text(definition.title)),
                     AuraText(
                       child: Text(definition.slug),
-                      color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
                   spacing: AuraSpacing.xs,

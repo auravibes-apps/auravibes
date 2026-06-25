@@ -447,7 +447,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
           AuraText(
             child: Text(deviceCode.userCode),
             style: AuraTextStyle.heading5,
-            color: AuraColorVariant.primary,
+            tint: AuraTint.primary,
           ),
           const AuraSizedBox(height: .md),
           AuraButton(
@@ -541,7 +541,6 @@ class _SelectModelProvider extends HookConsumerWidget {
                           AddModelProviderWidget.noModelsFoundKey,
                         ),
                         style: AuraTextStyle.bodyLarge,
-                        color: AuraColorVariant.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -567,7 +566,7 @@ class _SelectModelProvider extends HookConsumerWidget {
                                 LocaleKeys.mcp_modal_auth_oauth,
                               ),
                               style: AuraTextStyle.bodySmall,
-                              color: AuraColorVariant.primary,
+                              tint: AuraTint.primary,
                             ),
                         ],
                       ),

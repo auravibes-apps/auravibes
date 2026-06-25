@@ -91,7 +91,6 @@ class ToolsGroupHeader extends StatelessWidget {
                   ),
                 ),
                 style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
             spacing: .xs,
@@ -107,7 +106,7 @@ class ToolsGroupHeader extends StatelessWidget {
                 icon: Icons.delete_outline,
                 onPressed: onDelete,
                 size: AuraIconSize.small,
-                color: AuraColorVariant.error,
+                tint: AuraTint.error,
                 tooltip: LocaleKeys.common_delete.tr(),
               ),
             if (!groupWithTools.isDefaultGroup && onToggleEnabled != null)
@@ -120,7 +119,6 @@ class ToolsGroupHeader extends StatelessWidget {
               child: AnimatedRotation(
                 child: const AuraIcon(
                   Icons.keyboard_arrow_down,
-                  color: AuraColorVariant.onSurfaceVariant,
                 ),
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
@@ -162,9 +160,7 @@ class _GroupIcon extends StatelessWidget {
       child: Center(
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,
-          color: isEnabled
-              ? AuraColorVariant.primary
-              : AuraColorVariant.onSurfaceVariant,
+          tint: isEnabled ? AuraTint.primary : null,
         ),
       ),
     );

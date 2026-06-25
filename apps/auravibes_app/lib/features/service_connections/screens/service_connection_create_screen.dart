@@ -378,7 +378,6 @@ class _CredentialFormContent extends StatelessWidget {
                       context: context,
                     ),
                   ),
-                  color: AuraColorVariant.onSurfaceVariant,
                 )
               else ...[
                 AuraInput(

@@ -92,7 +92,6 @@ class _SectionTile extends StatelessWidget {
           AuraText(
             child: TextLocale(subtitleKey),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
         ],
         spacing: .xs,

@@ -173,9 +173,6 @@ class _ToolDescription extends StatelessWidget {
       children: [
         AuraText(
           child: toolState.tool.getNameWidget(),
-          color: isWorkspaceEnabled
-              ? AuraColorVariant.onSurface
-              : AuraColorVariant.onSurfaceVariant,
         ),
         if (isWorkspaceEnabled)
           AuraText(
@@ -185,7 +182,6 @@ class _ToolDescription extends StatelessWidget {
               child: toolState.tool.getDescriptionWidget(),
             ),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           )
         else
           AuraText(
@@ -196,7 +192,6 @@ class _ToolDescription extends StatelessWidget {
               ),
             ),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
       ],
       spacing: .xs,
@@ -222,16 +217,13 @@ class _ToolToggleIcon extends StatelessWidget {
         child: AuraIcon(
           Icons.block,
           size: AuraIconSize.small,
-          color: AuraColorVariant.onSurfaceVariant,
         ),
       );
     }
 
     return AuraIcon(
       isEnabled ? Icons.check_circle : Icons.circle_outlined,
-      color: isEnabled
-          ? AuraColorVariant.primary
-          : AuraColorVariant.onSurfaceVariant,
+      tint: isEnabled ? AuraTint.primary : null,
     );
   }
 }
@@ -256,7 +248,6 @@ class _ToolPermissionSection extends StatelessWidget {
               const AuraText(
                 child: TextLocale(LocaleKeys.tools_screen_permission_label),
                 style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
               ToolPermissionSelector(value: value, onChanged: onChanged),
             ],

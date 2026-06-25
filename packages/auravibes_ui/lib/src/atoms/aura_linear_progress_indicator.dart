@@ -1,6 +1,6 @@
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraBorderRadius, AuraColorVariant;
+    show AuraBorderRadius, AuraTint;
 import 'package:flutter/widgets.dart';
 
 /// A linear progress indicator following the Aura design system.
@@ -10,8 +10,7 @@ class AuraLinearProgressIndicator extends StatelessWidget {
     required this.value,
     super.key,
     this.height = 4,
-    this.color = AuraColorVariant.primary,
-    this.backgroundColor = AuraColorVariant.surfaceVariant,
+    this.tint = AuraTint.primary,
     this.backgroundAlpha = 1,
     this.borderRadius = AuraBorderRadius.full,
     this.semanticLabel,
@@ -26,11 +25,8 @@ class AuraLinearProgressIndicator extends StatelessWidget {
   /// Height of the progress track.
   final double height;
 
-  /// Filled progress color.
-  final AuraColorVariant color;
-
-  /// Track background color.
-  final AuraColorVariant backgroundColor;
+  /// Filled progress tint.
+  final AuraTint tint;
 
   /// Track background alpha.
   final double backgroundAlpha;
@@ -61,15 +57,15 @@ class AuraLinearProgressIndicator extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               ColoredBox(
-                color: auraColors
-                    .getColor(backgroundColor)
-                    .withValues(alpha: clampedBackgroundAlpha),
+                color: auraColors.surfaceVariant.withValues(
+                  alpha: clampedBackgroundAlpha,
+                ),
               ),
               FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: clampedValue,
                 child: ColoredBox(
-                  color: auraColors.getColor(color),
+                  color: auraColors.colorFor(tint),
                 ),
               ),
             ],

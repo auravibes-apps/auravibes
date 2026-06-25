@@ -23,20 +23,17 @@ class ToolsEmptyState extends StatelessWidget {
               child: AuraIcon(
                 Icons.build_circle_outlined,
                 size: AuraIconSize.extraLarge,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
             ),
             AuraText(
               child: TextLocale(LocaleKeys.tools_screen_no_tools_added),
               style: AuraTextStyle.heading6,
               textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraText(
               child: TextLocale(LocaleKeys.tools_screen_add_tools_hint),
               style: AuraTextStyle.bodySmall,
               textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
           ],
           spacing: .md,

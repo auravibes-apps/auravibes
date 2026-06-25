@@ -76,7 +76,6 @@ class ToolsManagementModal extends ConsumerWidget {
                   AuraIconButton(
                     icon: Icons.close,
                     onPressed: () => Navigator.of(context).pop(),
-                    color: AuraColorVariant.onSurfaceVariant,
                     semanticLabel: LocaleKeys.common_close_dialog.tr(),
                   ),
                 ],
@@ -98,7 +97,7 @@ class ToolsManagementModal extends ConsumerWidget {
                       LocaleKeys.tools_screen_load_error,
                       args: [error.toString()],
                     ),
-                    color: AuraColorVariant.error,
+                    tint: AuraTint.error,
                   ),
                 ),
               },

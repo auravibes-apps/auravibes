@@ -139,26 +139,16 @@ void main() {
     });
   });
 
-  group('AuraColorVariant enum', () {
+  group('AuraTint enum', () {
     test('has all expected values', () {
-      expect(AuraColorVariant.values, hasLength(11));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.primary));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.onSurface));
-      expect(
-        AuraColorVariant.values,
-        contains(AuraColorVariant.onSurfaceVariant),
-      );
-      expect(
-        AuraColorVariant.values,
-        contains(AuraColorVariant.surfaceVariant),
-      );
-      expect(AuraColorVariant.values, contains(AuraColorVariant.error));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.onError));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.onPrimary));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.secondary));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.success));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.warning));
-      expect(AuraColorVariant.values, contains(AuraColorVariant.info));
+      expect(AuraTint.values, hasLength(7));
+      expect(AuraTint.values, contains(AuraTint.primary));
+      expect(AuraTint.values, contains(AuraTint.secondary));
+      expect(AuraTint.values, contains(AuraTint.tertiary));
+      expect(AuraTint.values, contains(AuraTint.error));
+      expect(AuraTint.values, contains(AuraTint.success));
+      expect(AuraTint.values, contains(AuraTint.warning));
+      expect(AuraTint.values, contains(AuraTint.info));
     });
   });
 }

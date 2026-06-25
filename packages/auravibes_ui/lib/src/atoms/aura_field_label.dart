@@ -48,7 +48,6 @@ class AuraFieldLabel extends StatelessWidget {
               label: semanticLabel,
             ),
             style: style ?? AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurface,
           ),
         ),
         if (isRequired) ...[
@@ -62,7 +61,7 @@ class AuraFieldLabel extends StatelessWidget {
               semanticsLabel: 'required',
             ),
             style: style ?? AuraTextStyle.bodySmall,
-            color: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
         ],
       ],

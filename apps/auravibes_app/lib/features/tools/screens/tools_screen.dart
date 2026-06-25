@@ -36,7 +36,7 @@ class ToolsScreen extends ConsumerWidget {
                           AuraText(
                             child: Icon(Icons.build_circle_outlined),
                             style: AuraTextStyle.heading3,
-                            color: AuraColorVariant.primary,
+                            tint: AuraTint.primary,
                           ),
                           AuraText(
                             child: TextLocale(
@@ -50,7 +50,6 @@ class ToolsScreen extends ConsumerWidget {
                         child: TextLocale(
                           LocaleKeys.tools_screen_enable_configure_description,
                         ),
-                        color: AuraColorVariant.onSurfaceVariant,
                       ),
                       Row(
                         children: [

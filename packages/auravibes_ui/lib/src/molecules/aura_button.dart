@@ -17,7 +17,7 @@ class AuraButton extends StatelessWidget {
     required this.child,
     super.key,
     this.variant = AuraButtonVariant.primary,
-    this.colorVariant,
+    this.tint,
     this.size = AuraButtonSize.medium,
     this.isLoading = false,
     this.isFullWidth = false,
@@ -45,8 +45,8 @@ class AuraButton extends StatelessWidget {
   /// Whether the button is disabled.
   final bool disabled;
 
-  /// The color variant of the button.
-  final AuraColorVariant? colorVariant;
+  /// The tint of the button.
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +58,15 @@ class AuraButton extends StatelessWidget {
         child: AuraPadding(
           child: Center(
             child: isLoading
-                ? AuraLoadingCircle.compact(
-                    colorVariant: _getLoadingColorVariant(),
+                ? AuraLoadingCircle(
+                    tint: tint ?? AuraTint.primary,
+                    size: 20,
+                    itemBuilder: (context, _) => DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: _getLoadingColor(auraColors),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   )
                 : DefaultTextStyle(
                     style: _getTextStyle(
@@ -98,13 +105,11 @@ class AuraButton extends StatelessWidget {
     }
 
     return switch (variant) {
-      AuraButtonVariant.primary =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
+      AuraButtonVariant.primary => colors.colorFor(tint ?? AuraTint.primary),
       AuraButtonVariant.secondary => colors.secondary,
       AuraButtonVariant.outlined => DesignColors.transparent,
       AuraButtonVariant.ghost => DesignColors.transparent,
-      AuraButtonVariant.elevated =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
+      AuraButtonVariant.elevated => colors.colorFor(tint ?? AuraTint.primary),
       AuraButtonVariant.text => DesignColors.transparent,
     };
   }
@@ -113,30 +118,16 @@ class AuraButton extends StatelessWidget {
     if (disabled) return colors.onSurfaceVariant;
 
     return switch (variant) {
-      AuraButtonVariant.primary => colors.onPrimary,
-      AuraButtonVariant.secondary => colors.onSecondary,
-      AuraButtonVariant.outlined =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
-      AuraButtonVariant.ghost =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
-      AuraButtonVariant.elevated => colors.onPrimary,
-      AuraButtonVariant.text =>
-        colors.getColorOrNull(colorVariant) ?? colors.primary,
+      AuraButtonVariant.primary => colors.onTint(tint ?? AuraTint.primary),
+      AuraButtonVariant.secondary => colors.onTint(AuraTint.secondary),
+      AuraButtonVariant.outlined => colors.colorFor(tint ?? AuraTint.primary),
+      AuraButtonVariant.ghost => colors.colorFor(tint ?? AuraTint.primary),
+      AuraButtonVariant.elevated => colors.onTint(tint ?? AuraTint.primary),
+      AuraButtonVariant.text => colors.colorFor(tint ?? AuraTint.primary),
     };
   }
 
-  AuraColorVariant _getLoadingColorVariant() {
-    if (disabled) return AuraColorVariant.onSurfaceVariant;
-
-    return switch (variant) {
-      AuraButtonVariant.primary => AuraColorVariant.onPrimary,
-      AuraButtonVariant.secondary => AuraColorVariant.onPrimary,
-      AuraButtonVariant.outlined => colorVariant ?? AuraColorVariant.primary,
-      AuraButtonVariant.ghost => colorVariant ?? AuraColorVariant.primary,
-      AuraButtonVariant.elevated => AuraColorVariant.onPrimary,
-      AuraButtonVariant.text => AuraColorVariant.onSurfaceVariant,
-    };
-  }
+  Color _getLoadingColor(AuraColorScheme colors) => _getForegroundColor(colors);
 
   AuraEdgeInsetsGeometry _getPadding() {
     // Text variant uses minimal/inline padding for dialogs and inline actions.
@@ -168,7 +159,7 @@ class AuraButton extends StatelessWidget {
       return Border.all(
         color: disabled
             ? colors.outlineVariant
-            : colors.getColorOrNull(colorVariant) ?? colors.primary,
+            : colors.colorFor(tint ?? AuraTint.primary),
       );
     }
 

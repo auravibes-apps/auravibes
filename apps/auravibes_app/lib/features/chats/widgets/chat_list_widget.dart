@@ -69,7 +69,6 @@ class _ChatListEmptyState extends StatelessWidget {
             const AuraIcon(
               Icons.chat_outlined,
               size: AuraIconSize.extraLarge,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             const AuraText(
@@ -157,7 +156,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                       const AuraIcon(
                         Icons.push_pin_outlined,
                         size: AuraIconSize.small,
-                        color: AuraColorVariant.warning,
+                        tint: AuraTint.warning,
                       ),
                       const SizedBox(width: 8),
                     ],
@@ -176,7 +175,6 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,
-                  color: AuraColorVariant.onSurfaceVariant,
                 ),
               ],
             ),
