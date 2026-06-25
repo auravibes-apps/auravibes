@@ -6,7 +6,6 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -14,22 +13,16 @@ class StopConversationUsecase {
   const StopConversationUsecase({
     required this._agentCancellationRuntime,
     required this._sendQueueRuntime,
-    required this._conversationStreamingRuntime,
-    required this._rateLimitRetryRuntime,
     required this._messageRepository,
   });
 
   final AgentCancellationRuntime _agentCancellationRuntime;
   final ConversationSendQueueRuntime _sendQueueRuntime;
-  final ConversationStreamingRuntime _conversationStreamingRuntime;
-  final ConversationRateLimitRetryRuntime _rateLimitRetryRuntime;
   final MessageRepository _messageRepository;
 
   Future<void> call({required String conversationId}) async {
     _agentCancellationRuntime.requestStop(conversationId);
     _sendQueueRuntime.clear(conversationId);
-    _conversationStreamingRuntime.remove(conversationId);
-    _rateLimitRetryRuntime.clear(conversationId);
     await _stopLatestPendingTools(conversationId);
   }
 
@@ -69,10 +62,6 @@ final stopConversationUsecaseProvider = Provider<StopConversationUsecase>((
   return StopConversationUsecase(
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-    conversationStreamingRuntime: ref.watch(
-      conversationStreamingRuntimeProvider,
-    ),
-    rateLimitRetryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
   );
 });

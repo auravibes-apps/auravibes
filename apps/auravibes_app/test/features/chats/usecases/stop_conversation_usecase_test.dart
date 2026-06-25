@@ -1,13 +1,9 @@
-import 'dart:async';
-
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -91,40 +87,6 @@ void main() {
         );
       },
     );
-
-    test(
-      'clears local busy state before pending tool cleanup completes',
-      () async {
-        fixture.conversationStreamingRuntime.start('conversation-1');
-        fixture.rateLimitRetryRuntime.start(
-          'conversation-1',
-          DateTime(2026),
-        );
-        final messagesCompleter = Completer<List<MessageEntity>>();
-
-        when(
-          () => fixture.messageRepository.getMessagesByConversation(
-            'conversation-1',
-          ),
-        ).thenAnswer((_) => messagesCompleter.future);
-
-        final stopFuture = fixture.usecase.call(
-          conversationId: 'conversation-1',
-        );
-
-        expect(
-          fixture.conversationStreamingRuntime.isStreaming('conversation-1'),
-          isFalse,
-        );
-        expect(
-          fixture.rateLimitRetryRuntime.retryAt('conversation-1'),
-          isNull,
-        );
-
-        messagesCompleter.complete(const <MessageEntity>[]);
-        await stopFuture;
-      },
-    );
   });
 }
 
@@ -142,12 +104,6 @@ class _StopConversationFixture {
 
   ProviderContainer get container =>
       _container ?? fail('Fixture not initialized');
-
-  ConversationStreamingRuntime get conversationStreamingRuntime =>
-      _conversationStreamingRuntime();
-
-  ConversationRateLimitRetryRuntime get rateLimitRetryRuntime =>
-      _rateLimitRetryRuntime();
 
   StopConversationUsecase get usecase =>
       _usecase ?? fail('Fixture not initialized');
@@ -170,31 +126,7 @@ class _StopConversationFixture {
         dequeueAll: queueNotifier.dequeueAll,
         clear: queueNotifier.clear,
       ),
-      conversationStreamingRuntime: _conversationStreamingRuntime(),
-      rateLimitRetryRuntime: _rateLimitRetryRuntime(),
       messageRepository: messageRepository,
-    );
-  }
-
-  ConversationStreamingRuntime _conversationStreamingRuntime() {
-    final notifier = container.read(conversationStreamingProvider.notifier);
-
-    return ConversationStreamingRuntime(
-      start: notifier.start,
-      isStreaming: notifier.isStreaming,
-      remove: notifier.remove,
-    );
-  }
-
-  ConversationRateLimitRetryRuntime _rateLimitRetryRuntime() {
-    final notifier = container.read(
-      conversationRateLimitRetryProvider.notifier,
-    );
-
-    return ConversationRateLimitRetryRuntime(
-      start: notifier.start,
-      retryAt: notifier.retryAt,
-      clear: notifier.clear,
     );
   }
 

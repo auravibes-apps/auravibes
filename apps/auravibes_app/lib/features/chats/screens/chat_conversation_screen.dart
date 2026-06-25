@@ -118,6 +118,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
     }
 
     final conversation = conversationResult.conversation;
+    final stopRequested = useState(false);
 
     final onToolsPress = useCallback(
       () {
@@ -132,9 +133,10 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
     final onStop = useCallback(
       () {
+        stopRequested.value = true;
         unawaited(_stopConversation(context, ref));
       },
-      [ref],
+      [ref, stopRequested],
     );
 
     final onSendMessage = useCallback<void Function(String)>(
@@ -169,14 +171,34 @@ class _ChatConversationScreen extends HookConsumerWidget {
         compactionState?.status == CompactionExecutionStatus.running;
     final isInputBusy =
         (busyState?.isBusy ?? false) || rateLimitRetryAt != null;
+    useEffect(
+      () {
+        stopRequested.value = false;
+
+        return null;
+      },
+      [conversation.id],
+    );
+    useEffect(
+      () {
+        if (!isInputBusy) {
+          stopRequested.value = false;
+        }
+
+        return null;
+      },
+      [conversation.id, isInputBusy],
+    );
+    final hidesStoppedRun = stopRequested.value && isInputBusy;
 
     return AuraScreen(
       child: AuraColumn(
         children: [
           const _ChatControlsBar(),
           Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
-          if (busyState?.isStreaming == true) const ChatThinkingIndicator(),
-          if (rateLimitRetryAt != null)
+          if (busyState?.isStreaming == true && !hidesStoppedRun)
+            const ChatThinkingIndicator(),
+          if (rateLimitRetryAt != null && !hidesStoppedRun)
             _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
@@ -208,6 +230,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
                       _continueAgent(context, ref, conversation.id),
                     ),
               isBusy: isInputBusy,
+              showStopButton: isInputBusy && !hidesStoppedRun,
               onStop: onStop,
               onCompact: onCompact,
               isCompacting: isCompacting,
