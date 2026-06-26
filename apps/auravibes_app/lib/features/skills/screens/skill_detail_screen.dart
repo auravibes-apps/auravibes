@@ -7,7 +7,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
-import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
@@ -447,15 +447,21 @@ class _SkillDetailForm extends StatelessWidget {
         label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
         enabled: !isReadOnly,
       ),
-      _MarkdownDescriptionField(
+      MarkdownPreviewField(
         controller: descriptionController,
-        isReadOnly: isReadOnly,
+        titleKey: LocaleKeys.skills_screen_description_label,
+        editKey: LocaleKeys.skills_screen_edit_description,
+        emptyKey: LocaleKeys.skills_screen_description_empty,
         onEdit: onEditDescription,
-      ),
-      _MarkdownContentField(
-        controller: contentController,
         isReadOnly: isReadOnly,
+      ),
+      MarkdownPreviewField(
+        controller: contentController,
+        titleKey: LocaleKeys.skills_screen_content_label,
+        editKey: LocaleKeys.skills_screen_edit_content,
+        emptyKey: LocaleKeys.skills_screen_content_empty,
         onEdit: onEditContent,
+        isReadOnly: isReadOnly,
       ),
       AuraRow(
         children: [
@@ -519,122 +525,6 @@ class _SkillDetailForm extends StatelessWidget {
         ),
         disabled: isSaving,
       ),
-    );
-  }
-}
-
-class _MarkdownDescriptionField extends StatelessWidget {
-  const _MarkdownDescriptionField({
-    required this.controller,
-    required this.isReadOnly,
-    required this.onEdit,
-  });
-
-  final TextEditingController controller;
-  final bool isReadOnly;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          AuraRow(
-            children: [
-              const Expanded(
-                child: AuraText(
-                  child: TextLocale(LocaleKeys.skills_screen_description_label),
-                  style: AuraTextStyle.heading6,
-                ),
-              ),
-              if (!isReadOnly)
-                AuraButton(
-                  onPressed: onEdit,
-                  child: const TextLocale(
-                    LocaleKeys.skills_screen_edit_description,
-                  ),
-                  variant: AuraButtonVariant.outlined,
-                  size: AuraButtonSize.small,
-                ),
-            ],
-            spacing: .md,
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              final text = value.text.trim();
-              if (text.isEmpty) {
-                return const EmptyMarkdownPreview(
-                  label: LocaleKeys.skills_screen_description_empty,
-                );
-              }
-
-              return GptMarkdown(text);
-            },
-          ),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
-      ),
-      style: AuraCardStyle.border,
-    );
-  }
-}
-
-class _MarkdownContentField extends StatelessWidget {
-  const _MarkdownContentField({
-    required this.controller,
-    required this.isReadOnly,
-    required this.onEdit,
-  });
-
-  final TextEditingController controller;
-  final bool isReadOnly;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          AuraRow(
-            children: [
-              const Expanded(
-                child: AuraText(
-                  child: TextLocale(LocaleKeys.skills_screen_content_label),
-                  style: AuraTextStyle.heading6,
-                ),
-              ),
-              if (!isReadOnly)
-                AuraButton(
-                  onPressed: onEdit,
-                  child: const TextLocale(
-                    LocaleKeys.skills_screen_edit_content,
-                  ),
-                  variant: AuraButtonVariant.outlined,
-                  size: AuraButtonSize.small,
-                ),
-            ],
-            spacing: .md,
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              final text = value.text.trim();
-              if (text.isEmpty) {
-                return const EmptyMarkdownPreview(
-                  label: LocaleKeys.skills_screen_content_empty,
-                );
-              }
-
-              return GptMarkdown(text);
-            },
-          ),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
-      ),
-      style: AuraCardStyle.border,
     );
   }
 }

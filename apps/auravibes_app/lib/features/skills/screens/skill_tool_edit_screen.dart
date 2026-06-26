@@ -4,7 +4,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
-import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
@@ -485,8 +485,11 @@ class _SkillToolForm extends StatelessWidget {
                   LocaleKeys.skills_screen_title_label.tr(context: context),
                 ),
               ),
-              _MarkdownToolDescriptionField(
+              MarkdownPreviewField(
                 controller: descriptionController,
+                titleKey: LocaleKeys.skills_tool_description_label,
+                editKey: LocaleKeys.skills_screen_edit_description,
+                emptyKey: LocaleKeys.skills_screen_description_empty,
                 onEdit: onEditDescription,
               ),
               AuraInput(
@@ -605,61 +608,6 @@ class _SkillToolForm extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _MarkdownToolDescriptionField extends StatelessWidget {
-  const _MarkdownToolDescriptionField({
-    required this.controller,
-    required this.onEdit,
-  });
-
-  final TextEditingController controller;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraCard(
-      child: AuraColumn(
-        children: [
-          AuraRow(
-            children: [
-              const Expanded(
-                child: AuraText(
-                  child: TextLocale(LocaleKeys.skills_tool_description_label),
-                  style: AuraTextStyle.heading6,
-                ),
-              ),
-              AuraButton(
-                onPressed: onEdit,
-                child: const TextLocale(
-                  LocaleKeys.skills_screen_edit_description,
-                ),
-                variant: AuraButtonVariant.outlined,
-                size: AuraButtonSize.small,
-              ),
-            ],
-            spacing: .md,
-          ),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: controller,
-            builder: (context, value, _) {
-              final text = value.text.trim();
-              if (text.isEmpty) {
-                return const EmptyMarkdownPreview(
-                  label: LocaleKeys.skills_screen_description_empty,
-                );
-              }
-
-              return GptMarkdown(text);
-            },
-          ),
-        ],
-        spacing: .sm,
-        crossAxisAlignment: CrossAxisAlignment.start,
-      ),
-      style: AuraCardStyle.border,
     );
   }
 }
