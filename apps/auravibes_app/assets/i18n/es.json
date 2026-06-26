@@ -249,7 +249,11 @@
     "slug_label": "Slug",
     "title_label": "Título",
     "description_label": "Descripción",
+    "edit_description": "Editar descripción",
+    "description_empty": "Sin descripción todavía",
     "content_label": "Contenido",
+    "edit_content": "Editar contenido",
+    "content_empty": "Sin contenido todavía",
     "enabled_label": "Activada",
     "credential_optional_label": "La credencial es opcional",
     "credential_optional_hint": "Permite cargar esta habilidad aunque no se haya guardado una credencial.",
@@ -260,6 +264,20 @@
     "kind": {
       "template": "Plantilla",
       "native": "Nativa"
+    }
+  },
+  "markdown_editor": {
+    "title": "Editor Markdown",
+    "editor_label": "Markdown",
+    "preview_label": "Vista previa",
+    "empty": "Nada para previsualizar todavía",
+    "toolbar": {
+      "bold": "Negrita",
+      "italic": "Cursiva",
+      "heading": "Encabezado",
+      "bullets": "Viñetas",
+      "code": "Código",
+      "quote": "Cita"
     }
   },
   "skills_selector": {

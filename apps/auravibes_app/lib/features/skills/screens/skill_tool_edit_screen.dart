@@ -3,6 +3,8 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
+import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
@@ -15,6 +17,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:textf/textf.dart';
+
+const _skillToolDescriptionMaxCharacters = 1024;
 
 class SkillToolEditScreen extends ConsumerStatefulWidget {
   const SkillToolEditScreen({
@@ -35,7 +40,7 @@ class SkillToolEditScreen extends ConsumerStatefulWidget {
 
 class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final _descriptionController = TextfEditingController();
   final _urlController = TextEditingController();
   final _bodyController = TextEditingController();
   final _queryFields = <_KeyValueField>[];
@@ -94,6 +99,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
         isEnabled: _isEnabled,
         isSaving: _isSaving,
         skillHasCredentialDefinition: skillHasCredentialDefinition,
+        onEditDescription: () => _editDescription(context),
         onMethodChanged: (value) => setState(() => _method = value),
         onAddQueryField: () =>
             setState(() => _queryFields.add(_KeyValueField())),
@@ -131,6 +137,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
             isEnabled: _isEnabled,
             isSaving: _isSaving,
             skillHasCredentialDefinition: skillHasCredentialDefinition,
+            onEditDescription: () => _editDescription(context),
             onMethodChanged: (value) => setState(() => _method = value),
             onAddQueryField: () =>
                 setState(() => _queryFields.add(_KeyValueField())),
@@ -165,6 +172,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
             isEnabled: _isEnabled,
             isSaving: _isSaving,
             skillHasCredentialDefinition: skillHasCredentialDefinition,
+            onEditDescription: () => _editDescription(context),
             onMethodChanged: (value) => setState(() => _method = value),
             onAddQueryField: () =>
                 setState(() => _queryFields.add(_KeyValueField())),
@@ -219,6 +227,17 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       _inputFields.add(_InputField());
       _initialized = true;
     }
+  }
+
+  Future<void> _editDescription(BuildContext context) async {
+    final result = await showMarkdownEditor(
+      context,
+      initialMarkdown: _descriptionController.text,
+      maxCharacters: _skillToolDescriptionMaxCharacters,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _descriptionController.text = result);
   }
 
   void _removeQueryField(_KeyValueField field) {
@@ -407,6 +426,7 @@ class _SkillToolForm extends StatelessWidget {
     required this.isEnabled,
     required this.isSaving,
     required this.skillHasCredentialDefinition,
+    required this.onEditDescription,
     required this.onMethodChanged,
     required this.onAddQueryField,
     required this.onRemoveQueryField,
@@ -432,6 +452,7 @@ class _SkillToolForm extends StatelessWidget {
   final bool isEnabled;
   final bool isSaving;
   final bool skillHasCredentialDefinition;
+  final VoidCallback onEditDescription;
   final ValueChanged<UrlRequestMethod> onMethodChanged;
   final VoidCallback onAddQueryField;
   final ValueChanged<_KeyValueField> onRemoveQueryField;
@@ -464,16 +485,9 @@ class _SkillToolForm extends StatelessWidget {
                   LocaleKeys.skills_screen_title_label.tr(context: context),
                 ),
               ),
-              AuraInput(
+              _MarkdownToolDescriptionField(
                 controller: descriptionController,
-                placeholder: Text(
-                  LocaleKeys.skills_tool_description_hint.tr(context: context),
-                ),
-                label: Text(
-                  LocaleKeys.skills_tool_description_label.tr(context: context),
-                ),
-                minLines: 2,
-                maxLines: 4,
+                onEdit: onEditDescription,
               ),
               AuraInput(
                 controller: urlController,
@@ -591,6 +605,61 @@ class _SkillToolForm extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MarkdownToolDescriptionField extends StatelessWidget {
+  const _MarkdownToolDescriptionField({
+    required this.controller,
+    required this.onEdit,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          AuraRow(
+            children: [
+              const Expanded(
+                child: AuraText(
+                  child: TextLocale(LocaleKeys.skills_tool_description_label),
+                  style: AuraTextStyle.heading6,
+                ),
+              ),
+              AuraButton(
+                onPressed: onEdit,
+                child: const TextLocale(
+                  LocaleKeys.skills_screen_edit_description,
+                ),
+                variant: AuraButtonVariant.outlined,
+                size: AuraButtonSize.small,
+              ),
+            ],
+            spacing: .md,
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final text = value.text.trim();
+              if (text.isEmpty) {
+                return const EmptyMarkdownPreview(
+                  label: LocaleKeys.skills_screen_description_empty,
+                );
+              }
+
+              return GptMarkdown(text);
+            },
+          ),
+        ],
+        spacing: .sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      style: AuraCardStyle.border,
     );
   }
 }

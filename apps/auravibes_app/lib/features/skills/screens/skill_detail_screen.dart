@@ -6,6 +6,8 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
+import 'package:auravibes_app/features/markdown/widgets/empty_markdown_preview.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
@@ -26,6 +28,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:textf/textf.dart';
+
+const _skillDescriptionMaxCharacters = 1024;
 
 class SkillDetailScreen extends ConsumerStatefulWidget {
   const SkillDetailScreen({
@@ -43,7 +48,7 @@ class SkillDetailScreen extends ConsumerStatefulWidget {
 
 class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final _descriptionController = TextfEditingController();
   final _contentController = TextEditingController();
   String? _credentialDefinitionId;
   bool _isCredentialOptional = false;
@@ -159,8 +164,31 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       onCredentialOptionalChanged: (value) =>
           setState(() => _isCredentialOptional = value),
       onEnabledChanged: (value) => setState(() => _isEnabled = value),
+      onEditDescription: () => _editDescription(context),
+      onEditContent: () => _editContent(context),
       onSave: () => _save(context),
     );
+  }
+
+  Future<void> _editDescription(BuildContext context) async {
+    final result = await showMarkdownEditor(
+      context,
+      initialMarkdown: _descriptionController.text,
+      maxCharacters: _skillDescriptionMaxCharacters,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _descriptionController.text = result);
+  }
+
+  Future<void> _editContent(BuildContext context) async {
+    final result = await showMarkdownEditor(
+      context,
+      initialMarkdown: _contentController.text,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _contentController.text = result);
   }
 
   void _setCredentialDefinition(String? value) {
@@ -314,6 +342,8 @@ class _SkillDetailForm extends StatelessWidget {
     required this.onCredentialDefinitionChanged,
     required this.onCredentialOptionalChanged,
     required this.onEnabledChanged,
+    required this.onEditDescription,
+    required this.onEditContent,
     required this.onSave,
   });
 
@@ -329,6 +359,8 @@ class _SkillDetailForm extends StatelessWidget {
   final ValueChanged<String?> onCredentialDefinitionChanged;
   final ValueChanged<bool> onCredentialOptionalChanged;
   final ValueChanged<bool> onEnabledChanged;
+  final VoidCallback onEditDescription;
+  final VoidCallback onEditContent;
   final VoidCallback onSave;
 
   @override
@@ -416,21 +448,15 @@ class _SkillDetailForm extends StatelessWidget {
         label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
         enabled: !isReadOnly,
       ),
-      AuraInput(
+      _MarkdownDescriptionField(
         controller: descriptionController,
-        label: Text(
-          LocaleKeys.skills_screen_description_label.tr(context: context),
-        ),
-        enabled: !isReadOnly,
+        isReadOnly: isReadOnly,
+        onEdit: onEditDescription,
       ),
-      AuraInput(
+      _MarkdownContentField(
         controller: contentController,
-        label: Text(
-          LocaleKeys.skills_screen_content_label.tr(context: context),
-        ),
-        enabled: !isReadOnly,
-        minLines: 8,
-        maxLines: 16,
+        isReadOnly: isReadOnly,
+        onEdit: onEditContent,
       ),
       AuraRow(
         children: [
@@ -494,6 +520,122 @@ class _SkillDetailForm extends StatelessWidget {
         ),
         disabled: isSaving,
       ),
+    );
+  }
+}
+
+class _MarkdownDescriptionField extends StatelessWidget {
+  const _MarkdownDescriptionField({
+    required this.controller,
+    required this.isReadOnly,
+    required this.onEdit,
+  });
+
+  final TextEditingController controller;
+  final bool isReadOnly;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          AuraRow(
+            children: [
+              const Expanded(
+                child: AuraText(
+                  child: TextLocale(LocaleKeys.skills_screen_description_label),
+                  style: AuraTextStyle.heading6,
+                ),
+              ),
+              if (!isReadOnly)
+                AuraButton(
+                  onPressed: onEdit,
+                  child: const TextLocale(
+                    LocaleKeys.skills_screen_edit_description,
+                  ),
+                  variant: AuraButtonVariant.outlined,
+                  size: AuraButtonSize.small,
+                ),
+            ],
+            spacing: .md,
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final text = value.text.trim();
+              if (text.isEmpty) {
+                return const EmptyMarkdownPreview(
+                  label: LocaleKeys.skills_screen_description_empty,
+                );
+              }
+
+              return GptMarkdown(text);
+            },
+          ),
+        ],
+        spacing: .sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      style: AuraCardStyle.border,
+    );
+  }
+}
+
+class _MarkdownContentField extends StatelessWidget {
+  const _MarkdownContentField({
+    required this.controller,
+    required this.isReadOnly,
+    required this.onEdit,
+  });
+
+  final TextEditingController controller;
+  final bool isReadOnly;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraCard(
+      child: AuraColumn(
+        children: [
+          AuraRow(
+            children: [
+              const Expanded(
+                child: AuraText(
+                  child: TextLocale(LocaleKeys.skills_screen_content_label),
+                  style: AuraTextStyle.heading6,
+                ),
+              ),
+              if (!isReadOnly)
+                AuraButton(
+                  onPressed: onEdit,
+                  child: const TextLocale(
+                    LocaleKeys.skills_screen_edit_content,
+                  ),
+                  variant: AuraButtonVariant.outlined,
+                  size: AuraButtonSize.small,
+                ),
+            ],
+            spacing: .md,
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              final text = value.text.trim();
+              if (text.isEmpty) {
+                return const EmptyMarkdownPreview(
+                  label: LocaleKeys.skills_screen_content_empty,
+                );
+              }
+
+              return GptMarkdown(text);
+            },
+          ),
+        ],
+        spacing: .sm,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      style: AuraCardStyle.border,
     );
   }
 }
