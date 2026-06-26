@@ -210,7 +210,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     } else if (placeholder != null) {
       displayText = AuraText(
         child: placeholder,
-        color: AuraColorVariant.onSurfaceVariant,
+        style: AuraTextStyle.bodySmall,
       );
     } else {
       displayText = const Text('');
@@ -265,7 +265,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
                       size: AuraIconSize.small,
-                      color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -393,7 +392,7 @@ class _DropdownMenu<T> extends StatelessWidget {
                               const AuraIcon(
                                 Icons.check,
                                 size: AuraIconSize.small,
-                                color: AuraColorVariant.primary,
+                                tint: AuraTint.primary,
                               ),
                             ],
                           ],
@@ -403,7 +402,7 @@ class _DropdownMenu<T> extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? auraColors.primary.withValues(alpha: 0.08)
-                            : Colors.transparent,
+                            : DesignColors.transparent,
                         borderRadius: BorderRadius.all(
                           Radius.circular(
                             context.auraTheme.fromBorderRadius(

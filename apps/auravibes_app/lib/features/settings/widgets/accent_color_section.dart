@@ -23,14 +23,12 @@ class AccentColorSection extends ConsumerWidget {
           const AuraText(
             child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
             style: AuraTextStyle.heading6,
-            color: AuraColorVariant.onSurface,
           ),
           const AuraText(
             child: TextLocale(
               LocaleKeys.settings_screen_accent_color_subtitle,
             ),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
           AuraTile(
             child: const AuraText(

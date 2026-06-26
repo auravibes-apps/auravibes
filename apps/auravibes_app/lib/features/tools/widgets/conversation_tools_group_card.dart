@@ -158,7 +158,6 @@ class _ToolsList extends StatelessWidget {
           child: AuraText(
             child: Text(_kNoToolsInGroup.tr()),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
         ),
       );

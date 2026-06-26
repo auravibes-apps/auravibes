@@ -338,7 +338,6 @@ class _WorkspaceListTile extends StatelessWidget {
             const AuraText(
               child: TextLocale(LocaleKeys.workspace_management_active_label),
               style: AuraTextStyle.bodySmall,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
         ],
         spacing: .xs,

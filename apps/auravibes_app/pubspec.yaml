@@ -72,7 +72,6 @@ dev_dependencies:
   mocktail: ^1.0.4
   nock: ^1.2.3
   riverpod_generator: 4.0.4
-  sqlite3: ^3.3.3
 dependency_overrides:
   # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
   flutter_secure_storage_darwin: 0.2.0

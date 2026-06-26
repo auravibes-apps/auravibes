@@ -23,7 +23,6 @@ class EmptyMarkdownPreview extends StatelessWidget {
       child: AuraText(
         child: TextLocale(label),
         style: AuraTextStyle.caption,
-        color: AuraColorVariant.onSurfaceVariant,
       ),
     );
   }

@@ -1,10 +1,9 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraColorVariant, DesignColors;
+    show AuraTint, DesignColors;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,14 +14,14 @@ class AuraCheckbox extends StatelessWidget {
     required this.value,
     required this.onChanged,
     super.key,
-    this.colorVariant,
+    this.tint,
     this.disabled = false,
     this.autofocus = false,
   }) : _visualOnly = false;
 
   const AuraCheckbox._visual({
     required this.value,
-    required this.colorVariant,
+    required this.tint,
     required this.disabled,
   }) : onChanged = null,
        autofocus = false,
@@ -34,8 +33,8 @@ class AuraCheckbox extends StatelessWidget {
   /// Called when the user toggles the checkbox.
   final ValueChanged<bool>? onChanged;
 
-  /// Color variant used when selected.
-  final AuraColorVariant? colorVariant;
+  /// Tint used when selected.
+  final AuraTint? tint;
 
   /// Whether the checkbox is disabled.
   final bool disabled;
@@ -54,7 +53,7 @@ class AuraCheckbox extends StatelessWidget {
 
       return _CheckboxVisual(
         value: value,
-        colorVariant: colorVariant,
+        tint: tint,
         disabled: isDisabled,
         isFocused: isFocused,
       );
@@ -72,7 +71,7 @@ class AuraCheckbox extends StatelessWidget {
 
             return _CheckboxVisual(
               value: value,
-              colorVariant: colorVariant,
+              tint: tint,
               disabled: isDisabled,
               isFocused: isFocused,
             );
@@ -97,7 +96,7 @@ class AuraCheckboxListTile extends StatelessWidget {
     required this.title,
     super.key,
     this.subtitle,
-    this.colorVariant,
+    this.tint,
     this.disabled = false,
     this.autofocus = false,
   });
@@ -114,8 +113,8 @@ class AuraCheckboxListTile extends StatelessWidget {
   /// Optional subtitle widget.
   final Widget? subtitle;
 
-  /// Color variant used when selected.
-  final AuraColorVariant? colorVariant;
+  /// Tint used when selected.
+  final AuraTint? tint;
 
   /// Whether the tile is disabled.
   final bool disabled;
@@ -139,7 +138,7 @@ class AuraCheckboxListTile extends StatelessWidget {
           children: [
             AuraCheckbox._visual(
               value: value,
-              colorVariant: colorVariant,
+              tint: tint,
               disabled: isDisabled,
             ),
             const SizedBox(width: 12),
@@ -154,7 +153,6 @@ class AuraCheckboxListTile extends StatelessWidget {
                     AuraText(
                       child: subtitle,
                       style: AuraTextStyle.bodySmall,
-                      color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
                 ],
@@ -264,13 +262,13 @@ class _CheckboxFocusState extends InheritedWidget {
 class _CheckboxVisual extends StatelessWidget {
   const _CheckboxVisual({
     required this.value,
-    required this.colorVariant,
+    required this.tint,
     required this.disabled,
     required this.isFocused,
   });
 
   final bool value;
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
   final bool disabled;
   final bool isFocused;
 
@@ -290,10 +288,10 @@ class _CheckboxVisual extends StatelessWidget {
       width: 24,
       height: 24,
       child: value
-          ? const AuraIcon(
+          ? Icon(
               _checkIcon,
-              size: AuraIconSize.extraSmall,
-              color: AuraColorVariant.onPrimary,
+              size: 12,
+              color: auraColors.onTint(tint ?? AuraTint.primary),
             )
           : null,
       duration: context.auraTheme.animation.fast,
@@ -303,6 +301,6 @@ class _CheckboxVisual extends StatelessWidget {
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
 
-    return auraColors.getColorOrNull(colorVariant) ?? auraColors.primary;
+    return auraColors.colorFor(tint ?? AuraTint.primary);
   }
 }

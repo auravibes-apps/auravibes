@@ -26,9 +26,9 @@ Widget textStylesUseCase(BuildContext context) {
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
-    color: context.knobs.objectOrNull.dropdown(
-      label: 'Color',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'Tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),

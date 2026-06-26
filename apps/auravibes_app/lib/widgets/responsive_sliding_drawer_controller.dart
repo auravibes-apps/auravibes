@@ -102,8 +102,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   static const _dividerVisibleWidth = 4.0;
   static const _dividerIdleOpacity = 0.45;
   static const _desktopDragAreaWidth = 10.0;
-  static const Color _scrimColorLightMode = Colors.black;
-  static const Color _scrimColorDarkMode = Colors.white;
+  static const Color _scrimColorLightMode = DesignColors.neutral900;
+  static const Color _scrimColorDarkMode = DesignColors.neutral50;
   static const _scrimColorOpacityLightMode = 0.36;
   static const _scrimColorOpacityDarkMode = 0.38;
   static const _scrimGradientStartOpacityLightMode = 0.14;

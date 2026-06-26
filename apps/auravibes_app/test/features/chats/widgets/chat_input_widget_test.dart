@@ -13,6 +13,7 @@ void main() {
     VoidCallback onToolsPress = _noop,
     bool disabled = false,
     bool isBusy = false,
+    bool? showStopButton,
     VoidCallback? onStop,
   }) {
     return EasyLocalization(
@@ -30,6 +31,7 @@ void main() {
                       modelControl: const SizedBox.shrink(),
                       disabled: disabled,
                       isBusy: isBusy,
+                      showStopButton: showStopButton,
                       onStop: onStop,
                     ),
                   ),
@@ -143,6 +145,26 @@ void main() {
       ),
     );
 
+    expect(find.byIcon(Icons.stop_rounded).hitTestable(), findsNothing);
+  });
+
+  testWidgets('hides stop button while keeping input busy', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        isBusy: true,
+        showStopButton: false,
+        onStop: () {
+          final _ = Object();
+        },
+      ),
+    );
+
+    final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
+    expect(input.isBusy, isTrue);
     expect(find.byIcon(Icons.stop_rounded).hitTestable(), findsNothing);
   });
 

@@ -1,4 +1,3 @@
-import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -17,8 +16,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     required this.icon,
     super.key,
     this.size = AuraFABSize.regular,
-    this.backgroundColor,
-    this.foregroundColor,
+    this.tint,
     this.heroTag = const ValueKey<String>('aura_floating_action_button'),
     this.semanticLabel,
     this.tooltip,
@@ -30,8 +28,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     required this.icon,
     required this.text,
     super.key,
-    this.backgroundColor,
-    this.foregroundColor,
+    this.tint,
     this.heroTag = const ValueKey<String>('aura_floating_action_button'),
     this.semanticLabel,
     this.tooltip,
@@ -49,12 +46,8 @@ class AuraFloatingActionButton extends StatelessWidget {
   /// The size of the FAB.
   final AuraFABSize size;
 
-  /// The background color variant of the FAB. If null, uses the primary color.
-  final AuraColorVariant? backgroundColor;
-
-  /// The foreground color variant of the FAB.
-  /// If null, uses the primary contrast color.
-  final AuraColorVariant? foregroundColor;
+  /// The tint of the FAB. If null, uses the primary tint.
+  final AuraTint? tint;
 
   /// The tag used for the FAB hero animation.
   ///
@@ -71,10 +64,9 @@ class AuraFloatingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final labelText = text;
-    final resolvedBackground =
-        auraColors.getColorOrNull(backgroundColor) ?? auraColors.primary;
-    final resolvedForeground =
-        auraColors.getColorOrNull(foregroundColor) ?? auraColors.onPrimary;
+    final resolvedTint = tint ?? AuraTint.primary;
+    final resolvedBackground = auraColors.colorFor(resolvedTint);
+    final resolvedForeground = auraColors.onTint(resolvedTint);
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(
         context.auraTheme.fromBorderRadius(_getBorderRadius()),
@@ -93,7 +85,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         highlightElevation: _getHighlightElevation(),
         onPressed: onPressed,
         shape: shape,
-        icon: AuraIcon(icon, color: foregroundColor),
+        icon: Icon(icon, color: resolvedForeground),
         label: AuraText(
           child: Text(
             labelText,
@@ -106,10 +98,10 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
     } else {
       fab = FloatingActionButton(
-        child: AuraIcon(
+        child: Icon(
           icon,
-          size: _getIconSize(),
-          color: foregroundColor ?? AuraColorVariant.onPrimary,
+          size: _getIconPixels(),
+          color: resolvedForeground,
         ),
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
@@ -159,12 +151,12 @@ class AuraFloatingActionButton extends StatelessWidget {
     };
   }
 
-  AuraIconSize _getIconSize() {
+  double _getIconPixels() {
     return switch (size) {
-      AuraFABSize.mini => AuraIconSize.small,
-      AuraFABSize.regular => AuraIconSize.medium,
-      AuraFABSize.large => AuraIconSize.large,
-      AuraFABSize.extended => AuraIconSize.medium,
+      AuraFABSize.mini => 16,
+      AuraFABSize.regular => 20,
+      AuraFABSize.large => 24,
+      AuraFABSize.extended => 20,
     };
   }
 

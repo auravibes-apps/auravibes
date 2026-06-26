@@ -25,11 +25,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
 const _workspaceId = 'ws-1';
 const _chatId = 'chat-1';
+
+final _busyRefreshProvider = NotifierProvider<_BusyRefreshNotifier, int>(
+  _BusyRefreshNotifier.new,
+);
 
 void main() {
   setUp(() {
@@ -562,6 +567,112 @@ void main() {
     expect(input.isCompacting, isTrue);
   });
 
+  testWidgets('keeps input busy while busy state refreshes', (tester) async {
+    final conversation = ConversationEntity(
+      id: _chatId,
+      title: 'Chat',
+      workspaceId: _workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+    final refreshCompleter = Completer<ConversationBusyState>();
+    final container = ProviderContainer(
+      overrides: [
+        conversationSelectedProvider.overrideWithValue(_chatId),
+        routerPathSegmentsProvider.overrideWithValue(const []),
+        conversationRepositoryProvider.overrideWithValue(
+          _StubConversationRepository(),
+        ),
+        conversationChatProvider(_workspaceId).overrideWith(
+          () => _ResultChatNotifier(
+            ConversationFound(conversation),
+          ),
+        ),
+        conversationBusyStateProvider.overrideWith((ref) {
+          final refresh = ref.watch(_busyRefreshProvider);
+          if (refresh == 0) {
+            return Future.value(
+              const ConversationBusyState(
+                isStreaming: true,
+                hasPendingTools: false,
+              ),
+            );
+          }
+
+          return refreshCompleter.future;
+        }),
+        chatMessagesProvider.overrideWith(
+          (ref) async => const <MessageEntity>[],
+        ),
+        chatMessageIdsProvider.overrideWith(
+          (ref) => const <String>[],
+        ),
+        contextUsageProvider.overrideWith(
+          (ref) => ContextUsageData.compute(
+            usedTokens: 0,
+            limitTokens: null,
+          ),
+        ),
+        pendingToolCallsProvider.overrideWith(
+          (ref) async => const <PendingToolCall>[],
+        ),
+        listModelsGroupedByProviderProvider(
+          workspaceId: _workspaceId,
+        ).overrideWith(
+          (ref) => Stream.value(const {}),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return UncontrolledProviderScope(
+                container: container,
+                child: MaterialApp(
+                  home: const ChatConversationScreen(
+                    workspaceId: _workspaceId,
+                    chatId: _chatId,
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    });
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).isBusy,
+      isTrue,
+    );
+
+    container.read(_busyRefreshProvider.notifier).refresh();
+    await tester.pump();
+
+    expect(
+      tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).isBusy,
+      isTrue,
+    );
+  });
+
   testWidgets('shows rate-limit retry countdown and marks input busy', (
     tester,
   ) async {
@@ -683,6 +794,15 @@ class _StaticRateLimitRetryNotifier extends ConversationRateLimitRetryNotifier {
 
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
+}
+
+class _BusyRefreshNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void refresh() {
+    state = state + 1;
+  }
 }
 
 class _StubConversationRepository implements ConversationRepository {

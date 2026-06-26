@@ -182,7 +182,7 @@ class _AuraSidebarItem extends StatelessWidget {
       child: AuraPadding(
         child: AuraText(
           child: AuraRow(children: [icon, label], spacing: .sm),
-          color: selected ? .primary : null,
+          tint: selected ? AuraTint.primary : null,
         ),
         padding: .small,
       ),

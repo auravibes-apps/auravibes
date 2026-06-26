@@ -685,7 +685,6 @@ class _QueryFieldsSection extends StatelessWidget {
         ),
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_query_hint),
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         for (final field in fields)
           Row(
@@ -763,7 +762,6 @@ class _InputFieldsSection extends StatelessWidget {
         ),
         const AuraText(
           child: TextLocale(LocaleKeys.skills_tool_inputs_hint),
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         for (final field in fields)
           AuraCard(
@@ -939,7 +937,6 @@ class _ReadOnlyField extends StatelessWidget {
       children: [
         AuraText(
           child: TextLocale(labelKey),
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         AuraSelectableText(value),
       ],

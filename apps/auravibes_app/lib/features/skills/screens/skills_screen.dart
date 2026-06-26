@@ -180,7 +180,6 @@ class _SkillsScreenBody extends ConsumerWidget {
             const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
               textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraButton(
               onPressed: () => unawaited(onCreateSkill(context)),
@@ -348,7 +347,6 @@ class _SkillChip extends StatelessWidget {
       child: AuraText(
         child: Text(label),
         style: AuraTextStyle.caption,
-        color: AuraColorVariant.onSurfaceVariant,
       ),
       variant: AuraBadgeVariant.outlined,
       size: AuraBadgeSize.small,

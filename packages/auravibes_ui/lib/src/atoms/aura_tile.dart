@@ -67,7 +67,6 @@ class _AuraTileState extends State<AuraTile> {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
-    final loadingColorVariant = _getLoadingColorVariant();
     final leading = widget.leading;
     final trailing = widget.trailing;
     final tileChild = widget.child;
@@ -76,8 +75,15 @@ class _AuraTileState extends State<AuraTile> {
     final Widget content;
     if (widget.isLoading) {
       content = Center(
-        child: AuraLoadingCircle.compact(
-          colorVariant: loadingColorVariant,
+        child: AuraLoadingCircle(
+          tint: AuraTint.primary,
+          size: 20,
+          itemBuilder: (context, _) => DecoratedBox(
+            decoration: BoxDecoration(
+              color: _getTextColor(auraColors),
+              shape: BoxShape.circle,
+            ),
+          ),
         ),
       );
     } else if (isChildEmpty && leading != null && trailing == null) {
@@ -168,7 +174,7 @@ class _AuraTileState extends State<AuraTile> {
     final baseColor = switch (widget.variant) {
       AuraTileVariant.primary => colors.primary,
       AuraTileVariant.surface => colors.surface,
-      AuraTileVariant.ghost => Colors.transparent,
+      AuraTileVariant.ghost => DesignColors.transparent,
       AuraTileVariant.selected => colors.primary.withValues(alpha: 0.1),
       AuraTileVariant.error => colors.error,
     };
@@ -206,16 +212,6 @@ class _AuraTileState extends State<AuraTile> {
     return [];
   }
 
-  AuraColorVariant _getLoadingColorVariant() {
-    return switch (widget.variant) {
-      AuraTileVariant.primary => AuraColorVariant.onPrimary,
-      AuraTileVariant.surface => AuraColorVariant.onSurface,
-      AuraTileVariant.ghost => AuraColorVariant.primary,
-      AuraTileVariant.selected => AuraColorVariant.primary,
-      AuraTileVariant.error => AuraColorVariant.onError,
-    };
-  }
-
   TextStyle _getTextStyle(
     AuraColorScheme colors, {
     required AuraTypographyScale typography,
@@ -232,22 +228,24 @@ class _AuraTileState extends State<AuraTile> {
       AuraTileSize.large => typography.fontWeightSemibold,
     };
 
-    final textColor = !widget.enabled
-        ? colors.onSurfaceVariant
-        : switch (widget.variant) {
-            AuraTileVariant.primary => colors.onPrimary,
-            AuraTileVariant.surface => colors.onSurface,
-            AuraTileVariant.ghost => colors.primary,
-            AuraTileVariant.selected => colors.primary,
-            AuraTileVariant.error => colors.onError,
-          };
-
     return TextStyle(
-      color: textColor,
+      color: _getTextColor(colors),
       fontSize: fontSize,
       fontWeight: fontWeight,
       height: typography.lineHeightBase,
     );
+  }
+
+  Color _getTextColor(AuraColorScheme colors) {
+    if (!widget.enabled) return colors.mutedForeground;
+
+    return switch (widget.variant) {
+      AuraTileVariant.primary => colors.onTint(AuraTint.primary),
+      AuraTileVariant.surface => colors.foregroundOnSurface,
+      AuraTileVariant.ghost => colors.primary,
+      AuraTileVariant.selected => colors.primary,
+      AuraTileVariant.error => colors.onTint(AuraTint.error),
+    };
   }
 
   EdgeInsets _getPadding({required AuraSpacingScale spacing}) {

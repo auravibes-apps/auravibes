@@ -159,30 +159,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
             },
           ),
         ],
-        bottom: maxCharacters == null
-            ? null
-            : PreferredSize(
-                preferredSize: const Size.fromHeight(20),
-                child: GestureDetector(
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _controller,
-                    builder: (context, value, _) {
-                      final characterCount = value.text.characters.length;
-                      final isOverLimit = characterCount > maxCharacters;
-
-                      return Center(
-                        child: AuraText(
-                          child: Text('$characterCount/$maxCharacters'),
-                          style: AuraTextStyle.caption,
-                          color: _limitColor(isOverLimit),
-                        ),
-                      );
-                    },
-                  ),
-                  onTap: _unfocusInput,
-                  behavior: HitTestBehavior.opaque,
-                ),
-              ),
+        bottom: _buildLimitCounter(maxCharacters),
         leading: AuraIconButton(
           icon: Icons.close,
           onPressed: () => Navigator.of(context).pop(),
@@ -206,9 +183,31 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  AuraColorVariant _limitColor(bool isOverLimit) {
-    if (isOverLimit) return AuraColorVariant.error;
+  PreferredSizeWidget? _buildLimitCounter(int? maxCharacters) {
+    if (maxCharacters == null) return null;
 
-    return AuraColorVariant.onSurfaceVariant;
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(20),
+      child: GestureDetector(
+        child: ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _controller,
+          builder: (context, value, _) {
+            final characterCount = value.text.characters.length;
+            final isOverLimit = characterCount > maxCharacters;
+            final tint = isOverLimit ? AuraTint.error : null;
+
+            return Center(
+              child: AuraText(
+                child: Text('$characterCount/$maxCharacters'),
+                style: AuraTextStyle.caption,
+                tint: tint,
+              ),
+            );
+          },
+        ),
+        onTap: _unfocusInput,
+        behavior: HitTestBehavior.opaque,
+      ),
+    );
   }
 }

@@ -14,7 +14,7 @@ class AuraText extends StatelessWidget {
     super.key,
     this.style = AuraTextStyle.body,
     this.textAlign,
-    this.color,
+    this.tint,
   });
 
   /// The text to display.
@@ -26,20 +26,24 @@ class AuraText extends StatelessWidget {
   /// Aligmnet.
   final TextAlign? textAlign;
 
-  /// Enum color options.
-  final AuraColorVariant? color;
+  /// Optional accent tint.
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = auraResolveTextStyle(
-      style: style,
-      colors: context.auraColors,
-      typography: context.auraTheme.typography,
-    ).copyWith(color: context.auraColors.getColorOrNull(color));
+    final tint = this.tint;
+    final textStyle =
+        auraResolveTextStyle(
+          style: style,
+          colors: context.auraColors,
+          typography: context.auraTheme.typography,
+        ).copyWith(
+          color: tint == null ? null : context.auraColors.colorFor(tint),
+        );
 
     final iconData = IconThemeData(
       size: textStyle.fontSize,
-      color: context.auraColors.getColorOrNull(color) ?? textStyle.color,
+      color: tint == null ? textStyle.color : context.auraColors.colorFor(tint),
     );
 
     return DefaultTextStyle.merge(
@@ -61,7 +65,7 @@ TextStyle auraResolveTextStyle({
 
   return switch (style) {
     AuraTextStyle.heading1 => TextStyle(
-      color: colors.onBackground,
+      color: colors.foreground,
       fontSize: typography.fontSize5Xl,
       fontWeight: typography.fontWeightBold,
       letterSpacing: typography.letterSpacingTight,
@@ -69,7 +73,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.heading2 => TextStyle(
-      color: colors.onBackground,
+      color: colors.foreground,
       fontSize: typography.fontSize4Xl,
       fontWeight: typography.fontWeightBold,
       letterSpacing: typography.letterSpacingTight,
@@ -77,7 +81,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.heading3 => TextStyle(
-      color: colors.onBackground,
+      color: colors.foreground,
       fontSize: typography.fontSize3Xl,
       fontWeight: typography.fontWeightSemibold,
       letterSpacing: typography.letterSpacingTight,
@@ -85,7 +89,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.heading4 => TextStyle(
-      color: colors.onBackground,
+      color: colors.foreground,
       fontSize: typography.fontSize2Xl,
       fontWeight: typography.fontWeightSemibold,
       letterSpacing: typography.letterSpacingNormal,
@@ -93,7 +97,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.heading5 => TextStyle(
-      color: colors.onBackground,
+      color: colors.foreground,
       fontSize: typography.fontSizeXl,
       fontWeight: typography.fontWeightSemibold,
       letterSpacing: typography.letterSpacingNormal,
@@ -101,7 +105,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.heading6 => TextStyle(
-      color: colors.onBackground,
+      color: colors.foreground,
       fontSize: typography.fontSizeLg,
       fontWeight: typography.fontWeightSemibold,
       letterSpacing: typography.letterSpacingNormal,
@@ -109,7 +113,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.bodyLarge => TextStyle(
-      color: colors.onSurface,
+      color: colors.foregroundOnSurface,
       fontSize: typography.fontSizeLg,
       fontWeight: typography.fontWeightRegular,
       letterSpacing: typography.letterSpacingNormal,
@@ -117,7 +121,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.body => TextStyle(
-      color: colors.onSurface,
+      color: colors.foregroundOnSurface,
       fontSize: typography.fontSizeBase,
       fontWeight: typography.fontWeightRegular,
       letterSpacing: typography.letterSpacingNormal,
@@ -125,7 +129,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.bodySmall => TextStyle(
-      color: colors.onSurfaceVariant,
+      color: colors.mutedForeground,
       fontSize: typography.fontSizeSm,
       fontWeight: typography.fontWeightRegular,
       letterSpacing: typography.letterSpacingNormal,
@@ -133,7 +137,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.caption => TextStyle(
-      color: colors.onSurfaceVariant,
+      color: colors.mutedForeground,
       fontSize: typography.fontSizeXs,
       fontWeight: typography.fontWeightRegular,
       letterSpacing: typography.letterSpacingWide,
@@ -141,7 +145,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.overline => TextStyle(
-      color: colors.onSurfaceVariant,
+      color: colors.mutedForeground,
       fontSize: typography.fontSizeXs,
       fontWeight: typography.fontWeightMedium,
       letterSpacing: typography.letterSpacingWide,
@@ -156,7 +160,7 @@ TextStyle auraResolveTextStyle({
       fontFamily: fontFamily,
     ),
     AuraTextStyle.code => TextStyle(
-      color: colors.onSurface,
+      color: colors.foregroundOnSurface,
       fontSize: typography.fontSizeSm,
       fontWeight: typography.fontWeightRegular,
       letterSpacing: typography.letterSpacingNormal,

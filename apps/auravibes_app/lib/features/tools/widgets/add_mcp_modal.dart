@@ -138,7 +138,7 @@ class _AddMcpModalHeader extends StatelessWidget {
         children: [
           const AuraIcon(
             Icons.extension,
-            color: AuraColorVariant.primary,
+            tint: AuraTint.primary,
           ),
           const Expanded(
             child: AuraText(
@@ -212,7 +212,7 @@ class _ErrorBanner extends ConsumerWidget {
           const AuraIcon(
             Icons.error_outline,
             size: AuraIconSize.small,
-            color: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
           const AuraSizedBox(width: .sm),
           Expanded(
@@ -304,7 +304,6 @@ class _TransportSelector extends ConsumerWidget {
         const AuraText(
           child: TextLocale(LocaleKeys.mcp_modal_fields_transport_label),
           style: AuraTextStyle.bodySmall,
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         AuraDropdownSelector<McpTransportTypeOptions>(
           options: const [
@@ -363,7 +362,6 @@ class _Http2Toggle extends ConsumerWidget {
               AuraText(
                 child: TextLocale(LocaleKeys.mcp_modal_fields_use_http2_hint),
                 style: AuraTextStyle.bodySmall,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
             spacing: .none,
@@ -403,7 +401,6 @@ class _AuthenticationSelector extends ConsumerWidget {
         const AuraText(
           child: TextLocale(LocaleKeys.mcp_modal_fields_authentication_label),
           style: AuraTextStyle.bodySmall,
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         AuraButtonGroup<McpAuthenticationTypeOptions>.single(
           items: availableTypes.map((type) {

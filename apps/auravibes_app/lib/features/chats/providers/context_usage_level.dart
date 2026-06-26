@@ -57,12 +57,12 @@ enum ContextUsageLevel {
     ContextUsageLevel.unknown => Icons.help_outline,
   };
 
-  AuraColorVariant get iconColor => switch (this) {
-    ContextUsageLevel.normal => AuraColorVariant.success,
-    ContextUsageLevel.elevated => AuraColorVariant.info,
-    ContextUsageLevel.warning => AuraColorVariant.warning,
-    ContextUsageLevel.overflow => AuraColorVariant.error,
-    ContextUsageLevel.unknown => AuraColorVariant.onSurfaceVariant,
+  AuraTint? get iconTint => switch (this) {
+    ContextUsageLevel.normal => AuraTint.success,
+    ContextUsageLevel.elevated => AuraTint.info,
+    ContextUsageLevel.warning => AuraTint.warning,
+    ContextUsageLevel.overflow => AuraTint.error,
+    ContextUsageLevel.unknown => null,
   };
 }
 
