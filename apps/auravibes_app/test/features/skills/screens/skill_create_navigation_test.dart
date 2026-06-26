@@ -102,8 +102,30 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Write Summary');
-    await tester.enterText(find.byType(TextFormField).at(1), 'Summarize text');
-    await tester.enterText(find.byType(TextFormField).at(2), 'Summarize text.');
+    await tester.tap(find.text('Edit description'));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).last, 'a' * 1025);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('1025/1024'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.save_outlined).last);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Markdown editor'), findsOneWidget);
+    await tester.enterText(
+      find.byType(TextFormField).last,
+      '# Summary\n\n**Bold**',
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('19/1024'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.save_outlined).last);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit content'));
+    final _ = await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextFormField).last,
+      'Summarize text.',
+    );
+    await tester.tap(find.byIcon(Icons.save_outlined).last);
+    final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));
     final _ = await tester.pumpAndSettle();
 
@@ -119,6 +141,8 @@ void main() {
       database,
     ).getSkillByTitle(workspace.id, 'Write Summary');
     final skillId = (skill ?? fail('skill missing')).id;
+    expect(skill.description, '# Summary\n\n**Bold**');
+    expect(skill.content, 'Summarize text.');
     expect(skill.credentialDefinitionId, null);
 
     final _ = router.push(
