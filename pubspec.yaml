@@ -137,12 +137,9 @@ melos:
 
     validate:quick:
       run: |
-        melos analyze &&
-        melos run unused:files &&
-        melos run unused:code &&
-        melos run unnecessary:nullable &&
-        melos run format:check
-      description: Quick validation for development
+        dart analyze --fatal-infos --fatal-warnings &&
+        dart format --line-length 80 -o none --set-exit-if-changed .
+      description: Quick validation for development (analyze + format)
 
     # Development Scripts
     outdated:
