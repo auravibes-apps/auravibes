@@ -42,6 +42,7 @@ class ChatInputWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController();
+    final focusNode = useFocusNode();
 
     final isEmpty = useListenableSelector(
       controller,
@@ -58,129 +59,142 @@ class ChatInputWidget extends HookConsumerWidget {
     );
 
     final shouldShowStopButton = showStopButton ?? isBusy;
+    const continueAgentKey =
+        LocaleKeys.chats_screens_chat_conversation_continue_agent;
+    const stopGenerationKey =
+        LocaleKeys.chats_screens_chat_conversation_stop_generation;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: AuraInput(
-        controller: controller,
-        placeholder: const TextLocale(
-          LocaleKeys.chats_screens_chat_conversation_message_placeholder,
-        ),
-        textInputAction: TextInputAction.send,
-        maxLines: 2,
-        onSubmitted: (value) {
-          sendMessage.call();
-        },
-        footer: Row(
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                modelControl,
-                const AuraSizedBox(width: .xs),
-                AuraPopupMenuButton(
-                  items: [
-                    AuraPopupMenuItem(
-                      title: const TextLocale(LocaleKeys.menu_tools),
-                      onTap: onToolsPress,
-                      leading: const AuraIcon(Icons.build_circle_outlined),
-                    ),
-                    if (onSkillsPress case final onSkillsPress?)
-                      AuraPopupMenuItem(
-                        title: const TextLocale(
-                          LocaleKeys.skills_selector_title,
+    return TextFieldTapRegion(
+      child: GestureDetector(
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: AuraInput(
+              controller: controller,
+              placeholder: const TextLocale(
+                LocaleKeys.chats_screens_chat_conversation_message_placeholder,
+              ),
+              textInputAction: TextInputAction.send,
+              maxLines: 2,
+              onSubmitted: (value) {
+                sendMessage.call();
+              },
+              onTapOutside: (_) => focusNode.unfocus(),
+              focusNode: focusNode,
+              footer: GestureDetector(
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (disabledHint case final Widget disabledHint) ...[
+                        AuraText(
+                          child: Row(
+                            children: [
+                              const AuraIcon(
+                                Icons.info_outline,
+                                size: AuraIconSize.small,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(child: disabledHint),
+                            ],
+                          ),
+                          style: AuraTextStyle.bodySmall,
                         ),
-                        onTap: onSkillsPress,
-                        leading: const AuraIcon(
-                          Icons.psychology_alt_outlined,
-                        ),
-                      ),
-                    if (onContinueAgent != null)
-                      AuraPopupMenuItem(
-                        title: const TextLocale(
-                          LocaleKeys
-                              .chats_screens_chat_conversation_continue_agent,
-                        ),
-                        onTap: onContinueAgent,
-                        leading: const AuraIcon(Icons.play_circle_outline),
-                      ),
-                    if (onCompact != null &&
-                        !disabled &&
-                        !isBusy &&
-                        !isCompacting)
-                      AuraPopupMenuItem(
-                        title: const TextLocale(
-                          LocaleKeys.compaction_manual_button_tooltip,
-                        ),
-                        onTap: onCompact,
-                        leading: const AuraIcon(Icons.compress_outlined),
-                      ),
-                  ],
-                  icon: Icons.tune_rounded,
-                  tooltip: LocaleKeys
-                      .chats_screens_chat_conversation_options_tooltip
-                      .tr(),
-                ),
-              ],
-            ),
-
-            if (disabledHint case final Widget disabledHint)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: AuraText(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const AuraIcon(
-                          Icons.info_outline,
-                          size: AuraIconSize.small,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(child: disabledHint),
+                        const AuraSizedBox(height: .xs),
                       ],
-                    ),
-                    style: AuraTextStyle.bodySmall,
-                  ),
-                ),
-              )
-            else
-              const Spacer(),
-
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onStop case final onStop?) ...[
-                  Visibility(
-                    child: AuraTooltip(
-                      message: LocaleKeys
-                          .chats_screens_chat_conversation_stop_generation
-                          .tr(),
-                      child: AuraButton(
-                        onPressed: onStop,
-                        child: const AuraIcon(Icons.stop_rounded),
-                        variant: AuraButtonVariant.outlined,
-                        tint: AuraTint.error,
-                        size: AuraButtonSize.small,
+                      Row(
+                        children: [
+                          Flexible(child: modelControl),
+                          const AuraSizedBox(width: .xs),
+                          AuraPopupMenuButton(
+                            items: [
+                              AuraPopupMenuItem(
+                                title: const TextLocale(LocaleKeys.menu_tools),
+                                onTap: onToolsPress,
+                                leading: const AuraIcon(
+                                  Icons.build_circle_outlined,
+                                ),
+                              ),
+                              if (onSkillsPress case final onSkillsPress?)
+                                AuraPopupMenuItem(
+                                  title: const TextLocale(
+                                    LocaleKeys.skills_selector_title,
+                                  ),
+                                  onTap: onSkillsPress,
+                                  leading: const AuraIcon(
+                                    Icons.psychology_alt_outlined,
+                                  ),
+                                ),
+                              if (onContinueAgent != null)
+                                AuraPopupMenuItem(
+                                  title: const TextLocale(
+                                    continueAgentKey,
+                                  ),
+                                  onTap: onContinueAgent,
+                                  leading: const AuraIcon(
+                                    Icons.play_circle_outline,
+                                  ),
+                                ),
+                              if (onCompact != null &&
+                                  !disabled &&
+                                  !isBusy &&
+                                  !isCompacting)
+                                AuraPopupMenuItem(
+                                  title: const TextLocale(
+                                    LocaleKeys.compaction_manual_button_tooltip,
+                                  ),
+                                  onTap: onCompact,
+                                  leading: const AuraIcon(
+                                    Icons.compress_outlined,
+                                  ),
+                                ),
+                            ],
+                            icon: Icons.tune_rounded,
+                            tooltip: LocaleKeys
+                                .chats_screens_chat_conversation_options_tooltip
+                                .tr(),
+                          ),
+                          const Spacer(),
+                          if (onStop case final onStop?) ...[
+                            Visibility(
+                              child: AuraTooltip(
+                                message: stopGenerationKey.tr(),
+                                child: AuraButton(
+                                  onPressed: onStop,
+                                  child: const AuraIcon(Icons.stop_rounded),
+                                  variant: AuraButtonVariant.outlined,
+                                  tint: AuraTint.error,
+                                  size: AuraButtonSize.small,
+                                ),
+                              ),
+                              visible: shouldShowStopButton,
+                              maintainState: true,
+                              maintainAnimation: true,
+                              maintainSize: true,
+                            ),
+                            const AuraSizedBox(width: .xs),
+                          ],
+                          AuraButton(
+                            onPressed: sendMessage,
+                            child: const AuraIcon(Icons.arrow_upward),
+                            size: AuraButtonSize.small,
+                            disabled: isEmpty || disabled,
+                          ),
+                        ],
                       ),
-                    ),
-                    visible: shouldShowStopButton,
-                    maintainState: true,
-                    maintainAnimation: true,
-                    maintainSize: true,
+                    ],
                   ),
-                  const AuraSizedBox(width: .xs),
-                ],
-                AuraButton(
-                  onPressed: sendMessage,
-                  child: const AuraIcon(Icons.arrow_upward),
-                  size: AuraButtonSize.small,
-                  disabled: isEmpty || disabled,
                 ),
-              ],
+                onTap: () => focusNode.hasFocus,
+                behavior: HitTestBehavior.opaque,
+              ),
             ),
-          ],
+          ),
         ),
+        onTap: focusNode.requestFocus,
+        behavior: HitTestBehavior.translucent,
       ),
     );
   }

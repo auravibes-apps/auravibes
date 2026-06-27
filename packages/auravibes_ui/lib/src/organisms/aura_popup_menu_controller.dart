@@ -244,6 +244,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
                 ),
               ),
             ),
+            onTapOutside: (_) => close(),
             groupId: this,
           ),
           child: TapRegion(

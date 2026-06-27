@@ -40,9 +40,9 @@
   },
   "models_screens": {
     "select_provider": "Select Provider",
-    "select_model": "Select Model",
+    "select_model": "Model",
     "select_provider_first": "Select provider first",
-    "no_providers_configured": "No providers configured",
+    "no_providers_configured": "No model",
     "no_models_available": "No models available",
     "title": "Model Providers",
     "list_error": "Error loading models: {}",
