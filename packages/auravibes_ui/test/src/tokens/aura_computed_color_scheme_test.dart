@@ -149,6 +149,17 @@ void main() {
       expect(OKLCHColor.fromColor(s.background).chroma, lessThan(0.001));
     });
 
+    test('light background is below surface elevation', () {
+      final s = AuraComputedColorScheme(
+        primaryHue: 180,
+        brightness: AuraBrightness.light,
+      );
+      final background = OKLCHColor.fromColor(s.background);
+      final surface = OKLCHColor.fromColor(s.surface);
+
+      expect(background.lightness, lessThan(surface.lightness));
+    });
+
     test('dark background is gray and below surface elevation', () {
       final s = AuraComputedColorScheme(
         primaryHue: 180,
