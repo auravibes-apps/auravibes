@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,8 @@ void main() {
     await _pumpUntilFound(tester, find.byKey(_continueKey));
 
     expect(find.text('Welcome to AuraVibes'), findsOneWidget);
+    _expectProgressStepColor(tester, 0, AuraTheme.light.colors.primary);
+    _expectProgressStepColor(tester, 1, AuraTheme.light.colors.outlineVariant);
 
     await tester.tap(find.byKey(_continueKey));
     await _pumpUntilFound(tester, find.byKey(_continueKey));
@@ -72,6 +75,18 @@ const _continueKey = Key('intro_continue_button');
 const _connectAiKey = Key('intro_connect_ai_button');
 const _createWorkspaceKey = Key('intro_create_workspace_button');
 const _skipAiKey = Key('intro_skip_ai_button');
+
+Key _progressStepKey(int index) => Key('intro_progress_step_$index');
+
+void _expectProgressStepColor(
+  WidgetTester tester,
+  int index,
+  Color color,
+) {
+  final step = tester.widget<DecoratedBox>(find.byKey(_progressStepKey(index)));
+
+  expect((step.decoration as BoxDecoration).color, color);
+}
 
 Future<void> _pumpFrame(WidgetTester tester) async {
   await tester.pump();
