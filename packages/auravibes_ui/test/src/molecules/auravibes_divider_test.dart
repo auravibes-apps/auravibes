@@ -60,7 +60,7 @@ void main() {
     });
 
     testWidgets('applies custom color correctly', (tester) async {
-      const customColor = AuraColorVariant.error;
+      const customColor = AuraTint.error;
 
       await tester.pumpWidget(
         const MaterialApp(
@@ -75,7 +75,7 @@ void main() {
       final innerContainer = tester.widget<Container>(
         find.byType(Container).last,
       );
-      // Note: The actual color will be resolved from AuraColorVariant.error.
+      // Note: The actual color will be resolved from AuraTint.error.
       expect(innerContainer.color, isNotNull);
     });
 

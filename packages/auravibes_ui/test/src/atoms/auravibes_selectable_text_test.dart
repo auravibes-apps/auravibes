@@ -197,13 +197,13 @@ void main() {
       );
     });
 
-    testWidgets('applies colorVariant', (tester) async {
+    testWidgets('applies tint', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
             body: AuraSelectableText(
               'Error text',
-              colorVariant: AuraColorVariant.error,
+              tint: AuraTint.error,
             ),
           ),
           theme: ThemeData.light().copyWith(
@@ -301,13 +301,13 @@ void main() {
       expect(selectableText.cursorColor, AuraTheme.light.colors.primary);
     });
 
-    testWidgets('respects custom cursorColorVariant', (tester) async {
+    testWidgets('respects custom cursorTint', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
             body: AuraSelectableText(
               'Custom cursor',
-              cursorColorVariant: AuraColorVariant.secondary,
+              cursorTint: AuraTint.secondary,
             ),
           ),
           theme: ThemeData.light().copyWith(

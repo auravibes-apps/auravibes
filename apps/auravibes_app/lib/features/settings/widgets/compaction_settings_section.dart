@@ -89,12 +89,10 @@ class _CompactionSettingsSectionState
           const AuraText(
             child: TextLocale(LocaleKeys.compaction_settings_title),
             style: AuraTextStyle.heading6,
-            color: AuraColorVariant.onSurface,
           ),
           const AuraText(
             child: TextLocale(LocaleKeys.compaction_settings_subtitle),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
           AuraRow(
             children: [
@@ -111,7 +109,6 @@ class _CompactionSettingsSectionState
                         LocaleKeys.compaction_settings_auto_enabled_hint,
                       ),
                       style: AuraTextStyle.bodySmall,
-                      color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
                   spacing: .xs,

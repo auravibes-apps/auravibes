@@ -119,7 +119,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
                   AuraIcon(
                     Icons.open_in_new,
                     size: AuraIconSize.small,
-                    color: AuraColorVariant.primary,
+                    tint: AuraTint.primary,
                   ),
                 ],
                 spacing: .xs,

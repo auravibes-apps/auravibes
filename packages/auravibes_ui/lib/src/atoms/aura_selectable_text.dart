@@ -21,14 +21,14 @@ class AuraSelectableText extends StatelessWidget {
     this.data, {
     super.key,
     this.style = AuraTextStyle.body,
-    this.colorVariant,
+    this.tint,
     this.textAlign,
     this.maxLines,
     this.onTap,
     this.cursorWidth = 2.0,
     this.cursorHeight,
     this.cursorRadius,
-    this.cursorColorVariant,
+    this.cursorTint,
     this.onSelectionChanged,
     this.showCursor = false,
     this.autofocus = false,
@@ -41,8 +41,8 @@ class AuraSelectableText extends StatelessWidget {
   /// The style variant to apply to the text.
   final AuraTextStyle style;
 
-  /// The color variant for the text.
-  final AuraColorVariant? colorVariant;
+  /// The tint for the text.
+  final AuraTint? tint;
 
   /// How the text should be aligned horizontally.
   final TextAlign? textAlign;
@@ -62,8 +62,8 @@ class AuraSelectableText extends StatelessWidget {
   /// How rounded the cursor is.
   final Radius? cursorRadius;
 
-  /// The color variant for the cursor.
-  final AuraColorVariant? cursorColorVariant;
+  /// The tint for the cursor.
+  final AuraTint? cursorTint;
 
   /// Called when the user changes the selection.
   final SelectionChangedCallback? onSelectionChanged;
@@ -80,14 +80,16 @@ class AuraSelectableText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final tint = this.tint;
+    final cursorTint = this.cursorTint;
     final baseStyle = auraResolveTextStyle(
       style: style,
       colors: auraColors,
       typography: context.auraTheme.typography,
     );
-    // Only override color when colorVariant is provided.
-    final textStyle = colorVariant != null
-        ? baseStyle.copyWith(color: auraColors.getColorOrNull(colorVariant))
+    // Only override color when tint is provided.
+    final textStyle = tint != null
+        ? baseStyle.copyWith(color: auraColors.colorFor(tint))
         : baseStyle;
 
     return SelectableText(
@@ -101,8 +103,8 @@ class AuraSelectableText extends StatelessWidget {
       cursorWidth: cursorWidth,
       cursorHeight: cursorHeight,
       cursorRadius: cursorRadius,
-      cursorColor: cursorColorVariant != null
-          ? auraColors.getColorOrNull(cursorColorVariant)
+      cursorColor: cursorTint != null
+          ? auraColors.colorFor(cursorTint)
           : auraColors.primary,
       onTap: onTap,
       onSelectionChanged: onSelectionChanged,

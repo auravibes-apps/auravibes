@@ -38,10 +38,10 @@ Finder findAuraButtonByLabel(String label) {
   );
 }
 
-/// Finds an [AuraButton] with the given [AuraColorVariant].
-Finder findAuraButtonByColorVariant(AuraColorVariant variant) {
+/// Finds an [AuraButton] with the given [AuraTint].
+Finder findAuraButtonByColorVariant(AuraTint variant) {
   return find.byWidgetPredicate(
-    (widget) => widget is AuraButton && widget.colorVariant == variant,
+    (widget) => widget is AuraButton && widget.tint == variant,
   );
 }
 
@@ -101,7 +101,7 @@ void main() {
 
       // The confirm button should have error styling.
       final confirmButton = findAuraButtonByColorVariant(
-        AuraColorVariant.error,
+        AuraTint.error,
       );
 
       expect(confirmButton, findsOneWidget);
@@ -123,7 +123,7 @@ void main() {
       expect(find.text('No'), findsOneWidget);
     });
 
-    testWidgets('applies custom colorVariant when provided', (tester) async {
+    testWidgets('applies custom tint when provided', (tester) async {
       await tester.pumpWidget(
         const AuraThemeWrapper(
           child: AuraConfirmDialog(
@@ -131,14 +131,14 @@ void main() {
             message: Text('Proceed with caution'),
             confirmLabel: Text('Confirm'),
             cancelLabel: Text('Cancel'),
-            colorVariant: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
         ),
       );
 
       final confirmButtonFinder = findAuraButtonByLabel('Confirm');
       final confirmButton = tester.widget<AuraButton>(confirmButtonFinder);
-      expect(confirmButton.colorVariant, AuraColorVariant.error);
+      expect(confirmButton.tint, AuraTint.error);
     });
 
     testWidgets('calls onConfirm when confirm button tapped', (tester) async {

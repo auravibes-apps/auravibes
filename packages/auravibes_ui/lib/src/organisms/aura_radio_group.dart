@@ -43,7 +43,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
     super.key,
     this.label,
     this.direction = Axis.vertical,
-    this.colorVariant,
+    this.tint,
   });
   static const double _kRadioVisualSize = 24;
 
@@ -62,8 +62,8 @@ class AuraRadioGroup<T> extends StatelessWidget {
   /// Layout direction for the options.
   final Axis direction;
 
-  /// Color variant for all radio buttons in the group.
-  final AuraColorVariant? colorVariant;
+  /// Tint for all radio buttons in the group.
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +76,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
       onChanged: onChanged,
       options: options,
       direction: direction,
-      colorVariant: colorVariant,
+      tint: tint,
     );
 
     final label = this.label;
@@ -101,14 +101,14 @@ class _AuraRadioOptions<T> extends StatelessWidget {
     required this.onChanged,
     required this.options,
     required this.direction,
-    required this.colorVariant,
+    required this.tint,
   });
 
   final T? value;
   final ValueChanged<T?>? onChanged;
   final List<AuraRadioOption<T>> options;
   final Axis direction;
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +176,7 @@ class _AuraRadioOptions<T> extends StatelessWidget {
           value: option.value,
           groupValue: value,
           onChanged: onChanged,
-          colorVariant: colorVariant,
+          tint: tint,
           disabled: option.disabled,
         ),
         const AuraSizedBox(width: .sm),
@@ -231,7 +231,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
     required this.title,
     super.key,
     this.subtitle,
-    this.colorVariant,
+    this.tint,
     this.disabled = false,
   });
 
@@ -250,8 +250,8 @@ class AuraRadioListTile<T> extends StatelessWidget {
   /// Optional subtitle widget.
   final Widget? subtitle;
 
-  /// Color variant when selected.
-  final AuraColorVariant? colorVariant;
+  /// Tint when selected.
+  final AuraTint? tint;
 
   /// Whether the tile is disabled.
   final bool disabled;
@@ -275,7 +275,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
                 value: value,
                 groupValue: groupValue,
                 onChanged: isDisabled ? null : onChanged,
-                colorVariant: colorVariant,
+                tint: tint,
                 disabled: isDisabled,
               ),
               const SizedBox(width: 12),

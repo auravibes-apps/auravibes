@@ -85,6 +85,16 @@ class _MockGroupedConversationToolsNotifier
   }) async => groups;
 }
 
+class _MockMcpConnectionNotifier extends McpConnectionNotifier {
+  @override
+  List<McpConnectionState> build() => const [];
+
+  @override
+  Future<void> reconnectMcpServer(String serverId) async {
+    final _ = serverId;
+  }
+}
+
 class _Subject extends StatelessWidget {
   const _Subject({required this.child});
 
@@ -95,6 +105,9 @@ class _Subject extends StatelessWidget {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
+          mcpConnectionProvider.overrideWith(
+            _MockMcpConnectionNotifier.new,
+          ),
           conversationToolsProvider(
             workspaceId: _workspaceId,
           ).overrideWith(

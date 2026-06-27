@@ -39,9 +39,6 @@ class AuraFieldHint extends StatelessWidget {
     if (displayText == null) return const SizedBox.shrink();
 
     final isError = error != null;
-    final color = isError
-        ? AuraColorVariant.error
-        : AuraColorVariant.onSurfaceVariant;
     final textStyle = isError
         ? (errorStyle ?? AuraTextStyle.caption)
         : (style ?? AuraTextStyle.caption);
@@ -52,7 +49,7 @@ class AuraFieldHint extends StatelessWidget {
         label: semanticLabel,
       ),
       style: textStyle,
-      color: color,
+      tint: isError ? AuraTint.error : null,
     );
   }
 }

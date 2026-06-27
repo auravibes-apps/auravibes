@@ -67,14 +67,13 @@ void main() {
       expect(sizedBox.height, 8);
     });
 
-    testWidgets('resolves color variants', (tester) async {
+    testWidgets('resolves tints', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
             body: AuraLinearProgressIndicator(
               value: 0.5,
-              color: AuraColorVariant.error,
-              backgroundColor: AuraColorVariant.onSurfaceVariant,
+              tint: AuraTint.error,
               backgroundAlpha: 0.25,
             ),
           ),
@@ -96,7 +95,7 @@ void main() {
       final [background, fill] = coloredBoxes;
       expect(
         background.color,
-        AuraTheme.light.colors.onSurfaceVariant.withValues(alpha: 0.25),
+        AuraTheme.light.colors.surfaceVariant.withValues(alpha: 0.25),
       );
       expect(fill.color, AuraTheme.light.colors.error);
     });

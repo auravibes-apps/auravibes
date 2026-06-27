@@ -2,7 +2,7 @@
 import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
-    show AuraBorderRadius, AuraColorVariant;
+    show AuraBorderRadius, AuraTint, DesignColors;
 import 'package:flutter/material.dart';
 
 /// A customizable icon component following the Aura design system.
@@ -15,7 +15,7 @@ class AuraIcon extends StatelessWidget {
     this.icon, {
     super.key,
     this.size = AuraIconSize.medium,
-    this.color,
+    this.tint,
     this.semanticLabel,
   });
 
@@ -25,9 +25,9 @@ class AuraIcon extends StatelessWidget {
   /// The size of the icon.
   final AuraIconSize size;
 
-  /// The color variant of the icon.
+  /// The tint of the icon.
   /// If null, uses the default color from the theme.
-  final AuraColorVariant? color;
+  final AuraTint? tint;
 
   /// A semantic label for the icon for accessibility.
   final String? semanticLabel;
@@ -35,8 +35,10 @@ class AuraIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final iconColor =
-        auraColors.getColorOrNull(color) ?? _getDefaultColor(auraColors);
+    final tint = this.tint;
+    final iconColor = tint == null
+        ? _getDefaultColor(auraColors)
+        : auraColors.colorFor(tint);
     final iconSize = _getIconSize();
 
     return Semantics(
@@ -79,8 +81,7 @@ class AuraIconButton extends StatelessWidget {
     super.key,
     this.disabled = false,
     this.size = AuraIconSize.medium,
-    this.color,
-    this.backgroundColor,
+    this.tint,
     this.variant = AuraIconButtonVariant.ghost,
     this.semanticLabel,
     this.tooltip,
@@ -95,8 +96,7 @@ class AuraIconButton extends StatelessWidget {
     super.key,
     this.disabled = false,
     this.size = AuraIconSize.medium,
-    this.color,
-    this.backgroundColor,
+    this.tint,
     this.variant = AuraIconButtonVariant.ghost,
     this.semanticLabel,
     this.tooltip,
@@ -117,13 +117,9 @@ class AuraIconButton extends StatelessWidget {
   /// The size of the icon.
   final AuraIconSize size;
 
-  /// The color variant of the icon.
+  /// The tint of the icon.
   /// If null, uses the default color for the variant.
-  final AuraColorVariant? color;
-
-  /// The background color variant of the button.
-  /// If null, uses the default for the variant.
-  final AuraColorVariant? backgroundColor;
+  final AuraTint? tint;
 
   /// The visual variant of the icon button.
   final AuraIconButtonVariant variant;
@@ -140,12 +136,13 @@ class AuraIconButton extends StatelessWidget {
     final buttonSize = _getButtonSize();
     final iconSize = _getIconSize();
 
+    final foregroundColor = _getIconColor(auraColors);
     final iconContent =
         child ??
-        AuraIcon(
+        Icon(
           icon ?? (throw StateError('AuraIconButton requires icon or child')),
-          size: size,
-          color: color,
+          size: iconSize,
+          color: foregroundColor,
           semanticLabel: semanticLabel,
         );
 
@@ -161,11 +158,8 @@ class AuraIconButton extends StatelessWidget {
           minHeight: buttonSize,
         ),
         style: IconButton.styleFrom(
-          foregroundColor:
-              auraColors.getColorOrNull(color) ?? _getIconColor(auraColors),
-          backgroundColor:
-              auraColors.getColorOrNull(backgroundColor) ??
-              _getBackgroundColor(auraColors),
+          foregroundColor: foregroundColor,
+          backgroundColor: _getBackgroundColor(auraColors),
           elevation: variant == AuraIconButtonVariant.elevated ? 2 : 0,
           shape: RoundedRectangleBorder(
             side: variant == AuraIconButtonVariant.outlined
@@ -229,22 +223,31 @@ class AuraIconButton extends StatelessWidget {
       return colors.onSurfaceVariant.withValues(alpha: 0.6);
     }
 
+    final tint = this.tint;
+
     return switch (variant) {
-      AuraIconButtonVariant.ghost => colors.onSurface,
-      AuraIconButtonVariant.filled => colors.onPrimary,
-      AuraIconButtonVariant.outlined => colors.primary,
-      AuraIconButtonVariant.elevated => colors.onPrimary,
+      AuraIconButtonVariant.ghost =>
+        tint == null ? colors.foregroundOnSurface : colors.colorFor(tint),
+      AuraIconButtonVariant.filled => colors.onTint(tint ?? AuraTint.primary),
+      AuraIconButtonVariant.outlined => colors.colorFor(
+        tint ?? AuraTint.primary,
+      ),
+      AuraIconButtonVariant.elevated => colors.onTint(tint ?? AuraTint.primary),
     };
   }
 
   Color _getBackgroundColor(AuraColorScheme colors) {
-    if (disabled) return Colors.transparent;
+    if (disabled) return DesignColors.transparent;
 
     return switch (variant) {
-      AuraIconButtonVariant.ghost => Colors.transparent,
-      AuraIconButtonVariant.filled => colors.primary,
-      AuraIconButtonVariant.outlined => Colors.transparent,
-      AuraIconButtonVariant.elevated => colors.primary,
+      AuraIconButtonVariant.ghost => DesignColors.transparent,
+      AuraIconButtonVariant.filled => colors.colorFor(
+        tint ?? AuraTint.primary,
+      ),
+      AuraIconButtonVariant.outlined => DesignColors.transparent,
+      AuraIconButtonVariant.elevated => colors.colorFor(
+        tint ?? AuraTint.primary,
+      ),
     };
   }
 }

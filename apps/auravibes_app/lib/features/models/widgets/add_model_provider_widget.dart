@@ -546,7 +546,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
                 child: AuraSelectableText(
                   deviceCode.userCode,
                   style: AuraTextStyle.heading5,
-                  colorVariant: AuraColorVariant.primary,
+                  tint: AuraTint.primary,
                 ),
               ),
               AuraIconButton(
@@ -577,7 +577,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
               AuraIconButton(
                 icon: Icons.open_in_new,
                 onPressed: () => _showVerificationUrlActions(context),
-                color: AuraColorVariant.primary,
+                tint: AuraTint.primary,
                 tooltip: LocaleKeys
                     .models_screens_add_provider_device_code_open_link_tooltip
                     .tr(context: context),
@@ -676,7 +676,6 @@ class _SelectModelProvider extends HookConsumerWidget {
                           AddModelProviderWidget.noModelsFoundKey,
                         ),
                         style: AuraTextStyle.bodyLarge,
-                        color: AuraColorVariant.onSurfaceVariant,
                       ),
                     ],
                   ),
@@ -702,7 +701,7 @@ class _SelectModelProvider extends HookConsumerWidget {
                                 LocaleKeys.mcp_modal_auth_oauth,
                               ),
                               style: AuraTextStyle.bodySmall,
-                              color: AuraColorVariant.primary,
+                              tint: AuraTint.primary,
                             ),
                         ],
                       ),

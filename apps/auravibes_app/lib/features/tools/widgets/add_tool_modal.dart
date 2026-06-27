@@ -88,7 +88,6 @@ class AddToolModal extends HookConsumerWidget {
                   AuraIconButton(
                     icon: Icons.close,
                     onPressed: () => Navigator.of(context).pop(),
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
               ),
@@ -106,7 +105,6 @@ class AddToolModal extends HookConsumerWidget {
                 ),
                 prefixIcon: const AuraIcon(
                   Icons.search,
-                  color: AuraColorVariant.onSurfaceVariant,
                 ),
                 size: AuraInputSize.small,
               ),
@@ -171,7 +169,6 @@ class _AvailableToolsList extends StatelessWidget {
               AuraIcon(
                 tools.isEmpty ? Icons.check_circle_outline : Icons.search_off,
                 size: AuraIconSize.large,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
               AuraText(
                 child: TextLocale(
@@ -180,7 +177,6 @@ class _AvailableToolsList extends StatelessWidget {
                       : LocaleKeys.tools_screen_no_tools_found,
                 ),
                 textAlign: TextAlign.center,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
             ],
             spacing: .sm,
@@ -227,7 +223,6 @@ class _AvailableToolTile extends ConsumerWidget {
               child: toolType.getDescriptionWidget(),
             ),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
         ],
         spacing: .xs,
@@ -252,7 +247,7 @@ class _AvailableToolTile extends ConsumerWidget {
       ),
       trailing: const AuraIcon(
         Icons.add_circle_outline,
-        color: AuraColorVariant.primary,
+        tint: AuraTint.primary,
       ),
     );
   }

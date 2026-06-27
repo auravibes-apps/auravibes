@@ -70,6 +70,18 @@ class AuraComputedColorScheme extends AuraColorScheme {
     );
     final secondary = brandSecondary(0.4, 0.78, 0.17);
     final secondaryVariant = brandSecondary(0.3, 0.68, 0.15);
+    final tertiaryHue = (primaryHue + 60) % 360;
+    AuraComputedColor brandTertiary(
+      double lightL,
+      double darkL,
+      double chroma,
+    ) => color(
+      tertiaryHue,
+      l(lightL, darkL),
+      chroma,
+    );
+    final tertiary = brandTertiary(0.4, 0.78, 0.17);
+    final tertiaryVariant = brandTertiary(0.3, 0.68, 0.15);
 
     AuraComputedColor neutral(double lightL, double darkL) => color(
       primaryHue,
@@ -100,6 +112,9 @@ class AuraComputedColorScheme extends AuraColorScheme {
       secondary: secondary.toColor(),
       secondaryVariant: secondaryVariant.toColor(),
       onSecondary: on(secondary),
+      tertiary: tertiary.toColor(),
+      tertiaryVariant: tertiaryVariant.toColor(),
+      onTertiary: on(tertiary),
       surface: surface.toColor(),
       surfaceVariant: surfaceVariant.toColor(),
       onSurface: on(surface),
@@ -127,6 +142,9 @@ class AuraComputedColorScheme extends AuraColorScheme {
     required super.secondary,
     required super.secondaryVariant,
     required super.onSecondary,
+    required super.tertiary,
+    required super.tertiaryVariant,
+    required super.onTertiary,
     required super.surface,
     required super.surfaceVariant,
     required super.onSurface,

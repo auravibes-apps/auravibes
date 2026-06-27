@@ -117,7 +117,7 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: actions,
       bottom: bottom,
       elevation: 0,
-      backgroundColor: const Color(0x00000000),
+      backgroundColor: DesignColors.transparent,
       centerTitle: true,
     );
   }
@@ -178,7 +178,7 @@ class _AuroraBackground extends StatelessWidget {
         // Blur Mesh.
         BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
-          child: Container(color: Colors.transparent),
+          child: Container(color: DesignColors.transparent),
         ),
       ],
     );

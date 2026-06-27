@@ -55,6 +55,7 @@ dependencies:
   schemantic: ^0.2.0
   shared_preferences: ^2.5.4
   sqlite3_flutter_libs: ^0.6.0
+  textf: ^1.2.4
   url_launcher: ^6.3.2
   uuid: ^4.5.3
 dev_dependencies:
@@ -72,7 +73,6 @@ dev_dependencies:
   mocktail: ^1.0.4
   nock: ^1.2.3
   riverpod_generator: 4.0.4
-  sqlite3: ^3.3.3
 dependency_overrides:
   # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
   flutter_secure_storage_darwin: 0.2.0

@@ -336,7 +336,6 @@ class _SkillCredentialDefinitionForm extends StatelessWidget {
                 child: TextLocale(
                   LocaleKeys.skill_credentials_definitions_hint,
                 ),
-                color: AuraColorVariant.onSurfaceVariant,
               ),
               if (definition != null) AuraSelectableText(definition.slug),
               AuraInput(
@@ -351,7 +350,6 @@ class _SkillCredentialDefinitionForm extends StatelessWidget {
                     child: TextLocale(
                       LocaleKeys.skill_credentials_definitions_attributes_label,
                     ),
-                    color: AuraColorVariant.onSurface,
                   ),
                   for (final row in attributeRows)
                     _AttributeRowEditor(
