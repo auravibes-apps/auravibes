@@ -244,10 +244,11 @@ class _ProgressIndicator extends StatelessWidget {
                 right: index == _IntroSlide.count - 1 ? 0 : 8,
               ),
               child: DecoratedBox(
+                key: ValueKey('intro_progress_step_$index'),
                 decoration: BoxDecoration(
                   color: index <= activeSlide.index
                       ? auraColors.primary
-                      : auraColors.surfaceVariant,
+                      : auraColors.outlineVariant,
                   borderRadius: const BorderRadius.all(Radius.circular(4)),
                 ),
                 child: const SizedBox(height: 4),

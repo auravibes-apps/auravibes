@@ -90,7 +90,7 @@ class AuraComputedColorScheme extends AuraColorScheme {
     );
     final surface = neutral(0.98, 0.18);
     final surfaceVariant = neutral(0.96, 0.22);
-    final background = neutral(0.97, 0.15);
+    final background = neutral(0.94, 0.15);
     final outline = neutral(0.65, 0.45);
     final outlineVariant = neutral(0.8, 0.3);
 
@@ -101,6 +101,8 @@ class AuraComputedColorScheme extends AuraColorScheme {
     final info = semantic(HueColorValues.info);
 
     Color on(AuraComputedColor c) => c.onColor();
+    Color foreground(Color lightColor, AuraComputedColor darkSurface) =>
+        isLight ? lightColor : on(darkSurface);
 
     const shadow = Color(0xFF000000);
     final scrim = isLight ? const Color(0x80000000) : const Color(0xB3000000);
@@ -117,10 +119,10 @@ class AuraComputedColorScheme extends AuraColorScheme {
       onTertiary: on(tertiary),
       surface: surface.toColor(),
       surfaceVariant: surfaceVariant.toColor(),
-      onSurface: on(surface),
-      onSurfaceVariant: on(surfaceVariant),
+      onSurface: foreground(DesignColors.neutral900, surface),
+      onSurfaceVariant: foreground(DesignColors.neutral700, surfaceVariant),
       background: background.toColor(),
-      onBackground: on(background),
+      onBackground: foreground(DesignColors.neutral900, background),
       error: error.toColor(),
       onError: on(error),
       warning: warning.toColor(),
