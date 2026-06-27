@@ -70,6 +70,26 @@ abstract class LocaleKeys {
       'models_screens.add_provider.use_device_code';
   static const models_screens_add_provider_device_code_instruction =
       'models_screens.add_provider.device_code_instruction';
+  static const models_screens_add_provider_device_code_step_code =
+      'models_screens.add_provider.device_code_step_code';
+  static const models_screens_add_provider_device_code_step_link =
+      'models_screens.add_provider.device_code_step_link';
+  static const models_screens_add_provider_device_code_copied =
+      'models_screens.add_provider.device_code_copied';
+  static const models_screens_add_provider_device_code_link_copied =
+      'models_screens.add_provider.device_code_link_copied';
+  static const models_screens_add_provider_device_code_copy_tooltip =
+      'models_screens.add_provider.device_code_copy_tooltip';
+  static const models_screens_add_provider_device_code_open_link_tooltip =
+      'models_screens.add_provider.device_code_open_link_tooltip';
+  static const models_screens_add_provider_device_code_open_link_failed =
+      'models_screens.add_provider.device_code_open_link_failed';
+  static const models_screens_add_provider_device_code_link_actions_title =
+      'models_screens.add_provider.device_code_link_actions_title';
+  static const models_screens_add_provider_device_code_open_browser =
+      'models_screens.add_provider.device_code_open_browser';
+  static const models_screens_add_provider_device_code_copy_link =
+      'models_screens.add_provider.device_code_copy_link';
   static const models_screens_add_provider_sections_advanced =
       'models_screens.add_provider.sections.advanced';
   static const models_screens_add_provider_fields_name_label =

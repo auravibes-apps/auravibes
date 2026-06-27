@@ -60,6 +60,16 @@
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
       "device_code_instruction": "Abre esta URL e ingresa el código.",
+      "device_code_step_code": "1. Copia este código",
+      "device_code_step_link": "2. Abre este enlace",
+      "device_code_copied": "Código copiado",
+      "device_code_link_copied": "Enlace copiado",
+      "device_code_copy_tooltip": "Copiar código",
+      "device_code_open_link_tooltip": "Abrir enlace",
+      "device_code_open_link_failed": "No se pudo abrir el enlace",
+      "device_code_link_actions_title": "¿Abrir enlace de verificación?",
+      "device_code_open_browser": "Abrir navegador",
+      "device_code_copy_link": "Copiar enlace",
       "sections": {
         "advanced": "Avanzado"
       },
