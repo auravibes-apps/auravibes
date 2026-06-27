@@ -62,7 +62,7 @@ void main() {
   testWidgets('shows empty provider placeholder', (tester) async {
     await _pumpSubject(tester, _buildSubject(groupedModels: {}));
 
-    expect(find.text('No providers configured'), findsOneWidget);
+    expect(find.text('Model'), findsOneWidget);
   });
 
   testWidgets('filters models by search text', (tester) async {

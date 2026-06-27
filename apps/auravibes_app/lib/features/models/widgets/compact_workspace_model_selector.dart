@@ -89,7 +89,10 @@ class _CompactModelDropdown extends HookWidget {
         child: AuraDropdownSelector<String>(
           options: [],
           placeholder: TextLocale(
-            LocaleKeys.models_screens_no_providers_configured,
+            LocaleKeys.models_screens_select_model,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           isEnabled: false,
         ),
@@ -115,7 +118,12 @@ class _CompactModelDropdown extends HookWidget {
             .toList(),
         value: workspaceModelSelectionId,
         onChanged: onChanged,
-        placeholder: const TextLocale(LocaleKeys.models_screens_select_model),
+        placeholder: const TextLocale(
+          LocaleKeys.models_screens_select_model,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
         header: AuraPadding(
           child: TextField(
             controller: controller,
