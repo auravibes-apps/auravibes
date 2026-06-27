@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 
@@ -24,7 +25,7 @@ class CodexDeviceCode {
 class CodexOAuthService {
   CodexOAuthService({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
     : _dio = dio ?? Dio(),
-      _openBrowser = openBrowser ?? _openSystemBrowser;
+      _openBrowser = openBrowser ?? openSystemBrowser;
 
   final Dio _dio;
   final Future<void> Function(Uri uri) _openBrowser;
@@ -270,22 +271,6 @@ class CodexOAuthService {
     }
 
     throw TimeoutException('Device auth timed out after 15 minutes');
-  }
-
-  static Future<void> _openSystemBrowser(Uri uri) async {
-    if (Platform.isMacOS) {
-      final _ = await Process.run('open', [uri.toString()]);
-
-      return;
-    }
-    if (Platform.isWindows) {
-      final _ = await Process.run('cmd', ['/c', 'start', '', uri.toString()]);
-
-      return;
-    }
-    if (Platform.isLinux) {
-      final _ = await Process.run('xdg-open', [uri.toString()]);
-    }
   }
 
   Future<void> _writeHtml(HttpRequest request, String html) async {

@@ -3,6 +3,8 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
@@ -12,12 +14,14 @@ import 'package:auravibes_app/features/models/widgets/model_logo.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
@@ -429,8 +433,96 @@ class _CodexDeviceCodePanel extends StatelessWidget {
   final CodexDeviceCode deviceCode;
   final VoidCallback onCancel;
 
+  Future<void> _copyCode(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: deviceCode.userCode));
+    if (!context.mounted) return;
+
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(
+        LocaleKeys.models_screens_add_provider_device_code_copied.tr(),
+      ),
+      variant: AuraSnackBarVariant.success,
+    );
+  }
+
+  Future<void> _copyVerificationUrl(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: deviceCode.verificationUrl));
+    if (!context.mounted) return;
+
+    final _ = showAuraSnackBar(
+      context: context,
+      content: Text(
+        LocaleKeys.models_screens_add_provider_device_code_link_copied.tr(),
+      ),
+      variant: AuraSnackBarVariant.success,
+    );
+  }
+
+  void _showVerificationUrlActions(BuildContext context) {
+    showAuraAlertDialog(
+      context: context,
+      title: const TextLocale(
+        LocaleKeys.models_screens_add_provider_device_code_link_actions_title,
+      ),
+      message: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AuraButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              unawaited(_launchVerificationUrl(context));
+            },
+            child: const TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_open_browser,
+            ),
+            isFullWidth: true,
+          ),
+          const AuraSizedBox(height: .sm),
+          AuraButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              unawaited(_copyVerificationUrl(context));
+            },
+            child: const TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_copy_link,
+            ),
+            variant: AuraButtonVariant.outlined,
+            isFullWidth: true,
+          ),
+        ],
+      ),
+      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
+    );
+  }
+
+  Future<void> _launchVerificationUrl(BuildContext context) async {
+    final uri = Uri.parse(deviceCode.verificationUrl);
+    try {
+      await openSystemBrowser(uri);
+    } on Exception {
+      if (!context.mounted) return;
+
+      final _ = showAuraSnackBar(
+        context: context,
+        content: Text(
+          LocaleKeys.models_screens_add_provider_device_code_open_link_failed
+              .tr(),
+        ),
+        variant: AuraSnackBarVariant.error,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: context.auraColors.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: context.auraColors.primary,
+    );
+
     return AuraCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,14 +534,57 @@ class _CodexDeviceCodePanel extends StatelessWidget {
             style: AuraTextStyle.bodyLarge,
           ),
           const AuraSizedBox(height: .sm),
-          AuraSelectableText(deviceCode.verificationUrl),
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_step_code,
+            ),
+          ),
           const AuraSizedBox(height: .sm),
-          AuraText(
-            child: Text(deviceCode.userCode),
-            style: AuraTextStyle.heading5,
-            color: AuraColorVariant.primary,
+          Row(
+            children: [
+              Expanded(
+                child: AuraSelectableText(
+                  deviceCode.userCode,
+                  style: AuraTextStyle.heading5,
+                  colorVariant: AuraColorVariant.primary,
+                ),
+              ),
+              AuraIconButton(
+                icon: Icons.copy_outlined,
+                onPressed: () => _copyCode(context),
+                tooltip: LocaleKeys
+                    .models_screens_add_provider_device_code_copy_tooltip
+                    .tr(context: context),
+              ),
+            ],
           ),
           const AuraSizedBox(height: .md),
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_step_link,
+            ),
+          ),
+          const AuraSizedBox(height: .sm),
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText(
+                  deviceCode.verificationUrl,
+                  style: linkStyle,
+                  onTap: () => _showVerificationUrlActions(context),
+                ),
+              ),
+              AuraIconButton(
+                icon: Icons.open_in_new,
+                onPressed: () => _showVerificationUrlActions(context),
+                color: AuraColorVariant.primary,
+                tooltip: LocaleKeys
+                    .models_screens_add_provider_device_code_open_link_tooltip
+                    .tr(context: context),
+              ),
+            ],
+          ),
+          const AuraSizedBox(height: .lg),
           AuraButton(
             onPressed: onCancel,
             child: const TextLocale(LocaleKeys.common_cancel),
