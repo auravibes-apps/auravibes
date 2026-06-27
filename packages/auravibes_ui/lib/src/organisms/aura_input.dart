@@ -37,6 +37,7 @@ class AuraInput extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.onTap,
+    this.onTapOutside,
     this.focusNode,
     this.semanticLabel,
     this.footer,
@@ -118,6 +119,9 @@ class AuraInput extends StatefulWidget {
 
   /// Called when the input field is tapped.
   final VoidCallback? onTap;
+
+  /// Called for taps outside this input field's tap region.
+  final TapRegionCallback? onTapOutside;
 
   /// Defines the keyboard focus for this widget.
   final FocusNode? focusNode;
@@ -219,6 +223,7 @@ class _AuraInputState extends State<AuraInput> {
                     maxLength: widget.maxLength,
                     onChanged: widget.onChanged,
                     onTap: widget.onTap,
+                    onTapOutside: widget.onTapOutside,
                     onFieldSubmitted: widget.onSubmitted,
                     inputFormatters: widget.inputFormatters,
                     enabled: widget.enabled,

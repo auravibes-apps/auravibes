@@ -77,6 +77,7 @@ class ChatMessagesWidget extends HookConsumerWidget {
       itemCount: itemCount,
       addAutomaticKeepAlives: false,
       scrollCacheExtent: const ScrollCacheExtent.pixels(500),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
     );
   }
 }
