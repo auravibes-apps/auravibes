@@ -22,7 +22,7 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
           const AuraIcon(
             Icons.error_outline,
             size: AuraIconSize.large,
-            color: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
           const AuraText(
             child: _AppErrorText(
@@ -36,7 +36,6 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
               LocaleKeys.common_error_message,
             ),
             textAlign: TextAlign.center,
-            color: AuraColorVariant.onSurfaceVariant,
           ),
           ?action,
         ],

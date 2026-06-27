@@ -15,9 +15,9 @@ Widget confirmDialogUseCase(BuildContext context) {
       label: 'isDestructive',
       initialValue: false,
     ),
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: AuraColorVariant.values,
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: AuraTint.values,
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -27,11 +27,11 @@ Widget confirmDialogUseCase(BuildContext context) {
 class _ConfirmDialogDemo extends StatelessWidget {
   const _ConfirmDialogDemo({
     required this.isDestructive,
-    required this.colorVariant,
+    required this.tint,
   });
 
   final bool isDestructive;
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +55,7 @@ class _ConfirmDialogDemo extends StatelessWidget {
         'Are you sure you want to delete this item? This action cannot be undone.',
       ),
       isDestructive: isDestructive,
-      colorVariant: colorVariant,
+      tint: tint,
     );
     if (!context.mounted) return;
 
@@ -68,9 +68,9 @@ class _ConfirmDialogDemo extends StatelessWidget {
 @widgetbook.UseCase(name: 'Alert Dialog', type: AuraAlertDialog)
 Widget alertDialogUseCase(BuildContext context) {
   return _AlertDialogDemo(
-    colorVariant: context.knobs.objectOrNull.dropdown(
-      label: 'colorVariant',
-      options: [...AuraColorVariant.values],
+    tint: context.knobs.objectOrNull.dropdown(
+      label: 'tint',
+      options: [...AuraTint.values],
       initialOption: null,
       labelBuilder: (value) => value.name,
     ),
@@ -78,9 +78,9 @@ Widget alertDialogUseCase(BuildContext context) {
 }
 
 class _AlertDialogDemo extends StatelessWidget {
-  const _AlertDialogDemo({required this.colorVariant});
+  const _AlertDialogDemo({required this.tint});
 
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +95,7 @@ class _AlertDialogDemo extends StatelessWidget {
                 message: const Text(
                   'A new version of the app is available. Please update to the latest version.',
                 ),
-                colorVariant: colorVariant,
+                tint: tint,
               ),
             );
           },

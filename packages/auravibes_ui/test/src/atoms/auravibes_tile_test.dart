@@ -1,6 +1,7 @@
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
 import 'package:auravibes_ui/src/atoms/aura_tile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -120,6 +121,28 @@ void main() {
       );
 
       await tester.tap(find.byType(AuraTile));
+      await tester.pump();
+
+      expect(wasTapped, true);
+    });
+
+    testWidgets('can be focused and activated with keyboard', (tester) async {
+      var wasTapped = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraTile(
+              child: const Text('Test Tile'),
+              onTap: () => wasTapped = true,
+            ),
+          ),
+        ),
+      );
+
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.enter);
       await tester.pump();
 
       expect(wasTapped, true);

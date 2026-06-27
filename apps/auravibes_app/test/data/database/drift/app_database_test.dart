@@ -1,11 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
@@ -15,136 +12,6 @@ QueryExecutor createTestConnection() {
       );
     }),
   );
-}
-
-void _createVersionThreeSchema(sqlite.Database database) {
-  database
-    ..execute('''
-      CREATE TABLE workspaces (
-        id TEXT NOT NULL PRIMARY KEY,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        name TEXT NOT NULL,
-        type TEXT NOT NULL
-      )
-    ''')
-    ..execute('''
-      CREATE TABLE model_connections (
-        id TEXT NOT NULL PRIMARY KEY,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        name TEXT NOT NULL,
-        model_id TEXT NOT NULL,
-        url TEXT,
-        key_value TEXT NOT NULL,
-        key_suffix TEXT,
-        workspace_id TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE
-      )
-    ''')
-    ..execute('''
-      CREATE TABLE api_model_providers (
-        id TEXT NOT NULL PRIMARY KEY,
-        name TEXT NOT NULL,
-        type TEXT,
-        url TEXT
-      )
-    ''')
-    ..execute('''
-      CREATE TABLE workspace_model_selections (
-        id TEXT NOT NULL PRIMARY KEY,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        model_id TEXT NOT NULL,
-        model_connection_id TEXT NOT NULL
-          REFERENCES model_connections (id) ON DELETE CASCADE
-      )
-    ''')
-    ..execute(
-      '''
-      INSERT INTO workspaces (id, name, type)
-      VALUES ('ws-1', 'WS', 'local')
-      ''',
-    )
-    ..execute('''
-      INSERT INTO api_model_providers (id, name)
-      VALUES ('openai', 'OpenAI'), ('anthropic', 'Anthropic')
-    ''')
-    ..execute('''
-      INSERT INTO model_connections (
-        id,
-        name,
-        model_id,
-        key_value,
-        key_suffix,
-        workspace_id
-      ) VALUES (
-        'conn-1',
-        'OpenAI',
-        'openai',
-        'encrypted-key',
-        'key',
-        'ws-1'
-      )
-    ''')
-    ..execute('''
-      INSERT INTO workspace_model_selections (
-        id,
-        model_id,
-        model_connection_id
-      ) VALUES ('selection-1', 'gpt-4', 'conn-1')
-    ''')
-    ..execute('PRAGMA user_version = 3');
-}
-
-void _createVersionSevenMcpSchema(sqlite.Database database) {
-  database
-    ..execute('''
-      CREATE TABLE workspaces (
-        id TEXT NOT NULL PRIMARY KEY,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        name TEXT NOT NULL,
-        type TEXT NOT NULL
-      )
-    ''')
-    ..execute('''
-      CREATE TABLE service_connections (
-        id TEXT NOT NULL PRIMARY KEY,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        name TEXT NOT NULL,
-        service_id TEXT NOT NULL,
-        kind TEXT NOT NULL,
-        authentication_type TEXT NOT NULL,
-        url TEXT,
-        encrypted_auth_value TEXT,
-        key_suffix TEXT,
-        metadata_json TEXT,
-        workspace_id TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
-        is_enabled INTEGER NOT NULL DEFAULT 1
-      )
-    ''')
-    ..execute('''
-      CREATE TABLE mcp_servers (
-        id TEXT NOT NULL PRIMARY KEY,
-        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
-        workspace_id TEXT NOT NULL REFERENCES workspaces (id) ON DELETE CASCADE,
-        name TEXT NOT NULL,
-        url TEXT NOT NULL,
-        transport TEXT NOT NULL,
-        authentication_type TEXT NOT NULL,
-        description TEXT,
-        is_enabled INTEGER NOT NULL DEFAULT 1
-      )
-    ''')
-    ..execute(
-      '''
-      INSERT INTO workspaces (id, name, type)
-      VALUES ('ws-1', 'WS', 'local')
-      ''',
-    )
-    ..execute('PRAGMA user_version = 7');
 }
 
 final class _DatabaseFixture {
@@ -181,7 +48,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 12);
+      expect(fixture.database.schemaVersion, 1);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -265,110 +132,6 @@ void main() {
       expect(strategy, isNotNull);
     });
 
-    test('schemaVersion is 12', () {
-      expect(fixture.database.schemaVersion, 12);
-    });
-
-    test(
-      'migration from v3 copies model connections and updates selection FK',
-      () async {
-        await fixture.close();
-        final rawDatabase = sqlite.sqlite3.openInMemory();
-        _createVersionThreeSchema(rawDatabase);
-
-        final migratedDatabase = AppDatabase(
-          connection: NativeDatabase.opened(rawDatabase),
-        );
-        fixture.database = migratedDatabase;
-
-        final connections = await migratedDatabase
-            .select(migratedDatabase.serviceConnections)
-            .get();
-        final connection = connections.firstOrNull;
-        expect(connections, hasLength(1));
-        expect(connection?.serviceId, 'openai');
-        expect(connection?.encryptedAuthValue, 'encrypted-key');
-
-        final foreignKeys = await migratedDatabase
-            .customSelect('PRAGMA foreign_key_list(workspace_model_selections)')
-            .get();
-        final foreignKeyTables = foreignKeys
-            .map((row) => row.read<String>('table'))
-            .toList();
-        expect(foreignKeyTables, contains('service_connections'));
-        expect(foreignKeyTables, isNot(contains('model_connections')));
-
-        final oldTables = await migratedDatabase.customSelect(
-          '''
-              SELECT name FROM sqlite_master
-              WHERE name = 'model_connections'
-              ''',
-        ).get();
-        expect(oldTables, isEmpty);
-
-        const newConnectionId = 'conn-2';
-        final insertedConnectionId = await migratedDatabase
-            .into(migratedDatabase.serviceConnections)
-            .insert(
-              ServiceConnectionsCompanion.insert(
-                id: const Value(newConnectionId),
-                name: 'New Connection',
-                serviceId: 'anthropic',
-                kind: ServiceConnectionKindTable.modelProvider,
-                authenticationType: ServiceAuthenticationTypeTable.apiKey,
-                encryptedAuthValue: const Value('new-key'),
-                workspaceId: 'ws-1',
-              ),
-            );
-        expect(insertedConnectionId, isA<int>());
-
-        final insertedSelectionId = await migratedDatabase
-            .into(migratedDatabase.workspaceModelSelections)
-            .insert(
-              WorkspaceModelSelectionsCompanion.insert(
-                modelId: 'anthropic',
-                modelConnectionId: newConnectionId,
-              ),
-            );
-        expect(insertedSelectionId, isA<int>());
-      },
-    );
-
-    test(
-      'migration from v7 drops old MCP authentication type column',
-      () async {
-        await fixture.close();
-        final rawDatabase = sqlite.sqlite3.openInMemory();
-        _createVersionSevenMcpSchema(rawDatabase);
-
-        final migratedDatabase = AppDatabase(
-          connection: NativeDatabase.opened(rawDatabase),
-        );
-        fixture.database = migratedDatabase;
-
-        final columns = await migratedDatabase
-            .customSelect('PRAGMA table_info(mcp_servers)')
-            .get();
-        final columnNames = columns
-            .map((row) => row.read<String>('name'))
-            .toSet();
-        expect(columnNames, isNot(contains('authentication_type')));
-        expect(columnNames, contains('service_connection_id'));
-
-        final inserted = await migratedDatabase
-            .into(migratedDatabase.mcpServers)
-            .insert(
-              McpServersCompanion.insert(
-                workspaceId: 'ws-1',
-                name: 'Notion',
-                url: 'https://mcp.notion.com/mcp',
-                transport: const McpTransportTypeStreamableHttp(),
-              ),
-            );
-        expect(inserted, isA<int>());
-      },
-    );
-
     test('getDatabaseStats returns valid types', () async {
       final stats = await fixture.database.getDatabaseStats();
       expect(stats['workspaceCount'], isA<int>());
@@ -380,11 +143,6 @@ void main() {
     test('migration strategy has onCreate callback', () {
       final strategy = fixture.database.migration;
       expect(strategy.onCreate, isNotNull);
-    });
-
-    test('migration strategy has onUpgrade callback', () {
-      final strategy = fixture.database.migration;
-      expect(strategy.onUpgrade, isNotNull);
     });
 
     test('can insert workspace and query back', () async {

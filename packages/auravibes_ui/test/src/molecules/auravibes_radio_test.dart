@@ -187,7 +187,7 @@ void main() {
       expect(selectedValue, isNull);
     });
 
-    testWidgets('applies colorVariant', (tester) async {
+    testWidgets('applies tint', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -197,7 +197,7 @@ void main() {
               onChanged: (_) {
                 final _ = Object();
               },
-              colorVariant: AuraColorVariant.secondary,
+              tint: AuraTint.secondary,
             ),
           ),
         ),

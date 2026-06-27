@@ -311,7 +311,13 @@ abstract class LocaleKeys {
   static const skills_screen_title_label = 'skills_screen.title_label';
   static const skills_screen_description_label =
       'skills_screen.description_label';
+  static const skills_screen_edit_description =
+      'skills_screen.edit_description';
+  static const skills_screen_description_empty =
+      'skills_screen.description_empty';
   static const skills_screen_content_label = 'skills_screen.content_label';
+  static const skills_screen_edit_content = 'skills_screen.edit_content';
+  static const skills_screen_content_empty = 'skills_screen.content_empty';
   static const skills_screen_enabled_label = 'skills_screen.enabled_label';
   static const skills_screen_credential_optional_label =
       'skills_screen.credential_optional_label';
@@ -321,6 +327,19 @@ abstract class LocaleKeys {
   static const skills_screen_source_app = 'skills_screen.source.app';
   static const skills_screen_kind_template = 'skills_screen.kind.template';
   static const skills_screen_kind_native = 'skills_screen.kind.native';
+  static const markdown_editor_title = 'markdown_editor.title';
+  static const markdown_editor_editor_label = 'markdown_editor.editor_label';
+  static const markdown_editor_preview_label = 'markdown_editor.preview_label';
+  static const markdown_editor_empty = 'markdown_editor.empty';
+  static const markdown_editor_toolbar_bold = 'markdown_editor.toolbar.bold';
+  static const markdown_editor_toolbar_italic =
+      'markdown_editor.toolbar.italic';
+  static const markdown_editor_toolbar_heading =
+      'markdown_editor.toolbar.heading';
+  static const markdown_editor_toolbar_bullets =
+      'markdown_editor.toolbar.bullets';
+  static const markdown_editor_toolbar_code = 'markdown_editor.toolbar.code';
+  static const markdown_editor_toolbar_quote = 'markdown_editor.toolbar.quote';
   static const skills_selector_title = 'skills_selector.title';
   static const skills_selector_error = 'skills_selector.error';
   static const skills_selector_loaded_title = 'skills_selector.loaded_title';

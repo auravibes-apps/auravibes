@@ -51,7 +51,7 @@ class AuraCard extends StatelessWidget {
     if (isGlass) {
       backgroundColor = auraColors.surface.withValues(alpha: 0.1);
       border = Border.all(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: auraColors.surfaceVariant.withValues(alpha: 0.2),
         width: 1.5,
       );
       shadows = [DesignShadows.glass];

@@ -59,15 +59,13 @@ void main() {
       expect(container.padding, customMargin);
     });
 
-    testWidgets('applies custom background color correctly', (tester) async {
-      const customColor = AuraColorVariant.error;
-
+    testWidgets('applies surface variant correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: AuraContainer(
               child: Text('Content'),
-              backgroundColor: customColor,
+              variant: AuraContainerVariant.surfaceVariant,
             ),
           ),
         ),
@@ -78,7 +76,6 @@ void main() {
           (container.decoration ??
                   fail('Expected container.decoration to be non-null'))
               as BoxDecoration;
-      // Note: The actual color will be resolved from AuraColorVariant.error.
       expect(decoration.color, isNotNull);
     });
 

@@ -62,9 +62,7 @@ class ToolItemRow extends HookConsumerWidget {
                 child: Center(
                   child: AuraText(
                     child: tool.getIconWidget(),
-                    color: isEnabled
-                        ? AuraColorVariant.primary
-                        : AuraColorVariant.onSurfaceVariant,
+                    tint: isEnabled ? AuraTint.primary : null,
                   ),
                 ),
               ),
@@ -80,7 +78,6 @@ class ToolItemRow extends HookConsumerWidget {
                         child: tool.getDescriptionWidget(),
                       ),
                       style: AuraTextStyle.bodySmall,
-                      color: AuraColorVariant.onSurfaceVariant,
                     ),
                   ],
                   spacing: .xs,
@@ -101,7 +98,6 @@ class ToolItemRow extends HookConsumerWidget {
                   child: const AuraIcon(
                     Icons.keyboard_arrow_down,
                     size: AuraIconSize.small,
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                   turns: isExpanded.value ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
@@ -200,7 +196,7 @@ class _ToolOptions extends HookConsumerWidget {
                   AuraIcon(
                     Icons.delete_outline,
                     size: AuraIconSize.small,
-                    color: AuraColorVariant.error,
+                    tint: AuraTint.error,
                   ),
                   TextLocale(LocaleKeys.common_remove),
                 ],
@@ -208,7 +204,7 @@ class _ToolOptions extends HookConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
               ),
               variant: AuraButtonVariant.text,
-              colorVariant: AuraColorVariant.error,
+              tint: AuraTint.error,
               size: AuraButtonSize.small,
             ),
           ),

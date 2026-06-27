@@ -21,7 +21,7 @@ class AuraConfirmDialog extends StatelessWidget {
     this.onConfirm,
     this.onCancel,
     this.isDestructive = false,
-    this.colorVariant,
+    this.tint,
   });
 
   /// The dialog title widget.
@@ -46,7 +46,7 @@ class AuraConfirmDialog extends StatelessWidget {
   final bool isDestructive;
 
   /// The accent color for the dialog.
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -70,9 +70,7 @@ class AuraConfirmDialog extends StatelessWidget {
           },
           child: confirmLabel,
           variant: AuraButtonVariant.text,
-          colorVariant: isDestructive
-              ? AuraColorVariant.error
-              : colorVariant ?? AuraColorVariant.primary,
+          tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
         ),
       ],
     );
@@ -90,7 +88,7 @@ class AuraAlertDialog extends StatelessWidget {
     required this.message,
     required this.dismissLabel,
     super.key,
-    this.colorVariant,
+    this.tint,
   });
 
   /// The dialog title widget.
@@ -103,7 +101,7 @@ class AuraAlertDialog extends StatelessWidget {
   final Widget dismissLabel;
 
   /// The accent color for the dialog.
-  final AuraColorVariant? colorVariant;
+  final AuraTint? tint;
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +115,7 @@ class AuraAlertDialog extends StatelessWidget {
           },
           child: dismissLabel,
           variant: AuraButtonVariant.text,
-          colorVariant: colorVariant,
+          tint: tint,
         ),
       ],
     );
@@ -141,7 +139,7 @@ class _AuraDialogShell extends StatelessWidget {
 
     return Center(
       child: Material(
-        color: Colors.transparent,
+        color: DesignColors.transparent,
         child: Container(
           decoration: BoxDecoration(
             color: auraColors.surface,
@@ -221,7 +219,7 @@ Future<bool?> showAuraConfirmDialog({
   AuraConfirmDialogActions actions = const AuraConfirmDialogActions(),
   bool isDestructive = false,
   bool barrierDismissible = true,
-  AuraColorVariant? colorVariant,
+  AuraTint? tint,
 }) {
   return showGeneralDialog<bool>(
     context: context,
@@ -232,12 +230,12 @@ Future<bool?> showAuraConfirmDialog({
         confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
         cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
         isDestructive: isDestructive,
-        colorVariant: colorVariant,
+        tint: tint,
       );
     },
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black54,
+    barrierColor: context.auraColors.scrim,
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
         opacity: animation,
@@ -276,7 +274,7 @@ Future<void> showAuraAlertDialog({
   required Widget title,
   required Widget message,
   Widget? dismissLabel,
-  AuraColorVariant? colorVariant,
+  AuraTint? tint,
   bool barrierDismissible = true,
 }) async {
   await showGeneralDialog<void>(
@@ -286,12 +284,12 @@ Future<void> showAuraAlertDialog({
         title: title,
         message: message,
         dismissLabel: dismissLabel ?? const Text('OK'),
-        colorVariant: colorVariant,
+        tint: tint,
       );
     },
     barrierDismissible: barrierDismissible,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black54,
+    barrierColor: context.auraColors.scrim,
     transitionBuilder: (context, animation, secondaryAnimation, child) {
       return FadeTransition(
         opacity: animation,

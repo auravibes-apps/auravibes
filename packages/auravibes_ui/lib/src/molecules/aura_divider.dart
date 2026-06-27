@@ -56,8 +56,8 @@ class AuraDivider extends StatelessWidget {
   /// The thickness of the divider line.
   final double? thickness;
 
-  /// The color variant of the divider line.
-  final AuraColorVariant? color;
+  /// The tint of the divider line.
+  final AuraTint? color;
 
   /// The amount of empty space to the leading edge of the divider.
   final double indent;
@@ -71,8 +71,10 @@ class AuraDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
-    final dividerColor =
-        auraTheme.colors.getColorOrNull(color) ?? auraTheme.colors.outline;
+    final color = this.color;
+    final dividerColor = color == null
+        ? auraTheme.colors.outline
+        : auraTheme.colors.colorFor(color);
     final dividerThickness = thickness ?? DesignBorderWidth.thin;
 
     final label = this.label;
@@ -98,7 +100,6 @@ class AuraDivider extends StatelessWidget {
               child: AuraText(
                 child: label,
                 style: AuraTextStyle.caption,
-                color: AuraColorVariant.onSurfaceVariant,
               ),
             ),
             Expanded(

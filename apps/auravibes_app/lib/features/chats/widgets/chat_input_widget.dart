@@ -19,6 +19,7 @@ class ChatInputWidget extends HookConsumerWidget {
     this.disabledHint,
     this.disabled = false,
     this.isBusy = false,
+    this.showStopButton,
     this.onStop,
     this.onCompact,
     this.isCompacting = false,
@@ -27,6 +28,7 @@ class ChatInputWidget extends HookConsumerWidget {
 
   final bool disabled;
   final bool isBusy;
+  final bool? showStopButton;
   final void Function(String message) onSendMessage;
   final VoidCallback onToolsPress;
   final VoidCallback? onSkillsPress;
@@ -54,6 +56,8 @@ class ChatInputWidget extends HookConsumerWidget {
       },
       [controller, onSendMessage, isEmpty],
     );
+
+    final shouldShowStopButton = showStopButton ?? isBusy;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -131,14 +135,12 @@ class ChatInputWidget extends HookConsumerWidget {
                         const AuraIcon(
                           Icons.info_outline,
                           size: AuraIconSize.small,
-                          color: AuraColorVariant.onSurfaceVariant,
                         ),
                         const SizedBox(width: 6),
                         Flexible(child: disabledHint),
                       ],
                     ),
                     style: AuraTextStyle.bodySmall,
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ),
               )
@@ -158,11 +160,11 @@ class ChatInputWidget extends HookConsumerWidget {
                         onPressed: onStop,
                         child: const AuraIcon(Icons.stop_rounded),
                         variant: AuraButtonVariant.outlined,
-                        colorVariant: AuraColorVariant.error,
+                        tint: AuraTint.error,
                         size: AuraButtonSize.small,
                       ),
                     ),
-                    visible: isBusy,
+                    visible: shouldShowStopButton,
                     maintainState: true,
                     maintainAnimation: true,
                     maintainSize: true,

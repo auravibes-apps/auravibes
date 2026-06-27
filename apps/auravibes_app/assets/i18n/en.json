@@ -249,7 +249,11 @@
     "slug_label": "Slug",
     "title_label": "Title",
     "description_label": "Description",
+    "edit_description": "Edit description",
+    "description_empty": "No description yet",
     "content_label": "Content",
+    "edit_content": "Edit content",
+    "content_empty": "No content yet",
     "enabled_label": "Enabled",
     "credential_optional_label": "Credential is optional",
     "credential_optional_hint": "Allow this skill to load even when no credential has been saved.",
@@ -260,6 +264,20 @@
     "kind": {
       "template": "Template",
       "native": "Native"
+    }
+  },
+  "markdown_editor": {
+    "title": "Markdown editor",
+    "editor_label": "Markdown",
+    "preview_label": "Preview",
+    "empty": "Nothing to preview yet",
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "heading": "Heading",
+      "bullets": "Bullets",
+      "code": "Code",
+      "quote": "Quote"
     }
   },
   "skills_selector": {
@@ -518,7 +536,7 @@
   },
   "sidebar": {
     "recent_chats": "Recent Chats",
-    "no_recent_chats": "No recent chats",
+    "no_recent_chats": "Chats will appear here",
     "view_all_chats": "View All"
   },
   "mcp_modal": {

@@ -30,7 +30,7 @@ class _DelayTween extends Tween<double> {
 class AuraLoadingCircle extends StatefulWidget {
   /// Constructor.
   const AuraLoadingCircle({
-    required this.colorVariant,
+    required this.tint,
     super.key,
     this.size = 50.0,
     this.itemSize,
@@ -42,7 +42,7 @@ class AuraLoadingCircle extends StatefulWidget {
 
   /// Compact loading indicator for inline controls.
   const AuraLoadingCircle.compact({
-    required this.colorVariant,
+    required this.tint,
     super.key,
     this.duration = const Duration(milliseconds: 1200),
     this.controller,
@@ -55,7 +55,7 @@ class AuraLoadingCircle extends StatefulWidget {
   ///
   /// Ignored when [itemBuilder] is provided, because custom builders own their
   /// rendering.
-  final AuraColorVariant colorVariant;
+  final AuraTint tint;
 
   /// Size.
   final double size;
@@ -141,11 +141,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
                           itemBuilder?.call(context, i) ??
                           DecoratedBox(
                             decoration: BoxDecoration(
-                              color:
-                                  context.auraColors.getColorOrNull(
-                                    widget.colorVariant,
-                                  ) ??
-                                  context.auraColors.primary,
+                              color: context.auraColors.colorFor(widget.tint),
                               shape: BoxShape.circle,
                             ),
                           ),

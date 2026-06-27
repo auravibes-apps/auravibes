@@ -58,7 +58,12 @@ class SidebarConversationsWidget extends ConsumerWidget {
     return switch (chatListAsync) {
       AsyncData(value: final chats) => () {
         if (chats.isEmpty) {
-          return const _SidebarConversationsEmptyState();
+          return const Column(
+            children: [
+              _SidebarConversationsSectionHeader(),
+              _SidebarConversationsEmptyState(),
+            ],
+          );
         }
 
         return Column(
@@ -97,7 +102,7 @@ class SidebarConversationsWidget extends ConsumerWidget {
               args: [error.toString()],
             ),
             style: AuraTextStyle.bodySmall,
-            color: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
         ),
       ),
@@ -127,7 +132,6 @@ class _SidebarConversationsSectionHeader extends StatelessWidget {
           LocaleKeys.sidebar_recent_chats,
         ),
         style: AuraTextStyle.caption,
-        color: AuraColorVariant.onSurfaceVariant,
       ),
     );
   }
@@ -149,7 +153,6 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
         ),
         style: AuraTextStyle.bodySmall,
         textAlign: TextAlign.center,
-        color: AuraColorVariant.onSurfaceVariant,
       ),
     );
   }
@@ -233,7 +236,7 @@ class _SidebarConversationTileState
             maxLines: 1,
           ),
           style: AuraTextStyle.bodySmall,
-          color: widget.isActive ? AuraColorVariant.primary : null,
+          tint: widget.isActive ? AuraTint.primary : null,
         ),
         onTap: () => ConversationRoute(
           workspaceId: widget.workspaceId,
@@ -246,9 +249,7 @@ class _SidebarConversationTileState
         leading: AuraIcon(
           Icons.chat_bubble_outline,
           size: AuraIconSize.small,
-          color: widget.isActive
-              ? AuraColorVariant.primary
-              : AuraColorVariant.onSurfaceVariant,
+          tint: widget.isActive ? AuraTint.primary : null,
         ),
         trailing: AuraPopupMenu(
           child: AuraIconButton(
@@ -289,7 +290,6 @@ class _CompactingRow extends ConsumerWidget {
             LocaleKeys.compaction_compacting_row_label,
           ),
           style: AuraTextStyle.bodySmall,
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,

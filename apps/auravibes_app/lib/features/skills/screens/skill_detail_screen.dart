@@ -6,6 +6,8 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
+import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
@@ -26,6 +28,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:textf/textf.dart';
+
+const _skillDescriptionMaxCharacters = 1024;
 
 class SkillDetailScreen extends ConsumerStatefulWidget {
   const SkillDetailScreen({
@@ -43,7 +48,7 @@ class SkillDetailScreen extends ConsumerStatefulWidget {
 
 class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final _descriptionController = TextfEditingController();
   final _contentController = TextEditingController();
   String? _credentialDefinitionId;
   bool _isCredentialOptional = false;
@@ -159,8 +164,31 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       onCredentialOptionalChanged: (value) =>
           setState(() => _isCredentialOptional = value),
       onEnabledChanged: (value) => setState(() => _isEnabled = value),
+      onEditDescription: () => _editDescription(context),
+      onEditContent: () => _editContent(context),
       onSave: () => _save(context),
     );
+  }
+
+  Future<void> _editDescription(BuildContext context) async {
+    final result = await showMarkdownEditor(
+      context,
+      initialMarkdown: _descriptionController.text,
+      maxCharacters: _skillDescriptionMaxCharacters,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _descriptionController.text = result);
+  }
+
+  Future<void> _editContent(BuildContext context) async {
+    final result = await showMarkdownEditor(
+      context,
+      initialMarkdown: _contentController.text,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _contentController.text = result);
   }
 
   void _setCredentialDefinition(String? value) {
@@ -314,6 +342,8 @@ class _SkillDetailForm extends StatelessWidget {
     required this.onCredentialDefinitionChanged,
     required this.onCredentialOptionalChanged,
     required this.onEnabledChanged,
+    required this.onEditDescription,
+    required this.onEditContent,
     required this.onSave,
   });
 
@@ -329,6 +359,8 @@ class _SkillDetailForm extends StatelessWidget {
   final ValueChanged<String?> onCredentialDefinitionChanged;
   final ValueChanged<bool> onCredentialOptionalChanged;
   final ValueChanged<bool> onEnabledChanged;
+  final VoidCallback onEditDescription;
+  final VoidCallback onEditContent;
   final VoidCallback onSave;
 
   @override
@@ -404,7 +436,6 @@ class _SkillDetailForm extends StatelessWidget {
       if (isReadOnly)
         const AuraText(
           child: TextLocale(LocaleKeys.skills_screen_app_read_only),
-          color: AuraColorVariant.onSurfaceVariant,
         ),
       if (detail != null)
         _ReadOnlyField(
@@ -416,21 +447,21 @@ class _SkillDetailForm extends StatelessWidget {
         label: Text(LocaleKeys.skills_screen_title_label.tr(context: context)),
         enabled: !isReadOnly,
       ),
-      AuraInput(
+      MarkdownPreviewField(
         controller: descriptionController,
-        label: Text(
-          LocaleKeys.skills_screen_description_label.tr(context: context),
-        ),
-        enabled: !isReadOnly,
+        titleKey: LocaleKeys.skills_screen_description_label,
+        editKey: LocaleKeys.skills_screen_edit_description,
+        emptyKey: LocaleKeys.skills_screen_description_empty,
+        onEdit: onEditDescription,
+        isReadOnly: isReadOnly,
       ),
-      AuraInput(
+      MarkdownPreviewField(
         controller: contentController,
-        label: Text(
-          LocaleKeys.skills_screen_content_label.tr(context: context),
-        ),
-        enabled: !isReadOnly,
-        minLines: 8,
-        maxLines: 16,
+        titleKey: LocaleKeys.skills_screen_content_label,
+        editKey: LocaleKeys.skills_screen_edit_content,
+        emptyKey: LocaleKeys.skills_screen_content_empty,
+        onEdit: onEditContent,
+        isReadOnly: isReadOnly,
       ),
       AuraRow(
         children: [
@@ -536,7 +567,6 @@ class _SkillToolsCard extends ConsumerWidget {
               value.isEmpty
                   ? const AuraText(
                       child: TextLocale(LocaleKeys.skills_tool_empty),
-                      color: AuraColorVariant.onSurfaceVariant,
                     )
                   : AuraColumn(
                       children: [
@@ -547,7 +577,6 @@ class _SkillToolsCard extends ConsumerWidget {
                                 AuraText(child: Text(tool.title)),
                                 AuraText(
                                   child: Text(tool.slug),
-                                  color: AuraColorVariant.onSurfaceVariant,
                                 ),
                               ],
                               spacing: .xs,
@@ -583,7 +612,7 @@ class _SkillToolsCard extends ConsumerWidget {
             AsyncLoading() => const Center(child: AuraSpinner()),
             AsyncError() => const AuraText(
               child: TextLocale(LocaleKeys.skills_tool_load_error),
-              color: AuraColorVariant.error,
+              tint: AuraTint.error,
             ),
           },
         ],
@@ -695,7 +724,6 @@ class _AppSkillToolsCard extends StatelessWidget {
                       null => Text(tool.description),
                       final descriptionKey => TextLocale(descriptionKey),
                     },
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
                 spacing: .xs,
@@ -738,7 +766,7 @@ class _CredentialDefinitionSelector extends ConsumerWidget {
       AsyncLoading() => const AuraSpinner(size: AuraSpinnerSize.small),
       AsyncError() => const AuraText(
         child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
-        color: AuraColorVariant.error,
+        tint: AuraTint.error,
       ),
     };
   }
@@ -793,7 +821,7 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
             child: TextLocale(
               LocaleKeys.skill_credentials_definitions_not_found,
             ),
-            color: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
       ],
       spacing: .xs,
@@ -844,7 +872,7 @@ class _SkillCredentialsHint extends ConsumerWidget {
       (definition: AsyncError(), credentials: _) ||
       (definition: _, credentials: AsyncError()) => const AuraText(
         child: TextLocale(LocaleKeys.skill_credentials_load_error),
-        color: AuraColorVariant.error,
+        tint: AuraTint.error,
       ),
     };
   }
@@ -931,7 +959,6 @@ class _LoadedCredentialsHint extends StatelessWidget {
           context: context,
         ),
       ),
-      color: AuraColorVariant.onSurfaceVariant,
     );
   }
 }
@@ -950,16 +977,13 @@ class _MissingCredentialHint extends StatelessWidget {
     final hintKey = isCredentialOptional
         ? LocaleKeys.skill_credentials_optional_missing_hint
         : LocaleKeys.skill_credentials_missing_hint;
-    final color = isCredentialOptional
-        ? AuraColorVariant.onSurfaceVariant
-        : AuraColorVariant.error;
 
     return Row(
       children: [
         Expanded(
           child: AuraText(
             child: TextLocale(hintKey),
-            color: color,
+            tint: isCredentialOptional ? null : AuraTint.error,
           ),
         ),
         AuraButton(
@@ -986,7 +1010,6 @@ class _ReadOnlyField extends StatelessWidget {
       children: [
         AuraText(
           child: TextLocale(labelKey),
-          color: AuraColorVariant.onSurfaceVariant,
         ),
         AuraSelectableText(value),
       ],

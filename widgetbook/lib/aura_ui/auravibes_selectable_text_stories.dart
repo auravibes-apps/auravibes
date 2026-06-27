@@ -22,9 +22,9 @@ Widget defaultSelectableTextUseCase(BuildContext context) {
           initialOption: AuraTextStyle.body,
           labelBuilder: (value) => value.name,
         ),
-        colorVariant: context.knobs.objectOrNull.dropdown(
-          label: 'colorVariant',
-          options: AuraColorVariant.values,
+        tint: context.knobs.objectOrNull.dropdown(
+          label: 'tint',
+          options: AuraTint.values,
           initialOption: null,
           labelBuilder: (value) => value.name,
         ),

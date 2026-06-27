@@ -180,7 +180,6 @@ class _SkillsScreenBody extends ConsumerWidget {
             const AuraText(
               child: TextLocale(LocaleKeys.skills_screen_empty_subtitle),
               textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraButton(
               onPressed: () => unawaited(onCreateSkill(context)),
@@ -227,66 +226,84 @@ class _SkillTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraCard(
-      child: AuraTile(
-        child: AuraColumn(
-          children: [
-            AuraText(
-              child: switch (skill.titleKey) {
-                null => Text(skill.title),
-                final titleKey => TextLocale(titleKey),
-              },
-            ),
-            if (skill.descriptionKey case final descriptionKey?)
-              AuraText(
-                child: TextLocale(descriptionKey),
-                color: AuraColorVariant.onSurfaceVariant,
-              )
-            else if (skill.description.isNotEmpty)
-              AuraText(
-                child: Text(skill.description),
-                color: AuraColorVariant.onSurfaceVariant,
-              ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
+      child: AuraRow(
+        children: [
+          AuraIcon(_icon),
+          Expanded(
+            child: AuraColumn(
               children: [
-                _SkillChip(label: _sourceLabel(context)),
-                _SkillChip(label: _kindLabel(context)),
-                _SkillChip(label: skill.slug),
+                AuraText(
+                  child: switch (skill.titleKey) {
+                    null => Text(skill.title),
+                    final titleKey => TextLocale(titleKey),
+                  },
+                  style: AuraTextStyle.heading6,
+                ),
+                if (_description(context) case final description?)
+                  GptMarkdown(
+                    description,
+                    style: TextStyle(
+                      color: context.auraColors.onSurfaceVariant,
+                      fontWeight:
+                          context.auraTheme.typography.fontWeightRegular,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    _SkillChip(label: _sourceLabel(context)),
+                    _SkillChip(label: _kindLabel(context)),
+                    _SkillChip(label: skill.slug),
+                  ],
+                ),
               ],
+              spacing: .xs,
+              crossAxisAlignment: CrossAxisAlignment.start,
             ),
-          ],
-          spacing: .xs,
-          crossAxisAlignment: CrossAxisAlignment.start,
-        ),
-        onTap: onOpen,
-        variant: AuraTileVariant.ghost,
-        leading: AuraIcon(_icon),
-        trailing: AuraRow(
-          children: [
-            AuraSwitch(value: skill.isEnabled, onChanged: onChanged),
-            if (skill.source == SkillSource.user)
-              AuraPopupMenuButton(
-                items: [
-                  AuraPopupMenuItem(
-                    title: Text(LocaleKeys.common_edit.tr(context: context)),
-                    onTap: onOpen,
-                  ),
-                  AuraPopupMenuItem(
-                    title: Text(LocaleKeys.common_delete.tr(context: context)),
-                    onTap: onDelete,
-                    variant: AuraTileVariant.error,
-                  ),
-                ],
-                tooltip: LocaleKeys.common_show_more.tr(context: context),
-              ),
-          ],
-          mainAxisSize: MainAxisSize.min,
-        ),
+          ),
+          AuraRow(
+            children: [
+              AuraSwitch(value: skill.isEnabled, onChanged: onChanged),
+              if (skill.source == SkillSource.user)
+                AuraPopupMenuButton(
+                  items: [
+                    AuraPopupMenuItem(
+                      title: Text(LocaleKeys.common_edit.tr(context: context)),
+                      onTap: onOpen,
+                    ),
+                    AuraPopupMenuItem(
+                      title: Text(
+                        LocaleKeys.common_delete.tr(context: context),
+                      ),
+                      onTap: onDelete,
+                      variant: AuraTileVariant.error,
+                    ),
+                  ],
+                  tooltip: LocaleKeys.common_show_more.tr(context: context),
+                ),
+            ],
+            mainAxisSize: MainAxisSize.min,
+          ),
+        ],
+        spacing: .sm,
       ),
       onTap: onOpen,
       style: AuraCardStyle.border,
     );
+  }
+
+  String? _description(BuildContext context) {
+    final description = switch (skill.descriptionKey) {
+      null => skill.description,
+      final descriptionKey => descriptionKey.tr(context: context),
+    };
+
+    if (description.trim().isEmpty) return null;
+
+    return description;
   }
 
   IconData get _icon {
@@ -326,9 +343,12 @@ class _SkillChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AuraBadge.text(
-      child: Text(label),
-      variant: AuraBadgeVariant.neutral,
+    return AuraBadge(
+      child: AuraText(
+        child: Text(label),
+        style: AuraTextStyle.caption,
+      ),
+      variant: AuraBadgeVariant.outlined,
       size: AuraBadgeSize.small,
     );
   }

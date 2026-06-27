@@ -88,7 +88,7 @@ class AuraRadioOption<T> {
 
 /// An individual radio button that communicates with its parent group.
 ///
-/// Follows the const-first design pattern using [AuraColorVariant] for
+/// Follows the const-first design pattern using [AuraTint] for
 /// compile-time color configuration.
 ///
 /// ## Selection Contract
@@ -107,7 +107,7 @@ class AuraRadioOption<T> {
 ///   value: 'option1',
 ///   groupValue: selectedValue,
 ///   onChanged: (value) => setState(() => selectedValue = value),
-///   colorVariant: AuraColorVariant.primary,
+///   tint: AuraTint.primary,
 /// )
 /// ```
 class AuraRadio<T> extends StatefulWidget {
@@ -117,7 +117,7 @@ class AuraRadio<T> extends StatefulWidget {
     required this.groupValue,
     required this.onChanged,
     super.key,
-    this.colorVariant,
+    this.tint,
     this.disabled = false,
   });
 
@@ -132,8 +132,8 @@ class AuraRadio<T> extends StatefulWidget {
   /// If null, the radio button will be disabled.
   final ValueChanged<T?>? onChanged;
 
-  /// The color variant for the radio button when selected.
-  final AuraColorVariant? colorVariant;
+  /// The tint for the radio button when selected.
+  final AuraTint? tint;
 
   /// Whether the radio button is disabled.
   final bool disabled;
@@ -149,7 +149,7 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
   Color _getActiveColor(BuildContext context) {
     final auraColors = context.auraColors;
 
-    return auraColors.getColorOrNull(widget.colorVariant) ?? auraColors.primary;
+    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
   }
 
   Color _getBorderColor(BuildContext context, bool isDisabled) {

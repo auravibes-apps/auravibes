@@ -33,21 +33,19 @@ class ConversationContextUsagePill extends ConsumerWidget {
                 AuraIcon(
                   data.level.icon,
                   size: AuraIconSize.extraSmall,
-                  color: data.level.iconColor,
+                  tint: data.level.iconTint,
                 ),
                 SizedBox(
                   width: 26,
                   child: AuraLinearProgressIndicator(
                     value: data.progress,
-                    color: data.level.iconColor,
-                    backgroundColor: AuraColorVariant.onSurfaceVariant,
+                    tint: data.level.iconTint ?? AuraTint.primary,
                     backgroundAlpha: 0.25,
                   ),
                 ),
                 AuraText(
                   child: Text(data.usageLabel),
                   style: AuraTextStyle.caption,
-                  color: AuraColorVariant.onSurfaceVariant,
                 ),
                 AuraBadge.text(
                   child: Text(data.percentLabel),
@@ -62,7 +60,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
               horizontal: .sm,
               vertical: .xs,
             ),
-            backgroundColor: AuraColorVariant.surfaceVariant,
+            variant: AuraContainerVariant.surfaceVariant,
             borderRadius: context.auraTheme.fromBorderRadius(
               .full,
             ),

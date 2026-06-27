@@ -49,7 +49,7 @@ class ServiceConnectionsScreen extends ConsumerWidget {
         AsyncError() => const Center(
           child: AuraText(
             child: TextLocale(LocaleKeys.service_connections_load_error),
-            color: AuraColorVariant.error,
+            tint: AuraTint.error,
           ),
         ),
       },
@@ -89,7 +89,6 @@ class _ConnectionsList extends StatelessWidget {
             const AuraIcon(
               Icons.hub_outlined,
               size: AuraIconSize.extraLarge,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_title),
@@ -98,7 +97,6 @@ class _ConnectionsList extends StatelessWidget {
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_subtitle),
               textAlign: TextAlign.center,
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             AuraButton(
               onPressed: onAddConnection,
@@ -140,7 +138,6 @@ class _ConnectionTile extends ConsumerWidget {
             ),
             AuraText(
               child: Text(_subtitle(context)),
-              color: AuraColorVariant.onSurfaceVariant,
             ),
             if (connection.kind == ServiceConnectionListItemKind.mcpServer)
               _ConnectionStatusBadge(status: connection.displayStatus),

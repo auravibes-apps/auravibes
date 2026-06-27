@@ -146,7 +146,6 @@ class _SkillSection extends StatelessWidget {
         if (skills.isEmpty)
           AuraText(
             child: TextLocale(emptyKey),
-            color: AuraColorVariant.onSurfaceVariant,
           )
         else
           for (final skill in skills)
@@ -156,7 +155,6 @@ class _SkillSection extends StatelessWidget {
                   AuraText(child: Text(skill.title)),
                   AuraText(
                     child: Text(skill.description),
-                    color: AuraColorVariant.onSurfaceVariant,
                   ),
                 ],
                 spacing: AuraSpacing.xs,
