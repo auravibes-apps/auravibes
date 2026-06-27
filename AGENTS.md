@@ -22,7 +22,7 @@
 ## Verification
 
 - Run the smallest focused test or check that proves the change.
-- Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
+- Use `validate:quick` for fast analyzer + format coverage before claiming done for shared behavior, app logic, or broad refactors.
 - For generated-code drift, run the relevant generator and verify `git diff --check` plus a clean generated diff.
 - For CI static-analysis parity, also run dependency validation and import sorting.
 - Docs-only changes can use `git diff --check`.
@@ -43,7 +43,7 @@
 - Static analysis CI runs format, analyze, unused files, unused code, unnecessary nullable, dependency validation, and import sorting.
 - Generated Artifacts CI fails if bootstrap or code generation changes tracked files.
 - If `.fvmrc` changes, run `fvm use` and commit the resulting `.vscode/settings.json` sync.
-- Before opening or updating a PR with code changes, prefer `fvm dart run melos run validate:quick`, `fvm dart run dependency_validator`, and `fvm dart run import_sorter:main --exit-if-changed`.
+- Before opening or updating a PR with code changes, prefer `fvm dart run melos run validate`, `fvm dart run dependency_validator`, and `fvm dart run import_sorter:main --exit-if-changed`.
 
 ## Dependencies
 
