@@ -18,7 +18,6 @@ import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.da
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
-import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -101,7 +100,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
-          routerPathSegmentsProvider.overrideWithValue(const []),
           conversationRepositoryProvider.overrideWithValue(repo),
           conversationChatProvider(_workspaceId).overrideWith(
             _ForeverLoadingChatNotifier.new,
@@ -127,7 +125,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
-          routerPathSegmentsProvider.overrideWithValue(const []),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
@@ -156,7 +153,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
-          routerPathSegmentsProvider.overrideWithValue(const []),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
@@ -188,7 +184,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
-          routerPathSegmentsProvider.overrideWithValue(const []),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
@@ -264,7 +259,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
-          routerPathSegmentsProvider.overrideWithValue(const []),
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
@@ -409,7 +403,6 @@ void main() {
                 return TestProviderScope(
                   overrides: [
                     conversationSelectedProvider.overrideWithValue(_chatId),
-                    routerPathSegmentsProvider.overrideWithValue(const []),
                     conversationRepositoryProvider.overrideWithValue(
                       _StubConversationRepository(),
                     ),
@@ -493,7 +486,6 @@ void main() {
               return TestProviderScope(
                 overrides: [
                   conversationSelectedProvider.overrideWithValue(_chatId),
-                  routerPathSegmentsProvider.overrideWithValue(const []),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
@@ -580,7 +572,6 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         conversationSelectedProvider.overrideWithValue(_chatId),
-        routerPathSegmentsProvider.overrideWithValue(const []),
         conversationRepositoryProvider.overrideWithValue(
           _StubConversationRepository(),
         ),
@@ -694,7 +685,6 @@ void main() {
               return TestProviderScope(
                 overrides: [
                   conversationSelectedProvider.overrideWithValue(_chatId),
-                  routerPathSegmentsProvider.overrideWithValue(const []),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),

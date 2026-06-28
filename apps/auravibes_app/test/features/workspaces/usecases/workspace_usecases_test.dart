@@ -261,7 +261,6 @@ void main() {
 
       await fixture.usecase.call(
         id: 'ws-1',
-        workspaceCount: 2,
         activeWorkspaceId: 'ws-2',
       );
 
@@ -269,19 +268,18 @@ void main() {
       expect(remaining, hasLength(1));
     });
 
-    test('throws when deleting last remaining workspace', () async {
+    test('deletes last remaining workspace', () async {
       final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
-      expect(
-        () => fixture.usecase.call(
-          id: 'ws-1',
-          workspaceCount: 1,
-          activeWorkspaceId: 'ws-1',
-        ),
-        throwsA(isA<WorkspaceDeleteLastException>()),
+      await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'other',
       );
+
+      final remaining = await fixture.repository.getAllWorkspaces();
+      expect(remaining, isEmpty);
     });
 
     test('throws when deleting active workspace', () async {
@@ -295,26 +293,24 @@ void main() {
       expect(
         () => fixture.usecase.call(
           id: 'ws-1',
-          workspaceCount: 2,
           activeWorkspaceId: 'ws-1',
         ),
         throwsA(isA<WorkspaceDeleteActiveException>()),
       );
     });
 
-    test('last workspace guard takes priority over active guard', () async {
+    test('allows deleting active workspace when it is the last one', () async {
       final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
-      expect(
-        () => fixture.usecase.call(
-          id: 'ws-1',
-          workspaceCount: 1,
-          activeWorkspaceId: 'ws-1',
-        ),
-        throwsA(isA<WorkspaceDeleteLastException>()),
+      await fixture.usecase.call(
+        id: 'ws-1',
+        activeWorkspaceId: 'ws-1',
       );
+
+      final remaining = await fixture.repository.getAllWorkspaces();
+      expect(remaining, isEmpty);
     });
   });
 }

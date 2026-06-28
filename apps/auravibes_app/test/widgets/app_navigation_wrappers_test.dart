@@ -11,7 +11,6 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -593,7 +592,6 @@ void main() {
                     ),
                   ]),
                 ),
-                routerPathSegmentsProvider.overrideWithValue(const []),
               ],
               child: MaterialApp.router(
                 routerConfig: router,

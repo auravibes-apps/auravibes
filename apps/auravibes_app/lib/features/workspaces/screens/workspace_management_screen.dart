@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_management
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/usecases/usecases.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:collection/collection.dart';
@@ -139,21 +140,32 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await deleteWorkspaceMutation.run(ref, (transaction) {
-        final usecase = ref.read(deleteWorkspaceUseCaseProvider);
+      try {
+        await deleteWorkspaceMutation.run(ref, (transaction) {
+          final usecase = ref.read(deleteWorkspaceUseCaseProvider);
 
-        return usecase.call(
-          id: id,
-          workspaceCount: workspaces.length,
-          activeWorkspaceId: workspaceId,
-        );
-      });
+          return usecase.call(
+            id: id,
+            activeWorkspaceId: workspaceId,
+          );
+        });
+      } on Exception catch (error) {
+        if (context.mounted) _showError(context, error);
+
+        return;
+      }
 
       if (!context.mounted) return;
 
       final mutationState = ref.read(deleteWorkspaceMutation);
       if (mutationState is MutationError) {
         _showError(context, mutationState.error);
+
+        return;
+      }
+
+      if (workspaces.length == 1) {
+        const IntroRoute().go(context);
       }
     }
   }

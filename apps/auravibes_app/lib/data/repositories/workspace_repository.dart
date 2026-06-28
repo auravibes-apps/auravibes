@@ -255,16 +255,6 @@ class WorkspaceNotFoundException extends WorkspaceException {
   final String workspaceId;
 }
 
-/// Exception thrown when attempting to delete the last remaining workspace.
-class WorkspaceDeleteLastException extends WorkspaceException {
-  /// Creates a new WorkspaceDeleteLastException.
-  const WorkspaceDeleteLastException()
-    : super(
-        'Cannot delete the last remaining workspace.',
-        localizationKey: LocaleKeys.workspace_management_delete_last_error,
-      );
-}
-
 /// Exception thrown when attempting to delete the currently active workspace.
 class WorkspaceDeleteActiveException extends WorkspaceException {
   /// Creates a new WorkspaceDeleteActiveException.

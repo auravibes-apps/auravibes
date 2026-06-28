@@ -11,7 +11,6 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
-import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +29,6 @@ void main() {
         TestProviderScope(
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repository),
-            routerPathSegmentsProvider.overrideWithValue(const []),
           ],
           child: const MaterialApp(
             home: _SidebarWorkspaceHost(),
@@ -62,7 +60,6 @@ void main() {
         TestProviderScope(
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repository),
-            routerPathSegmentsProvider.overrideWithValue(const []),
           ],
           child: const MaterialApp(
             home: _SidebarWorkspaceHost(),
@@ -108,7 +105,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
-          routerPathSegmentsProvider.overrideWithValue(const []),
         ],
         child: const MaterialApp(
           home: _SidebarWorkspaceHost(),
@@ -128,7 +124,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
-          routerPathSegmentsProvider.overrideWithValue(const []),
         ],
         child: const MaterialApp(
           home: _SidebarWorkspaceHost(),
@@ -150,7 +145,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
-          routerPathSegmentsProvider.overrideWithValue(const []),
         ],
         child: MaterialApp(
           home: Theme(
@@ -220,7 +214,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
-          routerPathSegmentsProvider.overrideWithValue(const []),
         ],
         child: MaterialApp(
           home: Theme(
@@ -252,7 +245,6 @@ void main() {
       TestProviderScope(
         overrides: [
           conversationRepositoryProvider.overrideWithValue(repository),
-          routerPathSegmentsProvider.overrideWithValue(const []),
         ],
         child: MaterialApp(
           home: Theme(
@@ -289,7 +281,6 @@ void main() {
               return TestProviderScope(
                 overrides: [
                   conversationRepositoryProvider.overrideWithValue(repository),
-                  routerPathSegmentsProvider.overrideWithValue(const []),
                 ],
                 child: MaterialApp(
                   home: Theme(
@@ -368,7 +359,6 @@ void main() {
                           ),
                         });
                       }),
-                      routerPathSegmentsProvider.overrideWithValue(const []),
                     ],
                     child: MaterialApp(
                       home: Theme(

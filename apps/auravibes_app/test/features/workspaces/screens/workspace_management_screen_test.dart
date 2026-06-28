@@ -24,6 +24,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   final List<WorkspaceEntity> _workspaces = [];
   final _controller = StreamController<List<WorkspaceEntity>>.broadcast();
   var _nextId = 1;
+  Exception? deleteError;
 
   void _emit() => _controller.add(List.unmodifiable(_workspaces));
 
@@ -72,6 +73,9 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async {
+    final error = deleteError;
+    if (error != null) throw error;
+
     final index = _workspaces.indexWhere((w) => w.id == id);
     if (index == -1) return false;
     final _ = _workspaces.removeAt(index);
@@ -157,6 +161,54 @@ void main() {
               overrides: overrides.cast(),
               child: MaterialApp(
                 home: WorkspaceManagementScreen(workspaceId: workspaceId),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            );
+          },
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      );
+    }
+
+    Widget _buildRoutedScreen({required String workspaceId}) {
+      return EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            final router = GoRouter(
+              routes: [
+                GoRoute(
+                  path: '/intro',
+                  builder: (context, state) => const Text('Welcome'),
+                ),
+                GoRoute(
+                  path: '/workspaces/:workspaceId/more/manage-workspaces',
+                  builder: (context, state) => WorkspaceManagementScreen(
+                    workspaceId: state.pathParameters['workspaceId']!,
+                  ),
+                ),
+              ],
+              initialLocation:
+                  '/workspaces/$workspaceId/more/manage-workspaces',
+            );
+            final overrides = [
+              workspaceRepositoryProvider.overrideWithValue(repository),
+              currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
+            ];
+
+            return ProviderScope(
+              overrides: overrides.cast(),
+              child: MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) => AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -429,6 +481,48 @@ void main() {
 
       expect(find.text('ToDelete'), findsNothing);
       expect(find.text('KeepMe'), findsOneWidget);
+    });
+
+    testWidgets('confirm delete of last workspace goes to welcome', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
+      );
+
+      await _pumpAndInit(tester, _buildRoutedScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Welcome'), findsOneWidget);
+      expect(await repository.getWorkspaceCount(), 0);
+    });
+
+    testWidgets('failed delete of last workspace stays on management', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
+      );
+      repository.deleteError = const WorkspaceException('Delete failed');
+
+      await _pumpAndInit(tester, _buildRoutedScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Welcome'), findsNothing);
+      expect(find.text('Only'), findsOneWidget);
+      expect(await repository.getWorkspaceCount(), 1);
     });
 
     testWidgets('tapping back button does not crash', (tester) async {

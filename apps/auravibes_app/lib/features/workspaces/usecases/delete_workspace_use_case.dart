@@ -7,8 +7,7 @@ part 'delete_workspace_use_case.g.dart';
 /// Deletes a workspace after enforcing business-rule guards.
 ///
 /// Guards:
-/// - Cannot delete the last remaining workspace.
-/// - Cannot delete the currently active workspace.
+/// - Cannot delete the currently active workspace while others remain.
 class DeleteWorkspaceUseCase {
   const DeleteWorkspaceUseCase({
     required this._repository,
@@ -20,21 +19,16 @@ class DeleteWorkspaceUseCase {
   // ignore: unnecessary-nullable
   /// Deletes the workspace with [id].
   ///
-  /// [workspaceCount] is the current total number of workspaces.
   /// [activeWorkspaceId] is the ID of the currently active workspace.
   ///
-  /// Throws [WorkspaceDeleteLastException] if this is the last workspace.
   /// Throws [WorkspaceDeleteActiveException] if the workspace is active.
   Future<void> call({
     required String id,
-    required int workspaceCount,
     required String? activeWorkspaceId,
   }) async {
-    if (workspaceCount <= 1) {
-      throw const WorkspaceDeleteLastException();
-    }
+    final workspaceCount = await _repository.getWorkspaceCount();
 
-    if (id == activeWorkspaceId) {
+    if (workspaceCount > 1 && id == activeWorkspaceId) {
       throw const WorkspaceDeleteActiveException();
     }
 
