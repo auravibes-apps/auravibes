@@ -193,24 +193,6 @@ void main() {
     });
   });
 
-  group('routerPathSegmentsProvider', () {
-    test('returns a list of strings', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final segments = container.read(routerPathSegmentsProvider);
-      expect(segments, isA<List<String>>());
-    });
-
-    test('returns path segments from initial location', () {
-      final container = ProviderContainer();
-      addTearDown(container.dispose);
-
-      final segments = container.read(routerPathSegmentsProvider);
-      expect(segments, isA<List<String>>());
-    });
-  });
-
   group('currentRouteWorkspaceIdProvider', () {
     test('returns null for root path', () {
       final container = ProviderContainer();
@@ -223,10 +205,12 @@ void main() {
     test('returns null for non-workspace segments', () {
       final container = ProviderContainer(
         overrides: [
-          routerPathSegmentsProvider.overrideWithValue([
-            'chat',
-            'new',
-          ]),
+          routerInformationProvider.overrideWithValue(
+            GoRouteInformationProvider(
+              initialLocation: '/chat/new',
+              initialExtra: null,
+            ),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -238,9 +222,12 @@ void main() {
     test('returns null for insufficient segments', () {
       final container = ProviderContainer(
         overrides: [
-          routerPathSegmentsProvider.overrideWithValue([
-            'workspaces',
-          ]),
+          routerInformationProvider.overrideWithValue(
+            GoRouteInformationProvider(
+              initialLocation: '/workspaces',
+              initialExtra: null,
+            ),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -252,10 +239,12 @@ void main() {
     test('returns null when first segment is not workspaces', () {
       final container = ProviderContainer(
         overrides: [
-          routerPathSegmentsProvider.overrideWithValue([
-            'tools',
-            'ws-42',
-          ]),
+          routerInformationProvider.overrideWithValue(
+            GoRouteInformationProvider(
+              initialLocation: '/tools/ws-42',
+              initialExtra: null,
+            ),
+          ),
         ],
       );
       addTearDown(container.dispose);
