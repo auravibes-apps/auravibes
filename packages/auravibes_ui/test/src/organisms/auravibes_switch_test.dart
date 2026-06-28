@@ -278,6 +278,65 @@ void main() {
       });
     });
 
+    group('Focus state', () {
+      testWidgets('shows focus ring when focus highlight is active', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: AuraSwitch(
+                value: false,
+                onChanged: (_) {
+                  final _ = Object();
+                },
+              ),
+            ),
+          ),
+        );
+
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
+          find.descendant(
+            of: find.byType(AuraSwitch),
+            matching: find.byType(FocusableActionDetector),
+          ),
+        );
+        focusableActionDetector.onShowFocusHighlight?.call(true);
+        await tester.pump();
+
+        final focusedTrack = tester.widget<AnimatedContainer>(
+          find.byType(AnimatedContainer).first,
+        );
+        final focusedDecoration = focusedTrack.decoration! as BoxDecoration;
+
+        expect(focusedDecoration.border, isNull);
+        expect(focusedDecoration.boxShadow, isNotNull);
+      });
+
+      testWidgets('does not enable focus when onChanged is null', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: AuraSwitch(
+                value: false,
+                onChanged: null,
+              ),
+            ),
+          ),
+        );
+
+        final focusableActionDetector = tester.widget<FocusableActionDetector>(
+          find.descendant(
+            of: find.byType(AuraSwitch),
+            matching: find.byType(FocusableActionDetector),
+          ),
+        );
+        expect(focusableActionDetector.enabled, isFalse);
+      });
+    });
+
     group('Disabled state', () {
       testWidgets('applies disabled property correctly', (tester) async {
         await tester.pumpWidget(
