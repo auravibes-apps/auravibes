@@ -201,7 +201,7 @@ void main() {
       ],
     );
 
-    await ai.generate<Object?, Object?>(
+    final response = await ai.generate<Object?, Object?>(
       model: openAICodexModel('gpt-5.5'),
       messages: [
         Message(
@@ -235,6 +235,7 @@ void main() {
       ],
     );
 
+    expect(response.text, 'Done.');
     expect(capturedBody?['input'], [
       {'role': 'user', 'content': 'Use tool'},
       {'role': 'assistant', 'content': ''},

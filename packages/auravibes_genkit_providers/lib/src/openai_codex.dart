@@ -198,12 +198,15 @@ Map<String, dynamic> _decodeStreamEvent(String data) {
   try {
     return jsonDecode(data) as Map<String, dynamic>;
   } on Object catch (error, stackTrace) {
-    throw GenkitException(
-      'OpenAI Codex stream parse error.',
-      status: StatusCodes.INTERNAL,
-      details: data,
-      underlyingException: error,
-      stackTrace: stackTrace,
+    Error.throwWithStackTrace(
+      GenkitException(
+        'OpenAI Codex stream parse error.',
+        status: StatusCodes.INTERNAL,
+        details: data,
+        underlyingException: error,
+        stackTrace: stackTrace,
+      ),
+      stackTrace,
     );
   }
 }
