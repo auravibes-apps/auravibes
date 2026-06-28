@@ -307,7 +307,10 @@ void main() {
         final focusedTrack = tester.widget<AnimatedContainer>(
           find.byType(AnimatedContainer).first,
         );
-        final focusedDecoration = focusedTrack.decoration! as BoxDecoration;
+        final focusedDecoration = switch (focusedTrack.decoration) {
+          final BoxDecoration decoration => decoration,
+          _ => fail('Expected a box decoration.'),
+        };
 
         expect(focusedDecoration.border, isNull);
         expect(focusedDecoration.boxShadow, isNotNull);

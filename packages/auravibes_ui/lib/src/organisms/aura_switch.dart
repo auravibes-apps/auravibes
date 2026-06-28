@@ -85,10 +85,10 @@ class _AuraSwitchState extends State<AuraSwitch> {
             },
           ),
         },
+        onShowFocusHighlight: (value) => setState(() => _isFocused = value),
         mouseCursor: isInteractive
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
-        onShowFocusHighlight: (value) => setState(() => _isFocused = value),
         child: GestureDetector(
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
