@@ -313,7 +313,20 @@ void main() {
         };
 
         expect(focusedDecoration.border, isNull);
-        expect(focusedDecoration.boxShadow, isNotNull);
+        expect(focusedDecoration.boxShadow, hasLength(1));
+
+        focusableActionDetector.onShowFocusHighlight?.call(false);
+        await tester.pump();
+
+        final unfocusedTrack = tester.widget<AnimatedContainer>(
+          find.byType(AnimatedContainer).first,
+        );
+        final unfocusedDecoration = switch (unfocusedTrack.decoration) {
+          final BoxDecoration decoration => decoration,
+          _ => fail('Expected a box decoration.'),
+        };
+
+        expect(unfocusedDecoration.boxShadow, isNull);
       });
 
       testWidgets('does not enable focus when onChanged is null', (
