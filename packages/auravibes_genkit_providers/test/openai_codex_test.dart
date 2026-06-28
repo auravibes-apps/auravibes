@@ -128,6 +128,130 @@ void main() {
     expect(result.usage?.totalTokens, 3);
   });
 
+  test('retries transient server errors before streaming chunks', () async {
+    var requests = 0;
+    final client = _FakeClient((request) async {
+      requests++;
+      if (requests == 1) {
+        return http.StreamedResponse(
+          Stream.value(
+            utf8.encode(
+              'data: ${jsonEncode({
+                'type': 'response.failed',
+                'response': {
+                  'error': {'code': 'server_error', 'message': 'retry'},
+                },
+              })}\n\n',
+            ),
+          ),
+          200,
+        );
+      }
+
+      return http.StreamedResponse(
+        Stream.fromIterable([
+          utf8.encode(
+            'data: {"type":"response.output_text.delta","delta":"Ok"}\n\n',
+          ),
+          utf8.encode('data: {"type":"response.completed"}\n\n'),
+        ]),
+        200,
+      );
+    });
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          models: const ['gpt-5.5'],
+          httpClient: client,
+        ),
+      ],
+    );
+
+    final stream = ai.generateStream<Object?, Object?>(
+      model: openAICodexModel('gpt-5.5'),
+      messages: [
+        Message(
+          role: Role.user,
+          content: [TextPart(text: 'Hi')],
+        ),
+      ],
+    );
+
+    expect((await stream.toList()).map((chunk) => chunk.text).join(), 'Ok');
+    expect(requests, 2);
+  });
+
+  test('sends tool call history before tool outputs', () async {
+    Map<String, dynamic>? capturedBody;
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          models: const ['gpt-5.5'],
+          httpClient: _FakeClient((request) async {
+            capturedBody = await _readBody(request);
+
+            return _jsonResponse({
+              'status': 'completed',
+              'output_text': 'Done.',
+            });
+          }),
+        ),
+      ],
+    );
+
+    await ai.generate<Object?, Object?>(
+      model: openAICodexModel('gpt-5.5'),
+      messages: [
+        Message(
+          role: Role.user,
+          content: [TextPart(text: 'Use tool')],
+        ),
+        Message(
+          role: Role.model,
+          content: [
+            ToolRequestPart(
+              toolRequest: ToolRequest(
+                ref: 'call_1',
+                name: 'read_file',
+                input: {'path': 'README.md'},
+              ),
+            ),
+          ],
+        ),
+        Message(
+          role: Role.tool,
+          content: [
+            ToolResponsePart(
+              toolResponse: ToolResponse(
+                ref: 'call_1',
+                name: 'read_file',
+                output: 'content',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    expect(capturedBody?['input'], [
+      {'role': 'user', 'content': 'Use tool'},
+      {'role': 'assistant', 'content': ''},
+      {
+        'type': 'function_call',
+        'call_id': 'call_1',
+        'name': 'read_file',
+        'arguments': '{"path":"README.md"}',
+      },
+      {
+        'type': 'function_call_output',
+        'call_id': 'call_1',
+        'output': '"content"',
+      },
+    ]);
+  });
+
   test('preserves backend error body', () {
     final ai = Genkit(
       plugins: [
@@ -196,7 +320,7 @@ void main() {
     expect(response.finishReason, FinishReason.length);
   });
 
-  test('streams failed events as Genkit errors', () {
+  test('streams failed events with compact error details', () {
     final ai = Genkit(
       plugins: [
         OpenAICodexProvider(
@@ -231,7 +355,123 @@ void main() {
         );
         await stream.drain<void>();
       },
-      throwsA(isA<GenkitException>()),
+      throwsA(
+        isA<GenkitException>()
+            .having((error) => error.message, 'message', contains('bad'))
+            .having((error) => error.details, 'details', contains('bad'))
+            .having(
+              (error) => error.stackTrace,
+              'stackTrace',
+              isNotNull,
+            ),
+      ),
+    );
+  });
+
+  test('streams nested failed events without encrypted content', () {
+    const requestId = 'c3579012-0e03-40fc-a77a-198de40f6bca';
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          httpClient: _FakeClient((request) async {
+            return http.StreamedResponse(
+              Stream.value(
+                utf8.encode(
+                  'data: ${jsonEncode({
+                    'type': 'response.failed',
+                    'response': {
+                      'id': 'resp_1',
+                      'status': 'failed',
+                      'model': 'gpt-5.5',
+                      'error': {
+                        'code': 'server_error',
+                        'message': 'Include request ID $requestId',
+                      },
+                      'output': [
+                        {
+                          'encrypted_content': 'secret-encrypted-content',
+                        },
+                      ],
+                    },
+                  })}\n\n',
+                ),
+              ),
+              200,
+            );
+          }),
+        ),
+      ],
+    );
+
+    expect(
+      () async {
+        final stream = ai.generateStream<Object?, Object?>(
+          model: openAICodexModel('gpt-5.5'),
+          messages: [
+            Message(
+              role: Role.user,
+              content: [TextPart(text: 'Hi')],
+            ),
+          ],
+        );
+        await stream.drain<void>();
+      },
+      throwsA(
+        isA<GenkitException>()
+            .having((error) => error.message, 'message', contains(requestId))
+            .having((error) => error.details, 'details', contains('resp_1'))
+            .having(
+              (error) => error.details,
+              'details',
+              isNot(contains('secret-encrypted-content')),
+            ),
+      ),
+    );
+  });
+
+  test('streams malformed events with raw payload details', () {
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          httpClient: _FakeClient((request) async {
+            return http.StreamedResponse(
+              Stream.value(utf8.encode('data: {not-json}\n\n')),
+              200,
+            );
+          }),
+        ),
+      ],
+    );
+
+    expect(
+      () async {
+        final stream = ai.generateStream<Object?, Object?>(
+          model: openAICodexModel('gpt-5.5'),
+          messages: [
+            Message(
+              role: Role.user,
+              content: [TextPart(text: 'Hi')],
+            ),
+          ],
+        );
+        await stream.drain<void>();
+      },
+      throwsA(
+        isA<GenkitException>()
+            .having(
+              (error) => error.message,
+              'message',
+              contains('stream parse error'),
+            )
+            .having((error) => error.details, 'details', '{not-json}')
+            .having(
+              (error) => error.underlyingException,
+              'underlyingException',
+              isNotNull,
+            ),
+      ),
     );
   });
 
