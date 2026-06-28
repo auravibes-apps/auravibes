@@ -40,7 +40,7 @@ class CodexOAuthService {
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
     final port = server.port;
-    final redirectUri = 'http://127.0.0.1:$port/auth/callback';
+    final redirectUri = 'http://localhost:$port/auth/callback';
     final codeCompleter = Completer<String>();
 
     unawaited(

@@ -41,6 +41,7 @@ void main() {
         dio: dio,
         openBrowser: (uri) async {
           final redirectUri = Uri.parse(uri.queryParameters['redirect_uri']!);
+          expect(redirectUri.host, 'localhost');
           final callbackUri = redirectUri.replace(
             queryParameters: {
               'state': uri.queryParameters['state'],
