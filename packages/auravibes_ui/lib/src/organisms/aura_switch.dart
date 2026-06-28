@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 ///
 /// This switch supports multiple sizes and states (on/off, disabled, loading)
 /// while maintaining consistency with the design tokens.
-class AuraSwitch extends StatelessWidget {
+class AuraSwitch extends StatefulWidget {
   /// Creates an Aura switch.
   const AuraSwitch({
     required this.value,
@@ -43,25 +43,35 @@ class AuraSwitch extends StatelessWidget {
   final bool isLoading;
 
   @override
+  State<AuraSwitch> createState() => _AuraSwitchState();
+}
+
+class _AuraSwitchState extends State<AuraSwitch> {
+  bool _isFocused = false;
+
+  @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final auraTheme = context.auraTheme;
 
-    final onChanged = this.onChanged;
-    final isInteractive = !disabled && !isLoading && onChanged != null;
+    final onChanged = widget.onChanged;
+    final isInteractive =
+        !widget.disabled && !widget.isLoading && onChanged != null;
 
     final trackWidth = _getTrackWidth();
     final trackHeight = _getTrackHeight();
     final thumbSize = _getThumbSize();
     final thumbPadding = _getThumbPadding();
 
-    final thumbOffset = value ? trackWidth - thumbSize - thumbPadding * 2 : 0.0;
+    final thumbOffset = widget.value
+        ? trackWidth - thumbSize - thumbPadding * 2
+        : 0.0;
 
     final trackColor = _getTrackColor(auraColors);
     final thumbColor = _getThumbColor(auraColors);
     final loadingTint = _getLoadingTint();
 
-    void handleToggle() => onChanged?.call(!value);
+    void handleToggle() => onChanged?.call(!widget.value);
 
     return Semantics(
       child: FocusableActionDetector(
@@ -75,6 +85,7 @@ class AuraSwitch extends StatelessWidget {
             },
           ),
         },
+        onShowFocusHighlight: (value) => setState(() => _isFocused = value),
         mouseCursor: isInteractive
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
@@ -87,6 +98,14 @@ class AuraSwitch extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: trackColor,
                   borderRadius: BorderRadius.circular(trackHeight / 2),
+                  boxShadow: _isFocused
+                      ? [
+                          BoxShadow(
+                            color: auraColors.primary.withValues(alpha: 0.24),
+                            spreadRadius: 3,
+                          ),
+                        ]
+                      : null,
                 ),
                 width: trackWidth,
                 height: trackHeight,
@@ -96,12 +115,14 @@ class AuraSwitch extends StatelessWidget {
                       child: AnimatedContainer(
                         decoration: BoxDecoration(
                           color: thumbColor,
-                          boxShadow: disabled ? null : [DesignShadows.sm],
+                          boxShadow: widget.disabled
+                              ? null
+                              : [DesignShadows.sm],
                           shape: BoxShape.circle,
                         ),
                         width: thumbSize,
                         height: thumbSize,
-                        child: isLoading
+                        child: widget.isLoading
                             ? AuraLoadingCircle(
                                 tint: loadingTint,
                                 size: thumbSize * 0.6,
@@ -126,12 +147,12 @@ class AuraSwitch extends StatelessWidget {
         ),
       ),
       enabled: isInteractive,
-      toggled: value,
+      toggled: widget.value,
     );
   }
 
   double _getTrackWidth() {
-    return switch (size) {
+    return switch (widget.size) {
       AuraSwitchSize.sm => 36.0,
       AuraSwitchSize.base => 44.0,
       AuraSwitchSize.lg => 52.0,
@@ -139,7 +160,7 @@ class AuraSwitch extends StatelessWidget {
   }
 
   double _getTrackHeight() {
-    return switch (size) {
+    return switch (widget.size) {
       AuraSwitchSize.sm => 20.0,
       AuraSwitchSize.base => 24.0,
       AuraSwitchSize.lg => 28.0,
@@ -147,21 +168,21 @@ class AuraSwitch extends StatelessWidget {
   }
 
   double _getThumbSize() {
-    return switch (size) {
+    return switch (widget.size) {
       AuraSwitchSize.sm => 16.0,
       AuraSwitchSize.base => 20.0,
       AuraSwitchSize.lg => 24.0,
     };
   }
 
-  double _getThumbPadding() => _thumbPadding;
+  double _getThumbPadding() => AuraSwitch._thumbPadding;
 
   Color _getTrackColor(AuraColorScheme colors) {
-    if (disabled) {
+    if (widget.disabled) {
       return colors.outlineVariant;
     }
 
-    return value ? colors.primary : colors.outline;
+    return widget.value ? colors.primary : colors.outline;
   }
 
   Color _getThumbColor(AuraColorScheme colors) => colors.surface;
