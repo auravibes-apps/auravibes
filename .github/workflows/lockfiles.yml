@@ -36,24 +36,19 @@ jobs:
         with:
           run-bootstrap: true
 
-      - name: 🖥️ macOS Pod Install (App)
-        run: |
-          cd apps/auravibes_app/macos
-          pod install --no-repo-update
-
-      - name: 🖥️ macOS Pod Install (Widgetbook)
-        run: |
-          cd widgetbook/macos
-          pod install --no-repo-update
-
       - name: 📦 Check for lockfile changes
         id: changes
         run: |
-          changed_files=$(git diff --name-only)
-          if echo "$changed_files" | grep -qE "pubspec\.lock|Podfile\.lock"; then
+          lockfiles=$(git diff --name-only -- '*pubspec.lock')
+          if [ -n "$lockfiles" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
+            {
+              echo "lockfiles<<EOF"
+              echo "$lockfiles"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
             echo "Changed files:"
-            echo "$changed_files" | grep -E "pubspec\.lock|Podfile\.lock"
+            echo "$lockfiles"
           else
             echo "changed=false" >> $GITHUB_OUTPUT
             echo "No lockfile changes"
@@ -69,7 +64,7 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         run: |
           git checkout -b update/lockfiles
-          git add pubspec.lock apps/auravibes_app/macos/Podfile.lock widgetbook/macos/Podfile.lock
+          echo "${{ steps.changes.outputs.lockfiles }}" | xargs git add
           git diff --staged --quiet || git commit -m "chore: update lockfiles"
 
       - name: 📤 Push and Create PR

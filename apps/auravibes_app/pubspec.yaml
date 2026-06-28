@@ -76,8 +76,15 @@ dev_dependencies:
 dependency_overrides:
   # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
   flutter_secure_storage_darwin: 0.2.0
+  # Uses PR branch until window_to_front releases the FlutterFramework SPM fix.
+  window_to_front:
+    git:
+      url: https://github.com/auravibes-apps/window_to_front.git
+      ref: fix/flutterframework-spm
 
 flutter:
+  config:
+    enable-swift-package-manager: true
   assets:
     - assets/i18n/
   uses-material-design: true
@@ -126,7 +133,6 @@ flavorizr:
     - android:androidManifest
     # - android:dummyAssets
     # - android:icons
-    - ios:podfile
     - ios:xcconfig
     - ios:buildTargets
     - ios:schema
@@ -134,7 +140,6 @@ flavorizr:
     # - ios:icons
     - ios:plist
     # - ios:launchScreen
-    - macos:podfile
     - macos:xcconfig
     - macos:configs
     - macos:buildTargets

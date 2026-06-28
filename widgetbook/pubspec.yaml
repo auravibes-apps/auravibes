@@ -20,5 +20,7 @@ dev_dependencies:
   widgetbook_generator: ^3.24.0
 
 flutter:
+  config:
+    enable-swift-package-manager: true
   uses-material-design: true
 version: 0.1.0
