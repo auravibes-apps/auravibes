@@ -81,37 +81,48 @@ class OpenAICodexProvider extends GenkitPlugin {
     Map<String, dynamic> body,
     void Function(ModelResponseChunk) sendChunk,
   ) async {
-    final request = await _request(body);
     final client = httpClient ?? http.Client();
+    var sentChunks = false;
     try {
-      final response = await client
-          .send(request)
-          .timeout(
-            requestTimeout,
-          );
-      final accumulator = _CodexStreamAccumulator();
+      for (var attempt = 0; ; attempt++) {
+        try {
+          final request = await _request(body);
+          final response = await client
+              .send(request)
+              .timeout(
+                requestTimeout,
+              );
+          final accumulator = _CodexStreamAccumulator();
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        final responseBody = await response.stream.bytesToString();
-        _throwIfRawError(response.statusCode, responseBody);
-      }
+          if (response.statusCode < 200 || response.statusCode >= 300) {
+            final responseBody = await response.stream.bytesToString();
+            _throwIfRawError(response.statusCode, responseBody);
+          }
 
-      await for (final line
-          in response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())) {
-        if (!line.startsWith('data:')) continue;
-        final data = line.replaceFirst('data:', '').trim();
-        if (data.isEmpty || data == '[DONE]') continue;
+          await for (final line
+              in response.stream
+                  .transform(utf8.decoder)
+                  .transform(const LineSplitter())) {
+            if (!line.startsWith('data:')) continue;
+            final data = line.replaceFirst('data:', '').trim();
+            if (data.isEmpty || data == '[DONE]') continue;
 
-        final event = jsonDecode(data) as Map<String, dynamic>;
-        final parts = accumulator.addEvent(event);
-        if (parts.isNotEmpty) {
-          sendChunk(ModelResponseChunk(index: 0, content: parts));
+            final event = _decodeStreamEvent(data);
+            final parts = accumulator.addEvent(event);
+            if (parts.isNotEmpty) {
+              sentChunks = true;
+              sendChunk(ModelResponseChunk(index: 0, content: parts));
+            }
+          }
+
+          return accumulator.toResponse();
+        } on GenkitException catch (error) {
+          if (!_isRetryableCodexError(error)) rethrow;
+          if (attempt > 0 || sentChunks) {
+            rethrow;
+          }
         }
       }
-
-      return accumulator.toResponse();
     } finally {
       if (httpClient == null) client.close();
     }
@@ -183,6 +194,23 @@ class OpenAICodexProvider extends GenkitPlugin {
   }
 }
 
+Map<String, dynamic> _decodeStreamEvent(String data) {
+  try {
+    return jsonDecode(data) as Map<String, dynamic>;
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      GenkitException(
+        'OpenAI Codex stream parse error.',
+        status: StatusCodes.INTERNAL,
+        details: data,
+        underlyingException: error,
+        stackTrace: stackTrace,
+      ),
+      stackTrace,
+    );
+  }
+}
+
 ModelRef<Object?> openAICodexModel(String name) {
   return modelRef('openai_codex/$name');
 }
@@ -215,6 +243,20 @@ List<Map<String, dynamic>> _messageToInput(Message message) {
       'role': role,
       'content': _contentToInput(message.content),
     },
+    if (message.role == Role.model) ..._toolCallsToInput(message.content),
+  ];
+}
+
+List<Map<String, dynamic>> _toolCallsToInput(List<Part> parts) {
+  return [
+    for (final part in parts)
+      if (part.toolRequest case final request?)
+        {
+          'type': 'function_call',
+          'call_id': request.ref,
+          'name': request.name,
+          'arguments': jsonEncode(request.input ?? const <String, dynamic>{}),
+        },
   ];
 }
 
@@ -341,11 +383,12 @@ class _CodexStreamAccumulator {
   List<Part> addEvent(Map<String, dynamic> event) {
     final type = event['type'] as String?;
     if (type == 'response.failed') {
-      final error = event['error'] ?? event;
+      final details = _failedEventDetails(event);
       throw GenkitException(
-        'OpenAI Codex API error: ${jsonEncode(error)}',
+        'OpenAI Codex API error: ${jsonEncode(details['error'])}',
         status: StatusCodes.INTERNAL,
-        details: '$error',
+        details: jsonEncode(details),
+        stackTrace: StackTrace.current,
       );
     }
     if (type == 'response.completed') {
@@ -390,4 +433,22 @@ class _CodexStreamAccumulator {
       usage: _usage,
     );
   }
+}
+
+Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
+  final response = event['response'] as Map<String, dynamic>?;
+  final error = event['error'] ?? response?['error'] ?? event;
+
+  return {
+    'type': event['type'],
+    if (response?['id'] != null) 'response_id': response?['id'],
+    if (response?['status'] != null) 'status': response?['status'],
+    if (response?['model'] != null) 'model': response?['model'],
+    'error': error,
+  };
+}
+
+bool _isRetryableCodexError(GenkitException error) {
+  return error.status == StatusCodes.INTERNAL &&
+      '${error.details}'.contains('server_error');
 }
