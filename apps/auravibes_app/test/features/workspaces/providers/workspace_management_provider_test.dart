@@ -327,19 +327,18 @@ void main() {
       expect(await repository.getWorkspaceCount(), 1);
     });
 
-    test('throws when deleting last remaining workspace', () async {
+    test('deletes last remaining workspace', () async {
       final only = await repository.createWorkspace(
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
-      expect(
-        () => usecase.call(
-          id: only.id,
-          workspaceCount: 1,
-          activeWorkspaceId: 'other',
-        ),
-        throwsA(isA<WorkspaceDeleteLastException>()),
+      await usecase.call(
+        id: only.id,
+        workspaceCount: 1,
+        activeWorkspaceId: only.id,
       );
+
+      expect(await repository.getWorkspaceCount(), 0);
     });
 
     test('throws when deleting active workspace', () async {

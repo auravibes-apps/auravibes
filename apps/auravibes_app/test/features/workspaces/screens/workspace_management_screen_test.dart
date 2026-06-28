@@ -173,6 +173,51 @@ void main() {
       );
     }
 
+    Widget _buildRoutedScreen({required String workspaceId}) {
+      return EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            final router = GoRouter(
+              routes: [
+                GoRoute(
+                  path: '/intro',
+                  builder: (context, state) => const Text('Welcome'),
+                ),
+                GoRoute(
+                  path: '/workspaces/:workspaceId/more/manage-workspaces',
+                  builder: (context, state) => WorkspaceManagementScreen(
+                    workspaceId: state.pathParameters['workspaceId']!,
+                  ),
+                ),
+              ],
+              initialLocation:
+                  '/workspaces/$workspaceId/more/manage-workspaces',
+            );
+            final overrides = [
+              workspaceRepositoryProvider.overrideWithValue(repository),
+              currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
+            ];
+
+            return ProviderScope(
+              overrides: overrides.cast(),
+              child: MaterialApp.router(
+                routerConfig: router,
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            );
+          },
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      );
+    }
+
     Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(widget);
@@ -429,6 +474,26 @@ void main() {
 
       expect(find.text('ToDelete'), findsNothing);
       expect(find.text('KeepMe'), findsOneWidget);
+    });
+
+    testWidgets('confirm delete of last workspace goes to welcome', (
+      tester,
+    ) async {
+      final _ = await repository.createWorkspace(
+        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
+      );
+
+      await _pumpAndInit(tester, _buildRoutedScreen(workspaceId: 'ws-1'));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.delete));
+      final _ = await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Delete'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Welcome'), findsOneWidget);
+      expect(await repository.getWorkspaceCount(), 0);
     });
 
     testWidgets('tapping back button does not crash', (tester) async {

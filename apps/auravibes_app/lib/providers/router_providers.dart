@@ -78,6 +78,7 @@ final currentRouteWorkspaceIdProvider = Provider<String?>(
 
     return matchWorkspaceId(routeInformationProvider.value.uri);
   },
+  dependencies: [routerProvider, routerInformationProvider],
 );
 
 String? matchWorkspaceId(Uri uri) {

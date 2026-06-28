@@ -11,25 +11,13 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-final _currentChatIdProvider = Provider<String?>(
-  (ref) {
-    final pathSegments = ref.watch(routerPathSegmentsProvider);
-    if (pathSegments.length < 4) return null;
-    final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
-    if (firstSegment != 'workspaces') return null;
-    if (thirdSegment != 'chats') return null;
-
-    return fourthSegment;
-  },
-);
 
 class SidebarConversationsWidget extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
@@ -50,7 +38,11 @@ class SidebarConversationsWidget extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final currentChatId = ref.watch(_currentChatIdProvider);
+    final currentChatId = _currentChatId(
+      GoRouter.maybeOf(
+        context,
+      )?.routeInformationProvider.value.uri.pathSegments,
+    );
     final chatListAsync = ref.watch(
       conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
     );
@@ -107,6 +99,16 @@ class SidebarConversationsWidget extends ConsumerWidget {
         ),
       ),
     };
+  }
+
+  String? _currentChatId(List<String>? pathSegments) {
+    if (pathSegments == null) return null;
+    if (pathSegments.length < 4) return null;
+    final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
+    if (firstSegment != 'workspaces') return null;
+    if (thirdSegment != 'chats') return null;
+
+    return fourthSegment;
   }
 
   bool _isCompacting(WidgetRef ref, String conversationId) {
