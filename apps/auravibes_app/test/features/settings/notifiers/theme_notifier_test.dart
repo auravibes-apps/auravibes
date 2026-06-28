@@ -84,6 +84,24 @@ void main() {
       expect(theme, AppTheme.system);
     });
 
+    test('build treats default string config as system theme', () async {
+      SharedPreferences.setMockInitialValues({'app_theme': 'default'});
+      final container2 = ProviderContainer();
+      addTearDown(container2.dispose);
+
+      final theme = await container2.read(themeProvider.future);
+      expect(theme, AppTheme.system);
+    });
+
+    test('build treats system string config as system theme', () async {
+      SharedPreferences.setMockInitialValues({'app_theme': 'system'});
+      final container2 = ProviderContainer();
+      addTearDown(container2.dispose);
+
+      final theme = await container2.read(themeProvider.future);
+      expect(theme, AppTheme.system);
+    });
+
     test('setTheme persists to SharedPreferences', () async {
       await container.read(themeProvider.notifier).setTheme(AppTheme.dark);
 
