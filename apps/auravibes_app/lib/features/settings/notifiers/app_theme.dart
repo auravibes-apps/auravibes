@@ -29,11 +29,13 @@ class ThemeNotifier extends _$ThemeNotifier {
   @override
   Future<AppTheme> build() async {
     final prefs = await ref.watch(sharedPreferencesProvider.future);
-    final themeIndex = prefs.getInt(_themeKey);
-    if (themeIndex != null &&
-        themeIndex >= 0 &&
-        themeIndex < AppTheme.values.length) {
-      return .values[themeIndex];
+    final theme = prefs.get(_themeKey);
+    if (theme is int && theme >= 0 && theme < AppTheme.values.length) {
+      return .values[theme];
+    }
+
+    if (theme == 'default' || theme == AppTheme.system.name) {
+      return .system;
     }
 
     return .system;
