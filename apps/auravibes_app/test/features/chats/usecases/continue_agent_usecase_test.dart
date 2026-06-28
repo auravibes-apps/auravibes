@@ -484,7 +484,7 @@ void main() {
             limitContext: 128000,
             limitOutput: 16384,
             modalitiesInput: ['text'],
-            modalitiesOuput: ['text'],
+            modalitiesOutput: ['text'],
             supportsPriorityMode: true,
           ),
         );
@@ -546,7 +546,7 @@ void main() {
           limitContext: 16385,
           limitOutput: 4096,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
         ),
       );
 

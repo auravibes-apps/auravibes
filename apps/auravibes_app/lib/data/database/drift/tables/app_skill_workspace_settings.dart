@@ -6,6 +6,11 @@ import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:drift/drift.dart';
 
 @DataClassName('AppSkillWorkspaceSettingsTable')
+@TableIndex(
+  name: 'app_skill_workspace_settings_workspace_app_skill',
+  columns: {#workspaceId, #appSkillIdentifier},
+  unique: true,
+)
 class AppSkillWorkspaceSettings extends Table with TableMixin {
   TextColumn get workspaceId => text().references(
     Workspaces,

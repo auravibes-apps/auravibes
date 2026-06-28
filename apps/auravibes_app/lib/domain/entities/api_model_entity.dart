@@ -28,7 +28,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     /// Maximum output tokens.
     required int limitOutput,
     required List<String> modalitiesInput,
-    required List<String> modalitiesOuput,
+    required List<String> modalitiesOutput,
 
     /// models.dev model family identifier.
     String? family,
@@ -75,7 +75,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
       limitContext: limit.get('context'),
       limitOutput: limit.get('output'),
       modalitiesInput: (modalities.get<List<dynamic>?>('input') ?? []).cast(),
-      modalitiesOuput: (modalities.get<List<dynamic>?>('output') ?? []).cast(),
+      modalitiesOutput: (modalities.get<List<dynamic>?>('output') ?? []).cast(),
       family: json.get<String?>('family'),
       costInput: cost?.get<num?>('input')?.toDouble(),
       costCacheRead: cost?.get<num?>('cache_read')?.toDouble(),
@@ -104,13 +104,13 @@ abstract class ApiModelEntity with _$ApiModelEntity {
   bool get isTextGenerationModel =>
       isCanonical &&
       modalitiesInput.contains('text') &&
-      modalitiesOuput.contains('text') &&
+      modalitiesOutput.contains('text') &&
       limitOutput > 0;
 
   bool get isCodexRuntimeModel =>
       (supportsPriorityMode || family == 'gpt-codex-spark') &&
       modalitiesInput.contains('text') &&
-      modalitiesOuput.contains('text') &&
+      modalitiesOutput.contains('text') &&
       limitOutput > 0;
 
   /// Returns a context size category for the model.

@@ -27,7 +27,7 @@ class ApiModels extends Table {
 
   TextColumn get modalitiesInput =>
       text().map(stringListConverter).nullable()();
-  TextColumn get modalitiesOuput =>
+  TextColumn get modalitiesOutput =>
       text().map(stringListConverter).nullable()();
 
   BoolColumn get openWeights => boolean().nullable()();

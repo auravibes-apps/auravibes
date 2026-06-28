@@ -339,7 +339,7 @@ void main() {
           limitContext: 1050000,
           limitOutput: 128000,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
           supportsPriorityMode: true,
         ),
         ApiModelEntity(
@@ -349,7 +349,7 @@ void main() {
           limitContext: 16385,
           limitOutput: 4096,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
         ),
       ];
       final container = ProviderContainer(

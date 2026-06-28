@@ -299,7 +299,7 @@ ApiModelEntity _apiModel({
     limitContext: limit,
     limitOutput: 4096,
     modalitiesInput: const ['text'],
-    modalitiesOuput: const ['text'],
+    modalitiesOutput: const ['text'],
   );
 }
 

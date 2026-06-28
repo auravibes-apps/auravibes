@@ -1,8 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:drift/drift.dart';
 
 part 'mcp_servers_dao.g.dart';
@@ -10,7 +8,7 @@ part 'mcp_servers_dao.g.dart';
 /// Data Access Object for MCP server configurations.
 ///
 /// Provides CRUD operations for MCP server data in the database.
-@DriftAccessor(tables: [McpServers, Tools, ToolsGroups])
+@DriftAccessor(tables: [McpServers])
 class McpServersDao extends DatabaseAccessor<AppDatabase>
     with _$McpServersDaoMixin {
   /// Creates a new [McpServersDao] instance.
@@ -51,33 +49,11 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Returns true if a row was deleted.
   Future<bool> deleteMcpServer(String id) async {
-    return transaction(() async {
-      final toolGroup = await (select(
-        toolsGroups,
-      )..where((tg) => tg.mcpServerId.equals(id))).getSingleOrNull();
-      if (toolGroup == null) return false;
-      final toolsToDelete = await (select(
-        tools,
-      )..where((t) => t.workspaceToolsGroupId.equals(toolGroup.id))).get();
+    final rowsDeleted = await (delete(
+      mcpServers,
+    )..where((t) => t.id.equals(id))).go();
 
-      // Delete tools.
-      for (final tool in toolsToDelete) {
-        final _ = await (delete(
-          tools,
-        )..where((t) => t.id.equals(tool.id))).go();
-      }
-      // Delete tool groups.
-      final _ = await (delete(
-        toolsGroups,
-      )..where((tg) => tg.id.equals(toolGroup.id))).go();
-      // Delete server.
-
-      final rowsDeleted = await (delete(
-        mcpServers,
-      )..where((t) => t.id.equals(id))).go();
-
-      return rowsDeleted > 0;
-    });
+    return rowsDeleted > 0;
   }
 
   /// Toggle the enabled state of an MCP server.

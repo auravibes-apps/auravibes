@@ -35,7 +35,7 @@ void main() {
       id: 'gpt-4',
       name: 'GPT-4',
       modalitiesInput: ['text'],
-      modalitiesOuput: ['text'],
+      modalitiesOutput: ['text'],
       openWeights: false,
       supportsReasoning: false,
       isCanonical: true,
@@ -121,7 +121,7 @@ void main() {
         expect(result.firstOrNull?.limitContext, 128000);
         expect(result.firstOrNull?.limitOutput, 4096);
         expect(result.firstOrNull?.modalitiesInput, ['text']);
-        expect(result.firstOrNull?.modalitiesOuput, ['text']);
+        expect(result.firstOrNull?.modalitiesOutput, ['text']);
         expect(result.firstOrNull?.costInput, 30);
         expect(result.firstOrNull?.costOutput, 60);
         expect(result.firstOrNull?.openWeights, false);
@@ -213,7 +213,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
         );
 
         when(
@@ -240,7 +240,7 @@ void main() {
             limitContext: 128000,
             limitOutput: 4096,
             modalitiesInput: [],
-            modalitiesOuput: [],
+            modalitiesOutput: [],
           ),
         ]);
 
@@ -303,7 +303,7 @@ void main() {
                 limitContext: 128000,
                 limitOutput: 4096,
                 modalitiesInput: [],
-                modalitiesOuput: [],
+                modalitiesOutput: [],
               ),
             ],
           ),

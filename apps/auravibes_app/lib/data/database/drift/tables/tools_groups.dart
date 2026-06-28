@@ -34,5 +34,5 @@ class ToolsGroups extends Table with TableMixin {
   TextColumn get permissions => textEnum<PermissionAccess>()();
 
   @override
-  Set<Column> get primaryKey => {workspaceId, id};
+  Set<Column> get primaryKey => {id};
 }

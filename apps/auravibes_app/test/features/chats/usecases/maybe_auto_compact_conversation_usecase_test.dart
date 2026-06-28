@@ -119,7 +119,7 @@ ApiModelEntity _makeModel() => const ApiModelEntity(
   limitContext: 128000,
   limitOutput: 4096,
   modalitiesInput: ['text'],
-  modalitiesOuput: ['text'],
+  modalitiesOutput: ['text'],
 );
 
 CompactionExecutionState _makeExecState(String id) => CompactionExecutionState(

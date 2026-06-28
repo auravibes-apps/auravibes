@@ -26,12 +26,8 @@ class Tools extends Table with TableMixin {
   /// Type of tool (for example, 'web_search', 'calculator', etc).
   TextColumn get toolId => text()();
 
-  TextColumn get customName => text().nullable()();
-
   /// Optional description of the tool (from MCP or user-defined).
   TextColumn get description => text().nullable()();
-
-  TextColumn get additionalPrompt => text().nullable()();
 
   /// Tool configuration as JSON (optional).
   TextColumn get config => text().nullable()();
@@ -47,5 +43,5 @@ class Tools extends Table with TableMixin {
   )();
 
   @override
-  Set<Column> get primaryKey => {workspaceId, id};
+  Set<Column> get primaryKey => {id};
 }

@@ -71,14 +71,10 @@ void main() {
       expect(columns.length, 8);
     });
 
-    test('composite primary key on workspace_id and id', () {
-      final wsCol = columns.firstWhere(
-        (r) => r.read<String>('name') == 'workspace_id',
-      );
+    test('primary key on id', () {
       final idCol = columns.firstWhere(
         (r) => r.read<String>('name') == 'id',
       );
-      expect(wsCol.read<int>('pk'), greaterThan(0));
       expect(idCol.read<int>('pk'), greaterThan(0));
     });
 
@@ -127,10 +123,9 @@ void main() {
       expect(table.permissions, isNotNull);
     });
 
-    test('primaryKey contains workspace_id and id', () {
+    test('primaryKey contains id', () {
       final table = fixture.database.toolsGroups;
-      expect(table.primaryKey.length, 2);
-      expect(table.primaryKey, contains(table.workspaceId));
+      expect(table.primaryKey.length, 1);
       expect(table.primaryKey, contains(table.id));
     });
 

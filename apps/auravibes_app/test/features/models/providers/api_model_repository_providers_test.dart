@@ -162,7 +162,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
       ];
       final container = ProviderContainer(
@@ -190,7 +190,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
       ];
       final container = ProviderContainer(
@@ -261,7 +261,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
         const ApiModelEntity(
           modelProvider: 'anthropic',
@@ -270,7 +270,7 @@ void main() {
           limitContext: 200000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
       ];
       final container = ProviderContainer(

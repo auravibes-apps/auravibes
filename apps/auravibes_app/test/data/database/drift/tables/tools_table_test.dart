@@ -84,9 +84,7 @@ void main() {
           'workspace_id',
           'workspace_tools_group_id',
           'tool_id',
-          'custom_name',
           'description',
-          'additional_prompt',
           'config',
           'input_schema',
           'is_enabled',
@@ -95,18 +93,14 @@ void main() {
       );
     });
 
-    test('has 13 columns', () {
-      expect(columns.length, 13);
+    test('has 11 columns', () {
+      expect(columns.length, 11);
     });
 
-    test('composite primary key on workspace_id and id', () {
-      final wsCol = columns.firstWhere(
-        (r) => r.read<String>('name') == 'workspace_id',
-      );
+    test('primary key on id', () {
       final idCol = columns.firstWhere(
         (r) => r.read<String>('name') == 'id',
       );
-      expect(wsCol.read<int>('pk'), greaterThan(0));
       expect(idCol.read<int>('pk'), greaterThan(0));
     });
 
@@ -124,23 +118,9 @@ void main() {
       expect(col.read<int>('notnull'), 1);
     });
 
-    test('custom_name is nullable', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'custom_name',
-      );
-      expect(col.read<int>('notnull'), 0);
-    });
-
     test('description is nullable', () {
       final col = columns.firstWhere(
         (r) => r.read<String>('name') == 'description',
-      );
-      expect(col.read<int>('notnull'), 0);
-    });
-
-    test('additional_prompt is nullable', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'additional_prompt',
       );
       expect(col.read<int>('notnull'), 0);
     });
@@ -186,19 +166,16 @@ void main() {
       expect(table.workspaceId, isNotNull);
       expect(table.workspaceToolsGroupId, isNotNull);
       expect(table.toolId, isNotNull);
-      expect(table.customName, isNotNull);
       expect(table.description, isNotNull);
-      expect(table.additionalPrompt, isNotNull);
       expect(table.config, isNotNull);
       expect(table.inputSchema, isNotNull);
       expect(table.isEnabled, isNotNull);
       expect(table.permissions, isNotNull);
     });
 
-    test('primaryKey contains workspace_id and id', () {
+    test('primaryKey contains id', () {
       final table = fixture.database.tools;
-      expect(table.primaryKey.length, 2);
-      expect(table.primaryKey, contains(table.workspaceId));
+      expect(table.primaryKey.length, 1);
       expect(table.primaryKey, contains(table.id));
     });
 
@@ -207,9 +184,7 @@ void main() {
       expect(table.workspaceId.name, 'workspace_id');
       expect(table.workspaceToolsGroupId.name, 'workspace_tools_group_id');
       expect(table.toolId.name, 'tool_id');
-      expect(table.customName.name, 'custom_name');
       expect(table.description.name, 'description');
-      expect(table.additionalPrompt.name, 'additional_prompt');
       expect(table.config.name, 'config');
       expect(table.inputSchema.name, 'input_schema');
       expect(table.isEnabled.name, 'is_enabled');
@@ -218,7 +193,7 @@ void main() {
 
     test(r'$columns returns all columns including TableMixin', () {
       final table = fixture.database.tools;
-      expect(table.$columns.length, 13);
+      expect(table.$columns.length, 11);
     });
 
     test('table name is tools', () {
