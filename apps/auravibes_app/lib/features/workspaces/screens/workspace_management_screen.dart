@@ -140,15 +140,20 @@ class WorkspaceManagementScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      await deleteWorkspaceMutation.run(ref, (transaction) {
-        final usecase = ref.read(deleteWorkspaceUseCaseProvider);
+      try {
+        await deleteWorkspaceMutation.run(ref, (transaction) {
+          final usecase = ref.read(deleteWorkspaceUseCaseProvider);
 
-        return usecase.call(
-          id: id,
-          workspaceCount: workspaces.length,
-          activeWorkspaceId: workspaceId,
-        );
-      });
+          return usecase.call(
+            id: id,
+            activeWorkspaceId: workspaceId,
+          );
+        });
+      } on Exception catch (error) {
+        if (context.mounted) _showError(context, error);
+
+        return;
+      }
 
       if (!context.mounted) return;
 

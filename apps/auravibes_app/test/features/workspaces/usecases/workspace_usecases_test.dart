@@ -261,7 +261,6 @@ void main() {
 
       await fixture.usecase.call(
         id: 'ws-1',
-        workspaceCount: 2,
         activeWorkspaceId: 'ws-2',
       );
 
@@ -276,7 +275,6 @@ void main() {
 
       await fixture.usecase.call(
         id: 'ws-1',
-        workspaceCount: 1,
         activeWorkspaceId: 'other',
       );
 
@@ -295,7 +293,6 @@ void main() {
       expect(
         () => fixture.usecase.call(
           id: 'ws-1',
-          workspaceCount: 2,
           activeWorkspaceId: 'ws-1',
         ),
         throwsA(isA<WorkspaceDeleteActiveException>()),
@@ -309,7 +306,6 @@ void main() {
 
       await fixture.usecase.call(
         id: 'ws-1',
-        workspaceCount: 1,
         activeWorkspaceId: 'ws-1',
       );
 

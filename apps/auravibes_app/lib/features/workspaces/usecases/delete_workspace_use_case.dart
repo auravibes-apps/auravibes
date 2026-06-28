@@ -19,15 +19,15 @@ class DeleteWorkspaceUseCase {
   // ignore: unnecessary-nullable
   /// Deletes the workspace with [id].
   ///
-  /// [workspaceCount] is the current total number of workspaces.
   /// [activeWorkspaceId] is the ID of the currently active workspace.
   ///
   /// Throws [WorkspaceDeleteActiveException] if the workspace is active.
   Future<void> call({
     required String id,
-    required int workspaceCount,
     required String? activeWorkspaceId,
   }) async {
+    final workspaceCount = await _repository.getWorkspaceCount();
+
     if (workspaceCount > 1 && id == activeWorkspaceId) {
       throw const WorkspaceDeleteActiveException();
     }

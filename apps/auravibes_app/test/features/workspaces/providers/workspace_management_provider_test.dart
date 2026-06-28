@@ -320,7 +320,6 @@ void main() {
 
       await usecase.call(
         id: toDelete.id,
-        workspaceCount: 2,
         activeWorkspaceId: 'other',
       );
 
@@ -334,7 +333,6 @@ void main() {
 
       await usecase.call(
         id: only.id,
-        workspaceCount: 1,
         activeWorkspaceId: only.id,
       );
 
@@ -352,7 +350,6 @@ void main() {
       expect(
         () => usecase.call(
           id: active.id,
-          workspaceCount: 2,
           activeWorkspaceId: active.id,
         ),
         throwsA(isA<WorkspaceDeleteActiveException>()),
