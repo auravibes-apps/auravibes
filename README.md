@@ -69,13 +69,11 @@ Before you begin, ensure you have the following installed:
 **iOS Development** (macOS only)
 
 - Xcode 14.0 or higher
-- CocoaPods: `sudo gem install cocoapods`
 - iOS Simulator or physical iOS device
 
 **macOS Development**
 
 - Xcode 14.0 or higher
-- CocoaPods
 
 **Linux Development**
 
@@ -90,6 +88,7 @@ Before you begin, ensure you have the following installed:
 **Web Development**
 
 - Chrome browser (latest version)
+
 </details>
 
 ### Installation

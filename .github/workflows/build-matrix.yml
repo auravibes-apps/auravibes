@@ -106,19 +106,13 @@ jobs:
       - name: 🛠️ Generate Code
         run: melos run generate --no-select
 
-      - name: 🔧 Setup CocoaPods
-        run: |
-          cd ${{ env.FLUTTER_WORKING_DIRECTORY }}/macos
-          rm -rf Pods Podfile.lock
-          pod install --repo-update
-
       - name: 🏗️ Configure macOS Build
         run: flutter build macos --debug --flavor prod --config-only
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
       - name: 🏗️ Build macOS (No Codesign)
         run: >-
-          xcodebuild -workspace macos/Runner.xcworkspace -scheme Runner
+          xcodebuild -project macos/Runner.xcodeproj -scheme Runner
           -configuration Debug-prod -derivedDataPath build/macos
           CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
