@@ -12,6 +12,8 @@ scripts:
   - &script_setup_environment
     name: Setup Environment
     script: |
+      mkdir -p .fvm
+      ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
       echo PATH="$PATH":"$FLUTTER_ROOT/.pub-cache/bin" >> $CM_ENV
       echo PATH="$PATH":"$FLUTTER_ROOT/bin" >> $CM_ENV
 
