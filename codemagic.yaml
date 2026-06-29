@@ -143,6 +143,7 @@ workflows:
               echo "Not a tag build, will not publish to GitHub release"
               exit 0
             fi
+            export GH_TOKEN=${GH_TOKEN:-${GITHUB_TOKEN:-}}
             cd apps/auravibes_app
             gh release upload "${RELEASE_TAG}" build/ios/ipa/*.ipa --clobber
 
@@ -215,5 +216,6 @@ workflows:
               echo "Not a tag build, will not publish to GitHub release"
               exit 0
             fi
+            export GH_TOKEN=${GH_TOKEN:-${GITHUB_TOKEN:-}}
             cd apps/auravibes_app
             gh release upload "${RELEASE_TAG}" build/app/outputs/bundle/**/*.aab --clobber
