@@ -55,6 +55,11 @@ class RunSkillTemplateToolUsecase {
     final credentialDefinitions = await _credentialDefinitions(
       skill.credentialDefinitionId,
     );
+    final credentialAttributes = credential == null
+        ? const <String, String>{}
+        : await _skillCredentialsRepository.readCredentialAttributes(
+            credential.id,
+          );
     final template = SkillUrlTemplate.fromJsonString(tool.templateJson);
     final inputDefinitions = SkillTemplateInputDefinition.parseMap(
       tool.inputsJson,
@@ -62,7 +67,7 @@ class RunSkillTemplateToolUsecase {
     final request = _resolveSkillUrlTemplateUsecase.call(
       template: template,
       inputs: arguments,
-      credentials: credential?.attributes ?? const {},
+      credentials: credentialAttributes,
       inputDefinitions: inputDefinitions,
       credentialDefinitions: credentialDefinitions,
     );

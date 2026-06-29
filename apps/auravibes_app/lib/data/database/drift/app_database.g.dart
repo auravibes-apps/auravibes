@@ -124,7 +124,7 @@ class $WorkspacesTable extends Workspaces
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   WorkspacesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -766,7 +766,7 @@ class $ServiceConnectionsTable extends ServiceConnections
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ServiceConnectionTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -1466,6 +1466,390 @@ class ServiceConnectionsCompanion
   }
 }
 
+class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
+    with
+        TableInfo<
+          $WorkspaceModelSelectionsTable,
+          WorkspaceModelSelectionTable
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceModelSelectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _modelIdMeta = const VerificationMeta(
+    'modelId',
+  );
+  @override
+  late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
+    'model_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelConnectionIdMeta = const VerificationMeta(
+    'modelConnectionId',
+  );
+  @override
+  late final GeneratedColumn<String> modelConnectionId =
+      GeneratedColumn<String>(
+        'model_connection_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES service_connections (id) ON DELETE CASCADE',
+        ),
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    modelId,
+    modelConnectionId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_model_selections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WorkspaceModelSelectionTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('model_id')) {
+      context.handle(
+        _modelIdMeta,
+        modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelIdMeta);
+    }
+    if (data.containsKey('model_connection_id')) {
+      context.handle(
+        _modelConnectionIdMeta,
+        modelConnectionId.isAcceptableOrUnknown(
+          data['model_connection_id']!,
+          _modelConnectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_modelConnectionIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkspaceModelSelectionTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceModelSelectionTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      modelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_id'],
+      )!,
+      modelConnectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_connection_id'],
+      )!,
+    );
+  }
+
+  @override
+  $WorkspaceModelSelectionsTable createAlias(String alias) {
+    return $WorkspaceModelSelectionsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceModelSelectionTable extends DataClass
+    implements Insertable<WorkspaceModelSelectionTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+
+  /// Model unique identifier.
+  final String modelId;
+  final String modelConnectionId;
+  const WorkspaceModelSelectionTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.modelId,
+    required this.modelConnectionId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['model_id'] = Variable<String>(modelId);
+    map['model_connection_id'] = Variable<String>(modelConnectionId);
+    return map;
+  }
+
+  WorkspaceModelSelectionsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceModelSelectionsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      modelId: Value(modelId),
+      modelConnectionId: Value(modelConnectionId),
+    );
+  }
+
+  factory WorkspaceModelSelectionTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceModelSelectionTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      modelId: serializer.fromJson<String>(json['modelId']),
+      modelConnectionId: serializer.fromJson<String>(json['modelConnectionId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'modelId': serializer.toJson<String>(modelId),
+      'modelConnectionId': serializer.toJson<String>(modelConnectionId),
+    };
+  }
+
+  WorkspaceModelSelectionTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? modelId,
+    String? modelConnectionId,
+  }) => WorkspaceModelSelectionTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    modelId: modelId ?? this.modelId,
+    modelConnectionId: modelConnectionId ?? this.modelConnectionId,
+  );
+  WorkspaceModelSelectionTable copyWithCompanion(
+    WorkspaceModelSelectionsCompanion data,
+  ) {
+    return WorkspaceModelSelectionTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      modelId: data.modelId.present ? data.modelId.value : this.modelId,
+      modelConnectionId: data.modelConnectionId.present
+          ? data.modelConnectionId.value
+          : this.modelConnectionId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceModelSelectionTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('modelId: $modelId, ')
+          ..write('modelConnectionId: $modelConnectionId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, createdAt, updatedAt, modelId, modelConnectionId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceModelSelectionTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.modelId == this.modelId &&
+          other.modelConnectionId == this.modelConnectionId);
+}
+
+class WorkspaceModelSelectionsCompanion
+    extends UpdateCompanion<WorkspaceModelSelectionTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> modelId;
+  final Value<String> modelConnectionId;
+  final Value<int> rowid;
+  const WorkspaceModelSelectionsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.modelId = const Value.absent(),
+    this.modelConnectionId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceModelSelectionsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String modelId,
+    required String modelConnectionId,
+    this.rowid = const Value.absent(),
+  }) : modelId = Value(modelId),
+       modelConnectionId = Value(modelConnectionId);
+  static Insertable<WorkspaceModelSelectionTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? modelId,
+    Expression<String>? modelConnectionId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (modelId != null) 'model_id': modelId,
+      if (modelConnectionId != null) 'model_connection_id': modelConnectionId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceModelSelectionsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? modelId,
+    Value<String>? modelConnectionId,
+    Value<int>? rowid,
+  }) {
+    return WorkspaceModelSelectionsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      modelId: modelId ?? this.modelId,
+      modelConnectionId: modelConnectionId ?? this.modelConnectionId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (modelId.present) {
+      map['model_id'] = Variable<String>(modelId.value);
+    }
+    if (modelConnectionId.present) {
+      map['model_connection_id'] = Variable<String>(modelConnectionId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceModelSelectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('modelId: $modelId, ')
+          ..write('modelConnectionId: $modelConnectionId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ApiModelProvidersTable extends ApiModelProviders
     with TableInfo<$ApiModelProvidersTable, ApiModelProvidersTable> {
   @override
@@ -1832,393 +2216,6 @@ class ApiModelProvidersCompanion
   }
 }
 
-class $WorkspaceModelSelectionsTable extends WorkspaceModelSelections
-    with
-        TableInfo<
-          $WorkspaceModelSelectionsTable,
-          WorkspaceModelSelectionTable
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $WorkspaceModelSelectionsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _modelIdMeta = const VerificationMeta(
-    'modelId',
-  );
-  @override
-  late final GeneratedColumn<String> modelId = GeneratedColumn<String>(
-    'model_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES api_model_providers (id)',
-    ),
-  );
-  static const VerificationMeta _modelConnectionIdMeta = const VerificationMeta(
-    'modelConnectionId',
-  );
-  @override
-  late final GeneratedColumn<String> modelConnectionId =
-      GeneratedColumn<String>(
-        'model_connection_id',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES service_connections (id) ON DELETE CASCADE',
-        ),
-      );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    modelId,
-    modelConnectionId,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'workspace_model_selections';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<WorkspaceModelSelectionTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('model_id')) {
-      context.handle(
-        _modelIdMeta,
-        modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_modelIdMeta);
-    }
-    if (data.containsKey('model_connection_id')) {
-      context.handle(
-        _modelConnectionIdMeta,
-        modelConnectionId.isAcceptableOrUnknown(
-          data['model_connection_id']!,
-          _modelConnectionIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_modelConnectionIdMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => const {};
-  @override
-  WorkspaceModelSelectionTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return WorkspaceModelSelectionTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      modelId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}model_id'],
-      )!,
-      modelConnectionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}model_connection_id'],
-      )!,
-    );
-  }
-
-  @override
-  $WorkspaceModelSelectionsTable createAlias(String alias) {
-    return $WorkspaceModelSelectionsTable(attachedDatabase, alias);
-  }
-}
-
-class WorkspaceModelSelectionTable extends DataClass
-    implements Insertable<WorkspaceModelSelectionTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-
-  /// Model unique identifier.
-  final String modelId;
-  final String modelConnectionId;
-  const WorkspaceModelSelectionTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.modelId,
-    required this.modelConnectionId,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['model_id'] = Variable<String>(modelId);
-    map['model_connection_id'] = Variable<String>(modelConnectionId);
-    return map;
-  }
-
-  WorkspaceModelSelectionsCompanion toCompanion(bool nullToAbsent) {
-    return WorkspaceModelSelectionsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      modelId: Value(modelId),
-      modelConnectionId: Value(modelConnectionId),
-    );
-  }
-
-  factory WorkspaceModelSelectionTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return WorkspaceModelSelectionTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      modelId: serializer.fromJson<String>(json['modelId']),
-      modelConnectionId: serializer.fromJson<String>(json['modelConnectionId']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'modelId': serializer.toJson<String>(modelId),
-      'modelConnectionId': serializer.toJson<String>(modelConnectionId),
-    };
-  }
-
-  WorkspaceModelSelectionTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? modelId,
-    String? modelConnectionId,
-  }) => WorkspaceModelSelectionTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    modelId: modelId ?? this.modelId,
-    modelConnectionId: modelConnectionId ?? this.modelConnectionId,
-  );
-  WorkspaceModelSelectionTable copyWithCompanion(
-    WorkspaceModelSelectionsCompanion data,
-  ) {
-    return WorkspaceModelSelectionTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      modelId: data.modelId.present ? data.modelId.value : this.modelId,
-      modelConnectionId: data.modelConnectionId.present
-          ? data.modelConnectionId.value
-          : this.modelConnectionId,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('WorkspaceModelSelectionTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('modelId: $modelId, ')
-          ..write('modelConnectionId: $modelConnectionId')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, createdAt, updatedAt, modelId, modelConnectionId);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is WorkspaceModelSelectionTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.modelId == this.modelId &&
-          other.modelConnectionId == this.modelConnectionId);
-}
-
-class WorkspaceModelSelectionsCompanion
-    extends UpdateCompanion<WorkspaceModelSelectionTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> modelId;
-  final Value<String> modelConnectionId;
-  final Value<int> rowid;
-  const WorkspaceModelSelectionsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.modelId = const Value.absent(),
-    this.modelConnectionId = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  WorkspaceModelSelectionsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String modelId,
-    required String modelConnectionId,
-    this.rowid = const Value.absent(),
-  }) : modelId = Value(modelId),
-       modelConnectionId = Value(modelConnectionId);
-  static Insertable<WorkspaceModelSelectionTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? modelId,
-    Expression<String>? modelConnectionId,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (modelId != null) 'model_id': modelId,
-      if (modelConnectionId != null) 'model_connection_id': modelConnectionId,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  WorkspaceModelSelectionsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? modelId,
-    Value<String>? modelConnectionId,
-    Value<int>? rowid,
-  }) {
-    return WorkspaceModelSelectionsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      modelId: modelId ?? this.modelId,
-      modelConnectionId: modelConnectionId ?? this.modelConnectionId,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (modelId.present) {
-      map['model_id'] = Variable<String>(modelId.value);
-    }
-    if (modelConnectionId.present) {
-      map['model_connection_id'] = Variable<String>(modelConnectionId.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('WorkspaceModelSelectionsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('modelId: $modelId, ')
-          ..write('modelConnectionId: $modelConnectionId, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $ApiModelsTable extends ApiModels
     with TableInfo<$ApiModelsTable, ApiModelsTable> {
   @override
@@ -2236,7 +2233,7 @@ class $ApiModelsTable extends ApiModels
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES api_model_providers (id)',
+      'REFERENCES api_model_providers (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
@@ -2277,13 +2274,13 @@ class $ApiModelsTable extends ApiModels
   ).withConverter<List<String>?>($ApiModelsTable.$convertermodalitiesInputn);
   @override
   late final GeneratedColumnWithTypeConverter<List<String>?, String>
-  modalitiesOuput = GeneratedColumn<String>(
-    'modalities_ouput',
+  modalitiesOutput = GeneratedColumn<String>(
+    'modalities_output',
     aliasedName,
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-  ).withConverter<List<String>?>($ApiModelsTable.$convertermodalitiesOuputn);
+  ).withConverter<List<String>?>($ApiModelsTable.$convertermodalitiesOutputn);
   static const VerificationMeta _openWeightsMeta = const VerificationMeta(
     'openWeights',
   );
@@ -2419,7 +2416,7 @@ class $ApiModelsTable extends ApiModels
     name,
     family,
     modalitiesInput,
-    modalitiesOuput,
+    modalitiesOutput,
     openWeights,
     supportsReasoning,
     isCanonical,
@@ -2592,10 +2589,10 @@ class $ApiModelsTable extends ApiModels
           data['${effectivePrefix}modalities_input'],
         ),
       ),
-      modalitiesOuput: $ApiModelsTable.$convertermodalitiesOuputn.fromSql(
+      modalitiesOutput: $ApiModelsTable.$convertermodalitiesOutputn.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
-          data['${effectivePrefix}modalities_ouput'],
+          data['${effectivePrefix}modalities_output'],
         ),
       ),
       openWeights: attachedDatabase.typeMapping.read(
@@ -2653,10 +2650,10 @@ class $ApiModelsTable extends ApiModels
     $convertermodalitiesInput,
   );
   static JsonTypeConverter2<List<String>, String, Object?>
-  $convertermodalitiesOuput = stringListConverter;
+  $convertermodalitiesOutput = stringListConverter;
   static JsonTypeConverter2<List<String>?, String?, Object?>
-  $convertermodalitiesOuputn = JsonTypeConverter2.asNullable(
-    $convertermodalitiesOuput,
+  $convertermodalitiesOutputn = JsonTypeConverter2.asNullable(
+    $convertermodalitiesOutput,
   );
 }
 
@@ -2671,7 +2668,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   /// Type of chat model (local or remote).
   /// Stored as string to handle enum conversion
   final List<String>? modalitiesInput;
-  final List<String>? modalitiesOuput;
+  final List<String>? modalitiesOutput;
   final bool? openWeights;
   final bool supportsReasoning;
   final bool isCanonical;
@@ -2688,7 +2685,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     required this.name,
     this.family,
     this.modalitiesInput,
-    this.modalitiesOuput,
+    this.modalitiesOutput,
     this.openWeights,
     required this.supportsReasoning,
     required this.isCanonical,
@@ -2714,9 +2711,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
         $ApiModelsTable.$convertermodalitiesInputn.toSql(modalitiesInput),
       );
     }
-    if (!nullToAbsent || modalitiesOuput != null) {
-      map['modalities_ouput'] = Variable<String>(
-        $ApiModelsTable.$convertermodalitiesOuputn.toSql(modalitiesOuput),
+    if (!nullToAbsent || modalitiesOutput != null) {
+      map['modalities_output'] = Variable<String>(
+        $ApiModelsTable.$convertermodalitiesOutputn.toSql(modalitiesOutput),
       );
     }
     if (!nullToAbsent || openWeights != null) {
@@ -2751,9 +2748,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       modalitiesInput: modalitiesInput == null && nullToAbsent
           ? const Value.absent()
           : Value(modalitiesInput),
-      modalitiesOuput: modalitiesOuput == null && nullToAbsent
+      modalitiesOutput: modalitiesOutput == null && nullToAbsent
           ? const Value.absent()
-          : Value(modalitiesOuput),
+          : Value(modalitiesOutput),
       openWeights: openWeights == null && nullToAbsent
           ? const Value.absent()
           : Value(openWeights),
@@ -2788,8 +2785,8 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       modalitiesInput: $ApiModelsTable.$convertermodalitiesInputn.fromJson(
         serializer.fromJson<Object?>(json['modalitiesInput']),
       ),
-      modalitiesOuput: $ApiModelsTable.$convertermodalitiesOuputn.fromJson(
-        serializer.fromJson<Object?>(json['modalitiesOuput']),
+      modalitiesOutput: $ApiModelsTable.$convertermodalitiesOutputn.fromJson(
+        serializer.fromJson<Object?>(json['modalitiesOutput']),
       ),
       openWeights: serializer.fromJson<bool?>(json['openWeights']),
       supportsReasoning: serializer.fromJson<bool>(json['supportsReasoning']),
@@ -2816,8 +2813,8 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       'modalitiesInput': serializer.toJson<Object?>(
         $ApiModelsTable.$convertermodalitiesInputn.toJson(modalitiesInput),
       ),
-      'modalitiesOuput': serializer.toJson<Object?>(
-        $ApiModelsTable.$convertermodalitiesOuputn.toJson(modalitiesOuput),
+      'modalitiesOutput': serializer.toJson<Object?>(
+        $ApiModelsTable.$convertermodalitiesOutputn.toJson(modalitiesOutput),
       ),
       'openWeights': serializer.toJson<bool?>(openWeights),
       'supportsReasoning': serializer.toJson<bool>(supportsReasoning),
@@ -2838,7 +2835,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     String? name,
     Value<String?> family = const Value.absent(),
     Value<List<String>?> modalitiesInput = const Value.absent(),
-    Value<List<String>?> modalitiesOuput = const Value.absent(),
+    Value<List<String>?> modalitiesOutput = const Value.absent(),
     Value<bool?> openWeights = const Value.absent(),
     bool? supportsReasoning,
     bool? isCanonical,
@@ -2857,9 +2854,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     modalitiesInput: modalitiesInput.present
         ? modalitiesInput.value
         : this.modalitiesInput,
-    modalitiesOuput: modalitiesOuput.present
-        ? modalitiesOuput.value
-        : this.modalitiesOuput,
+    modalitiesOutput: modalitiesOutput.present
+        ? modalitiesOutput.value
+        : this.modalitiesOutput,
     openWeights: openWeights.present ? openWeights.value : this.openWeights,
     supportsReasoning: supportsReasoning ?? this.supportsReasoning,
     isCanonical: isCanonical ?? this.isCanonical,
@@ -2884,9 +2881,9 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
       modalitiesInput: data.modalitiesInput.present
           ? data.modalitiesInput.value
           : this.modalitiesInput,
-      modalitiesOuput: data.modalitiesOuput.present
-          ? data.modalitiesOuput.value
-          : this.modalitiesOuput,
+      modalitiesOutput: data.modalitiesOutput.present
+          ? data.modalitiesOutput.value
+          : this.modalitiesOutput,
       openWeights: data.openWeights.present
           ? data.openWeights.value
           : this.openWeights,
@@ -2926,7 +2923,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           ..write('name: $name, ')
           ..write('family: $family, ')
           ..write('modalitiesInput: $modalitiesInput, ')
-          ..write('modalitiesOuput: $modalitiesOuput, ')
+          ..write('modalitiesOutput: $modalitiesOutput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
           ..write('isCanonical: $isCanonical, ')
@@ -2948,7 +2945,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
     name,
     family,
     modalitiesInput,
-    modalitiesOuput,
+    modalitiesOutput,
     openWeights,
     supportsReasoning,
     isCanonical,
@@ -2969,7 +2966,7 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
           other.name == this.name &&
           other.family == this.family &&
           other.modalitiesInput == this.modalitiesInput &&
-          other.modalitiesOuput == this.modalitiesOuput &&
+          other.modalitiesOutput == this.modalitiesOutput &&
           other.openWeights == this.openWeights &&
           other.supportsReasoning == this.supportsReasoning &&
           other.isCanonical == this.isCanonical &&
@@ -2988,7 +2985,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   final Value<String> name;
   final Value<String?> family;
   final Value<List<String>?> modalitiesInput;
-  final Value<List<String>?> modalitiesOuput;
+  final Value<List<String>?> modalitiesOutput;
   final Value<bool?> openWeights;
   final Value<bool> supportsReasoning;
   final Value<bool> isCanonical;
@@ -3006,7 +3003,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     this.name = const Value.absent(),
     this.family = const Value.absent(),
     this.modalitiesInput = const Value.absent(),
-    this.modalitiesOuput = const Value.absent(),
+    this.modalitiesOutput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
     this.isCanonical = const Value.absent(),
@@ -3025,7 +3022,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     required String name,
     this.family = const Value.absent(),
     this.modalitiesInput = const Value.absent(),
-    this.modalitiesOuput = const Value.absent(),
+    this.modalitiesOutput = const Value.absent(),
     this.openWeights = const Value.absent(),
     this.supportsReasoning = const Value.absent(),
     this.isCanonical = const Value.absent(),
@@ -3048,7 +3045,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Expression<String>? name,
     Expression<String>? family,
     Expression<String>? modalitiesInput,
-    Expression<String>? modalitiesOuput,
+    Expression<String>? modalitiesOutput,
     Expression<bool>? openWeights,
     Expression<bool>? supportsReasoning,
     Expression<bool>? isCanonical,
@@ -3067,7 +3064,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       if (name != null) 'name': name,
       if (family != null) 'family': family,
       if (modalitiesInput != null) 'modalities_input': modalitiesInput,
-      if (modalitiesOuput != null) 'modalities_ouput': modalitiesOuput,
+      if (modalitiesOutput != null) 'modalities_output': modalitiesOutput,
       if (openWeights != null) 'open_weights': openWeights,
       if (supportsReasoning != null) 'supports_reasoning': supportsReasoning,
       if (isCanonical != null) 'is_canonical': isCanonical,
@@ -3089,7 +3086,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
     Value<String>? name,
     Value<String?>? family,
     Value<List<String>?>? modalitiesInput,
-    Value<List<String>?>? modalitiesOuput,
+    Value<List<String>?>? modalitiesOutput,
     Value<bool?>? openWeights,
     Value<bool>? supportsReasoning,
     Value<bool>? isCanonical,
@@ -3108,7 +3105,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
       name: name ?? this.name,
       family: family ?? this.family,
       modalitiesInput: modalitiesInput ?? this.modalitiesInput,
-      modalitiesOuput: modalitiesOuput ?? this.modalitiesOuput,
+      modalitiesOutput: modalitiesOutput ?? this.modalitiesOutput,
       openWeights: openWeights ?? this.openWeights,
       supportsReasoning: supportsReasoning ?? this.supportsReasoning,
       isCanonical: isCanonical ?? this.isCanonical,
@@ -3143,9 +3140,11 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
         $ApiModelsTable.$convertermodalitiesInputn.toSql(modalitiesInput.value),
       );
     }
-    if (modalitiesOuput.present) {
-      map['modalities_ouput'] = Variable<String>(
-        $ApiModelsTable.$convertermodalitiesOuputn.toSql(modalitiesOuput.value),
+    if (modalitiesOutput.present) {
+      map['modalities_output'] = Variable<String>(
+        $ApiModelsTable.$convertermodalitiesOutputn.toSql(
+          modalitiesOutput.value,
+        ),
       );
     }
     if (openWeights.present) {
@@ -3194,7 +3193,7 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
           ..write('name: $name, ')
           ..write('family: $family, ')
           ..write('modalitiesInput: $modalitiesInput, ')
-          ..write('modalitiesOuput: $modalitiesOuput, ')
+          ..write('modalitiesOutput: $modalitiesOutput, ')
           ..write('openWeights: $openWeights, ')
           ..write('supportsReasoning: $supportsReasoning, ')
           ..write('isCanonical: $isCanonical, ')
@@ -3285,7 +3284,7 @@ class $ConversationsTable extends Conversations
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspace_model_selections (id)',
+      'REFERENCES workspace_model_selections (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
@@ -3375,7 +3374,7 @@ class $ConversationsTable extends Conversations
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ConversationsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -3868,7 +3867,7 @@ class $MessagesTable extends Messages
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   MessagesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -5100,7 +5099,7 @@ class $ToolsGroupsTable extends ToolsGroups
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {workspaceId, id};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ToolsGroupsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -5543,34 +5542,12 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _customNameMeta = const VerificationMeta(
-    'customName',
-  );
-  @override
-  late final GeneratedColumn<String> customName = GeneratedColumn<String>(
-    'custom_name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _descriptionMeta = const VerificationMeta(
     'description',
   );
   @override
   late final GeneratedColumn<String> description = GeneratedColumn<String>(
     'description',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _additionalPromptMeta = const VerificationMeta(
-    'additionalPrompt',
-  );
-  @override
-  late final GeneratedColumn<String> additionalPrompt = GeneratedColumn<String>(
-    'additional_prompt',
     aliasedName,
     true,
     type: DriftSqlType.string,
@@ -5629,9 +5606,7 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     workspaceId,
     workspaceToolsGroupId,
     toolId,
-    customName,
     description,
-    additionalPrompt,
     config,
     inputSchema,
     isEnabled,
@@ -5692,27 +5667,12 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
     } else if (isInserting) {
       context.missing(_toolIdMeta);
     }
-    if (data.containsKey('custom_name')) {
-      context.handle(
-        _customNameMeta,
-        customName.isAcceptableOrUnknown(data['custom_name']!, _customNameMeta),
-      );
-    }
     if (data.containsKey('description')) {
       context.handle(
         _descriptionMeta,
         description.isAcceptableOrUnknown(
           data['description']!,
           _descriptionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('additional_prompt')) {
-      context.handle(
-        _additionalPromptMeta,
-        additionalPrompt.isAcceptableOrUnknown(
-          data['additional_prompt']!,
-          _additionalPromptMeta,
         ),
       );
     }
@@ -5741,7 +5701,7 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {workspaceId, id};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ToolsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -5770,17 +5730,9 @@ class $ToolsTable extends Tools with TableInfo<$ToolsTable, ToolsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}tool_id'],
       )!,
-      customName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}custom_name'],
-      ),
       description: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}description'],
-      ),
-      additionalPrompt: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}additional_prompt'],
       ),
       config: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -5830,11 +5782,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
 
   /// Type of tool (for example, 'web_search', 'calculator', etc).
   final String toolId;
-  final String? customName;
 
   /// Optional description of the tool (from MCP or user-defined).
   final String? description;
-  final String? additionalPrompt;
 
   /// Tool configuration as JSON (optional).
   final String? config;
@@ -5852,9 +5802,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     required this.workspaceId,
     this.workspaceToolsGroupId,
     required this.toolId,
-    this.customName,
     this.description,
-    this.additionalPrompt,
     this.config,
     this.inputSchema,
     required this.isEnabled,
@@ -5871,14 +5819,8 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
       map['workspace_tools_group_id'] = Variable<String>(workspaceToolsGroupId);
     }
     map['tool_id'] = Variable<String>(toolId);
-    if (!nullToAbsent || customName != null) {
-      map['custom_name'] = Variable<String>(customName);
-    }
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
-    }
-    if (!nullToAbsent || additionalPrompt != null) {
-      map['additional_prompt'] = Variable<String>(additionalPrompt);
     }
     if (!nullToAbsent || config != null) {
       map['config'] = Variable<String>(config);
@@ -5905,15 +5847,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ? const Value.absent()
           : Value(workspaceToolsGroupId),
       toolId: Value(toolId),
-      customName: customName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(customName),
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
-      additionalPrompt: additionalPrompt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(additionalPrompt),
       config: config == null && nullToAbsent
           ? const Value.absent()
           : Value(config),
@@ -5939,9 +5875,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
         json['workspaceToolsGroupId'],
       ),
       toolId: serializer.fromJson<String>(json['toolId']),
-      customName: serializer.fromJson<String?>(json['customName']),
       description: serializer.fromJson<String?>(json['description']),
-      additionalPrompt: serializer.fromJson<String?>(json['additionalPrompt']),
       config: serializer.fromJson<String?>(json['config']),
       inputSchema: serializer.fromJson<String?>(json['inputSchema']),
       isEnabled: serializer.fromJson<bool>(json['isEnabled']),
@@ -5962,9 +5896,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
         workspaceToolsGroupId,
       ),
       'toolId': serializer.toJson<String>(toolId),
-      'customName': serializer.toJson<String?>(customName),
       'description': serializer.toJson<String?>(description),
-      'additionalPrompt': serializer.toJson<String?>(additionalPrompt),
       'config': serializer.toJson<String?>(config),
       'inputSchema': serializer.toJson<String?>(inputSchema),
       'isEnabled': serializer.toJson<bool>(isEnabled),
@@ -5981,9 +5913,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     String? workspaceId,
     Value<String?> workspaceToolsGroupId = const Value.absent(),
     String? toolId,
-    Value<String?> customName = const Value.absent(),
     Value<String?> description = const Value.absent(),
-    Value<String?> additionalPrompt = const Value.absent(),
     Value<String?> config = const Value.absent(),
     Value<String?> inputSchema = const Value.absent(),
     bool? isEnabled,
@@ -5997,11 +5927,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
         ? workspaceToolsGroupId.value
         : this.workspaceToolsGroupId,
     toolId: toolId ?? this.toolId,
-    customName: customName.present ? customName.value : this.customName,
     description: description.present ? description.value : this.description,
-    additionalPrompt: additionalPrompt.present
-        ? additionalPrompt.value
-        : this.additionalPrompt,
     config: config.present ? config.value : this.config,
     inputSchema: inputSchema.present ? inputSchema.value : this.inputSchema,
     isEnabled: isEnabled ?? this.isEnabled,
@@ -6019,15 +5945,9 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ? data.workspaceToolsGroupId.value
           : this.workspaceToolsGroupId,
       toolId: data.toolId.present ? data.toolId.value : this.toolId,
-      customName: data.customName.present
-          ? data.customName.value
-          : this.customName,
       description: data.description.present
           ? data.description.value
           : this.description,
-      additionalPrompt: data.additionalPrompt.present
-          ? data.additionalPrompt.value
-          : this.additionalPrompt,
       config: data.config.present ? data.config.value : this.config,
       inputSchema: data.inputSchema.present
           ? data.inputSchema.value
@@ -6048,9 +5968,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           ..write('workspaceId: $workspaceId, ')
           ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
           ..write('toolId: $toolId, ')
-          ..write('customName: $customName, ')
           ..write('description: $description, ')
-          ..write('additionalPrompt: $additionalPrompt, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
           ..write('isEnabled: $isEnabled, ')
@@ -6067,9 +5985,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
     workspaceId,
     workspaceToolsGroupId,
     toolId,
-    customName,
     description,
-    additionalPrompt,
     config,
     inputSchema,
     isEnabled,
@@ -6085,9 +6001,7 @@ class ToolsTable extends DataClass implements Insertable<ToolsTable> {
           other.workspaceId == this.workspaceId &&
           other.workspaceToolsGroupId == this.workspaceToolsGroupId &&
           other.toolId == this.toolId &&
-          other.customName == this.customName &&
           other.description == this.description &&
-          other.additionalPrompt == this.additionalPrompt &&
           other.config == this.config &&
           other.inputSchema == this.inputSchema &&
           other.isEnabled == this.isEnabled &&
@@ -6101,9 +6015,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
   final Value<String> workspaceId;
   final Value<String?> workspaceToolsGroupId;
   final Value<String> toolId;
-  final Value<String?> customName;
   final Value<String?> description;
-  final Value<String?> additionalPrompt;
   final Value<String?> config;
   final Value<String?> inputSchema;
   final Value<bool> isEnabled;
@@ -6116,9 +6028,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     this.workspaceId = const Value.absent(),
     this.workspaceToolsGroupId = const Value.absent(),
     this.toolId = const Value.absent(),
-    this.customName = const Value.absent(),
     this.description = const Value.absent(),
-    this.additionalPrompt = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
@@ -6132,9 +6042,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     required String workspaceId,
     this.workspaceToolsGroupId = const Value.absent(),
     required String toolId,
-    this.customName = const Value.absent(),
     this.description = const Value.absent(),
-    this.additionalPrompt = const Value.absent(),
     this.config = const Value.absent(),
     this.inputSchema = const Value.absent(),
     this.isEnabled = const Value.absent(),
@@ -6149,9 +6057,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Expression<String>? workspaceId,
     Expression<String>? workspaceToolsGroupId,
     Expression<String>? toolId,
-    Expression<String>? customName,
     Expression<String>? description,
-    Expression<String>? additionalPrompt,
     Expression<String>? config,
     Expression<String>? inputSchema,
     Expression<bool>? isEnabled,
@@ -6166,9 +6072,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
       if (workspaceToolsGroupId != null)
         'workspace_tools_group_id': workspaceToolsGroupId,
       if (toolId != null) 'tool_id': toolId,
-      if (customName != null) 'custom_name': customName,
       if (description != null) 'description': description,
-      if (additionalPrompt != null) 'additional_prompt': additionalPrompt,
       if (config != null) 'config': config,
       if (inputSchema != null) 'input_schema': inputSchema,
       if (isEnabled != null) 'is_enabled': isEnabled,
@@ -6184,9 +6088,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     Value<String>? workspaceId,
     Value<String?>? workspaceToolsGroupId,
     Value<String>? toolId,
-    Value<String?>? customName,
     Value<String?>? description,
-    Value<String?>? additionalPrompt,
     Value<String?>? config,
     Value<String?>? inputSchema,
     Value<bool>? isEnabled,
@@ -6201,9 +6103,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
       workspaceToolsGroupId:
           workspaceToolsGroupId ?? this.workspaceToolsGroupId,
       toolId: toolId ?? this.toolId,
-      customName: customName ?? this.customName,
       description: description ?? this.description,
-      additionalPrompt: additionalPrompt ?? this.additionalPrompt,
       config: config ?? this.config,
       inputSchema: inputSchema ?? this.inputSchema,
       isEnabled: isEnabled ?? this.isEnabled,
@@ -6235,14 +6135,8 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
     if (toolId.present) {
       map['tool_id'] = Variable<String>(toolId.value);
     }
-    if (customName.present) {
-      map['custom_name'] = Variable<String>(customName.value);
-    }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
-    }
-    if (additionalPrompt.present) {
-      map['additional_prompt'] = Variable<String>(additionalPrompt.value);
     }
     if (config.present) {
       map['config'] = Variable<String>(config.value);
@@ -6273,9 +6167,7 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
           ..write('workspaceId: $workspaceId, ')
           ..write('workspaceToolsGroupId: $workspaceToolsGroupId, ')
           ..write('toolId: $toolId, ')
-          ..write('customName: $customName, ')
           ..write('description: $description, ')
-          ..write('additionalPrompt: $additionalPrompt, ')
           ..write('config: $config, ')
           ..write('inputSchema: $inputSchema, ')
           ..write('isEnabled: $isEnabled, ')
@@ -7472,7 +7364,7 @@ class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {workspaceId, title},
@@ -8065,7 +7957,7 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {workspaceId, title},
@@ -8860,7 +8752,7 @@ class $SkillTemplateToolsTable extends SkillTemplateTools
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {skillId, title},
@@ -9512,7 +9404,7 @@ class $ConversationSkillsTable extends ConversationSkills
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ConversationSkillsTable map(
     Map<String, dynamic> data, {
@@ -9993,7 +9885,7 @@ class $AppSkillWorkspaceSettingsTable extends AppSkillWorkspaceSettings
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   AppSkillWorkspaceSettingsTable map(
     Map<String, dynamic> data, {
@@ -10290,10 +10182,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkspacesTable workspaces = $WorkspacesTable(this);
   late final $ServiceConnectionsTable serviceConnections =
       $ServiceConnectionsTable(this);
-  late final $ApiModelProvidersTable apiModelProviders =
-      $ApiModelProvidersTable(this);
   late final $WorkspaceModelSelectionsTable workspaceModelSelections =
       $WorkspaceModelSelectionsTable(this);
+  late final $ApiModelProvidersTable apiModelProviders =
+      $ApiModelProvidersTable(this);
   late final $ApiModelsTable apiModels = $ApiModelsTable(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
@@ -10313,6 +10205,34 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ConversationSkillsTable(this);
   late final $AppSkillWorkspaceSettingsTable appSkillWorkspaceSettings =
       $AppSkillWorkspaceSettingsTable(this);
+  late final Index workspaceModelSelectionsConnectionModel = Index(
+    'workspace_model_selections_connection_model',
+    'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
+  );
+  late final Index toolsNativeIdentity = Index(
+    'tools_native_identity',
+    'CREATE UNIQUE INDEX tools_native_identity ON tools (workspace_id, tool_id) WHERE workspace_tools_group_id IS NULL',
+  );
+  late final Index toolsGroupIdentity = Index(
+    'tools_group_identity',
+    'CREATE UNIQUE INDEX tools_group_identity ON tools (workspace_tools_group_id, tool_id) WHERE workspace_tools_group_id IS NOT NULL',
+  );
+  late final Index toolsGroupsMcpServerId = Index(
+    'tools_groups_mcp_server_id',
+    'CREATE UNIQUE INDEX tools_groups_mcp_server_id ON tools_groups (mcp_server_id) WHERE mcp_server_id IS NOT NULL',
+  );
+  late final Index conversationSkillsWorkspaceSkill = Index(
+    'conversation_skills_workspace_skill',
+    'CREATE UNIQUE INDEX conversation_skills_workspace_skill ON conversation_skills (conversation_id, workspace_skill_id) WHERE workspace_skill_id IS NOT NULL',
+  );
+  late final Index conversationSkillsAppSkill = Index(
+    'conversation_skills_app_skill',
+    'CREATE UNIQUE INDEX conversation_skills_app_skill ON conversation_skills (conversation_id, app_skill_identifier) WHERE app_skill_identifier IS NOT NULL',
+  );
+  late final Index appSkillWorkspaceSettingsWorkspaceAppSkill = Index(
+    'app_skill_workspace_settings_workspace_app_skill',
+    'CREATE UNIQUE INDEX app_skill_workspace_settings_workspace_app_skill ON app_skill_workspace_settings (workspace_id, app_skill_identifier)',
+  );
   late final WorkspaceDao workspaceDao = WorkspaceDao(this as AppDatabase);
   late final ModelConnectionsDao modelConnectionsDao = ModelConnectionsDao(
     this as AppDatabase,
@@ -10358,8 +10278,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     workspaces,
     serviceConnections,
-    apiModelProviders,
     workspaceModelSelections,
+    apiModelProviders,
     apiModels,
     conversations,
     messages,
@@ -10373,6 +10293,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     skillTemplateTools,
     conversationSkills,
     appSkillWorkspaceSettings,
+    workspaceModelSelectionsConnectionModel,
+    toolsNativeIdentity,
+    toolsGroupIdentity,
+    toolsGroupsMcpServerId,
+    conversationSkillsWorkspaceSkill,
+    conversationSkillsAppSkill,
+    appSkillWorkspaceSettingsWorkspaceAppSkill,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -10394,10 +10321,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'api_model_providers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('api_models', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('conversations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspace_model_selections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversations', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -12460,6 +12401,449 @@ typedef $$ServiceConnectionsTableProcessedTableManager =
         bool mcpServersRefs,
       })
     >;
+typedef $$WorkspaceModelSelectionsTableCreateCompanionBuilder =
+    WorkspaceModelSelectionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String modelId,
+      required String modelConnectionId,
+      Value<int> rowid,
+    });
+typedef $$WorkspaceModelSelectionsTableUpdateCompanionBuilder =
+    WorkspaceModelSelectionsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> modelId,
+      Value<String> modelConnectionId,
+      Value<int> rowid,
+    });
+
+final class $$WorkspaceModelSelectionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $WorkspaceModelSelectionsTable,
+          WorkspaceModelSelectionTable
+        > {
+  $$WorkspaceModelSelectionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ServiceConnectionsTable _modelConnectionIdTable(
+    _$AppDatabase db,
+  ) => db.serviceConnections.createAlias(
+    'workspace_model_selections__model_connection_id__service_connections__id',
+  );
+
+  $$ServiceConnectionsTableProcessedTableManager get modelConnectionId {
+    final $_column = $_itemColumn<String>('model_connection_id')!;
+
+    final manager = $$ServiceConnectionsTableTableManager(
+      $_db,
+      $_db.serviceConnections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_modelConnectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ConversationsTable, List<ConversationsTable>>
+  _conversationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.conversations,
+    aliasName: 'workspace_model_selections__id__conversations__model_id',
+  );
+
+  $$ConversationsTableProcessedTableManager get conversationsRefs {
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.modelId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$WorkspaceModelSelectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceModelSelectionsTable> {
+  $$WorkspaceModelSelectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ServiceConnectionsTableFilterComposer get modelConnectionId {
+    final $$ServiceConnectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.modelConnectionId,
+      referencedTable: $db.serviceConnections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ServiceConnectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.serviceConnections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> conversationsRefs(
+    Expression<bool> Function($$ConversationsTableFilterComposer f) f,
+  ) {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.modelId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$WorkspaceModelSelectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceModelSelectionsTable> {
+  $$WorkspaceModelSelectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelId => $composableBuilder(
+    column: $table.modelId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ServiceConnectionsTableOrderingComposer get modelConnectionId {
+    final $$ServiceConnectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.modelConnectionId,
+      referencedTable: $db.serviceConnections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ServiceConnectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.serviceConnections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WorkspaceModelSelectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceModelSelectionsTable> {
+  $$WorkspaceModelSelectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get modelId =>
+      $composableBuilder(column: $table.modelId, builder: (column) => column);
+
+  $$ServiceConnectionsTableAnnotationComposer get modelConnectionId {
+    final $$ServiceConnectionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.modelConnectionId,
+          referencedTable: $db.serviceConnections,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ServiceConnectionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.serviceConnections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  Expression<T> conversationsRefs<T extends Object>(
+    Expression<T> Function($$ConversationsTableAnnotationComposer a) f,
+  ) {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.modelId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$WorkspaceModelSelectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WorkspaceModelSelectionsTable,
+          WorkspaceModelSelectionTable,
+          $$WorkspaceModelSelectionsTableFilterComposer,
+          $$WorkspaceModelSelectionsTableOrderingComposer,
+          $$WorkspaceModelSelectionsTableAnnotationComposer,
+          $$WorkspaceModelSelectionsTableCreateCompanionBuilder,
+          $$WorkspaceModelSelectionsTableUpdateCompanionBuilder,
+          (
+            WorkspaceModelSelectionTable,
+            $$WorkspaceModelSelectionsTableReferences,
+          ),
+          WorkspaceModelSelectionTable,
+          PrefetchHooks Function({
+            bool modelConnectionId,
+            bool conversationsRefs,
+          })
+        > {
+  $$WorkspaceModelSelectionsTableTableManager(
+    _$AppDatabase db,
+    $WorkspaceModelSelectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceModelSelectionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$WorkspaceModelSelectionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$WorkspaceModelSelectionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> modelId = const Value.absent(),
+                Value<String> modelConnectionId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceModelSelectionsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                modelId: modelId,
+                modelConnectionId: modelConnectionId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String modelId,
+                required String modelConnectionId,
+                Value<int> rowid = const Value.absent(),
+              }) => WorkspaceModelSelectionsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                modelId: modelId,
+                modelConnectionId: modelConnectionId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$WorkspaceModelSelectionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({modelConnectionId = false, conversationsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (conversationsRefs) db.conversations,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (modelConnectionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.modelConnectionId,
+                                    referencedTable:
+                                        $$WorkspaceModelSelectionsTableReferences
+                                            ._modelConnectionIdTable(db),
+                                    referencedColumn:
+                                        $$WorkspaceModelSelectionsTableReferences
+                                            ._modelConnectionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (conversationsRefs)
+                        await $_getPrefetchedData<
+                          WorkspaceModelSelectionTable,
+                          $WorkspaceModelSelectionsTable,
+                          ConversationsTable
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$WorkspaceModelSelectionsTableReferences
+                                  ._conversationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspaceModelSelectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.modelId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$WorkspaceModelSelectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WorkspaceModelSelectionsTable,
+      WorkspaceModelSelectionTable,
+      $$WorkspaceModelSelectionsTableFilterComposer,
+      $$WorkspaceModelSelectionsTableOrderingComposer,
+      $$WorkspaceModelSelectionsTableAnnotationComposer,
+      $$WorkspaceModelSelectionsTableCreateCompanionBuilder,
+      $$WorkspaceModelSelectionsTableUpdateCompanionBuilder,
+      (WorkspaceModelSelectionTable, $$WorkspaceModelSelectionsTableReferences),
+      WorkspaceModelSelectionTable,
+      PrefetchHooks Function({bool modelConnectionId, bool conversationsRefs})
+    >;
 typedef $$ApiModelProvidersTableCreateCompanionBuilder =
     ApiModelProvidersCompanion Function({
       required String id,
@@ -12491,32 +12875,6 @@ final class $$ApiModelProvidersTableReferences
     super.$_table,
     super.$_typedResult,
   );
-
-  static MultiTypedResultKey<
-    $WorkspaceModelSelectionsTable,
-    List<WorkspaceModelSelectionTable>
-  >
-  _workspaceModelSelectionsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.workspaceModelSelections,
-        aliasName:
-            'api_model_providers__id__workspace_model_selections__model_id',
-      );
-
-  $$WorkspaceModelSelectionsTableProcessedTableManager
-  get workspaceModelSelectionsRefs {
-    final manager = $$WorkspaceModelSelectionsTableTableManager(
-      $_db,
-      $_db.workspaceModelSelections,
-    ).filter((f) => f.modelId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _workspaceModelSelectionsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
 
   static MultiTypedResultKey<$ApiModelsTable, List<ApiModelsTable>>
   _apiModelsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -12575,33 +12933,6 @@ class $$ApiModelProvidersTableFilterComposer
     column: $table.doc,
     builder: (column) => ColumnFilters(column),
   );
-
-  Expression<bool> workspaceModelSelectionsRefs(
-    Expression<bool> Function($$WorkspaceModelSelectionsTableFilterComposer f)
-    f,
-  ) {
-    final $$WorkspaceModelSelectionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.workspaceModelSelections,
-          getReferencedColumn: (t) => t.modelId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$WorkspaceModelSelectionsTableFilterComposer(
-                $db: $db,
-                $table: $db.workspaceModelSelections,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
 
   Expression<bool> apiModelsRefs(
     Expression<bool> Function($$ApiModelsTableFilterComposer f) f,
@@ -12688,33 +13019,6 @@ class $$ApiModelProvidersTableAnnotationComposer
   GeneratedColumn<String> get doc =>
       $composableBuilder(column: $table.doc, builder: (column) => column);
 
-  Expression<T> workspaceModelSelectionsRefs<T extends Object>(
-    Expression<T> Function($$WorkspaceModelSelectionsTableAnnotationComposer a)
-    f,
-  ) {
-    final $$WorkspaceModelSelectionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.workspaceModelSelections,
-          getReferencedColumn: (t) => t.modelId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$WorkspaceModelSelectionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.workspaceModelSelections,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
   Expression<T> apiModelsRefs<T extends Object>(
     Expression<T> Function($$ApiModelsTableAnnotationComposer a) f,
   ) {
@@ -12754,10 +13058,7 @@ class $$ApiModelProvidersTableTableManager
           $$ApiModelProvidersTableUpdateCompanionBuilder,
           (ApiModelProvidersTable, $$ApiModelProvidersTableReferences),
           ApiModelProvidersTable,
-          PrefetchHooks Function({
-            bool workspaceModelSelectionsRefs,
-            bool apiModelsRefs,
-          })
+          PrefetchHooks Function({bool apiModelsRefs})
         > {
   $$ApiModelProvidersTableTableManager(
     _$AppDatabase db,
@@ -12815,64 +13116,38 @@ class $$ApiModelProvidersTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback:
-              ({workspaceModelSelectionsRefs = false, apiModelsRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (workspaceModelSelectionsRefs)
-                      db.workspaceModelSelections,
-                    if (apiModelsRefs) db.apiModels,
-                  ],
-                  addJoins: null,
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (workspaceModelSelectionsRefs)
-                        await $_getPrefetchedData<
-                          ApiModelProvidersTable,
-                          $ApiModelProvidersTable,
-                          WorkspaceModelSelectionTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$ApiModelProvidersTableReferences
-                              ._workspaceModelSelectionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$ApiModelProvidersTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).workspaceModelSelectionsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.modelId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (apiModelsRefs)
-                        await $_getPrefetchedData<
-                          ApiModelProvidersTable,
-                          $ApiModelProvidersTable,
-                          ApiModelsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$ApiModelProvidersTableReferences
-                              ._apiModelsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$ApiModelProvidersTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).apiModelsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.modelProvider == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
+          prefetchHooksCallback: ({apiModelsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (apiModelsRefs) db.apiModels],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (apiModelsRefs)
+                    await $_getPrefetchedData<
+                      ApiModelProvidersTable,
+                      $ApiModelProvidersTable,
+                      ApiModelsTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ApiModelProvidersTableReferences
+                          ._apiModelsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ApiModelProvidersTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).apiModelsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.modelProvider == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
               },
+            );
+          },
         ),
       );
 }
@@ -12889,553 +13164,7 @@ typedef $$ApiModelProvidersTableProcessedTableManager =
       $$ApiModelProvidersTableUpdateCompanionBuilder,
       (ApiModelProvidersTable, $$ApiModelProvidersTableReferences),
       ApiModelProvidersTable,
-      PrefetchHooks Function({
-        bool workspaceModelSelectionsRefs,
-        bool apiModelsRefs,
-      })
-    >;
-typedef $$WorkspaceModelSelectionsTableCreateCompanionBuilder =
-    WorkspaceModelSelectionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String modelId,
-      required String modelConnectionId,
-      Value<int> rowid,
-    });
-typedef $$WorkspaceModelSelectionsTableUpdateCompanionBuilder =
-    WorkspaceModelSelectionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> modelId,
-      Value<String> modelConnectionId,
-      Value<int> rowid,
-    });
-
-final class $$WorkspaceModelSelectionsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $WorkspaceModelSelectionsTable,
-          WorkspaceModelSelectionTable
-        > {
-  $$WorkspaceModelSelectionsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $ApiModelProvidersTable _modelIdTable(_$AppDatabase db) =>
-      db.apiModelProviders.createAlias(
-        'workspace_model_selections__model_id__api_model_providers__id',
-      );
-
-  $$ApiModelProvidersTableProcessedTableManager get modelId {
-    final $_column = $_itemColumn<String>('model_id')!;
-
-    final manager = $$ApiModelProvidersTableTableManager(
-      $_db,
-      $_db.apiModelProviders,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_modelIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $ServiceConnectionsTable _modelConnectionIdTable(
-    _$AppDatabase db,
-  ) => db.serviceConnections.createAlias(
-    'workspace_model_selections__model_connection_id__service_connections__id',
-  );
-
-  $$ServiceConnectionsTableProcessedTableManager get modelConnectionId {
-    final $_column = $_itemColumn<String>('model_connection_id')!;
-
-    final manager = $$ServiceConnectionsTableTableManager(
-      $_db,
-      $_db.serviceConnections,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_modelConnectionIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$ConversationsTable, List<ConversationsTable>>
-  _conversationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.conversations,
-    aliasName: 'workspace_model_selections__id__conversations__model_id',
-  );
-
-  $$ConversationsTableProcessedTableManager get conversationsRefs {
-    final manager = $$ConversationsTableTableManager(
-      $_db,
-      $_db.conversations,
-    ).filter((f) => f.modelId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$WorkspaceModelSelectionsTableFilterComposer
-    extends Composer<_$AppDatabase, $WorkspaceModelSelectionsTable> {
-  $$WorkspaceModelSelectionsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$ApiModelProvidersTableFilterComposer get modelId {
-    final $$ApiModelProvidersTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelId,
-      referencedTable: $db.apiModelProviders,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ApiModelProvidersTableFilterComposer(
-            $db: $db,
-            $table: $db.apiModelProviders,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$ServiceConnectionsTableFilterComposer get modelConnectionId {
-    final $$ServiceConnectionsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelConnectionId,
-      referencedTable: $db.serviceConnections,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ServiceConnectionsTableFilterComposer(
-            $db: $db,
-            $table: $db.serviceConnections,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> conversationsRefs(
-    Expression<bool> Function($$ConversationsTableFilterComposer f) f,
-  ) {
-    final $$ConversationsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.conversations,
-      getReferencedColumn: (t) => t.modelId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ConversationsTableFilterComposer(
-            $db: $db,
-            $table: $db.conversations,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$WorkspaceModelSelectionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $WorkspaceModelSelectionsTable> {
-  $$WorkspaceModelSelectionsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$ApiModelProvidersTableOrderingComposer get modelId {
-    final $$ApiModelProvidersTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelId,
-      referencedTable: $db.apiModelProviders,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ApiModelProvidersTableOrderingComposer(
-            $db: $db,
-            $table: $db.apiModelProviders,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$ServiceConnectionsTableOrderingComposer get modelConnectionId {
-    final $$ServiceConnectionsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.modelConnectionId,
-      referencedTable: $db.serviceConnections,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ServiceConnectionsTableOrderingComposer(
-            $db: $db,
-            $table: $db.serviceConnections,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$WorkspaceModelSelectionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $WorkspaceModelSelectionsTable> {
-  $$WorkspaceModelSelectionsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  $$ApiModelProvidersTableAnnotationComposer get modelId {
-    final $$ApiModelProvidersTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.modelId,
-          referencedTable: $db.apiModelProviders,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$ApiModelProvidersTableAnnotationComposer(
-                $db: $db,
-                $table: $db.apiModelProviders,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
-  $$ServiceConnectionsTableAnnotationComposer get modelConnectionId {
-    final $$ServiceConnectionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.modelConnectionId,
-          referencedTable: $db.serviceConnections,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$ServiceConnectionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.serviceConnections,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
-  Expression<T> conversationsRefs<T extends Object>(
-    Expression<T> Function($$ConversationsTableAnnotationComposer a) f,
-  ) {
-    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.conversations,
-      getReferencedColumn: (t) => t.modelId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ConversationsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.conversations,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$WorkspaceModelSelectionsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $WorkspaceModelSelectionsTable,
-          WorkspaceModelSelectionTable,
-          $$WorkspaceModelSelectionsTableFilterComposer,
-          $$WorkspaceModelSelectionsTableOrderingComposer,
-          $$WorkspaceModelSelectionsTableAnnotationComposer,
-          $$WorkspaceModelSelectionsTableCreateCompanionBuilder,
-          $$WorkspaceModelSelectionsTableUpdateCompanionBuilder,
-          (
-            WorkspaceModelSelectionTable,
-            $$WorkspaceModelSelectionsTableReferences,
-          ),
-          WorkspaceModelSelectionTable,
-          PrefetchHooks Function({
-            bool modelId,
-            bool modelConnectionId,
-            bool conversationsRefs,
-          })
-        > {
-  $$WorkspaceModelSelectionsTableTableManager(
-    _$AppDatabase db,
-    $WorkspaceModelSelectionsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$WorkspaceModelSelectionsTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$WorkspaceModelSelectionsTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$WorkspaceModelSelectionsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> modelId = const Value.absent(),
-                Value<String> modelConnectionId = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => WorkspaceModelSelectionsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                modelId: modelId,
-                modelConnectionId: modelConnectionId,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String modelId,
-                required String modelConnectionId,
-                Value<int> rowid = const Value.absent(),
-              }) => WorkspaceModelSelectionsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                modelId: modelId,
-                modelConnectionId: modelConnectionId,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$WorkspaceModelSelectionsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                modelId = false,
-                modelConnectionId = false,
-                conversationsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (conversationsRefs) db.conversations,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (modelId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.modelId,
-                                    referencedTable:
-                                        $$WorkspaceModelSelectionsTableReferences
-                                            ._modelIdTable(db),
-                                    referencedColumn:
-                                        $$WorkspaceModelSelectionsTableReferences
-                                            ._modelIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-                        if (modelConnectionId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.modelConnectionId,
-                                    referencedTable:
-                                        $$WorkspaceModelSelectionsTableReferences
-                                            ._modelConnectionIdTable(db),
-                                    referencedColumn:
-                                        $$WorkspaceModelSelectionsTableReferences
-                                            ._modelConnectionIdTable(db)
-                                            .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (conversationsRefs)
-                        await $_getPrefetchedData<
-                          WorkspaceModelSelectionTable,
-                          $WorkspaceModelSelectionsTable,
-                          ConversationsTable
-                        >(
-                          currentTable: table,
-                          referencedTable:
-                              $$WorkspaceModelSelectionsTableReferences
-                                  ._conversationsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WorkspaceModelSelectionsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).conversationsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.modelId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$WorkspaceModelSelectionsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $WorkspaceModelSelectionsTable,
-      WorkspaceModelSelectionTable,
-      $$WorkspaceModelSelectionsTableFilterComposer,
-      $$WorkspaceModelSelectionsTableOrderingComposer,
-      $$WorkspaceModelSelectionsTableAnnotationComposer,
-      $$WorkspaceModelSelectionsTableCreateCompanionBuilder,
-      $$WorkspaceModelSelectionsTableUpdateCompanionBuilder,
-      (WorkspaceModelSelectionTable, $$WorkspaceModelSelectionsTableReferences),
-      WorkspaceModelSelectionTable,
-      PrefetchHooks Function({
-        bool modelId,
-        bool modelConnectionId,
-        bool conversationsRefs,
-      })
+      PrefetchHooks Function({bool apiModelsRefs})
     >;
 typedef $$ApiModelsTableCreateCompanionBuilder =
     ApiModelsCompanion Function({
@@ -13444,7 +13173,7 @@ typedef $$ApiModelsTableCreateCompanionBuilder =
       required String name,
       Value<String?> family,
       Value<List<String>?> modalitiesInput,
-      Value<List<String>?> modalitiesOuput,
+      Value<List<String>?> modalitiesOutput,
       Value<bool?> openWeights,
       Value<bool> supportsReasoning,
       Value<bool> isCanonical,
@@ -13464,7 +13193,7 @@ typedef $$ApiModelsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String?> family,
       Value<List<String>?> modalitiesInput,
-      Value<List<String>?> modalitiesOuput,
+      Value<List<String>?> modalitiesOutput,
       Value<bool?> openWeights,
       Value<bool> supportsReasoning,
       Value<bool> isCanonical,
@@ -13532,8 +13261,8 @@ class $$ApiModelsTableFilterComposer
   );
 
   ColumnWithTypeConverterFilters<List<String>?, List<String>, String>
-  get modalitiesOuput => $composableBuilder(
-    column: $table.modalitiesOuput,
+  get modalitiesOutput => $composableBuilder(
+    column: $table.modalitiesOutput,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
@@ -13640,8 +13369,8 @@ class $$ApiModelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get modalitiesOuput => $composableBuilder(
-    column: $table.modalitiesOuput,
+  ColumnOrderings<String> get modalitiesOutput => $composableBuilder(
+    column: $table.modalitiesOutput,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -13743,11 +13472,11 @@ class $$ApiModelsTableAnnotationComposer
         builder: (column) => column,
       );
 
-  GeneratedColumnWithTypeConverter<List<String>?, String> get modalitiesOuput =>
-      $composableBuilder(
-        column: $table.modalitiesOuput,
-        builder: (column) => column,
-      );
+  GeneratedColumnWithTypeConverter<List<String>?, String>
+  get modalitiesOutput => $composableBuilder(
+    column: $table.modalitiesOutput,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get openWeights => $composableBuilder(
     column: $table.openWeights,
@@ -13855,7 +13584,7 @@ class $$ApiModelsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String?> family = const Value.absent(),
                 Value<List<String>?> modalitiesInput = const Value.absent(),
-                Value<List<String>?> modalitiesOuput = const Value.absent(),
+                Value<List<String>?> modalitiesOutput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
                 Value<bool> isCanonical = const Value.absent(),
@@ -13873,7 +13602,7 @@ class $$ApiModelsTableTableManager
                 name: name,
                 family: family,
                 modalitiesInput: modalitiesInput,
-                modalitiesOuput: modalitiesOuput,
+                modalitiesOutput: modalitiesOutput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
                 isCanonical: isCanonical,
@@ -13893,7 +13622,7 @@ class $$ApiModelsTableTableManager
                 required String name,
                 Value<String?> family = const Value.absent(),
                 Value<List<String>?> modalitiesInput = const Value.absent(),
-                Value<List<String>?> modalitiesOuput = const Value.absent(),
+                Value<List<String>?> modalitiesOutput = const Value.absent(),
                 Value<bool?> openWeights = const Value.absent(),
                 Value<bool> supportsReasoning = const Value.absent(),
                 Value<bool> isCanonical = const Value.absent(),
@@ -13911,7 +13640,7 @@ class $$ApiModelsTableTableManager
                 name: name,
                 family: family,
                 modalitiesInput: modalitiesInput,
-                modalitiesOuput: modalitiesOuput,
+                modalitiesOutput: modalitiesOutput,
                 openWeights: openWeights,
                 supportsReasoning: supportsReasoning,
                 isCanonical: isCanonical,
@@ -16335,9 +16064,7 @@ typedef $$ToolsTableCreateCompanionBuilder =
       required String workspaceId,
       Value<String?> workspaceToolsGroupId,
       required String toolId,
-      Value<String?> customName,
       Value<String?> description,
-      Value<String?> additionalPrompt,
       Value<String?> config,
       Value<String?> inputSchema,
       Value<bool> isEnabled,
@@ -16352,9 +16079,7 @@ typedef $$ToolsTableUpdateCompanionBuilder =
       Value<String> workspaceId,
       Value<String?> workspaceToolsGroupId,
       Value<String> toolId,
-      Value<String?> customName,
       Value<String?> description,
-      Value<String?> additionalPrompt,
       Value<String?> config,
       Value<String?> inputSchema,
       Value<bool> isEnabled,
@@ -16456,18 +16181,8 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get customName => $composableBuilder(
-    column: $table.customName,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get additionalPrompt => $composableBuilder(
-    column: $table.additionalPrompt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16593,18 +16308,8 @@ class $$ToolsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get customName => $composableBuilder(
-    column: $table.customName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get description => $composableBuilder(
     column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get additionalPrompt => $composableBuilder(
-    column: $table.additionalPrompt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -16696,18 +16401,8 @@ class $$ToolsTableAnnotationComposer
   GeneratedColumn<String> get toolId =>
       $composableBuilder(column: $table.toolId, builder: (column) => column);
 
-  GeneratedColumn<String> get customName => $composableBuilder(
-    column: $table.customName,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get additionalPrompt => $composableBuilder(
-    column: $table.additionalPrompt,
     builder: (column) => column,
   );
 
@@ -16839,9 +16534,7 @@ class $$ToolsTableTableManager
                 Value<String> workspaceId = const Value.absent(),
                 Value<String?> workspaceToolsGroupId = const Value.absent(),
                 Value<String> toolId = const Value.absent(),
-                Value<String?> customName = const Value.absent(),
                 Value<String?> description = const Value.absent(),
-                Value<String?> additionalPrompt = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
@@ -16854,9 +16547,7 @@ class $$ToolsTableTableManager
                 workspaceId: workspaceId,
                 workspaceToolsGroupId: workspaceToolsGroupId,
                 toolId: toolId,
-                customName: customName,
                 description: description,
-                additionalPrompt: additionalPrompt,
                 config: config,
                 inputSchema: inputSchema,
                 isEnabled: isEnabled,
@@ -16871,9 +16562,7 @@ class $$ToolsTableTableManager
                 required String workspaceId,
                 Value<String?> workspaceToolsGroupId = const Value.absent(),
                 required String toolId,
-                Value<String?> customName = const Value.absent(),
                 Value<String?> description = const Value.absent(),
-                Value<String?> additionalPrompt = const Value.absent(),
                 Value<String?> config = const Value.absent(),
                 Value<String?> inputSchema = const Value.absent(),
                 Value<bool> isEnabled = const Value.absent(),
@@ -16886,9 +16575,7 @@ class $$ToolsTableTableManager
                 workspaceId: workspaceId,
                 workspaceToolsGroupId: workspaceToolsGroupId,
                 toolId: toolId,
-                customName: customName,
                 description: description,
-                additionalPrompt: additionalPrompt,
                 config: config,
                 inputSchema: inputSchema,
                 isEnabled: isEnabled,
@@ -20446,13 +20133,13 @@ class $AppDatabaseManager {
       $$WorkspacesTableTableManager(_db, _db.workspaces);
   $$ServiceConnectionsTableTableManager get serviceConnections =>
       $$ServiceConnectionsTableTableManager(_db, _db.serviceConnections);
-  $$ApiModelProvidersTableTableManager get apiModelProviders =>
-      $$ApiModelProvidersTableTableManager(_db, _db.apiModelProviders);
   $$WorkspaceModelSelectionsTableTableManager get workspaceModelSelections =>
       $$WorkspaceModelSelectionsTableTableManager(
         _db,
         _db.workspaceModelSelections,
       );
+  $$ApiModelProvidersTableTableManager get apiModelProviders =>
+      $$ApiModelProvidersTableTableManager(_db, _db.apiModelProviders);
   $$ApiModelsTableTableManager get apiModels =>
       $$ApiModelsTableTableManager(_db, _db.apiModels);
   $$ConversationsTableTableManager get conversations =>

@@ -45,7 +45,7 @@ void main() {
     test('parses modalities', () {
       final model = ApiModelEntity.fromJson('openai', baseJson);
       expect(model.modalitiesInput, ['text', 'image']);
-      expect(model.modalitiesOuput, ['text']);
+      expect(model.modalitiesOutput, ['text']);
     });
 
     test('parses openWeights', () {
@@ -109,7 +109,7 @@ void main() {
       };
       final model = ApiModelEntity.fromJson('openai', json);
       expect(model.modalitiesInput, <String>[]);
-      expect(model.modalitiesOuput, <String>[]);
+      expect(model.modalitiesOutput, <String>[]);
     });
   });
 
@@ -122,7 +122,7 @@ void main() {
         limitContext: limitContext,
         limitOutput: 1000,
         modalitiesInput: [],
-        modalitiesOuput: [],
+        modalitiesOutput: [],
       );
     }
 
@@ -135,7 +135,7 @@ void main() {
         limitContext: 8000,
         limitOutput: 1000,
         modalitiesInput: [],
-        modalitiesOuput: [],
+        modalitiesOutput: [],
         openWeights: true,
       );
       expect(open.isOpenSource, isTrue);
@@ -160,7 +160,7 @@ void main() {
         limitContext: 400000,
         limitOutput: 128000,
         modalitiesInput: ['text'],
-        modalitiesOuput: ['text'],
+        modalitiesOutput: ['text'],
         family: 'gpt-5.5',
         supportsPriorityMode: true,
       );

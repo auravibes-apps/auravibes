@@ -73,11 +73,6 @@ class _FakeApiModelRepository implements ApiModelRepository {
   }
 
   @override
-  Future<int> deleteAllData() {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<void> replaceAllData({
     required List<ApiModelProviderEntity> providers,
     required List<ApiModelEntity> models,
@@ -145,11 +140,11 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
     modelConnection: ModelConnectionEntity(
       id: modelConnectionId,
       name: modelConnectionName,
-      key: 'key',
       modelId: connectionProviderId ?? modelId ?? 'model-$selectionId',
       createdAt: now,
       updatedAt: now,
       workspaceId: 'ws-1',
+      hasKey: true,
     ),
     modelsProvider: ApiModelProviderEntity(
       id: providerId,
@@ -175,11 +170,11 @@ void main() {
           modelConnection: ModelConnectionEntity(
             id: 'conn-1',
             name: 'OpenAI',
-            key: 'key',
             modelId: 'gpt-4',
             createdAt: now,
             updatedAt: now,
             workspaceId: 'ws-1',
+            hasKey: true,
           ),
           modelsProvider: const ApiModelProviderEntity(
             id: 'openai',
@@ -229,11 +224,11 @@ void main() {
         modelConnection: ModelConnectionEntity(
           id: 'conn-1',
           name: 'OpenAI',
-          key: 'key',
           modelId: 'gpt-4',
           createdAt: now,
           updatedAt: now,
           workspaceId: 'ws-1',
+          hasKey: true,
         ),
         modelsProvider: const ApiModelProviderEntity(
           id: 'openai',
@@ -252,11 +247,11 @@ void main() {
         modelConnection: ModelConnectionEntity(
           id: 'conn-2',
           name: 'Anthropic',
-          key: 'key',
           modelId: 'claude-3',
           createdAt: now,
           updatedAt: now,
           workspaceId: 'ws-1',
+          hasKey: true,
         ),
         modelsProvider: const ApiModelProviderEntity(
           id: 'anthropic',
@@ -339,7 +334,7 @@ void main() {
           limitContext: 1050000,
           limitOutput: 128000,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
           supportsPriorityMode: true,
         ),
         ApiModelEntity(
@@ -349,7 +344,7 @@ void main() {
           limitContext: 16385,
           limitOutput: 4096,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
         ),
       ];
       final container = ProviderContainer(

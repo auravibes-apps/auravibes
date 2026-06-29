@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:dio/dio.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -157,8 +158,9 @@ class OAuthCredentialService {
     }
 
     try {
+      final tokenUri = await requirePublicHttpsUri(tokenEndpoint);
       final response = await _dio.post<Object?>(
-        tokenEndpoint,
+        tokenUri.toString(),
         data: {
           'grant_type': 'refresh_token',
           'refresh_token': refreshToken,
@@ -195,6 +197,9 @@ class OAuthCredentialService {
           error: 'OAuth refresh token was rejected.',
         );
       }
+      rethrow;
+    } on FormatException catch (e) {
+      await markReauthRequired(serviceConnectionId, error: e.message);
       rethrow;
     }
   }

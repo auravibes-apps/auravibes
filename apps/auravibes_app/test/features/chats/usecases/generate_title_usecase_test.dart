@@ -44,11 +44,11 @@ void main() {
       modelConnection: ModelConnectionEntity(
         id: 'conn-1',
         name: 'OpenAI',
-        key: 'test-key',
         modelId: 'gpt-4',
         createdAt: DateTime(2026),
         updatedAt: DateTime(2026),
         workspaceId: 'ws-1',
+        hasKey: true,
       ),
       modelsProvider: const ApiModelProviderEntity(
         id: 'provider-1',

@@ -5,8 +5,6 @@ part of 'conversation_tools_dao.dart';
 // ignore_for_file: type=lint
 mixin _$ConversationToolsDaoMixin on DatabaseAccessor<AppDatabase> {
   $WorkspacesTable get workspaces => attachedDatabase.workspaces;
-  $ApiModelProvidersTable get apiModelProviders =>
-      attachedDatabase.apiModelProviders;
   $ServiceConnectionsTable get serviceConnections =>
       attachedDatabase.serviceConnections;
   $WorkspaceModelSelectionsTable get workspaceModelSelections =>
@@ -25,11 +23,6 @@ class ConversationToolsDaoManager {
   ConversationToolsDaoManager(this._db);
   $$WorkspacesTableTableManager get workspaces =>
       $$WorkspacesTableTableManager(_db.attachedDatabase, _db.workspaces);
-  $$ApiModelProvidersTableTableManager get apiModelProviders =>
-      $$ApiModelProvidersTableTableManager(
-        _db.attachedDatabase,
-        _db.apiModelProviders,
-      );
   $$ServiceConnectionsTableTableManager get serviceConnections =>
       $$ServiceConnectionsTableTableManager(
         _db.attachedDatabase,

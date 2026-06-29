@@ -8,8 +8,6 @@ mixin _$McpServersDaoMixin on DatabaseAccessor<AppDatabase> {
   $ServiceConnectionsTable get serviceConnections =>
       attachedDatabase.serviceConnections;
   $McpServersTable get mcpServers => attachedDatabase.mcpServers;
-  $ToolsGroupsTable get toolsGroups => attachedDatabase.toolsGroups;
-  $ToolsTable get tools => attachedDatabase.tools;
   McpServersDaoManager get managers => McpServersDaoManager(this);
 }
 
@@ -25,8 +23,4 @@ class McpServersDaoManager {
       );
   $$McpServersTableTableManager get mcpServers =>
       $$McpServersTableTableManager(_db.attachedDatabase, _db.mcpServers);
-  $$ToolsGroupsTableTableManager get toolsGroups =>
-      $$ToolsGroupsTableTableManager(_db.attachedDatabase, _db.toolsGroups);
-  $$ToolsTableTableManager get tools =>
-      $$ToolsTableTableManager(_db.attachedDatabase, _db.tools);
 }

@@ -12,7 +12,11 @@ export 'package:auravibes_app/data/database/drift/converters/list_converter.dart
 /// Table definition for chat models in the database.
 @DataClassName('ApiModelsTable')
 class ApiModels extends Table {
-  TextColumn get modelProvider => text().references(ApiModelProviders, #id)();
+  TextColumn get modelProvider => text().references(
+    ApiModelProviders,
+    #id,
+    onDelete: KeyAction.cascade,
+  )();
 
   // Model id.
   TextColumn get id => text()();
@@ -27,7 +31,7 @@ class ApiModels extends Table {
 
   TextColumn get modalitiesInput =>
       text().map(stringListConverter).nullable()();
-  TextColumn get modalitiesOuput =>
+  TextColumn get modalitiesOutput =>
       text().map(stringListConverter).nullable()();
 
   BoolColumn get openWeights => boolean().nullable()();

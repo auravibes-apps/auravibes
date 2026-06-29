@@ -2,7 +2,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
-import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubModelConnectionRepository implements ModelConnectionRepository {
@@ -14,7 +13,12 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
-    return connections;
+    final workspaces = filter.workspaces;
+    if (workspaces.isEmpty) return connections;
+
+    return connections
+        .where((connection) => workspaces.contains(connection.workspaceId))
+        .toList();
   }
 
   @override
@@ -31,11 +35,11 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
     final entity = ModelConnectionEntity(
       id: 'mc-${created.length}',
       name: modelConnection.name,
-      key: modelConnection.key,
       modelId: modelConnection.modelId,
       createdAt: DateTime(2024),
       updatedAt: DateTime(2024),
       workspaceId: modelConnection.workspaceId,
+      hasKey: modelConnection.key.isNotEmpty,
       url: modelConnection.url,
     );
     created.add(entity);
@@ -57,7 +61,7 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
       name: connection.name,
       modelId: connection.modelId,
       workspaceId: connection.workspaceId,
-      hasKey: connection.key.isNotEmpty,
+      hasKey: connection.hasKey,
       url: connection.url,
       keySuffix: connection.keySuffix,
     );
@@ -95,18 +99,25 @@ void main() {
         ModelConnectionEntity(
           id: 'mc-1',
           name: 'OpenAI',
-          key: 'key-1',
           modelId: 'gpt-4',
           createdAt: DateTime(2024),
           updatedAt: DateTime(2024),
           workspaceId: 'ws-1',
+          hasKey: true,
+        ),
+        ModelConnectionEntity(
+          id: 'mc-2',
+          name: 'Other',
+          modelId: 'claude-3',
+          createdAt: DateTime(2024),
+          updatedAt: DateTime(2024),
+          workspaceId: 'ws-2',
+          hasKey: true,
         ),
       ];
 
       final result = await repo.getModelConnections(
-        const ModelConnectionFilter(
-          types: [CredentialsModelType.openai],
-        ),
+        const ModelConnectionFilter(workspaces: ['ws-1']),
       );
 
       expect(result, hasLength(1));

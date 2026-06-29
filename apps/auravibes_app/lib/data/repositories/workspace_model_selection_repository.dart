@@ -99,11 +99,12 @@ class WorkspaceModelSelectionRepository {
       modelConnection: ModelConnectionEntity(
         id: withProvider.modelConnection.id,
         name: withProvider.modelConnection.name,
-        key: withProvider.modelConnection.encryptedAuthValue ?? '',
         modelId: withProvider.modelConnection.serviceId,
         createdAt: withProvider.modelConnection.createdAt,
         updatedAt: withProvider.modelConnection.updatedAt,
         workspaceId: withProvider.modelConnection.workspaceId,
+        hasKey:
+            withProvider.modelConnection.encryptedAuthValue?.isNotEmpty == true,
         authMode: _authMode(withProvider.modelConnection.authenticationType),
         url: withProvider.modelConnection.url,
         keySuffix: withProvider.modelConnection.keySuffix,

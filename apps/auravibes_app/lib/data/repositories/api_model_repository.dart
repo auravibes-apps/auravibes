@@ -104,22 +104,38 @@ class ApiModelRepository {
     ];
   }
 
-  Future<int> deleteAllData() async {
-    final deletedModels = await _database.apiModelsDao.deleteAllModels();
-    final deletedProviders = await _database.apiModelProvidersDao
-        .deleteAllProviders();
-
-    return deletedModels + deletedProviders;
-  }
-
   Future<void> replaceAllData({
     required List<ApiModelProviderEntity> providers,
     required List<ApiModelEntity> models,
   }) async {
     await _database.transaction(() async {
-      final _ = await deleteAllData();
       final _ = await batchUpsertProviders(providers);
       final _ = await batchUpsertModels(models);
+      final nextProviderIds = providers.map((provider) => provider.id).toSet();
+      final nextModelKeys = models
+          .map((model) => (provider: model.modelProvider, id: model.id))
+          .toSet();
+
+      final existingModels = await _database.apiModelsDao.getAllModels();
+      for (final model in existingModels) {
+        final key = (provider: model.modelProvider, id: model.id);
+        if (nextModelKeys.contains(key)) continue;
+
+        final _ = await _database.apiModelsDao.deleteModelByProviderAndId(
+          model.modelProvider,
+          model.id,
+        );
+      }
+
+      final existingProviders = await _database.apiModelProvidersDao
+          .getAllProviders();
+      for (final provider in existingProviders) {
+        if (nextProviderIds.contains(provider.id)) continue;
+
+        final _ = await _database.apiModelProvidersDao.deleteProvider(
+          provider.id,
+        );
+      }
     });
   }
 
@@ -179,7 +195,7 @@ class ApiModelRepository {
       limitContext: modelTable.limitContext,
       limitOutput: modelTable.limitOutput,
       modalitiesInput: modelTable.modalitiesInput ?? [],
-      modalitiesOuput: modelTable.modalitiesOuput ?? [],
+      modalitiesOutput: modelTable.modalitiesOutput ?? [],
       family: modelTable.family,
       costInput: modelTable.costInput,
       costCacheRead: modelTable.costCacheRead,
@@ -201,7 +217,7 @@ class ApiModelRepository {
       name: .new(entity.name),
       family: .new(entity.family),
       modalitiesInput: .new(entity.modalitiesInput),
-      modalitiesOuput: .new(entity.modalitiesOuput),
+      modalitiesOutput: .new(entity.modalitiesOutput),
       openWeights: .new(entity.openWeights),
       supportsReasoning: .new(entity.supportsReasoning),
       isCanonical: .new(entity.isCanonical),

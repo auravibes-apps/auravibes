@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -36,21 +37,6 @@ void main() {
 
       expect(
         () => verifyNever(() => mockStorage.delete(key: any(named: 'key'))),
-        returnsNormally,
-      );
-    });
-
-    test('deleteKey removes from storage and clears cache', () async {
-      when(() => mockStorage.delete(key: any(named: 'key'))).thenAnswer((_) {
-        return Future<void>.value();
-      });
-
-      await manager.deleteKey();
-
-      expect(
-        () => verify(
-          () => mockStorage.delete(key: 'app_encryption_secret_key'),
-        ).called(1),
         returnsNormally,
       );
     });
@@ -127,5 +113,36 @@ void main() {
         ).called(1);
       },
     );
+
+    test('getOrCreateSecretKey shares concurrent key creation', () async {
+      final readCompleter = Completer<String?>();
+      when(
+        () => mockStorage.read(key: any(named: 'key')),
+      ).thenAnswer((_) => readCompleter.future);
+      when(
+        () => mockStorage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((_) {
+        return Future<void>.value();
+      });
+
+      final first = manager.getOrCreateSecretKey();
+      final second = manager.getOrCreateSecretKey();
+      readCompleter.complete(null);
+      final keys = await Future.wait([first, second]);
+
+      expect(identical(keys.firstOrNull, keys.lastOrNull), isTrue);
+      verify(
+        () => mockStorage.read(key: 'app_encryption_secret_key'),
+      ).called(1);
+      verify(
+        () => mockStorage.write(
+          key: 'app_encryption_secret_key',
+          value: any(named: 'value'),
+        ),
+      ).called(1);
+    });
   });
 }

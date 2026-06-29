@@ -2,12 +2,10 @@ import 'package:auravibes_app/data/repositories/model_connection_repository.dart
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
-import 'package:auravibes_app/services/secret_key_manager.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -57,8 +55,6 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   }
 }
 
-class _MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
-
 class _MockServiceConnectionRepository extends Mock
     implements ServiceConnectionRepository {}
 
@@ -70,17 +66,14 @@ void main() {
     test('returns a ChatbotService instance', () {
       final fakeRepo = _FakeModelConnectionRepository();
       final mockServiceConnections = _MockServiceConnectionRepository();
-      final mockStorage = _MockFlutterSecureStorage();
       final container = ProviderContainer(
         overrides: [
           modelConnectionRepositoryProvider.overrideWithValue(fakeRepo),
+          serviceConnectionRepositoryProvider.overrideWithValue(
+            mockServiceConnections,
+          ),
           oauthCredentialServiceProvider.overrideWithValue(
             OAuthCredentialService(mockServiceConnections),
-          ),
-          encryptionServiceProvider.overrideWithValue(
-            EncryptionService(
-              SecretKeyManager(secureStorage: mockStorage),
-            ),
           ),
         ],
       );
@@ -93,17 +86,14 @@ void main() {
     test('returns same instance on subsequent reads (keepAlive)', () {
       final fakeRepo = _FakeModelConnectionRepository();
       final mockServiceConnections = _MockServiceConnectionRepository();
-      final mockStorage = _MockFlutterSecureStorage();
       final container = ProviderContainer(
         overrides: [
           modelConnectionRepositoryProvider.overrideWithValue(fakeRepo),
+          serviceConnectionRepositoryProvider.overrideWithValue(
+            mockServiceConnections,
+          ),
           oauthCredentialServiceProvider.overrideWithValue(
             OAuthCredentialService(mockServiceConnections),
-          ),
-          encryptionServiceProvider.overrideWithValue(
-            EncryptionService(
-              SecretKeyManager(secureStorage: mockStorage),
-            ),
           ),
         ],
       );

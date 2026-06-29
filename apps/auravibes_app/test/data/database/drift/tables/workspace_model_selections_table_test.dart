@@ -81,6 +81,20 @@ void main() {
       );
       expect(col.read<int>('notnull'), 1);
     });
+
+    test('primary key on id', () {
+      final idCol = columns.firstWhere(
+        (r) => r.read<String>('name') == 'id',
+      );
+      expect(idCol.read<int>('pk'), greaterThan(0));
+      expect(columns.where((r) => r.read<int>('pk') > 0), hasLength(1));
+      expect(
+        columns
+            .firstWhere((r) => r.read<String>('name') == 'model_id')
+            .read<int>('pk'),
+        0,
+      );
+    });
   });
 
   group('WorkspaceModelSelections column accessors', () {
@@ -94,6 +108,12 @@ void main() {
       final table = fixture.database.workspaceModelSelections;
       expect(table.modelId, isNotNull);
       expect(table.modelConnectionId, isNotNull);
+    });
+
+    test('primaryKey contains id', () {
+      final table = fixture.database.workspaceModelSelections;
+      expect(table.primaryKey.length, 1);
+      expect(table.primaryKey, contains(table.id));
     });
 
     test('column names match expected snake_case', () {

@@ -2,6 +2,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
@@ -45,15 +46,15 @@ class AppLogging {
     final timestamp = record.time.toIso8601String();
     final line =
         '[$timestamp] [${record.level.name}] ${record.loggerName}: '
-        '${record.message}';
+        '${redactLogValue(record.message)}';
     debugPrint(line);
 
     if (record.error != null) {
-      debugPrint('Error: ${record.error}');
+      debugPrint('Error: ${redactLogValue(record.error)}');
     }
 
     if (record.stackTrace != null) {
-      debugPrint('StackTrace: ${record.stackTrace}');
+      debugPrint('StackTrace: ${redactLogValue(record.stackTrace)}');
     }
   }
 

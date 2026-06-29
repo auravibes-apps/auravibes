@@ -53,6 +53,20 @@ class SkillCredentialsRepository {
     return _tableToEntity(row);
   }
 
+  Future<Map<String, String>> readCredentialAttributes(
+    String credentialId,
+  ) async {
+    final row = await _dao.getCredentialById(credentialId);
+    if (row == null) {
+      throw SkillCredentialsException.notFound(credentialId);
+    }
+
+    return {
+      ..._nonSecretAttributes(row),
+      ...await _secretAttributes(row),
+    };
+  }
+
   Future<SkillCredentialForEdit?> getCredentialForEdit(
     String credentialId,
   ) async {
@@ -122,7 +136,7 @@ class SkillCredentialsRepository {
   ) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) {
-      throw StateError('Skill credential not found: $credentialId');
+      throw SkillCredentialsException.notFound(credentialId);
     }
     final definitions = await _attributeDefinitions(row.serviceId);
     final existingSecrets = await _secretAttributes(row);
@@ -156,7 +170,7 @@ class SkillCredentialsRepository {
       ),
     );
     if (updated == null) {
-      throw StateError('Skill credential not found: $credentialId');
+      throw SkillCredentialsException.notFound(credentialId);
     }
 
     return _tableToEntity(updated);
@@ -184,17 +198,12 @@ class SkillCredentialsRepository {
   Future<SkillCredentialEntity> _tableToEntity(
     ServiceConnectionTable table,
   ) async {
-    final attributes = {
-      ..._nonSecretAttributes(table),
-      ...await _secretAttributes(table),
-    };
-
     return SkillCredentialEntity(
       id: table.id,
       workspaceId: table.workspaceId,
       credentialDefinitionId: table.serviceId,
       name: table.name,
-      attributes: attributes,
+      attributes: _nonSecretAttributes(table),
       isEnabled: table.isEnabled,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
@@ -214,7 +223,11 @@ class SkillCredentialsRepository {
   ) async {
     final definition = await _database.skillCredentialDefinitionsDao
         .getDefinitionById(credentialDefinitionId);
-    if (definition == null) return const {};
+    if (definition == null) {
+      throw SkillCredentialsException.definitionNotFound(
+        credentialDefinitionId,
+      );
+    }
 
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
@@ -285,4 +298,25 @@ class SkillCredentialsRepository {
   String _metadataJson(Map<String, String> attributes) {
     return jsonEncode({'attributes': attributes});
   }
+}
+
+class SkillCredentialsException implements Exception {
+  const SkillCredentialsException(this.message);
+
+  factory SkillCredentialsException.notFound(String credentialId) {
+    return SkillCredentialsException(
+      'Skill credential not found: $credentialId',
+    );
+  }
+
+  factory SkillCredentialsException.definitionNotFound(String definitionId) {
+    return SkillCredentialsException(
+      'Skill credential definition not found: $definitionId',
+    );
+  }
+
+  final String message;
+
+  @override
+  String toString() => 'SkillCredentialsException: $message';
 }

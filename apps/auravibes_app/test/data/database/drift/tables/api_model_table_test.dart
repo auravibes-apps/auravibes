@@ -82,7 +82,7 @@ void main() {
           'name',
           'family',
           'modalities_input',
-          'modalities_ouput',
+          'modalities_output',
           'open_weights',
           'cost_input',
           'cost_output',
@@ -119,9 +119,9 @@ void main() {
       expect(col.read<int>('notnull'), 0);
     });
 
-    test('modalities_ouput is nullable', () {
+    test('modalities_output is nullable', () {
       final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'modalities_ouput',
+        (r) => r.read<String>('name') == 'modalities_output',
       );
       expect(col.read<int>('notnull'), 0);
     });
@@ -176,7 +176,7 @@ void main() {
       expect(table.id, isNotNull);
       expect(table.name, isNotNull);
       expect(table.modalitiesInput, isNotNull);
-      expect(table.modalitiesOuput, isNotNull);
+      expect(table.modalitiesOutput, isNotNull);
       expect(table.openWeights, isNotNull);
       expect(table.costInput, isNotNull);
       expect(table.costOutput, isNotNull);
@@ -200,7 +200,7 @@ void main() {
       expect(table.name.name, 'name');
       expect(table.family.name, 'family');
       expect(table.modalitiesInput.name, 'modalities_input');
-      expect(table.modalitiesOuput.name, 'modalities_ouput');
+      expect(table.modalitiesOutput.name, 'modalities_output');
       expect(table.openWeights.name, 'open_weights');
       expect(table.costInput.name, 'cost_input');
       expect(table.costOutput.name, 'cost_output');

@@ -59,6 +59,17 @@ void main() {
         encryptionService: mockEncryptionService,
         modelProviderServices: mockModelProviderServices,
       );
+      when(
+        () => mockSelectionsDao.getByModelConnectionId(any()),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => mockSelectionsDao.deleteByIds(any()),
+      ).thenAnswer((_) async => 0);
+      when(
+        () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
+      ).thenAnswer((_) async {
+        return;
+      });
     });
 
     tearDown(() async {
@@ -396,7 +407,7 @@ void main() {
         expect(result, hasLength(1));
         expect(result.firstOrNull?.id, 'conn-1');
         expect(result.firstOrNull?.name, 'My Connection');
-        expect(result.firstOrNull?.key, 'encrypted-key');
+        expect(result.firstOrNull?.hasKey, isTrue);
         expect(result.firstOrNull?.keySuffix, 'abc123');
         expect(result.firstOrNull?.workspaceId, 'ws-1');
       });
@@ -433,7 +444,7 @@ void main() {
         );
 
         expect(result.name, 'Renamed Connection');
-        expect(result.key, 'encrypted-key');
+        expect(result.hasKey, isTrue);
         final _ = verifyNever(() => mockEncryptionService.encrypt(any()));
         final _ = verify(
           () => mockEncryptionService.decrypt('encrypted-key'),
@@ -503,7 +514,7 @@ void main() {
           const ModelConnectionToUpdate(key: 'new-api-key-123456'),
         );
 
-        expect(result.key, 'encrypted-new-key');
+        expect(result.hasKey, isTrue);
         expect(result.keySuffix, '123456');
         final _ = verifyNever(() => mockEncryptionService.decrypt(any()));
         final _ = verify(
@@ -547,6 +558,72 @@ void main() {
                 ).captured.single
                 as ServiceConnectionsCompanion;
         expect(companion.url.present, isFalse);
+      });
+
+      test('preserves existing selection ids for unchanged models', () async {
+        final existingSelection = WorkspaceModelSelectionTable(
+          id: 'selection-existing',
+          createdAt: now,
+          updatedAt: now,
+          modelId: 'gpt-4',
+          modelConnectionId: 'conn-1',
+        );
+        final removedSelection = WorkspaceModelSelectionTable(
+          id: 'selection-removed',
+          createdAt: now,
+          updatedAt: now,
+          modelId: 'old-model',
+          modelConnectionId: 'conn-1',
+        );
+        when(
+          () => mockConnectionsDao.getModelConnectionById('conn-1'),
+        ).thenAnswer((_) async => connectionRow);
+        when(
+          () => mockProvidersDao.getProviderById('openai'),
+        ).thenAnswer((_) async => providerRow);
+        when(
+          () => mockEncryptionService.decrypt('encrypted-key'),
+        ).thenAnswer((_) async => existingKeyPayload);
+        when(
+          () => mockModelProviderServices.getWorkspaceModelSelections(any()),
+        ).thenAnswer(
+          (_) async => const [
+            WorkspaceModelSelectionToCreate(
+              modelId: 'gpt-4',
+              modelConnectionId: '',
+            ),
+            WorkspaceModelSelectionToCreate(
+              modelId: 'new-model',
+              modelConnectionId: '',
+            ),
+          ],
+        );
+        when(
+          () => mockConnectionsDao.updateModelConnection('conn-1', any()),
+        ).thenAnswer((_) async => connectionRow);
+        when(
+          () => mockSelectionsDao.getByModelConnectionId('conn-1'),
+        ).thenAnswer((_) async => [existingSelection, removedSelection]);
+
+        final result = await repository.updateModelConnection(
+          'conn-1',
+          const ModelConnectionToUpdate(name: 'Renamed Connection'),
+        );
+
+        expect(result.id, 'conn-1');
+        final _ = verify(
+          () => mockSelectionsDao.deleteByIds({'selection-removed'}),
+        ).called(1);
+        final captured =
+            verify(
+                  () => mockSelectionsDao.insertWorkspaceModelSelections(
+                    captureAny(),
+                  ),
+                ).captured.last
+                as List<WorkspaceModelSelectionsCompanion>;
+        expect(captured, hasLength(1));
+        expect(captured.single.modelId.value, 'new-model');
+        expect(captured.single.modelConnectionId.value, 'conn-1');
       });
     });
 

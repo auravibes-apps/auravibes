@@ -9,6 +9,16 @@ import 'package:drift/drift.dart';
 export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 
 @DataClassName('ToolsTable')
+@TableIndex.sql('''
+CREATE UNIQUE INDEX tools_native_identity
+ON tools (workspace_id, tool_id)
+WHERE workspace_tools_group_id IS NULL
+''')
+@TableIndex.sql('''
+CREATE UNIQUE INDEX tools_group_identity
+ON tools (workspace_tools_group_id, tool_id)
+WHERE workspace_tools_group_id IS NOT NULL
+''')
 class Tools extends Table with TableMixin {
   /// Reference to the workspace this tool belongs to.
   TextColumn get workspaceId => text().references(
@@ -26,12 +36,8 @@ class Tools extends Table with TableMixin {
   /// Type of tool (for example, 'web_search', 'calculator', etc).
   TextColumn get toolId => text()();
 
-  TextColumn get customName => text().nullable()();
-
   /// Optional description of the tool (from MCP or user-defined).
   TextColumn get description => text().nullable()();
-
-  TextColumn get additionalPrompt => text().nullable()();
 
   /// Tool configuration as JSON (optional).
   TextColumn get config => text().nullable()();
@@ -47,5 +53,5 @@ class Tools extends Table with TableMixin {
   )();
 
   @override
-  Set<Column> get primaryKey => {workspaceId, id};
+  Set<Column> get primaryKey => {id};
 }

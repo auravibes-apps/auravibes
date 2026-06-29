@@ -11,6 +11,14 @@ import 'package:auravibes_app/services/model_provider_services/model_provider.da
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 
+typedef _ModelConnectionUpdatePayload = ({
+  String? encryptedKey,
+  bool hasUrlUpdate,
+  String? keySuffix,
+  List<WorkspaceModelSelectionToCreate> models,
+  String? nextUrl,
+});
+
 /// Implementation of the [ModelConnectionRepository] interface.
 ///
 /// This class provides a concrete implementation of model connection data
@@ -74,27 +82,30 @@ class ModelConnectionRepository {
       throw ModelConnectionNoModelsException(modelConnection.modelId);
     }
 
-    final createdModelConnection = await _database.modelConnectionsDao
-        .insertModelConnection(
-          _modelProviderToCreateToCompanion(
-            modelConnection,
-            encryptedApiKey,
-            keySuffix,
-          ),
-        );
+    final createdModelConnection = await _database.transaction(() async {
+      final created = await _database.modelConnectionsDao.insertModelConnection(
+        _modelProviderToCreateToCompanion(
+          modelConnection,
+          encryptedApiKey,
+          keySuffix,
+        ),
+      );
 
-    final workspaceModelSelections = models
-        .map(
-          (model) =>
-              model.copyWith(modelConnectionId: createdModelConnection.id),
-        )
-        .toList();
+      final workspaceModelSelections = models
+          .map(
+            (model) => model.copyWith(modelConnectionId: created.id),
+          )
+          .toList();
 
-    await _database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
-      workspaceModelSelections
-          .map(_workspaceModelSelectionToCreateToCompanion)
-          .toList(),
-    );
+      await _database.workspaceModelSelectionsDao
+          .insertWorkspaceModelSelections(
+            workspaceModelSelections
+                .map(_workspaceModelSelectionToCreateToCompanion)
+                .toList(),
+          );
+
+      return created;
+    });
 
     return _modelProviderTableToEntity(createdModelConnection);
   }
@@ -190,6 +201,27 @@ class ModelConnectionRepository {
     String modelConnectionId,
     ModelConnectionToUpdate modelConnection,
   ) async {
+    final existing = await _editableModelConnection(modelConnectionId);
+    final payload = await _updatePayload(existing, modelConnection);
+    final updated = await _database.transaction(
+      () => _updateConnectionAndSelections(
+        modelConnectionId,
+        modelConnection,
+        payload,
+      ),
+    );
+    if (updated == null) {
+      throw ModelConnectionException(
+        'Model connection with ID "$modelConnectionId" not found',
+      );
+    }
+
+    return _modelProviderTableToEntity(updated);
+  }
+
+  Future<ServiceConnectionTable> _editableModelConnection(
+    String modelConnectionId,
+  ) async {
     final existing = await _database.modelConnectionsDao.getModelConnectionById(
       modelConnectionId,
     );
@@ -203,6 +235,14 @@ class ModelConnectionRepository {
         'OAuth model connections must be reconnected instead of edited.',
       );
     }
+
+    return existing;
+  }
+
+  Future<_ModelConnectionUpdatePayload> _updatePayload(
+    ServiceConnectionTable existing,
+    ModelConnectionToUpdate modelConnection,
+  ) async {
     final modelProvider = await _database.apiModelProvidersDao.getProviderById(
       existing.serviceId,
     );
@@ -247,30 +287,82 @@ class ModelConnectionRepository {
       throw ModelConnectionNoModelsException(existing.serviceId);
     }
 
-    final encryptedKey = key == null
-        ? existing.encryptedAuthValue
-        : await _encryptionService.encrypt(
-            ServiceConnectionAuthCodec.encodeSecret(
-              ServiceConnectionSecretApiKey(apiKey: key),
-            ),
-          );
+    final encryptedKey = await _updatedEncryptedKey(
+      key,
+      existing.encryptedAuthValue,
+    );
     final keySuffix = key == null ? existing.keySuffix : _keySuffix(key);
-    final updated = await _database.modelConnectionsDao.updateModelConnection(
-      modelConnectionId,
-      ServiceConnectionsCompanion(
-        name: .absentIfNull(modelConnection.name),
-        url: hasUrlUpdate ? Value(nextUrl) : const Value.absent(),
-        encryptedAuthValue: .absentIfNull(encryptedKey),
-        keySuffix: .absentIfNull(keySuffix),
+
+    return (
+      encryptedKey: encryptedKey,
+      hasUrlUpdate: hasUrlUpdate,
+      keySuffix: keySuffix,
+      models: models,
+      nextUrl: nextUrl,
+    );
+  }
+
+  Future<String?> _updatedEncryptedKey(
+    String? key,
+    String? existingEncryptedKey,
+  ) async {
+    if (key == null) return existingEncryptedKey;
+
+    return _encryptionService.encrypt(
+      ServiceConnectionAuthCodec.encodeSecret(
+        ServiceConnectionSecretApiKey(apiKey: key),
       ),
     );
-    if (updated == null) {
-      throw ModelConnectionException(
-        'Model connection with ID "$modelConnectionId" not found',
-      );
-    }
+  }
 
-    return _modelProviderTableToEntity(updated);
+  Future<ServiceConnectionTable?> _updateConnectionAndSelections(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
+    _ModelConnectionUpdatePayload payload,
+  ) async {
+    final updatedConnection = await _database.modelConnectionsDao
+        .updateModelConnection(
+          modelConnectionId,
+          ServiceConnectionsCompanion(
+            name: .absentIfNull(modelConnection.name),
+            url: payload.hasUrlUpdate
+                ? Value(payload.nextUrl)
+                : const Value.absent(),
+            encryptedAuthValue: .absentIfNull(payload.encryptedKey),
+            keySuffix: .absentIfNull(payload.keySuffix),
+          ),
+        );
+    if (updatedConnection == null) return null;
+
+    await _replaceWorkspaceModelSelections(modelConnectionId, payload.models);
+
+    return updatedConnection;
+  }
+
+  Future<void> _replaceWorkspaceModelSelections(
+    String modelConnectionId,
+    List<WorkspaceModelSelectionToCreate> models,
+  ) async {
+    final existingSelections = await _database.workspaceModelSelectionsDao
+        .getByModelConnectionId(modelConnectionId);
+    final existingModelIds = {
+      for (final selection in existingSelections) selection.modelId,
+    };
+    final nextModelIds = {for (final model in models) model.modelId};
+    final removedIds = {
+      for (final selection in existingSelections)
+        if (!nextModelIds.contains(selection.modelId)) selection.id,
+    };
+    final _ = await _database.workspaceModelSelectionsDao.deleteByIds(
+      removedIds,
+    );
+    await _database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
+      models
+          .where((model) => !existingModelIds.contains(model.modelId))
+          .map((model) => model.copyWith(modelConnectionId: modelConnectionId))
+          .map(_workspaceModelSelectionToCreateToCompanion)
+          .toList(),
+    );
   }
 
   static String? _nextConnectionUrl(String? url) {
@@ -348,11 +440,11 @@ class ModelConnectionRepository {
     return ModelConnectionEntity(
       id: modelConnection.id,
       name: modelConnection.name,
-      key: modelConnection.encryptedAuthValue ?? '',
       modelId: modelConnection.serviceId,
       createdAt: modelConnection.createdAt,
       updatedAt: modelConnection.updatedAt,
       workspaceId: modelConnection.workspaceId,
+      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
       authMode: _authMode(modelConnection.authenticationType),
       url: modelConnection.url,
       keySuffix: modelConnection.keySuffix,

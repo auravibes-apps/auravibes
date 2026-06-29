@@ -86,11 +86,11 @@ ModelConnectionEntity _modelConnection({
   return ModelConnectionEntity(
     id: id,
     name: name,
-    key: 'secret-key',
     modelId: modelId,
     createdAt: timestamp,
     updatedAt: timestamp,
     workspaceId: workspaceId,
+    hasKey: true,
     keySuffix: keySuffix,
   );
 }

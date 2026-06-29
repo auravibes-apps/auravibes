@@ -1,6 +1,5 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
-import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -11,11 +10,11 @@ abstract class ModelConnectionEntity with _$ModelConnectionEntity {
   const factory ModelConnectionEntity({
     required String id,
     required String name,
-    required String key,
     required String modelId,
     required DateTime createdAt,
     required DateTime updatedAt,
     required String workspaceId,
+    required bool hasKey,
     @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
     String? url,
     String? keySuffix,
@@ -71,6 +70,5 @@ abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
   const factory ModelConnectionFilter({
     @Default([]) List<String> workspaces,
-    List<CredentialsModelType>? types,
   }) = _ModelConnectionFilter;
 }

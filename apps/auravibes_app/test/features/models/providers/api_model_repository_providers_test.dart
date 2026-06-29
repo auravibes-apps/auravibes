@@ -70,11 +70,6 @@ class _FakeApiModelRepository implements ApiModelRepository {
   }
 
   @override
-  Future<int> deleteAllData() {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<void> replaceAllData({
     required List<ApiModelProviderEntity> providers,
     required List<ApiModelEntity> models,
@@ -162,7 +157,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
       ];
       final container = ProviderContainer(
@@ -190,7 +185,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
       ];
       final container = ProviderContainer(
@@ -261,7 +256,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
         const ApiModelEntity(
           modelProvider: 'anthropic',
@@ -270,7 +265,7 @@ void main() {
           limitContext: 200000,
           limitOutput: 4096,
           modalitiesInput: [],
-          modalitiesOuput: [],
+          modalitiesOutput: [],
         ),
       ];
       final container = ProviderContainer(

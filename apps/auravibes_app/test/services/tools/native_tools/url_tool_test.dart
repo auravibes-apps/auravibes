@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tools/url_tool.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -170,32 +171,42 @@ void main() {
       );
     });
 
-    test('POST with structured body auto-adds content-type', () async {
-      String? sentMethod;
-      Map<String, dynamic>? sentHeaders;
+    test('rejects mutating methods', () {
+      final tool = UrlTool();
+
+      for (final method in const ['POST', 'PUT', 'PATCH', 'DELETE']) {
+        expect(
+          tool
+              .runner('{"url": "https://example.com", "method": "$method"}')
+              .value,
+          throwsA(isA<FormatException>()),
+        );
+      }
+    });
+
+    test('sends HEAD requests', () async {
+      UrlRequestMethod? method;
       final dio = Dio()
         ..httpClientAdapter = _InspectAdapter(
-          body: 'created',
-          statusCode: 201,
-          onInspect: (method, headers, body) {
-            sentMethod = method;
-            sentHeaders = headers;
+          body: '',
+          statusCode: 200,
+          onInspect: (requestMethod, _, _) {
+            method = UrlRequestMethod.values.byName(
+              requestMethod?.toLowerCase() ?? '',
+            );
           },
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
-      final result = await tool
+      final _ = await tool
           .runner(
-            '{"url": "https://1.1.1.1", "method": "POST", "body": {"key": "val"}}',
+            '{'
+            '"url":"https://1.1.1.1",'
+            '"method":"HEAD"}',
           )
           .value;
 
-      expect(result, contains('Status: 201'));
-      expect(sentMethod, 'POST');
-      expect(
-        sentHeaders?.keys.any((k) => k.toLowerCase() == 'content-type'),
-        isTrue,
-      );
+      expect(method, UrlRequestMethod.head);
     });
 
     test('formats response with headers', () async {
@@ -206,6 +217,8 @@ void main() {
           extraHeaders: {
             'content-type': ['text/plain'],
             'x-custom': ['value'],
+            'set-cookie': ['session=secret'],
+            'authorization': ['Bearer secret'],
           },
         );
       final tool = UrlTool(urlService: UrlService(dio: dio));
@@ -215,6 +228,9 @@ void main() {
       expect(result, contains('Status: 200'));
       expect(result, contains('content-type: text/plain'));
       expect(result, contains('x-custom: value'));
+      expect(result, isNot(contains('set-cookie')));
+      expect(result, isNot(contains('authorization')));
+      expect(result, isNot(contains('secret')));
       expect(result, contains('Elapsed:'));
       expect(result, contains('ok'));
     });
@@ -222,95 +238,6 @@ void main() {
     test('type getter returns url', () {
       final tool = UrlTool();
       expect(tool.type, NativeToolType.url);
-    });
-
-    test(
-      'POST with string body does not auto-add content-type header',
-      () async {
-        Map<String, dynamic>? sentHeaders;
-        final dio = Dio()
-          ..httpClientAdapter = _InspectAdapter(
-            body: 'created',
-            statusCode: 201,
-            onInspect: (method, headers, body) {
-              sentHeaders = headers;
-            },
-          );
-        final tool = UrlTool(urlService: UrlService(dio: dio));
-
-        final result = await tool
-            .runner(
-              '{"url": "https://1.1.1.1", '
-              '"method": "POST", '
-              '"body": "plain text body"}',
-            )
-            .value;
-
-        expect(result, contains('Status: 201'));
-        expect(
-          (sentHeaders ?? fail('Expected sentHeaders to be non-null')).keys.map(
-            (key) => key.toLowerCase(),
-          ),
-          isNot(contains('content-type')),
-        );
-      },
-    );
-
-    test('handles POST method correctly', () async {
-      String? sentMethod;
-      final dio = Dio()
-        ..httpClientAdapter = _InspectAdapter(
-          body: 'ok',
-          statusCode: 200,
-          onInspect: (method, headers, body) {
-            sentMethod = method;
-          },
-        );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
-
-      final _ = await tool
-          .runner('{"url": "https://1.1.1.1", "method": "POST"}')
-          .value;
-
-      expect(sentMethod, 'POST');
-    });
-
-    test('handles PUT method correctly', () async {
-      String? sentMethod;
-      final dio = Dio()
-        ..httpClientAdapter = _InspectAdapter(
-          body: 'ok',
-          statusCode: 200,
-          onInspect: (method, headers, body) {
-            sentMethod = method;
-          },
-        );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
-
-      final _ = await tool
-          .runner('{"url": "https://1.1.1.1", "method": "PUT"}')
-          .value;
-
-      expect(sentMethod, 'PUT');
-    });
-
-    test('handles DELETE method correctly', () async {
-      String? sentMethod;
-      final dio = Dio()
-        ..httpClientAdapter = _InspectAdapter(
-          body: 'ok',
-          statusCode: 200,
-          onInspect: (method, headers, body) {
-            sentMethod = method;
-          },
-        );
-      final tool = UrlTool(urlService: UrlService(dio: dio));
-
-      final _ = await tool
-          .runner('{"url": "https://1.1.1.1", "method": "DELETE"}')
-          .value;
-
-      expect(sentMethod, 'DELETE');
     });
 
     test('rejects .localhost subdomain', () {

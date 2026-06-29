@@ -20,12 +20,29 @@ class SecretKeyManager {
 
   final FlutterSecureStorage _secureStorage;
   SecretKey? _cachedKey;
+  Future<SecretKey>? _pendingKey;
 
   /// Loads existing key or generates a new one.
   Future<SecretKey> getOrCreateSecretKey() async {
     final cachedKey = _cachedKey;
     if (cachedKey != null) return cachedKey;
 
+    final pendingKey = _pendingKey;
+    if (pendingKey != null) return pendingKey;
+
+    final newPendingKey = _loadOrCreateSecretKey();
+    _pendingKey = newPendingKey;
+
+    try {
+      return await newPendingKey;
+    } finally {
+      if (identical(_pendingKey, newPendingKey)) {
+        _pendingKey = null;
+      }
+    }
+  }
+
+  Future<SecretKey> _loadOrCreateSecretKey() async {
     final existingKey = await _loadKey();
     if (existingKey != null) {
       _cachedKey = existingKey;
@@ -60,12 +77,7 @@ class SecretKeyManager {
   /// Clears the cached key (useful for logout).
   void clearCache() {
     _cachedKey = null;
-  }
-
-  /// Deletes the key entirely (use with caution - data will be unrecoverable).
-  Future<void> deleteKey() async {
-    await _secureStorage.delete(key: _keyStorageKey);
-    _cachedKey = null;
+    _pendingKey = null;
   }
 }
 

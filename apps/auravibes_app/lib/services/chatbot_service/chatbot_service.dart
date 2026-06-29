@@ -1,11 +1,11 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
@@ -16,18 +16,17 @@ final _anthropicSafeToolCallIdChar = RegExp('[a-zA-Z0-9_-]');
 
 class ChatbotService {
   ChatbotService({
-    required this.encryptionService,
+    required ServiceConnectionRepository serviceConnectionRepository,
     OAuthCredentialService? oauthCredentialService,
     ProviderFactory? providerFactory,
   }) : _providerFactory =
            providerFactory ??
            ProviderFactory(
-             encryptionService: encryptionService,
+             serviceConnectionRepository: serviceConnectionRepository,
              resolveOAuthAccessToken:
                  oauthCredentialService?.getValidAccessToken,
            );
 
-  EncryptionService encryptionService;
   final ProviderFactory _providerFactory;
 
   Stream<ChatResult<ChatMessage>> sendMessage(

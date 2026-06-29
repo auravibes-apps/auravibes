@@ -35,7 +35,7 @@ void main() {
       id: 'gpt-4',
       name: 'GPT-4',
       modalitiesInput: ['text'],
-      modalitiesOuput: ['text'],
+      modalitiesOutput: ['text'],
       openWeights: false,
       supportsReasoning: false,
       isCanonical: true,
@@ -121,7 +121,7 @@ void main() {
         expect(result.firstOrNull?.limitContext, 128000);
         expect(result.firstOrNull?.limitOutput, 4096);
         expect(result.firstOrNull?.modalitiesInput, ['text']);
-        expect(result.firstOrNull?.modalitiesOuput, ['text']);
+        expect(result.firstOrNull?.modalitiesOutput, ['text']);
         expect(result.firstOrNull?.costInput, 30);
         expect(result.firstOrNull?.costOutput, 60);
         expect(result.firstOrNull?.openWeights, false);
@@ -213,7 +213,7 @@ void main() {
           limitContext: 128000,
           limitOutput: 4096,
           modalitiesInput: ['text'],
-          modalitiesOuput: ['text'],
+          modalitiesOutput: ['text'],
         );
 
         when(
@@ -240,7 +240,7 @@ void main() {
             limitContext: 128000,
             limitOutput: 4096,
             modalitiesInput: [],
-            modalitiesOuput: [],
+            modalitiesOutput: [],
           ),
         ]);
 
@@ -253,37 +253,20 @@ void main() {
       });
     });
 
-    group('deleteAllData', () {
-      test('returns sum of deleted models and providers', () async {
-        when(
-          () => fixture.mockModelsDao.deleteAllModels(),
-        ).thenAnswer((_) async => 5);
-        when(
-          () => fixture.mockProvidersDao.deleteAllProviders(),
-        ).thenAnswer((_) async => 3);
-
-        final result = await fixture.repository.deleteAllData();
-
-        expect(result, 8);
-        verify(() => fixture.mockModelsDao.deleteAllModels()).called(1);
-        verify(() => fixture.mockProvidersDao.deleteAllProviders()).called(1);
-      });
-    });
-
     group('replaceAllData', () {
-      test('runs delete and upserts in a transaction', () async {
-        when(
-          () => fixture.mockModelsDao.deleteAllModels(),
-        ).thenAnswer((_) async => 5);
-        when(
-          () => fixture.mockProvidersDao.deleteAllProviders(),
-        ).thenAnswer((_) async => 3);
+      test('upserts providers and models in a transaction', () async {
         when(
           () => fixture.mockProvidersDao.batchUpsertProviders(any()),
         ).thenAnswer((_) async => [providerRow]);
         when(
           () => fixture.mockModelsDao.batchUpsertModels(any()),
         ).thenThrow(Exception('DB error'));
+        when(
+          () => fixture.mockModelsDao.getAllModels(),
+        ).thenAnswer((_) async => const []);
+        when(
+          () => fixture.mockProvidersDao.getAllProviders(),
+        ).thenAnswer((_) async => const []);
 
         await expectLater(
           fixture.repository.replaceAllData(
@@ -303,7 +286,7 @@ void main() {
                 limitContext: 128000,
                 limitOutput: 4096,
                 modalitiesInput: [],
-                modalitiesOuput: [],
+                modalitiesOutput: [],
               ),
             ],
           ),
@@ -311,12 +294,79 @@ void main() {
         );
 
         expect(fixture.database.transactionCount, 1);
-        verify(() => fixture.mockModelsDao.deleteAllModels()).called(1);
-        verify(() => fixture.mockProvidersDao.deleteAllProviders()).called(1);
+        final _ = verifyNever(
+          () => fixture.mockModelsDao.deleteAllModels(),
+        );
+        final _ = verifyNever(
+          () => fixture.mockProvidersDao.deleteAllProviders(),
+        );
         verify(
           () => fixture.mockProvidersDao.batchUpsertProviders(any()),
         ).called(1);
         verify(() => fixture.mockModelsDao.batchUpsertModels(any())).called(1);
+      });
+
+      test('prunes rows missing from replacement data', () async {
+        when(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).thenAnswer((_) async => [providerRow]);
+        when(
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
+        ).thenAnswer((_) async => [modelRow]);
+        when(() => fixture.mockModelsDao.getAllModels()).thenAnswer(
+          (_) async => [
+            modelRow,
+            modelRow.copyWith(id: 'old-model'),
+          ],
+        );
+        when(() => fixture.mockProvidersDao.getAllProviders()).thenAnswer(
+          (_) async => [
+            providerRow,
+            providerRow.copyWith(id: 'old-provider'),
+          ],
+        );
+        when(
+          () => fixture.mockModelsDao.deleteModelByProviderAndId(
+            'openai',
+            'old-model',
+          ),
+        ).thenAnswer((_) async => true);
+        when(
+          () => fixture.mockProvidersDao.deleteProvider('old-provider'),
+        ).thenAnswer((_) async => true);
+
+        await fixture.repository.replaceAllData(
+          providers: const [
+            ApiModelProviderEntity(
+              id: 'openai',
+              name: 'OpenAI',
+              type: ModelProvidersType.openai,
+              url: 'https://api.openai.com',
+            ),
+          ],
+          models: const [
+            ApiModelEntity(
+              modelProvider: 'openai',
+              id: 'gpt-4',
+              name: 'GPT-4',
+              limitContext: 128000,
+              limitOutput: 4096,
+              modalitiesInput: [],
+              modalitiesOutput: [],
+            ),
+          ],
+        );
+
+        expect(fixture.database.transactionCount, 1);
+        verify(
+          () => fixture.mockModelsDao.deleteModelByProviderAndId(
+            'openai',
+            'old-model',
+          ),
+        ).called(1);
+        verify(
+          () => fixture.mockProvidersDao.deleteProvider('old-provider'),
+        ).called(1);
       });
     });
 
