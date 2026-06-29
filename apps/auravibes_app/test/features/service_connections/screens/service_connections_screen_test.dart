@@ -111,12 +111,15 @@ void main() {
 
     expect(find.text('Second Token'), findsOneWidget);
 
-    final _ = await credentialsRepository.createCredential(
-      workspace.id,
-      const SkillCredentialToCreate(
-        credentialDefinitionId: 'missing-definition',
+    final _ = await database.skillCredentialsDao.createCredential(
+      ServiceConnectionsCompanion.insert(
         name: 'Stale Token',
-        attributes: {'token': 'secret-value'},
+        serviceId: 'missing-definition',
+        kind: ServiceConnectionKindTable.skillCredential,
+        authenticationType: ServiceAuthenticationTypeTable.apiKey,
+        encryptedAuthValue: const Value('encrypted-secret'),
+        keySuffix: const Value('value'),
+        workspaceId: workspace.id,
       ),
     );
     final _ = await tester.pumpAndSettle();

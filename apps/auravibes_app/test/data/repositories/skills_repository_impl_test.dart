@@ -1374,7 +1374,10 @@ void main() {
 
       final executionCredential = await skillCredentialsRepository
           .getCredentialById(credential.id);
-      expect(executionCredential?.attributes, {
+      expect(executionCredential?.attributes, {'account_id': 'acct-123'});
+      final executionAttributes = await skillCredentialsRepository
+          .readCredentialAttributes(credential.id);
+      expect(executionAttributes, {
         'account_id': 'acct-123',
         'api_key': 'secret-token',
         'optional_token': 'optional-secret',
@@ -1400,7 +1403,10 @@ void main() {
       );
 
       expect(updated.name, 'Updated Credential');
-      expect(updated.attributes, {
+      expect(updated.attributes, {'account_id': 'acct-999'});
+      final updatedAttributes = await skillCredentialsRepository
+          .readCredentialAttributes(credential.id);
+      expect(updatedAttributes, {
         'account_id': 'acct-999',
         'api_key': 'new-secret',
       });
@@ -1418,7 +1424,10 @@ void main() {
               secretAttributes: {'api_key': 'second-secret'},
             ),
           );
-      expect(secretOnlyUpdate.attributes, {
+      expect(secretOnlyUpdate.attributes, {'account_id': 'acct-999'});
+      final secretOnlyAttributes = await skillCredentialsRepository
+          .readCredentialAttributes(credential.id);
+      expect(secretOnlyAttributes, {
         'account_id': 'acct-999',
         'api_key': 'second-secret',
       });
