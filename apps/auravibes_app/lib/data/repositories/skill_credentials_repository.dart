@@ -58,7 +58,7 @@ class SkillCredentialsRepository {
   ) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) {
-      throw StateError('Skill credential not found: $credentialId');
+      throw SkillCredentialsException.notFound(credentialId);
     }
 
     return {
@@ -136,7 +136,7 @@ class SkillCredentialsRepository {
   ) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) {
-      throw StateError('Skill credential not found: $credentialId');
+      throw SkillCredentialsException.notFound(credentialId);
     }
     final definitions = await _attributeDefinitions(row.serviceId);
     final existingSecrets = await _secretAttributes(row);
@@ -170,7 +170,7 @@ class SkillCredentialsRepository {
       ),
     );
     if (updated == null) {
-      throw StateError('Skill credential not found: $credentialId');
+      throw SkillCredentialsException.notFound(credentialId);
     }
 
     return _tableToEntity(updated);
@@ -224,8 +224,8 @@ class SkillCredentialsRepository {
     final definition = await _database.skillCredentialDefinitionsDao
         .getDefinitionById(credentialDefinitionId);
     if (definition == null) {
-      throw StateError(
-        'Skill credential definition not found: $credentialDefinitionId',
+      throw SkillCredentialsException.definitionNotFound(
+        credentialDefinitionId,
       );
     }
 
@@ -298,4 +298,25 @@ class SkillCredentialsRepository {
   String _metadataJson(Map<String, String> attributes) {
     return jsonEncode({'attributes': attributes});
   }
+}
+
+class SkillCredentialsException implements Exception {
+  const SkillCredentialsException(this.message);
+
+  factory SkillCredentialsException.notFound(String credentialId) {
+    return SkillCredentialsException(
+      'Skill credential not found: $credentialId',
+    );
+  }
+
+  factory SkillCredentialsException.definitionNotFound(String definitionId) {
+    return SkillCredentialsException(
+      'Skill credential definition not found: $definitionId',
+    );
+  }
+
+  final String message;
+
+  @override
+  String toString() => 'SkillCredentialsException: $message';
 }

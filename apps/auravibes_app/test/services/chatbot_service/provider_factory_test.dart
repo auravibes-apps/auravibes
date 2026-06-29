@@ -330,12 +330,20 @@ Map<String, dynamic>? _generationConfigJson(Object? config) {
 }
 
 class _FakeServiceConnectionRepository implements ServiceConnectionRepository {
-  const _FakeServiceConnectionRepository({this.apiKey = 'test-api-key'});
+  const _FakeServiceConnectionRepository({
+    this.apiKey = 'test-api-key',
+  });
+
+  static const _expectedId = 'mc1';
 
   final String apiKey;
 
   @override
   Future<ServiceConnectionSecret> readSecret(String id) async {
+    if (id != _expectedId) {
+      throw StateError('Unexpected credential id: $id');
+    }
+
     return ServiceConnectionSecretApiKey(apiKey: apiKey);
   }
 

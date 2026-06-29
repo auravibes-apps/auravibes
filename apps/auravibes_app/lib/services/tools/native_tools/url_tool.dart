@@ -240,7 +240,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
       ),
     };
 
-    await ensurePublicHost(uri.host);
+    if (headers == null || headers.isEmpty) {
+      await ensurePublicHost(uri.host);
+    } else {
+      final _ = await requirePublicHttpsUri(uri.toString());
+    }
 
     return UrlRequest(
       url: uri.toString(),

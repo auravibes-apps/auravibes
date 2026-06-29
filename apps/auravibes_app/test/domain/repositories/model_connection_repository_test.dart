@@ -13,7 +13,12 @@ class _StubModelConnectionRepository implements ModelConnectionRepository {
   Future<List<ModelConnectionEntity>> getModelConnections(
     ModelConnectionFilter filter,
   ) async {
-    return connections;
+    final workspaces = filter.workspaces;
+    if (workspaces.isEmpty) return connections;
+
+    return connections
+        .where((connection) => workspaces.contains(connection.workspaceId))
+        .toList();
   }
 
   @override
@@ -98,6 +103,15 @@ void main() {
           createdAt: DateTime(2024),
           updatedAt: DateTime(2024),
           workspaceId: 'ws-1',
+          hasKey: true,
+        ),
+        ModelConnectionEntity(
+          id: 'mc-2',
+          name: 'Other',
+          modelId: 'claude-3',
+          createdAt: DateTime(2024),
+          updatedAt: DateTime(2024),
+          workspaceId: 'ws-2',
           hasKey: true,
         ),
       ];

@@ -349,7 +349,7 @@ void main() {
 
     test('toString includes cause when provided', () {
       final cause = Exception('inner');
-      final ex = ConversationToolsException('test', cause);
+      final ex = ConversationToolsException('test', cause: cause);
       expect(ex.toString(), contains('Caused by:'));
     });
   });

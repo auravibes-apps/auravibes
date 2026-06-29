@@ -367,8 +367,14 @@ class _FakeCredentialsRepository implements SkillCredentialsRepository {
   }
 
   @override
-  Future<Map<String, String>> readCredentialAttributes(String credentialId) {
-    return Future.value(const {});
+  Future<Map<String, String>> readCredentialAttributes(
+    String credentialId,
+  ) async {
+    for (final credential in _subject.value) {
+      if (credential.id == credentialId) return credential.attributes;
+    }
+
+    throw StateError('Skill credential not found: $credentialId');
   }
 }
 

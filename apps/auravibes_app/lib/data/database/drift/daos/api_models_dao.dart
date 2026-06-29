@@ -82,6 +82,16 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     return deleteCount > 0;
   }
 
+  Future<bool> deleteModelByProviderAndId(String providerId, String id) async {
+    final deleteCount =
+        await (delete(apiModels)..where(
+              (t) => t.modelProvider.equals(providerId) & t.id.equals(id),
+            ))
+            .go();
+
+    return deleteCount > 0;
+  }
+
   /// Deletes all models from a specific provider.
   ///
   /// Deletes all models with the given [providerId].

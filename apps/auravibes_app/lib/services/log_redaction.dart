@@ -23,7 +23,7 @@ final _secretPatterns = <RegExp>[
     caseSensitive: false,
   ),
   RegExp(
-    r'\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|token|secret|password)\s*[:=]\s*)[^\s,;&]+',
+    r'\b((?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|token|secret|password)\s*[:=]\s*)[^\s,;&]+',
     caseSensitive: false,
   ),
   RegExp(
@@ -33,7 +33,7 @@ final _secretPatterns = <RegExp>[
     caseSensitive: false,
   ),
   RegExp(
-    r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|token|secret|password)=)[^&#\s]+',
+    r'([?&](?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|token|secret|password)=)[^&#\s]+',
     caseSensitive: false,
   ),
 ];

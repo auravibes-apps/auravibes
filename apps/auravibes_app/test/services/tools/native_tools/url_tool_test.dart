@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tools/url_tool.dart';
+import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -181,6 +182,31 @@ void main() {
           throwsA(isA<FormatException>()),
         );
       }
+    });
+
+    test('sends HEAD requests', () async {
+      UrlRequestMethod? method;
+      final dio = Dio()
+        ..httpClientAdapter = _InspectAdapter(
+          body: '',
+          statusCode: 200,
+          onInspect: (requestMethod, _, _) {
+            method = UrlRequestMethod.values.byName(
+              requestMethod?.toLowerCase() ?? '',
+            );
+          },
+        );
+      final tool = UrlTool(urlService: UrlService(dio: dio));
+
+      final _ = await tool
+          .runner(
+            '{'
+            '"url":"https://1.1.1.1",'
+            '"method":"HEAD"}',
+          )
+          .value;
+
+      expect(method, UrlRequestMethod.head);
     });
 
     test('formats response with headers', () async {

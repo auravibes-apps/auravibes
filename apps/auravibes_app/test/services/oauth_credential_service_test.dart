@@ -134,8 +134,8 @@ void main() {
                   expiresIn: 1,
                 ),
                 clientId: 'client-id',
-                authorizationEndpoint: 'https://example.com/authorize',
-                tokenEndpoint: 'https://example.com/token',
+                authorizationEndpoint: 'https://1.1.1.1/authorize',
+                tokenEndpoint: 'https://1.1.1.1/token',
               ),
             ),
           );
@@ -185,8 +185,8 @@ void main() {
                   expiresIn: 3600,
                 ),
                 clientId: 'client-id',
-                authorizationEndpoint: 'https://example.com/authorize',
-                tokenEndpoint: 'https://example.com/token',
+                authorizationEndpoint: 'https://1.1.1.1/authorize',
+                tokenEndpoint: 'https://1.1.1.1/token',
               ),
             ),
           );
@@ -300,8 +300,8 @@ void main() {
                     expiresIn: 3600,
                   ),
                   clientId: 'client-id',
-                  authorizationEndpoint: 'https://example.com/authorize',
-                  tokenEndpoint: 'https://example.com/token',
+                  authorizationEndpoint: 'https://1.1.1.1/authorize',
+                  tokenEndpoint: 'https://1.1.1.1/token',
                 ),
               ),
             );
@@ -313,8 +313,8 @@ void main() {
         final oauth = auth as McpAuthenticationTypeOAuth;
         expect(oauth.token.accessToken, 'access-token');
         expect(oauth.clientId, 'client-id');
-        expect(oauth.authorizationEndpoint, 'https://example.com/authorize');
-        expect(oauth.tokenEndpoint, 'https://example.com/token');
+        expect(oauth.authorizationEndpoint, 'https://1.1.1.1/authorize');
+        expect(oauth.tokenEndpoint, 'https://1.1.1.1/token');
       },
     );
 
@@ -337,8 +337,8 @@ void main() {
                   expiresIn: 3600,
                 ),
                 clientId: 'client-id',
-                authorizationEndpoint: 'https://example.com/authorize',
-                tokenEndpoint: 'https://example.com/token',
+                authorizationEndpoint: 'https://1.1.1.1/authorize',
+                tokenEndpoint: 'https://1.1.1.1/token',
               ),
             ),
           );
@@ -402,7 +402,7 @@ void main() {
             refreshToken: 'refresh',
           ),
           metadata: const ServiceConnectionMetadata(
-            tokenEndpoint: 'https://example.com/token',
+            tokenEndpoint: 'https://1.1.1.1/token',
           ),
           expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
         );
@@ -448,7 +448,7 @@ void main() {
             refreshToken: 'refresh',
           ),
           metadata: const ServiceConnectionMetadata(
-            tokenEndpoint: 'https://example.com/token',
+            tokenEndpoint: 'https://1.1.1.1/token',
           ),
           expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
         );

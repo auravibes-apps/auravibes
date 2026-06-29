@@ -261,6 +261,12 @@ void main() {
         when(
           () => fixture.mockModelsDao.batchUpsertModels(any()),
         ).thenThrow(Exception('DB error'));
+        when(
+          () => fixture.mockModelsDao.getAllModels(),
+        ).thenAnswer((_) async => const []);
+        when(
+          () => fixture.mockProvidersDao.getAllProviders(),
+        ).thenAnswer((_) async => const []);
 
         await expectLater(
           fixture.repository.replaceAllData(
@@ -298,6 +304,69 @@ void main() {
           () => fixture.mockProvidersDao.batchUpsertProviders(any()),
         ).called(1);
         verify(() => fixture.mockModelsDao.batchUpsertModels(any())).called(1);
+      });
+
+      test('prunes rows missing from replacement data', () async {
+        when(
+          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
+        ).thenAnswer((_) async => [providerRow]);
+        when(
+          () => fixture.mockModelsDao.batchUpsertModels(any()),
+        ).thenAnswer((_) async => [modelRow]);
+        when(() => fixture.mockModelsDao.getAllModels()).thenAnswer(
+          (_) async => [
+            modelRow,
+            modelRow.copyWith(id: 'old-model'),
+          ],
+        );
+        when(() => fixture.mockProvidersDao.getAllProviders()).thenAnswer(
+          (_) async => [
+            providerRow,
+            providerRow.copyWith(id: 'old-provider'),
+          ],
+        );
+        when(
+          () => fixture.mockModelsDao.deleteModelByProviderAndId(
+            'openai',
+            'old-model',
+          ),
+        ).thenAnswer((_) async => true);
+        when(
+          () => fixture.mockProvidersDao.deleteProvider('old-provider'),
+        ).thenAnswer((_) async => true);
+
+        await fixture.repository.replaceAllData(
+          providers: const [
+            ApiModelProviderEntity(
+              id: 'openai',
+              name: 'OpenAI',
+              type: ModelProvidersType.openai,
+              url: 'https://api.openai.com',
+            ),
+          ],
+          models: const [
+            ApiModelEntity(
+              modelProvider: 'openai',
+              id: 'gpt-4',
+              name: 'GPT-4',
+              limitContext: 128000,
+              limitOutput: 4096,
+              modalitiesInput: [],
+              modalitiesOutput: [],
+            ),
+          ],
+        );
+
+        expect(fixture.database.transactionCount, 1);
+        verify(
+          () => fixture.mockModelsDao.deleteModelByProviderAndId(
+            'openai',
+            'old-model',
+          ),
+        ).called(1);
+        verify(
+          () => fixture.mockProvidersDao.deleteProvider('old-provider'),
+        ).called(1);
       });
     });
 

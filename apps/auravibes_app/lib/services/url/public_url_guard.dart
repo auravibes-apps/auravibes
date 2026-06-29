@@ -78,6 +78,10 @@ bool _isPrivateIPv4(List<int> b) {
       firstByte == 127 ||
       firstByte == 0 ||
       (firstByte == 100 && b[1] >= 64 && b[1] <= 127) ||
+      (firstByte == 192 && b[1] == 0 && b[2] == 2) ||
+      (firstByte == 198 && (b[1] == 18 || b[1] == 19)) ||
+      (firstByte == 198 && b[1] == 51 && b[2] == 100) ||
+      (firstByte == 203 && b[1] == 0 && b[2] == 113) ||
       (firstByte >= 224 && firstByte <= 239) ||
       firstByte >= 240;
 }

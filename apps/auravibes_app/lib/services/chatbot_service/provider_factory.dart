@@ -84,6 +84,9 @@ class ProviderFactory {
       return resolver(config.modelConnection.id);
     }
 
+    if (!config.modelConnection.hasKey) {
+      throw const FormatException('Model connection has no API key.');
+    }
     final secret = await serviceConnectionRepository.readSecret(
       config.modelConnection.id,
     );

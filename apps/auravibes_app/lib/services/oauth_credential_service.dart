@@ -157,9 +157,8 @@ class OAuthCredentialService {
       throw const FormatException('Missing OAuth refresh configuration.');
     }
 
-    final tokenUri = await requirePublicHttpsUri(tokenEndpoint);
-
     try {
+      final tokenUri = await requirePublicHttpsUri(tokenEndpoint);
       final response = await _dio.post<Object?>(
         tokenUri.toString(),
         data: {
@@ -198,6 +197,9 @@ class OAuthCredentialService {
           error: 'OAuth refresh token was rejected.',
         );
       }
+      rethrow;
+    } on FormatException catch (e) {
+      await markReauthRequired(serviceConnectionId, error: e.message);
       rethrow;
     }
   }

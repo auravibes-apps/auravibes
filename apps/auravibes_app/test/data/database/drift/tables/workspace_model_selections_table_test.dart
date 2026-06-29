@@ -87,6 +87,13 @@ void main() {
         (r) => r.read<String>('name') == 'id',
       );
       expect(idCol.read<int>('pk'), greaterThan(0));
+      expect(columns.where((r) => r.read<int>('pk') > 0), hasLength(1));
+      expect(
+        columns
+            .firstWhere((r) => r.read<String>('name') == 'model_id')
+            .read<int>('pk'),
+        0,
+      );
     });
   });
 

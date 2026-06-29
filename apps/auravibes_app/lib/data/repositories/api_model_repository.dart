@@ -111,6 +111,31 @@ class ApiModelRepository {
     await _database.transaction(() async {
       final _ = await batchUpsertProviders(providers);
       final _ = await batchUpsertModels(models);
+      final nextProviderIds = providers.map((provider) => provider.id).toSet();
+      final nextModelKeys = models
+          .map((model) => (provider: model.modelProvider, id: model.id))
+          .toSet();
+
+      final existingModels = await _database.apiModelsDao.getAllModels();
+      for (final model in existingModels) {
+        final key = (provider: model.modelProvider, id: model.id);
+        if (nextModelKeys.contains(key)) continue;
+
+        final _ = await _database.apiModelsDao.deleteModelByProviderAndId(
+          model.modelProvider,
+          model.id,
+        );
+      }
+
+      final existingProviders = await _database.apiModelProvidersDao
+          .getAllProviders();
+      for (final provider in existingProviders) {
+        if (nextProviderIds.contains(provider.id)) continue;
+
+        final _ = await _database.apiModelProvidersDao.deleteProvider(
+          provider.id,
+        );
+      }
     });
   }
 
