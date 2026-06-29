@@ -38,8 +38,24 @@ scripts:
   - &script_parse_tag
     name: Parse Tag and Set Environment
     script: |
-      # Parse tag to extract version and environment
-      TAG_VERSION=${CM_TAG##*-v} # Remove '<package-name>-v' prefix
+      RELEASE_TAG=${CM_TAG:-}
+
+      if [ -z "$RELEASE_TAG" ]; then
+        git fetch --tags --force
+        RELEASE_TAG=$(git tag --points-at HEAD --list 'auravibes_app-v*' | tail -n 1)
+      fi
+
+      if [ -z "$RELEASE_TAG" ]; then
+        RELEASE_TAG=$(git describe --tags --match 'auravibes_app-v*' --abbrev=0 2>/dev/null || true)
+      fi
+
+      if [ -n "$RELEASE_TAG" ]; then
+        TAG_VERSION=${RELEASE_TAG##*-v}
+      else
+        TAG_VERSION=$(grep '^version:' apps/auravibes_app/pubspec.yaml | awk '{print $2}')
+      fi
+
+      echo "Release tag: $RELEASE_TAG"
 
       if [[ $TAG_VERSION == *"-beta"* ]]; then
         FLAVOR="beta"
@@ -49,6 +65,7 @@ scripts:
 
       # Extract version from tag (1.2.3 or 1.2.3-beta.1)
       VERSION=${TAG_VERSION%%-*}
+      VERSION=${VERSION%%+*}
       echo "Version: $VERSION"
 
       # Set environment variables for build
@@ -57,6 +74,7 @@ scripts:
       # Set automatic build number
       echo "BUILD_NUMBER=$PROJECT_BUILD_NUMBER" >> $CM_ENV
       echo "FLAVOR=$FLAVOR" >> $CM_ENV
+      echo "RELEASE_TAG=$RELEASE_TAG" >> $CM_ENV
 
 workflows:
   # iOS Release Workflow
@@ -116,19 +134,17 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
-        beta_groups:
-          - Beta Testers
         submit_to_app_store: false
 
       scripts:
         - name: Publish iOS artifacts to GitHub Release
           script: |
-            if [ -z "${CM_TAG}" ]; then
+            if [ -z "${RELEASE_TAG}" ]; then
               echo "Not a tag build, will not publish to GitHub release"
               exit 0
             fi
             cd apps/auravibes_app
-            gh release upload "${CM_TAG}" build/ios/ipa/*.ipa --clobber
+            gh release upload "${RELEASE_TAG}" build/ios/ipa/*.ipa --clobber
 
   # Android Release Workflow
   release-android:
@@ -195,9 +211,9 @@ workflows:
       scripts:
         - name: Publish Android artifacts to GitHub Release
           script: |
-            if [ -z "${CM_TAG}" ]; then
+            if [ -z "${RELEASE_TAG}" ]; then
               echo "Not a tag build, will not publish to GitHub release"
               exit 0
             fi
             cd apps/auravibes_app
-            gh release upload "${CM_TAG}" build/app/outputs/bundle/**/*.aab --clobber
+            gh release upload "${RELEASE_TAG}" build/app/outputs/bundle/**/*.aab --clobber
