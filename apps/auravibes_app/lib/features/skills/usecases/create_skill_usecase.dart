@@ -1,8 +1,8 @@
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
+import 'package:auravibes_app/utils/generate_skill_slug.dart';
 import 'package:riverpod/riverpod.dart';
 
 class CreateSkillUsecase {

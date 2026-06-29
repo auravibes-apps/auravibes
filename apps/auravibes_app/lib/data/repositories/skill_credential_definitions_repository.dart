@@ -1,7 +1,7 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credential_definitions_dao.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
+import 'package:auravibes_app/utils/generate_skill_slug.dart';
 import 'package:drift/drift.dart';
 
 class SkillCredentialDefinitionsRepository {

@@ -99,11 +99,11 @@ const _provider = ApiModelProviderEntity(
 final _connection = ModelConnectionEntity(
   id: 'conn-1',
   name: 'Test Conn',
-  key: 'key-v-1',
   modelId: 'model-1',
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
   workspaceId: 'ws-1',
+  hasKey: true,
 );
 
 final _completion = WorkspaceModelSelectionWithConnectionEntity(

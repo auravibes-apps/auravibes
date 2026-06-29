@@ -172,11 +172,11 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection(
     modelConnection: ModelConnectionEntity(
       id: connectionId,
       name: connectionName,
-      key: 'key',
       modelId: providerName.toLowerCase(),
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
       workspaceId: 'ws-1',
+      hasKey: true,
     ),
     modelsProvider: ApiModelProviderEntity(
       id: providerName.toLowerCase(),

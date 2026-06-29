@@ -1,23 +1,21 @@
 // Required: Tests repeat generation config lookups for readability.
 // Required: Tests keep helper functions top-level.
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
-import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 
 void main() {
   group('ProviderFactory', () {
-    final factory = ProviderFactory(
-      encryptionService: _FakeEncryptionService(),
+    const factory = ProviderFactory(
+      serviceConnectionRepository: _FakeServiceConnectionRepository(),
     );
 
     WorkspaceModelSelectionWithConnectionEntity makeConfig({
@@ -43,11 +41,11 @@ void main() {
         modelConnection: ModelConnectionEntity(
           id: 'mc1',
           name: 'Test',
-          key: 'encrypted-key',
           modelId: connectionModelId ?? modelId,
           createdAt: DateTime(2025),
           updatedAt: DateTime(2025),
           workspaceId: 'w1',
+          hasKey: true,
           authMode: authMode,
           url: connectionUrl,
         ),
@@ -69,7 +67,7 @@ void main() {
 
     test('creates Genkit for Codex OAuth without model discovery', () async {
       final oauthFactory = ProviderFactory(
-        encryptionService: _FakeEncryptionService(),
+        serviceConnectionRepository: const _FakeServiceConnectionRepository(),
         resolveOAuthAccessToken: (_) async => 'oauth-token',
       );
       final config = makeConfig(
@@ -95,9 +93,11 @@ void main() {
       expect(ref.name, 'openai_codex/gpt-4o');
     });
 
-    test('creates Genkit with legacy plaintext API key', () async {
-      final legacyFactory = ProviderFactory(
-        encryptionService: _FakeEncryptionService('legacy-api-key'),
+    test('creates Genkit with API key secret', () async {
+      const legacyFactory = ProviderFactory(
+        serviceConnectionRepository: _FakeServiceConnectionRepository(
+          apiKey: 'legacy-api-key',
+        ),
       );
       final config = makeConfig(type: ModelProvidersType.openai);
 
@@ -329,27 +329,16 @@ Map<String, dynamic>? _generationConfigJson(Object? config) {
   };
 }
 
-class _FakeEncryptionService extends EncryptionService {
-  _FakeEncryptionService([this._decrypted]) : super(_FakeSecretKeyManager());
+class _FakeServiceConnectionRepository implements ServiceConnectionRepository {
+  const _FakeServiceConnectionRepository({this.apiKey = 'test-api-key'});
 
-  final String? _decrypted;
-
-  @override
-  Future<String> decrypt(String _) async {
-    final decrypted = _decrypted;
-    if (decrypted != null) return decrypted;
-
-    return ServiceConnectionAuthCodec.encodeSecret(
-      const ServiceConnectionSecretApiKey(apiKey: 'test-api-key'),
-    );
-  }
-}
-
-class _FakeSecretKeyManager extends SecretKeyManager {
-  _FakeSecretKeyManager() : super();
+  final String apiKey;
 
   @override
-  Future<SecretKey> getOrCreateSecretKey() async {
-    return SecretKey(List<int>.generate(32, (i) => i));
+  Future<ServiceConnectionSecret> readSecret(String id) async {
+    return ServiceConnectionSecretApiKey(apiKey: apiKey);
   }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

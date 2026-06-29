@@ -1,16 +1,15 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
-import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:collection/collection.dart';
-import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' as genkit;
 
@@ -19,26 +18,16 @@ void main() {
     test('can be constructed with required dependencies', () {
       expect(
         () => ChatbotService(
-          encryptionService: _FakeEncryptionService(),
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
         ),
         returnsNormally,
       );
     });
 
-    test('exposes injected encryption dependency', () {
-      final encryption = _FakeEncryptionService();
-
-      final service = ChatbotService(
-        encryptionService: encryption,
-      );
-
-      expect(service.encryptionService, same(encryption));
-    });
-
     test('accepts optional providerFactory', () {
       expect(
         () => ChatbotService(
-          encryptionService: _FakeEncryptionService(),
+          serviceConnectionRepository: const _FakeServiceConnectionRepository(),
         ),
         returnsNormally,
       );
@@ -563,7 +552,7 @@ String _processTitle(String title) {
 
 ChatbotService _createService({ProviderFactory? providerFactory}) {
   return ChatbotService(
-    encryptionService: _FakeEncryptionService(),
+    serviceConnectionRepository: const _FakeServiceConnectionRepository(),
     providerFactory: providerFactory,
   );
 }
@@ -585,11 +574,11 @@ WorkspaceModelSelectionWithConnectionEntity _makeConfig({
     modelConnection: ModelConnectionEntity(
       id: 'connection-1',
       name: 'Test Connection',
-      key: 'encrypted-key',
       modelId: modelId,
       createdAt: DateTime(2025),
       updatedAt: DateTime(2025),
       workspaceId: 'workspace-1',
+      hasKey: true,
     ),
     modelsProvider: ApiModelProviderEntity(
       id: 'provider-1',
@@ -613,7 +602,9 @@ class _FakeProviderFactory extends ProviderFactory {
     this.onRequest,
     this.throwsOnGenerate = false,
   }) : response = response ?? _modelResponse(genkit.FinishReason.stop),
-       super(encryptionService: _FakeEncryptionService());
+       super(
+         serviceConnectionRepository: const _FakeServiceConnectionRepository(),
+       );
 
   final List<genkit.ModelResponseChunk> chunks;
   final genkit.ModelResponse response;
@@ -647,18 +638,14 @@ class _FakeProviderFactory extends ProviderFactory {
   }
 }
 
-class _FakeEncryptionService extends EncryptionService {
-  _FakeEncryptionService() : super(_FakeSecretKeyManager());
+class _FakeServiceConnectionRepository implements ServiceConnectionRepository {
+  const _FakeServiceConnectionRepository();
 
   @override
-  Future<String> decrypt(String _) async => 'test-api-key';
-}
-
-class _FakeSecretKeyManager extends SecretKeyManager {
-  _FakeSecretKeyManager() : super();
-
-  @override
-  Future<SecretKey> getOrCreateSecretKey() async {
-    return SecretKey(List<int>.generate(32, (i) => i));
+  Future<ServiceConnectionSecret> readSecret(String id) async {
+    return const ServiceConnectionSecretApiKey(apiKey: 'test-api-key');
   }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

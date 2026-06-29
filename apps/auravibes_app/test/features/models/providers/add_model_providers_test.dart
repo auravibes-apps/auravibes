@@ -19,11 +19,11 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
     created = ModelConnectionEntity(
       id: 'new-id',
       name: toCreate.name,
-      key: toCreate.key,
       modelId: toCreate.modelId,
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
       workspaceId: toCreate.workspaceId,
+      hasKey: toCreate.key.isNotEmpty,
       url: toCreate.url,
     );
 

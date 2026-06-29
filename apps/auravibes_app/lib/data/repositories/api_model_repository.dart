@@ -104,20 +104,11 @@ class ApiModelRepository {
     ];
   }
 
-  Future<int> deleteAllData() async {
-    final deletedModels = await _database.apiModelsDao.deleteAllModels();
-    final deletedProviders = await _database.apiModelProvidersDao
-        .deleteAllProviders();
-
-    return deletedModels + deletedProviders;
-  }
-
   Future<void> replaceAllData({
     required List<ApiModelProviderEntity> providers,
     required List<ApiModelEntity> models,
   }) async {
     await _database.transaction(() async {
-      final _ = await deleteAllData();
       final _ = await batchUpsertProviders(providers);
       final _ = await batchUpsertModels(models);
     });

@@ -247,4 +247,9 @@ class _FakeSkillCredentialsRepository implements SkillCredentialsRepository {
   Future<void> deleteCredential(String credentialId) {
     throw UnsupportedError('Not needed by this test.');
   }
+
+  @override
+  Future<Map<String, String>> readCredentialAttributes(String credentialId) {
+    throw UnsupportedError('Not needed by this test.');
+  }
 }

@@ -36,6 +36,24 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  Future<List<WorkspaceModelSelectionTable>> getByModelConnectionId(
+    String modelConnectionId,
+  ) {
+    return (select(workspaceModelSelections)..where(
+          (table) => table.modelConnectionId.equals(modelConnectionId),
+        ))
+        .get();
+  }
+
+  Future<int> deleteByIds(Set<String> ids) {
+    if (ids.isEmpty) return Future.value(0);
+
+    return (delete(workspaceModelSelections)..where(
+          (table) => table.id.isIn(ids),
+        ))
+        .go();
+  }
+
   Future<List<WorkspaceModelSelectionWithConnection>>
   getAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,

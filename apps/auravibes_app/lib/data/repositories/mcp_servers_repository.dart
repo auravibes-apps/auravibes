@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/database/drift/daos/tools_groups_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
@@ -98,7 +99,11 @@ class McpServersRepository {
         if (deleted && serviceConnectionId != null) {
           final _ =
               await (_database.delete(_database.serviceConnections)..where(
-                    (tbl) => tbl.id.equals(serviceConnectionId),
+                    (tbl) =>
+                        tbl.id.equals(serviceConnectionId) &
+                        tbl.kind.equals(
+                          ServiceConnectionKindTable.mcpServer.name,
+                        ),
                   ))
                   .go();
         }
@@ -121,52 +126,54 @@ class McpServersRepository {
     required List<McpToolInfo> currentTools,
   }) async {
     try {
-      // 1. Get the tools group for this MCP.
-      final group = await _toolsGroupsDao.getToolsGroupByMcpServerId(
-        mcpServerId,
-      );
-      if (group == null) {
-        throw McpServerNotFoundException(mcpServerId);
-      }
+      await _database.transaction(() async {
+        // 1. Get the tools group for this MCP.
+        final group = await _toolsGroupsDao.getToolsGroupByMcpServerId(
+          mcpServerId,
+        );
+        if (group == null) {
+          throw McpServerNotFoundException(mcpServerId);
+        }
 
-      // 2. Get existing tools for this group.
-      final existingTools = await _workspaceToolsDao.getToolsByGroupId(
-        group.id,
-      );
-      final existingToolIds = existingTools.map((t) => t.toolId).toSet();
-      final currentToolIds = currentTools.map((t) => t.toolName).toSet();
+        // 2. Get existing tools for this group.
+        final existingTools = await _workspaceToolsDao.getToolsByGroupId(
+          group.id,
+        );
+        final existingToolIds = existingTools.map((t) => t.toolId).toSet();
+        final currentToolIds = currentTools.map((t) => t.toolName).toSet();
 
-      // 3. Find tools to add (in current but not in existing).
-      final toolsToAdd = currentTools
-          .where((t) => !existingToolIds.contains(t.toolName))
-          .toList();
+        // 3. Find tools to add (in current but not in existing).
+        final toolsToAdd = currentTools
+            .where((t) => !existingToolIds.contains(t.toolName))
+            .toList();
 
-      // 4. Find tools to remove (in existing but not in current).
-      final toolsToRemove = existingTools
-          .where((t) => !currentToolIds.contains(t.toolId))
-          .toList();
+        // 4. Find tools to remove (in existing but not in current).
+        final toolsToRemove = existingTools
+            .where((t) => !currentToolIds.contains(t.toolId))
+            .toList();
 
-      // 5. Add new tools (enabled by default, permission = ask).
-      if (toolsToAdd.isNotEmpty) {
-        final toolCompanions = toolsToAdd.map((tool) {
-          return ToolsCompanion.insert(
-            workspaceId: group.workspaceId,
-            workspaceToolsGroupId: Value(group.id),
-            toolId: tool.toolName,
-            description: Value(tool.description),
-            inputSchema: Value(jsonEncode(tool.inputSchema)),
-            isEnabled: const Value(true),
-            permissions: const Value(PermissionAccess.ask),
-          );
-        }).toList();
+        // 5. Add new tools (enabled by default, permission = ask).
+        if (toolsToAdd.isNotEmpty) {
+          final toolCompanions = toolsToAdd.map((tool) {
+            return ToolsCompanion.insert(
+              workspaceId: group.workspaceId,
+              workspaceToolsGroupId: Value(group.id),
+              toolId: tool.toolName,
+              description: Value(tool.description),
+              inputSchema: Value(jsonEncode(tool.inputSchema)),
+              isEnabled: const Value(true),
+              permissions: const Value(PermissionAccess.ask),
+            );
+          }).toList();
 
-        await _workspaceToolsDao.insertToolsBatch(toolCompanions);
-      }
+          await _workspaceToolsDao.insertToolsBatch(toolCompanions);
+        }
 
-      // 6. Remove old tools.
-      for (final tool in toolsToRemove) {
-        final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
-      }
+        // 6. Remove old tools.
+        for (final tool in toolsToRemove) {
+          final _ = await _workspaceToolsDao.deleteWorkspaceToolById(tool.id);
+        }
+      });
 
       // Note: Existing tools are NOT modified - user customizations preserved.
     } on McpServerNotFoundException {

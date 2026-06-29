@@ -7,7 +7,6 @@ import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart'
 import 'package:auravibes_app/domain/entities/conversation_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/services/tools/tool_service.dart';
 
 /// Implementation of the ConversationToolsRepository.
 class ConversationToolsRepository {
@@ -30,11 +29,18 @@ class ConversationToolsRepository {
   Future<List<ConversationToolEntity>> getEnabledConversationTools(
     String conversationId,
   ) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      return [];
+    }
+
     // Get available tools for the conversation by computing:.
     // Available tools = Workspace enabled tools - Conversation disabled tools.
     final availableToolTypes = await getAvailableToolsForConversation(
       conversationId,
-      '', // WorkspaceId will be retrieved from conversation.
+      conversation.workspaceId,
     );
 
     return availableToolTypes
@@ -168,10 +174,13 @@ class ConversationToolsRepository {
       );
     }
 
-    // Check if tool type is valid.
-    if (!ToolService.hasTypeString(toolId)) {
+    final tool = await _workspaceToolsRepository.getWorkspaceTool(
+      conversation.workspaceId,
+      toolId,
+    );
+    if (tool == null) {
       throw ConversationToolsValidationException(
-        'Invalid tool type: $toolId',
+        'Tool not found: $toolId',
       );
     }
 

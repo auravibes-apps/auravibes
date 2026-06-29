@@ -2,7 +2,7 @@ import 'package:auravibes_app/data/repositories/skill_template_tools_repository.
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
+import 'package:auravibes_app/utils/generate_skill_slug.dart';
 import 'package:riverpod/riverpod.dart';
 
 class DuplicateSkillTemplateToolUsecase {

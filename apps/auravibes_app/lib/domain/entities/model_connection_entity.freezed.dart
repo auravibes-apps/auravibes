@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ModelConnectionEntity {
 
- String get id; String get name; String get key; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get workspaceId; ModelProviderAuthMode get authMode; String? get url; String? get keySuffix; ServiceConnectionMetadata? get oauthMetadata;
+ String get id; String get name; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get workspaceId; bool get hasKey; ModelProviderAuthMode get authMode; String? get url; String? get keySuffix; ServiceConnectionMetadata? get oauthMetadata;
 /// Create a copy of ModelConnectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ModelConnectionEntityCopyWith<ModelConnectionEntity> get copyWith => _$ModelCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,key,modelId,createdAt,updatedAt,workspaceId,authMode,url,keySuffix,oauthMetadata);
+int get hashCode => Object.hash(runtimeType,id,name,modelId,createdAt,updatedAt,workspaceId,hasKey,authMode,url,keySuffix,oauthMetadata);
 
 @override
 String toString() {
-  return 'ModelConnectionEntity(id: $id, name: $name, key: $key, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
+  return 'ModelConnectionEntity(id: $id, name: $name, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ModelConnectionEntityCopyWith<$Res>  {
   factory $ModelConnectionEntityCopyWith(ModelConnectionEntity value, $Res Function(ModelConnectionEntity) _then) = _$ModelConnectionEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String key, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, ModelProviderAuthMode authMode, String? url, String? keySuffix, ServiceConnectionMetadata? oauthMetadata
+ String id, String name, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, bool hasKey, ModelProviderAuthMode authMode, String? url, String? keySuffix, ServiceConnectionMetadata? oauthMetadata
 });
 
 
@@ -62,16 +62,16 @@ class _$ModelConnectionEntityCopyWithImpl<$Res>
 
 /// Create a copy of ModelConnectionEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? key = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,Object? oauthMetadata = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,Object? oauthMetadata = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,key: null == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
-as String,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
+as String,hasKey: null == hasKey ? _self.hasKey : hasKey // ignore: cast_nullable_to_non_nullable
+as bool,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
 as ModelProviderAuthMode,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,oauthMetadata: freezed == oauthMetadata ? _self.oauthMetadata : oauthMetadata // ignore: cast_nullable_to_non_nullable
@@ -160,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix,  ServiceConnectionMetadata? oauthMetadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix,  ServiceConnectionMetadata? oauthMetadata)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ModelConnectionEntity() when $default != null:
-return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.authMode,_that.url,_that.keySuffix,_that.oauthMetadata);case _:
+return $default(_that.id,_that.name,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.hasKey,_that.authMode,_that.url,_that.keySuffix,_that.oauthMetadata);case _:
   return orElse();
 
 }
@@ -181,10 +181,10 @@ return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix,  ServiceConnectionMetadata? oauthMetadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix,  ServiceConnectionMetadata? oauthMetadata)  $default,) {final _that = this;
 switch (_that) {
 case _ModelConnectionEntity():
-return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.authMode,_that.url,_that.keySuffix,_that.oauthMetadata);case _:
+return $default(_that.id,_that.name,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.hasKey,_that.authMode,_that.url,_that.keySuffix,_that.oauthMetadata);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +201,10 @@ return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String key,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix,  ServiceConnectionMetadata? oauthMetadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String workspaceId,  bool hasKey,  ModelProviderAuthMode authMode,  String? url,  String? keySuffix,  ServiceConnectionMetadata? oauthMetadata)?  $default,) {final _that = this;
 switch (_that) {
 case _ModelConnectionEntity() when $default != null:
-return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.authMode,_that.url,_that.keySuffix,_that.oauthMetadata);case _:
+return $default(_that.id,_that.name,_that.modelId,_that.createdAt,_that.updatedAt,_that.workspaceId,_that.hasKey,_that.authMode,_that.url,_that.keySuffix,_that.oauthMetadata);case _:
   return null;
 
 }
@@ -216,16 +216,16 @@ return $default(_that.id,_that.name,_that.key,_that.modelId,_that.createdAt,_tha
 
 
 class _ModelConnectionEntity implements ModelConnectionEntity {
-  const _ModelConnectionEntity({required this.id, required this.name, required this.key, required this.modelId, required this.createdAt, required this.updatedAt, required this.workspaceId, this.authMode = ModelProviderAuthMode.apiKey, this.url, this.keySuffix, this.oauthMetadata});
+  const _ModelConnectionEntity({required this.id, required this.name, required this.modelId, required this.createdAt, required this.updatedAt, required this.workspaceId, required this.hasKey, this.authMode = ModelProviderAuthMode.apiKey, this.url, this.keySuffix, this.oauthMetadata});
   
 
 @override final  String id;
 @override final  String name;
-@override final  String key;
 @override final  String modelId;
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
 @override final  String workspaceId;
+@override final  bool hasKey;
 @override@JsonKey() final  ModelProviderAuthMode authMode;
 @override final  String? url;
 @override final  String? keySuffix;
@@ -241,16 +241,16 @@ _$ModelConnectionEntityCopyWith<_ModelConnectionEntity> get copyWith => __$Model
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,key,modelId,createdAt,updatedAt,workspaceId,authMode,url,keySuffix,oauthMetadata);
+int get hashCode => Object.hash(runtimeType,id,name,modelId,createdAt,updatedAt,workspaceId,hasKey,authMode,url,keySuffix,oauthMetadata);
 
 @override
 String toString() {
-  return 'ModelConnectionEntity(id: $id, name: $name, key: $key, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
+  return 'ModelConnectionEntity(id: $id, name: $name, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
 }
 
 
@@ -261,7 +261,7 @@ abstract mixin class _$ModelConnectionEntityCopyWith<$Res> implements $ModelConn
   factory _$ModelConnectionEntityCopyWith(_ModelConnectionEntity value, $Res Function(_ModelConnectionEntity) _then) = __$ModelConnectionEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String key, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, ModelProviderAuthMode authMode, String? url, String? keySuffix, ServiceConnectionMetadata? oauthMetadata
+ String id, String name, String modelId, DateTime createdAt, DateTime updatedAt, String workspaceId, bool hasKey, ModelProviderAuthMode authMode, String? url, String? keySuffix, ServiceConnectionMetadata? oauthMetadata
 });
 
 
@@ -278,16 +278,16 @@ class __$ModelConnectionEntityCopyWithImpl<$Res>
 
 /// Create a copy of ModelConnectionEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? key = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,Object? oauthMetadata = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,Object? oauthMetadata = freezed,}) {
   return _then(_ModelConnectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,key: null == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
-as String,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
+as String,hasKey: null == hasKey ? _self.hasKey : hasKey // ignore: cast_nullable_to_non_nullable
+as bool,authMode: null == authMode ? _self.authMode : authMode // ignore: cast_nullable_to_non_nullable
 as ModelProviderAuthMode,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String?,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,oauthMetadata: freezed == oauthMetadata ? _self.oauthMetadata : oauthMetadata // ignore: cast_nullable_to_non_nullable
@@ -1153,7 +1153,7 @@ as String?,
 /// @nodoc
 mixin _$ModelConnectionFilter {
 
- List<String> get workspaces; List<CredentialsModelType>? get types;
+ List<String> get workspaces;
 /// Create a copy of ModelConnectionFilter
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1164,16 +1164,16 @@ $ModelConnectionFilterCopyWith<ModelConnectionFilter> get copyWith => _$ModelCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionFilter&&const DeepCollectionEquality().equals(other.workspaces, workspaces)&&const DeepCollectionEquality().equals(other.types, types));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionFilter&&const DeepCollectionEquality().equals(other.workspaces, workspaces));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(workspaces),const DeepCollectionEquality().hash(types));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(workspaces));
 
 @override
 String toString() {
-  return 'ModelConnectionFilter(workspaces: $workspaces, types: $types)';
+  return 'ModelConnectionFilter(workspaces: $workspaces)';
 }
 
 
@@ -1184,7 +1184,7 @@ abstract mixin class $ModelConnectionFilterCopyWith<$Res>  {
   factory $ModelConnectionFilterCopyWith(ModelConnectionFilter value, $Res Function(ModelConnectionFilter) _then) = _$ModelConnectionFilterCopyWithImpl;
 @useResult
 $Res call({
- List<String> workspaces, List<CredentialsModelType>? types
+ List<String> workspaces
 });
 
 
@@ -1201,11 +1201,10 @@ class _$ModelConnectionFilterCopyWithImpl<$Res>
 
 /// Create a copy of ModelConnectionFilter
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? workspaces = null,Object? types = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? workspaces = null,}) {
   return _then(_self.copyWith(
 workspaces: null == workspaces ? _self.workspaces : workspaces // ignore: cast_nullable_to_non_nullable
-as List<String>,types: freezed == types ? _self.types : types // ignore: cast_nullable_to_non_nullable
-as List<CredentialsModelType>?,
+as List<String>,
   ));
 }
 
@@ -1290,10 +1289,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<String> workspaces,  List<CredentialsModelType>? types)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<String> workspaces)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ModelConnectionFilter() when $default != null:
-return $default(_that.workspaces,_that.types);case _:
+return $default(_that.workspaces);case _:
   return orElse();
 
 }
@@ -1311,10 +1310,10 @@ return $default(_that.workspaces,_that.types);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String> workspaces,  List<CredentialsModelType>? types)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<String> workspaces)  $default,) {final _that = this;
 switch (_that) {
 case _ModelConnectionFilter():
-return $default(_that.workspaces,_that.types);case _:
+return $default(_that.workspaces);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1331,10 +1330,10 @@ return $default(_that.workspaces,_that.types);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<String> workspaces,  List<CredentialsModelType>? types)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<String> workspaces)?  $default,) {final _that = this;
 switch (_that) {
 case _ModelConnectionFilter() when $default != null:
-return $default(_that.workspaces,_that.types);case _:
+return $default(_that.workspaces);case _:
   return null;
 
 }
@@ -1346,7 +1345,7 @@ return $default(_that.workspaces,_that.types);case _:
 
 
 class _ModelConnectionFilter implements ModelConnectionFilter {
-  const _ModelConnectionFilter({final  List<String> workspaces = const [], final  List<CredentialsModelType>? types}): _workspaces = workspaces,_types = types;
+  const _ModelConnectionFilter({final  List<String> workspaces = const []}): _workspaces = workspaces;
   
 
  final  List<String> _workspaces;
@@ -1354,15 +1353,6 @@ class _ModelConnectionFilter implements ModelConnectionFilter {
   if (_workspaces is EqualUnmodifiableListView) return _workspaces;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_workspaces);
-}
-
- final  List<CredentialsModelType>? _types;
-@override List<CredentialsModelType>? get types {
-  final value = _types;
-  if (value == null) return null;
-  if (_types is EqualUnmodifiableListView) return _types;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
 }
 
 
@@ -1376,16 +1366,16 @@ _$ModelConnectionFilterCopyWith<_ModelConnectionFilter> get copyWith => __$Model
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionFilter&&const DeepCollectionEquality().equals(other._workspaces, _workspaces)&&const DeepCollectionEquality().equals(other._types, _types));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionFilter&&const DeepCollectionEquality().equals(other._workspaces, _workspaces));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_workspaces),const DeepCollectionEquality().hash(_types));
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_workspaces));
 
 @override
 String toString() {
-  return 'ModelConnectionFilter(workspaces: $workspaces, types: $types)';
+  return 'ModelConnectionFilter(workspaces: $workspaces)';
 }
 
 
@@ -1396,7 +1386,7 @@ abstract mixin class _$ModelConnectionFilterCopyWith<$Res> implements $ModelConn
   factory _$ModelConnectionFilterCopyWith(_ModelConnectionFilter value, $Res Function(_ModelConnectionFilter) _then) = __$ModelConnectionFilterCopyWithImpl;
 @override @useResult
 $Res call({
- List<String> workspaces, List<CredentialsModelType>? types
+ List<String> workspaces
 });
 
 
@@ -1413,11 +1403,10 @@ class __$ModelConnectionFilterCopyWithImpl<$Res>
 
 /// Create a copy of ModelConnectionFilter
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? workspaces = null,Object? types = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? workspaces = null,}) {
   return _then(_ModelConnectionFilter(
 workspaces: null == workspaces ? _self._workspaces : workspaces // ignore: cast_nullable_to_non_nullable
-as List<String>,types: freezed == types ? _self._types : types // ignore: cast_nullable_to_non_nullable
-as List<CredentialsModelType>?,
+as List<String>,
   ));
 }
 

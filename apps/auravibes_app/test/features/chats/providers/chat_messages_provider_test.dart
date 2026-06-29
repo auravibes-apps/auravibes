@@ -322,11 +322,11 @@ _workspaceModelSelectionWithProvider({
     modelConnection: ModelConnectionEntity(
       id: 'cred-1',
       name: 'Test Provider',
-      key: 'encrypted',
       modelId: providerId,
       createdAt: now,
       updatedAt: now,
       workspaceId: 'workspace-1',
+      hasKey: true,
     ),
     modelsProvider: ApiModelProviderEntity(
       id: providerId,
@@ -543,11 +543,6 @@ class _FakeApiModelRepository implements ApiModelRepository {
 
   @override
   Future<List<ApiModelEntity>> batchUpsertModels(List<ApiModelEntity> models) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<int> deleteAllData() {
     throw UnimplementedError();
   }
 

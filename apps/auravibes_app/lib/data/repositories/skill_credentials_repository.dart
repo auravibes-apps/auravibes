@@ -53,6 +53,20 @@ class SkillCredentialsRepository {
     return _tableToEntity(row);
   }
 
+  Future<Map<String, String>> readCredentialAttributes(
+    String credentialId,
+  ) async {
+    final row = await _dao.getCredentialById(credentialId);
+    if (row == null) {
+      throw StateError('Skill credential not found: $credentialId');
+    }
+
+    return {
+      ..._nonSecretAttributes(row),
+      ...await _secretAttributes(row),
+    };
+  }
+
   Future<SkillCredentialForEdit?> getCredentialForEdit(
     String credentialId,
   ) async {
@@ -184,17 +198,12 @@ class SkillCredentialsRepository {
   Future<SkillCredentialEntity> _tableToEntity(
     ServiceConnectionTable table,
   ) async {
-    final attributes = {
-      ..._nonSecretAttributes(table),
-      ...await _secretAttributes(table),
-    };
-
     return SkillCredentialEntity(
       id: table.id,
       workspaceId: table.workspaceId,
       credentialDefinitionId: table.serviceId,
       name: table.name,
-      attributes: attributes,
+      attributes: _nonSecretAttributes(table),
       isEnabled: table.isEnabled,
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
@@ -214,7 +223,11 @@ class SkillCredentialsRepository {
   ) async {
     final definition = await _database.skillCredentialDefinitionsDao
         .getDefinitionById(credentialDefinitionId);
-    if (definition == null) return const {};
+    if (definition == null) {
+      throw StateError(
+        'Skill credential definition not found: $credentialDefinitionId',
+      );
+    }
 
     return SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,

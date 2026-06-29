@@ -1,7 +1,7 @@
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
 import 'package:genkit/genkit.dart';
@@ -12,11 +12,11 @@ typedef UntypedModelRef = ModelRef<Object?>;
 
 class ProviderFactory {
   const ProviderFactory({
-    required this.encryptionService,
+    required this.serviceConnectionRepository,
     this.resolveOAuthAccessToken,
   });
 
-  final EncryptionService encryptionService;
+  final ServiceConnectionRepository serviceConnectionRepository;
   final Future<String> Function(String id)? resolveOAuthAccessToken;
 
   Future<Genkit> createGenkit(
@@ -84,14 +84,9 @@ class ProviderFactory {
       return resolver(config.modelConnection.id);
     }
 
-    final encrypted = config.modelConnection.key;
-    final decrypted = await encryptionService.decrypt(encrypted);
-    ServiceConnectionSecret secret;
-    try {
-      secret = ServiceConnectionAuthCodec.decodeSecret(decrypted);
-    } on FormatException {
-      secret = ServiceConnectionSecretApiKey(apiKey: decrypted);
-    }
+    final secret = await serviceConnectionRepository.readSecret(
+      config.modelConnection.id,
+    );
     if (secret is! ServiceConnectionSecretApiKey) {
       throw const FormatException('Model connection is not an API key.');
     }

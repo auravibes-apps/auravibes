@@ -1,6 +1,5 @@
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'workspace_model_selection_entity.freezed.dart';
@@ -35,7 +34,6 @@ abstract class WorkspaceModelSelectionFilter
     with _$WorkspaceModelSelectionFilter {
   const factory WorkspaceModelSelectionFilter({
     @Default([]) List<String> workspaces,
-    List<CredentialsModelType>? types,
   }) = _WorkspaceModelSelectionFilter;
 }
 

@@ -10,6 +10,11 @@ import 'package:drift/drift.dart';
 export 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 
 @DataClassName('ToolsGroupsTable')
+@TableIndex.sql('''
+CREATE UNIQUE INDEX tools_groups_mcp_server_id
+ON tools_groups (mcp_server_id)
+WHERE mcp_server_id IS NOT NULL
+''')
 class ToolsGroups extends Table with TableMixin {
   /// Reference to the workspace this tools group belongs to.
   TextColumn get workspaceId => text().references(

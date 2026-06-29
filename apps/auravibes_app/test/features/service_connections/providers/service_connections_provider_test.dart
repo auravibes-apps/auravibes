@@ -365,6 +365,11 @@ class _FakeCredentialsRepository implements SkillCredentialsRepository {
 
     return _subject.stream;
   }
+
+  @override
+  Future<Map<String, String>> readCredentialAttributes(String credentialId) {
+    return Future.value(const {});
+  }
 }
 
 ModelConnectionEntity _modelConnection({
@@ -379,11 +384,11 @@ ModelConnectionEntity _modelConnection({
   return ModelConnectionEntity(
     id: id,
     name: name,
-    key: 'secret-key',
     modelId: modelId,
     createdAt: timestamp,
     updatedAt: timestamp,
     workspaceId: workspaceId,
+    hasKey: true,
     keySuffix: keySuffix,
   );
 }

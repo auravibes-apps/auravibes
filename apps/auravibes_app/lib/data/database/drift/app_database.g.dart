@@ -124,7 +124,7 @@ class $WorkspacesTable extends Workspaces
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   WorkspacesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -766,7 +766,7 @@ class $ServiceConnectionsTable extends ServiceConnections
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ServiceConnectionTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -2233,7 +2233,7 @@ class $ApiModelsTable extends ApiModels
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES api_model_providers (id)',
+      'REFERENCES api_model_providers (id) ON DELETE CASCADE',
     ),
   );
   static const VerificationMeta _idMeta = const VerificationMeta('id');
@@ -3284,7 +3284,7 @@ class $ConversationsTable extends Conversations
     type: DriftSqlType.string,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspace_model_selections (id)',
+      'REFERENCES workspace_model_selections (id) ON DELETE SET NULL',
     ),
   );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
@@ -3374,7 +3374,7 @@ class $ConversationsTable extends Conversations
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ConversationsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -3867,7 +3867,7 @@ class $MessagesTable extends Messages
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   MessagesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -7364,7 +7364,7 @@ class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {workspaceId, title},
@@ -7957,7 +7957,7 @@ class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {workspaceId, title},
@@ -8752,7 +8752,7 @@ class $SkillTemplateToolsTable extends SkillTemplateTools
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
     {skillId, title},
@@ -9404,7 +9404,7 @@ class $ConversationSkillsTable extends ConversationSkills
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   ConversationSkillsTable map(
     Map<String, dynamic> data, {
@@ -9885,7 +9885,7 @@ class $AppSkillWorkspaceSettingsTable extends AppSkillWorkspaceSettings
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => const {};
+  Set<GeneratedColumn> get $primaryKey => {id};
   @override
   AppSkillWorkspaceSettingsTable map(
     Map<String, dynamic> data, {
@@ -10205,6 +10205,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ConversationSkillsTable(this);
   late final $AppSkillWorkspaceSettingsTable appSkillWorkspaceSettings =
       $AppSkillWorkspaceSettingsTable(this);
+  late final Index workspaceModelSelectionsConnectionModel = Index(
+    'workspace_model_selections_connection_model',
+    'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
+  );
+  late final Index toolsNativeIdentity = Index(
+    'tools_native_identity',
+    'CREATE UNIQUE INDEX tools_native_identity ON tools (workspace_id, tool_id) WHERE workspace_tools_group_id IS NULL',
+  );
+  late final Index toolsGroupIdentity = Index(
+    'tools_group_identity',
+    'CREATE UNIQUE INDEX tools_group_identity ON tools (workspace_tools_group_id, tool_id) WHERE workspace_tools_group_id IS NOT NULL',
+  );
+  late final Index toolsGroupsMcpServerId = Index(
+    'tools_groups_mcp_server_id',
+    'CREATE UNIQUE INDEX tools_groups_mcp_server_id ON tools_groups (mcp_server_id) WHERE mcp_server_id IS NOT NULL',
+  );
   late final Index conversationSkillsWorkspaceSkill = Index(
     'conversation_skills_workspace_skill',
     'CREATE UNIQUE INDEX conversation_skills_workspace_skill ON conversation_skills (conversation_id, workspace_skill_id) WHERE workspace_skill_id IS NOT NULL',
@@ -10277,6 +10293,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     skillTemplateTools,
     conversationSkills,
     appSkillWorkspaceSettings,
+    workspaceModelSelectionsConnectionModel,
+    toolsNativeIdentity,
+    toolsGroupIdentity,
+    toolsGroupsMcpServerId,
     conversationSkillsWorkspaceSkill,
     conversationSkillsAppSkill,
     appSkillWorkspaceSettingsWorkspaceAppSkill,
@@ -10301,10 +10321,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'api_model_providers',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('api_models', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('conversations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspace_model_selections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversations', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(

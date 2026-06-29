@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_discovery_result.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/utils/map_exception.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
@@ -83,6 +84,7 @@ class OAuthAuthenticate {
   Future<OAuthTokenModel> authenticate(
     OAuthDiscoveryResult oAuthResult,
   ) async {
+    final _ = await requirePublicHttpsUri(oAuthResult.authorizationUrl);
     final codeVerifier = _generateRandomString(128);
     final codeChallenge = generateCodeChallenge(codeVerifier);
     final stateParam = _generateRandomString(32);
@@ -182,8 +184,9 @@ class OAuthAuthenticate {
     required String codeVerifier,
     required String redirectUrl,
   }) async {
+    final tokenUri = await requirePublicHttpsUri(oAuthResult.tokenUrl);
     final response = await _dio.post<Object?>(
-      oAuthResult.tokenUrl,
+      tokenUri.toString(),
       data: {
         'grant_type': 'authorization_code',
         'code': code,

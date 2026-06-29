@@ -68,6 +68,7 @@ class UrlService {
           receiveTimeout: request.timeout,
           headers: effectiveHeaders,
           responseType: ResponseType.stream,
+          followRedirects: false,
         ),
       );
       if (completer.isCanceled) {

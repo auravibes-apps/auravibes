@@ -36,6 +36,34 @@ void main() {
       expect(response.headers[Headers.contentTypeHeader], ['text/plain']);
     });
 
+    test('does not follow redirects automatically', () async {
+      bool? followRedirects;
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          followRedirects = options.followRedirects;
+
+          return ResponseBody.fromString(
+            '',
+            302,
+            headers: {
+              'location': ['http://127.0.0.1/private'],
+            },
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(
+            const UrlRequest(url: 'https://example.com'),
+          )
+          .value;
+
+      expect(followRedirects, isFalse);
+      expect(response.statusCode, 302);
+    });
+
     test('cancels the underlying dio request', () async {
       final requestStarted = Completer<void>();
       CancelToken? observedCancelToken;

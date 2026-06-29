@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/credentials_model_type.dart';
 import 'package:auravibes_app/services/model_provider_services/models/antropic_response_models_item.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:http/http.dart' as http;
 import 'package:openai_dart/openai_dart.dart';
 
@@ -20,9 +21,13 @@ class ModelProviderServices {
     ModelProvider provider,
   ) async {
     if (provider.type == CredentialsModelType.openai) {
+      final baseUrl = await _providerBaseUrl(
+        provider.url,
+        fallback: 'https://api.openai.com/v1',
+      );
       final client = OpenAIClient.withApiKey(
         provider.key,
-        baseUrl: provider.url ?? 'https://api.openai.com/v1',
+        baseUrl: baseUrl,
       );
 
       final modelsResponse = await client.models.list();
@@ -73,7 +78,10 @@ class ModelProviderServices {
 }
 
 Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
-  final url = provider.url ?? 'https://openrouter.ai/api/v1';
+  final url = await _providerBaseUrl(
+    provider.url,
+    fallback: 'https://openrouter.ai/api/v1',
+  );
   try {
     final request = await http
         .get(
@@ -92,7 +100,10 @@ Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
 }
 
 Future<List<String>?> _openRouterModels(ModelProvider provider) async {
-  final url = provider.url ?? 'https://openrouter.ai/api/v1';
+  final url = await _providerBaseUrl(
+    provider.url,
+    fallback: 'https://openrouter.ai/api/v1',
+  );
   try {
     final request = await http
         .get(
@@ -154,7 +165,10 @@ Future<AntropicResponseModels> _anthopicModels(
   ModelProvider provider, [
   String? afterId,
 ]) async {
-  final url = provider.url ?? 'https://api.anthropic.com/v1';
+  final url = await _providerBaseUrl(
+    provider.url,
+    fallback: 'https://api.anthropic.com/v1',
+  );
   final qp = <String, dynamic>{'limit': '1000'};
 
   if (afterId != null) {
@@ -171,4 +185,10 @@ Future<AntropicResponseModels> _anthopicModels(
   final json = jsonDecode(request.body) as Map<String, dynamic>;
 
   return AntropicResponseModels.fromJson(json);
+}
+
+Future<String> _providerBaseUrl(String? url, {required String fallback}) async {
+  final uri = await requirePublicHttpsUri(url ?? fallback);
+
+  return uri.toString().replaceFirst(RegExp(r'/$'), '');
 }

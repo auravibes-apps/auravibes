@@ -33,4 +33,9 @@ class ConversationSkills extends Table with TableMixin {
   TextColumn get appSkillIdentifier => text().nullable()();
 
   BoolColumn get isLoaded => boolean().withDefault(const Constant(true))();
+
+  @override
+  List<String> get customConstraints => [
+    'CHECK ((workspace_skill_id IS NULL) != (app_skill_identifier IS NULL))',
+  ];
 }

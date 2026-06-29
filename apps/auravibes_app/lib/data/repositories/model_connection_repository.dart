@@ -74,27 +74,30 @@ class ModelConnectionRepository {
       throw ModelConnectionNoModelsException(modelConnection.modelId);
     }
 
-    final createdModelConnection = await _database.modelConnectionsDao
-        .insertModelConnection(
-          _modelProviderToCreateToCompanion(
-            modelConnection,
-            encryptedApiKey,
-            keySuffix,
-          ),
-        );
+    final createdModelConnection = await _database.transaction(() async {
+      final created = await _database.modelConnectionsDao.insertModelConnection(
+        _modelProviderToCreateToCompanion(
+          modelConnection,
+          encryptedApiKey,
+          keySuffix,
+        ),
+      );
 
-    final workspaceModelSelections = models
-        .map(
-          (model) =>
-              model.copyWith(modelConnectionId: createdModelConnection.id),
-        )
-        .toList();
+      final workspaceModelSelections = models
+          .map(
+            (model) => model.copyWith(modelConnectionId: created.id),
+          )
+          .toList();
 
-    await _database.workspaceModelSelectionsDao.insertWorkspaceModelSelections(
-      workspaceModelSelections
-          .map(_workspaceModelSelectionToCreateToCompanion)
-          .toList(),
-    );
+      await _database.workspaceModelSelectionsDao
+          .insertWorkspaceModelSelections(
+            workspaceModelSelections
+                .map(_workspaceModelSelectionToCreateToCompanion)
+                .toList(),
+          );
+
+      return created;
+    });
 
     return _modelProviderTableToEntity(createdModelConnection);
   }
@@ -255,15 +258,46 @@ class ModelConnectionRepository {
             ),
           );
     final keySuffix = key == null ? existing.keySuffix : _keySuffix(key);
-    final updated = await _database.modelConnectionsDao.updateModelConnection(
-      modelConnectionId,
-      ServiceConnectionsCompanion(
-        name: .absentIfNull(modelConnection.name),
-        url: hasUrlUpdate ? Value(nextUrl) : const Value.absent(),
-        encryptedAuthValue: .absentIfNull(encryptedKey),
-        keySuffix: .absentIfNull(keySuffix),
-      ),
-    );
+    final updated = await _database.transaction(() async {
+      final updatedConnection = await _database.modelConnectionsDao
+          .updateModelConnection(
+            modelConnectionId,
+            ServiceConnectionsCompanion(
+              name: .absentIfNull(modelConnection.name),
+              url: hasUrlUpdate ? Value(nextUrl) : const Value.absent(),
+              encryptedAuthValue: .absentIfNull(encryptedKey),
+              keySuffix: .absentIfNull(keySuffix),
+            ),
+          );
+      if (updatedConnection == null) return null;
+
+      final existingSelections = await _database.workspaceModelSelectionsDao
+          .getByModelConnectionId(modelConnectionId);
+      final existingModelIds = {
+        for (final selection in existingSelections) selection.modelId,
+      };
+      final nextModelIds = {for (final model in models) model.modelId};
+      final removedIds = {
+        for (final selection in existingSelections)
+          if (!nextModelIds.contains(selection.modelId)) selection.id,
+      };
+      final _ = await _database.workspaceModelSelectionsDao.deleteByIds(
+        removedIds,
+      );
+      await _database.workspaceModelSelectionsDao
+          .insertWorkspaceModelSelections(
+            models
+                .where((model) => !existingModelIds.contains(model.modelId))
+                .map(
+                  (model) =>
+                      model.copyWith(modelConnectionId: modelConnectionId),
+                )
+                .map(_workspaceModelSelectionToCreateToCompanion)
+                .toList(),
+          );
+
+      return updatedConnection;
+    });
     if (updated == null) {
       throw ModelConnectionException(
         'Model connection with ID "$modelConnectionId" not found',
@@ -348,11 +382,11 @@ class ModelConnectionRepository {
     return ModelConnectionEntity(
       id: modelConnection.id,
       name: modelConnection.name,
-      key: modelConnection.encryptedAuthValue ?? '',
       modelId: modelConnection.serviceId,
       createdAt: modelConnection.createdAt,
       updatedAt: modelConnection.updatedAt,
       workspaceId: modelConnection.workspaceId,
+      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
       authMode: _authMode(modelConnection.authenticationType),
       url: modelConnection.url,
       keySuffix: modelConnection.keySuffix,

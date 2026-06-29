@@ -14,7 +14,10 @@ class Conversations extends Table with TableMixin {
     onDelete: KeyAction.cascade,
   )();
   TextColumn get title => text()();
-  TextColumn get modelId =>
-      text().nullable().references(WorkspaceModelSelections, #id)();
+  TextColumn get modelId => text().nullable().references(
+    WorkspaceModelSelections,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
 }

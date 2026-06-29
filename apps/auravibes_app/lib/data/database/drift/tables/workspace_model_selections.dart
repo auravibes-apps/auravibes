@@ -7,6 +7,11 @@ import 'package:drift/drift.dart';
 
 /// Table definition for chat models in the database.
 @DataClassName('WorkspaceModelSelectionTable')
+@TableIndex(
+  name: 'workspace_model_selections_connection_model',
+  columns: {#modelConnectionId, #modelId},
+  unique: true,
+)
 class WorkspaceModelSelections extends Table with TableMixin {
   /// Model unique identifier.
   TextColumn get modelId => text()();
@@ -16,7 +21,4 @@ class WorkspaceModelSelections extends Table with TableMixin {
     #id,
     onDelete: KeyAction.cascade,
   )();
-
-  @override
-  Set<Column> get primaryKey => {id};
 }

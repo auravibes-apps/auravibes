@@ -1321,11 +1321,11 @@ final _model = WorkspaceModelSelectionWithConnectionEntity(
   modelConnection: ModelConnectionEntity(
     id: 'credential-1',
     name: 'Main credential',
-    key: 'secret',
     modelId: 'model-1',
     createdAt: DateTime(2025),
     updatedAt: DateTime(2025),
     workspaceId: 'workspace-1',
+    hasKey: true,
   ),
   modelsProvider: const ApiModelProviderEntity(
     id: 'provider-1',

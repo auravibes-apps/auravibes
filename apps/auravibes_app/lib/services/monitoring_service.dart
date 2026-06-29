@@ -1,4 +1,5 @@
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod/riverpod.dart';
@@ -28,7 +29,9 @@ class MonitoringService {
   }
 
   String _sanitize(Object? value) {
-    final normalized = '$value'.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized = redactLogValue(
+      value,
+    ).replaceAll(RegExp(r'\s+'), ' ').trim();
 
     if (normalized.length <= _maxLogFieldLength) {
       return normalized;

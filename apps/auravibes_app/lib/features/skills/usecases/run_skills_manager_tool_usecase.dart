@@ -11,10 +11,10 @@ import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_to
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
+import 'package:auravibes_app/utils/generate_skill_slug.dart';
 import 'package:riverpod/riverpod.dart';
 
 class RunSkillsManagerToolUsecase {

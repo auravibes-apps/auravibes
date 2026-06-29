@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -897,6 +898,17 @@ void main() {
     test(
       'returns enabled tools filtered by disabled conversation tools',
       () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        );
+        final _ = await fixture.database.conversationDao.insertConversation(
+          ConversationsCompanion.insert(
+            id: const Value('conv-1'),
+            workspaceId: workspace.id,
+            title: 'Conv',
+          ),
+        );
+
         when(
           () => fixture.mockWorkspaceToolsRepository.getEnabledWorkspaceTools(
             any(),
@@ -905,7 +917,7 @@ void main() {
           (_) async => [
             WorkspaceToolEntity(
               id: 'tool-1',
-              workspaceId: 'ws-1',
+              workspaceId: workspace.id,
               toolId: 'read_file',
               isEnabled: true,
               permissionMode: ToolPermissionMode.alwaysAllow,

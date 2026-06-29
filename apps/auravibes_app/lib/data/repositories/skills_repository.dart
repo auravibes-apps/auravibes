@@ -2,7 +2,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/skills.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/features/skills/usecases/generate_skill_slug_usecase.dart';
+import 'package:auravibes_app/utils/generate_skill_slug.dart';
 import 'package:drift/drift.dart';
 
 class SkillsRepository {

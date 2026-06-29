@@ -49,6 +49,19 @@ void main() {
       expect(logs, anyElement(contains('StackTrace:')));
     });
 
+    test('redacts credential-like values', () async {
+      AppLogging.configure(enabled: true);
+
+      Logger('test.logger').warning(
+        'Authorization: Bearer secret-token api_key=abc123',
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(logs.join('\n'), isNot(contains('secret-token')));
+      expect(logs.join('\n'), isNot(contains('abc123')));
+      expect(logs.join('\n'), contains('[REDACTED]'));
+    });
+
     test('logs Flutter errors and forwards to previous handler', () async {
       var forwarded = false;
       FlutterError.onError = (_) {

@@ -253,31 +253,8 @@ void main() {
       });
     });
 
-    group('deleteAllData', () {
-      test('returns sum of deleted models and providers', () async {
-        when(
-          () => fixture.mockModelsDao.deleteAllModels(),
-        ).thenAnswer((_) async => 5);
-        when(
-          () => fixture.mockProvidersDao.deleteAllProviders(),
-        ).thenAnswer((_) async => 3);
-
-        final result = await fixture.repository.deleteAllData();
-
-        expect(result, 8);
-        verify(() => fixture.mockModelsDao.deleteAllModels()).called(1);
-        verify(() => fixture.mockProvidersDao.deleteAllProviders()).called(1);
-      });
-    });
-
     group('replaceAllData', () {
-      test('runs delete and upserts in a transaction', () async {
-        when(
-          () => fixture.mockModelsDao.deleteAllModels(),
-        ).thenAnswer((_) async => 5);
-        when(
-          () => fixture.mockProvidersDao.deleteAllProviders(),
-        ).thenAnswer((_) async => 3);
+      test('upserts providers and models in a transaction', () async {
         when(
           () => fixture.mockProvidersDao.batchUpsertProviders(any()),
         ).thenAnswer((_) async => [providerRow]);
@@ -311,8 +288,12 @@ void main() {
         );
 
         expect(fixture.database.transactionCount, 1);
-        verify(() => fixture.mockModelsDao.deleteAllModels()).called(1);
-        verify(() => fixture.mockProvidersDao.deleteAllProviders()).called(1);
+        final _ = verifyNever(
+          () => fixture.mockModelsDao.deleteAllModels(),
+        );
+        final _ = verifyNever(
+          () => fixture.mockProvidersDao.deleteAllProviders(),
+        );
         verify(
           () => fixture.mockProvidersDao.batchUpsertProviders(any()),
         ).called(1);

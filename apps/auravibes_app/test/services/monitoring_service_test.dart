@@ -75,5 +75,22 @@ void main() {
         ]),
       );
     });
+
+    test('trackError redacts credential-like values', () {
+      final messages = <String>[];
+      MonitoringService(debugLogger: messages.add).trackError(
+        'auth_failure',
+        error: Exception(
+          'Authorization: Bearer secret-token refresh_token=abc123',
+        ),
+        stackTrace: StackTrace.fromString('api_key=key123'),
+      );
+
+      final joined = messages.join('\n');
+      expect(joined, isNot(contains('secret-token')));
+      expect(joined, isNot(contains('abc123')));
+      expect(joined, isNot(contains('key123')));
+      expect(joined, contains('[REDACTED]'));
+    });
   });
 }

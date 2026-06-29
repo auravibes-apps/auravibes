@@ -19,4 +19,7 @@ mixin TableMixin on Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(
     currentDateAndTime,
   )();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }

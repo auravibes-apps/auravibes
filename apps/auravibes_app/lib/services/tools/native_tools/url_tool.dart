@@ -4,19 +4,15 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:async/async.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_content_transformer.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
-import 'package:collection/collection.dart';
-
-const _privateNetworkUrlError =
-    'Private or local network URLs are not allowed.';
 
 final class UrlTool extends NativeToolEntity<String, String> {
   UrlTool({this._urlService, UrlContentTransformer? transformer})
@@ -43,9 +39,8 @@ final class UrlTool extends NativeToolEntity<String, String> {
                 'A JSON object with: '
                 '"url" (required) - the URL to fetch, '
                 '"method" (optional) - HTTP method '
-                '(GET, POST, PUT, DELETE, PATCH, HEAD), '
+                '(GET or HEAD), '
                 '"headers" (optional) - JSON object of HTTP headers, '
-                '"body" (optional) - request body for POST/PUT/PATCH, '
                 '"format" (optional) - markdown, text, html, '
                 'or omit for default (markdown). '
                 'Controls the Accept header sent and how the response '
@@ -100,6 +95,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
       requestedFormat: requestedFormat,
     );
     final headerLines = response.headers.entries
+        .where((e) => !_isSensitiveHeader(e.key))
         .expand((e) => e.value.map((v) => '${e.key}: $v'))
         .join('\n');
 
@@ -142,6 +138,16 @@ final class UrlTool extends NativeToolEntity<String, String> {
       maxBytes: _maxToolOutputBytes,
       maxLines: _maxToolOutputLines,
     );
+  }
+
+  bool _isSensitiveHeader(String name) {
+    final normalized = name.toLowerCase();
+
+    return normalized == 'set-cookie' ||
+        normalized == 'authorization' ||
+        normalized == 'proxy-authorization' ||
+        normalized == 'www-authenticate' ||
+        normalized == 'proxy-authenticate';
   }
 
   static const int _maxToolOutputBytes = 50 * 1024;
@@ -221,14 +227,10 @@ final class UrlTool extends NativeToolEntity<String, String> {
     }
 
     final method = _parseMethod(json['method']);
+    if (method != UrlRequestMethod.get && method != UrlRequestMethod.head) {
+      throw const FormatException('Only GET and HEAD are allowed.');
+    }
     final headers = _parseHeaders(json['headers']);
-    final rawBody = json['body'];
-    final body = switch (rawBody) {
-      null => null,
-      final String s => s,
-      _ => jsonEncode(rawBody),
-    };
-    final isStructuredBody = rawBody != null && rawBody is! String;
 
     final format = switch (json['format']) {
       null => UrlResponseFormat.defaultFormat,
@@ -238,26 +240,12 @@ final class UrlTool extends NativeToolEntity<String, String> {
       ),
     };
 
-    final resolvedHost = await _ensurePublicHost(uri.host);
-
-    final effectiveHeaders = <String, String>{
-      ...?headers,
-      if (isStructuredBody &&
-          !(headers?.keys.any((k) => k.toLowerCase() == 'content-type') ??
-              false))
-        'Content-Type': 'application/json',
-      if (uri.scheme == 'http') 'Host': uri.authority,
-    };
-
-    final effectiveUrl = uri.scheme == 'https'
-        ? uri.toString()
-        : uri.replace(host: resolvedHost).toString();
+    await ensurePublicHost(uri.host);
 
     return UrlRequest(
-      url: effectiveUrl,
+      url: uri.toString(),
       method: method,
-      headers: effectiveHeaders,
-      body: body,
+      headers: headers ?? const {},
       format: format,
     );
   }
@@ -308,91 +296,6 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
       return result;
     });
-  }
-
-  Future<String> _ensurePublicHost(String host) async {
-    if (_isBlockedHostLabel(host)) {
-      throw const FormatException(
-        _privateNetworkUrlError,
-      );
-    }
-
-    final literalAddress = InternetAddress.tryParse(host);
-    if (literalAddress != null) {
-      if (_isPrivateAddress(literalAddress)) {
-        throw const FormatException(
-          _privateNetworkUrlError,
-        );
-      }
-
-      return literalAddress.address;
-    }
-
-    final addresses = await InternetAddress.lookup(host);
-    final firstAddress = addresses.firstOrNull;
-    if (firstAddress == null || addresses.any(_isPrivateAddress)) {
-      throw const FormatException(
-        _privateNetworkUrlError,
-      );
-    }
-
-    return firstAddress.address;
-  }
-
-  bool _isBlockedHostLabel(String host) {
-    final normalizedHost = host.toLowerCase();
-
-    return normalizedHost == 'localhost' ||
-        normalizedHost.endsWith('.localhost');
-  }
-
-  bool _isPrivateAddress(InternetAddress address) {
-    if (address.isLoopback || address.isLinkLocal) {
-      return true;
-    }
-
-    final raw = address.rawAddress;
-    if (address.type == InternetAddressType.IPv4) {
-      return _isPrivateIPv4(raw);
-    }
-
-    if (address.type == InternetAddressType.IPv6 && raw.length == 16) {
-      final isMapped =
-          const ListEquality<int>().equals(
-            raw.sublist(0, 10),
-            const [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          ) &&
-          raw[10] == 0xff &&
-          raw[11] == 0xff;
-      if (isMapped) {
-        return _isPrivateIPv4(raw.sublist(12));
-      }
-    }
-
-    final isUnspecified = raw.every((b) => b == 0);
-
-    return isUnspecified ||
-        raw.firstOrNull == 0xfc ||
-        raw.firstOrNull == 0xfd ||
-        raw.firstOrNull == 0xff ||
-        (raw.firstOrNull == 0xfe && (raw[1] & 0xc0) == 0x80);
-  }
-
-  bool _isPrivateIPv4(List<int> b) {
-    final firstByte = b.firstOrNull;
-    if (firstByte == null) {
-      return false;
-    }
-
-    return firstByte == 10 ||
-        (firstByte == 172 && b[1] >= 16 && b[1] <= 31) ||
-        (firstByte == 192 && b[1] == 168) ||
-        (firstByte == 169 && b[1] == 254) ||
-        firstByte == 127 ||
-        firstByte == 0 ||
-        (firstByte == 100 && b[1] >= 64 && b[1] <= 127) ||
-        (firstByte >= 224 && firstByte <= 239) ||
-        firstByte >= 240;
   }
 
   @override
