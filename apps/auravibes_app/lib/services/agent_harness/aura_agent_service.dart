@@ -28,7 +28,7 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
 
     return agent.AuraAgentService<ResolvedTool>(
       data: agentService.provider as agent.AgentDataProvider,
-      tools: _AppAgentToolProvider(
+      tools: AppAgentToolProvider(
         execution: ref.watch(agentToolExecutionServiceProvider).provider,
         calls: ref.watch(agentToolCallLoaderProvider).provider,
         decisions: ref.watch(agentToolDecisionServiceProvider).provider,
@@ -50,7 +50,7 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
         stopPending: toolCallActions,
         resume: agentToolResumeService.provider,
       ),
-      runtime: _AppAgentRuntimeProvider(
+      runtime: AppAgentRuntimeProvider(
         sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
         cancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
         retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
@@ -59,8 +59,8 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
   },
 );
 
-class _AppAgentRuntimeProvider implements agent.AgentRuntimeProvider {
-  const _AppAgentRuntimeProvider({
+class AppAgentRuntimeProvider implements agent.AgentRuntimeProvider {
+  const AppAgentRuntimeProvider({
     required this.sendQueueRuntime,
     required this.cancellationRuntime,
     required this._retryRuntime,
@@ -83,8 +83,8 @@ class _AppAgentRuntimeProvider implements agent.AgentRuntimeProvider {
   }
 }
 
-class _AppAgentToolProvider implements agent.AgentToolProvider<ResolvedTool> {
-  const _AppAgentToolProvider({
+class AppAgentToolProvider implements agent.AgentToolProvider<ResolvedTool> {
+  const AppAgentToolProvider({
     required this.execution,
     required this.calls,
     required this.decisions,
