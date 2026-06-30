@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -112,15 +113,38 @@ void main() {
     expect(find.text('Inputs JSON'), findsNothing);
     expect(find.text('Requires credential'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Find Company');
+    Future<void> enterLabeledField(String label, String value) async {
+      final input = find.byWidgetPredicate(
+        (widget) {
+          if (widget is! AuraInput) return false;
+          final labelWidget = widget.label;
+
+          return labelWidget is Text && labelWidget.data == label;
+        },
+      ).first;
+      await tester.scrollUntilVisible(
+        input,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final field = find.descendant(
+        of: input,
+        matching: find.byType(TextFormField),
+      );
+      await tester.enterText(field, value);
+      final _ = await tester.pumpAndSettle();
+    }
+
+    await enterLabeledField('Title', 'Find Company');
+    await tester.tap(find.text('Edit description'));
+    final _ = await tester.pumpAndSettle();
     await tester.enterText(
-      find.byType(TextFormField).at(1),
+      find.byType(TextFormField).last,
       'Find company records.',
     );
-    await tester.enterText(
-      find.byType(TextFormField).at(2),
-      'https://example.com/company',
-    );
+    await tester.tap(find.byIcon(Icons.save_outlined).last);
+    final _ = await tester.pumpAndSettle();
+    await enterLabeledField('URL', 'https://example.com/company');
     await tester.tap(find.text('GET'));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('POST').last);
@@ -128,17 +152,14 @@ void main() {
     await tester.ensureVisible(find.text('Add query parameter'));
     await tester.tap(find.text('Add query parameter'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).at(3), 'token');
-    await tester.enterText(
-      find.byType(TextFormField).at(4),
-      '{credential:api_key}',
-    );
-    await tester.enterText(
-      find.byType(TextFormField).at(5),
+    await enterLabeledField('Key', 'token');
+    await enterLabeledField('Value', '{credential:api_key}');
+    await enterLabeledField(
+      'Request body',
       '{"company_id":{{ input.company_id | json }}}',
     );
-    await tester.enterText(find.byType(TextFormField).at(6), 'company_id');
-    await tester.enterText(find.byType(TextFormField).at(7), 'Company id');
+    await enterLabeledField('Input name', 'company_id');
+    await enterLabeledField('Description', 'Company id');
     await tester.tap(find.text('Requires credential'));
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));

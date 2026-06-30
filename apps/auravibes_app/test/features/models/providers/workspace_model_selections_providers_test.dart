@@ -378,6 +378,67 @@ void main() {
       );
       expect(result.single.modelsProvider.id, 'openai-codex');
     });
+
+    test(
+      'keeps Codex tool-call support independent from priority mode',
+      () async {
+        final selections = [
+          _makeSelection(
+            selectionId: 'sel-codex-spark',
+            modelConnectionId: 'conn-codex',
+            modelConnectionName: 'Codex',
+            providerId: 'openai',
+            providerName: 'OpenAI',
+            modelId: 'gpt-5-spark',
+            connectionProviderId: openAICodexProviderId,
+          ),
+        ];
+        const openAIProvider = ApiModelProviderEntity(
+          id: 'openai',
+          name: 'OpenAI',
+          type: ModelProvidersType.openai,
+        );
+        const openAIModels = [
+          ApiModelEntity(
+            modelProvider: 'openai',
+            id: 'gpt-5-spark',
+            name: 'GPT-5 Spark',
+            limitContext: 1050000,
+            limitOutput: 128000,
+            modalitiesInput: ['text'],
+            modalitiesOutput: ['text'],
+            family: 'gpt-codex-spark',
+            supportsToolCalls: true,
+          ),
+        ];
+        final container = ProviderContainer(
+          overrides: [
+            workspaceModelSelectionRepositoryProvider.overrideWithValue(
+              _FakeWorkspaceModelSelectionRepository(selections),
+            ),
+            apiModelRepositoryProvider.overrideWithValue(
+              const _FakeApiModelRepository(
+                providers: [openAIProvider],
+                models: openAIModels,
+              ),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final provider = listWorkspaceModelSelectionsProvider(
+          workspaceId: 'ws-1',
+        );
+        final subscription = container.listen(provider, (_, _) {
+          final _ = Object();
+        });
+        addTearDown(subscription.close);
+
+        final result = await container.read(provider.future);
+
+        expect(result.single.workspaceModelSelection.supportsToolCalls, isTrue);
+      },
+    );
   });
 
   group('listModelsGroupedByProviderProvider', () {

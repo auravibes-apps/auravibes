@@ -1,3 +1,5 @@
+import 'package:auravibes_agent/auravibes_agent.dart'
+    show AgentIterationContext;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
@@ -22,21 +24,20 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
-import 'package:auravibes_app/features/chats/usecases/continue_agent_result.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/resume_conversation_if_ready_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/get_agent_iteration_decision_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/load_latest_message_tool_calls_result.dart';
-import 'package:auravibes_app/features/tools/usecases/run_allowed_tools_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/services/agent_harness/agent_service.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
+import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
@@ -138,7 +139,7 @@ class MockChatResult extends Mock implements ChatResult<ChatMessage> {}
 
 class MockChatbotService extends Mock implements ChatbotService {}
 
-class MockContinueAgentUsecase extends Mock implements ContinueAgentUsecase {}
+class MockContinueAgentService extends Mock implements ContinueAgentService {}
 
 class MockConversationDao extends Mock implements ConversationDao {}
 
@@ -154,8 +155,8 @@ class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
 
 class MockGenerateTitleUsecase extends Mock implements GenerateTitleUsecase {}
 
-class MockGetAgentIterationDecisionUsecase extends Mock
-    implements GetAgentIterationDecisionUsecase {}
+class MockAgentToolDecisionService extends Mock
+    implements AgentToolDecisionService {}
 
 class MockGetConversationBusyStateUsecase extends Mock
     implements GetConversationBusyStateUsecase {}
@@ -163,8 +164,7 @@ class MockGetConversationBusyStateUsecase extends Mock
 class MockLoadConversationToolSpecsUsecase extends Mock
     implements LoadConversationToolSpecsUsecase {}
 
-class MockLoadLatestMessageToolCallsUsecase extends Mock
-    implements LoadLatestMessageToolCallsUsecase {}
+class MockAgentToolCallLoader extends Mock implements AgentToolCallLoader {}
 
 class MockMaybeAutoCompactConversationUsecase extends Mock
     implements MaybeAutoCompactConversationUsecase {}
@@ -184,14 +184,13 @@ class MockMonitoringService extends Mock implements MonitoringService {}
 class MockResolveToolApprovalDecisionUsecase extends Mock
     implements ResolveToolApprovalDecisionUsecase {}
 
-class MockResumeConversationIfReadyUsecase extends Mock
-    implements ResumeConversationIfReadyUsecase {}
+class MockAgentToolResumeService extends Mock
+    implements AgentToolResumeService {}
 
-class MockRunAgentIterationUsecase extends Mock
-    implements RunAgentIterationUsecase {}
+class MockAgentService extends Mock implements AgentService {}
 
-class MockRunAllowedToolsUsecase extends Mock
-    implements RunAllowedToolsUsecase {}
+class MockAgentToolExecutionService extends Mock
+    implements AgentToolExecutionService {}
 
 class MockSelectPromptMessagesUsecase extends Mock
     implements SelectPromptMessagesUsecase {}

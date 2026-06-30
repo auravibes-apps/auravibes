@@ -140,8 +140,7 @@ WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(
     workspaceModelSelection: model.workspaceModelSelection.copyWith(
       modelName: openAIModel.name,
       supportsReasoning: openAIModel.supportsReasoning,
-      supportsToolCalls:
-          openAIModel.supportsToolCalls && openAIModel.supportsPriorityMode,
+      supportsToolCalls: openAIModel.supportsToolCalls,
     ),
     modelsProvider: ApiModelProviderEntity(
       id: openAICodexProviderId,

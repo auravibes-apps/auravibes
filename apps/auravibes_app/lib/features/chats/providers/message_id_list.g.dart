@@ -643,4 +643,4 @@ final class PendingToolCallsProvider
   }
 }
 
-String _$pendingToolCallsHash() => r'316b2aa2566082bf3c46746920011a327991fe09';
+String _$pendingToolCallsHash() => r'5fcd00efd4ac67efe76018cab8094a9cff047918';

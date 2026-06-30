@@ -67,9 +67,7 @@ class LoadConversationToolSpecsUsecase {
 
     return [
       ...toolSpecs,
-      ...skillToolSpecs.where(
-        (spec) => enabledSkillToolNames.contains(spec.name),
-      ),
+      ...skillToolSpecs.where(_isAvailableSkillControlTool),
       ...skillTemplateToolSpecs.where(
         (spec) => enabledSkillToolNames.contains(spec.name),
       ),
@@ -77,6 +75,12 @@ class LoadConversationToolSpecsUsecase {
         (spec) => enabledSkillToolNames.contains(spec.name),
       ),
     ];
+  }
+
+  bool _isAvailableSkillControlTool(ToolSpec spec) {
+    return spec.name == loadSkillToolName ||
+        spec.name == unloadSkillToolName ||
+        spec.name == listSkillCredentialsToolName;
   }
 }
 

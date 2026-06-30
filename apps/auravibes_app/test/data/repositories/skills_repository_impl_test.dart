@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:async/async.dart';
+import 'package:auravibes_agent/auravibes_agent.dart'
+    show AgentCancellationRuntime, skillContextMetadataKind;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
@@ -18,11 +20,9 @@ import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/build_skill_context_messages_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
@@ -40,8 +40,9 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_template_too
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/run_resolved_tool_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
+import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -453,6 +454,10 @@ void main() {
         _slugEnumFor(specs, loadSkillToolName),
         containsAll(['example_services', 'skills_manager']),
       );
+      expect(
+        specs.map((spec) => spec.name),
+        isNot(contains(unloadSkillToolName)),
+      );
 
       await loadSkillUsecase.call(
         conversationId: conversation.id,
@@ -517,7 +522,7 @@ void main() {
         skill.id,
         isLoaded: true,
       );
-      final usecase = BuildSkillContextMessagesUsecase(
+      final usecase = BuildSkillContextMessagesService(
         listAvailableSkillsUsecase,
       );
 
@@ -1009,7 +1014,7 @@ void main() {
         skill.id,
         isLoaded: true,
       );
-      final runUsecase = RunResolvedToolUsecase(
+      final runUsecase = ResolvedToolService(
         agentCancellationRuntime: AgentCancellationRuntime(),
         mcpToolCaller:
             ({

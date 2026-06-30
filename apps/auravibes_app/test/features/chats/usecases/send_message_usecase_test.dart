@@ -1,9 +1,9 @@
+import 'package:auravibes_agent/auravibes_agent.dart'
+    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
-import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
-import 'package:auravibes_app/features/chats/usecases/agent_iteration_decision.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,7 +126,7 @@ class _SendMessageUsecaseFixture {
   });
 
   factory _SendMessageUsecaseFixture.create() {
-    final runAgentIterationUsecase = MockRunAgentIterationUsecase();
+    final runAgentIterationUsecase = MockAgentService();
     final messageRepository = MockMessageRepository();
     final getConversationBusyStateUsecase =
         MockGetConversationBusyStateUsecase();
@@ -141,7 +141,7 @@ class _SendMessageUsecaseFixture {
       getConversationBusyStateUsecase: getConversationBusyStateUsecase,
       container: container,
       usecase: SendMessageUsecase(
-        runAgentIterationUsecase: runAgentIterationUsecase,
+        continueAgentTurn: runAgentIterationUsecase.call,
         messageRepository: messageRepository,
         getConversationBusyStateUsecase: getConversationBusyStateUsecase,
         sendQueueRuntime: ConversationSendQueueRuntime(
@@ -153,7 +153,7 @@ class _SendMessageUsecaseFixture {
     );
   }
 
-  final MockRunAgentIterationUsecase runAgentIterationUsecase;
+  final MockAgentService runAgentIterationUsecase;
   final MockMessageRepository messageRepository;
   final MockGetConversationBusyStateUsecase getConversationBusyStateUsecase;
   final ProviderContainer container;

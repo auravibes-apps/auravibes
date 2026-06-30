@@ -29,16 +29,18 @@ class BuildDynamicSkillToolSpecsUsecase {
     );
 
     return [
-      _buildSpec(
-        name: loadSkillToolName,
-        action: 'Load',
-        skills: loadableSkills,
-      ),
-      _buildSpec(
-        name: unloadSkillToolName,
-        action: 'Unload',
-        skills: loadedSkills,
-      ),
+      if (loadableSkills.isNotEmpty)
+        _buildSpec(
+          name: loadSkillToolName,
+          action: 'Load',
+          skills: loadableSkills,
+        ),
+      if (loadedSkills.isNotEmpty)
+        _buildSpec(
+          name: unloadSkillToolName,
+          action: 'Unload',
+          skills: loadedSkills,
+        ),
       if (loadedSkills.any(
         (skill) =>
             skill.source == SkillSource.user &&

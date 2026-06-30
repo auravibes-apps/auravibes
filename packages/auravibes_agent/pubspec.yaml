@@ -1,0 +1,15 @@
+name: auravibes_agent
+description: Riverpod-free agent orchestration for AuraVibes.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  meta: ^1.18.0
+
+dev_dependencies:
+  test: ^1.28.0
+  very_good_analysis: ^10.3.0

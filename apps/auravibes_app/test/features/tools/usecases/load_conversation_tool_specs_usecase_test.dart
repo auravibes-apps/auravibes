@@ -345,7 +345,7 @@ void main() {
       ]);
     });
 
-    test('omits dynamic skill specs disabled in conversation state', () async {
+    test('keeps dynamic skill control specs available for the agent', () async {
       final skillSpecs = [
         const ToolSpec(
           name: loadSkillToolName,
@@ -357,21 +357,15 @@ void main() {
           description: 'unload skill',
           inputJsonSchema: {},
         ),
+        const ToolSpec(
+          name: listSkillCredentialsToolName,
+          description: 'list credentials',
+          inputJsonSchema: {},
+        ),
       ];
 
       final usecase = LoadConversationToolSpecsUsecase(
-        conversationToolsRepository: _FakeConversationToolsRepository([
-          WorkspaceToolEntity(
-            id: 'load-tool-id',
-            workspaceId: 'ws-1',
-            toolId: loadSkillToolName,
-            isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAsk,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
-            workspaceToolsGroupId: 'skills-group',
-          ),
-        ]),
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
         buildDynamicSkillToolSpecsUsecase:
             _FakeBuildDynamicSkillToolSpecsUsecase(skillSpecs),
@@ -383,7 +377,11 @@ void main() {
         workspaceId: 'ws-1',
       );
 
-      expect(result.map((spec) => spec.name), [loadSkillToolName]);
+      expect(result.map((spec) => spec.name), [
+        loadSkillToolName,
+        unloadSkillToolName,
+        listSkillCredentialsToolName,
+      ]);
     });
   });
 }
