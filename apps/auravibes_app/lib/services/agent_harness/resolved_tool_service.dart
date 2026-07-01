@@ -2,8 +2,6 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:async/async.dart';
 import 'package:auravibes_agent/auravibes_agent.dart' as agent;
-import 'package:auravibes_agent/auravibes_agent_internal.dart'
-    as agent_resolved;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -59,7 +57,7 @@ class ResolvedToolService {
     ListAvailableSkillsUsecase? listAvailableSkillsUsecase,
     SkillCredentialsRepository? skillCredentialsRepository,
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
-  }) : _delegate = agent_resolved.ResolvedToolService<ResolvedTool>(
+  }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
            agentCancellationRuntime: agentCancellationRuntime,
            mcpToolCaller: mcpToolCaller,
@@ -74,7 +72,7 @@ class ResolvedToolService {
          ),
        );
 
-  final agent_resolved.ResolvedToolService<ResolvedTool> _delegate;
+  final agent.ResolvedToolRunner<ResolvedTool> _delegate;
 
   Future<Object?> call({
     required String conversationId,

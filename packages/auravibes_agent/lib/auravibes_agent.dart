@@ -1,6 +1,7 @@
 export 'src/agent_continuation_preparer.dart';
 export 'src/agent_iteration_context.dart';
 export 'src/agent_iteration_decision.dart';
+export 'src/agent_runners.dart';
 export 'src/agent_runtime.dart';
 export 'src/agent_service.dart' hide AgentService;
 export 'src/agent_stop_service.dart' hide AgentStopService;
@@ -15,6 +16,7 @@ export 'src/namespaces/conversations_namespace.dart';
 export 'src/namespaces/tools_namespace.dart';
 export 'src/prompt_messages.dart';
 export 'src/providers/agent_data_provider.dart';
+export 'src/providers/agent_model_provider.dart';
 export 'src/providers/agent_runtime_provider.dart';
 export 'src/providers/agent_tool_provider.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;

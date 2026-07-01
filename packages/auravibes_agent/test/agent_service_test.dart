@@ -6,7 +6,9 @@ void main() {
   test('returns done when continuation has no tool calls', () async {
     final dataProvider = _FakeAgentConversationDataProvider();
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -29,7 +31,9 @@ void main() {
   test('throws when conversation has no workspace', () async {
     final dataProvider = _FakeAgentConversationDataProvider(workspaceId: null);
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -55,7 +59,9 @@ void main() {
       drafts: const [AgentQueuedDraft(content: 'queued')],
     );
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: sendQueue,
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -88,7 +94,9 @@ void main() {
       toolDecisions: const [AgentIterationDecision.done],
     );
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -116,7 +124,9 @@ void main() {
       continueErrors: [Exception('RateLimitException: retry after 2 seconds')],
     );
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -155,7 +165,9 @@ void main() {
       continueErrors: [Exception('RESOURCE_EXHAUSTED: try again in 1 minute')],
     );
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -191,7 +203,9 @@ void main() {
     );
     final sendQueue = _FakeAgentSendQueueRuntime();
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: sendQueue,
       agentCancellationRuntime: cancellationRuntime,
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -223,7 +237,9 @@ void main() {
       continueErrors: [StateError('broken')],
     );
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
       agentCancellationRuntime: AgentCancellationRuntime(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -252,7 +268,9 @@ void main() {
       drafts: const [AgentQueuedDraft(content: 'queued')],
     );
     final usecase = AgentService(
-      provider: dataProvider,
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
       sendQueueRuntime: sendQueue,
       agentCancellationRuntime: cancellationRuntime,
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -275,7 +293,8 @@ void main() {
   });
 }
 
-class _FakeAgentConversationDataProvider implements AgentProvider {
+class _FakeAgentConversationDataProvider
+    implements AgentDataProvider, AgentModelProvider, AgentLoopToolProvider {
   _FakeAgentConversationDataProvider({
     this.workspaceId = 'workspace-1',
     List<ContinueAgentResult>? continueResults,
@@ -370,6 +389,9 @@ class _FakeAgentConversationDataProvider implements AgentProvider {
   Future<void> markMessagesSent(List<String> messageIds) async {
     markedSent.addAll(messageIds);
   }
+
+  @override
+  Future<void> stopLatestPendingTools(String conversationId) async {}
 }
 
 class _FakeAgentSendQueueRuntime implements AgentSendQueueRuntime {

@@ -1,24 +1,16 @@
 import 'package:auravibes_agent/src/agent_iteration_context.dart';
 import 'package:auravibes_agent/src/agent_iteration_decision.dart';
 import 'package:auravibes_agent/src/agent_runtime.dart';
-import 'package:auravibes_agent/src/continue_agent_result.dart';
+import 'package:auravibes_agent/src/providers/agent_data_provider.dart';
+import 'package:auravibes_agent/src/providers/agent_model_provider.dart';
 
 const defaultAgentRateLimitRetryDelay = Duration(seconds: 60);
 
-abstract interface class AgentProvider
-    implements AgentConversationDataProvider {
-  Future<ContinueAgentResult> continueAgent({
-    required String conversationId,
-    AgentIterationContext? context,
-  });
-
+// ignore: one_member_abstracts, provider interface keeps tool loop injectable.
+abstract interface class AgentLoopToolProvider {
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
     required String workspaceId,
-  });
-
-  Future<void> autoCompactConversation({
-    required String conversationId,
   });
 }
 
@@ -28,7 +20,9 @@ Future<void> _defaultAgentSleep(Duration duration) {
 
 class AgentService {
   const AgentService({
-    required this.provider,
+    required this.data,
+    required this.models,
+    required this.tools,
     required this.sendQueueRuntime,
     required this.agentCancellationRuntime,
     required this.rateLimitRetryRuntime,
@@ -37,7 +31,9 @@ class AgentService {
     this.sleep = _defaultAgentSleep,
   });
 
-  final AgentProvider provider;
+  final AgentDataProvider data;
+  final AgentModelProvider models;
+  final AgentLoopToolProvider tools;
   final AgentSendQueueRuntime sendQueueRuntime;
   final AgentCancellationRuntime agentCancellationRuntime;
   final AgentRateLimitRetryRuntime rateLimitRetryRuntime;
@@ -49,7 +45,7 @@ class AgentService {
     required String conversationId,
     required AgentIterationContext context,
   }) async {
-    final workspaceId = await provider.getWorkspaceId(conversationId);
+    final workspaceId = await data.getWorkspaceId(conversationId);
     if (workspaceId == null) {
       throw Exception('Conversation not found');
     }
@@ -127,9 +123,9 @@ class AgentService {
       return _AgentIterationStep(currentContext, cancelDecision);
     }
 
-    await provider.autoCompactConversation(conversationId: conversationId);
+    await data.autoCompactConversation(conversationId: conversationId);
 
-    final continueResult = await provider.continueAgent(
+    final continueResult = await models.continueAgent(
       conversationId: conversationId,
       context: currentContext,
     );
@@ -148,7 +144,7 @@ class AgentService {
       return _continueAfterNoToolCalls(conversationId, currentContext);
     }
 
-    final decision = await provider.runAllowedTools(
+    final decision = await tools.runAllowedTools(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
@@ -203,7 +199,7 @@ class AgentService {
 
     final createdMessages = await Future.wait(
       queuedDrafts.map(
-        (queuedDraft) => provider.createQueuedUserMessage(
+        (queuedDraft) => data.createQueuedUserMessage(
           conversationId: conversationId,
           content: queuedDraft.content,
         ),
@@ -223,7 +219,7 @@ class AgentService {
     final ackMessageIds = context?.ackMessageIds ?? const <String>[];
     if (ackMessageIds.isEmpty) return;
 
-    await provider.markMessagesSent(ackMessageIds);
+    await data.markMessagesSent(ackMessageIds);
   }
 
   Future<AgentIterationDecision?> _waitForRateLimitRetry({

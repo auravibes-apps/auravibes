@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_agent/auravibes_agent.dart';
-import 'package:auravibes_agent/auravibes_agent_internal.dart' as agent_loop;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -20,38 +19,12 @@ class AppAgentConversationDataProvider implements AgentDataProvider {
   const AppAgentConversationDataProvider({
     required this.conversationRepository,
     required this.messageRepository,
-    required this.continueAgentService,
-    required this.toolExecutionService,
     required this.autoCompactConversationUsecase,
   });
 
   final ConversationRepository conversationRepository;
   final MessageRepository messageRepository;
-  final ContinueAgentService continueAgentService;
-  final AgentToolExecutionService toolExecutionService;
   final MaybeAutoCompactConversationUsecase autoCompactConversationUsecase;
-
-  @override
-  Future<ContinueAgentResult> continueAgent({
-    required String conversationId,
-    AgentIterationContext? context,
-  }) {
-    return continueAgentService.call(
-      conversationId: conversationId,
-      context: context,
-    );
-  }
-
-  @override
-  Future<AgentIterationDecision> runAllowedTools({
-    required String conversationId,
-    required String workspaceId,
-  }) {
-    return toolExecutionService.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-  }
 
   @override
   Future<void> autoCompactConversation({
@@ -164,7 +137,7 @@ AgentConversationMessage _toAgentConversationMessage(MessageEntity message) {
   );
 }
 
-class AgentService extends agent_loop.AgentService {
+class AgentService extends AgentLoopRunner {
   AgentService({
     required ContinueAgentService continueAgentService,
     required AgentToolExecutionService toolExecutionService,
@@ -178,19 +151,53 @@ class AgentService extends agent_loop.AgentService {
     super.now,
     super.sleep,
   }) : super(
-         provider: AppAgentConversationDataProvider(
+         data: AppAgentConversationDataProvider(
            conversationRepository: conversationRepository,
            messageRepository: messageRepository,
-           continueAgentService: continueAgentService,
-           toolExecutionService: toolExecutionService,
            autoCompactConversationUsecase: autoCompactConversationUsecase,
          ),
+         models: AppAgentModelProvider(continueAgentService),
+         tools: AppAgentLoopToolProvider(toolExecutionService),
          sendQueueRuntime: sendQueueRuntime,
          rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
            start: rateLimitRetryRuntime.start,
            clear: rateLimitRetryRuntime.clear,
          ),
        );
+}
+
+class AppAgentLoopToolProvider implements AgentLoopToolProvider {
+  const AppAgentLoopToolProvider(this._toolExecutionService);
+
+  final AgentToolExecutionService _toolExecutionService;
+
+  @override
+  Future<AgentIterationDecision> runAllowedTools({
+    required String conversationId,
+    required String workspaceId,
+  }) {
+    return _toolExecutionService.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+  }
+}
+
+class AppAgentModelProvider implements AgentModelProvider {
+  const AppAgentModelProvider(this._continueAgentService);
+
+  final ContinueAgentService _continueAgentService;
+
+  @override
+  Future<ContinueAgentResult> continueAgent({
+    required String conversationId,
+    AgentIterationContext? context,
+  }) {
+    return _continueAgentService.call(
+      conversationId: conversationId,
+      context: context,
+    );
+  }
 }
 
 final agentServiceProvider = Provider<AgentService>((

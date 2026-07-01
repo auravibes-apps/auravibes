@@ -1,5 +1,5 @@
 import 'package:auravibes_agent/auravibes_agent.dart';
-import 'package:auravibes_agent/auravibes_agent_internal.dart';
+import 'package:auravibes_agent/src/agent_tool_execution_service.dart';
 import 'package:test/test.dart';
 
 void main() {

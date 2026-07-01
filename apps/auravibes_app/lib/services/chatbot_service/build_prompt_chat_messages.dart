@@ -61,19 +61,37 @@ class BuildPromptChatMessages {
         reasoning: part.reasoning ?? '',
       ),
       agent.AgentChatPartType.toolRequest => ToolRequestPart(
-        toolRequest: ToolRequest(
-          ref: part.toolRequest?.ref,
-          name: part.toolRequest?.name ?? '',
-          input: part.toolRequest?.input ?? const {},
-        ),
+        toolRequest: _toToolRequest(part),
       ),
       agent.AgentChatPartType.toolResponse => ToolResponsePart(
-        toolResponse: ToolResponse(
-          ref: part.toolResponse?.ref,
-          name: part.toolResponse?.name ?? '',
-          output: part.toolResponse?.output,
-        ),
+        toolResponse: _toToolResponse(part),
       ),
     };
+  }
+
+  ToolRequest _toToolRequest(agent.AgentChatPart part) {
+    final request = part.toolRequest;
+    if (request == null) {
+      throw StateError('Tool request part is missing request payload.');
+    }
+
+    return ToolRequest(
+      ref: request.ref,
+      name: request.name,
+      input: request.input,
+    );
+  }
+
+  ToolResponse _toToolResponse(agent.AgentChatPart part) {
+    final response = part.toolResponse;
+    if (response == null) {
+      throw StateError('Tool response part is missing response payload.');
+    }
+
+    return ToolResponse(
+      ref: response.ref,
+      name: response.name,
+      output: response.output,
+    );
   }
 }

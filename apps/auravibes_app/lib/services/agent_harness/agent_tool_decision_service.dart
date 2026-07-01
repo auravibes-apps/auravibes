@@ -1,7 +1,5 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_agent/auravibes_agent.dart' as agent;
-import 'package:auravibes_agent/auravibes_agent_internal.dart'
-    as agent_decision;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -33,7 +31,7 @@ class AppAgentToolCallDataProvider implements agent.AgentToolDecisionProvider {
   }
 }
 
-class AgentToolDecisionService extends agent_decision.AgentToolDecisionService {
+class AgentToolDecisionService extends agent.AgentToolDecisionRunner {
   AgentToolDecisionService({
     required MessageRepository messageRepository,
   }) : super(

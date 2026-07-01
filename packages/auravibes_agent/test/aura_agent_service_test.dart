@@ -58,12 +58,13 @@ AuraAgentService<String> _service(
 }) {
   return AuraAgentService<String>(
     data: provider,
+    models: provider,
     tools: tools ?? _FakeToolProvider(),
     runtime: _FakeRuntimeProvider(),
   );
 }
 
-class _FakeAgentProvider implements AgentDataProvider {
+class _FakeAgentProvider implements AgentDataProvider, AgentModelProvider {
   final createdContents = <String>[];
 
   @override
@@ -118,14 +119,6 @@ class _FakeAgentProvider implements AgentDataProvider {
 
   @override
   Future<void> stopLatestPendingTools(String conversationId) async {}
-
-  @override
-  Future<AgentIterationDecision> runAllowedTools({
-    required String conversationId,
-    required String workspaceId,
-  }) async {
-    return AgentIterationDecision.done;
-  }
 }
 
 class _FakeToolProvider implements AgentToolProvider<String> {

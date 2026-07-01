@@ -1,8 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_agent/auravibes_agent.dart' as agent;
-import 'package:auravibes_agent/auravibes_agent_internal.dart'
-    as agent_execution;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     hide ToolToCall;
@@ -21,7 +19,7 @@ import 'package:riverpod/riverpod.dart';
 final _logger = Logger('agent_tool_execution_service');
 
 class AgentToolExecutionService
-    extends agent_execution.AgentToolExecutionService<ResolvedTool> {
+    extends agent.AgentToolExecutionRunner<ResolvedTool> {
   AgentToolExecutionService({
     required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
     required MessageRepository messageRepository,

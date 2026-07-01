@@ -47,8 +47,8 @@ class ConversationSendQueueRuntime implements AgentSendQueueRuntime {
   final void Function(String conversationId) _clear;
 
   @override
-  List<ConversationQueuedDraft> dequeueAll(String conversationId) {
-    return _dequeueAll(conversationId);
+  List<AgentQueuedDraft> dequeueAll(String conversationId) {
+    return List<AgentQueuedDraft>.of(_dequeueAll(conversationId));
   }
 
   @override

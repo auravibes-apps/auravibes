@@ -1,5 +1,9 @@
-import 'package:auravibes_agent/src/agent_service.dart';
+import 'package:auravibes_agent/src/agent_runtime.dart';
 import 'package:auravibes_agent/src/agent_stop_service.dart';
 
 abstract interface class AgentDataProvider
-    implements AgentProvider, AgentStopProvider {}
+    implements AgentConversationDataProvider, AgentStopProvider {
+  Future<void> autoCompactConversation({
+    required String conversationId,
+  });
+}

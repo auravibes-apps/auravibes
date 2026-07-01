@@ -5,7 +5,6 @@ import 'dart:async';
 
 import 'package:auravibes_agent/auravibes_agent.dart'
     hide BuildPromptChatMessages;
-import 'package:auravibes_agent/auravibes_agent_internal.dart';
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -142,7 +141,7 @@ class ContinueAgentService
       sessionId: conversationId,
     );
 
-    return AgentStreamService<ChatResult<ChatMessage>>(
+    return AgentStreamRunner<ChatResult<ChatMessage>>(
       agentCancellationRuntime: agentCancellationRuntime,
       provider: this,
     ).call(

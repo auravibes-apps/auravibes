@@ -1,5 +1,4 @@
 import 'package:auravibes_agent/auravibes_agent.dart' as agent;
-import 'package:auravibes_agent/auravibes_agent_internal.dart' as agent_resume;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -7,7 +6,7 @@ import 'package:auravibes_app/services/agent_harness/agent_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
 import 'package:riverpod/riverpod.dart';
 
-class AgentToolResumeService extends agent_resume.AgentToolResumeService {
+class AgentToolResumeService extends agent.AgentToolResumeRunner {
   AgentToolResumeService({
     required MessageRepository messageRepository,
     required ConversationRepository conversationRepository,
