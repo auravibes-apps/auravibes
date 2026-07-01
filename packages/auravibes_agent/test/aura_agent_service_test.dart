@@ -25,12 +25,40 @@ void main() {
     expect(messages.single.content, 'hello');
     expect(provider.createdContents, ['hello']);
   });
+
+  test('exposes tools module actions', () async {
+    final tools = _FakeToolProvider();
+    final service = _service(_FakeAgentProvider(), tools: tools);
+
+    await service.tools.approve(
+      messageId: 'message-1',
+      toolCallId: 'tool-1',
+      level: AgentToolGrantLevel.conversation,
+    );
+    await service.tools.skip(messageId: 'message-1', toolCallId: 'tool-2');
+    await service.tools.stopPending(messageId: 'message-1');
+    await service.tools.resumeIfReady(messageId: 'message-1');
+
+    expect(tools.calls, [
+      'grant:conversation-1:tool',
+      'run:conversation-1:tool',
+      'update:tool-1:AgentToolResultStatus.success:ok',
+      'resume:message-1',
+      'skip:message-1:tool-2',
+      'resume:message-1',
+      'stop-pending-calls:message-1',
+      'resume-reference:message-1',
+    ]);
+  });
 }
 
-AuraAgentService<String> _service(_FakeAgentProvider provider) {
+AuraAgentService<String> _service(
+  _FakeAgentProvider provider, {
+  _FakeToolProvider? tools,
+}) {
   return AuraAgentService<String>(
     data: provider,
-    tools: _FakeToolProvider(),
+    tools: tools ?? _FakeToolProvider(),
     runtime: _FakeRuntimeProvider(),
   );
 }
@@ -101,6 +129,8 @@ class _FakeAgentProvider implements AgentDataProvider {
 }
 
 class _FakeToolProvider implements AgentToolProvider<String> {
+  final calls = <String>[];
+
   @override
   Future<List<AgentToolMessage>> loadMessages(String conversationId) async {
     return const [AgentToolMessage(id: 'message-1', isUser: false)];
@@ -140,7 +170,9 @@ class _FakeToolProvider implements AgentToolProvider<String> {
     required String tool,
     required Map<String, dynamic> arguments,
   }) async {
-    return null;
+    calls.add('run:$conversationId:$tool');
+
+    return 'ok';
   }
 
   @override
@@ -157,6 +189,8 @@ class _FakeToolProvider implements AgentToolProvider<String> {
 
   @override
   Future<AgentToolResumeReference?> getResumeReference(String messageId) async {
+    calls.add('resume-reference:$messageId');
+
     return null;
   }
 
@@ -181,7 +215,9 @@ class _FakeToolProvider implements AgentToolProvider<String> {
   Future<void> stopPendingTools({required String messageId}) async {}
 
   @override
-  Future<void> stopPendingToolCalls({required String messageId}) async {}
+  Future<void> stopPendingToolCalls({required String messageId}) async {
+    calls.add('stop-pending-calls:$messageId');
+  }
 
   @override
   Future<void> updateToolResults({
@@ -197,14 +233,20 @@ class _FakeToolProvider implements AgentToolProvider<String> {
     required String messageId,
     required String toolCallId,
   }) async {
-    return null;
+    return const AgentApprovableToolCall(
+      conversationId: 'conversation-1',
+      name: 'calculator',
+      argumentsRaw: '{}',
+    );
   }
 
   @override
   Future<void> grantToolForConversation({
     required String conversationId,
     required String tool,
-  }) async {}
+  }) async {
+    calls.add('grant:$conversationId:$tool');
+  }
 
   @override
   Future<void> updateToolCallResult({
@@ -212,17 +254,23 @@ class _FakeToolProvider implements AgentToolProvider<String> {
     required String toolCallId,
     required AgentToolResultStatus resultStatus,
     String? responseRaw,
-  }) async {}
+  }) async {
+    calls.add('update:$toolCallId:$resultStatus:$responseRaw');
+  }
 
   @override
-  Future<void> resumeConversationIfReady({required String messageId}) async {}
+  Future<void> resumeConversationIfReady({required String messageId}) async {
+    calls.add('resume:$messageId');
+  }
 
   @override
   Future<bool> skipToolCall({
     required String messageId,
     required String toolCallId,
   }) async {
-    return false;
+    calls.add('skip:$messageId:$toolCallId');
+
+    return true;
   }
 
   @override

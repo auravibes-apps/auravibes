@@ -45,6 +45,128 @@ void main() {
       ]);
     },
   );
+
+  test('throws when stream completes without a result', () async {
+    final usecase = AgentStreamService<_Chunk>(
+      agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+      provider: _FakeAgentStreamProvider(
+        persistenceSink: _MemorySink<_Chunk>(),
+        uiSink: _MemorySink<_Chunk>(),
+        calls: <String>[],
+      ),
+    );
+
+    expect(
+      () => usecase.call(
+        conversationId: 'c1',
+        responseStream: const Stream<_Chunk>.empty(),
+        pendingUserMessageIds: const [],
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
+  test(
+    'marks pending users errored when stream fails before message',
+    () async {
+      final calls = <String>[];
+      final usecase = AgentStreamService<_Chunk>(
+        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        provider: _FakeAgentStreamProvider(
+          persistenceSink: _MemorySink<_Chunk>(),
+          uiSink: _MemorySink<_Chunk>(),
+          calls: calls,
+        ),
+      );
+
+      await expectLater(
+        usecase.call(
+          conversationId: 'c1',
+          responseStream: Stream.error(StateError('boom')),
+          pendingUserMessageIds: const ['u1'],
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(calls, ['start:c1', 'response-error', 'errored:u1', 'remove:c1']);
+    },
+  );
+
+  test(
+    'marks assistant errored when processing fails after creation',
+    () async {
+      final calls = <String>[];
+      final usecase = AgentStreamService<_Chunk>(
+        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        provider: _FakeAgentStreamProvider(
+          persistenceSink: _MemorySink<_Chunk>(),
+          uiSink: _MemorySink<_Chunk>(),
+          calls: calls,
+          throwOnConcat: true,
+        ),
+      );
+
+      await expectLater(
+        usecase.call(
+          conversationId: 'c1',
+          responseStream: Stream.fromIterable([
+            const _Chunk('a'),
+            const _Chunk('b'),
+          ]),
+          pendingUserMessageIds: const [],
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(calls, [
+        'start:c1',
+        'create:a',
+        'message-stream:m1',
+        'errored:',
+        'assistant-error:m1',
+        'remove:c1',
+        'message-remove:m1',
+      ]);
+    },
+  );
+
+  test(
+    'persists stopped message when cancellation is requested mid-stream',
+    () async {
+      final calls = <String>[];
+      final cancellationRuntime = AgentCancellationRuntime()..start('c1');
+      final usecase = AgentStreamService<_Chunk>(
+        agentCancellationRuntime: cancellationRuntime,
+        provider: _FakeAgentStreamProvider(
+          persistenceSink: _MemorySink<_Chunk>(),
+          uiSink: _MemorySink<_Chunk>(),
+          calls: calls,
+          onStartMessageStreaming: (_) => cancellationRuntime.requestStop('c1'),
+        ),
+      );
+
+      final result = await usecase.call(
+        conversationId: 'c1',
+        responseStream: Stream.fromIterable([
+          const _Chunk('a'),
+          const _Chunk('b'),
+        ]),
+        pendingUserMessageIds: const ['u1'],
+      );
+
+      expect(result.messageId, 'm1');
+      expect(result.hasToolCalls, isFalse);
+      expect(calls, [
+        'start:c1',
+        'sent:u1',
+        'create:a',
+        'message-stream:m1',
+        'stopped:m1:a',
+        'remove:c1',
+        'message-remove:m1',
+      ]);
+    },
+  );
 }
 
 class _Chunk {
@@ -58,11 +180,15 @@ class _FakeAgentStreamProvider implements AgentStreamProvider<_Chunk> {
     required this.persistenceSink,
     required this.uiSink,
     required this.calls,
+    this.throwOnConcat = false,
+    this.onStartMessageStreaming,
   });
 
   final _MemorySink<_Chunk> persistenceSink;
   final _MemorySink<_Chunk> uiSink;
   final List<String> calls;
+  final bool throwOnConcat;
+  final void Function(String messageId)? onStartMessageStreaming;
 
   @override
   void startConversationStreaming(String conversationId) {
@@ -97,6 +223,7 @@ class _FakeAgentStreamProvider implements AgentStreamProvider<_Chunk> {
   @override
   Future<void> startMessageStreaming(String messageId) async {
     calls.add('message-stream:$messageId');
+    onStartMessageStreaming?.call(messageId);
   }
 
   @override
@@ -110,13 +237,17 @@ class _FakeAgentStreamProvider implements AgentStreamProvider<_Chunk> {
   }
 
   @override
-  Future<void> markPendingUsersErrored(List<String> messageIds) async {}
+  Future<void> markPendingUsersErrored(List<String> messageIds) async {
+    calls.add('errored:${messageIds.join(',')}');
+  }
 
   @override
   Future<void> persistStoppedAssistantMessage(
     String? messageId,
     _Chunk? result,
-  ) async {}
+  ) async {
+    calls.add('stopped:$messageId:${result?.text}');
+  }
 
   @override
   Future<void> persistCompletedAssistantMessage(
@@ -127,10 +258,16 @@ class _FakeAgentStreamProvider implements AgentStreamProvider<_Chunk> {
   }
 
   @override
-  Future<void> markAssistantErrored(String messageId) async {}
+  Future<void> markAssistantErrored(String messageId) async {
+    calls.add('assistant-error:$messageId');
+  }
 
   @override
   _Chunk concatChunks(_Chunk current, _Chunk delta) {
+    if (throwOnConcat) {
+      throw StateError('concat failed');
+    }
+
     return _Chunk(current.text + delta.text);
   }
 
@@ -141,7 +278,9 @@ class _FakeAgentStreamProvider implements AgentStreamProvider<_Chunk> {
   bool hasToolCalls(_Chunk chunk) => false;
 
   @override
-  void trackResponseStreamError(Object error, StackTrace stackTrace) {}
+  void trackResponseStreamError(Object error, StackTrace stackTrace) {
+    calls.add('response-error');
+  }
 
   @override
   void trackCancellationStreamError(Object error, StackTrace stackTrace) {}

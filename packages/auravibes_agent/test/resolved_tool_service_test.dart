@@ -19,6 +19,37 @@ void main() {
       expect(result, 'built-in:1+1');
     });
 
+    test('runs native tools with input argument', () async {
+      final usecase = _usecase();
+
+      final result = await usecase.call(
+        conversationId: 'c1',
+        tool: AgentResolvedToolName.native(
+          tableId: 'native',
+          toolIdentifier: 'search',
+        ),
+        arguments: {'input': 'query'},
+      );
+
+      expect(result, 'native:query');
+    });
+
+    test('rejects input tools without input', () async {
+      final usecase = _usecase();
+
+      expect(
+        () => usecase.call(
+          conversationId: 'c1',
+          tool: AgentResolvedToolName.builtIn(
+            tableId: 'calc',
+            toolIdentifier: 'calculator',
+          ),
+          arguments: const {},
+        ),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
     test('runs MCP tools with server binding', () async {
       final usecase = _usecase();
 
@@ -33,6 +64,35 @@ void main() {
       );
 
       expect(result, 'mcp:server-1:sum:1');
+    });
+
+    test('rejects MCP tools without server binding', () async {
+      final usecase = _usecase();
+
+      expect(
+        () => usecase.call(
+          conversationId: 'c1',
+          tool: AgentResolvedToolName.mcp(
+            tableId: 'server-1',
+            toolIdentifier: 'sum',
+            mcpServerId: '',
+          ),
+          arguments: const {},
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('runs skill control tools with workspace from conversation', () async {
+      final usecase = _usecase();
+
+      final result = await usecase.call(
+        conversationId: 'c1',
+        tool: AgentResolvedToolName.skillControl(toolIdentifier: 'load_skill'),
+        arguments: {'slug': 'writer'},
+      );
+
+      expect(result, 'control:w1:load_skill');
     });
 
     test(
@@ -53,6 +113,22 @@ void main() {
         expect(result, 'template:w1:writer:draft');
       },
     );
+
+    test('runs skill native tools with workspace from conversation', () async {
+      final usecase = _usecase();
+
+      final result = await usecase.call(
+        conversationId: 'c1',
+        tool: AgentResolvedToolName.skillNative(
+          tableId: 'run',
+          skillSlug: 'manager',
+          toolIdentifier: 'run',
+        ),
+        arguments: {'topic': 'x'},
+      );
+
+      expect(result, 'native-skill:w1:manager:run');
+    });
   });
 }
 
