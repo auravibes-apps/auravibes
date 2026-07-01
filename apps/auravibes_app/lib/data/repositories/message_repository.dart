@@ -137,6 +137,18 @@ class MessageRepository {
   ) async {
     _validateMessagePatch(message);
 
+    if (message.status == MessageStatus.sent && message.content == null) {
+      final existingMessage = await getMessageById(id);
+      if (existingMessage == null) {
+        throw MessageNotFoundException(id);
+      }
+      if (existingMessage.content.trim().isEmpty) {
+        throw const MessageValidationException(
+          'Message content cannot be empty',
+        );
+      }
+    }
+
     final messageCompanion = _mapPatchToMessagesCompanion(message);
     final updatedMessage = await _database.messageDao.patchMessage(
       id,
@@ -256,7 +268,9 @@ class MessageRepository {
     if (message.conversationId.isEmpty) {
       return 'Conversation ID cannot be empty';
     }
-    if (message.content.isEmpty) return 'Message content cannot be empty';
+    if (message.content.trim().isEmpty) {
+      return 'Message content cannot be empty';
+    }
 
     return 'Unknown validation error';
   }

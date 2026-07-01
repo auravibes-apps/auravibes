@@ -361,6 +361,51 @@ void main() {
       expect(valid, isTrue);
     });
 
+    test('validateMessage accepts sent message with content', () async {
+      final valid = await repository.validateMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'hello',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+        ),
+      );
+      expect(valid, isTrue);
+    });
+
+    test('validateMessage rejects sent message without content', () {
+      expect(
+        () => repository.validateMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.sent,
+            metadata: '{}',
+          ),
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
+    });
+
+    test('validateMessage rejects sent message with blank content', () {
+      expect(
+        () => repository.validateMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: '   ',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.sent,
+            metadata: '{}',
+          ),
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
+    });
+
     test('validateMessage throws for invalid message', () {
       expect(
         () => repository.validateMessage(
@@ -442,6 +487,61 @@ void main() {
         const MessagePatch(status: MessageStatus.sent),
       );
       expect(patched.status, MessageStatus.sent);
+    });
+
+    test('patchMessage rejects sent status for empty content', () async {
+      const metadata = MessageMetadataEntity(
+        toolCalls: [
+          MessageToolCallEntity(
+            id: 'tool-1',
+            name: 'calculator',
+            argumentsRaw: '{"input":"2+2"}',
+          ),
+        ],
+      );
+
+      final created = await repository.createMessage(
+        MessageToCreate(
+          conversationId: 'conv-1',
+          content: '',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: jsonEncode(metadata.toJson()),
+        ),
+      );
+
+      await expectLater(
+        repository.patchMessage(
+          created.id,
+          const MessagePatch(status: MessageStatus.sent),
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
+
+      final found = await repository.getMessageById(created.id);
+      expect(found?.status, MessageStatus.unfinished);
+    });
+
+    test('patchMessage rejects sent status for blank content', () async {
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: '   ',
+          messageType: MessageType.text,
+          isUser: false,
+          status: MessageStatus.unfinished,
+          metadata: '{}',
+        ),
+      );
+
+      await expectLater(
+        repository.patchMessage(
+          created.id,
+          const MessagePatch(status: MessageStatus.sent),
+        ),
+        throwsA(isA<MessageValidationException>()),
+      );
     });
 
     test('createMessage with metadata stores it', () async {
