@@ -174,18 +174,26 @@ class BuildPromptChatMessages {
     }
 
     if (message.type == AgentPromptMessageType.system) {
-      if (!message.isCompactionSummary) return const [];
-
-      final normalized = message.content.trim();
-      if (normalized.isEmpty) return const [];
-
-      return [AgentChatMessage.system(normalized)];
+      return _mapSystemMessage(message);
     }
 
     if (message.isCompactionSummary) {
       return const [];
     }
 
+    return _mapModelMessage(message);
+  }
+
+  List<AgentChatMessage> _mapSystemMessage(AgentPromptMessage message) {
+    if (!message.isCompactionSummary) return const [];
+
+    final normalized = message.content.trim();
+    if (normalized.isEmpty) return const [];
+
+    return [AgentChatMessage.system(normalized)];
+  }
+
+  List<AgentChatMessage> _mapModelMessage(AgentPromptMessage message) {
     final thinking = message.thinking?.trim();
     final parts = <AgentChatPart>[
       if (thinking != null && thinking.isNotEmpty)

@@ -185,10 +185,12 @@ class AppResolvedToolProvider
       workspaceId: workspaceId,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
-      loadConversationSkillUsecase: loadConversationSkillUsecase,
-      unloadConversationSkillUsecase: unloadConversationSkillUsecase,
-      listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-      skillCredentialsRepository: skillCredentialsRepository,
+      dependencies: _SkillControlToolDependencies(
+        loadConversationSkillUsecase: loadConversationSkillUsecase,
+        unloadConversationSkillUsecase: unloadConversationSkillUsecase,
+        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+        skillCredentialsRepository: skillCredentialsRepository,
+      ),
     );
   }
 
@@ -346,18 +348,15 @@ Future<Object?> _runSkillControlTool({
   required String workspaceId,
   required String toolIdentifier,
   required Map<String, dynamic> arguments,
-  required LoadConversationSkillUsecase? loadConversationSkillUsecase,
-  required UnloadConversationSkillUsecase? unloadConversationSkillUsecase,
-  required ListAvailableSkillsUsecase? listAvailableSkillsUsecase,
-  required SkillCredentialsRepository? skillCredentialsRepository,
+  required _SkillControlToolDependencies dependencies,
 }) async {
   if (toolIdentifier == listSkillCredentialsToolName) {
     return _listSkillCredentials(
       workspaceId: workspaceId,
       conversationId: conversationId,
       arguments: arguments,
-      listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-      skillCredentialsRepository: skillCredentialsRepository,
+      listAvailableSkillsUsecase: dependencies.listAvailableSkillsUsecase,
+      skillCredentialsRepository: dependencies.skillCredentialsRepository,
     );
   }
 
@@ -367,7 +366,7 @@ Future<Object?> _runSkillControlTool({
   }
 
   if (toolIdentifier == loadSkillToolName) {
-    final usecase = loadConversationSkillUsecase;
+    final usecase = dependencies.loadConversationSkillUsecase;
     if (usecase == null) {
       throw StateError('LoadConversationSkillUsecase is not configured.');
     }
@@ -380,7 +379,7 @@ Future<Object?> _runSkillControlTool({
     return 'Skill "$slug" loaded.';
   }
 
-  final usecase = unloadConversationSkillUsecase;
+  final usecase = dependencies.unloadConversationSkillUsecase;
   if (usecase == null) {
     throw StateError('UnloadConversationSkillUsecase is not configured.');
   }
@@ -391,6 +390,20 @@ Future<Object?> _runSkillControlTool({
   );
 
   return 'Skill "$slug" unloaded.';
+}
+
+class _SkillControlToolDependencies {
+  const _SkillControlToolDependencies({
+    required this.loadConversationSkillUsecase,
+    required this.unloadConversationSkillUsecase,
+    required this.listAvailableSkillsUsecase,
+    required this.skillCredentialsRepository,
+  });
+
+  final LoadConversationSkillUsecase? loadConversationSkillUsecase;
+  final UnloadConversationSkillUsecase? unloadConversationSkillUsecase;
+  final ListAvailableSkillsUsecase? listAvailableSkillsUsecase;
+  final SkillCredentialsRepository? skillCredentialsRepository;
 }
 
 Future<Object> _listSkillCredentials({
