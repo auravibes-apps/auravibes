@@ -9,6 +9,8 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/utils/encode.dart';
 import 'package:drift/drift.dart';
 
+const _messageContentCannotBeEmpty = 'Message content cannot be empty';
+
 /// Implementation of [MessageRepository] interface.
 ///
 /// This class provides a concrete implementation of message data operations
@@ -144,7 +146,7 @@ class MessageRepository {
       }
       if (existingMessage.content.trim().isEmpty) {
         throw const MessageValidationException(
-          'Message content cannot be empty',
+          _messageContentCannotBeEmpty,
         );
       }
     }
@@ -269,7 +271,7 @@ class MessageRepository {
       return 'Conversation ID cannot be empty';
     }
     if (message.content.trim().isEmpty) {
-      return 'Message content cannot be empty';
+      return _messageContentCannotBeEmpty;
     }
 
     return 'Unknown validation error';
@@ -278,7 +280,7 @@ class MessageRepository {
   String? _getValidationErrorPatch(MessagePatch message) {
     final content = message.content;
     if (content != null && content.trim().isEmpty) {
-      return 'Message content cannot be empty';
+      return _messageContentCannotBeEmpty;
     }
     if (message.content == null &&
         message.metadata == null &&

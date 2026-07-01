@@ -374,9 +374,9 @@ void main() {
       expect(valid, isTrue);
     });
 
-    test('validateMessage rejects sent message without content', () {
-      expect(
-        () => repository.validateMessage(
+    test('validateMessage rejects sent message without content', () async {
+      await expectLater(
+        repository.validateMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '',
@@ -390,9 +390,9 @@ void main() {
       );
     });
 
-    test('validateMessage rejects sent message with blank content', () {
-      expect(
-        () => repository.validateMessage(
+    test('validateMessage rejects sent message with blank content', () async {
+      await expectLater(
+        repository.validateMessage(
           const MessageToCreate(
             conversationId: 'conv-1',
             content: '   ',
@@ -406,9 +406,9 @@ void main() {
       );
     });
 
-    test('validateMessage throws for invalid message', () {
-      expect(
-        () => repository.validateMessage(
+    test('validateMessage throws for invalid message', () async {
+      await expectLater(
+        repository.validateMessage(
           const MessageToCreate(
             conversationId: '',
             content: '',
