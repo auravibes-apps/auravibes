@@ -1,4 +1,4 @@
-import 'package:auravibes_agent/src/agent_tool_execution_service.dart';
+import 'package:auravibes_agent/src/tool_execution_dispatcher.dart';
 
 enum AgentToolGrantLevel { once, conversation }
 
@@ -128,56 +128,17 @@ class ApproveToolCallService<TTool extends Object> {
     required String toolCallId,
     required TTool tool,
     required String argumentsRaw,
-  }) async {
-    final arguments = safeJsonDecodeToolArguments(argumentsRaw);
-
-    try {
-      final result = await provider.runResolvedTool(
-        conversationId: conversationId,
-        tool: tool,
-        arguments: arguments,
-      );
-      if (provider.isCancellationRequested(conversationId)) {
-        return const AgentToolExecutionResult(
-          resultStatus: AgentToolResultStatus.stoppedByUser,
-        );
-      }
-      if (result == null) {
-        return const AgentToolExecutionResult(
-          resultStatus: AgentToolResultStatus.toolNotFound,
-        );
-      }
-
-      return AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.success,
-        responseRaw: result.toString(),
-      );
-    } on FormatException catch (error, stackTrace) {
-      provider.logToolExecutionError(
-        conversationId: conversationId,
-        toolCallId: toolCallId,
-        tool: tool,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.executionError,
-        responseRaw: 'Tool execution failed: ${error.message}',
-      );
-    } on Object catch (error, stackTrace) {
-      provider.logToolExecutionError(
-        conversationId: conversationId,
-        toolCallId: toolCallId,
-        tool: tool,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return const AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.executionError,
-      );
-    }
+  }) {
+    return AgentToolExecutionDispatcher<TTool>(
+      runResolvedTool: provider.runResolvedTool,
+      isCancellationRequested: provider.isCancellationRequested,
+      logToolExecutionError: provider.logToolExecutionError,
+    ).call(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      argumentsRaw: argumentsRaw,
+    );
   }
 }
 
