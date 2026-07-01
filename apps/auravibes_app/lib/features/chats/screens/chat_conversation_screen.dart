@@ -6,6 +6,8 @@
 
 import 'dart:async';
 
+import 'package:auravibes_agent/auravibes_agent.dart'
+    show AgentIterationContext, AgentIterationOrigin;
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -15,12 +17,9 @@ import 'package:auravibes_app/features/chats/providers/compaction_execution.dart
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/chats/usecases/agent_iteration_context.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
-import 'package:auravibes_app/features/chats/usecases/run_agent_iteration_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
-import 'package:auravibes_app/features/chats/usecases/stop_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -31,6 +30,7 @@ import 'package:auravibes_app/features/models/widgets/compact_workspace_model_se
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/agent_harness/aura_agent_service.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -447,12 +447,15 @@ Future<void> _continueAgent(
   if ((busyState?.isBusy ?? false) || rateLimitRetryAt != null) return;
 
   try {
-    final _ = await ref.read(runAgentIterationUsecaseProvider)(
-      conversationId: conversationId,
-      context: const AgentIterationContext(
-        origin: AgentIterationOrigin.manualContinue,
-      ),
-    );
+    final _ = await ref
+        .read(auraAgentServiceProvider)
+        .agent
+        .continueTurn(
+          conversationId: conversationId,
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.manualContinue,
+          ),
+        );
   } on Exception catch (error, stackTrace) {
     _logger.severe(
       'Failed to continue agent for conversation $conversationId',
@@ -484,8 +487,11 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
   final conversationId = ref.read(conversationSelectedProvider);
   try {
     await ref
-        .read(stopConversationUsecaseProvider)
-        .call(conversationId: conversationId);
+        .read(auraAgentServiceProvider)
+        .agent
+        .stop(
+          conversationId: conversationId,
+        );
   } catch (error, stackTrace) {
     FlutterError.reportError(
       FlutterErrorDetails(

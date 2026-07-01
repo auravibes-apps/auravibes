@@ -1,35 +1,10 @@
-// Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
 import 'package:async/async.dart';
+import 'package:auravibes_agent/auravibes_agent.dart';
 import 'package:riverpod/riverpod.dart';
 
-class AgentCancellationRuntime {
-  final _entries = <String, _AgentCancellationEntry>{};
-
-  void start(String conversationId) {
-    final _ = _entries.putIfAbsent(
-      conversationId,
-      _AgentCancellationEntry.new,
-    );
-  }
-
-  bool isCancellationRequested(String conversationId) {
-    return _entries[conversationId]?.isCancellationRequested ?? false;
-  }
-
-  void requestStop(String conversationId) {
-    final entry = _entries[conversationId];
-    if (entry == null) return;
-
-    entry.requestStop();
-  }
-
-  void clear(String conversationId) {
-    final entry = _entries.remove(conversationId);
-    entry?.requestStop();
-  }
-
+extension AgentCancellationRuntimeSubscriptions on AgentCancellationRuntime {
   void registerStreamSubscription<T>(
     String conversationId,
     StreamSubscription<T> subscription,
@@ -48,57 +23,6 @@ class AgentCancellationRuntime {
       conversationId,
       operation.cancel,
     );
-  }
-
-  void registerCleanup(
-    String conversationId,
-    FutureOr<void> Function() cleanup,
-  ) {
-    _entries
-        .putIfAbsent(
-          conversationId,
-          _AgentCancellationEntry.new,
-        )
-        .registerCleanup(cleanup);
-  }
-}
-
-class _AgentCancellationEntry {
-  final _cleanupCallbacks = <FutureOr<void> Function()>[];
-  bool _isCancellationRequested = false;
-
-  bool get isCancellationRequested => _isCancellationRequested;
-
-  void requestStop() {
-    if (_isCancellationRequested) return;
-
-    _isCancellationRequested = true;
-    for (final cleanup in List.of(_cleanupCallbacks)) {
-      try {
-        final result = cleanup();
-        if (result is Future<void>) {
-          unawaited(result.catchError((Object _) => null));
-        }
-      } on Object {
-        // Swallow so subsequent cleanups still run.
-        continue;
-      }
-    }
-  }
-
-  void registerCleanup(FutureOr<void> Function() cleanup) {
-    _cleanupCallbacks.add(cleanup);
-    if (!_isCancellationRequested) return;
-
-    try {
-      final result = cleanup();
-      if (result is Future<void>) {
-        unawaited(result.catchError((Object _) => null));
-      }
-    } on Object {
-      // Swallow so registration continues.
-      return;
-    }
   }
 }
 

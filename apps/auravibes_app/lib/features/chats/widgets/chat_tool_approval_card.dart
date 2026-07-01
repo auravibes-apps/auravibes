@@ -6,14 +6,14 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:auravibes_agent/auravibes_agent.dart'
+    as agent
+    show AgentToolGrantLevel;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/tool_grant_level.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
-import 'package:auravibes_app/features/tools/usecases/approve_tool_call_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/skip_tool_call_usecase.dart';
-import 'package:auravibes_app/features/tools/usecases/stop_all_pending_tool_calls_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/services/agent_harness/aura_agent_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
@@ -453,11 +453,12 @@ class _ConfirmationButtons extends ConsumerWidget {
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
       action: () {
         return ref
-            .read(approveToolCallUsecaseProvider)
-            .call(
+            .read(auraAgentServiceProvider)
+            .tools
+            .approve(
               toolCallId: toolCall.id,
               messageId: messageId,
-              level: ToolGrantLevel.once,
+              level: agent.AgentToolGrantLevel.once,
             );
       },
     );
@@ -472,11 +473,12 @@ class _ConfirmationButtons extends ConsumerWidget {
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
       action: () {
         return ref
-            .read(approveToolCallUsecaseProvider)
-            .call(
+            .read(auraAgentServiceProvider)
+            .tools
+            .approve(
               toolCallId: toolCall.id,
               messageId: messageId,
-              level: ToolGrantLevel.conversation,
+              level: agent.AgentToolGrantLevel.conversation,
             );
       },
     );
@@ -488,8 +490,9 @@ class _ConfirmationButtons extends ConsumerWidget {
       errorMessageKey: LocaleKeys.tool_approval_errors_skip,
       action: () {
         return ref
-            .read(skipToolCallUsecaseProvider)
-            .call(
+            .read(auraAgentServiceProvider)
+            .tools
+            .skip(
               toolCallId: toolCall.id,
               messageId: messageId,
             );
@@ -503,8 +506,9 @@ class _ConfirmationButtons extends ConsumerWidget {
       errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
       action: () {
         return ref
-            .read(stopAllPendingToolCallsUsecaseProvider)
-            .call(
+            .read(auraAgentServiceProvider)
+            .tools
+            .stopPending(
               messageId: messageId,
             );
       },

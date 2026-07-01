@@ -1,15 +1,15 @@
+import 'package:auravibes_agent/auravibes_agent.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_queued_draft.g.dart';
 
-class ConversationQueuedDraft {
+class ConversationQueuedDraft extends AgentQueuedDraft {
   const ConversationQueuedDraft({
     required this.id,
-    required this.content,
+    required super.content,
   });
 
   final String id;
-  final String content;
 }
 
 @riverpod

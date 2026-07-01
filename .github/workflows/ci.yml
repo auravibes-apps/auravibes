@@ -199,6 +199,10 @@ jobs:
             package: packages/auravibes_genkit_providers
             targets: test
             source_prefix: packages/auravibes_genkit_providers
+          - id: agent
+            package: packages/auravibes_agent
+            targets: test
+            source_prefix: packages/auravibes_agent
           - id: app-core-data-domain
             package: apps/auravibes_app
             targets: test/core test/data test/domain test/flavors_test.dart

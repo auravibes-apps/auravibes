@@ -247,7 +247,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   }
 
   final decisionUsecase = ref.watch(resolveToolApprovalDecisionUsecaseProvider);
-  final resolver = ToolResolverService();
+  const resolver = ToolResolverService();
 
   final entries = await Future.wait(
     pendingCalls.map((toolCall) async {
