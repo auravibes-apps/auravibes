@@ -280,6 +280,20 @@ void main() {
       expect(empty.hasValidContent, isFalse);
     });
 
+    test('hasValidContent false when content is blank', () {
+      final empty = MessageEntity(
+        id: 'msg_2',
+        conversationId: 'conv_1',
+        content: '   ',
+        messageType: MessageType.text,
+        isUser: true,
+        status: MessageStatus.sent,
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(empty.hasValidContent, isFalse);
+    });
+
     test('isValid true when content and conversationId are valid', () {
       expect(validMessage.isValid, isTrue);
     });
@@ -334,6 +348,42 @@ void main() {
         status: MessageStatus.sending,
       );
       expect(msg.hasValidContent, isFalse);
+    });
+
+    test('hasValidContent false when sent message content is empty', () {
+      const msg = MessageToCreate(
+        conversationId: 'conv_1',
+        content: '',
+        messageType: MessageType.text,
+        isUser: false,
+        status: MessageStatus.sent,
+        metadata: '{}',
+      );
+      expect(msg.hasValidContent, isFalse);
+    });
+
+    test('hasValidContent false when sent message content is blank', () {
+      const msg = MessageToCreate(
+        conversationId: 'conv_1',
+        content: '   ',
+        messageType: MessageType.text,
+        isUser: false,
+        status: MessageStatus.sent,
+        metadata: '{}',
+      );
+      expect(msg.hasValidContent, isFalse);
+    });
+
+    test('hasValidContent true for unfinished assistant metadata', () {
+      const msg = MessageToCreate(
+        conversationId: 'conv_1',
+        content: '',
+        messageType: MessageType.text,
+        isUser: false,
+        status: MessageStatus.unfinished,
+        metadata: '{}',
+      );
+      expect(msg.hasValidContent, isTrue);
     });
 
     test(
