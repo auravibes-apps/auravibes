@@ -563,8 +563,8 @@ data: [DONE]
     test('requires credential for Brave', () async {
       final usecase = _usecase();
 
-      expect(
-        () => usecase.call(
+      await expectLater(
+        usecase.call(
           workspaceId: 'workspace-1',
           skillSlug: 'brave',
           toolSlug: 'web_search',
