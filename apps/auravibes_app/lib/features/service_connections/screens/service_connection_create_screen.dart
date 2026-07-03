@@ -480,9 +480,9 @@ class _AppSkillCredentialForm extends StatelessWidget {
                 label: Text(
                   _credentialValueLabel(context, selectedAppSkillId),
                 ),
-                onChanged: onApiKeyChanged,
-                obscureText: true,
                 keyboardType: TextInputType.visiblePassword,
+                obscureText: true,
+                onChanged: onApiKeyChanged,
               ),
               Align(
                 alignment: Alignment.centerRight,

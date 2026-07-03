@@ -7,6 +7,7 @@ final runSkillUrlTemplateUsecaseProvider =
     Provider<package_skills.RunSkillUrlTemplate>(
       (ref) {
         final urlService = UrlService();
+
         return package_skills.RunSkillUrlTemplate(
           const package_skills.ResolveSkillUrlTemplate(),
           AppSkillHttpClientAdapter(urlService).execute,

@@ -11,23 +11,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ServiceConnectionRepository', () {
-    late AppDatabase database;
-    late EncryptionService encryption;
-    late ServiceConnectionRepository repository;
-
-    setUp(() {
-      database = AppDatabase(
+    test('lists app skill and compatible model provider candidates', () async {
+      final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
-      encryption = EncryptionService(_FakeSecretKeyManager());
-      repository = ServiceConnectionRepository(database, encryption);
-    });
+      addTearDown(database.close);
+      final encryption = EncryptionService(_FakeSecretKeyManager());
+      final repository = ServiceConnectionRepository(database, encryption);
 
-    tearDown(() async {
-      await database.close();
-    });
-
-    test('lists app skill and compatible model provider candidates', () async {
       final appCredentialId = await _insertConnection(
         database,
         encryption,

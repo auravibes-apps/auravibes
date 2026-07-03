@@ -27,7 +27,7 @@ class AppSkillHttpClientAdapter {
         final uri = await _requirePublicUri(request.url);
         if (completer.isCanceled) return;
 
-        operation = _urlService.execute(
+        final currentOperation = _urlService.execute(
           UrlRequest(
             url: uri.toString(),
             method: request.method,
@@ -37,7 +37,8 @@ class AppSkillHttpClientAdapter {
             format: request.format,
           ),
         );
-        final response = await operation!.value;
+        operation = currentOperation;
+        final response = await currentOperation.value;
         if (completer.isCanceled) return;
 
         completer.complete(

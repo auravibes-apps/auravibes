@@ -118,7 +118,7 @@ Map<String, Object?> _schemaFor(
           'Credential id to use. Call list_skill_credentials for names.',
     };
   } else {
-    properties.remove('credentialId');
+    final _ = properties.remove('credentialId');
   }
   schema['properties'] = properties;
 
@@ -128,7 +128,7 @@ Map<String, Object?> _schemaFor(
     if (tool.requiresCredential && candidates.length > 1) 'credentialId',
   ];
   if (required.isEmpty) {
-    schema.remove('required');
+    final _ = schema.remove('required');
   } else {
     schema['required'] = required;
   }

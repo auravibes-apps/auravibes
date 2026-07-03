@@ -957,7 +957,7 @@ class _AppSkillCredentialsHint extends ConsumerStatefulWidget {
 
 class _AppSkillCredentialsHintState
     extends ConsumerState<_AppSkillCredentialsHint> {
-  late Future<List<AppSkillCredentialCandidate>> _future;
+  Future<List<AppSkillCredentialCandidate>> _future = Future.value(const []);
 
   @override
   void initState() {

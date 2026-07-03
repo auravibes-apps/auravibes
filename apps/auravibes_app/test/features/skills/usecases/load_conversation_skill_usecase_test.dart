@@ -127,6 +127,7 @@ class _FakeConversationSkillsRepository
     required bool isLoaded,
   }) async {
     loadedAppSkillIdentifier = appSkillIdentifier;
+
     return ConversationSkillEntity(
       id: 'conversation-skill-1',
       conversationId: conversationId,

@@ -35,7 +35,7 @@ class RunAppSkillToolUsecase {
     required String skillSlug,
     required String toolSlug,
     required Map<String, dynamic> arguments,
-  }) async {
+  }) {
     final operation = callCancelable(
       workspaceId: workspaceId,
       skillSlug: skillSlug,
@@ -131,20 +131,20 @@ class RunAppSkillToolUsecase {
     }
     if (trimmed.startsWith('skill:')) {
       return _skillCredentialsRepository.readCredentialAttributes(
-        trimmed.substring('skill:'.length),
+        trimmed.replaceFirst('skill:', ''),
       );
     }
     if (trimmed.startsWith('service:')) {
       return _serviceConnectionAttributes(
         workspaceId: workspaceId,
-        connectionId: trimmed.substring('service:'.length),
+        connectionId: trimmed.replaceFirst('service:', ''),
         skill: skill,
       );
     }
     if (trimmed.startsWith('model:')) {
       return _serviceConnectionAttributes(
         workspaceId: workspaceId,
-        connectionId: trimmed.substring('model:'.length),
+        connectionId: trimmed.replaceFirst('model:', ''),
         skill: skill,
       );
     }
@@ -220,6 +220,7 @@ class RunAppSkillToolUsecase {
 final runAppSkillToolUsecaseProvider = Provider<RunAppSkillToolUsecase>((ref) {
   final urlService = UrlService();
   final httpClient = AppSkillHttpClientAdapter(urlService);
+
   return RunAppSkillToolUsecase(
     ref.watch(appSkillRegistryProvider),
     ref.watch(serviceConnectionRepositoryProvider),

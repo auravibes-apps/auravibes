@@ -36,7 +36,7 @@ void main() {
     });
 
     test('executes DuckDuckGo callback scraper without credentials', () async {
-      late UrlRequest capturedRequest;
+      var capturedRequest = const UrlRequest(url: '');
       final usecase = _usecase(
         executeUrl: (request) async {
           capturedRequest = request;
@@ -88,7 +88,7 @@ void main() {
 
     test('executes SearXNG URL template with base URL credential', () async {
       final serviceConnections = _MockServiceConnectionRepository();
-      late UrlRequest capturedRequest;
+      var capturedRequest = const UrlRequest(url: '');
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
@@ -111,7 +111,7 @@ void main() {
         },
       );
 
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'workspace-1',
         skillSlug: 'searxng',
         toolSlug: 'search',
@@ -167,7 +167,7 @@ void main() {
       'executes Brave URL template with service credential header',
       () async {
         final serviceConnections = _MockServiceConnectionRepository();
-        late UrlRequest capturedRequest;
+        var capturedRequest = const UrlRequest(url: '');
         when(
           () => serviceConnections.getById('connection-1'),
         ).thenAnswer((_) async => _serviceConnection());
@@ -188,7 +188,7 @@ void main() {
           },
         );
 
-        await usecase.call(
+        final _ = await usecase.call(
           workspaceId: 'workspace-1',
           skillSlug: 'brave',
           toolSlug: 'web_search',
@@ -209,7 +209,7 @@ void main() {
 
     test('executes POST URL template body', () async {
       final serviceConnections = _MockServiceConnectionRepository();
-      late UrlRequest capturedRequest;
+      var capturedRequest = const UrlRequest(url: '');
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
@@ -230,7 +230,7 @@ void main() {
         },
       );
 
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'workspace-1',
         skillSlug: 'synthetic',
         toolSlug: 'search',
@@ -248,7 +248,7 @@ void main() {
 
     test('executes pending Exa contents URL template', () async {
       final serviceConnections = _MockServiceConnectionRepository();
-      late UrlRequest capturedRequest;
+      var capturedRequest = const UrlRequest(url: '');
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
@@ -269,7 +269,7 @@ void main() {
         },
       );
 
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'workspace-1',
         skillSlug: 'exa',
         toolSlug: 'contents',
@@ -287,7 +287,7 @@ void main() {
 
     test('executes pending OpenAI callback request', () async {
       final serviceConnections = _MockServiceConnectionRepository();
-      late UrlRequest capturedRequest;
+      var capturedRequest = const UrlRequest(url: '');
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
@@ -308,7 +308,7 @@ void main() {
         },
       );
 
-      await usecase.call(
+      final _ = await usecase.call(
         workspaceId: 'workspace-1',
         skillSlug: 'openai',
         toolSlug: 'web_search',
@@ -348,7 +348,7 @@ void main() {
     test('executes Codex callback with refreshed OAuth credential', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
-      late UrlRequest capturedRequest;
+      var capturedRequest = const UrlRequest(url: '');
       when(
         () => serviceConnections.getById('codex-connection'),
       ).thenAnswer(
@@ -597,7 +597,7 @@ RunAppSkillToolUsecase _usecase({
     );
   }
 
-  Future<Uri> trustTestUrl(String url) async => Uri.parse(url);
+  Future<Uri> trustTestUrl(String url) => Future.value(Uri.parse(url));
   final httpClient = AppSkillHttpClientAdapter(
     effectiveUrlService,
     requirePublicUri: requirePublicUri ?? trustTestUrl,

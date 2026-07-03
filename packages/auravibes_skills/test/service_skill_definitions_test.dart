@@ -143,13 +143,15 @@ void main() {
   });
 }
 
-Map _properties(String skillSlug, String toolSlug) {
+Map<String, Object?> _properties(String skillSlug, String toolSlug) {
   final skill = serviceSkillDefinitions.singleWhere(
     (skill) => skill.slug == skillSlug,
   );
   final tool = skill.nativeTools.singleWhere((tool) => tool.slug == toolSlug);
 
-  return tool.inputJsonSchema!['properties'] as Map;
+  return Map<String, Object?>.from(
+    tool.inputJsonSchema!['properties']! as Map,
+  );
 }
 
 void _collectInternalLeaks(List<String> leaks, String path, String text) {
