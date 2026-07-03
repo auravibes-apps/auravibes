@@ -149,7 +149,7 @@ void main() {
       );
       expect(
         () => SkillUrlTemplate.fromJsonString(
-          jsonEncode({'url': 'https://example.com', 'headers': []}),
+          jsonEncode({'url': 'https://example.com', 'headers': <String>[]}),
         ),
         throwsFormatException,
       );
