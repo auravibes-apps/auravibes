@@ -6,8 +6,10 @@ import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -55,7 +57,7 @@ void main() {
               workspaceSkillId: loadedSkill.id,
             ),
           ]),
-          _FakeAppSkillWorkspaceSettingsRepository(),
+          const _FakeAppSkillWorkspaceSettingsRepository(),
           const AppSkillRegistry(),
           CheckSkillCredentialReadinessUsecase(
             _FakeSkillCredentialsRepository(),
@@ -77,6 +79,117 @@ void main() {
         expect(loaded.map((skill) => skill.id), [loadedSkill.id]);
       },
     );
+
+    test(
+      'hides enabled required-credential app skills without credentials',
+      () async {
+        const workspaceId = 'workspace-1';
+        const conversationId = 'conversation-1';
+        const usecase = ListAvailableSkillsUsecase(
+          _FakeSkillsRepository([]),
+          _FakeConversationSkillsRepository([]),
+          _FakeAppSkillWorkspaceSettingsRepository({'openai'}),
+          AppSkillRegistry(),
+          null,
+          _FakeAppSkillCandidates(),
+        );
+
+        final skills = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: SkillLoadFilter.loadable,
+        );
+
+        expect(skills.map((skill) => skill.slug), isNot(contains('openai')));
+      },
+    );
+
+    test('shows enabled app skills without credential requirements', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      const usecase = ListAvailableSkillsUsecase(
+        _FakeSkillsRepository([]),
+        _FakeConversationSkillsRepository([]),
+        _FakeAppSkillWorkspaceSettingsRepository({'duckduckgo'}),
+        AppSkillRegistry(),
+        null,
+        _FakeAppSkillCandidates(),
+      );
+
+      final skills = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: SkillLoadFilter.loadable,
+      );
+
+      expect(skills.map((skill) => skill.slug), contains('duckduckgo'));
+    });
+
+    test(
+      'shows mixed app skills when at least one tool needs no key',
+      () async {
+        const workspaceId = 'workspace-1';
+        const conversationId = 'conversation-1';
+        const usecase = ListAvailableSkillsUsecase(
+          _FakeSkillsRepository([]),
+          _FakeConversationSkillsRepository([]),
+          _FakeAppSkillWorkspaceSettingsRepository({'jina'}),
+          AppSkillRegistry(),
+          null,
+          _FakeAppSkillCandidates(),
+        );
+
+        final skills = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: SkillLoadFilter.loadable,
+        );
+
+        expect(skills.map((skill) => skill.slug), contains('jina'));
+      },
+    );
+
+    test('hides SearXNG until an instance credential exists', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      const usecase = ListAvailableSkillsUsecase(
+        _FakeSkillsRepository([]),
+        _FakeConversationSkillsRepository([]),
+        _FakeAppSkillWorkspaceSettingsRepository({'searxng'}),
+        AppSkillRegistry(),
+        null,
+        _FakeAppSkillCandidates(),
+      );
+
+      final skills = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: SkillLoadFilter.loadable,
+      );
+
+      expect(skills.map((skill) => skill.slug), isNot(contains('searxng')));
+    });
+
+    test('shows SearXNG when an instance credential exists', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      const usecase = ListAvailableSkillsUsecase(
+        _FakeSkillsRepository([]),
+        _FakeConversationSkillsRepository([]),
+        _FakeAppSkillWorkspaceSettingsRepository({'searxng'}),
+        AppSkillRegistry(),
+        null,
+        _FakeAppSkillCandidates({'searxng'}),
+      );
+
+      final skills = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: SkillLoadFilter.loadable,
+      );
+
+      expect(skills.map((skill) => skill.slug), contains('searxng'));
+    });
   });
 }
 
@@ -183,12 +296,16 @@ class _FakeConversationSkillsRepository
 
 class _FakeAppSkillWorkspaceSettingsRepository
     implements AppSkillWorkspaceSettingsRepository {
+  const _FakeAppSkillWorkspaceSettingsRepository([this.enabledIds = const {}]);
+
+  final Set<String> enabledIds;
+
   @override
   Future<bool> isAppSkillEnabled(
     String workspaceId,
     String appSkillIdentifier,
   ) async {
-    return false;
+    return enabledIds.contains(appSkillIdentifier);
   }
 
   @override
@@ -198,6 +315,46 @@ class _FakeAppSkillWorkspaceSettingsRepository
     required bool isEnabled,
   }) {
     throw UnsupportedError('Not needed by this test.');
+  }
+}
+
+class _FakeAppSkillCandidates
+    implements ListAppSkillCredentialCandidatesUsecase {
+  const _FakeAppSkillCandidates([this.readySlugs = const {}]);
+
+  final Set<String> readySlugs;
+
+  @override
+  Future<List<AppSkillCredentialCandidate>> call({
+    required String workspaceId,
+    required AppSkillDefinition skill,
+  }) async {
+    if (!readySlugs.contains(skill.slug)) return const [];
+
+    return [
+      AppSkillCredentialCandidate(
+        id: 'service:${skill.slug}-1',
+        name: skill.slug,
+      ),
+    ];
+  }
+
+  @override
+  bool isCredentialRequired(AppSkillDefinition skill) {
+    return skill.requiresCredential ||
+        skill.nativeTools.any((tool) => tool.requiresCredential);
+  }
+
+  @override
+  Future<bool> hasUsableNativeTool({
+    required String workspaceId,
+    required AppSkillDefinition skill,
+  }) async {
+    if (skill.nativeTools.any((tool) => !tool.requiresCredential)) {
+      return true;
+    }
+
+    return readySlugs.contains(skill.slug);
   }
 }
 

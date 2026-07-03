@@ -37,7 +37,7 @@ Future<SkillDetail?> skillDetail(
     id: appSkill.identifier,
     workspaceId: workspaceId,
     source: SkillSource.app,
-    kind: appSkill.kind,
+    kind: SkillKind.native,
     title: appSkill.title,
     slug: appSkill.slug,
     description: appSkill.description,

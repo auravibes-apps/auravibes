@@ -958,6 +958,43 @@ void main() {
         );
       },
     );
+
+    test(
+      'allows empty stream after tool resume',
+      () async {
+        when(
+          () => conversationRepository.getConversationById('conversation-1'),
+        ).thenAnswer((_) async => _conversation);
+        when(
+          () => workspaceModelSelectionsRepository
+              .getWorkspaceModelSelectionById('model-1'),
+        ).thenAnswer((_) async => _model);
+        when(
+          () => loadConversationToolSpecsUsecase(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => []);
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: const [],
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((_) => const Stream.empty());
+
+        final result = await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.toolResume,
+          ),
+        );
+
+        expect(result.messageId, isEmpty);
+        expect(result.hasToolCalls, isFalse);
+      },
+    );
   });
 
   group('ContinueAgentService error paths', () {

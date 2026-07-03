@@ -122,6 +122,7 @@
     "type": {
       "model_provider": "Model Provider",
       "skill_credential": "Skill Credential",
+      "app_skill_credential": "Service Skill Credential",
       "mcp_server": "MCP"
     },
     "status": {
@@ -148,7 +149,10 @@
       "refresh_error": "Unable to refresh OAuth token"
     },
     "create": {
-      "type_label": "Connection type"
+      "type_label": "Connection type",
+      "app_skill_label": "Service skill",
+      "api_key_label": "API key",
+      "base_url_label": "Instance base URL"
     }
   },
   "chats_screens": {

@@ -31,6 +31,7 @@ abstract interface class ResolvedToolProvider<TTool> {
   });
 
   Future<Object?> runSkillTemplateTool({
+    required String conversationId,
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,
@@ -38,6 +39,7 @@ abstract interface class ResolvedToolProvider<TTool> {
   });
 
   Future<Object?> runSkillNativeTool({
+    required String conversationId,
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,
@@ -171,6 +173,7 @@ class ResolvedToolService<TTool> {
     );
 
     return provider.runSkillTemplateTool(
+      conversationId: conversationId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: descriptor.toolIdentifier,
@@ -196,6 +199,7 @@ class ResolvedToolService<TTool> {
     );
 
     return provider.runSkillNativeTool(
+      conversationId: conversationId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
       toolSlug: toolSlug,

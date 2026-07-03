@@ -1,0 +1,16 @@
+name: auravibes_skills
+description: Reusable app-defined skills for AuraVibes apps.
+version: 0.0.1
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  async: ^2.13.0
+  liquify: ^1.0.1
+
+dev_dependencies:
+  test: ^1.28.0
+  very_good_analysis: ^10.3.0

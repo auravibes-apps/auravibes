@@ -6,11 +6,13 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -25,12 +27,14 @@ class ServiceConnectionCreateScreen extends ConsumerStatefulWidget {
     required this.workspaceId,
     this.initialType,
     this.initialCredentialDefinitionId,
+    this.initialAppSkillId,
     super.key,
   });
 
   final String workspaceId;
   final ServiceConnectionCreateType? initialType;
   final String? initialCredentialDefinitionId;
+  final String? initialAppSkillId;
 
   @override
   ConsumerState<ServiceConnectionCreateScreen> createState() =>
@@ -43,13 +47,18 @@ class _ServiceConnectionCreateScreenState
   final _attributeControllers = <String, TextEditingController>{};
   ServiceConnectionCreateType _type = ServiceConnectionCreateType.modelProvider;
   String? _definitionId;
+  String? _appSkillId;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _type = widget.initialType ?? _type;
+    final initialAppSkill = appSkillCredentialOption(widget.initialAppSkillId);
+    _type = initialAppSkill == null && widget.initialAppSkillId != null
+        ? ServiceConnectionCreateType.modelProvider
+        : widget.initialType ?? _type;
     _definitionId = widget.initialCredentialDefinitionId;
+    _appSkillId = initialAppSkill?.identifier;
   }
 
   @override
@@ -75,6 +84,7 @@ class _ServiceConnectionCreateScreenState
                 setState(() {
                   _type = value;
                   _definitionId = null;
+                  _appSkillId = null;
                   _resetAttributeControllers();
                 });
               },
@@ -107,6 +117,26 @@ class _ServiceConnectionCreateScreenState
                 },
                 onSave: () => unawaited(_saveSkillCredential()),
               ),
+              ServiceConnectionCreateType.appSkillCredential =>
+                _AppSkillCredentialForm(
+                  selectedAppSkillId: _appSkillId,
+                  nameController: _nameController,
+                  apiKeyController: _attributeControllers.putIfAbsent(
+                    'apiKey',
+                    TextEditingController.new,
+                  ),
+                  isSaving: _isSaving,
+                  onNameChanged: (_) => setState(() {
+                    final _ = Object();
+                  }),
+                  onAppSkillChanged: (value) {
+                    setState(() => _appSkillId = value);
+                  },
+                  onApiKeyChanged: (_) => setState(() {
+                    final _ = Object();
+                  }),
+                  onSave: () => unawaited(_saveAppSkillCredential()),
+                ),
             },
           ),
         ],
@@ -119,6 +149,50 @@ class _ServiceConnectionCreateScreenState
         ),
       ),
     );
+  }
+
+  Future<void> _saveAppSkillCredential() async {
+    if (_isSaving) return;
+    final appSkillId = _appSkillId;
+    final apiKey = _attributeControllers['apiKey']?.text.trim();
+    final name = _nameController.text.trim();
+    if (appSkillId == null ||
+        name.isEmpty ||
+        apiKey == null ||
+        apiKey.isEmpty) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final _ = await ref
+          .read(serviceConnectionRepositoryProvider)
+          .createAppSkillCredential(
+            workspaceId: widget.workspaceId,
+            appSkillServiceId: appSkillId,
+            name: name,
+            apiKey: apiKey,
+          );
+      await _closeAfterSave(resetModelMutation: false);
+    } on Object catch (error, stackTrace) {
+      _logger.severe(
+        'debug:app skill credential save failed '
+        'workspace=${widget.workspaceId} appSkillId=$appSkillId '
+        'nameLength=${name.length}',
+        error,
+        stackTrace,
+      );
+      if (!mounted) return;
+      final _ = showAuraSnackBar(
+        context: context,
+        content: Text(
+          LocaleKeys.skill_credentials_save_error.tr(context: context),
+        ),
+        variant: AuraSnackBarVariant.error,
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   Future<void> _saveSkillCredential() async {
@@ -231,6 +305,7 @@ class _ServiceConnectionCreateScreenState
 enum ServiceConnectionCreateType {
   modelProvider,
   skillCredential,
+  appSkillCredential,
 }
 
 extension ServiceConnectionCreateTypeQuery on ServiceConnectionCreateType {
@@ -238,6 +313,7 @@ extension ServiceConnectionCreateTypeQuery on ServiceConnectionCreateType {
     return switch (value) {
       'modelProvider' => ServiceConnectionCreateType.modelProvider,
       'skillCredential' => ServiceConnectionCreateType.skillCredential,
+      'appSkillCredential' => ServiceConnectionCreateType.appSkillCredential,
       _ => null,
     };
   }
@@ -265,6 +341,14 @@ class _TypeSelector extends StatelessWidget {
           value: ServiceConnectionCreateType.skillCredential,
           child: Text(
             LocaleKeys.service_connections_type_skill_credential.tr(
+              context: context,
+            ),
+          ),
+        ),
+        AuraDropdownOption(
+          value: ServiceConnectionCreateType.appSkillCredential,
+          child: Text(
+            LocaleKeys.service_connections_type_app_skill_credential.tr(
               context: context,
             ),
           ),
@@ -331,6 +415,123 @@ class _CredentialForm extends ConsumerWidget {
       _ => const Center(child: AuraSpinner()),
     };
   }
+}
+
+class _AppSkillCredentialForm extends StatelessWidget {
+  const _AppSkillCredentialForm({
+    required this.selectedAppSkillId,
+    required this.nameController,
+    required this.apiKeyController,
+    required this.isSaving,
+    required this.onNameChanged,
+    required this.onAppSkillChanged,
+    required this.onApiKeyChanged,
+    required this.onSave,
+  });
+
+  final String? selectedAppSkillId;
+  final TextEditingController nameController;
+  final TextEditingController apiKeyController;
+  final bool isSaving;
+  final ValueChanged<String> onNameChanged;
+  final ValueChanged<String?> onAppSkillChanged;
+  final ValueChanged<String> onApiKeyChanged;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final skills = appSkillCredentialOptions();
+    final canSave =
+        selectedAppSkillId != null &&
+        nameController.text.trim().isNotEmpty &&
+        apiKeyController.text.trim().isNotEmpty;
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        AuraCard(
+          child: AuraColumn(
+            children: [
+              AuraDropdownSelector<String>(
+                options: [
+                  for (final skill in skills)
+                    AuraDropdownOption(
+                      value: skill.identifier,
+                      child: Text(skill.title),
+                    ),
+                ],
+                value: selectedAppSkillId,
+                onChanged: onAppSkillChanged,
+                label: Text(
+                  LocaleKeys.service_connections_create_app_skill_label.tr(
+                    context: context,
+                  ),
+                ),
+              ),
+              AuraInput(
+                controller: nameController,
+                label: Text(
+                  LocaleKeys.skill_credentials_name_label.tr(context: context),
+                ),
+                onChanged: onNameChanged,
+              ),
+              AuraInput(
+                controller: apiKeyController,
+                label: Text(
+                  _credentialValueLabel(context, selectedAppSkillId),
+                ),
+                onChanged: onApiKeyChanged,
+                obscureText: true,
+                keyboardType: TextInputType.visiblePassword,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: AuraButton(
+                  onPressed: onSave,
+                  child: const TextLocale(LocaleKeys.common_save),
+                  isLoading: isSaving,
+                  disabled: isSaving || !canSave,
+                ),
+              ),
+            ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+List<AppSkillDefinition> appSkillCredentialOptions() {
+  return serviceSkillDefinitions.where(_canCreateAppSkillCredential).toList();
+}
+
+AppSkillDefinition? appSkillCredentialOption(String? appSkillId) {
+  if (appSkillId == null) return null;
+
+  return appSkillCredentialOptions()
+      .where((skill) => skill.identifier == appSkillId)
+      .firstOrNull;
+}
+
+bool _canCreateAppSkillCredential(AppSkillDefinition skill) {
+  if (skill.compatibleModelProviderIds.isNotEmpty) return false;
+
+  return skill.requiresCredential ||
+      skill.nativeTools.any((tool) => tool.requiresCredential);
+}
+
+String _credentialValueLabel(BuildContext context, String? appSkillId) {
+  if (appSkillId == 'searxng') {
+    return LocaleKeys.service_connections_create_base_url_label.tr(
+      context: context,
+    );
+  }
+
+  return LocaleKeys.service_connections_create_api_key_label.tr(
+    context: context,
+  );
 }
 
 class _CredentialFormContent extends StatelessWidget {

@@ -122,6 +122,7 @@
     "type": {
       "model_provider": "Proveedor de Modelo",
       "skill_credential": "Credencial de Habilidad",
+      "app_skill_credential": "Credencial de Habilidad de Servicio",
       "mcp_server": "MCP"
     },
     "status": {
@@ -148,7 +149,10 @@
       "refresh_error": "No se pudo actualizar el token OAuth"
     },
     "create": {
-      "type_label": "Tipo de conexión"
+      "type_label": "Tipo de conexión",
+      "app_skill_label": "Habilidad de servicio",
+      "api_key_label": "Clave API",
+      "base_url_label": "URL base de la instancia"
     }
   },
   "chats_screens": {

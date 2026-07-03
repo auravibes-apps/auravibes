@@ -196,6 +196,7 @@ class _FakeResolvedToolProvider
 
   @override
   Future<Object?> runSkillTemplateTool({
+    required String conversationId,
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,
@@ -206,6 +207,7 @@ class _FakeResolvedToolProvider
 
   @override
   Future<Object?> runSkillNativeTool({
+    required String conversationId,
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,

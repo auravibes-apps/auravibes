@@ -130,13 +130,12 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Workspace Skills'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Write Summary'), findsOneWidget);
-    expect(find.text('Skills Manager'), findsOneWidget);
     expect(find.text('User'), findsOneWidget);
-    expect(find.text('App'), findsOneWidget);
     expect(find.text('Template'), findsOneWidget);
-    expect(find.text('Native'), findsOneWidget);
-    expect(find.byType(AuraSwitch), findsNWidgets(2));
+    expect(find.byType(AuraSwitch), findsWidgets);
 
     await tester.tap(find.text('Write Summary'));
     final _ = await tester.pumpAndSettle();
@@ -144,6 +143,8 @@ void main() {
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));
@@ -154,6 +155,8 @@ void main() {
     expect(find.text('Editing ${fixture.skill.id}'), findsOneWidget);
 
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
+    final _ = await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
     final _ = await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.more_vert));

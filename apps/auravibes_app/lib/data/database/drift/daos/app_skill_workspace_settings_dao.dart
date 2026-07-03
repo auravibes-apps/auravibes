@@ -26,7 +26,7 @@ class AppSkillWorkspaceSettingsDao extends DatabaseAccessor<AppDatabase>
   ) async {
     final setting = await getSetting(workspaceId, appSkillIdentifier);
 
-    return setting?.isEnabled ?? true;
+    return setting?.isEnabled ?? appSkillIdentifier == 'skills_manager';
   }
 
   Future<AppSkillWorkspaceSettingsTable> setAppSkillEnabled(

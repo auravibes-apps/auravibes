@@ -46,25 +46,54 @@ void main() {
     },
   );
 
-  test('throws when stream completes without a result', () async {
-    final usecase = AgentStreamService<_Chunk>(
-      agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
-      provider: _FakeAgentStreamProvider(
-        persistenceSink: _MemorySink<_Chunk>(),
-        uiSink: _MemorySink<_Chunk>(),
-        calls: <String>[],
-      ),
-    );
+  test(
+    'completes as no-op when stream is empty without pending users',
+    () async {
+      final calls = <String>[];
+      final usecase = AgentStreamService<_Chunk>(
+        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        provider: _FakeAgentStreamProvider(
+          persistenceSink: _MemorySink<_Chunk>(),
+          uiSink: _MemorySink<_Chunk>(),
+          calls: calls,
+        ),
+      );
 
-    expect(
-      () => usecase.call(
+      final result = await usecase.call(
         conversationId: 'c1',
         responseStream: const Stream<_Chunk>.empty(),
         pendingUserMessageIds: const [],
-      ),
-      throwsA(isA<StateError>()),
-    );
-  });
+        allowEmptyResult: true,
+      );
+
+      expect(result.messageId, isEmpty);
+      expect(result.hasToolCalls, isFalse);
+      expect(calls, ['start:c1', 'remove:c1']);
+    },
+  );
+
+  test(
+    'throws when stream completes without result for pending users',
+    () async {
+      final usecase = AgentStreamService<_Chunk>(
+        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        provider: _FakeAgentStreamProvider(
+          persistenceSink: _MemorySink<_Chunk>(),
+          uiSink: _MemorySink<_Chunk>(),
+          calls: <String>[],
+        ),
+      );
+
+      expect(
+        () => usecase.call(
+          conversationId: 'c1',
+          responseStream: const Stream<_Chunk>.empty(),
+          pendingUserMessageIds: const ['u1'],
+        ),
+        throwsA(isA<StateError>()),
+      );
+    },
+  );
 
   test(
     'marks pending users errored when stream fails before message',

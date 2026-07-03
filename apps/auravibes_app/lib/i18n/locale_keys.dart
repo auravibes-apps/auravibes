@@ -156,6 +156,8 @@ abstract class LocaleKeys {
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =
       'service_connections.type.skill_credential';
+  static const service_connections_type_app_skill_credential =
+      'service_connections.type.app_skill_credential';
   static const service_connections_type_mcp_server =
       'service_connections.type.mcp_server';
   static const service_connections_status_connected =
@@ -194,6 +196,12 @@ abstract class LocaleKeys {
       'service_connections.action.refresh_error';
   static const service_connections_create_type_label =
       'service_connections.create.type_label';
+  static const service_connections_create_app_skill_label =
+      'service_connections.create.app_skill_label';
+  static const service_connections_create_api_key_label =
+      'service_connections.create.api_key_label';
+  static const service_connections_create_base_url_label =
+      'service_connections.create.base_url_label';
   static const chats_screens_chats_list_title =
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =

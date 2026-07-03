@@ -1,7 +1,10 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:riverpod/riverpod.dart';
 
 const loadSkillToolName = 'load_skill';
@@ -9,9 +12,16 @@ const unloadSkillToolName = 'unload_skill';
 const listSkillCredentialsToolName = 'list_skill_credentials';
 
 class BuildDynamicSkillToolSpecsUsecase {
-  const BuildDynamicSkillToolSpecsUsecase(this._listAvailableSkillsUsecase);
+  const BuildDynamicSkillToolSpecsUsecase(
+    this._listAvailableSkillsUsecase,
+    this._appSkillRegistry,
+    this._listAppSkillCredentialCandidatesUsecase,
+  );
 
   final ListAvailableSkillsUsecase _listAvailableSkillsUsecase;
+  final AppSkillRegistry _appSkillRegistry;
+  final ListAppSkillCredentialCandidatesUsecase
+  _listAppSkillCredentialCandidatesUsecase;
 
   Future<List<ToolSpec>> call({
     required String conversationId,
@@ -27,6 +37,7 @@ class BuildDynamicSkillToolSpecsUsecase {
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
+    final credentialBackedSkills = _credentialBackedSkills(loadedSkills);
 
     return [
       if (loadableSkills.isNotEmpty)
@@ -41,12 +52,8 @@ class BuildDynamicSkillToolSpecsUsecase {
           action: 'Unload',
           skills: loadedSkills,
         ),
-      if (loadedSkills.any(
-        (skill) =>
-            skill.source == SkillSource.user &&
-            skill.credentialDefinitionId != null,
-      ))
-        _buildListCredentialsSpec(loadedSkills),
+      if (credentialBackedSkills.isNotEmpty)
+        _buildListCredentialsSpec(credentialBackedSkills),
     ];
   }
 
@@ -89,19 +96,11 @@ class BuildDynamicSkillToolSpecsUsecase {
     return buffer.toString();
   }
 
-  ToolSpec _buildListCredentialsSpec(List<AvailableSkill> loadedSkills) {
-    final skills = loadedSkills
-        .where(
-          (skill) =>
-              skill.source == SkillSource.user &&
-              skill.credentialDefinitionId != null,
-        )
-        .toList();
-
+  ToolSpec _buildListCredentialsSpec(List<AvailableSkill> skills) {
     return ToolSpec(
       name: listSkillCredentialsToolName,
       description:
-          'List available saved credentials for a loaded user skill. Returns '
+          'List available saved credentials for a loaded skill. Returns '
           'credential id and name only, never secret values.',
       inputJsonSchema: {
         'type': 'object',
@@ -117,11 +116,37 @@ class BuildDynamicSkillToolSpecsUsecase {
       },
     );
   }
+
+  List<AvailableSkill> _credentialBackedSkills(
+    List<AvailableSkill> loadedSkills,
+  ) {
+    final result = <AvailableSkill>[];
+    for (final skill in loadedSkills) {
+      if (skill.source == SkillSource.user &&
+          skill.credentialDefinitionId != null) {
+        result.add(skill);
+        continue;
+      }
+      if (skill.source != SkillSource.app) continue;
+      final appSkill = _appSkillRegistry.getBySlug(skill.slug);
+      if (appSkill == null ||
+          !_listAppSkillCredentialCandidatesUsecase.isCredentialRequired(
+            appSkill,
+          )) {
+        continue;
+      }
+      result.add(skill);
+    }
+
+    return result;
+  }
 }
 
 final buildDynamicSkillToolSpecsUsecaseProvider =
     Provider<BuildDynamicSkillToolSpecsUsecase>((ref) {
       return BuildDynamicSkillToolSpecsUsecase(
         ref.watch(listAvailableSkillsUsecaseProvider),
+        ref.watch(appSkillRegistryProvider),
+        ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
       );
     });

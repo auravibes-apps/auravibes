@@ -22,11 +22,30 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  test('exposes only model provider and skill credential types', () {
+  test('exposes all supported create types', () {
     expect(ServiceConnectionCreateType.values, [
       ServiceConnectionCreateType.modelProvider,
       ServiceConnectionCreateType.skillCredential,
+      ServiceConnectionCreateType.appSkillCredential,
     ]);
+  });
+
+  test('app skill credential options exclude model-provider skills', () {
+    final options = appSkillCredentialOptions();
+    final ids = options.map((skill) => skill.identifier).toSet();
+
+    expect(ids, containsAll(['brave', 'exa', 'jina', 'searxng']));
+    expect(ids, isNot(contains('openai')));
+    expect(ids, isNot(contains('codex')));
+    expect(ids, isNot(contains('anthropic')));
+    expect(ids, isNot(contains('gemini')));
+  });
+
+  test('model-provider skills are not valid app credential preselects', () {
+    expect(appSkillCredentialOption('brave')?.identifier, 'brave');
+    expect(appSkillCredentialOption('searxng')?.identifier, 'searxng');
+    expect(appSkillCredentialOption('openai'), null);
+    expect(appSkillCredentialOption('codex'), null);
   });
 
   testWidgets('preselects credential definition from initial params', (
