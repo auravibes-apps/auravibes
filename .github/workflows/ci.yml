@@ -203,6 +203,10 @@ jobs:
             package: packages/auravibes_agent
             targets: test
             source_prefix: packages/auravibes_agent
+          - id: skills
+            package: packages/auravibes_skills
+            targets: test
+            source_prefix: packages/auravibes_skills
           - id: app-core-data-domain
             package: apps/auravibes_app
             targets: test/core test/data test/domain test/flavors_test.dart
