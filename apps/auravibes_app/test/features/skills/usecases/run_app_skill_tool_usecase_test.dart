@@ -493,7 +493,8 @@ data: [DONE]
           'credentialId': 'model:codex-annotation-connection',
         },
       );
-      final decoded = jsonDecode(result! as String) as Map<String, dynamic>;
+      final resultText = (result ?? fail('Expected Codex result')) as String;
+      final decoded = jsonDecode(resultText) as Map<String, dynamic>;
 
       expect(decoded['answer'], 'Final answer with citation');
       expect(decoded['sources'], [
@@ -552,7 +553,8 @@ data: [DONE]
           'credentialId': 'model:codex-sse-connection',
         },
       );
-      final decoded = jsonDecode(result! as String) as Map<String, dynamic>;
+      final resultText = (result ?? fail('Expected Codex result')) as String;
+      final decoded = jsonDecode(resultText) as Map<String, dynamic>;
 
       expect(decoded['answer'], 'Streamed answer');
       expect(decoded['sources'], [
