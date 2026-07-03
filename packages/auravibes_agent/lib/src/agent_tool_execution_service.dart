@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:auravibes_agent/src/agent_iteration_decision.dart';
 import 'package:auravibes_agent/src/tool_calls.dart';
+import 'package:auravibes_agent/src/tool_execution_dispatcher.dart';
 
 enum AgentToolPermissionResult {
   granted,
@@ -9,16 +8,6 @@ enum AgentToolPermissionResult {
   disabledInConversation,
   disabledInWorkspace,
   notConfigured,
-}
-
-enum AgentToolResultStatus {
-  success,
-  toolNotFound,
-  executionError,
-  disabledInConversation,
-  disabledInWorkspace,
-  notConfigured,
-  stoppedByUser,
 }
 
 class AgentToolApprovalDecision {
@@ -35,16 +24,6 @@ class AgentToolResultUpdate {
   });
 
   final String toolCallId;
-  final AgentToolResultStatus resultStatus;
-  final String? responseRaw;
-}
-
-class AgentToolExecutionResult {
-  const AgentToolExecutionResult({
-    required this.resultStatus,
-    this.responseRaw,
-  });
-
   final AgentToolResultStatus resultStatus;
   final String? responseRaw;
 }
@@ -248,56 +227,17 @@ class AgentToolExecutionService<TTool extends Object> {
   Future<AgentToolExecutionResult> _executeTool({
     required String conversationId,
     required AgentToolToCall<TTool> toolToCall,
-  }) async {
-    final arguments = safeJsonDecodeToolArguments(toolToCall.argumentsRaw);
-
-    try {
-      final result = await provider.runResolvedTool(
-        conversationId: conversationId,
-        tool: toolToCall.tool,
-        arguments: arguments,
-      );
-      if (provider.isCancellationRequested(conversationId)) {
-        return const AgentToolExecutionResult(
-          resultStatus: AgentToolResultStatus.stoppedByUser,
-        );
-      }
-      if (result == null) {
-        return const AgentToolExecutionResult(
-          resultStatus: AgentToolResultStatus.toolNotFound,
-        );
-      }
-
-      return AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.success,
-        responseRaw: result.toString(),
-      );
-    } on FormatException catch (error, stackTrace) {
-      _logExecutionError(
-        conversationId: conversationId,
-        toolCallId: toolToCall.id,
-        tool: toolToCall.tool,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.executionError,
-        responseRaw: 'Tool execution failed: ${error.message}',
-      );
-    } on Object catch (error, stackTrace) {
-      _logExecutionError(
-        conversationId: conversationId,
-        toolCallId: toolToCall.id,
-        tool: toolToCall.tool,
-        error: error,
-        stackTrace: stackTrace,
-      );
-
-      return const AgentToolExecutionResult(
-        resultStatus: AgentToolResultStatus.executionError,
-      );
-    }
+  }) {
+    return AgentToolExecutionDispatcher<TTool>(
+      runResolvedTool: provider.runResolvedTool,
+      isCancellationRequested: provider.isCancellationRequested,
+      logToolExecutionError: provider.logToolExecutionError,
+    ).call(
+      conversationId: conversationId,
+      toolCallId: toolToCall.id,
+      tool: toolToCall.tool,
+      argumentsRaw: toolToCall.argumentsRaw,
+    );
   }
 
   Future<AgentToolResultUpdate> _executeSafely({
@@ -348,13 +288,4 @@ class AgentToolExecutionService<TTool extends Object> {
       stackTrace: stackTrace,
     );
   }
-}
-
-Map<String, dynamic> safeJsonDecodeToolArguments(String source) {
-  try {
-    final decoded = jsonDecode(source);
-    if (decoded is Map<String, dynamic>) return decoded;
-  } on Object catch (_) {}
-
-  return const <String, dynamic>{};
 }

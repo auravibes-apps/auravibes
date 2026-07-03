@@ -141,7 +141,7 @@ abstract class MessageEntity with _$MessageEntity {
   const MessageEntity._();
 
   /// Returns true if the message has valid content.
-  bool get hasValidContent => content.isNotEmpty;
+  bool get hasValidContent => content.trim().isNotEmpty;
 
   /// Returns true if the message is in a valid state.
   bool get isValid {
@@ -175,13 +175,20 @@ abstract class MessageToCreate with _$MessageToCreate {
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
+    if (content.trim().isNotEmpty) {
+      return true;
+    }
+
+    if (status == MessageStatus.sent) {
+      return false;
+    }
+
     final metadata = this.metadata;
 
-    return content.isNotEmpty ||
-        (!isUser &&
-            metadata != null &&
-            metadata.trim().isNotEmpty &&
-            safeJsonDecode(metadata) != null);
+    return !isUser &&
+        metadata != null &&
+        metadata.trim().isNotEmpty &&
+        safeJsonDecode(metadata) != null;
   }
 
   /// Returns true if the message is in a valid state.

@@ -23,7 +23,7 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
-import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -32,13 +32,6 @@ import 'package:riverpod/riverpod.dart';
 
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
-
-typedef McpToolCaller =
-    Future<String> Function({
-      required String mcpServerId,
-      required String toolIdentifier,
-      required Map<String, dynamic> arguments,
-    });
 
 typedef SkillsManagerToolSuccessHandler =
     void Function({
@@ -613,19 +606,3 @@ void _invalidateSkillsManagerToolState(
       }
   }
 }
-
-final mcpToolCallerProvider = Provider<McpToolCaller>((ref) {
-  return ({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) {
-    return ref
-        .read(mcpConnectionProvider.notifier)
-        .callTool(
-          mcpServerId: mcpServerId,
-          toolIdentifier: toolIdentifier,
-          arguments: arguments,
-        );
-  };
-});
