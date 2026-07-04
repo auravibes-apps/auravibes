@@ -434,6 +434,7 @@ class _ToolCallWidget extends ConsumerWidget {
     }
 
     return switch (status) {
+      ToolCallResultStatus.running => Icons.sync,
       ToolCallResultStatus.success => Icons.check_circle_outline,
       ToolCallResultStatus.skippedByUser => Icons.skip_next,
       ToolCallResultStatus.stoppedByUser => Icons.stop_circle_outlined,
@@ -454,6 +455,7 @@ class _ToolCallWidget extends ConsumerWidget {
     }
 
     return switch (status) {
+      ToolCallResultStatus.running => context.auraColors.primary,
       ToolCallResultStatus.success => context.auraColors.success,
       ToolCallResultStatus.skippedByUser => context.auraColors.onSurfaceVariant,
       ToolCallResultStatus.stoppedByUser => context.auraColors.onSurfaceVariant,

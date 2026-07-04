@@ -157,22 +157,36 @@ class AgentToolExecutionService<TTool extends Object> {
       }
     }
 
-    if (grantedTools.isNotEmpty) {
-      final executionResults = await Future.wait(
-        grantedTools.map(
-          (tool) => _executeSafely(
-            conversationId: conversationId,
-            toolToCall: tool,
-          ),
-        ),
-      );
-      updates.addAll(executionResults);
-    }
-
     if (updates.isNotEmpty) {
       await provider.updateToolResults(
         messageId: latestToolCalls.messageId,
         updates: updates,
+      );
+    }
+
+    if (grantedTools.isNotEmpty) {
+      var updateChain = Future<void>.value();
+
+      Future<void> persistResult(AgentToolResultUpdate update) {
+        final next = updateChain.then(
+          (_) => provider.updateToolResults(
+            messageId: latestToolCalls.messageId,
+            updates: [update],
+          ),
+        );
+        updateChain = next;
+
+        return next;
+      }
+
+      await Future.wait(
+        grantedTools.map((tool) async {
+          final result = await _executeSafely(
+            conversationId: conversationId,
+            toolToCall: tool,
+          );
+          await persistResult(result);
+        }),
       );
     }
 

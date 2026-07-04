@@ -8,6 +8,10 @@ void main() {
       expect(ToolCallResultStatus.success.toResponseString(), '');
     });
 
+    test('running returns empty string', () {
+      expect(ToolCallResultStatus.running.toResponseString(), '');
+    });
+
     test('skippedByUser', () {
       expect(
         ToolCallResultStatus.skippedByUser.toResponseString(),
@@ -65,6 +69,7 @@ void main() {
 
     test('other statuses return false', () {
       expect(ToolCallResultStatus.success.stopsAgentLoop, isFalse);
+      expect(ToolCallResultStatus.running.stopsAgentLoop, isFalse);
       expect(ToolCallResultStatus.skippedByUser.stopsAgentLoop, isFalse);
       expect(ToolCallResultStatus.toolNotFound.stopsAgentLoop, isFalse);
       expect(ToolCallResultStatus.disabledInWorkspace.stopsAgentLoop, isFalse);
@@ -100,6 +105,7 @@ void main() {
 
       test('parses all snake_case values', () {
         const cases = {
+          'running': ToolCallResultStatus.running,
           'success': ToolCallResultStatus.success,
           'skipped_by_user': ToolCallResultStatus.skippedByUser,
           'stopped_by_user': ToolCallResultStatus.stoppedByUser,
@@ -126,6 +132,7 @@ void main() {
       });
 
       test('serializes all values to snake_case', () {
+        expect(converter.toJson(ToolCallResultStatus.running), 'running');
         expect(converter.toJson(ToolCallResultStatus.success), 'success');
         expect(
           converter.toJson(ToolCallResultStatus.skippedByUser),

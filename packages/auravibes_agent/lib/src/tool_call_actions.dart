@@ -33,6 +33,11 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
     required Map<String, dynamic> arguments,
   });
 
+  Future<void> markToolCallRunning({
+    required String messageId,
+    required String toolCallId,
+  });
+
   Future<void> updateToolCallResult({
     required String messageId,
     required String toolCallId,
@@ -103,6 +108,11 @@ class ApproveToolCallService<TTool extends Object> {
         tool: tool,
       );
     }
+
+    await provider.markToolCallRunning(
+      messageId: messageId,
+      toolCallId: toolCallId,
+    );
 
     final executionResult = await _executeTool(
       conversationId: toolCall.conversationId,

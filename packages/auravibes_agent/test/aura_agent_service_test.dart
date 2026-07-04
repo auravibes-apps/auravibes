@@ -41,6 +41,7 @@ void main() {
 
     expect(tools.calls, [
       'grant:conversation-1:tool',
+      'running:message-1:tool-1',
       'run:conversation-1:tool',
       'update:tool-1:AgentToolResultStatus.success:ok',
       'resume:message-1',
@@ -249,6 +250,14 @@ class _FakeToolProvider implements AgentToolProvider<String> {
     String? responseRaw,
   }) async {
     calls.add('update:$toolCallId:$resultStatus:$responseRaw');
+  }
+
+  @override
+  Future<void> markToolCallRunning({
+    required String messageId,
+    required String toolCallId,
+  }) async {
+    calls.add('running:$messageId:$toolCallId');
   }
 
   @override

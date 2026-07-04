@@ -42,11 +42,31 @@ void main() {
       expect(toolCall.isResolved, isFalse);
     });
 
+    test('isResolved false when resultStatus is running', () {
+      const toolCall = MessageToolCallEntity(
+        id: 'call_running',
+        name: 'test_tool',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.running,
+      );
+      expect(toolCall.isResolved, isFalse);
+    });
+
     test('isPending true when resultStatus is null', () {
       const toolCall = MessageToolCallEntity(
         id: 'call_5',
         name: 'test_tool',
         argumentsRaw: '{}',
+      );
+      expect(toolCall.isPending, isTrue);
+    });
+
+    test('isPending true when resultStatus is running', () {
+      const toolCall = MessageToolCallEntity(
+        id: 'call_running',
+        name: 'test_tool',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.running,
       );
       expect(toolCall.isPending, isTrue);
     });
@@ -59,6 +79,25 @@ void main() {
         resultStatus: ToolCallResultStatus.success,
       );
       expect(toolCall.isPending, isFalse);
+    });
+
+    test('isAwaitingApproval and isRunning reflect active states', () {
+      const awaiting = MessageToolCallEntity(
+        id: 'call_awaiting',
+        name: 'test_tool',
+        argumentsRaw: '{}',
+      );
+      const running = MessageToolCallEntity(
+        id: 'call_running',
+        name: 'test_tool',
+        argumentsRaw: '{}',
+        resultStatus: ToolCallResultStatus.running,
+      );
+
+      expect(awaiting.isAwaitingApproval, isTrue);
+      expect(awaiting.isRunning, isFalse);
+      expect(running.isAwaitingApproval, isFalse);
+      expect(running.isRunning, isTrue);
     });
 
     test('getResponseForAI returns responseRaw when available', () {

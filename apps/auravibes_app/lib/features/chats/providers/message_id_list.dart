@@ -223,7 +223,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   final toolCalls = latestAssistantMessage.metadata?.toolCalls;
   if (toolCalls == null || toolCalls.isEmpty) return const [];
 
-  final pendingCalls = toolCalls.where((tc) => tc.isPending).toList();
+  final pendingCalls = toolCalls.where((tc) => tc.isAwaitingApproval).toList();
   if (pendingCalls.isEmpty) return const [];
 
   final conversation = await ref.watch(

@@ -18,8 +18,8 @@ mixin _$MessageToolCallEntity {
  String get id; String get name; String get argumentsRaw;/// The raw response from tool execution, if successful.
  String? get responseRaw;/// The result status of this tool call.
 ///
-/// - null: Tool is pending or currently running
-/// - non-null: Tool has completed with this result status
+/// - null: Tool is awaiting approval
+/// - non-null: Tool is running or completed with this result status
 @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? get resultStatus;
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -228,8 +228,8 @@ class _MessageToolCallEntity extends MessageToolCallEntity {
 @override final  String? responseRaw;
 /// The result status of this tool call.
 ///
-/// - null: Tool is pending or currently running
-/// - non-null: Tool has completed with this result status
+/// - null: Tool is awaiting approval
+/// - non-null: Tool is running or completed with this result status
 @override@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) final  ToolCallResultStatus? resultStatus;
 
 /// Create a copy of MessageToolCallEntity

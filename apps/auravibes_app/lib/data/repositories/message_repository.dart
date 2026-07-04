@@ -144,7 +144,9 @@ class MessageRepository {
       if (existingMessage == null) {
         throw MessageNotFoundException(id);
       }
-      if (existingMessage.content.trim().isEmpty) {
+      final metadata = message.metadata ?? existingMessage.metadata;
+      final hasToolCalls = metadata?.toolCalls.isNotEmpty ?? false;
+      if (existingMessage.content.trim().isEmpty && !hasToolCalls) {
         throw const MessageValidationException(
           _messageContentCannotBeEmpty,
         );

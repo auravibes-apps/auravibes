@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auravibes_agent/auravibes_agent.dart';
 import 'package:auravibes_agent/src/agent_tool_execution_service.dart';
 import 'package:test/test.dart';
@@ -103,6 +105,93 @@ void main() {
       expect(provider.loggedErrors, ['tool-3']);
     },
   );
+
+  test('stores each granted tool result as it finishes', () async {
+    final slow = Completer<Object?>();
+    final fast = Completer<Object?>();
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(tool: 'slow', id: 'slow-id', argumentsRaw: '{}'),
+          AgentToolToCall(tool: 'fast', id: 'fast-id', argumentsRaw: '{}'),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {
+        'slow-id': AgentToolPermissionResult.granted,
+        'fast-id': AgentToolPermissionResult.granted,
+      },
+      resultFutures: {
+        'slow': slow.future,
+        'fast': fast.future,
+      },
+    );
+    final service = AgentToolExecutionService<String>(provider: provider);
+
+    final resultFuture = service(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    await _flushMicrotasks();
+    fast.complete('fast result');
+    await _flushMicrotasks();
+
+    expect(provider.updateBatches, hasLength(1));
+    expect(provider.updateBatches.single.single.toolCallId, 'fast-id');
+
+    slow.complete('slow result');
+    final result = await resultFuture;
+
+    expect(result, AgentIterationDecision.continueIteration);
+    expect(provider.updateBatches, hasLength(2));
+    expect(provider.updateBatches.last.single.toolCallId, 'slow-id');
+  });
+
+  test('waits for approvals after storing execution error', () async {
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(
+            tool: 'blocked',
+            id: 'blocked-id',
+            argumentsRaw: '{}',
+          ),
+          AgentToolToCall(tool: 'manual', id: 'manual-id', argumentsRaw: '{}'),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+      decisions: const {
+        'blocked-id': AgentToolPermissionResult.granted,
+        'manual-id': AgentToolPermissionResult.needsConfirmation,
+      },
+      results: {
+        'blocked': Exception('blocked'),
+      },
+    );
+    final service = AgentToolExecutionService<String>(provider: provider);
+
+    final result = await service(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    expect(result, AgentIterationDecision.waitForToolApproval);
+    expect(
+      provider.updates.single.resultStatus,
+      AgentToolResultStatus.executionError,
+    );
+  });
+}
+
+Future<void> _flushMicrotasks() async {
+  await Future<void>.delayed(Duration.zero);
 }
 
 LoadLatestMessageToolCallsResult<String> _latestToolCalls() {
@@ -125,13 +214,16 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     this.cancellationRequested = false,
     this.decisions = const {},
     this.results = const {},
+    this.resultFutures = const {},
   });
 
   final LoadLatestMessageToolCallsResult<String> latestToolCalls;
   final bool cancellationRequested;
   final Map<String, AgentToolPermissionResult> decisions;
   final Map<String, Object?> results;
+  final Map<String, Future<Object?>> resultFutures;
   final stoppedMessageIds = <String>[];
+  final updateBatches = <List<AgentToolResultUpdate>>[];
   final updates = <AgentToolResultUpdate>[];
   final loggedErrors = <String>[];
 
@@ -161,6 +253,9 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     required String tool,
     required Map<String, dynamic> arguments,
   }) async {
+    final future = resultFutures[tool];
+    if (future != null) return future;
+
     final result = results[tool];
     if (result is Object) {
       if (result is Exception) throw result;
@@ -193,6 +288,7 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     required String messageId,
     required List<AgentToolResultUpdate> updates,
   }) async {
+    updateBatches.add(updates);
     this.updates.addAll(updates);
   }
 

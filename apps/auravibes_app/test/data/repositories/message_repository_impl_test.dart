@@ -489,25 +489,50 @@ void main() {
       expect(patched.status, MessageStatus.sent);
     });
 
-    test('patchMessage rejects sent status for empty content', () async {
-      const metadata = MessageMetadataEntity(
-        toolCalls: [
-          MessageToolCallEntity(
-            id: 'tool-1',
-            name: 'calculator',
-            argumentsRaw: '{"input":"2+2"}',
-          ),
-        ],
-      );
+    test(
+      'patchMessage allows sent status for empty tool-call content',
+      () async {
+        const metadata = MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: 'calculator',
+              argumentsRaw: '{"input":"2+2"}',
+            ),
+          ],
+        );
 
+        final created = await repository.createMessage(
+          MessageToCreate(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.unfinished,
+            metadata: jsonEncode(metadata.toJson()),
+          ),
+        );
+
+        final patched = await repository.patchMessage(
+          created.id,
+          const MessagePatch(status: MessageStatus.sent),
+        );
+
+        expect(patched.status, MessageStatus.sent);
+        expect(patched.content, isEmpty);
+        expect(patched.metadata?.toolCalls, hasLength(1));
+      },
+    );
+
+    test('patchMessage rejects sent status for empty content', () async {
       final created = await repository.createMessage(
-        MessageToCreate(
+        const MessageToCreate(
           conversationId: 'conv-1',
           content: '',
           messageType: MessageType.text,
           isUser: false,
           status: MessageStatus.unfinished,
-          metadata: jsonEncode(metadata.toJson()),
+          metadata: '{}',
         ),
       );
 
@@ -518,9 +543,6 @@ void main() {
         ),
         throwsA(isA<MessageValidationException>()),
       );
-
-      final found = await repository.getMessageById(created.id);
-      expect(found?.status, MessageStatus.unfinished);
     });
 
     test('patchMessage rejects sent status for blank content', () async {
