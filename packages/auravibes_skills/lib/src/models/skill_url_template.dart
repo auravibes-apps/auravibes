@@ -26,10 +26,11 @@ class SkillUrlTemplate {
       throw const FormatException('URL template requires a url.');
     }
 
-    final body = decoded['body'];
-    if (body != null && body is! String) {
+    final bodyValue = decoded['body'];
+    if (bodyValue != null && bodyValue is! String) {
       throw const FormatException('URL template body must be a string.');
     }
+    final body = bodyValue as String?;
 
     return SkillUrlTemplate(
       url: _canonicalizeTemplate(url),
