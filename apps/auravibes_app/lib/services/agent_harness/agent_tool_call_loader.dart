@@ -60,12 +60,13 @@ class AppAgentToolCallProvider
       toolCalls: [
         for (final toolCall
             in message.metadata?.toolCalls ?? const <MessageToolCallEntity>[])
-          agent.AgentMessageToolCall(
-            id: toolCall.id,
-            name: toolCall.name,
-            argumentsRaw: toolCall.argumentsRaw,
-            resultStatus: _toAgentToolCallResultStatus(toolCall.resultStatus),
-          ),
+          if (!toolCall.isRunning)
+            agent.AgentMessageToolCall(
+              id: toolCall.id,
+              name: toolCall.name,
+              argumentsRaw: toolCall.argumentsRaw,
+              resultStatus: _toAgentToolCallResultStatus(toolCall.resultStatus),
+            ),
       ],
     );
   }
@@ -76,7 +77,6 @@ agent.AgentToolCallResultStatus? _toAgentToolCallResultStatus(
 ) {
   return switch (status) {
     null => null,
-    ToolCallResultStatus.running => null,
     ToolCallResultStatus.success => agent.AgentToolCallResultStatus.success,
     ToolCallResultStatus.skippedByUser =>
       agent.AgentToolCallResultStatus.skippedByUser,

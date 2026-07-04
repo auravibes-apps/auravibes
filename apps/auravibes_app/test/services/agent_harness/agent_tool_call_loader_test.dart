@@ -94,6 +94,36 @@ void main() {
         expect(result.hasToolCalls, isFalse);
       },
     );
+    test('filters out running tool calls', () async {
+      when(
+        () => messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer(
+        (_) async => [
+          _message(id: 'user-1', isUser: true),
+          _message(
+            id: 'assistant-1',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'running-tool',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                  resultStatus: ToolCallResultStatus.running,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.hasToolCalls, isFalse);
+      expect(result.toolsToRun, isEmpty);
+      expect(result.notFoundToolCallIds, isEmpty);
+      expect(result.previouslyFailedToolCallIds, isEmpty);
+    });
+
     test(
       'T005: resolves native tool composite ID to correct '
       'ResolvedTool with valid tableId',

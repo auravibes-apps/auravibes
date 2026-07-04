@@ -165,7 +165,6 @@ class AgentToolExecutionService<TTool extends Object> {
     }
 
     if (grantedTools.isNotEmpty) {
-      final executionResults = <AgentToolResultUpdate>[];
       var updateChain = Future<void>.value();
 
       Future<void> persistResult(AgentToolResultUpdate update) {
@@ -186,11 +185,9 @@ class AgentToolExecutionService<TTool extends Object> {
             conversationId: conversationId,
             toolToCall: tool,
           );
-          executionResults.add(result);
           await persistResult(result);
         }),
       );
-      updates.addAll(executionResults);
     }
 
     if (hasPendingTools) {
