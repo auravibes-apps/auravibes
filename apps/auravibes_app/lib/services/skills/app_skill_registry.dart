@@ -141,4 +141,12 @@ Only create user skills from explicit user intent.
 
     return null;
   }
+
+  AppSkillDefinition? getByIdentifier(String identifier) {
+    for (final skill in getAll()) {
+      if (skill.identifier == identifier) return skill;
+    }
+
+    return null;
+  }
 }

@@ -980,6 +980,13 @@ class _AppSkillCredentialsHintState
     return FutureBuilder<List<AppSkillCredentialCandidate>>(
       future: _future,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _MissingCredentialHint(
+            isCredentialOptional: false,
+            onCreateCredential: () => _openCredentialCreate(context),
+          );
+        }
+
         final credentials = snapshot.data;
         if (credentials == null) {
           return const AuraSpinner(size: AuraSpinnerSize.small);
@@ -1007,7 +1014,7 @@ class _AppSkillCredentialsHintState
   Future<List<AppSkillCredentialCandidate>> _load() async {
     final appSkill = ref
         .read(appSkillRegistryProvider)
-        .getBySlug(
+        .getByIdentifier(
           widget.appSkillId,
         );
     if (appSkill == null) return const [];
@@ -1023,7 +1030,7 @@ class _AppSkillCredentialsHintState
   Future<void> _openCredentialCreate(BuildContext context) async {
     final appSkill = ref
         .read(appSkillRegistryProvider)
-        .getBySlug(widget.appSkillId);
+        .getByIdentifier(widget.appSkillId);
     if (appSkill == null) return;
 
     final result = appSkill.compatibleModelProviderIds.isNotEmpty

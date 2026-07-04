@@ -105,7 +105,9 @@ String apiKey(Map<String, dynamic> input) {
 
 String textInput(Map<String, dynamic> input, String key) {
   final value = input[key];
-  return value is String ? value : '';
+  if (value is String && value.trim().isNotEmpty) return value.trim();
+
+  throw FormatException('Input $key is required.');
 }
 
 String stringInput(
