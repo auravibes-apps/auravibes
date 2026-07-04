@@ -305,13 +305,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(updatedToolCalls, isNotNull);
         expect(
           updatedToolCalls
@@ -438,13 +432,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(updatedToolCalls, isNotNull);
         expect(
           updatedToolCalls?.firstWhere((tc) => tc.id == 'tool-1').resultStatus,
@@ -561,13 +549,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(updatedToolCalls, isNotNull);
         expect(
           updatedToolCalls
@@ -713,13 +695,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.waitForToolApproval);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(updatedToolCalls, isNotNull);
         expect(
           updatedToolCalls
@@ -1010,13 +986,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(updatedToolCalls, isNotNull);
         expect(
           updatedToolCalls
@@ -1102,13 +1072,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.done);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(updatedToolCalls, isNotNull);
         expect(
           updatedToolCalls
@@ -1430,13 +1394,7 @@ void main() {
         );
 
         expect(result, AgentIterationDecision.continueIteration);
-        final update =
-            verify(
-                  () =>
-                      messageRepository.patchMessage('message-1', captureAny()),
-                ).captured.single
-                as MessagePatch;
-        final updatedToolCalls = update.metadata?.toolCalls;
+        final updatedToolCalls = _capturedToolCalls(messageRepository);
         expect(
           updatedToolCalls
               ?.firstWhere((tc) => tc.id == 'failed-tool')
@@ -1661,6 +1619,27 @@ void main() {
       },
     );
   });
+}
+
+List<MessageToolCallEntity>? _capturedToolCalls(
+  MockMessageRepository messageRepository,
+) {
+  final patches = verify(
+    () => messageRepository.patchMessage('message-1', captureAny()),
+  ).captured.cast<MessagePatch>();
+  final byId = <String, MessageToolCallEntity>{};
+  for (final patch in patches) {
+    for (final toolCall
+        in patch.metadata?.toolCalls ?? const <MessageToolCallEntity>[]) {
+      final existing = byId[toolCall.id];
+      byId[toolCall.id] = toolCall.copyWith(
+        resultStatus: toolCall.resultStatus ?? existing?.resultStatus,
+        responseRaw: toolCall.responseRaw ?? existing?.responseRaw,
+      );
+    }
+  }
+
+  return byId.values.toList();
 }
 
 MessageEntity _runAllowedToolsToolMessage() {

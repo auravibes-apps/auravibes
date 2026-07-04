@@ -76,6 +76,7 @@ agent.AgentToolCallResultStatus? _toAgentToolCallResultStatus(
 ) {
   return switch (status) {
     null => null,
+    ToolCallResultStatus.running => null,
     ToolCallResultStatus.success => agent.AgentToolCallResultStatus.success,
     ToolCallResultStatus.skippedByUser =>
       agent.AgentToolCallResultStatus.skippedByUser,

@@ -37,6 +37,7 @@ void main() {
 
       expect(provider.calls, [
         'grant:conversation-1:calculator',
+        'running:message-1:tool-1',
         'run:1+1',
         'update:AgentToolResultStatus.success:2',
         'resume:message-1',
@@ -60,6 +61,25 @@ void main() {
       );
 
       expect(provider.didResume, isFalse);
+    });
+
+    test('resumes after execution error', () async {
+      final provider = _FakeApproveToolCallProvider(
+        resolvedTool: 'calculator',
+        runError: StateError('blocked'),
+      );
+      final usecase = ApproveToolCallService<String>(
+        provider: provider,
+      );
+
+      await usecase.call(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+        level: AgentToolGrantLevel.once,
+      );
+
+      expect(provider.updates, [AgentToolResultStatus.executionError]);
+      expect(provider.didResume, isTrue);
     });
   });
 
@@ -92,11 +112,13 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
   _FakeApproveToolCallProvider({
     required this.resolvedTool,
     this.runResult,
+    this.runError,
     this.isCancelled = false,
   });
 
   final String? resolvedTool;
   final Object? runResult;
+  final Object? runError;
   final bool isCancelled;
   final calls = <String>[];
   final updates = <AgentToolResultStatus>[];
@@ -132,8 +154,18 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
     required Map<String, dynamic> arguments,
   }) async {
     calls.add('run:${arguments['input']}');
+    final error = runError;
+    if (error != null) throw error;
 
     return runResult;
+  }
+
+  @override
+  Future<void> markToolCallRunning({
+    required String messageId,
+    required String toolCallId,
+  }) async {
+    calls.add('running:$messageId:$toolCallId');
   }
 
   @override

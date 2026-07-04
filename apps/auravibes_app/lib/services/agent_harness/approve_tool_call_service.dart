@@ -102,10 +102,36 @@ class AppApproveToolCallDataProvider
   }
 
   @override
+  Future<void> markToolCallRunning({
+    required String messageId,
+    required String toolCallId,
+  }) async {
+    await _patchToolCall(
+      messageId: messageId,
+      toolCallId: toolCallId,
+      resultStatus: ToolCallResultStatus.running,
+    );
+  }
+
+  @override
   Future<void> updateToolCallResult({
     required String messageId,
     required String toolCallId,
     required agent.AgentToolResultStatus resultStatus,
+    String? responseRaw,
+  }) async {
+    await _patchToolCall(
+      messageId: messageId,
+      toolCallId: toolCallId,
+      resultStatus: _toAppResultStatus(resultStatus),
+      responseRaw: responseRaw,
+    );
+  }
+
+  Future<void> _patchToolCall({
+    required String messageId,
+    required String toolCallId,
+    required ToolCallResultStatus resultStatus,
     String? responseRaw,
   }) async {
     final message = await messageRepository.getMessageById(messageId);
@@ -116,7 +142,7 @@ class AppApproveToolCallDataProvider
       if (toolCall.id != toolCallId) return toolCall;
 
       return toolCall.copyWith(
-        resultStatus: _toAppResultStatus(resultStatus),
+        resultStatus: resultStatus,
         responseRaw: responseRaw,
       );
     }).toList();

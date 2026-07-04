@@ -23,8 +23,8 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
 
     /// The result status of this tool call.
     ///
-    /// - null: Tool is pending or currently running
-    /// - non-null: Tool has completed with this result status
+    /// - null: Tool is awaiting approval
+    /// - non-null: Tool is running or completed with this result status
     @JsonKey(
       fromJson: _toolCallResultStatusFromJson,
       toJson: _toolCallResultStatusToJson,
@@ -41,11 +41,17 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
   }
 
   /// Whether this tool call has been resolved (success or failure).
-  bool get isResolved => resultStatus != null;
+  bool get isResolved => resultStatus != null && !isRunning;
+
+  /// Whether this tool call is waiting for permission.
+  bool get isAwaitingApproval => resultStatus == null;
+
+  /// Whether this tool call is currently running.
+  bool get isRunning => resultStatus == ToolCallResultStatus.running;
 
   /// Whether this tool call is still pending
   /// (waiting for permission or execution).
-  bool get isPending => resultStatus == null;
+  bool get isPending => isAwaitingApproval || isRunning;
 
   /// Gets the response to send to the AI.
   ///

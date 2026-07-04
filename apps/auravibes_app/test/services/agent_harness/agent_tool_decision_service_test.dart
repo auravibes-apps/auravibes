@@ -74,6 +74,30 @@ void main() {
       },
     );
 
+    test(
+      'returns continueIteration when tool call is running',
+      () async {
+        when(() => messageRepository.getMessageById('message-4')).thenAnswer(
+          (_) async => _message(
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'running-tool',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                  resultStatus: ToolCallResultStatus.running,
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final result = await usecase.call(messageId: 'message-4');
+
+        expect(result, AgentIterationDecision.continueIteration);
+      },
+    );
+
     test('returns done when a tool status stops the agent loop', () async {
       when(() => messageRepository.getMessageById('message-3')).thenAnswer(
         (_) async => _message(

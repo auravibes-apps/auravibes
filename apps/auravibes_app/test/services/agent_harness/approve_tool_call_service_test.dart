@@ -249,6 +249,31 @@ void main() {
       );
     });
 
+    test('marks tool call running in message metadata', () async {
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
+        (_) async => message,
+      );
+      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
+        (_) async => message,
+      );
+
+      await provider.markToolCallRunning(
+        messageId: messageId,
+        toolCallId: 'tool-1',
+      );
+
+      final patch =
+          verify(
+                () => messageRepository.patchMessage(messageId, captureAny()),
+              ).captured.single
+              as MessagePatch;
+      expect(
+        patch.metadata?.toolCalls.single.resultStatus,
+        ToolCallResultStatus.running,
+      );
+      expect(patch.metadata?.toolCalls.single.responseRaw, isNull);
+    });
+
     test('resumes conversation through resume service', () async {
       when(
         () => agentToolResumeService.call(messageId: messageId),

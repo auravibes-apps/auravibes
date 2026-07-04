@@ -117,6 +117,12 @@ void main() {
       ),
     ).thenAnswer((_) => Future<void>.value());
     when(
+      () => delegates.markToolCallRunning(
+        messageId: 'message-1',
+        toolCallId: 'tool-1',
+      ),
+    ).thenAnswer((_) => Future<void>.value());
+    when(
       () => delegates.resumeConversationIfReady(messageId: 'message-1'),
     ).thenAnswer((_) => Future<void>.value());
     when(
@@ -212,6 +218,10 @@ void main() {
       toolCallId: 'tool-1',
       resultStatus: agent.AgentToolResultStatus.success,
       responseRaw: 'ok',
+    );
+    await provider.markToolCallRunning(
+      messageId: 'message-1',
+      toolCallId: 'tool-1',
     );
     await provider.resumeConversationIfReady(messageId: 'message-1');
     expect(

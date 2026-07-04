@@ -244,6 +244,17 @@ class AppAgentToolProvider implements agent.AgentToolProvider<ResolvedTool> {
   }
 
   @override
+  Future<void> markToolCallRunning({
+    required String messageId,
+    required String toolCallId,
+  }) {
+    return approvals.markToolCallRunning(
+      messageId: messageId,
+      toolCallId: toolCallId,
+    );
+  }
+
+  @override
   Future<void> resumeConversationIfReady({required String messageId}) {
     return approvals.resumeConversationIfReady(messageId: messageId);
   }

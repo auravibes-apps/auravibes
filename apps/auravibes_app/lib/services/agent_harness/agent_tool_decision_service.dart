@@ -24,7 +24,9 @@ class AppAgentToolCallDataProvider implements agent.AgentToolDecisionProvider {
       if (toolCall.resultStatus == ToolCallResultStatus.stoppedByUser) {
         return agent.AgentToolCallState.stopped;
       }
-      if (toolCall.isPending) return agent.AgentToolCallState.pending;
+      if (toolCall.isAwaitingApproval) {
+        return agent.AgentToolCallState.pending;
+      }
 
       return agent.AgentToolCallState.resolved;
     }).toList();

@@ -5,9 +5,12 @@ import 'package:json_annotation/json_annotation.dart';
 /// Represents the result status of a tool call execution.
 ///
 /// This is stored in the database to indicate why a tool call ended.
-/// A null resultStatus means the tool is still pending or running.
+/// A null resultStatus means the tool is awaiting approval.
 @JsonEnum(fieldRename: FieldRename.snake)
 enum ToolCallResultStatus {
+  /// Tool was approved and is currently executing.
+  running,
+
   /// Tool executed successfully, responseRaw contains the output.
   success,
 
@@ -41,6 +44,7 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   /// contain the actual output.
   String toResponseString() {
     return switch (this) {
+      ToolCallResultStatus.running => '',
       ToolCallResultStatus.success => '',
       ToolCallResultStatus.skippedByUser => 'Tool was skipped by the user.',
       ToolCallResultStatus.stoppedByUser =>
@@ -66,6 +70,7 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   /// Use with `.tr()` to get the translated string.
   String get localeKey {
     return switch (this) {
+      ToolCallResultStatus.running => LocaleKeys.tool_call_status_running,
       ToolCallResultStatus.success => LocaleKeys.tool_call_status_success,
       ToolCallResultStatus.skippedByUser =>
         LocaleKeys.tool_call_status_skipped_by_user,
@@ -97,6 +102,7 @@ class ToolCallResultStatusConverter
     if (json == null) return null;
 
     return switch (json) {
+      'running' => ToolCallResultStatus.running,
       'success' => ToolCallResultStatus.success,
       'skipped_by_user' => ToolCallResultStatus.skippedByUser,
       'stopped_by_user' => ToolCallResultStatus.stoppedByUser,
@@ -114,6 +120,7 @@ class ToolCallResultStatusConverter
     if (object == null) return null;
 
     return switch (object) {
+      ToolCallResultStatus.running => 'running',
       ToolCallResultStatus.success => 'success',
       ToolCallResultStatus.skippedByUser => 'skipped_by_user',
       ToolCallResultStatus.stoppedByUser => 'stopped_by_user',
