@@ -155,7 +155,8 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
   }) async {
     calls.add('run:${arguments['input']}');
     final error = runError;
-    if (error != null) throw error;
+    if (error is Exception) throw error;
+    if (error is Error) throw error;
 
     return runResult;
   }
