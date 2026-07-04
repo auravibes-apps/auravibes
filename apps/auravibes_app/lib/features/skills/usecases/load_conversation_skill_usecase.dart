@@ -1,23 +1,40 @@
+import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:riverpod/riverpod.dart';
+
+class LoadConversationSkillException implements Exception {
+  const LoadConversationSkillException(this.localizationKey);
+
+  final String localizationKey;
+
+  @override
+  String toString() => localizationKey;
+}
 
 class LoadConversationSkillUsecase {
   const LoadConversationSkillUsecase(
     this._skillsRepository,
     this._conversationSkillsRepository,
+    this._appSkillSettingsRepository,
     this._appSkillRegistry, [
     this._checkSkillCredentialReadinessUsecase,
+    this._listAppSkillCredentialCandidatesUsecase,
   ]);
 
   final SkillsRepository _skillsRepository;
   final ConversationSkillsRepository _conversationSkillsRepository;
+  final AppSkillWorkspaceSettingsRepository _appSkillSettingsRepository;
   final AppSkillRegistry _appSkillRegistry;
   final CheckSkillCredentialReadinessUsecase?
   _checkSkillCredentialReadinessUsecase;
+  final ListAppSkillCredentialCandidatesUsecase?
+  _listAppSkillCredentialCandidatesUsecase;
 
   Future<void> call({
     required String conversationId,
@@ -35,7 +52,9 @@ class LoadConversationSkillUsecase {
             workspaceId: workspaceId,
             skill: userSkill,
           )) {
-        throw StateError('Skill requires at least one configured credential.');
+        throw const LoadConversationSkillException(
+          LocaleKeys.skills_screen_error_requires_credential,
+        );
       }
       final _ = await _conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversationId,
@@ -48,6 +67,25 @@ class LoadConversationSkillUsecase {
 
     final appSkill = _appSkillRegistry.getBySlug(slug);
     if (appSkill != null) {
+      final isEnabled = await _appSkillSettingsRepository.isAppSkillEnabled(
+        workspaceId,
+        appSkill.identifier,
+      );
+      if (!isEnabled) {
+        throw const LoadConversationSkillException(
+          LocaleKeys.skills_screen_error_app_skill_disabled,
+        );
+      }
+      final credentialUsecase = _listAppSkillCredentialCandidatesUsecase;
+      if (credentialUsecase != null &&
+          !await credentialUsecase.hasUsableNativeTool(
+            workspaceId: workspaceId,
+            skill: appSkill,
+          )) {
+        throw const LoadConversationSkillException(
+          LocaleKeys.skills_screen_error_requires_credential,
+        );
+      }
       final _ = await _conversationSkillsRepository.setAppSkillLoaded(
         conversationId,
         appSkill.identifier,
@@ -66,7 +104,9 @@ final loadConversationSkillUsecaseProvider =
       return LoadConversationSkillUsecase(
         ref.watch(skillsRepositoryProvider),
         ref.watch(conversationSkillsRepositoryProvider),
+        ref.watch(appSkillWorkspaceSettingsRepositoryProvider),
         ref.watch(appSkillRegistryProvider),
         ref.watch(checkSkillCredentialReadinessUsecaseProvider),
+        ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
       );
     });

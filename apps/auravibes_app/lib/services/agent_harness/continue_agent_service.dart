@@ -148,6 +148,7 @@ class ContinueAgentService
       conversationId: conversationId,
       responseStream: responseStream,
       pendingUserMessageIds: context?.ackMessageIds ?? const <String>[],
+      allowEmptyResult: context?.origin == AgentIterationOrigin.toolResume,
     );
   }
 

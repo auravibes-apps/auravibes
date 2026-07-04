@@ -71,6 +71,7 @@ class AgentStreamService<TChunk> {
     required String conversationId,
     required Stream<TChunk> responseStream,
     required List<String> pendingUserMessageIds,
+    bool allowEmptyResult = false,
   }) async {
     final state = _ContinueAgentStreamState<TChunk>(
       conversationId: conversationId,
@@ -91,6 +92,10 @@ class AgentStreamService<TChunk> {
       final completedMessageId = state.messageId;
       final completedResult = state.accumulatedResult;
       if (completedMessageId == null || completedResult == null) {
+        if (allowEmptyResult) {
+          return _completeEmptyRun(state);
+        }
+
         throw StateError('Agent stream completed without any result');
       }
 
@@ -265,6 +270,14 @@ class AgentStreamService<TChunk> {
       messageId: state.messageId ?? '',
       hasToolCalls: false,
     );
+  }
+
+  Future<ContinueAgentResult> _completeEmptyRun(
+    _ContinueAgentStreamState<TChunk> state,
+  ) async {
+    await _closeSinks(state);
+
+    return const ContinueAgentResult(messageId: '', hasToolCalls: false);
   }
 
   Future<void> _closeSinks(_ContinueAgentStreamState<TChunk> state) async {

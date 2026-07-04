@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
+import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
@@ -21,6 +22,7 @@ import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
+import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -29,9 +31,9 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/resolve_skill_url_template_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
@@ -49,6 +51,8 @@ import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
+import 'package:auravibes_skills/auravibes_skills.dart'
+    show ResolveSkillUrlTemplate, RunSkillUrlTemplate;
 import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:dio/dio.dart';
@@ -74,6 +78,10 @@ void main() {
     );
     var conversationSkillsRepository = ConversationSkillsRepository(
       database,
+    );
+    var serviceConnectionRepository = ServiceConnectionRepository(
+      database,
+      EncryptionService(_FakeSecretKeyManager()),
     );
     var appSkillSettingsRepository = AppSkillWorkspaceSettingsRepository(
       database,
@@ -103,6 +111,10 @@ void main() {
         encryptionService: EncryptionService(_FakeSecretKeyManager()),
       );
       conversationSkillsRepository = ConversationSkillsRepository(database);
+      serviceConnectionRepository = ServiceConnectionRepository(
+        database,
+        EncryptionService(_FakeSecretKeyManager()),
+      );
       appSkillSettingsRepository = AppSkillWorkspaceSettingsRepository(
         database,
       );
@@ -435,6 +447,7 @@ void main() {
       final loadSkillUsecase = LoadConversationSkillUsecase(
         skillsRepository,
         conversationSkillsRepository,
+        appSkillSettingsRepository,
         const AppSkillRegistry(),
       );
       final unloadSkillUsecase = UnloadConversationSkillUsecase(
@@ -444,6 +457,8 @@ void main() {
       );
       final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
         listAvailableSkillsUsecase,
+        const AppSkillRegistry(),
+        ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -574,8 +589,10 @@ void main() {
       final loadSkillUsecase = LoadConversationSkillUsecase(
         skillsRepository,
         conversationSkillsRepository,
+        appSkillSettingsRepository,
         const AppSkillRegistry(),
         CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
+        ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
       );
 
       final loadableSkills = await listAvailableSkillsUsecase.call(
@@ -615,7 +632,13 @@ void main() {
           workspaceId: workspace.id,
           slug: skill.slug,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<LoadConversationSkillException>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.skills_screen_error_requires_credential,
+          ),
+        ),
       );
 
       final _ = await skillCredentialsRepository.createCredential(
@@ -797,13 +820,18 @@ void main() {
         skillCredentialsRepository,
       );
       final requests = <RequestOptions>[];
+      final urlService = UrlService(
+        dio: _dioWithBody('ok', requests: requests),
+      );
       final runUsecase = RunSkillTemplateToolUsecase(
         toolsRepository,
         skillsRepository,
         skillCredentialDefinitionsRepository,
         skillCredentialsRepository,
-        const ResolveSkillUrlTemplateUsecase(),
-        UrlService(dio: _dioWithBody('ok', requests: requests)),
+        RunSkillUrlTemplate(
+          const ResolveSkillUrlTemplate(),
+          AppSkillHttpClientAdapter(urlService).execute,
+        ),
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -1047,7 +1075,7 @@ void main() {
     test(
       'renders optional Liquid fields in JSON template fields',
       () {
-        const usecase = ResolveSkillUrlTemplateUsecase();
+        const usecase = ResolveSkillUrlTemplate();
 
         final request = usecase.call(
           template: SkillUrlTemplate(
@@ -1092,7 +1120,7 @@ void main() {
     );
 
     test('resolves typed JSON body placeholders', () {
-      const usecase = ResolveSkillUrlTemplateUsecase();
+      const usecase = ResolveSkillUrlTemplate();
 
       final request = usecase.call(
         template: SkillUrlTemplate(
@@ -1546,6 +1574,7 @@ void main() {
       );
       final buildSpecsUsecase = BuildAppSkillNativeToolSpecsUsecase(
         listAvailableSkillsUsecase,
+        ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
       );
       final runUsecase = runSkillsManagerToolUsecase();
 
@@ -2006,13 +2035,18 @@ void main() {
           ),
         );
         final requests = <RequestOptions>[];
+        final urlService = UrlService(
+          dio: _dioWithBody('ok', requests: requests),
+        );
         final runTemplateUsecase = RunSkillTemplateToolUsecase(
           toolsRepository,
           skillsRepository,
           skillCredentialDefinitionsRepository,
           skillCredentialsRepository,
-          const ResolveSkillUrlTemplateUsecase(),
-          UrlService(dio: _dioWithBody('ok', requests: requests)),
+          RunSkillUrlTemplate(
+            const ResolveSkillUrlTemplate(),
+            AppSkillHttpClientAdapter(urlService).execute,
+          ),
         );
         final result = await runTemplateUsecase.call(
           workspaceId: workspace.id,
@@ -2055,7 +2089,7 @@ void main() {
     );
 
     test('renders optional Liquid text body values as blank', () {
-      const usecase = ResolveSkillUrlTemplateUsecase();
+      const usecase = ResolveSkillUrlTemplate();
 
       final request = usecase.call(
         template: const SkillUrlTemplate(

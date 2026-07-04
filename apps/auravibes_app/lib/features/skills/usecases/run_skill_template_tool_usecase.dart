@@ -6,8 +6,8 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/usecases/resolve_skill_url_template_usecase.dart';
-import 'package:auravibes_app/services/url/url_service.dart';
+import 'package:auravibes_app/features/skills/usecases/run_skill_url_template_usecase.dart';
+import 'package:auravibes_skills/auravibes_skills.dart' as package_skills;
 import 'package:riverpod/riverpod.dart';
 
 class RunSkillTemplateToolUsecase {
@@ -16,8 +16,7 @@ class RunSkillTemplateToolUsecase {
     this._skillsRepository,
     this._skillCredentialDefinitionsRepository,
     this._skillCredentialsRepository,
-    this._resolveSkillUrlTemplateUsecase,
-    this._urlService,
+    this._runSkillUrlTemplateUsecase,
   );
 
   final SkillTemplateToolsRepository _skillTemplateToolsRepository;
@@ -25,8 +24,7 @@ class RunSkillTemplateToolUsecase {
   final SkillCredentialDefinitionsRepository
   _skillCredentialDefinitionsRepository;
   final SkillCredentialsRepository _skillCredentialsRepository;
-  final ResolveSkillUrlTemplateUsecase _resolveSkillUrlTemplateUsecase;
-  final UrlService _urlService;
+  final package_skills.RunSkillUrlTemplate _runSkillUrlTemplateUsecase;
 
   Future<Object?> call({
     required String workspaceId,
@@ -64,14 +62,15 @@ class RunSkillTemplateToolUsecase {
     final inputDefinitions = SkillTemplateInputDefinition.parseMap(
       tool.inputsJson,
     );
-    final request = _resolveSkillUrlTemplateUsecase.call(
-      template: template,
-      inputs: arguments,
-      credentials: credentialAttributes,
-      inputDefinitions: inputDefinitions,
-      credentialDefinitions: credentialDefinitions,
-    );
-    final response = await _urlService.execute(request).value;
+    final response = await _runSkillUrlTemplateUsecase
+        .call(
+          template: template,
+          inputs: arguments,
+          credentials: credentialAttributes,
+          inputDefinitions: inputDefinitions,
+          credentialDefinitions: credentialDefinitions,
+        )
+        .value;
 
     return response.body;
   }
@@ -133,7 +132,6 @@ final runSkillTemplateToolUsecaseProvider =
         ref.watch(skillsRepositoryProvider),
         ref.watch(skillCredentialDefinitionsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
-        ref.watch(resolveSkillUrlTemplateUsecaseProvider),
-        UrlService(),
+        ref.watch(runSkillUrlTemplateUsecaseProvider),
       );
     });

@@ -41,7 +41,7 @@ Future<List<WorkspaceSkill>> workspaceSkills(
         title: skill.title,
         description: skill.description,
         source: SkillSource.app,
-        kind: skill.kind,
+        kind: SkillKind.native,
         isEnabled: isEnabled,
         titleKey: skill.titleKey,
         descriptionKey: skill.descriptionKey,

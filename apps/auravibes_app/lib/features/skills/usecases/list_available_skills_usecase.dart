@@ -6,7 +6,9 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:riverpod/riverpod.dart';
 
 class ListAvailableSkillsUsecase {
@@ -16,6 +18,7 @@ class ListAvailableSkillsUsecase {
     this._appSkillSettingsRepository,
     this._appSkillRegistry, [
     this._checkSkillCredentialReadinessUsecase,
+    this._listAppSkillCredentialCandidatesUsecase,
   ]);
 
   final SkillsRepository _skillsRepository;
@@ -24,6 +27,8 @@ class ListAvailableSkillsUsecase {
   final AppSkillRegistry _appSkillRegistry;
   final CheckSkillCredentialReadinessUsecase?
   _checkSkillCredentialReadinessUsecase;
+  final ListAppSkillCredentialCandidatesUsecase?
+  _listAppSkillCredentialCandidatesUsecase;
 
   Future<List<AvailableSkill>> call({
     required String conversationId,
@@ -52,6 +57,7 @@ class ListAvailableSkillsUsecase {
       );
       if (!isEnabled) continue;
       final isLoaded = loadedAppIds.contains(skill.identifier);
+      if (!await _hasUsableAppSkillTool(workspaceId, skill)) continue;
       if (!filter.matches(isLoaded: isLoaded)) continue;
       result.add(
         AvailableSkill(
@@ -61,7 +67,7 @@ class ListAvailableSkillsUsecase {
           description: skill.description,
           content: skill.content,
           source: SkillSource.app,
-          kind: skill.kind,
+          kind: SkillKind.native,
         ),
       );
     }
@@ -75,6 +81,16 @@ class ListAvailableSkillsUsecase {
 
     return usecase.call(workspaceId: workspaceId, skill: skill);
   }
+
+  Future<bool> _hasUsableAppSkillTool(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) {
+    final usecase = _listAppSkillCredentialCandidatesUsecase;
+    if (usecase == null) return Future.value(true);
+
+    return usecase.hasUsableNativeTool(workspaceId: workspaceId, skill: skill);
+  }
 }
 
 final listAvailableSkillsUsecaseProvider = Provider<ListAvailableSkillsUsecase>(
@@ -85,6 +101,7 @@ final listAvailableSkillsUsecaseProvider = Provider<ListAvailableSkillsUsecase>(
       ref.watch(appSkillWorkspaceSettingsRepositoryProvider),
       ref.watch(appSkillRegistryProvider),
       ref.watch(checkSkillCredentialReadinessUsecaseProvider),
+      ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
     );
   },
 );

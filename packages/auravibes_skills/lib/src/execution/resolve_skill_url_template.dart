@@ -1,15 +1,15 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
-import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
+import 'package:auravibes_skills/src/models/skill_credential_attribute_definition.dart';
+import 'package:auravibes_skills/src/models/skill_template_input_definition.dart';
+import 'package:auravibes_skills/src/models/skill_url_template.dart';
+import 'package:auravibes_skills/src/models/url_request.dart';
 import 'package:liquify/liquify.dart';
-import 'package:riverpod/riverpod.dart';
 
-class ResolveSkillUrlTemplateUsecase {
-  const ResolveSkillUrlTemplateUsecase();
+class ResolveSkillUrlTemplate {
+  const ResolveSkillUrlTemplate();
 
-  UrlRequest call({
+  AppSkillUrlRequest call({
     required SkillUrlTemplate template,
     required Map<String, dynamic> inputs,
     required Map<String, String> credentials,
@@ -29,7 +29,7 @@ class ResolveSkillUrlTemplateUsecase {
       resolvedQuery,
     );
 
-    return UrlRequest(
+    return AppSkillUrlRequest(
       url: resolvedUrl,
       method: template.method,
       headers: _resolveEntryMap(template.headers, context),
@@ -55,10 +55,7 @@ class ResolveSkillUrlTemplateUsecase {
     return result;
   }
 
-  String? _resolveBody(
-    SkillUrlTemplate template,
-    _TemplateContext context,
-  ) {
+  String? _resolveBody(SkillUrlTemplate template, _TemplateContext context) {
     final body = template.body;
     if (body == null) return null;
     final bodyTemplate = _canonicalizeBody(body);
@@ -97,11 +94,6 @@ class ResolveSkillUrlTemplateUsecase {
     }
   }
 }
-
-final resolveSkillUrlTemplateUsecaseProvider =
-    Provider<ResolveSkillUrlTemplateUsecase>(
-      (_) => const ResolveSkillUrlTemplateUsecase(),
-    );
 
 final _liquid = Liquid();
 final _liquidReferencePattern = RegExp(

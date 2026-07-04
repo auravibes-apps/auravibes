@@ -135,6 +135,8 @@ void main() {
       '/workspaces/${workspace.id}/more/skills',
     );
     expect(find.text('Workspace Skills'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Write Summary'), findsOneWidget);
 
     final skill = await SkillsRepository(

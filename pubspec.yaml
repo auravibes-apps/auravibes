@@ -7,6 +7,7 @@ workspace:
   - apps/auravibes_app
   - packages/auravibes_agent
   - packages/auravibes_genkit_providers
+  - packages/auravibes_skills
   - packages/auravibes_ui
   - widgetbook
 

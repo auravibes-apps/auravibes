@@ -4,6 +4,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -15,12 +16,15 @@ import 'package:auravibes_app/features/skills/providers/skill_template_tools_pro
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -46,8 +50,12 @@ class ResolvedToolService {
     LoadConversationSkillUsecase? loadConversationSkillUsecase,
     UnloadConversationSkillUsecase? unloadConversationSkillUsecase,
     RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
+    RunAppSkillToolUsecase? runAppSkillToolUsecase,
     RunSkillsManagerToolUsecase? runSkillsManagerToolUsecase,
     ListAvailableSkillsUsecase? listAvailableSkillsUsecase,
+    ListAppSkillCredentialCandidatesUsecase?
+    listAppSkillCredentialCandidatesUsecase,
+    AppSkillRegistry? appSkillRegistry,
     SkillCredentialsRepository? skillCredentialsRepository,
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
@@ -58,8 +66,12 @@ class ResolvedToolService {
            loadConversationSkillUsecase: loadConversationSkillUsecase,
            unloadConversationSkillUsecase: unloadConversationSkillUsecase,
            runSkillTemplateToolUsecase: runSkillTemplateToolUsecase,
+           runAppSkillToolUsecase: runAppSkillToolUsecase,
            runSkillsManagerToolUsecase: runSkillsManagerToolUsecase,
            listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+           listAppSkillCredentialCandidatesUsecase:
+               listAppSkillCredentialCandidatesUsecase,
+           appSkillRegistry: appSkillRegistry,
            skillCredentialsRepository: skillCredentialsRepository,
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
          ),
@@ -89,8 +101,11 @@ class AppResolvedToolProvider
     this.loadConversationSkillUsecase,
     this.unloadConversationSkillUsecase,
     this.runSkillTemplateToolUsecase,
+    this.runAppSkillToolUsecase,
     this.runSkillsManagerToolUsecase,
     this.listAvailableSkillsUsecase,
+    this.listAppSkillCredentialCandidatesUsecase,
+    this.appSkillRegistry,
     this.skillCredentialsRepository,
     this.onSkillsManagerToolSuccess,
   });
@@ -101,8 +116,12 @@ class AppResolvedToolProvider
   final LoadConversationSkillUsecase? loadConversationSkillUsecase;
   final UnloadConversationSkillUsecase? unloadConversationSkillUsecase;
   final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase;
+  final RunAppSkillToolUsecase? runAppSkillToolUsecase;
   final RunSkillsManagerToolUsecase? runSkillsManagerToolUsecase;
   final ListAvailableSkillsUsecase? listAvailableSkillsUsecase;
+  final ListAppSkillCredentialCandidatesUsecase?
+  listAppSkillCredentialCandidatesUsecase;
+  final AppSkillRegistry? appSkillRegistry;
   final SkillCredentialsRepository? skillCredentialsRepository;
   final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess;
 
@@ -180,6 +199,9 @@ class AppResolvedToolProvider
         loadConversationSkillUsecase: loadConversationSkillUsecase,
         unloadConversationSkillUsecase: unloadConversationSkillUsecase,
         listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+        listAppSkillCredentialCandidatesUsecase:
+            listAppSkillCredentialCandidatesUsecase,
+        appSkillRegistry: appSkillRegistry,
         skillCredentialsRepository: skillCredentialsRepository,
       ),
     );
@@ -187,6 +209,7 @@ class AppResolvedToolProvider
 
   @override
   Future<Object?> runSkillTemplateTool({
+    required String conversationId,
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,
@@ -207,11 +230,32 @@ class AppResolvedToolProvider
 
   @override
   Future<Object?> runSkillNativeTool({
+    required String conversationId,
     required String workspaceId,
     required String skillSlug,
     required String toolSlug,
     required Map<String, dynamic> arguments,
   }) async {
+    if (skillSlug != skillsManagerSlug) {
+      final usecase = runAppSkillToolUsecase;
+      if (usecase == null) {
+        throw StateError('RunAppSkillToolUsecase is not configured.');
+      }
+
+      final operation = usecase.callCancelable(
+        workspaceId: workspaceId,
+        skillSlug: skillSlug,
+        toolSlug: toolSlug,
+        arguments: arguments,
+      );
+      agentCancellationRuntime.registerCancelableOperation(
+        conversationId,
+        operation,
+      );
+
+      return operation.valueOrCancellation();
+    }
+
     final usecase = runSkillsManagerToolUsecase;
     if (usecase == null) {
       throw StateError('RunSkillsManagerToolUsecase is not configured.');
@@ -347,6 +391,9 @@ Future<Object?> _runSkillControlTool({
       conversationId: conversationId,
       arguments: arguments,
       listAvailableSkillsUsecase: dependencies.listAvailableSkillsUsecase,
+      listAppSkillCredentialCandidatesUsecase:
+          dependencies.listAppSkillCredentialCandidatesUsecase,
+      appSkillRegistry: dependencies.appSkillRegistry,
       skillCredentialsRepository: dependencies.skillCredentialsRepository,
     );
   }
@@ -388,12 +435,17 @@ class _SkillControlToolDependencies {
     required this.loadConversationSkillUsecase,
     required this.unloadConversationSkillUsecase,
     required this.listAvailableSkillsUsecase,
+    required this.listAppSkillCredentialCandidatesUsecase,
+    required this.appSkillRegistry,
     required this.skillCredentialsRepository,
   });
 
   final LoadConversationSkillUsecase? loadConversationSkillUsecase;
   final UnloadConversationSkillUsecase? unloadConversationSkillUsecase;
   final ListAvailableSkillsUsecase? listAvailableSkillsUsecase;
+  final ListAppSkillCredentialCandidatesUsecase?
+  listAppSkillCredentialCandidatesUsecase;
+  final AppSkillRegistry? appSkillRegistry;
   final SkillCredentialsRepository? skillCredentialsRepository;
 }
 
@@ -402,6 +454,9 @@ Future<Object> _listSkillCredentials({
   required String conversationId,
   required Map<String, dynamic> arguments,
   required ListAvailableSkillsUsecase? listAvailableSkillsUsecase,
+  required ListAppSkillCredentialCandidatesUsecase?
+  listAppSkillCredentialCandidatesUsecase,
+  required AppSkillRegistry? appSkillRegistry,
   required SkillCredentialsRepository? skillCredentialsRepository,
 }) async {
   final skillSlug = arguments['skillSlug'];
@@ -411,6 +466,8 @@ Future<Object> _listSkillCredentials({
     );
   }
   final listSkills = listAvailableSkillsUsecase;
+  final appCandidates = listAppSkillCredentialCandidatesUsecase;
+  final registry = appSkillRegistry;
   final credentialsRepository = skillCredentialsRepository;
   if (listSkills == null || credentialsRepository == null) {
     throw StateError('Skill credential listing is not configured.');
@@ -423,6 +480,30 @@ Future<Object> _listSkillCredentials({
   final skill = loadedSkills
       .where((skill) => skill.slug == skillSlug)
       .firstOrNull;
+  if (skill?.source == SkillSource.app) {
+    if (appCandidates == null || registry == null) {
+      throw StateError('App skill credential listing is not configured.');
+    }
+    final appSkill = registry.getBySlug(skillSlug);
+    if (appSkill == null) {
+      throw StateError('Loaded skill with credentials not found: $skillSlug');
+    }
+    final credentials = await appCandidates.call(
+      workspaceId: workspaceId,
+      skill: appSkill,
+    );
+
+    return {
+      'skillSlug': skillSlug,
+      'credentials': [
+        for (final credential in credentials)
+          {
+            'id': credential.id,
+            'name': credential.name,
+          },
+      ],
+    };
+  }
   final credentialDefinitionId = skill?.credentialDefinitionId;
   if (skill == null || credentialDefinitionId == null) {
     throw StateError('Loaded skill with credentials not found: $skillSlug');
@@ -458,10 +539,17 @@ final resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     runSkillTemplateToolUsecase: ref.watch(
       runSkillTemplateToolUsecaseProvider,
     ),
+    runAppSkillToolUsecase: ref.watch(
+      runAppSkillToolUsecaseProvider,
+    ),
     runSkillsManagerToolUsecase: ref.watch(
       runSkillsManagerToolUsecaseProvider,
     ),
     listAvailableSkillsUsecase: ref.watch(listAvailableSkillsUsecaseProvider),
+    listAppSkillCredentialCandidatesUsecase: ref.watch(
+      listAppSkillCredentialCandidatesUsecaseProvider,
+    ),
+    appSkillRegistry: ref.watch(appSkillRegistryProvider),
     skillCredentialsRepository: ref.watch(skillCredentialsRepositoryProvider),
     onSkillsManagerToolSuccess:
         ({

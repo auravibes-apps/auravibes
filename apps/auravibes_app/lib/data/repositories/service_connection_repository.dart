@@ -3,9 +3,11 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ServiceConnectionRepository {
   const ServiceConnectionRepository(
@@ -30,6 +32,74 @@ class ServiceConnectionRepository {
     )..where((tbl) => tbl.workspaceId.equals(workspaceId))).watch().map(
       (rows) => rows.map(_toEntity).toList(),
     );
+  }
+
+  Future<List<ServiceConnectionCandidate>> listAppSkillCredentialCandidates({
+    required String workspaceId,
+    required String appSkillServiceId,
+    required List<String> compatibleModelProviderIds,
+  }) async {
+    final compatibleProviders = compatibleModelProviderIds.toSet();
+    final rows =
+        await (_database.select(_database.serviceConnections)..where((
+              tbl,
+            ) {
+              final appCredential =
+                  tbl.kind.equals(
+                    ServiceConnectionKindTable.appSkillCredential.name,
+                  ) &
+                  tbl.serviceId.equals(appSkillServiceId);
+              final modelCredential = compatibleProviders.isEmpty
+                  ? const Constant(false)
+                  : tbl.kind.equals(
+                          ServiceConnectionKindTable.modelProvider.name,
+                        ) &
+                        tbl.serviceId.isIn(compatibleProviders);
+
+              return tbl.workspaceId.equals(workspaceId) &
+                  tbl.isEnabled.equals(true) &
+                  tbl.encryptedAuthValue.isNotNull() &
+                  (appCredential | modelCredential);
+            }))
+            .get();
+
+    return [
+      for (final row in rows)
+        ServiceConnectionCandidate(
+          id: row.id,
+          name: _candidateName(row),
+          serviceId: row.serviceId,
+          kind: row.kind,
+        ),
+    ];
+  }
+
+  Future<ServiceConnectionEntity> createAppSkillCredential({
+    required String workspaceId,
+    required String appSkillServiceId,
+    required String name,
+    required String apiKey,
+  }) async {
+    final secret = ServiceConnectionSecretApiKey(apiKey: apiKey);
+    final row = await _database
+        .into(_database.serviceConnections)
+        .insertReturning(
+          ServiceConnectionsCompanion.insert(
+            name: name,
+            serviceId: appSkillServiceId,
+            kind: ServiceConnectionKindTable.appSkillCredential,
+            authenticationType: ServiceAuthenticationTypeTable.apiKey,
+            encryptedAuthValue: Value(
+              await _encryptionService.encrypt(
+                ServiceConnectionAuthCodec.encodeSecret(secret),
+              ),
+            ),
+            keySuffix: Value(_suffix(apiKey)),
+            workspaceId: workspaceId,
+          ),
+        );
+
+    return _toEntity(row);
   }
 
   Future<ServiceConnectionSecret> readSecret(String id) async {
@@ -250,6 +320,47 @@ class ServiceConnectionRepository {
       lastAuthError: row.lastAuthError,
     );
   }
+
+  String _candidateName(ServiceConnectionTable row) {
+    final prefix = switch (row.kind) {
+      ServiceConnectionKindTable.modelProvider => _candidatePrefix(
+        LocaleKeys.service_connections_candidate_model_provider,
+        'Model provider {serviceId}',
+        row.serviceId,
+      ),
+      ServiceConnectionKindTable.appSkillCredential => _candidatePrefix(
+        LocaleKeys.service_connections_candidate_app_skill,
+        'Service skill {serviceId}',
+        row.serviceId,
+      ),
+      _ => row.serviceId,
+    };
+    final suffix = row.keySuffix;
+    if (suffix == null || suffix.isEmpty) return '$prefix: ${row.name}';
+
+    return '$prefix: ${row.name} ****$suffix';
+  }
+
+  String _candidatePrefix(String key, String fallback, String serviceId) {
+    final value = tr(key, namedArgs: {'serviceId': serviceId});
+    if (value != key) return value;
+
+    return fallback.replaceAll('{serviceId}', serviceId);
+  }
+}
+
+class ServiceConnectionCandidate {
+  const ServiceConnectionCandidate({
+    required this.id,
+    required this.name,
+    required this.serviceId,
+    required this.kind,
+  });
+
+  final String id;
+  final String name;
+  final String serviceId;
+  final ServiceConnectionKindTable kind;
 }
 
 class McpServiceConnectionProfile {

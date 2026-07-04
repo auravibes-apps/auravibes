@@ -22,10 +22,11 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  test('exposes only model provider and skill credential types', () {
+  test('exposes all supported create types', () {
     expect(ServiceConnectionCreateType.values, [
       ServiceConnectionCreateType.modelProvider,
       ServiceConnectionCreateType.skillCredential,
+      ServiceConnectionCreateType.appSkillCredential,
     ]);
   });
 

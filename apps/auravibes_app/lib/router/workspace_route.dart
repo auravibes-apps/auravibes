@@ -363,6 +363,7 @@ class ServiceConnectionCreateRoute extends GoRouteData
       workspaceId: workspaceId,
       initialType: ServiceConnectionCreateTypeQuery.fromQueryValue(type),
       initialCredentialDefinitionId: credentialDefinitionId,
+      initialAppSkillId: state.uri.queryParameters['appSkillId'],
     );
   }
 }

@@ -1,7 +1,5 @@
-import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/services/skills/models/app_skill_definition.dart';
-import 'package:auravibes_app/services/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_skills/auravibes_skills.dart';
 
 const String _createTemplateTitleKey =
     LocaleKeys.app_skills_skills_manager_tools_create_skill_template_tool_title;
@@ -20,8 +18,8 @@ const String _createCredentialDescriptionKey =
 class AppSkillRegistry {
   const AppSkillRegistry();
 
-  List<AppSkillDefinition> getAll() => const [
-    AppSkillDefinition(
+  List<AppSkillDefinition> getAll() => [
+    const AppSkillDefinition(
       identifier: 'skills_manager',
       slug: 'skills_manager',
       title: 'Skills Manager',
@@ -38,7 +36,6 @@ Use Liquid conditionals for optional or dependent fields. Do not use {input:name
 Define each tool input accurately with type, description, and optional when appropriate.
 Only create user skills from explicit user intent.
 ''',
-      kind: SkillKind.native,
       nativeTools: [
         AppSkillToolDefinition(
           slug: 'list_user_skills',
@@ -134,11 +131,20 @@ Only create user skills from explicit user intent.
       descriptionKey: LocaleKeys.app_skills_skills_manager_description,
       contentKey: LocaleKeys.app_skills_skills_manager_content,
     ),
+    ...serviceSkillDefinitions,
   ];
 
   AppSkillDefinition? getBySlug(String slug) {
     for (final skill in getAll()) {
       if (skill.slug == slug) return skill;
+    }
+
+    return null;
+  }
+
+  AppSkillDefinition? getByIdentifier(String identifier) {
+    for (final skill in getAll()) {
+      if (skill.identifier == identifier) return skill;
     }
 
     return null;

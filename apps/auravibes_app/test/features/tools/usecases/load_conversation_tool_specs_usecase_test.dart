@@ -8,9 +8,11 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -53,6 +55,8 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
           _NeverAppSkillSettingsRepository(),
           const AppSkillRegistry(),
         ),
+        const AppSkillRegistry(),
+        const _NoAppSkillCandidates(),
       );
 
   final List<ToolSpec> _result;
@@ -79,6 +83,29 @@ class _NeverAppSkillSettingsRepository
     implements AppSkillWorkspaceSettingsRepository {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _NoAppSkillCandidates implements ListAppSkillCredentialCandidatesUsecase {
+  const _NoAppSkillCandidates();
+
+  @override
+  Future<List<AppSkillCredentialCandidate>> call({
+    required String workspaceId,
+    required AppSkillDefinition skill,
+  }) async {
+    return const [];
+  }
+
+  @override
+  bool isCredentialRequired(AppSkillDefinition skill) => false;
+
+  @override
+  Future<bool> hasUsableNativeTool({
+    required String workspaceId,
+    required AppSkillDefinition skill,
+  }) async {
+    return true;
+  }
 }
 
 class _CapturingRepo implements ConversationToolsRepository {

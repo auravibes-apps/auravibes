@@ -18,6 +18,7 @@ import 'package:auravibes_app/features/skills/providers/workspace_skills_provide
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -384,6 +385,15 @@ class _SkillDetailForm extends StatelessWidget {
           canSave: canSave,
           credentialDefinitionId: credentialDefinitionId,
         ),
+        if (detail != null &&
+            !detail.isUserSkill &&
+            detail.appTools.any((tool) => tool.requiresCredential)) ...[
+          const SizedBox(height: 12),
+          _AppSkillCredentialsHint(
+            workspaceId: workspaceId,
+            appSkillId: detail.id,
+          ),
+        ],
         if (detail != null && detail.isUserSkill) ...[
           const SizedBox(height: 12),
           _SkillToolsCard(
@@ -928,6 +938,112 @@ class _SkillCredentialsHint extends ConsumerWidget {
         credentialDefinitionId,
       ),
     );
+  }
+}
+
+class _AppSkillCredentialsHint extends ConsumerStatefulWidget {
+  const _AppSkillCredentialsHint({
+    required this.workspaceId,
+    required this.appSkillId,
+  });
+
+  final String workspaceId;
+  final String appSkillId;
+
+  @override
+  ConsumerState<_AppSkillCredentialsHint> createState() =>
+      _AppSkillCredentialsHintState();
+}
+
+class _AppSkillCredentialsHintState
+    extends ConsumerState<_AppSkillCredentialsHint> {
+  Future<List<AppSkillCredentialCandidate>> _future = Future.value(const []);
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  @override
+  void didUpdateWidget(_AppSkillCredentialsHint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId == widget.workspaceId &&
+        oldWidget.appSkillId == widget.appSkillId) {
+      return;
+    }
+    _future = _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<AppSkillCredentialCandidate>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return _MissingCredentialHint(
+            isCredentialOptional: false,
+            onCreateCredential: () => _openCredentialCreate(context),
+          );
+        }
+
+        final credentials = snapshot.data;
+        if (credentials == null) {
+          return const AuraSpinner(size: AuraSpinnerSize.small);
+        }
+        if (credentials.isEmpty) {
+          return _MissingCredentialHint(
+            isCredentialOptional: false,
+            onCreateCredential: () => _openCredentialCreate(context),
+          );
+        }
+
+        return AuraText(
+          child: Text(
+            LocaleKeys.skill_credentials_configured_count.plural(
+              credentials.length,
+              args: ['${credentials.length}'],
+              context: context,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<List<AppSkillCredentialCandidate>> _load() async {
+    final appSkill = ref
+        .read(appSkillRegistryProvider)
+        .getByIdentifier(
+          widget.appSkillId,
+        );
+    if (appSkill == null) return const [];
+
+    return ref
+        .read(listAppSkillCredentialCandidatesUsecaseProvider)
+        .call(
+          workspaceId: widget.workspaceId,
+          skill: appSkill,
+        );
+  }
+
+  Future<void> _openCredentialCreate(BuildContext context) async {
+    final appSkill = ref
+        .read(appSkillRegistryProvider)
+        .getByIdentifier(widget.appSkillId);
+    if (appSkill == null) return;
+
+    final result = appSkill.compatibleModelProviderIds.isNotEmpty
+        ? await ServiceConnectionCreateRoute(
+            workspaceId: widget.workspaceId,
+            type: 'modelProvider',
+          ).push<bool>(context)
+        : await context.push<bool>(
+            '/workspaces/${widget.workspaceId}/more/service-connections/new'
+            '?type=appSkillCredential&appSkillId=${widget.appSkillId}',
+          );
+    if (!mounted || result != true) return;
+    setState(() => _future = _load());
   }
 }
 
