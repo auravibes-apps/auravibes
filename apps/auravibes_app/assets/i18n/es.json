@@ -119,6 +119,10 @@
     "delete_model_provider_confirm": "¿Eliminar el proveedor \"{name}\"? Esta acción no se puede deshacer.",
     "delete_model_provider_error": "No se pudo eliminar el proveedor de modelo",
     "missing_credential_definition": "No se encontró la definición de credencial",
+    "candidate": {
+      "model_provider": "Proveedor de modelo {serviceId}",
+      "app_skill": "Habilidad de servicio {serviceId}"
+    },
     "type": {
       "model_provider": "Proveedor de Modelo",
       "skill_credential": "Credencial de Habilidad",
@@ -257,6 +261,8 @@
     "load_error": "Error al cargar habilidades",
     "error_title_required": "El título de la habilidad es obligatorio",
     "error_title_invalid": "El título de la habilidad solo puede contener letras, números y espacios",
+    "error_requires_credential": "La habilidad requiere al menos una credencial configurada.",
+    "error_app_skill_disabled": "La habilidad no está habilitada en este espacio de trabajo.",
     "empty_title": "No hay habilidades disponibles",
     "empty_subtitle": "Crea una habilidad para hacerla disponible en conversaciones",
     "app_read_only": "Las habilidades de la app vienen integradas y solo se pueden activar o desactivar para este espacio de trabajo.",

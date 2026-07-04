@@ -632,7 +632,13 @@ void main() {
           workspaceId: workspace.id,
           slug: skill.slug,
         ),
-        throwsA(isA<StateError>()),
+        throwsA(
+          isA<LoadConversationSkillException>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.skills_screen_error_requires_credential,
+          ),
+        ),
       );
 
       final _ = await skillCredentialsRepository.createCredential(
@@ -870,7 +876,6 @@ void main() {
       expect(singleCredentialProperties, contains('credentialId'));
       expect(credentialEnum, contains(credential.id));
       expect(result, 'ok');
-      expect(result, isNot(contains('headers')));
       expect(selectedCredentialResult, 'ok');
       expect(
         requests.firstOrNull?.uri.queryParameters,

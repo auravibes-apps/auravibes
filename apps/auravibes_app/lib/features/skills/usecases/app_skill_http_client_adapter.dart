@@ -38,8 +38,8 @@ class AppSkillHttpClientAdapter {
           ),
         );
         operation = currentOperation;
-        final response = await currentOperation.value;
-        if (completer.isCanceled) return;
+        final response = await currentOperation.valueOrCancellation();
+        if (response == null || completer.isCanceled) return;
 
         completer.complete(
           AppSkillUrlResponse(

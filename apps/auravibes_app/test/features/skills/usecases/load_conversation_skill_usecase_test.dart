@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,7 +29,13 @@ void main() {
           workspaceId: 'workspace-1',
           slug: 'openai',
         ),
-        throwsStateError,
+        throwsA(
+          isA<LoadConversationSkillException>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.skills_screen_error_app_skill_disabled,
+          ),
+        ),
       );
     });
 
@@ -49,7 +56,13 @@ void main() {
           workspaceId: 'workspace-1',
           slug: 'openai',
         ),
-        throwsStateError,
+        throwsA(
+          isA<LoadConversationSkillException>().having(
+            (error) => error.localizationKey,
+            'localizationKey',
+            LocaleKeys.skills_screen_error_requires_credential,
+          ),
+        ),
       );
     });
 

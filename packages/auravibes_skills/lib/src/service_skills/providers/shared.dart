@@ -69,6 +69,7 @@ const rerankInputs = {
   'query': SkillTemplateInputDefinition(description: 'Search query.'),
   'documents': SkillTemplateInputDefinition(
     description: 'JSON array of documents to rerank.',
+    type: 'array',
   ),
 };
 
@@ -96,10 +97,10 @@ String apiKey(Map<String, dynamic> input) {
   final credential = input['credential'];
   if (credential is Map) {
     final apiKey = credential['apiKey'];
-    if (apiKey is String) return apiKey;
+    if (apiKey is String && apiKey.trim().isNotEmpty) return apiKey;
   }
 
-  return '';
+  throw const FormatException('Credential apiKey is required.');
 }
 
 String textInput(Map<String, dynamic> input, String key) {

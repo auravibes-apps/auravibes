@@ -12,7 +12,10 @@ class AppSkillToolDefinition {
     this.requiresCredential = false,
     this.titleKey,
     this.descriptionKey,
-  });
+  }) : assert(
+         urlTemplate == null || callback == null,
+         'AppSkillToolDefinition cannot use both urlTemplate and callback.',
+       );
 
   final String slug;
   final String title;

@@ -109,9 +109,15 @@ CancelableOperation<Object?> _summarize(
   Map<String, dynamic> input,
   SkillHttpClient context,
 ) {
+  final url = stringInput(input, 'url');
+  final text = stringInput(input, 'text');
+  if (url.isEmpty && text.isEmpty) {
+    throw const FormatException('Kagi summarize requires url or text.');
+  }
+
   final body = <String, Object?>{};
-  putIfPresent(body, 'url', stringInput(input, 'url'));
-  putIfPresent(body, 'text', stringInput(input, 'text'));
+  putIfPresent(body, 'url', url);
+  putIfPresent(body, 'text', text);
   putIfPresent(body, 'engine', stringInput(input, 'engine'));
   putIfPresent(body, 'summary_type', stringInput(input, 'summaryType'));
   putIfPresent(body, 'target_language', stringInput(input, 'targetLanguage'));

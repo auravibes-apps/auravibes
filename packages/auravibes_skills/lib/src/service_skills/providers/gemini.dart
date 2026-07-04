@@ -47,8 +47,8 @@ CancelableOperation<Object?> _groundedAnswer(
   return postJson(
     context,
     'https://generativelanguage.googleapis.com/v1beta/models/'
-    '$model:generateContent?key=${apiKey(input)}',
-    const {},
+    '$model:generateContent',
+    {'x-goog-api-key': apiKey(input)},
     {
       'contents': [
         {

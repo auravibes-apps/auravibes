@@ -26,7 +26,10 @@ class SkillUrlTemplate {
       throw const FormatException('URL template requires a url.');
     }
 
-    final body = decoded['body'] as String?;
+    final body = decoded['body'];
+    if (body != null && body is! String) {
+      throw const FormatException('URL template body must be a string.');
+    }
 
     return SkillUrlTemplate(
       url: _canonicalizeTemplate(url),
@@ -93,7 +96,13 @@ class SkillUrlTemplate {
       throw const FormatException('Expected a JSON object map.');
     }
 
-    return value.map((key, value) => MapEntry('$key', '$value'));
+    return value.map((key, value) {
+      if (key is! String || value is! String) {
+        throw const FormatException('Expected a string-to-string JSON map.');
+      }
+
+      return MapEntry(key, value);
+    });
   }
 
   static int? _positiveInt(Object? value) {

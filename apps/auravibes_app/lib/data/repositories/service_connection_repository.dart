@@ -3,9 +3,11 @@ import 'package:auravibes_app/data/database/drift/tables/service_connections.dar
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/service_connection_entity.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class ServiceConnectionRepository {
   const ServiceConnectionRepository(
@@ -321,16 +323,29 @@ class ServiceConnectionRepository {
 
   String _candidateName(ServiceConnectionTable row) {
     final prefix = switch (row.kind) {
-      ServiceConnectionKindTable.modelProvider =>
-        'Model provider ${row.serviceId}',
-      ServiceConnectionKindTable.appSkillCredential =>
-        'Service skill ${row.serviceId}',
+      ServiceConnectionKindTable.modelProvider => _candidatePrefix(
+        LocaleKeys.service_connections_candidate_model_provider,
+        'Model provider {serviceId}',
+        row.serviceId,
+      ),
+      ServiceConnectionKindTable.appSkillCredential => _candidatePrefix(
+        LocaleKeys.service_connections_candidate_app_skill,
+        'Service skill {serviceId}',
+        row.serviceId,
+      ),
       _ => row.serviceId,
     };
     final suffix = row.keySuffix;
     if (suffix == null || suffix.isEmpty) return '$prefix: ${row.name}';
 
     return '$prefix: ${row.name} ****$suffix';
+  }
+
+  String _candidatePrefix(String key, String fallback, String serviceId) {
+    final value = tr(key, namedArgs: {'serviceId': serviceId});
+    if (value != key) return value;
+
+    return fallback.replaceAll('{serviceId}', serviceId);
   }
 }
 

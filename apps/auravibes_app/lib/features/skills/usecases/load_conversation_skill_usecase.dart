@@ -4,8 +4,18 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:riverpod/riverpod.dart';
+
+class LoadConversationSkillException implements Exception {
+  const LoadConversationSkillException(this.localizationKey);
+
+  final String localizationKey;
+
+  @override
+  String toString() => localizationKey;
+}
 
 class LoadConversationSkillUsecase {
   const LoadConversationSkillUsecase(
@@ -42,7 +52,9 @@ class LoadConversationSkillUsecase {
             workspaceId: workspaceId,
             skill: userSkill,
           )) {
-        throw StateError('Skill requires at least one configured credential.');
+        throw const LoadConversationSkillException(
+          LocaleKeys.skills_screen_error_requires_credential,
+        );
       }
       final _ = await _conversationSkillsRepository.setWorkspaceSkillLoaded(
         conversationId,
@@ -60,7 +72,9 @@ class LoadConversationSkillUsecase {
         appSkill.identifier,
       );
       if (!isEnabled) {
-        throw StateError('Skill is not enabled: $slug');
+        throw const LoadConversationSkillException(
+          LocaleKeys.skills_screen_error_app_skill_disabled,
+        );
       }
       final credentialUsecase = _listAppSkillCredentialCandidatesUsecase;
       if (credentialUsecase != null &&
@@ -68,7 +82,9 @@ class LoadConversationSkillUsecase {
             workspaceId: workspaceId,
             skill: appSkill,
           )) {
-        throw StateError('Skill requires at least one configured credential.');
+        throw const LoadConversationSkillException(
+          LocaleKeys.skills_screen_error_requires_credential,
+        );
       }
       final _ = await _conversationSkillsRepository.setAppSkillLoaded(
         conversationId,

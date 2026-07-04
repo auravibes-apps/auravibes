@@ -152,6 +152,10 @@ abstract class LocaleKeys {
       'service_connections.delete_model_provider_error';
   static const service_connections_missing_credential_definition =
       'service_connections.missing_credential_definition';
+  static const service_connections_candidate_model_provider =
+      'service_connections.candidate.model_provider';
+  static const service_connections_candidate_app_skill =
+      'service_connections.candidate.app_skill';
   static const service_connections_type_model_provider =
       'service_connections.type.model_provider';
   static const service_connections_type_skill_credential =
@@ -332,6 +336,10 @@ abstract class LocaleKeys {
       'skills_screen.error_title_required';
   static const skills_screen_error_title_invalid =
       'skills_screen.error_title_invalid';
+  static const skills_screen_error_requires_credential =
+      'skills_screen.error_requires_credential';
+  static const skills_screen_error_app_skill_disabled =
+      'skills_screen.error_app_skill_disabled';
   static const skills_screen_empty_title = 'skills_screen.empty_title';
   static const skills_screen_empty_subtitle = 'skills_screen.empty_subtitle';
   static const skills_screen_app_read_only = 'skills_screen.app_read_only';

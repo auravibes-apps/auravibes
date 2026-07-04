@@ -14,6 +14,7 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -53,7 +54,7 @@ class _ServiceConnectionCreateScreenState
   @override
   void initState() {
     super.initState();
-    final initialAppSkill = appSkillCredentialOption(widget.initialAppSkillId);
+    final initialAppSkill = _appSkillCredentialOption(widget.initialAppSkillId);
     _type = initialAppSkill == null && widget.initialAppSkillId != null
         ? ServiceConnectionCreateType.modelProvider
         : widget.initialType ?? _type;
@@ -440,7 +441,7 @@ class _AppSkillCredentialForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final skills = appSkillCredentialOptions();
+    final skills = _appSkillCredentialOptions();
     final canSave =
         selectedAppSkillId != null &&
         nameController.text.trim().isNotEmpty &&
@@ -503,14 +504,14 @@ class _AppSkillCredentialForm extends StatelessWidget {
   }
 }
 
-List<AppSkillDefinition> appSkillCredentialOptions() {
+List<AppSkillDefinition> _appSkillCredentialOptions() {
   return serviceSkillDefinitions.where(_canCreateAppSkillCredential).toList();
 }
 
-AppSkillDefinition? appSkillCredentialOption(String? appSkillId) {
+AppSkillDefinition? _appSkillCredentialOption(String? appSkillId) {
   if (appSkillId == null) return null;
 
-  return appSkillCredentialOptions()
+  return _appSkillCredentialOptions()
       .where((skill) => skill.identifier == appSkillId)
       .firstOrNull;
 }

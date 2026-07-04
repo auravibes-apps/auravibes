@@ -218,7 +218,57 @@ void main() {
       expect(
         capturedRequest.url,
         'https://generativelanguage.googleapis.com/v1beta/models/'
-        'gemini%20test%2Fmodel:generateContent?key=gemini-key',
+        'gemini%20test%2Fmodel:generateContent',
+      );
+      expect(capturedRequest.headers['x-goog-api-key'], 'gemini-key');
+    });
+
+    test('requires credentials before creating provider requests', () {
+      final executor = _executor((request) {
+        fail('HTTP client should not run without credentials.');
+      });
+
+      expect(
+        () => executor.run(
+          skill: _skill('gemini'),
+          toolSlug: 'google_search_grounded_answer',
+          input: {'question': 'Dart'},
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('requires Kagi summarize url or text', () {
+      final executor = _executor((request) {
+        fail('HTTP client should not run without summarize content.');
+      });
+
+      expect(
+        () => executor.run(
+          skill: _skill('kagi'),
+          toolSlug: 'summarize',
+          input: const {},
+          credentials: const {'apiKey': 'kagi-key'},
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('rejects tool definitions with multiple executors', () {
+      expect(
+        () => AppSkillToolDefinition(
+          slug: 'bad',
+          title: 'Bad',
+          description: 'Bad',
+          urlTemplate: const AppSkillUrlTemplate(
+            template: SkillUrlTemplate(url: 'https://example.com'),
+            inputs: {},
+          ),
+          callback: (input, request) => request(
+            const AppSkillUrlRequest(url: 'https://example.com'),
+          ),
+        ),
+        throwsA(isA<AssertionError>()),
       );
     });
 

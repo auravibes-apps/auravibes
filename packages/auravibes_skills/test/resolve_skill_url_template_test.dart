@@ -161,6 +161,30 @@ void main() {
       );
       expect(
         () => SkillUrlTemplate.fromJsonString(
+          jsonEncode({'url': 'https://example.com', 'body': <String>[]}),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillUrlTemplate.fromJsonString(
+          jsonEncode({
+            'url': 'https://example.com',
+            'headers': {'x-count': 1},
+          }),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillUrlTemplate.fromJsonString(
+          jsonEncode({
+            'url': 'https://example.com',
+            'query': {'q': <String>[]},
+          }),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillUrlTemplate.fromJsonString(
           jsonEncode({'url': 'https://example.com', 'bodyFormat': 'xml'}),
         ),
         throwsFormatException,

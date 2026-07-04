@@ -35,7 +35,7 @@ crawling, and research workflows.
       'research',
       'Research',
       'Research a query.',
-      searchInputSchema,
+      _researchInputSchema,
       _research,
     ),
   ],
@@ -122,6 +122,15 @@ const Map<String, Object> _mapInputSchema = {
     },
   },
   'required': ['url'],
+  'additionalProperties': false,
+};
+
+const Map<String, Object> _researchInputSchema = {
+  'type': 'object',
+  'properties': {
+    'query': {'type': 'string'},
+  },
+  'required': ['query'],
   'additionalProperties': false,
 };
 
