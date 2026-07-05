@@ -5,6 +5,7 @@ enum AgentToolResultStatus {
   toolNotFound,
   executionError,
   disabledInConversation,
+  disabledByAgent,
   disabledInWorkspace,
   notConfigured,
   stoppedByUser,

@@ -621,6 +621,8 @@ abstract class LocaleKeys {
       'tool_call_status.disabled_in_workspace';
   static const tool_call_status_disabled_in_conversation =
       'tool_call_status.disabled_in_conversation';
+  static const tool_call_status_disabled_by_agent =
+      'tool_call_status.disabled_by_agent';
   static const tool_call_status_not_configured =
       'tool_call_status.not_configured';
   static const tool_call_status_execution_error =

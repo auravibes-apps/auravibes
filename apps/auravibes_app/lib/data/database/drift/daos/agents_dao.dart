@@ -23,6 +23,15 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
     agentSkills,
   )..where((tbl) => tbl.agentId.equals(agentId))).get();
 
+  Future<List<AgentSkillsTable>> getSkillsForAgents(
+    Iterable<String> agentIds,
+  ) {
+    final ids = agentIds.toList();
+    if (ids.isEmpty) return Future.value(const []);
+
+    return (select(agentSkills)..where((tbl) => tbl.agentId.isIn(ids))).get();
+  }
+
   Future<AgentsTable> createAgent(
     AgentsCompanion agent,
     List<AgentSkillsCompanion> skills,

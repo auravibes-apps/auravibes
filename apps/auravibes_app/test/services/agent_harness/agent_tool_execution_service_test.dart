@@ -699,7 +699,7 @@ void main() {
         ).thenAnswer(
           (_) async => const ToolApprovalDecision(
             toolCallId: 'tool-disabled',
-            permissionResult: ToolPermissionResult.disabledInWorkspace,
+            permissionResult: ToolPermissionResult.disabledByAgent,
             permissionTableId: 'disabled_tool',
           ),
         );
@@ -737,7 +737,7 @@ void main() {
           updatedToolCalls
               ?.firstWhere((tc) => tc.id == 'tool-disabled')
               .resultStatus,
-          ToolCallResultStatus.disabledInWorkspace,
+          ToolCallResultStatus.disabledByAgent,
         );
       },
     );

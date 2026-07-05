@@ -33,7 +33,10 @@ class BuildSkillContextMessagesService {
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
-    final selectedAgent = await _selectedAgent(conversationId);
+    final selectedAgent = await _selectedAgent(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
     final agentSkills = await _listConversationAgentSkillsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -64,14 +67,22 @@ class BuildSkillContextMessagesService {
     ];
   }
 
-  Future<AgentEntity?> _selectedAgent(String conversationId) async {
+  Future<AgentEntity?> _selectedAgent({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
     final conversation = await _conversationRepository.getConversationById(
       conversationId,
     );
+    if (conversation?.workspaceId != workspaceId) return null;
+
     final agentId = conversation?.agentId;
     if (agentId == null) return null;
 
-    return _agentsRepository.getAgentById(agentId);
+    final agent = await _agentsRepository.getAgentById(agentId);
+    if (agent?.workspaceId != workspaceId) return null;
+
+    return agent;
   }
 }
 

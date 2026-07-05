@@ -43,6 +43,13 @@ void main() {
       );
     });
 
+    test('disabledByAgent', () {
+      expect(
+        ToolCallResultStatus.disabledByAgent.toResponseString(),
+        'Tool is denied by the selected agent.',
+      );
+    });
+
     test('notConfigured', () {
       expect(
         ToolCallResultStatus.notConfigured.toResponseString(),
@@ -72,6 +79,7 @@ void main() {
         ToolCallResultStatus.disabledInConversation.stopsAgentLoop,
         isFalse,
       );
+      expect(ToolCallResultStatus.disabledByAgent.stopsAgentLoop, isFalse);
       expect(ToolCallResultStatus.notConfigured.stopsAgentLoop, isFalse);
       expect(ToolCallResultStatus.executionError.stopsAgentLoop, isFalse);
     });
@@ -107,6 +115,7 @@ void main() {
           'disabled_in_workspace': ToolCallResultStatus.disabledInWorkspace,
           'disabled_in_conversation':
               ToolCallResultStatus.disabledInConversation,
+          'disabled_by_agent': ToolCallResultStatus.disabledByAgent,
           'not_configured': ToolCallResultStatus.notConfigured,
           'execution_error': ToolCallResultStatus.executionError,
         };
@@ -146,6 +155,10 @@ void main() {
         expect(
           converter.toJson(ToolCallResultStatus.disabledInConversation),
           'disabled_in_conversation',
+        );
+        expect(
+          converter.toJson(ToolCallResultStatus.disabledByAgent),
+          'disabled_by_agent',
         );
         expect(
           converter.toJson(ToolCallResultStatus.notConfigured),

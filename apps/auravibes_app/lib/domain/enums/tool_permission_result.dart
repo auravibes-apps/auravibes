@@ -8,7 +8,8 @@
 ///       - Conversation says DISABLED → [disabledInConversation]
 ///       - Conversation says ASK → [needsConfirmation]
 ///       - Conversation says GRANTED → [granted]
-///    b. If no conversation rule, check workspace permissions:
+///    b. If no conversation rule, check agent permissions.
+///    c. If no agent rule, check workspace permissions:
 ///       - Workspace says GRANTED → [granted]
 ///       - Workspace says ASK → [needsConfirmation]
 enum ToolPermissionResult {
@@ -24,6 +25,9 @@ enum ToolPermissionResult {
   /// Conversation rules override workspace rules, so this takes priority even
   /// if workspace allows the tool.
   disabledInConversation,
+
+  /// Tool is denied by the selected agent's tool permissions.
+  disabledByAgent,
 
   /// Tool is disabled at workspace level.
   disabledInWorkspace,

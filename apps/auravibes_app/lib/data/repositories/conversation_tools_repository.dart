@@ -354,7 +354,7 @@ class ConversationToolsRepository {
 
     return _permissionModeResult(
       _mapPermissionAccess(agentTool.permissions),
-      denyResult: ToolPermissionResult.disabledInWorkspace,
+      denyResult: ToolPermissionResult.disabledByAgent,
     );
   }
 

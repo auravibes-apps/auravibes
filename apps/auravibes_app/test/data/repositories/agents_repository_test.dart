@@ -255,6 +255,43 @@ void main() {
         );
     expect(noAgentSkills, isEmpty);
 
+    final otherWorkspace = await fixture.database.workspaceDao.insertWorkspace(
+      WorkspacesCompanion.insert(name: 'Other', type: WorkspaceType.local),
+    );
+    final wrongWorkspaceSkills = await ListConversationAgentSkillsUsecase(
+      fixture.conversationRepository,
+      fixture.agentsRepository,
+      fixture.resolveAgentSkillsUsecase,
+    ).call(conversationId: conversation.id, workspaceId: otherWorkspace.id);
+    expect(wrongWorkspaceSkills, isEmpty);
+
+    final otherAgent = await fixture.agentsRepository.createAgent(
+      otherWorkspace.id,
+      AgentToCreate(
+        name: 'Other Agent',
+        content: 'Prompt',
+        skills: [AgentSkillRef.user(skill.id)],
+      ),
+    );
+    final crossWorkspaceConversation = await fixture.conversationRepository
+        .createConversation(
+          ConversationToCreate(
+            title: 'Cross workspace agent',
+            workspaceId: fixture.workspaceId,
+            agentId: otherAgent.id,
+          ),
+        );
+    final crossWorkspaceAgentSkills =
+        await ListConversationAgentSkillsUsecase(
+          fixture.conversationRepository,
+          fixture.agentsRepository,
+          fixture.resolveAgentSkillsUsecase,
+        ).call(
+          conversationId: crossWorkspaceConversation.id,
+          workspaceId: fixture.workspaceId,
+        );
+    expect(crossWorkspaceAgentSkills, isEmpty);
+
     expect(
       await DeleteAgentUsecase(fixture.agentsRepository)(agent.id),
       isTrue,

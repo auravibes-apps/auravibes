@@ -24,11 +24,13 @@ class ListConversationAgentSkillsUsecase {
     final conversation = await _conversationRepository.getConversationById(
       conversationId,
     );
+    if (conversation?.workspaceId != workspaceId) return const [];
+
     final agentId = conversation?.agentId;
     if (agentId == null) return const [];
 
     final agent = await _agentsRepository.getAgentById(agentId);
-    if (agent == null) return const [];
+    if (agent == null || agent.workspaceId != workspaceId) return const [];
 
     final resolved = await _resolveAgentSkillsUsecase.call(
       workspaceId: workspaceId,

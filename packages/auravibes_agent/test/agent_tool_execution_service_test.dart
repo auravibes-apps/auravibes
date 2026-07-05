@@ -48,8 +48,8 @@ void main() {
       latestToolCalls: _latestToolCalls(),
       decisions: const {
         'tool-1': AgentToolPermissionResult.disabledInConversation,
-        'tool-2': AgentToolPermissionResult.disabledInWorkspace,
-        'tool-3': AgentToolPermissionResult.notConfigured,
+        'tool-2': AgentToolPermissionResult.disabledByAgent,
+        'tool-3': AgentToolPermissionResult.disabledInWorkspace,
       },
     );
     final service = AgentToolExecutionService<String>(provider: provider);
@@ -62,8 +62,8 @@ void main() {
     expect(result, AgentIterationDecision.continueIteration);
     expect(provider.updates.map((update) => update.resultStatus), [
       AgentToolResultStatus.disabledInConversation,
+      AgentToolResultStatus.disabledByAgent,
       AgentToolResultStatus.disabledInWorkspace,
-      AgentToolResultStatus.notConfigured,
     ]);
     expect(
       provider.updates.map((update) => update.responseRaw),

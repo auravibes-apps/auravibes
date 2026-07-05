@@ -504,6 +504,7 @@
     "tool_not_found": "Tool not found",
     "disabled_in_workspace": "Disabled in workspace",
     "disabled_in_conversation": "Disabled in conversation",
+    "disabled_by_agent": "Denied by agent",
     "not_configured": "Not configured",
     "execution_error": "Execution failed",
     "running": "Running...",

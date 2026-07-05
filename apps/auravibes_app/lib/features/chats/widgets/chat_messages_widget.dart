@@ -440,6 +440,7 @@ class _ToolCallWidget extends ConsumerWidget {
       ToolCallResultStatus.toolNotFound => Icons.error_outline,
       ToolCallResultStatus.disabledInWorkspace => Icons.block,
       ToolCallResultStatus.disabledInConversation => Icons.block,
+      ToolCallResultStatus.disabledByAgent => Icons.block,
       ToolCallResultStatus.notConfigured => Icons.settings,
       ToolCallResultStatus.executionError => Icons.warning_amber,
     };
@@ -460,6 +461,7 @@ class _ToolCallWidget extends ConsumerWidget {
       ToolCallResultStatus.toolNotFound => context.auraColors.error,
       ToolCallResultStatus.disabledInWorkspace => context.auraColors.warning,
       ToolCallResultStatus.disabledInConversation => context.auraColors.warning,
+      ToolCallResultStatus.disabledByAgent => context.auraColors.warning,
       ToolCallResultStatus.notConfigured => context.auraColors.warning,
       ToolCallResultStatus.executionError => context.auraColors.error,
     };

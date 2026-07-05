@@ -504,6 +504,7 @@
     "tool_not_found": "Herramienta no encontrada",
     "disabled_in_workspace": "Desactivada en espacio de trabajo",
     "disabled_in_conversation": "Desactivada en conversación",
+    "disabled_by_agent": "Denegada por el agente",
     "not_configured": "No configurada",
     "execution_error": "Error de ejecución",
     "running": "Ejecutando...",

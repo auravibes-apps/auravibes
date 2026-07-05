@@ -30,11 +30,14 @@ class BuildSkillTemplateToolSpecsUsecase {
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
-    final skillIds = <String>{};
-    final runtimeSkills = [
-      ...loadedSkills,
-      ...extraSkills,
-    ].where((skill) => skillIds.add(skill.id)).toList();
+    final skillKeys = <String>{};
+    final runtimeSkills =
+        [
+              ...loadedSkills,
+              ...extraSkills,
+            ]
+            .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
+            .toList();
     final specs = <ToolSpec>[];
 
     for (final skill in runtimeSkills.where(

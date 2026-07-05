@@ -345,7 +345,7 @@ void main() {
           toolId: testToolId,
         );
 
-        expect(result, ToolPermissionResult.disabledInWorkspace);
+        expect(result, ToolPermissionResult.disabledByAgent);
       },
     );
 

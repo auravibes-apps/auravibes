@@ -15,7 +15,7 @@ class AgentsRepository {
     return _database.agentsDao
         .watchAgentsByWorkspace(workspaceId)
         .asyncMap(
-          (rows) => Future.wait(rows.map(_mapToAgent)),
+          _mapAgentRows,
         );
   }
 
@@ -94,6 +94,27 @@ class AgentsRepository {
   Future<AgentEntity> _mapToAgent(AgentsTable table) async {
     final skills = await _database.agentsDao.getAgentSkills(table.id);
 
+    return _mapAgentRow(table, skills);
+  }
+
+  Future<List<AgentEntity>> _mapAgentRows(List<AgentsTable> rows) async {
+    final skills = await _database.agentsDao.getSkillsForAgents(
+      rows.map((row) => row.id),
+    );
+    final skillsByAgentId = <String, List<AgentSkillsTable>>{};
+    for (final skill in skills) {
+      skillsByAgentId.putIfAbsent(skill.agentId, () => []).add(skill);
+    }
+
+    return [
+      for (final row in rows) _mapAgentRow(row, skillsByAgentId[row.id] ?? []),
+    ];
+  }
+
+  AgentEntity _mapAgentRow(
+    AgentsTable table,
+    List<AgentSkillsTable> skills,
+  ) {
     return AgentEntity(
       id: table.id,
       workspaceId: table.workspaceId,
