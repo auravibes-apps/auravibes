@@ -29,6 +29,7 @@ void main() {
                       onSendMessage: onSendMessage,
                       onToolsPress: onToolsPress,
                       modelControl: const SizedBox.shrink(),
+                      agentControl: const SizedBox.shrink(),
                       disabled: disabled,
                       isBusy: isBusy,
                       showStopButton: showStopButton,

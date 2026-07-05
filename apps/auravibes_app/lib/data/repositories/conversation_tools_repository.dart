@@ -271,6 +271,7 @@ class ConversationToolsRepository {
     return switch (access) {
       PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
       PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
+      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
     };
   }
 
@@ -278,6 +279,7 @@ class ConversationToolsRepository {
     return switch (mode) {
       ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
       ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
+      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
     };
   }
 
@@ -286,43 +288,85 @@ class ConversationToolsRepository {
     required String workspaceId,
     required String toolId,
   }) async {
-    // 1. Check workspace - tool must exist and be enabled.
     final workspaceTool = await _workspaceToolsRepository.getWorkspaceTool(
       workspaceId,
       toolId,
     );
 
-    // Tool not in workspace or disabled = cannot run.
     if (workspaceTool == null || !workspaceTool.isEnabled) {
       return ToolPermissionResult.notConfigured;
     }
 
-    // 2. Check conversation override (takes priority).
     final conversationTool = await getConversationTool(
       conversationId,
       workspaceTool.id,
     );
-
     if (conversationTool != null) {
-      // Conversation rule exists - it takes priority.
-      if (!conversationTool.isEnabled) {
-        return ToolPermissionResult.disabledInConversation;
-      }
-
-      if (conversationTool.permissionMode == ToolPermissionMode.alwaysAsk) {
-        return ToolPermissionResult.needsConfirmation;
-      }
-
-      // Conversation says granted (alwaysAllow).
-      return ToolPermissionResult.granted;
+      return _conversationToolPermissionResult(conversationTool);
     }
 
-    // 3. No conversation override - use workspace permission.
-    if (workspaceTool.permissionMode == ToolPermissionMode.alwaysAsk) {
-      return ToolPermissionResult.needsConfirmation;
+    final agentResult = await _agentToolPermissionResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (agentResult != null) {
+      return agentResult;
     }
 
-    return ToolPermissionResult.granted;
+    return _permissionModeResult(
+      workspaceTool.permissionMode,
+      denyResult: ToolPermissionResult.disabledInWorkspace,
+    );
+  }
+
+  ToolPermissionResult _conversationToolPermissionResult(
+    ConversationToolEntity conversationTool,
+  ) {
+    if (!conversationTool.isEnabled) {
+      return ToolPermissionResult.disabledInConversation;
+    }
+
+    return _permissionModeResult(
+      conversationTool.permissionMode,
+      denyResult: ToolPermissionResult.disabledInConversation,
+    );
+  }
+
+  Future<ToolPermissionResult?> _agentToolPermissionResult({
+    required String conversationId,
+    required String toolId,
+  }) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    final agentId = conversation?.agentId;
+    if (agentId == null) {
+      return null;
+    }
+
+    final agentTool = await _database.agentToolsDao.getAgentTool(
+      agentId,
+      toolId,
+    );
+    if (agentTool == null) {
+      return null;
+    }
+
+    return _permissionModeResult(
+      _mapPermissionAccess(agentTool.permissions),
+      denyResult: ToolPermissionResult.disabledByAgent,
+    );
+  }
+
+  ToolPermissionResult _permissionModeResult(
+    ToolPermissionMode mode, {
+    required ToolPermissionResult denyResult,
+  }) {
+    return switch (mode) {
+      ToolPermissionMode.alwaysDeny => denyResult,
+      ToolPermissionMode.alwaysAsk => ToolPermissionResult.needsConfirmation,
+      ToolPermissionMode.alwaysAllow => ToolPermissionResult.granted,
+    };
   }
 }
 

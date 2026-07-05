@@ -2,6 +2,7 @@
 // Required: UI callbacks stay local to their widgets.
 import 'dart:async';
 
+import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -87,6 +88,13 @@ class NewChatScreen extends ConsumerWidget {
                 onChanged: (modelId) => ref
                     .read(newChatProvider(workspaceId).notifier)
                     .setModelId(modelId),
+              ),
+              agentControl: CompactAgentSelector(
+                workspaceId: workspaceId,
+                agentId: state.agentId,
+                onChanged: (agentId) => ref
+                    .read(newChatProvider(workspaceId).notifier)
+                    .setAgentId(agentId),
               ),
               disabled: state.isLoading || state.modelId == null,
             ),

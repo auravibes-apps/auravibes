@@ -29,6 +29,9 @@ enum ToolCallResultStatus {
   /// Tool disabled in conversation settings.
   disabledInConversation,
 
+  /// Tool denied by selected agent settings.
+  disabledByAgent,
+
   /// Tool not configured.
   notConfigured,
 
@@ -54,6 +57,8 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
         'Tool is disabled in workspace.',
       ToolCallResultStatus.disabledInConversation =>
         'Tool is disabled for this conversation.',
+      ToolCallResultStatus.disabledByAgent =>
+        'Tool is denied by the selected agent.',
       ToolCallResultStatus.notConfigured => 'Tool is not configured.',
       ToolCallResultStatus.executionError => 'Tool execution failed.',
     };
@@ -82,6 +87,8 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
         LocaleKeys.tool_call_status_disabled_in_workspace,
       ToolCallResultStatus.disabledInConversation =>
         LocaleKeys.tool_call_status_disabled_in_conversation,
+      ToolCallResultStatus.disabledByAgent =>
+        LocaleKeys.tool_call_status_disabled_by_agent,
       ToolCallResultStatus.notConfigured =>
         LocaleKeys.tool_call_status_not_configured,
       ToolCallResultStatus.executionError =>
@@ -109,6 +116,7 @@ class ToolCallResultStatusConverter
       'tool_not_found' => ToolCallResultStatus.toolNotFound,
       'disabled_in_workspace' => ToolCallResultStatus.disabledInWorkspace,
       'disabled_in_conversation' => ToolCallResultStatus.disabledInConversation,
+      'disabled_by_agent' => ToolCallResultStatus.disabledByAgent,
       'not_configured' => ToolCallResultStatus.notConfigured,
       'execution_error' => ToolCallResultStatus.executionError,
       _ => null,
@@ -127,6 +135,7 @@ class ToolCallResultStatusConverter
       ToolCallResultStatus.toolNotFound => 'tool_not_found',
       ToolCallResultStatus.disabledInWorkspace => 'disabled_in_workspace',
       ToolCallResultStatus.disabledInConversation => 'disabled_in_conversation',
+      ToolCallResultStatus.disabledByAgent => 'disabled_by_agent',
       ToolCallResultStatus.notConfigured => 'not_configured',
       ToolCallResultStatus.executionError => 'execution_error',
     };

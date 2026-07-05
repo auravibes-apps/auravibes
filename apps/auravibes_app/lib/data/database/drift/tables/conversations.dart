@@ -1,6 +1,7 @@
 // coverage:ignore-file
 // Required: Drift table DSL is unreachable at runtime.
 // (See api_models.dart).
+import 'package:auravibes_app/data/database/drift/tables/agents.dart';
 import 'package:auravibes_app/data/database/drift/tables/table_mixin.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_model_selections.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
@@ -16,6 +17,11 @@ class Conversations extends Table with TableMixin {
   TextColumn get title => text()();
   TextColumn get modelId => text().nullable().references(
     WorkspaceModelSelections,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
+  TextColumn get agentId => text().nullable().references(
+    Agents,
     #id,
     onDelete: KeyAction.setNull,
   )();

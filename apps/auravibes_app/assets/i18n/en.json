@@ -159,6 +159,69 @@
       "base_url_label": "Instance base URL"
     }
   },
+  "agents": {
+    "title": "Agents",
+    "create": "Create agent",
+    "edit_title": "Edit agent",
+    "load_error": "Unable to load agents",
+    "empty_title": "No agents",
+    "empty_subtitle": "Create agents to reuse prompts and skill sets across chats.",
+    "name_label": "Name",
+    "prompt_label": "System prompt",
+    "edit_prompt": "Edit prompt",
+    "prompt_empty": "No system prompt yet",
+    "profile_prompt_title": "Prompt",
+    "profile_prompt_description": "Name the agent and describe how it should behave.",
+    "skills_title": "Skills",
+    "manage_skills": "Manage skills",
+    "manage_skills_title": "Manage skills",
+    "manage_skills_search": "Search skills",
+    "manage_selected_section": "Selected",
+    "manage_selected_empty": "No skills selected",
+    "manage_available_section": "Available",
+    "manage_available_empty": "No available skills match your search",
+    "enabled_skills_title": "Enabled skills",
+    "disabled_skills_title": "Disabled skills",
+    "disabled_skills_empty": "No disabled skills",
+    "unavailable_skills_title": "Unavailable skills",
+    "skills_summary": "{selected} selected · {available} available",
+    "skills_warning_summary": "{disabled} disabled selected · {unavailable} unavailable",
+    "skills_load_error": "Unable to load skills",
+    "disabled_skills_warning": "Some selected skills are disabled and will not load at runtime.",
+    "disabled_skill_label": "Unavailable skill",
+    "enable_skill_title": "Enable skill?",
+    "enable_skill_message": "This skill must be enabled for the workspace before an agent can use it.",
+    "enable_skill_action": "Enable for workspace",
+    "tool_permissions_title": "Tool permissions",
+    "tool_permissions_subtitle": "Choose when this agent can run workspace tools. Conversation settings still win.",
+    "manage_tool_permissions": "Customize permissions",
+    "manage_tool_permissions_title": "Customize permissions",
+    "manage_tool_permissions_search": "Search tools",
+    "manage_overrides_section": "Overrides",
+    "manage_overrides_empty": "No overrides. This agent uses workspace defaults.",
+    "manage_selected_skill_tools_empty": "No selected skill tools match your search",
+    "manage_other_skill_tools_empty": "No other skill tools match your search",
+    "manage_skill_controls_section": "Skill controls",
+    "manage_skill_controls_empty": "No skill controls match your search",
+    "manage_other_workspace_tools_section": "Other workspace tools",
+    "manage_other_workspace_tools_empty": "No workspace tools match your search",
+    "manage_all_tools_section": "All workspace tools",
+    "manage_all_tools_empty": "No tools match your search",
+    "tool_permissions_default_summary": "Using workspace defaults",
+    "tool_permissions_override_summary": "{count} permission overrides",
+    "tool_permissions_warning_summary": "{count} overrides point to unavailable tools",
+    "tool_permission_workspace_default": "Workspace default",
+    "tool_permission_deny": "Deny",
+    "delete_title": "Delete agent",
+    "delete_message": "Delete this agent? Conversations using it will switch to no agent.",
+    "selector_placeholder": "Agent",
+    "selector_none": "No agent",
+    "skill_count": {
+      "zero": "No skills",
+      "one": "1 skill",
+      "other": "{} skills"
+    }
+  },
   "chats_screens": {
     "chats_list": {
       "title": "Chats",
@@ -441,6 +504,7 @@
     "tool_not_found": "Tool not found",
     "disabled_in_workspace": "Disabled in workspace",
     "disabled_in_conversation": "Disabled in conversation",
+    "disabled_by_agent": "Denied by agent",
     "not_configured": "Not configured",
     "execution_error": "Execution failed",
     "running": "Running...",
@@ -552,6 +616,10 @@
     "skills": {
       "title": "Skills",
       "subtitle": "Manage reusable agent skills"
+    },
+    "agents": {
+      "title": "Agents",
+      "subtitle": "Manage reusable prompts and skill sets"
     }
   },
   "sidebar": {

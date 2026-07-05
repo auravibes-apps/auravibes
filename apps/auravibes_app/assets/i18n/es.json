@@ -159,6 +159,69 @@
       "base_url_label": "URL base de la instancia"
     }
   },
+  "agents": {
+    "title": "Agentes",
+    "create": "Crear agente",
+    "edit_title": "Editar agente",
+    "load_error": "No se pudieron cargar los agentes",
+    "empty_title": "No hay agentes",
+    "empty_subtitle": "Crea agentes para reutilizar prompts y grupos de habilidades en chats.",
+    "name_label": "Nombre",
+    "prompt_label": "Prompt de sistema",
+    "edit_prompt": "Editar prompt",
+    "prompt_empty": "Aún no hay prompt de sistema",
+    "profile_prompt_title": "Prompt",
+    "profile_prompt_description": "Nombra el agente y describe cómo debe comportarse.",
+    "skills_title": "Habilidades",
+    "manage_skills": "Gestionar habilidades",
+    "manage_skills_title": "Gestionar habilidades",
+    "manage_skills_search": "Buscar habilidades",
+    "manage_selected_section": "Seleccionadas",
+    "manage_selected_empty": "No hay habilidades seleccionadas",
+    "manage_available_section": "Disponibles",
+    "manage_available_empty": "No hay habilidades disponibles para tu búsqueda",
+    "enabled_skills_title": "Habilidades activadas",
+    "disabled_skills_title": "Habilidades desactivadas",
+    "disabled_skills_empty": "No hay habilidades desactivadas",
+    "unavailable_skills_title": "Habilidades no disponibles",
+    "skills_summary": "{selected} seleccionadas · {available} disponibles",
+    "skills_warning_summary": "{disabled} desactivadas seleccionadas · {unavailable} no disponibles",
+    "skills_load_error": "No se pudieron cargar las habilidades",
+    "disabled_skills_warning": "Algunas habilidades seleccionadas están desactivadas y no se cargarán en ejecución.",
+    "disabled_skill_label": "Habilidad no disponible",
+    "enable_skill_title": "¿Activar habilidad?",
+    "enable_skill_message": "Esta habilidad debe activarse para el espacio de trabajo antes de que un agente pueda usarla.",
+    "enable_skill_action": "Activar para el espacio",
+    "tool_permissions_title": "Permisos de herramientas",
+    "tool_permissions_subtitle": "Elige cuándo este agente puede ejecutar herramientas del espacio. La configuración de la conversación sigue teniendo prioridad.",
+    "manage_tool_permissions": "Personalizar permisos",
+    "manage_tool_permissions_title": "Personalizar permisos",
+    "manage_tool_permissions_search": "Buscar herramientas",
+    "manage_overrides_section": "Sobrescrituras",
+    "manage_overrides_empty": "Sin sobrescrituras. Este agente usa los valores del espacio.",
+    "manage_selected_skill_tools_empty": "No hay herramientas de habilidades seleccionadas para tu búsqueda",
+    "manage_other_skill_tools_empty": "No hay otras herramientas de habilidades para tu búsqueda",
+    "manage_skill_controls_section": "Controles de habilidades",
+    "manage_skill_controls_empty": "No hay controles de habilidades para tu búsqueda",
+    "manage_other_workspace_tools_section": "Otras herramientas del espacio",
+    "manage_other_workspace_tools_empty": "No hay herramientas del espacio para tu búsqueda",
+    "manage_all_tools_section": "Todas las herramientas del espacio",
+    "manage_all_tools_empty": "No hay herramientas para tu búsqueda",
+    "tool_permissions_default_summary": "Usando valores del espacio",
+    "tool_permissions_override_summary": "{count} sobrescrituras de permisos",
+    "tool_permissions_warning_summary": "{count} sobrescrituras apuntan a herramientas no disponibles",
+    "tool_permission_workspace_default": "Predeterminado del espacio",
+    "tool_permission_deny": "Denegar",
+    "delete_title": "Eliminar agente",
+    "delete_message": "¿Eliminar este agente? Las conversaciones que lo usan pasarán a no usar agente.",
+    "selector_placeholder": "Agente",
+    "selector_none": "Sin agente",
+    "skill_count": {
+      "zero": "Sin habilidades",
+      "one": "1 habilidad",
+      "other": "{} habilidades"
+    }
+  },
   "chats_screens": {
     "chats_list": {
       "title": "Chats",
@@ -441,6 +504,7 @@
     "tool_not_found": "Herramienta no encontrada",
     "disabled_in_workspace": "Desactivada en espacio de trabajo",
     "disabled_in_conversation": "Desactivada en conversación",
+    "disabled_by_agent": "Denegada por el agente",
     "not_configured": "No configurada",
     "execution_error": "Error de ejecución",
     "running": "Ejecutando...",
@@ -552,6 +616,10 @@
     "skills": {
       "title": "Habilidades",
       "subtitle": "Administra habilidades reutilizables del agente"
+    },
+    "agents": {
+      "title": "Agentes",
+      "subtitle": "Administra prompts y grupos de habilidades reutilizables"
     }
   },
   "sidebar": {

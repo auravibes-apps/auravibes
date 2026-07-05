@@ -8,6 +8,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
@@ -437,6 +438,9 @@ void main() {
                     ).overrideWith(
                       (ref) => Stream.value(const {}),
                     ),
+                    agentsProvider(_workspaceId).overrideWith(
+                      (ref) => Stream.value(const []),
+                    ),
                   ],
                   child: MaterialApp(
                     home: const ChatConversationScreen(
@@ -519,6 +523,9 @@ void main() {
                     workspaceId: _workspaceId,
                   ).overrideWith(
                     (ref) => Stream.value(const {}),
+                  ),
+                  agentsProvider(_workspaceId).overrideWith(
+                    (ref) => Stream.value(const []),
                   ),
                   compactionExecutionStateProvider(_chatId).overrideWithValue(
                     CompactionExecutionState(
@@ -612,6 +619,9 @@ void main() {
           workspaceId: _workspaceId,
         ).overrideWith(
           (ref) => Stream.value(const {}),
+        ),
+        agentsProvider(_workspaceId).overrideWith(
+          (ref) => Stream.value(const []),
         ),
       ],
     );
@@ -721,6 +731,9 @@ void main() {
                     workspaceId: _workspaceId,
                   ).overrideWith(
                     (ref) => Stream.value(const {}),
+                  ),
+                  agentsProvider(_workspaceId).overrideWith(
+                    (ref) => Stream.value(const []),
                   ),
                 ],
                 child: MaterialApp(

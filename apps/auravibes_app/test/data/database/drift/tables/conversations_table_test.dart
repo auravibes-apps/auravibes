@@ -61,13 +61,14 @@ void main() {
           'workspace_id',
           'title',
           'model_id',
+          'agent_id',
           'is_pinned',
         ]),
       );
     });
 
-    test('has 7 columns', () {
-      expect(columns.length, 7);
+    test('has 8 columns', () {
+      expect(columns.length, 8);
     });
 
     test('workspace_id is not null', () {
@@ -87,6 +88,13 @@ void main() {
     test('model_id is nullable', () {
       final col = columns.firstWhere(
         (r) => r.read<String>('name') == 'model_id',
+      );
+      expect(col.read<int>('notnull'), 0);
+    });
+
+    test('agent_id is nullable', () {
+      final col = columns.firstWhere(
+        (r) => r.read<String>('name') == 'agent_id',
       );
       expect(col.read<int>('notnull'), 0);
     });
@@ -111,6 +119,7 @@ void main() {
       expect(table.workspaceId, isNotNull);
       expect(table.title, isNotNull);
       expect(table.modelId, isNotNull);
+      expect(table.agentId, isNotNull);
       expect(table.isPinned, isNotNull);
     });
 
@@ -119,12 +128,13 @@ void main() {
       expect(table.workspaceId.name, 'workspace_id');
       expect(table.title.name, 'title');
       expect(table.modelId.name, 'model_id');
+      expect(table.agentId.name, 'agent_id');
       expect(table.isPinned.name, 'is_pinned');
     });
 
     test(r'$columns returns all columns including TableMixin', () {
       final table = fixture.database.conversations;
-      expect(table.$columns.length, 7);
+      expect(table.$columns.length, 8);
     });
 
     test('table name is conversations', () {

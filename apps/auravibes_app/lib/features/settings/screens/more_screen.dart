@@ -61,6 +61,14 @@ class MoreScreen extends StatelessWidget {
               '/workspaces/$workspaceId/more/skills',
             ),
           ),
+          _SectionTile(
+            icon: Icons.smart_toy_outlined,
+            titleKey: LocaleKeys.more_screen_agents_title,
+            subtitleKey: LocaleKeys.more_screen_agents_subtitle,
+            onTap: () => context.push(
+              '/workspaces/$workspaceId/more/agents',
+            ),
+          ),
         ],
       ),
       appBar: const AuraAppBarWithDrawer(

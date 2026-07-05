@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -19,12 +20,14 @@ class SyncSkillToolPermissionsUsecase {
     required this.buildDynamicSkillToolSpecs,
     required this.buildSkillTemplateToolSpecs,
     required this.buildAppSkillNativeToolSpecs,
+    this.listConversationAgentSkillsUsecase,
   });
 
   final AppDatabase database;
   final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs;
   final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs;
   final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecs;
+  final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase;
 
   Future<void> call({
     required String conversationId,
@@ -40,6 +43,12 @@ class SyncSkillToolPermissionsUsecase {
     required String conversationId,
     required String workspaceId,
   }) async {
+    final agentSkills =
+        await listConversationAgentSkillsUsecase?.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        ) ??
+        const [];
     final specs = [
       ...await buildDynamicSkillToolSpecs.call(
         conversationId: conversationId,
@@ -48,10 +57,12 @@ class SyncSkillToolPermissionsUsecase {
       ...await buildSkillTemplateToolSpecs.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
+        extraSkills: agentSkills,
       ),
       ...await buildAppSkillNativeToolSpecs.call(
         conversationId: conversationId,
         workspaceId: workspaceId,
+        extraSkills: agentSkills,
       ),
     ];
 
@@ -144,6 +155,9 @@ final syncSkillToolPermissionsUsecaseProvider =
         ),
         buildAppSkillNativeToolSpecs: ref.watch(
           buildAppSkillNativeToolSpecsUsecaseProvider,
+        ),
+        listConversationAgentSkillsUsecase: ref.watch(
+          listConversationAgentSkillsUsecaseProvider,
         ),
       );
     });

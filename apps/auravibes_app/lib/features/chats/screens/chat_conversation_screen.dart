@@ -12,6 +12,7 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
+import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
@@ -245,6 +246,17 @@ class _LoadedChatConversation extends HookConsumerWidget {
                     ref
                         .read(conversationChatProvider(workspaceId).notifier)
                         .setModel(modelId),
+                  );
+                },
+              ),
+              agentControl: CompactAgentSelector(
+                workspaceId: workspaceId,
+                agentId: conversation.agentId,
+                onChanged: (agentId) {
+                  unawaited(
+                    ref
+                        .read(conversationChatProvider(workspaceId).notifier)
+                        .setAgent(agentId),
                   );
                 },
               ),

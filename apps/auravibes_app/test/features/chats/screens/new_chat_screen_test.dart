@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
@@ -84,11 +85,15 @@ void main() {
               listModelsGroupedByProviderProvider.overrideWith(
                 (ref, workspaceId) => Stream.value({}),
               ),
+              agentsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(const []),
+              ),
             ],
           ),
         );
       });
-      final _ = await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
       expect(find.byType(NewChatScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);
@@ -110,6 +115,9 @@ void main() {
               ),
               listModelsGroupedByProviderProvider.overrideWith(
                 (ref, workspaceId) => Stream.value({}),
+              ),
+              agentsProvider('test-ws').overrideWith(
+                (ref) => Stream.value(const []),
               ),
             ],
           ),

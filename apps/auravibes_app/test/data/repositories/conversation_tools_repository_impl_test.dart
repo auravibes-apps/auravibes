@@ -145,6 +145,284 @@ void main() {
     );
 
     test(
+      'agent override takes priority over workspace default',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        );
+        final _ = await fixture.database.agentsDao.createAgent(
+          AgentsCompanion.insert(
+            id: const Value('agent-1'),
+            workspaceId: workspace.id,
+            name: 'Agent',
+            content: 'Prompt',
+          ),
+          const [],
+        );
+        final _ = await fixture.database.conversationDao.insertConversation(
+          ConversationsCompanion.insert(
+            id: const Value(testConversationId),
+            workspaceId: workspace.id,
+            title: 'Conv',
+            agentId: const Value('agent-1'),
+          ),
+        );
+        final _ = await fixture.database
+            .into(fixture.database.tools)
+            .insert(
+              ToolsCompanion.insert(
+                id: const Value('workspace-tool-id'),
+                workspaceId: workspace.id,
+                toolId: testToolId,
+                isEnabled: const Value(true),
+                permissions: const Value(PermissionAccess.ask),
+              ),
+            );
+        final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
+          'agent-1',
+          'workspace-tool-id',
+          permission: PermissionAccess.granted,
+        );
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            testWorkspaceId,
+            testToolId,
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'workspace-tool-id',
+            workspaceId: workspace.id,
+            toolId: testToolId,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAsk,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        final result = await fixture.repository.checkToolPermission(
+          conversationId: testConversationId,
+          workspaceId: testWorkspaceId,
+          toolId: testToolId,
+        );
+
+        expect(result, ToolPermissionResult.granted);
+      },
+    );
+
+    test(
+      'conversation override takes priority over agent override',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        );
+        final _ = await fixture.database.agentsDao.createAgent(
+          AgentsCompanion.insert(
+            id: const Value('agent-1'),
+            workspaceId: workspace.id,
+            name: 'Agent',
+            content: 'Prompt',
+          ),
+          const [],
+        );
+        final _ = await fixture.database.conversationDao.insertConversation(
+          ConversationsCompanion.insert(
+            id: const Value(testConversationId),
+            workspaceId: workspace.id,
+            title: 'Conv',
+            agentId: const Value('agent-1'),
+          ),
+        );
+        final _ = await fixture.database
+            .into(fixture.database.tools)
+            .insert(
+              ToolsCompanion.insert(
+                id: const Value('workspace-tool-id'),
+                workspaceId: workspace.id,
+                toolId: testToolId,
+                isEnabled: const Value(true),
+                permissions: const Value(PermissionAccess.ask),
+              ),
+            );
+        final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
+          'agent-1',
+          'workspace-tool-id',
+          permission: PermissionAccess.granted,
+        );
+        final _ = await fixture.database.conversationToolsDao
+            .upsertConversationTool(
+              testConversationId,
+              'workspace-tool-id',
+              isEnabled: true,
+              permission: PermissionAccess.ask,
+            );
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            testWorkspaceId,
+            testToolId,
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'workspace-tool-id',
+            workspaceId: workspace.id,
+            toolId: testToolId,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        final result = await fixture.repository.checkToolPermission(
+          conversationId: testConversationId,
+          workspaceId: testWorkspaceId,
+          toolId: testToolId,
+        );
+
+        expect(result, ToolPermissionResult.needsConfirmation);
+      },
+    );
+
+    test(
+      'agent deny takes priority over workspace default',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        );
+        final _ = await fixture.database.agentsDao.createAgent(
+          AgentsCompanion.insert(
+            id: const Value('agent-1'),
+            workspaceId: workspace.id,
+            name: 'Agent',
+            content: 'Prompt',
+          ),
+          const [],
+        );
+        final _ = await fixture.database.conversationDao.insertConversation(
+          ConversationsCompanion.insert(
+            id: const Value(testConversationId),
+            workspaceId: workspace.id,
+            title: 'Conv',
+            agentId: const Value('agent-1'),
+          ),
+        );
+        final _ = await fixture.database
+            .into(fixture.database.tools)
+            .insert(
+              ToolsCompanion.insert(
+                id: const Value('workspace-tool-id'),
+                workspaceId: workspace.id,
+                toolId: testToolId,
+                isEnabled: const Value(true),
+                permissions: const Value(PermissionAccess.granted),
+              ),
+            );
+        final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
+          'agent-1',
+          'workspace-tool-id',
+          permission: PermissionAccess.denied,
+        );
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            testWorkspaceId,
+            testToolId,
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'workspace-tool-id',
+            workspaceId: workspace.id,
+            toolId: testToolId,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        final result = await fixture.repository.checkToolPermission(
+          conversationId: testConversationId,
+          workspaceId: testWorkspaceId,
+          toolId: testToolId,
+        );
+
+        expect(result, ToolPermissionResult.disabledByAgent);
+      },
+    );
+
+    test(
+      'conversation allow takes priority over agent deny',
+      () async {
+        final workspace = await fixture.database.workspaceDao.insertWorkspace(
+          WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
+        );
+        final _ = await fixture.database.agentsDao.createAgent(
+          AgentsCompanion.insert(
+            id: const Value('agent-1'),
+            workspaceId: workspace.id,
+            name: 'Agent',
+            content: 'Prompt',
+          ),
+          const [],
+        );
+        final _ = await fixture.database.conversationDao.insertConversation(
+          ConversationsCompanion.insert(
+            id: const Value(testConversationId),
+            workspaceId: workspace.id,
+            title: 'Conv',
+            agentId: const Value('agent-1'),
+          ),
+        );
+        final _ = await fixture.database
+            .into(fixture.database.tools)
+            .insert(
+              ToolsCompanion.insert(
+                id: const Value('workspace-tool-id'),
+                workspaceId: workspace.id,
+                toolId: testToolId,
+                isEnabled: const Value(true),
+                permissions: const Value(PermissionAccess.ask),
+              ),
+            );
+        final _ = await fixture.database.agentToolsDao.setAgentToolPermission(
+          'agent-1',
+          'workspace-tool-id',
+          permission: PermissionAccess.denied,
+        );
+        final _ = await fixture.database.conversationToolsDao
+            .upsertConversationTool(
+              testConversationId,
+              'workspace-tool-id',
+              isEnabled: true,
+              permission: PermissionAccess.granted,
+            );
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            testWorkspaceId,
+            testToolId,
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'workspace-tool-id',
+            workspaceId: workspace.id,
+            toolId: testToolId,
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAsk,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+
+        final result = await fixture.repository.checkToolPermission(
+          conversationId: testConversationId,
+          workspaceId: testWorkspaceId,
+          toolId: testToolId,
+        );
+
+        expect(result, ToolPermissionResult.granted);
+      },
+    );
+
+    test(
       'conversation override takes priority - disables tool',
       () async {
         // Arrange: workspace allows, but conversation disables.

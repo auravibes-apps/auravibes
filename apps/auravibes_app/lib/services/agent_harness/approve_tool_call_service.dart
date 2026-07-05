@@ -192,6 +192,8 @@ ToolCallResultStatus _toAppResultStatus(agent.AgentToolResultStatus status) {
       ToolCallResultStatus.executionError,
     agent.AgentToolResultStatus.disabledInConversation =>
       ToolCallResultStatus.disabledInConversation,
+    agent.AgentToolResultStatus.disabledByAgent =>
+      ToolCallResultStatus.disabledByAgent,
     agent.AgentToolResultStatus.disabledInWorkspace =>
       ToolCallResultStatus.disabledInWorkspace,
     agent.AgentToolResultStatus.notConfigured =>

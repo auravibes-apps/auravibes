@@ -6,6 +6,7 @@ enum AgentToolPermissionResult {
   granted,
   needsConfirmation,
   disabledInConversation,
+  disabledByAgent,
   disabledInWorkspace,
   notConfigured,
 }
@@ -131,6 +132,16 @@ class AgentToolExecutionService<TTool extends Object> {
                   'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
                   'disabled for '
                   'this conversation.',
+            ),
+          );
+        case AgentToolPermissionResult.disabledByAgent:
+          updates.add(
+            AgentToolResultUpdate(
+              toolCallId: toolToCall.id,
+              resultStatus: AgentToolResultStatus.disabledByAgent,
+              responseRaw:
+                  'Tool "${provider.toolIdentifier(toolToCall.tool)}" is '
+                  'denied by the selected agent.',
             ),
           );
         case AgentToolPermissionResult.disabledInWorkspace:

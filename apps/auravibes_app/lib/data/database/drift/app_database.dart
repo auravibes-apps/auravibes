@@ -1,6 +1,8 @@
 // Required: Existing thresholds and limits use numeric values.
 import 'dart:convert';
 
+import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';
@@ -19,6 +21,9 @@ import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_sett
 import 'package:auravibes_app/data/database/drift/daos/workspace_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_model_selection_with_connection.dart';
 import 'package:auravibes_app/data/database/drift/daos/workspace_tools_dao.dart';
+import 'package:auravibes_app/data/database/drift/tables/agent_skills.dart';
+import 'package:auravibes_app/data/database/drift/tables/agent_tools.dart';
+import 'package:auravibes_app/data/database/drift/tables/agents.dart';
 import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
@@ -57,6 +62,9 @@ part 'app_database.g.dart';
     ApiModelProviders,
     ApiModels,
     Conversations,
+    Agents,
+    AgentSkills,
+    AgentTools,
     Messages,
     Tools,
     ToolsGroups,
@@ -76,6 +84,8 @@ part 'app_database.g.dart';
     ApiModelProvidersDao,
     ApiModelsDao,
     ConversationDao,
+    AgentsDao,
+    AgentToolsDao,
     MessageDao,
     WorkspaceToolsDao,
     ToolsGroupsDao,
@@ -103,7 +113,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   /// Database creation strategy.
   @override
@@ -111,6 +121,16 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (m) async {
         await m.createAll();
+      },
+      onUpgrade: (m, from, to) async {
+        if (from < 2) {
+          await m.createTable(agents);
+          await m.createTable(agentSkills);
+          await m.addColumn(conversations, conversations.agentId);
+        }
+        if (from < 3) {
+          await m.createTable(agentTools);
+        }
       },
     );
   }

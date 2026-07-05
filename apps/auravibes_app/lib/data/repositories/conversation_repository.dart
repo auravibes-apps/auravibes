@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:drift/drift.dart';
 
 const _conversationTitleEmpty = 'Conversation title cannot be empty';
+const _agentIdEmpty = 'Agent ID cannot be empty';
 const _modelIdEmpty = 'Model ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
@@ -115,6 +116,11 @@ class ConversationRepository {
       return _modelIdEmpty;
     }
 
+    final agentId = conversation.agentId;
+    if (agentId != null && agentId.isEmpty) {
+      return _agentIdEmpty;
+    }
+
     return _unknownValidationError;
   }
 
@@ -137,6 +143,11 @@ class ConversationRepository {
       return _modelIdEmpty;
     }
 
+    final agentId = conversation.agentId;
+    if (agentId != null && agentId.isEmpty) {
+      return _agentIdEmpty;
+    }
+
     return _unknownValidationError;
   }
 
@@ -149,6 +160,7 @@ class ConversationRepository {
       createdAt: conversationTable.createdAt,
       updatedAt: conversationTable.updatedAt,
       modelId: conversationTable.modelId,
+      agentId: conversationTable.agentId,
     );
   }
 
@@ -159,6 +171,7 @@ class ConversationRepository {
       workspaceId: Value(conversation.workspaceId),
       title: Value(conversation.title),
       modelId: Value(conversation.modelId),
+      agentId: Value(conversation.agentId),
       isPinned: Value(conversation.isPinned ?? false),
     );
   }
@@ -169,6 +182,9 @@ class ConversationRepository {
     return ConversationsCompanion(
       title: Value.absentIfNull(conversation.title),
       modelId: Value.absentIfNull(conversation.modelId),
+      agentId: conversation.clearAgent
+          ? const Value(null)
+          : Value.absentIfNull(conversation.agentId),
       isPinned: Value.absentIfNull(conversation.isPinned),
     );
   }

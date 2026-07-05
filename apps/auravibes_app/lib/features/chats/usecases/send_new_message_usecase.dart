@@ -29,6 +29,7 @@ class SendNewMessageUsecase {
     required String workspaceId,
     required String firstMessage,
     required String workspaceModelSelectionId,
+    String? agentId,
   }) async {
     // Validate model selection exists before creating conversation.
     final workspaceModelSelection = await workspaceModelSelectionRepository
@@ -44,6 +45,7 @@ class SendNewMessageUsecase {
         title: 'New Conversation',
         workspaceId: workspaceId,
         modelId: workspaceModelSelectionId,
+        agentId: agentId,
       ),
     );
 

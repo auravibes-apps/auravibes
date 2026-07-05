@@ -198,6 +198,8 @@ agent.AgentToolPermissionResult _toAgentPermissionResult(
       agent.AgentToolPermissionResult.needsConfirmation,
     ToolPermissionResult.disabledInConversation =>
       agent.AgentToolPermissionResult.disabledInConversation,
+    ToolPermissionResult.disabledByAgent =>
+      agent.AgentToolPermissionResult.disabledByAgent,
     ToolPermissionResult.disabledInWorkspace =>
       agent.AgentToolPermissionResult.disabledInWorkspace,
     ToolPermissionResult.notConfigured =>
@@ -214,6 +216,8 @@ ToolCallResultStatus _toAppResultStatus(agent.AgentToolResultStatus status) {
       ToolCallResultStatus.executionError,
     agent.AgentToolResultStatus.disabledInConversation =>
       ToolCallResultStatus.disabledInConversation,
+    agent.AgentToolResultStatus.disabledByAgent =>
+      ToolCallResultStatus.disabledByAgent,
     agent.AgentToolResultStatus.disabledInWorkspace =>
       ToolCallResultStatus.disabledInWorkspace,
     agent.AgentToolResultStatus.notConfigured =>

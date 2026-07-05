@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_skills/auravibes_skills.dart';
@@ -40,13 +41,22 @@ class BuildAppSkillNativeToolSpecsUsecase {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
   }) async {
     final loadedSkills = await _listAvailableSkillsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
-    final hasSkillsManager = loadedSkills.any(
+    final skillKeys = <String>{};
+    final runtimeSkills =
+        [
+              ...loadedSkills,
+              ...extraSkills,
+            ]
+            .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
+            .toList();
+    final hasSkillsManager = runtimeSkills.any(
       (skill) =>
           skill.source == SkillSource.app && skill.slug == skillsManagerSlug,
     );
@@ -55,7 +65,7 @@ class BuildAppSkillNativeToolSpecsUsecase {
     ];
 
     for (final skill in serviceSkillDefinitions) {
-      final isLoaded = loadedSkills.any(
+      final isLoaded = runtimeSkills.any(
         (loaded) =>
             loaded.source == SkillSource.app && loaded.slug == skill.slug,
       );
