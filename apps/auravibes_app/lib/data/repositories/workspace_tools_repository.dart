@@ -195,6 +195,7 @@ class WorkspaceToolsRepository {
     return switch (access) {
       PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
       PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
+      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
     };
   }
 
@@ -202,6 +203,7 @@ class WorkspaceToolsRepository {
     return switch (mode) {
       ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
       ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
+      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
     };
   }
 

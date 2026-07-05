@@ -59,4 +59,19 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
         );
     state = AsyncData(ConversationFound(updatedConversation));
   }
+
+  Future<void> setAgent(String? agentId) async {
+    final result = state.value;
+    if (result is! ConversationFound) return;
+
+    final updatedConversation = await ref
+        .read(conversationRepositoryProvider)
+        .patchConversation(
+          result.conversation.id,
+          agentId == null
+              ? const ConversationPatch(clearAgent: true)
+              : ConversationPatch(agentId: agentId),
+        );
+    state = AsyncData(ConversationFound(updatedConversation));
+  }
 }

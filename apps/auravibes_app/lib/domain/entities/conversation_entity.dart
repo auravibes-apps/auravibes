@@ -32,6 +32,9 @@ abstract class ConversationEntity with _$ConversationEntity {
 
     /// ID of the AI model used for this conversation.
     String? modelId,
+
+    /// ID of the selected agent used for this conversation.
+    String? agentId,
   }) = _ConversationEntity;
   const ConversationEntity._();
 
@@ -56,6 +59,9 @@ abstract class ConversationToCreate with _$ConversationToCreate {
     /// ID of the AI model used for this conversation.
     String? modelId,
 
+    /// ID of the selected agent used for this conversation.
+    String? agentId,
+
     /// Whether this conversation is pinned.
     bool? isPinned,
   }) = _ConversationToCreate;
@@ -67,10 +73,12 @@ abstract class ConversationToCreate with _$ConversationToCreate {
   /// Returns true if the conversation is in a valid state.
   bool get isValid {
     final modelId = this.modelId;
+    final agentId = this.agentId;
 
     return hasValidTitle &&
         workspaceId.isNotEmpty &&
-        (modelId == null || modelId.isNotEmpty);
+        (modelId == null || modelId.isNotEmpty) &&
+        (agentId == null || agentId.isNotEmpty);
   }
 }
 
@@ -82,6 +90,12 @@ abstract class ConversationPatch with _$ConversationPatch {
 
     /// ID of the AI model used for this conversation.
     String? modelId,
+
+    /// ID of the selected agent used for this conversation.
+    String? agentId,
+
+    /// Clears [agentId]. Nullable Freezed fields cannot express null set.
+    @Default(false) bool clearAgent,
 
     /// Whether this conversation is pinned.
     bool? isPinned,
@@ -95,6 +109,15 @@ abstract class ConversationPatch with _$ConversationPatch {
     final modelId = this.modelId;
     if (modelId != null && modelId.isEmpty) return false;
 
-    return title != null || modelId != null || isPinned != null;
+    final agentId = this.agentId;
+    if (agentId != null && agentId.isEmpty) return false;
+
+    if (clearAgent && agentId != null) return false;
+
+    return title != null ||
+        modelId != null ||
+        agentId != null ||
+        clearAgent ||
+        isPinned != null;
   }
 }

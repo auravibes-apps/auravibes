@@ -11,6 +11,9 @@ enum ToolPermissionMode {
 
   /// Always allow tool execution without asking.
   alwaysAllow,
+
+  /// Always deny tool execution.
+  alwaysDeny,
 }
 
 /// Entity representing a tool setting for a specific workspace.

@@ -203,6 +203,7 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
     required String workspaceId,
     required String firstMessage,
     required String workspaceModelSelectionId,
+    String? agentId,
   }) async {
     return ConversationEntity(
       id: 'new-conv',
@@ -237,6 +238,7 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
     required String workspaceId,
     required String firstMessage,
     required String workspaceModelSelectionId,
+    String? agentId,
   }) async {
     throw Exception('send failed');
   }

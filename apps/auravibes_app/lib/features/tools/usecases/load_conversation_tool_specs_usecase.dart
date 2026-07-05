@@ -2,6 +2,7 @@
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
@@ -17,6 +18,7 @@ class LoadConversationToolSpecsUsecase {
     required this._buildCombinedToolSpecsUseCase,
     required this._buildDynamicSkillToolSpecsUsecase,
     required this._syncSkillToolPermissionsUsecase,
+    this._listConversationAgentSkillsUsecase,
     this._buildSkillTemplateToolSpecsUsecase,
     this._buildAppSkillNativeToolSpecsUsecase,
   });
@@ -25,6 +27,7 @@ class LoadConversationToolSpecsUsecase {
   final BuildCombinedToolSpecsUseCase _buildCombinedToolSpecsUseCase;
   final BuildDynamicSkillToolSpecsUsecase _buildDynamicSkillToolSpecsUsecase;
   final SyncSkillToolPermissionsUsecase _syncSkillToolPermissionsUsecase;
+  final ListConversationAgentSkillsUsecase? _listConversationAgentSkillsUsecase;
   final BuildSkillTemplateToolSpecsUsecase? _buildSkillTemplateToolSpecsUsecase;
   final BuildAppSkillNativeToolSpecsUsecase?
   _buildAppSkillNativeToolSpecsUsecase;
@@ -42,6 +45,12 @@ class LoadConversationToolSpecsUsecase {
           conversationId,
           workspaceId,
         );
+    final agentSkills =
+        await _listConversationAgentSkillsUsecase?.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        ) ??
+        const [];
 
     final toolSpecs = await _buildCombinedToolSpecsUseCase.call(enabledTools);
     final skillToolSpecs = await _buildDynamicSkillToolSpecsUsecase.call(
@@ -52,12 +61,14 @@ class LoadConversationToolSpecsUsecase {
         await _buildSkillTemplateToolSpecsUsecase?.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
+          extraSkills: agentSkills,
         ) ??
         const <ToolSpec>[];
     final appSkillNativeToolSpecs =
         await _buildAppSkillNativeToolSpecsUsecase?.call(
           conversationId: conversationId,
           workspaceId: workspaceId,
+          extraSkills: agentSkills,
         ) ??
         const <ToolSpec>[];
     final enabledSkillToolNames = enabledTools
@@ -101,6 +112,9 @@ final loadConversationToolSpecsUsecaseProvider =
         ),
         syncSkillToolPermissionsUsecase: ref.watch(
           syncSkillToolPermissionsUsecaseProvider,
+        ),
+        listConversationAgentSkillsUsecase: ref.watch(
+          listConversationAgentSkillsUsecaseProvider,
         ),
         buildSkillTemplateToolSpecsUsecase: ref.watch(
           buildSkillTemplateToolSpecsUsecaseProvider,

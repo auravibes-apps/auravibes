@@ -23,15 +23,21 @@ class BuildSkillTemplateToolSpecsUsecase {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
   }) async {
     final loadedSkills = await _listAvailableSkillsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
+    final skillIds = <String>{};
+    final runtimeSkills = [
+      ...loadedSkills,
+      ...extraSkills,
+    ].where((skill) => skillIds.add(skill.id)).toList();
     final specs = <ToolSpec>[];
 
-    for (final skill in loadedSkills.where(
+    for (final skill in runtimeSkills.where(
       (skill) => skill.source == SkillSource.user,
     )) {
       final tools = await _skillTemplateToolsRepository.getSkillTools(skill.id);

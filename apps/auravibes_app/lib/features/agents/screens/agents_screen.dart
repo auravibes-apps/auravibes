@@ -1,0 +1,173 @@
+// Required: Feature widgets keep closely related private widgets together.
+import 'dart:async';
+
+import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/features/agents/usecases/delete_agent_usecase.dart';
+import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+class AgentsScreen extends ConsumerWidget {
+  const AgentsScreen({required this.workspaceId, super.key});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final agentsAsync = ref.watch(agentsProvider(workspaceId));
+
+    return AuraScreen(
+      child: switch (agentsAsync) {
+        AsyncData(:final value) => _AgentsList(
+          agents: value,
+          workspaceId: workspaceId,
+        ),
+        AsyncLoading(:final value?) => _AgentsList(
+          agents: value,
+          workspaceId: workspaceId,
+        ),
+        AsyncLoading() => const Center(child: AuraSpinner()),
+        AsyncError() => const Center(
+          child: AuraText(child: TextLocale(LocaleKeys.agents_load_error)),
+        ),
+      },
+      appBar: AuraAppBar(
+        title: const TextLocale(LocaleKeys.agents_title),
+        actions: [
+          AuraIconButton(
+            icon: Icons.add,
+            onPressed: () {
+              final _ = context.push(
+                '/workspaces/$workspaceId/more/agents/new',
+              );
+            },
+            tooltip: LocaleKeys.agents_create.tr(context: context),
+          ),
+        ],
+        leading: AuraIconButton(
+          icon: Icons.arrow_back,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+}
+
+class _AgentsList extends ConsumerWidget {
+  const _AgentsList({required this.agents, required this.workspaceId});
+
+  final List<AgentEntity> agents;
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (agents.isEmpty) {
+      return Center(
+        child: AuraColumn(
+          children: [
+            const Icon(Icons.smart_toy_outlined, size: 48),
+            const AuraText(
+              child: TextLocale(LocaleKeys.agents_empty_title),
+              style: AuraTextStyle.heading4,
+            ),
+            const AuraText(
+              child: TextLocale(LocaleKeys.agents_empty_subtitle),
+            ),
+            AuraButton(
+              onPressed: () {
+                final _ = context.push(
+                  '/workspaces/$workspaceId/more/agents/new',
+                );
+              },
+              child: const TextLocale(LocaleKeys.agents_create),
+            ),
+          ],
+          mainAxisSize: MainAxisSize.min,
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(8),
+      itemBuilder: (context, index) {
+        final agent = agents[index];
+
+        return AuraTile(
+          child: AuraColumn(
+            children: [
+              Text(agent.name),
+              AuraText(
+                child: Text(
+                  LocaleKeys.agents_skill_count.plural(
+                    agent.skills.length,
+                    context: context,
+                  ),
+                ),
+                style: AuraTextStyle.bodySmall,
+              ),
+            ],
+            spacing: .xs,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          onTap: () {
+            final _ = context.push(
+              '/workspaces/$workspaceId/more/agents/${agent.id}',
+            );
+          },
+          variant: AuraTileVariant.ghost,
+          leading: const AuraIcon(Icons.smart_toy_outlined),
+          trailing: PopupMenuButton<String>(
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Text(LocaleKeys.common_edit.tr(context: context)),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Text(LocaleKeys.common_delete.tr(context: context)),
+              ),
+            ],
+            onSelected: (value) {
+              if (value == 'edit') {
+                final _ = context.push(
+                  '/workspaces/$workspaceId/more/agents/${agent.id}',
+                );
+
+                return;
+              }
+              unawaited(_confirmDelete(context, ref, agent.id));
+            },
+          ),
+        );
+      },
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemCount: agents.length,
+    );
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+    String agentId,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (_) => AuraConfirmDialog(
+        title: const TextLocale(LocaleKeys.agents_delete_title),
+        message: const TextLocale(LocaleKeys.agents_delete_message),
+        confirmLabel: Text(LocaleKeys.common_delete.tr(context: context)),
+        cancelLabel: Text(LocaleKeys.common_cancel.tr(context: context)),
+        isDestructive: true,
+      ),
+    );
+    if (shouldDelete != true) return;
+
+    final _ = await ref.read(deleteAgentUsecaseProvider).call(agentId);
+    final _ = ref.invalidate(agentsProvider(workspaceId));
+  }
+}

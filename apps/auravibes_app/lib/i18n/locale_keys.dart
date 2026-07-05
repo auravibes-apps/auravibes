@@ -206,6 +206,84 @@ abstract class LocaleKeys {
       'service_connections.create.api_key_label';
   static const service_connections_create_base_url_label =
       'service_connections.create.base_url_label';
+  static const agents_title = 'agents.title';
+  static const agents_create = 'agents.create';
+  static const agents_edit_title = 'agents.edit_title';
+  static const agents_load_error = 'agents.load_error';
+  static const agents_empty_title = 'agents.empty_title';
+  static const agents_empty_subtitle = 'agents.empty_subtitle';
+  static const agents_name_label = 'agents.name_label';
+  static const agents_prompt_label = 'agents.prompt_label';
+  static const agents_edit_prompt = 'agents.edit_prompt';
+  static const agents_prompt_empty = 'agents.prompt_empty';
+  static const agents_profile_prompt_title = 'agents.profile_prompt_title';
+  static const agents_profile_prompt_description =
+      'agents.profile_prompt_description';
+  static const agents_skills_title = 'agents.skills_title';
+  static const agents_manage_skills = 'agents.manage_skills';
+  static const agents_manage_skills_title = 'agents.manage_skills_title';
+  static const agents_manage_skills_search = 'agents.manage_skills_search';
+  static const agents_manage_selected_section =
+      'agents.manage_selected_section';
+  static const agents_manage_selected_empty = 'agents.manage_selected_empty';
+  static const agents_manage_available_section =
+      'agents.manage_available_section';
+  static const agents_manage_available_empty = 'agents.manage_available_empty';
+  static const agents_enabled_skills_title = 'agents.enabled_skills_title';
+  static const agents_disabled_skills_title = 'agents.disabled_skills_title';
+  static const agents_disabled_skills_empty = 'agents.disabled_skills_empty';
+  static const agents_unavailable_skills_title =
+      'agents.unavailable_skills_title';
+  static const agents_skills_summary = 'agents.skills_summary';
+  static const agents_skills_warning_summary = 'agents.skills_warning_summary';
+  static const agents_skills_load_error = 'agents.skills_load_error';
+  static const agents_disabled_skills_warning =
+      'agents.disabled_skills_warning';
+  static const agents_disabled_skill_label = 'agents.disabled_skill_label';
+  static const agents_enable_skill_title = 'agents.enable_skill_title';
+  static const agents_enable_skill_message = 'agents.enable_skill_message';
+  static const agents_enable_skill_action = 'agents.enable_skill_action';
+  static const agents_tool_permissions_title = 'agents.tool_permissions_title';
+  static const agents_tool_permissions_subtitle =
+      'agents.tool_permissions_subtitle';
+  static const agents_manage_tool_permissions =
+      'agents.manage_tool_permissions';
+  static const agents_manage_tool_permissions_title =
+      'agents.manage_tool_permissions_title';
+  static const agents_manage_tool_permissions_search =
+      'agents.manage_tool_permissions_search';
+  static const agents_manage_overrides_section =
+      'agents.manage_overrides_section';
+  static const agents_manage_overrides_empty = 'agents.manage_overrides_empty';
+  static const agents_manage_selected_skill_tools_empty =
+      'agents.manage_selected_skill_tools_empty';
+  static const agents_manage_other_skill_tools_empty =
+      'agents.manage_other_skill_tools_empty';
+  static const agents_manage_skill_controls_section =
+      'agents.manage_skill_controls_section';
+  static const agents_manage_skill_controls_empty =
+      'agents.manage_skill_controls_empty';
+  static const agents_manage_other_workspace_tools_section =
+      'agents.manage_other_workspace_tools_section';
+  static const agents_manage_other_workspace_tools_empty =
+      'agents.manage_other_workspace_tools_empty';
+  static const agents_manage_all_tools_section =
+      'agents.manage_all_tools_section';
+  static const agents_manage_all_tools_empty = 'agents.manage_all_tools_empty';
+  static const agents_tool_permissions_default_summary =
+      'agents.tool_permissions_default_summary';
+  static const agents_tool_permissions_override_summary =
+      'agents.tool_permissions_override_summary';
+  static const agents_tool_permissions_warning_summary =
+      'agents.tool_permissions_warning_summary';
+  static const agents_tool_permission_workspace_default =
+      'agents.tool_permission_workspace_default';
+  static const agents_tool_permission_deny = 'agents.tool_permission_deny';
+  static const agents_delete_title = 'agents.delete_title';
+  static const agents_delete_message = 'agents.delete_message';
+  static const agents_selector_placeholder = 'agents.selector_placeholder';
+  static const agents_selector_none = 'agents.selector_none';
+  static const agents_skill_count = 'agents.skill_count';
   static const chats_screens_chats_list_title =
       'chats_screens.chats_list.title';
   static const chats_screens_chats_list_add_chat =
@@ -637,6 +715,8 @@ abstract class LocaleKeys {
   static const more_screen_tools_subtitle = 'more_screen.tools.subtitle';
   static const more_screen_skills_title = 'more_screen.skills.title';
   static const more_screen_skills_subtitle = 'more_screen.skills.subtitle';
+  static const more_screen_agents_title = 'more_screen.agents.title';
+  static const more_screen_agents_subtitle = 'more_screen.agents.subtitle';
   static const sidebar_recent_chats = 'sidebar.recent_chats';
   static const sidebar_no_recent_chats = 'sidebar.no_recent_chats';
   static const sidebar_view_all_chats = 'sidebar.view_all_chats';

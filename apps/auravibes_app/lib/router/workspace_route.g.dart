@@ -119,6 +119,20 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                     ),
                   ],
                 ),
+                GoRouteData.$route(
+                  path: 'agents',
+                  factory: $AgentsRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'new',
+                      factory: $AgentCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: ':agentId',
+                      factory: $AgentDetailRoute._fromState,
+                    ),
+                  ],
+                ),
               ],
             ),
           ],
@@ -639,6 +653,83 @@ mixin $SkillCredentialDefinitionEditRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/skill-credential-definitions/${Uri.encodeComponent(_self.definitionId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $AgentsRoute on GoRouteData {
+  static AgentsRoute _fromState(GoRouterState state) =>
+      AgentsRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  AgentsRoute get _self => this as AgentsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/agents',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $AgentCreateRoute on GoRouteData {
+  static AgentCreateRoute _fromState(GoRouterState state) =>
+      AgentCreateRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  AgentCreateRoute get _self => this as AgentCreateRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/agents/new',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $AgentDetailRoute on GoRouteData {
+  static AgentDetailRoute _fromState(GoRouterState state) => AgentDetailRoute(
+    workspaceId: state.pathParameters['workspaceId']!,
+    agentId: state.pathParameters['agentId']!,
+  );
+
+  AgentDetailRoute get _self => this as AgentDetailRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/agents/${Uri.encodeComponent(_self.agentId)}',
   );
 
   @override

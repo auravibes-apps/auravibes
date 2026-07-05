@@ -3210,6 +3210,420 @@ class ApiModelsCompanion extends UpdateCompanion<ApiModelsTable> {
   }
 }
 
+class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    name,
+    content,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agents';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AgentsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+    );
+  }
+
+  @override
+  $AgentsTable createAlias(String alias) {
+    return $AgentsTable(attachedDatabase, alias);
+  }
+}
+
+class AgentsTable extends DataClass implements Insertable<AgentsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String name;
+  final String content;
+  const AgentsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.name,
+    required this.content,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['name'] = Variable<String>(name);
+    map['content'] = Variable<String>(content);
+    return map;
+  }
+
+  AgentsCompanion toCompanion(bool nullToAbsent) {
+    return AgentsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      name: Value(name),
+      content: Value(content),
+    );
+  }
+
+  factory AgentsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      name: serializer.fromJson<String>(json['name']),
+      content: serializer.fromJson<String>(json['content']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'name': serializer.toJson<String>(name),
+      'content': serializer.toJson<String>(content),
+    };
+  }
+
+  AgentsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? name,
+    String? content,
+  }) => AgentsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    name: name ?? this.name,
+    content: content ?? this.content,
+  );
+  AgentsTable copyWithCompanion(AgentsCompanion data) {
+    return AgentsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      name: data.name.present ? data.name.value : this.name,
+      content: data.content.present ? data.content.value : this.content,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('name: $name, ')
+          ..write('content: $content')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, createdAt, updatedAt, workspaceId, name, content);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.name == this.name &&
+          other.content == this.content);
+}
+
+class AgentsCompanion extends UpdateCompanion<AgentsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> name;
+  final Value<String> content;
+  final Value<int> rowid;
+  const AgentsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.content = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String name,
+    required String content,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       name = Value(name),
+       content = Value(content);
+  static Insertable<AgentsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? name,
+    Expression<String>? content,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (name != null) 'name': name,
+      if (content != null) 'content': content,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? name,
+    Value<String>? content,
+    Value<int>? rowid,
+  }) {
+    return AgentsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      name: name ?? this.name,
+      content: content ?? this.content,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('name: $name, ')
+          ..write('content: $content, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConversationsTable extends Conversations
     with TableInfo<$ConversationsTable, ConversationsTable> {
   @override
@@ -3287,6 +3701,20 @@ class $ConversationsTable extends Conversations
       'REFERENCES workspace_model_selections (id) ON DELETE SET NULL',
     ),
   );
+  static const VerificationMeta _agentIdMeta = const VerificationMeta(
+    'agentId',
+  );
+  @override
+  late final GeneratedColumn<String> agentId = GeneratedColumn<String>(
+    'agent_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES agents (id) ON DELETE SET NULL',
+    ),
+  );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -3310,6 +3738,7 @@ class $ConversationsTable extends Conversations
     workspaceId,
     title,
     modelId,
+    agentId,
     isPinned,
   ];
   @override
@@ -3364,6 +3793,12 @@ class $ConversationsTable extends Conversations
         modelId.isAcceptableOrUnknown(data['model_id']!, _modelIdMeta),
       );
     }
+    if (data.containsKey('agent_id')) {
+      context.handle(
+        _agentIdMeta,
+        agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta),
+      );
+    }
     if (data.containsKey('is_pinned')) {
       context.handle(
         _isPinnedMeta,
@@ -3403,6 +3838,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}model_id'],
       ),
+      agentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}agent_id'],
+      ),
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pinned'],
@@ -3429,6 +3868,7 @@ class ConversationsTable extends DataClass
   final String workspaceId;
   final String title;
   final String? modelId;
+  final String? agentId;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -3437,6 +3877,7 @@ class ConversationsTable extends DataClass
     required this.workspaceId,
     required this.title,
     this.modelId,
+    this.agentId,
     required this.isPinned,
   });
   @override
@@ -3449,6 +3890,9 @@ class ConversationsTable extends DataClass
     map['title'] = Variable<String>(title);
     if (!nullToAbsent || modelId != null) {
       map['model_id'] = Variable<String>(modelId);
+    }
+    if (!nullToAbsent || agentId != null) {
+      map['agent_id'] = Variable<String>(agentId);
     }
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
@@ -3464,6 +3908,9 @@ class ConversationsTable extends DataClass
       modelId: modelId == null && nullToAbsent
           ? const Value.absent()
           : Value(modelId),
+      agentId: agentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(agentId),
       isPinned: Value(isPinned),
     );
   }
@@ -3480,6 +3927,7 @@ class ConversationsTable extends DataClass
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
       title: serializer.fromJson<String>(json['title']),
       modelId: serializer.fromJson<String?>(json['modelId']),
+      agentId: serializer.fromJson<String?>(json['agentId']),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -3493,6 +3941,7 @@ class ConversationsTable extends DataClass
       'workspaceId': serializer.toJson<String>(workspaceId),
       'title': serializer.toJson<String>(title),
       'modelId': serializer.toJson<String?>(modelId),
+      'agentId': serializer.toJson<String?>(agentId),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -3504,6 +3953,7 @@ class ConversationsTable extends DataClass
     String? workspaceId,
     String? title,
     Value<String?> modelId = const Value.absent(),
+    Value<String?> agentId = const Value.absent(),
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -3512,6 +3962,7 @@ class ConversationsTable extends DataClass
     workspaceId: workspaceId ?? this.workspaceId,
     title: title ?? this.title,
     modelId: modelId.present ? modelId.value : this.modelId,
+    agentId: agentId.present ? agentId.value : this.agentId,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -3524,6 +3975,7 @@ class ConversationsTable extends DataClass
           : this.workspaceId,
       title: data.title.present ? data.title.value : this.title,
       modelId: data.modelId.present ? data.modelId.value : this.modelId,
+      agentId: data.agentId.present ? data.agentId.value : this.agentId,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -3537,6 +3989,7 @@ class ConversationsTable extends DataClass
           ..write('workspaceId: $workspaceId, ')
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
+          ..write('agentId: $agentId, ')
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -3550,6 +4003,7 @@ class ConversationsTable extends DataClass
     workspaceId,
     title,
     modelId,
+    agentId,
     isPinned,
   );
   @override
@@ -3562,6 +4016,7 @@ class ConversationsTable extends DataClass
           other.workspaceId == this.workspaceId &&
           other.title == this.title &&
           other.modelId == this.modelId &&
+          other.agentId == this.agentId &&
           other.isPinned == this.isPinned);
 }
 
@@ -3572,6 +4027,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String> workspaceId;
   final Value<String> title;
   final Value<String?> modelId;
+  final Value<String?> agentId;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -3581,6 +4037,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.workspaceId = const Value.absent(),
     this.title = const Value.absent(),
     this.modelId = const Value.absent(),
+    this.agentId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -3591,6 +4048,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     required String workspaceId,
     required String title,
     this.modelId = const Value.absent(),
+    this.agentId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -3602,6 +4060,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? workspaceId,
     Expression<String>? title,
     Expression<String>? modelId,
+    Expression<String>? agentId,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -3612,6 +4071,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (title != null) 'title': title,
       if (modelId != null) 'model_id': modelId,
+      if (agentId != null) 'agent_id': agentId,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3624,6 +4084,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String>? workspaceId,
     Value<String>? title,
     Value<String?>? modelId,
+    Value<String?>? agentId,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -3634,6 +4095,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       workspaceId: workspaceId ?? this.workspaceId,
       title: title ?? this.title,
       modelId: modelId ?? this.modelId,
+      agentId: agentId ?? this.agentId,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -3660,6 +4122,9 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     if (modelId.present) {
       map['model_id'] = Variable<String>(modelId.value);
     }
+    if (agentId.present) {
+      map['agent_id'] = Variable<String>(agentId.value);
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -3678,6 +4143,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('workspaceId: $workspaceId, ')
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
+          ..write('agentId: $agentId, ')
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3685,12 +4151,16 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   }
 }
 
-class $MessagesTable extends Messages
-    with TableInfo<$MessagesTable, MessagesTable> {
+class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
+    with
+        TableInfo<
+          $SkillCredentialDefinitionsTable,
+          SkillCredentialDefinitionsTable
+        > {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
-  $MessagesTable(this.attachedDatabase, [this._alias]);
+  $SkillCredentialDefinitionsTable(this.attachedDatabase, [this._alias]);
   static const VerificationMeta _idMeta = const VerificationMeta('id');
   @override
   late final GeneratedColumn<String> id = GeneratedColumn<String>(
@@ -3725,92 +4195,67 @@ class $MessagesTable extends Messages
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
-  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
-    'conversationId',
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
   );
   @override
-  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
-    'conversation_id',
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES conversations (id) ON DELETE CASCADE',
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
     ),
   );
-  static const VerificationMeta _contentMeta = const VerificationMeta(
-    'content',
-  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
-  late final GeneratedColumn<String> content = GeneratedColumn<String>(
-    'content',
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
   @override
-  late final GeneratedColumnWithTypeConverter<MessagesTableType, String>
-  messageType = GeneratedColumn<String>(
-    'message_type',
+  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
+    'slug',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  ).withConverter<MessagesTableType>($MessagesTable.$convertermessageType);
-  static const VerificationMeta _isUserMeta = const VerificationMeta('isUser');
-  @override
-  late final GeneratedColumn<bool> isUser = GeneratedColumn<bool>(
-    'is_user',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_user" IN (0, 1))',
-    ),
+  );
+  static const VerificationMeta _attributesJsonMeta = const VerificationMeta(
+    'attributesJson',
   );
   @override
-  late final GeneratedColumnWithTypeConverter<MessageTableStatus, String>
-  status = GeneratedColumn<String>(
-    'status',
+  late final GeneratedColumn<String> attributesJson = GeneratedColumn<String>(
+    'attributes_json',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  ).withConverter<MessageTableStatus>($MessagesTable.$converterstatus);
-  static const VerificationMeta _metadataMeta = const VerificationMeta(
-    'metadata',
-  );
-  @override
-  late final GeneratedColumn<String> metadata = GeneratedColumn<String>(
-    'metadata',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
   );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     createdAt,
     updatedAt,
-    conversationId,
-    content,
-    messageType,
-    isUser,
-    status,
-    metadata,
+    workspaceId,
+    title,
+    slug,
+    attributesJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
-  static const String $name = 'messages';
+  static const String $name = 'skill_credential_definitions';
   @override
   VerificationContext validateIntegrity(
-    Insertable<MessagesTable> instance, {
+    Insertable<SkillCredentialDefinitionsTable> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -3830,38 +4275,43 @@ class $MessagesTable extends Messages
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
-    if (data.containsKey('conversation_id')) {
+    if (data.containsKey('workspace_id')) {
       context.handle(
-        _conversationIdMeta,
-        conversationId.isAcceptableOrUnknown(
-          data['conversation_id']!,
-          _conversationIdMeta,
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
         ),
       );
     } else if (isInserting) {
-      context.missing(_conversationIdMeta);
+      context.missing(_workspaceIdMeta);
     }
-    if (data.containsKey('content')) {
+    if (data.containsKey('title')) {
       context.handle(
-        _contentMeta,
-        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
       );
     } else if (isInserting) {
-      context.missing(_contentMeta);
+      context.missing(_titleMeta);
     }
-    if (data.containsKey('is_user')) {
+    if (data.containsKey('slug')) {
       context.handle(
-        _isUserMeta,
-        isUser.isAcceptableOrUnknown(data['is_user']!, _isUserMeta),
+        _slugMeta,
+        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
       );
     } else if (isInserting) {
-      context.missing(_isUserMeta);
+      context.missing(_slugMeta);
     }
-    if (data.containsKey('metadata')) {
+    if (data.containsKey('attributes_json')) {
       context.handle(
-        _metadataMeta,
-        metadata.isAcceptableOrUnknown(data['metadata']!, _metadataMeta),
+        _attributesJsonMeta,
+        attributesJson.isAcceptableOrUnknown(
+          data['attributes_json']!,
+          _attributesJsonMeta,
+        ),
       );
+    } else if (isInserting) {
+      context.missing(_attributesJsonMeta);
     }
     return context;
   }
@@ -3869,9 +4319,17 @@ class $MessagesTable extends Messages
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  MessagesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {workspaceId, title},
+    {workspaceId, slug},
+  ];
+  @override
+  SkillCredentialDefinitionsTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return MessagesTable(
+    return SkillCredentialDefinitionsTable(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}id'],
@@ -3884,53 +4342,33 @@ class $MessagesTable extends Messages
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
-      conversationId: attachedDatabase.typeMapping.read(
+      workspaceId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}conversation_id'],
+        data['${effectivePrefix}workspace_id'],
       )!,
-      content: attachedDatabase.typeMapping.read(
+      title: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}content'],
+        data['${effectivePrefix}title'],
       )!,
-      messageType: $MessagesTable.$convertermessageType.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}message_type'],
-        )!,
-      ),
-      isUser: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_user'],
-      )!,
-      status: $MessagesTable.$converterstatus.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}status'],
-        )!,
-      ),
-      metadata: attachedDatabase.typeMapping.read(
+      slug: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}metadata'],
-      ),
+        data['${effectivePrefix}slug'],
+      )!,
+      attributesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}attributes_json'],
+      )!,
     );
   }
 
   @override
-  $MessagesTable createAlias(String alias) {
-    return $MessagesTable(attachedDatabase, alias);
+  $SkillCredentialDefinitionsTable createAlias(String alias) {
+    return $SkillCredentialDefinitionsTable(attachedDatabase, alias);
   }
-
-  static JsonTypeConverter2<MessagesTableType, String, String>
-  $convertermessageType = const EnumNameConverter<MessagesTableType>(
-    MessagesTableType.values,
-  );
-  static JsonTypeConverter2<MessageTableStatus, String, String>
-  $converterstatus = const EnumNameConverter<MessageTableStatus>(
-    MessageTableStatus.values,
-  );
 }
 
-class MessagesTable extends DataClass implements Insertable<MessagesTable> {
+class SkillCredentialDefinitionsTable extends DataClass
+    implements Insertable<SkillCredentialDefinitionsTable> {
   /// Primary key column as string.
   final String id;
 
@@ -3939,22 +4377,18 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
 
   /// When was last updated timestamp.
   final DateTime updatedAt;
-  final String conversationId;
-  final String content;
-  final MessagesTableType messageType;
-  final bool isUser;
-  final MessageTableStatus status;
-  final String? metadata;
-  const MessagesTable({
+  final String workspaceId;
+  final String title;
+  final String slug;
+  final String attributesJson;
+  const SkillCredentialDefinitionsTable({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
-    required this.conversationId,
-    required this.content,
-    required this.messageType,
-    required this.isUser,
-    required this.status,
-    this.metadata,
+    required this.workspaceId,
+    required this.title,
+    required this.slug,
+    required this.attributesJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3962,60 +4396,38 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     map['id'] = Variable<String>(id);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['conversation_id'] = Variable<String>(conversationId);
-    map['content'] = Variable<String>(content);
-    {
-      map['message_type'] = Variable<String>(
-        $MessagesTable.$convertermessageType.toSql(messageType),
-      );
-    }
-    map['is_user'] = Variable<bool>(isUser);
-    {
-      map['status'] = Variable<String>(
-        $MessagesTable.$converterstatus.toSql(status),
-      );
-    }
-    if (!nullToAbsent || metadata != null) {
-      map['metadata'] = Variable<String>(metadata);
-    }
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['title'] = Variable<String>(title);
+    map['slug'] = Variable<String>(slug);
+    map['attributes_json'] = Variable<String>(attributesJson);
     return map;
   }
 
-  MessagesCompanion toCompanion(bool nullToAbsent) {
-    return MessagesCompanion(
+  SkillCredentialDefinitionsCompanion toCompanion(bool nullToAbsent) {
+    return SkillCredentialDefinitionsCompanion(
       id: Value(id),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
-      conversationId: Value(conversationId),
-      content: Value(content),
-      messageType: Value(messageType),
-      isUser: Value(isUser),
-      status: Value(status),
-      metadata: metadata == null && nullToAbsent
-          ? const Value.absent()
-          : Value(metadata),
+      workspaceId: Value(workspaceId),
+      title: Value(title),
+      slug: Value(slug),
+      attributesJson: Value(attributesJson),
     );
   }
 
-  factory MessagesTable.fromJson(
+  factory SkillCredentialDefinitionsTable.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return MessagesTable(
+    return SkillCredentialDefinitionsTable(
       id: serializer.fromJson<String>(json['id']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      conversationId: serializer.fromJson<String>(json['conversationId']),
-      content: serializer.fromJson<String>(json['content']),
-      messageType: $MessagesTable.$convertermessageType.fromJson(
-        serializer.fromJson<String>(json['messageType']),
-      ),
-      isUser: serializer.fromJson<bool>(json['isUser']),
-      status: $MessagesTable.$converterstatus.fromJson(
-        serializer.fromJson<String>(json['status']),
-      ),
-      metadata: serializer.fromJson<String?>(json['metadata']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      title: serializer.fromJson<String>(json['title']),
+      slug: serializer.fromJson<String>(json['slug']),
+      attributesJson: serializer.fromJson<String>(json['attributesJson']),
     );
   }
   @override
@@ -4025,70 +4437,58 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
       'id': serializer.toJson<String>(id),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'conversationId': serializer.toJson<String>(conversationId),
-      'content': serializer.toJson<String>(content),
-      'messageType': serializer.toJson<String>(
-        $MessagesTable.$convertermessageType.toJson(messageType),
-      ),
-      'isUser': serializer.toJson<bool>(isUser),
-      'status': serializer.toJson<String>(
-        $MessagesTable.$converterstatus.toJson(status),
-      ),
-      'metadata': serializer.toJson<String?>(metadata),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'title': serializer.toJson<String>(title),
+      'slug': serializer.toJson<String>(slug),
+      'attributesJson': serializer.toJson<String>(attributesJson),
     };
   }
 
-  MessagesTable copyWith({
+  SkillCredentialDefinitionsTable copyWith({
     String? id,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? conversationId,
-    String? content,
-    MessagesTableType? messageType,
-    bool? isUser,
-    MessageTableStatus? status,
-    Value<String?> metadata = const Value.absent(),
-  }) => MessagesTable(
+    String? workspaceId,
+    String? title,
+    String? slug,
+    String? attributesJson,
+  }) => SkillCredentialDefinitionsTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
-    conversationId: conversationId ?? this.conversationId,
-    content: content ?? this.content,
-    messageType: messageType ?? this.messageType,
-    isUser: isUser ?? this.isUser,
-    status: status ?? this.status,
-    metadata: metadata.present ? metadata.value : this.metadata,
+    workspaceId: workspaceId ?? this.workspaceId,
+    title: title ?? this.title,
+    slug: slug ?? this.slug,
+    attributesJson: attributesJson ?? this.attributesJson,
   );
-  MessagesTable copyWithCompanion(MessagesCompanion data) {
-    return MessagesTable(
+  SkillCredentialDefinitionsTable copyWithCompanion(
+    SkillCredentialDefinitionsCompanion data,
+  ) {
+    return SkillCredentialDefinitionsTable(
       id: data.id.present ? data.id.value : this.id,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      conversationId: data.conversationId.present
-          ? data.conversationId.value
-          : this.conversationId,
-      content: data.content.present ? data.content.value : this.content,
-      messageType: data.messageType.present
-          ? data.messageType.value
-          : this.messageType,
-      isUser: data.isUser.present ? data.isUser.value : this.isUser,
-      status: data.status.present ? data.status.value : this.status,
-      metadata: data.metadata.present ? data.metadata.value : this.metadata,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      title: data.title.present ? data.title.value : this.title,
+      slug: data.slug.present ? data.slug.value : this.slug,
+      attributesJson: data.attributesJson.present
+          ? data.attributesJson.value
+          : this.attributesJson,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('MessagesTable(')
+    return (StringBuffer('SkillCredentialDefinitionsTable(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('conversationId: $conversationId, ')
-          ..write('content: $content, ')
-          ..write('messageType: $messageType, ')
-          ..write('isUser: $isUser, ')
-          ..write('status: $status, ')
-          ..write('metadata: $metadata')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('title: $title, ')
+          ..write('slug: $slug, ')
+          ..write('attributesJson: $attributesJson')
           ..write(')'))
         .toString();
   }
@@ -4098,115 +4498,97 @@ class MessagesTable extends DataClass implements Insertable<MessagesTable> {
     id,
     createdAt,
     updatedAt,
-    conversationId,
-    content,
-    messageType,
-    isUser,
-    status,
-    metadata,
+    workspaceId,
+    title,
+    slug,
+    attributesJson,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is MessagesTable &&
+      (other is SkillCredentialDefinitionsTable &&
           other.id == this.id &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.conversationId == this.conversationId &&
-          other.content == this.content &&
-          other.messageType == this.messageType &&
-          other.isUser == this.isUser &&
-          other.status == this.status &&
-          other.metadata == this.metadata);
+          other.workspaceId == this.workspaceId &&
+          other.title == this.title &&
+          other.slug == this.slug &&
+          other.attributesJson == this.attributesJson);
 }
 
-class MessagesCompanion extends UpdateCompanion<MessagesTable> {
+class SkillCredentialDefinitionsCompanion
+    extends UpdateCompanion<SkillCredentialDefinitionsTable> {
   final Value<String> id;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
-  final Value<String> conversationId;
-  final Value<String> content;
-  final Value<MessagesTableType> messageType;
-  final Value<bool> isUser;
-  final Value<MessageTableStatus> status;
-  final Value<String?> metadata;
+  final Value<String> workspaceId;
+  final Value<String> title;
+  final Value<String> slug;
+  final Value<String> attributesJson;
   final Value<int> rowid;
-  const MessagesCompanion({
+  const SkillCredentialDefinitionsCompanion({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    this.conversationId = const Value.absent(),
-    this.content = const Value.absent(),
-    this.messageType = const Value.absent(),
-    this.isUser = const Value.absent(),
-    this.status = const Value.absent(),
-    this.metadata = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.slug = const Value.absent(),
+    this.attributesJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
-  MessagesCompanion.insert({
+  SkillCredentialDefinitionsCompanion.insert({
     this.id = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
-    required String conversationId,
-    required String content,
-    required MessagesTableType messageType,
-    required bool isUser,
-    required MessageTableStatus status,
-    this.metadata = const Value.absent(),
+    required String workspaceId,
+    required String title,
+    required String slug,
+    required String attributesJson,
     this.rowid = const Value.absent(),
-  }) : conversationId = Value(conversationId),
-       content = Value(content),
-       messageType = Value(messageType),
-       isUser = Value(isUser),
-       status = Value(status);
-  static Insertable<MessagesTable> custom({
+  }) : workspaceId = Value(workspaceId),
+       title = Value(title),
+       slug = Value(slug),
+       attributesJson = Value(attributesJson);
+  static Insertable<SkillCredentialDefinitionsTable> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
-    Expression<String>? conversationId,
-    Expression<String>? content,
-    Expression<String>? messageType,
-    Expression<bool>? isUser,
-    Expression<String>? status,
-    Expression<String>? metadata,
+    Expression<String>? workspaceId,
+    Expression<String>? title,
+    Expression<String>? slug,
+    Expression<String>? attributesJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
-      if (conversationId != null) 'conversation_id': conversationId,
-      if (content != null) 'content': content,
-      if (messageType != null) 'message_type': messageType,
-      if (isUser != null) 'is_user': isUser,
-      if (status != null) 'status': status,
-      if (metadata != null) 'metadata': metadata,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (title != null) 'title': title,
+      if (slug != null) 'slug': slug,
+      if (attributesJson != null) 'attributes_json': attributesJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
-  MessagesCompanion copyWith({
+  SkillCredentialDefinitionsCompanion copyWith({
     Value<String>? id,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
-    Value<String>? conversationId,
-    Value<String>? content,
-    Value<MessagesTableType>? messageType,
-    Value<bool>? isUser,
-    Value<MessageTableStatus>? status,
-    Value<String?>? metadata,
+    Value<String>? workspaceId,
+    Value<String>? title,
+    Value<String>? slug,
+    Value<String>? attributesJson,
     Value<int>? rowid,
   }) {
-    return MessagesCompanion(
+    return SkillCredentialDefinitionsCompanion(
       id: id ?? this.id,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      conversationId: conversationId ?? this.conversationId,
-      content: content ?? this.content,
-      messageType: messageType ?? this.messageType,
-      isUser: isUser ?? this.isUser,
-      status: status ?? this.status,
-      metadata: metadata ?? this.metadata,
+      workspaceId: workspaceId ?? this.workspaceId,
+      title: title ?? this.title,
+      slug: slug ?? this.slug,
+      attributesJson: attributesJson ?? this.attributesJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4223,27 +4605,17 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
-    if (conversationId.present) {
-      map['conversation_id'] = Variable<String>(conversationId.value);
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
     }
-    if (content.present) {
-      map['content'] = Variable<String>(content.value);
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
     }
-    if (messageType.present) {
-      map['message_type'] = Variable<String>(
-        $MessagesTable.$convertermessageType.toSql(messageType.value),
-      );
+    if (slug.present) {
+      map['slug'] = Variable<String>(slug.value);
     }
-    if (isUser.present) {
-      map['is_user'] = Variable<bool>(isUser.value);
-    }
-    if (status.present) {
-      map['status'] = Variable<String>(
-        $MessagesTable.$converterstatus.toSql(status.value),
-      );
-    }
-    if (metadata.present) {
-      map['metadata'] = Variable<String>(metadata.value);
+    if (attributesJson.present) {
+      map['attributes_json'] = Variable<String>(attributesJson.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -4253,16 +4625,1258 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
 
   @override
   String toString() {
-    return (StringBuffer('MessagesCompanion(')
+    return (StringBuffer('SkillCredentialDefinitionsCompanion(')
           ..write('id: $id, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('conversationId: $conversationId, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('title: $title, ')
+          ..write('slug: $slug, ')
+          ..write('attributesJson: $attributesJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SkillsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<SkillSourceTable, String> source =
+      GeneratedColumn<String>(
+        'source',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<SkillSourceTable>($SkillsTable.$convertersource);
+  @override
+  late final GeneratedColumnWithTypeConverter<SkillKindTable, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<SkillKindTable>($SkillsTable.$converterkind);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
+  @override
+  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
+    'slug',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _credentialDefinitionIdMeta =
+      const VerificationMeta('credentialDefinitionId');
+  @override
+  late final GeneratedColumn<String> credentialDefinitionId =
+      GeneratedColumn<String>(
+        'credential_definition_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES skill_credential_definitions (id) ON DELETE SET NULL',
+        ),
+      );
+  static const VerificationMeta _isCredentialOptionalMeta =
+      const VerificationMeta('isCredentialOptional');
+  @override
+  late final GeneratedColumn<bool> isCredentialOptional = GeneratedColumn<bool>(
+    'is_credential_optional',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_credential_optional" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    source,
+    kind,
+    title,
+    slug,
+    description,
+    content,
+    credentialDefinitionId,
+    isCredentialOptional,
+    isEnabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'skills';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SkillsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('slug')) {
+      context.handle(
+        _slugMeta,
+        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slugMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('credential_definition_id')) {
+      context.handle(
+        _credentialDefinitionIdMeta,
+        credentialDefinitionId.isAcceptableOrUnknown(
+          data['credential_definition_id']!,
+          _credentialDefinitionIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_credential_optional')) {
+      context.handle(
+        _isCredentialOptionalMeta,
+        isCredentialOptional.isAcceptableOrUnknown(
+          data['is_credential_optional']!,
+          _isCredentialOptionalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {workspaceId, title},
+    {workspaceId, slug},
+  ];
+  @override
+  SkillsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SkillsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      source: $SkillsTable.$convertersource.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}source'],
+        )!,
+      ),
+      kind: $SkillsTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      slug: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}slug'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      credentialDefinitionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}credential_definition_id'],
+      ),
+      isCredentialOptional: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_credential_optional'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $SkillsTable createAlias(String alias) {
+    return $SkillsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<SkillSourceTable, String, String> $convertersource =
+      const EnumNameConverter<SkillSourceTable>(SkillSourceTable.values);
+  static JsonTypeConverter2<SkillKindTable, String, String> $converterkind =
+      const EnumNameConverter<SkillKindTable>(SkillKindTable.values);
+}
+
+class SkillsTable extends DataClass implements Insertable<SkillsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final SkillSourceTable source;
+  final SkillKindTable kind;
+  final String title;
+  final String slug;
+  final String description;
+  final String content;
+  final String? credentialDefinitionId;
+  final bool isCredentialOptional;
+  final bool isEnabled;
+  const SkillsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.source,
+    required this.kind,
+    required this.title,
+    required this.slug,
+    required this.description,
+    required this.content,
+    this.credentialDefinitionId,
+    required this.isCredentialOptional,
+    required this.isEnabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    {
+      map['source'] = Variable<String>(
+        $SkillsTable.$convertersource.toSql(source),
+      );
+    }
+    {
+      map['kind'] = Variable<String>($SkillsTable.$converterkind.toSql(kind));
+    }
+    map['title'] = Variable<String>(title);
+    map['slug'] = Variable<String>(slug);
+    map['description'] = Variable<String>(description);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || credentialDefinitionId != null) {
+      map['credential_definition_id'] = Variable<String>(
+        credentialDefinitionId,
+      );
+    }
+    map['is_credential_optional'] = Variable<bool>(isCredentialOptional);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    return map;
+  }
+
+  SkillsCompanion toCompanion(bool nullToAbsent) {
+    return SkillsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      source: Value(source),
+      kind: Value(kind),
+      title: Value(title),
+      slug: Value(slug),
+      description: Value(description),
+      content: Value(content),
+      credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(credentialDefinitionId),
+      isCredentialOptional: Value(isCredentialOptional),
+      isEnabled: Value(isEnabled),
+    );
+  }
+
+  factory SkillsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SkillsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      source: $SkillsTable.$convertersource.fromJson(
+        serializer.fromJson<String>(json['source']),
+      ),
+      kind: $SkillsTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      title: serializer.fromJson<String>(json['title']),
+      slug: serializer.fromJson<String>(json['slug']),
+      description: serializer.fromJson<String>(json['description']),
+      content: serializer.fromJson<String>(json['content']),
+      credentialDefinitionId: serializer.fromJson<String?>(
+        json['credentialDefinitionId'],
+      ),
+      isCredentialOptional: serializer.fromJson<bool>(
+        json['isCredentialOptional'],
+      ),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'source': serializer.toJson<String>(
+        $SkillsTable.$convertersource.toJson(source),
+      ),
+      'kind': serializer.toJson<String>(
+        $SkillsTable.$converterkind.toJson(kind),
+      ),
+      'title': serializer.toJson<String>(title),
+      'slug': serializer.toJson<String>(slug),
+      'description': serializer.toJson<String>(description),
+      'content': serializer.toJson<String>(content),
+      'credentialDefinitionId': serializer.toJson<String?>(
+        credentialDefinitionId,
+      ),
+      'isCredentialOptional': serializer.toJson<bool>(isCredentialOptional),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+    };
+  }
+
+  SkillsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    SkillSourceTable? source,
+    SkillKindTable? kind,
+    String? title,
+    String? slug,
+    String? description,
+    String? content,
+    Value<String?> credentialDefinitionId = const Value.absent(),
+    bool? isCredentialOptional,
+    bool? isEnabled,
+  }) => SkillsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    source: source ?? this.source,
+    kind: kind ?? this.kind,
+    title: title ?? this.title,
+    slug: slug ?? this.slug,
+    description: description ?? this.description,
+    content: content ?? this.content,
+    credentialDefinitionId: credentialDefinitionId.present
+        ? credentialDefinitionId.value
+        : this.credentialDefinitionId,
+    isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
+    isEnabled: isEnabled ?? this.isEnabled,
+  );
+  SkillsTable copyWithCompanion(SkillsCompanion data) {
+    return SkillsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      source: data.source.present ? data.source.value : this.source,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      title: data.title.present ? data.title.value : this.title,
+      slug: data.slug.present ? data.slug.value : this.slug,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      content: data.content.present ? data.content.value : this.content,
+      credentialDefinitionId: data.credentialDefinitionId.present
+          ? data.credentialDefinitionId.value
+          : this.credentialDefinitionId,
+      isCredentialOptional: data.isCredentialOptional.present
+          ? data.isCredentialOptional.value
+          : this.isCredentialOptional,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SkillsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('source: $source, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('slug: $slug, ')
+          ..write('description: $description, ')
           ..write('content: $content, ')
-          ..write('messageType: $messageType, ')
-          ..write('isUser: $isUser, ')
-          ..write('status: $status, ')
-          ..write('metadata: $metadata, ')
+          ..write('credentialDefinitionId: $credentialDefinitionId, ')
+          ..write('isCredentialOptional: $isCredentialOptional, ')
+          ..write('isEnabled: $isEnabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    source,
+    kind,
+    title,
+    slug,
+    description,
+    content,
+    credentialDefinitionId,
+    isCredentialOptional,
+    isEnabled,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SkillsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.source == this.source &&
+          other.kind == this.kind &&
+          other.title == this.title &&
+          other.slug == this.slug &&
+          other.description == this.description &&
+          other.content == this.content &&
+          other.credentialDefinitionId == this.credentialDefinitionId &&
+          other.isCredentialOptional == this.isCredentialOptional &&
+          other.isEnabled == this.isEnabled);
+}
+
+class SkillsCompanion extends UpdateCompanion<SkillsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<SkillSourceTable> source;
+  final Value<SkillKindTable> kind;
+  final Value<String> title;
+  final Value<String> slug;
+  final Value<String> description;
+  final Value<String> content;
+  final Value<String?> credentialDefinitionId;
+  final Value<bool> isCredentialOptional;
+  final Value<bool> isEnabled;
+  final Value<int> rowid;
+  const SkillsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.source = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.title = const Value.absent(),
+    this.slug = const Value.absent(),
+    this.description = const Value.absent(),
+    this.content = const Value.absent(),
+    this.credentialDefinitionId = const Value.absent(),
+    this.isCredentialOptional = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SkillsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required SkillSourceTable source,
+    required SkillKindTable kind,
+    required String title,
+    required String slug,
+    required String description,
+    required String content,
+    this.credentialDefinitionId = const Value.absent(),
+    this.isCredentialOptional = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       source = Value(source),
+       kind = Value(kind),
+       title = Value(title),
+       slug = Value(slug),
+       description = Value(description),
+       content = Value(content);
+  static Insertable<SkillsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? source,
+    Expression<String>? kind,
+    Expression<String>? title,
+    Expression<String>? slug,
+    Expression<String>? description,
+    Expression<String>? content,
+    Expression<String>? credentialDefinitionId,
+    Expression<bool>? isCredentialOptional,
+    Expression<bool>? isEnabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (source != null) 'source': source,
+      if (kind != null) 'kind': kind,
+      if (title != null) 'title': title,
+      if (slug != null) 'slug': slug,
+      if (description != null) 'description': description,
+      if (content != null) 'content': content,
+      if (credentialDefinitionId != null)
+        'credential_definition_id': credentialDefinitionId,
+      if (isCredentialOptional != null)
+        'is_credential_optional': isCredentialOptional,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SkillsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<SkillSourceTable>? source,
+    Value<SkillKindTable>? kind,
+    Value<String>? title,
+    Value<String>? slug,
+    Value<String>? description,
+    Value<String>? content,
+    Value<String?>? credentialDefinitionId,
+    Value<bool>? isCredentialOptional,
+    Value<bool>? isEnabled,
+    Value<int>? rowid,
+  }) {
+    return SkillsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      source: source ?? this.source,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      slug: slug ?? this.slug,
+      description: description ?? this.description,
+      content: content ?? this.content,
+      credentialDefinitionId:
+          credentialDefinitionId ?? this.credentialDefinitionId,
+      isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
+      isEnabled: isEnabled ?? this.isEnabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(
+        $SkillsTable.$convertersource.toSql(source.value),
+      );
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $SkillsTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (slug.present) {
+      map['slug'] = Variable<String>(slug.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (credentialDefinitionId.present) {
+      map['credential_definition_id'] = Variable<String>(
+        credentialDefinitionId.value,
+      );
+    }
+    if (isCredentialOptional.present) {
+      map['is_credential_optional'] = Variable<bool>(
+        isCredentialOptional.value,
+      );
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SkillsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('source: $source, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('slug: $slug, ')
+          ..write('description: $description, ')
+          ..write('content: $content, ')
+          ..write('credentialDefinitionId: $credentialDefinitionId, ')
+          ..write('isCredentialOptional: $isCredentialOptional, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AgentSkillsTable extends AgentSkills
+    with TableInfo<$AgentSkillsTable, AgentSkillsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentSkillsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _agentIdMeta = const VerificationMeta(
+    'agentId',
+  );
+  @override
+  late final GeneratedColumn<String> agentId = GeneratedColumn<String>(
+    'agent_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES agents (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _workspaceSkillIdMeta = const VerificationMeta(
+    'workspaceSkillId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceSkillId = GeneratedColumn<String>(
+    'workspace_skill_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES skills (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _appSkillIdentifierMeta =
+      const VerificationMeta('appSkillIdentifier');
+  @override
+  late final GeneratedColumn<String> appSkillIdentifier =
+      GeneratedColumn<String>(
+        'app_skill_identifier',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    agentId,
+    workspaceSkillId,
+    appSkillIdentifier,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_skills';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AgentSkillsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('agent_id')) {
+      context.handle(
+        _agentIdMeta,
+        agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_agentIdMeta);
+    }
+    if (data.containsKey('workspace_skill_id')) {
+      context.handle(
+        _workspaceSkillIdMeta,
+        workspaceSkillId.isAcceptableOrUnknown(
+          data['workspace_skill_id']!,
+          _workspaceSkillIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('app_skill_identifier')) {
+      context.handle(
+        _appSkillIdentifierMeta,
+        appSkillIdentifier.isAcceptableOrUnknown(
+          data['app_skill_identifier']!,
+          _appSkillIdentifierMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentSkillsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentSkillsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      agentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}agent_id'],
+      )!,
+      workspaceSkillId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_skill_id'],
+      ),
+      appSkillIdentifier: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_skill_identifier'],
+      ),
+    );
+  }
+
+  @override
+  $AgentSkillsTable createAlias(String alias) {
+    return $AgentSkillsTable(attachedDatabase, alias);
+  }
+}
+
+class AgentSkillsTable extends DataClass
+    implements Insertable<AgentSkillsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String agentId;
+  final String? workspaceSkillId;
+  final String? appSkillIdentifier;
+  const AgentSkillsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.agentId,
+    this.workspaceSkillId,
+    this.appSkillIdentifier,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['agent_id'] = Variable<String>(agentId);
+    if (!nullToAbsent || workspaceSkillId != null) {
+      map['workspace_skill_id'] = Variable<String>(workspaceSkillId);
+    }
+    if (!nullToAbsent || appSkillIdentifier != null) {
+      map['app_skill_identifier'] = Variable<String>(appSkillIdentifier);
+    }
+    return map;
+  }
+
+  AgentSkillsCompanion toCompanion(bool nullToAbsent) {
+    return AgentSkillsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      agentId: Value(agentId),
+      workspaceSkillId: workspaceSkillId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(workspaceSkillId),
+      appSkillIdentifier: appSkillIdentifier == null && nullToAbsent
+          ? const Value.absent()
+          : Value(appSkillIdentifier),
+    );
+  }
+
+  factory AgentSkillsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentSkillsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      agentId: serializer.fromJson<String>(json['agentId']),
+      workspaceSkillId: serializer.fromJson<String?>(json['workspaceSkillId']),
+      appSkillIdentifier: serializer.fromJson<String?>(
+        json['appSkillIdentifier'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'agentId': serializer.toJson<String>(agentId),
+      'workspaceSkillId': serializer.toJson<String?>(workspaceSkillId),
+      'appSkillIdentifier': serializer.toJson<String?>(appSkillIdentifier),
+    };
+  }
+
+  AgentSkillsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? agentId,
+    Value<String?> workspaceSkillId = const Value.absent(),
+    Value<String?> appSkillIdentifier = const Value.absent(),
+  }) => AgentSkillsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    agentId: agentId ?? this.agentId,
+    workspaceSkillId: workspaceSkillId.present
+        ? workspaceSkillId.value
+        : this.workspaceSkillId,
+    appSkillIdentifier: appSkillIdentifier.present
+        ? appSkillIdentifier.value
+        : this.appSkillIdentifier,
+  );
+  AgentSkillsTable copyWithCompanion(AgentSkillsCompanion data) {
+    return AgentSkillsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      agentId: data.agentId.present ? data.agentId.value : this.agentId,
+      workspaceSkillId: data.workspaceSkillId.present
+          ? data.workspaceSkillId.value
+          : this.workspaceSkillId,
+      appSkillIdentifier: data.appSkillIdentifier.present
+          ? data.appSkillIdentifier.value
+          : this.appSkillIdentifier,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentSkillsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('agentId: $agentId, ')
+          ..write('workspaceSkillId: $workspaceSkillId, ')
+          ..write('appSkillIdentifier: $appSkillIdentifier')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    agentId,
+    workspaceSkillId,
+    appSkillIdentifier,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentSkillsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.agentId == this.agentId &&
+          other.workspaceSkillId == this.workspaceSkillId &&
+          other.appSkillIdentifier == this.appSkillIdentifier);
+}
+
+class AgentSkillsCompanion extends UpdateCompanion<AgentSkillsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> agentId;
+  final Value<String?> workspaceSkillId;
+  final Value<String?> appSkillIdentifier;
+  final Value<int> rowid;
+  const AgentSkillsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.agentId = const Value.absent(),
+    this.workspaceSkillId = const Value.absent(),
+    this.appSkillIdentifier = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentSkillsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String agentId,
+    this.workspaceSkillId = const Value.absent(),
+    this.appSkillIdentifier = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : agentId = Value(agentId);
+  static Insertable<AgentSkillsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? agentId,
+    Expression<String>? workspaceSkillId,
+    Expression<String>? appSkillIdentifier,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (agentId != null) 'agent_id': agentId,
+      if (workspaceSkillId != null) 'workspace_skill_id': workspaceSkillId,
+      if (appSkillIdentifier != null)
+        'app_skill_identifier': appSkillIdentifier,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentSkillsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? agentId,
+    Value<String?>? workspaceSkillId,
+    Value<String?>? appSkillIdentifier,
+    Value<int>? rowid,
+  }) {
+    return AgentSkillsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      agentId: agentId ?? this.agentId,
+      workspaceSkillId: workspaceSkillId ?? this.workspaceSkillId,
+      appSkillIdentifier: appSkillIdentifier ?? this.appSkillIdentifier,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (agentId.present) {
+      map['agent_id'] = Variable<String>(agentId.value);
+    }
+    if (workspaceSkillId.present) {
+      map['workspace_skill_id'] = Variable<String>(workspaceSkillId.value);
+    }
+    if (appSkillIdentifier.present) {
+      map['app_skill_identifier'] = Variable<String>(appSkillIdentifier.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentSkillsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('agentId: $agentId, ')
+          ..write('workspaceSkillId: $workspaceSkillId, ')
+          ..write('appSkillIdentifier: $appSkillIdentifier, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6178,6 +7792,1014 @@ class ToolsCompanion extends UpdateCompanion<ToolsTable> {
   }
 }
 
+class $AgentToolsTable extends AgentTools
+    with TableInfo<$AgentToolsTable, AgentToolsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentToolsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _agentIdMeta = const VerificationMeta(
+    'agentId',
+  );
+  @override
+  late final GeneratedColumn<String> agentId = GeneratedColumn<String>(
+    'agent_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES agents (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _toolIdMeta = const VerificationMeta('toolId');
+  @override
+  late final GeneratedColumn<String> toolId = GeneratedColumn<String>(
+    'tool_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES tools (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<PermissionAccess, String>
+  permissions = GeneratedColumn<String>(
+    'permissions',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<PermissionAccess>($AgentToolsTable.$converterpermissions);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    agentId,
+    toolId,
+    permissions,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_tools';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AgentToolsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('agent_id')) {
+      context.handle(
+        _agentIdMeta,
+        agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_agentIdMeta);
+    }
+    if (data.containsKey('tool_id')) {
+      context.handle(
+        _toolIdMeta,
+        toolId.isAcceptableOrUnknown(data['tool_id']!, _toolIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_toolIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentToolsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentToolsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      agentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}agent_id'],
+      )!,
+      toolId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tool_id'],
+      )!,
+      permissions: $AgentToolsTable.$converterpermissions.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}permissions'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $AgentToolsTable createAlias(String alias) {
+    return $AgentToolsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<PermissionAccess, String, String>
+  $converterpermissions = const EnumNameConverter<PermissionAccess>(
+    PermissionAccess.values,
+  );
+}
+
+class AgentToolsTable extends DataClass implements Insertable<AgentToolsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String agentId;
+  final String toolId;
+
+  /// Null is represented by no row. Rows always override workspace permission.
+  final PermissionAccess permissions;
+  const AgentToolsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.agentId,
+    required this.toolId,
+    required this.permissions,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['agent_id'] = Variable<String>(agentId);
+    map['tool_id'] = Variable<String>(toolId);
+    {
+      map['permissions'] = Variable<String>(
+        $AgentToolsTable.$converterpermissions.toSql(permissions),
+      );
+    }
+    return map;
+  }
+
+  AgentToolsCompanion toCompanion(bool nullToAbsent) {
+    return AgentToolsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      agentId: Value(agentId),
+      toolId: Value(toolId),
+      permissions: Value(permissions),
+    );
+  }
+
+  factory AgentToolsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentToolsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      agentId: serializer.fromJson<String>(json['agentId']),
+      toolId: serializer.fromJson<String>(json['toolId']),
+      permissions: $AgentToolsTable.$converterpermissions.fromJson(
+        serializer.fromJson<String>(json['permissions']),
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'agentId': serializer.toJson<String>(agentId),
+      'toolId': serializer.toJson<String>(toolId),
+      'permissions': serializer.toJson<String>(
+        $AgentToolsTable.$converterpermissions.toJson(permissions),
+      ),
+    };
+  }
+
+  AgentToolsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? agentId,
+    String? toolId,
+    PermissionAccess? permissions,
+  }) => AgentToolsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    agentId: agentId ?? this.agentId,
+    toolId: toolId ?? this.toolId,
+    permissions: permissions ?? this.permissions,
+  );
+  AgentToolsTable copyWithCompanion(AgentToolsCompanion data) {
+    return AgentToolsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      agentId: data.agentId.present ? data.agentId.value : this.agentId,
+      toolId: data.toolId.present ? data.toolId.value : this.toolId,
+      permissions: data.permissions.present
+          ? data.permissions.value
+          : this.permissions,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentToolsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('agentId: $agentId, ')
+          ..write('toolId: $toolId, ')
+          ..write('permissions: $permissions')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, createdAt, updatedAt, agentId, toolId, permissions);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentToolsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.agentId == this.agentId &&
+          other.toolId == this.toolId &&
+          other.permissions == this.permissions);
+}
+
+class AgentToolsCompanion extends UpdateCompanion<AgentToolsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> agentId;
+  final Value<String> toolId;
+  final Value<PermissionAccess> permissions;
+  final Value<int> rowid;
+  const AgentToolsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.agentId = const Value.absent(),
+    this.toolId = const Value.absent(),
+    this.permissions = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentToolsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String agentId,
+    required String toolId,
+    required PermissionAccess permissions,
+    this.rowid = const Value.absent(),
+  }) : agentId = Value(agentId),
+       toolId = Value(toolId),
+       permissions = Value(permissions);
+  static Insertable<AgentToolsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? agentId,
+    Expression<String>? toolId,
+    Expression<String>? permissions,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (agentId != null) 'agent_id': agentId,
+      if (toolId != null) 'tool_id': toolId,
+      if (permissions != null) 'permissions': permissions,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentToolsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? agentId,
+    Value<String>? toolId,
+    Value<PermissionAccess>? permissions,
+    Value<int>? rowid,
+  }) {
+    return AgentToolsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      agentId: agentId ?? this.agentId,
+      toolId: toolId ?? this.toolId,
+      permissions: permissions ?? this.permissions,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (agentId.present) {
+      map['agent_id'] = Variable<String>(agentId.value);
+    }
+    if (toolId.present) {
+      map['tool_id'] = Variable<String>(toolId.value);
+    }
+    if (permissions.present) {
+      map['permissions'] = Variable<String>(
+        $AgentToolsTable.$converterpermissions.toSql(permissions.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentToolsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('agentId: $agentId, ')
+          ..write('toolId: $toolId, ')
+          ..write('permissions: $permissions, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MessagesTable extends Messages
+    with TableInfo<$MessagesTable, MessagesTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<MessagesTableType, String>
+  messageType = GeneratedColumn<String>(
+    'message_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<MessagesTableType>($MessagesTable.$convertermessageType);
+  static const VerificationMeta _isUserMeta = const VerificationMeta('isUser');
+  @override
+  late final GeneratedColumn<bool> isUser = GeneratedColumn<bool>(
+    'is_user',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_user" IN (0, 1))',
+    ),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<MessageTableStatus, String>
+  status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<MessageTableStatus>($MessagesTable.$converterstatus);
+  static const VerificationMeta _metadataMeta = const VerificationMeta(
+    'metadata',
+  );
+  @override
+  late final GeneratedColumn<String> metadata = GeneratedColumn<String>(
+    'metadata',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    content,
+    messageType,
+    isUser,
+    status,
+    metadata,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MessagesTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('is_user')) {
+      context.handle(
+        _isUserMeta,
+        isUser.isAcceptableOrUnknown(data['is_user']!, _isUserMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isUserMeta);
+    }
+    if (data.containsKey('metadata')) {
+      context.handle(
+        _metadataMeta,
+        metadata.isAcceptableOrUnknown(data['metadata']!, _metadataMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MessagesTable map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MessagesTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      messageType: $MessagesTable.$convertermessageType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}message_type'],
+        )!,
+      ),
+      isUser: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_user'],
+      )!,
+      status: $MessagesTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+      metadata: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}metadata'],
+      ),
+    );
+  }
+
+  @override
+  $MessagesTable createAlias(String alias) {
+    return $MessagesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<MessagesTableType, String, String>
+  $convertermessageType = const EnumNameConverter<MessagesTableType>(
+    MessagesTableType.values,
+  );
+  static JsonTypeConverter2<MessageTableStatus, String, String>
+  $converterstatus = const EnumNameConverter<MessageTableStatus>(
+    MessageTableStatus.values,
+  );
+}
+
+class MessagesTable extends DataClass implements Insertable<MessagesTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String conversationId;
+  final String content;
+  final MessagesTableType messageType;
+  final bool isUser;
+  final MessageTableStatus status;
+  final String? metadata;
+  const MessagesTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.conversationId,
+    required this.content,
+    required this.messageType,
+    required this.isUser,
+    required this.status,
+    this.metadata,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['content'] = Variable<String>(content);
+    {
+      map['message_type'] = Variable<String>(
+        $MessagesTable.$convertermessageType.toSql(messageType),
+      );
+    }
+    map['is_user'] = Variable<bool>(isUser);
+    {
+      map['status'] = Variable<String>(
+        $MessagesTable.$converterstatus.toSql(status),
+      );
+    }
+    if (!nullToAbsent || metadata != null) {
+      map['metadata'] = Variable<String>(metadata);
+    }
+    return map;
+  }
+
+  MessagesCompanion toCompanion(bool nullToAbsent) {
+    return MessagesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      conversationId: Value(conversationId),
+      content: Value(content),
+      messageType: Value(messageType),
+      isUser: Value(isUser),
+      status: Value(status),
+      metadata: metadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(metadata),
+    );
+  }
+
+  factory MessagesTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MessagesTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      content: serializer.fromJson<String>(json['content']),
+      messageType: $MessagesTable.$convertermessageType.fromJson(
+        serializer.fromJson<String>(json['messageType']),
+      ),
+      isUser: serializer.fromJson<bool>(json['isUser']),
+      status: $MessagesTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
+      metadata: serializer.fromJson<String?>(json['metadata']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'content': serializer.toJson<String>(content),
+      'messageType': serializer.toJson<String>(
+        $MessagesTable.$convertermessageType.toJson(messageType),
+      ),
+      'isUser': serializer.toJson<bool>(isUser),
+      'status': serializer.toJson<String>(
+        $MessagesTable.$converterstatus.toJson(status),
+      ),
+      'metadata': serializer.toJson<String?>(metadata),
+    };
+  }
+
+  MessagesTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? conversationId,
+    String? content,
+    MessagesTableType? messageType,
+    bool? isUser,
+    MessageTableStatus? status,
+    Value<String?> metadata = const Value.absent(),
+  }) => MessagesTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    conversationId: conversationId ?? this.conversationId,
+    content: content ?? this.content,
+    messageType: messageType ?? this.messageType,
+    isUser: isUser ?? this.isUser,
+    status: status ?? this.status,
+    metadata: metadata.present ? metadata.value : this.metadata,
+  );
+  MessagesTable copyWithCompanion(MessagesCompanion data) {
+    return MessagesTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      content: data.content.present ? data.content.value : this.content,
+      messageType: data.messageType.present
+          ? data.messageType.value
+          : this.messageType,
+      isUser: data.isUser.present ? data.isUser.value : this.isUser,
+      status: data.status.present ? data.status.value : this.status,
+      metadata: data.metadata.present ? data.metadata.value : this.metadata,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessagesTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('content: $content, ')
+          ..write('messageType: $messageType, ')
+          ..write('isUser: $isUser, ')
+          ..write('status: $status, ')
+          ..write('metadata: $metadata')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    conversationId,
+    content,
+    messageType,
+    isUser,
+    status,
+    metadata,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MessagesTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.conversationId == this.conversationId &&
+          other.content == this.content &&
+          other.messageType == this.messageType &&
+          other.isUser == this.isUser &&
+          other.status == this.status &&
+          other.metadata == this.metadata);
+}
+
+class MessagesCompanion extends UpdateCompanion<MessagesTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> conversationId;
+  final Value<String> content;
+  final Value<MessagesTableType> messageType;
+  final Value<bool> isUser;
+  final Value<MessageTableStatus> status;
+  final Value<String?> metadata;
+  final Value<int> rowid;
+  const MessagesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.content = const Value.absent(),
+    this.messageType = const Value.absent(),
+    this.isUser = const Value.absent(),
+    this.status = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MessagesCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String conversationId,
+    required String content,
+    required MessagesTableType messageType,
+    required bool isUser,
+    required MessageTableStatus status,
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : conversationId = Value(conversationId),
+       content = Value(content),
+       messageType = Value(messageType),
+       isUser = Value(isUser),
+       status = Value(status);
+  static Insertable<MessagesTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? conversationId,
+    Expression<String>? content,
+    Expression<String>? messageType,
+    Expression<bool>? isUser,
+    Expression<String>? status,
+    Expression<String>? metadata,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (content != null) 'content': content,
+      if (messageType != null) 'message_type': messageType,
+      if (isUser != null) 'is_user': isUser,
+      if (status != null) 'status': status,
+      if (metadata != null) 'metadata': metadata,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MessagesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? conversationId,
+    Value<String>? content,
+    Value<MessagesTableType>? messageType,
+    Value<bool>? isUser,
+    Value<MessageTableStatus>? status,
+    Value<String?>? metadata,
+    Value<int>? rowid,
+  }) {
+    return MessagesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      conversationId: conversationId ?? this.conversationId,
+      content: content ?? this.content,
+      messageType: messageType ?? this.messageType,
+      isUser: isUser ?? this.isUser,
+      status: status ?? this.status,
+      metadata: metadata ?? this.metadata,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (messageType.present) {
+      map['message_type'] = Variable<String>(
+        $MessagesTable.$convertermessageType.toSql(messageType.value),
+      );
+    }
+    if (isUser.present) {
+      map['is_user'] = Variable<bool>(isUser.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $MessagesTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (metadata.present) {
+      map['metadata'] = Variable<String>(metadata.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('content: $content, ')
+          ..write('messageType: $messageType, ')
+          ..write('isUser: $isUser, ')
+          ..write('status: $status, ')
+          ..write('metadata: $metadata, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConversationToolsTable extends ConversationTools
     with TableInfo<$ConversationToolsTable, ConversationToolsTable> {
   @override
@@ -7192,1297 +9814,6 @@ class WorkspaceCompactionSettingsCompanion
           ..write('autoCompactEnabled: $autoCompactEnabled, ')
           ..write('usagePercentageThreshold: $usagePercentageThreshold, ')
           ..write('remainingTokenThreshold: $remainingTokenThreshold, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $SkillCredentialDefinitionsTable extends SkillCredentialDefinitions
-    with
-        TableInfo<
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable
-        > {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkillCredentialDefinitionsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
-    'workspaceId',
-  );
-  @override
-  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
-    'workspace_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _attributesJsonMeta = const VerificationMeta(
-    'attributesJson',
-  );
-  @override
-  late final GeneratedColumn<String> attributesJson = GeneratedColumn<String>(
-    'attributes_json',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    title,
-    slug,
-    attributesJson,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'skill_credential_definitions';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkillCredentialDefinitionsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('workspace_id')) {
-      context.handle(
-        _workspaceIdMeta,
-        workspaceId.isAcceptableOrUnknown(
-          data['workspace_id']!,
-          _workspaceIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_workspaceIdMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('attributes_json')) {
-      context.handle(
-        _attributesJsonMeta,
-        attributesJson.isAcceptableOrUnknown(
-          data['attributes_json']!,
-          _attributesJsonMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_attributesJsonMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {workspaceId, title},
-    {workspaceId, slug},
-  ];
-  @override
-  SkillCredentialDefinitionsTable map(
-    Map<String, dynamic> data, {
-    String? tablePrefix,
-  }) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkillCredentialDefinitionsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      workspaceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}workspace_id'],
-      )!,
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      attributesJson: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}attributes_json'],
-      )!,
-    );
-  }
-
-  @override
-  $SkillCredentialDefinitionsTable createAlias(String alias) {
-    return $SkillCredentialDefinitionsTable(attachedDatabase, alias);
-  }
-}
-
-class SkillCredentialDefinitionsTable extends DataClass
-    implements Insertable<SkillCredentialDefinitionsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String workspaceId;
-  final String title;
-  final String slug;
-  final String attributesJson;
-  const SkillCredentialDefinitionsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.workspaceId,
-    required this.title,
-    required this.slug,
-    required this.attributesJson,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['workspace_id'] = Variable<String>(workspaceId);
-    map['title'] = Variable<String>(title);
-    map['slug'] = Variable<String>(slug);
-    map['attributes_json'] = Variable<String>(attributesJson);
-    return map;
-  }
-
-  SkillCredentialDefinitionsCompanion toCompanion(bool nullToAbsent) {
-    return SkillCredentialDefinitionsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      workspaceId: Value(workspaceId),
-      title: Value(title),
-      slug: Value(slug),
-      attributesJson: Value(attributesJson),
-    );
-  }
-
-  factory SkillCredentialDefinitionsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkillCredentialDefinitionsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      workspaceId: serializer.fromJson<String>(json['workspaceId']),
-      title: serializer.fromJson<String>(json['title']),
-      slug: serializer.fromJson<String>(json['slug']),
-      attributesJson: serializer.fromJson<String>(json['attributesJson']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'workspaceId': serializer.toJson<String>(workspaceId),
-      'title': serializer.toJson<String>(title),
-      'slug': serializer.toJson<String>(slug),
-      'attributesJson': serializer.toJson<String>(attributesJson),
-    };
-  }
-
-  SkillCredentialDefinitionsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? workspaceId,
-    String? title,
-    String? slug,
-    String? attributesJson,
-  }) => SkillCredentialDefinitionsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    workspaceId: workspaceId ?? this.workspaceId,
-    title: title ?? this.title,
-    slug: slug ?? this.slug,
-    attributesJson: attributesJson ?? this.attributesJson,
-  );
-  SkillCredentialDefinitionsTable copyWithCompanion(
-    SkillCredentialDefinitionsCompanion data,
-  ) {
-    return SkillCredentialDefinitionsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      workspaceId: data.workspaceId.present
-          ? data.workspaceId.value
-          : this.workspaceId,
-      title: data.title.present ? data.title.value : this.title,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      attributesJson: data.attributesJson.present
-          ? data.attributesJson.value
-          : this.attributesJson,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillCredentialDefinitionsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('attributesJson: $attributesJson')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    title,
-    slug,
-    attributesJson,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkillCredentialDefinitionsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.workspaceId == this.workspaceId &&
-          other.title == this.title &&
-          other.slug == this.slug &&
-          other.attributesJson == this.attributesJson);
-}
-
-class SkillCredentialDefinitionsCompanion
-    extends UpdateCompanion<SkillCredentialDefinitionsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> workspaceId;
-  final Value<String> title;
-  final Value<String> slug;
-  final Value<String> attributesJson;
-  final Value<int> rowid;
-  const SkillCredentialDefinitionsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.workspaceId = const Value.absent(),
-    this.title = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.attributesJson = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkillCredentialDefinitionsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String workspaceId,
-    required String title,
-    required String slug,
-    required String attributesJson,
-    this.rowid = const Value.absent(),
-  }) : workspaceId = Value(workspaceId),
-       title = Value(title),
-       slug = Value(slug),
-       attributesJson = Value(attributesJson);
-  static Insertable<SkillCredentialDefinitionsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? workspaceId,
-    Expression<String>? title,
-    Expression<String>? slug,
-    Expression<String>? attributesJson,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (workspaceId != null) 'workspace_id': workspaceId,
-      if (title != null) 'title': title,
-      if (slug != null) 'slug': slug,
-      if (attributesJson != null) 'attributes_json': attributesJson,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkillCredentialDefinitionsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? workspaceId,
-    Value<String>? title,
-    Value<String>? slug,
-    Value<String>? attributesJson,
-    Value<int>? rowid,
-  }) {
-    return SkillCredentialDefinitionsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      workspaceId: workspaceId ?? this.workspaceId,
-      title: title ?? this.title,
-      slug: slug ?? this.slug,
-      attributesJson: attributesJson ?? this.attributesJson,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (workspaceId.present) {
-      map['workspace_id'] = Variable<String>(workspaceId.value);
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (attributesJson.present) {
-      map['attributes_json'] = Variable<String>(attributesJson.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillCredentialDefinitionsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('attributesJson: $attributesJson, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SkillsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    clientDefault: () => const UuidV7().generate(),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
-    'workspaceId',
-  );
-  @override
-  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
-    'workspace_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES workspaces (id) ON DELETE CASCADE',
-    ),
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<SkillSourceTable, String> source =
-      GeneratedColumn<String>(
-        'source',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<SkillSourceTable>($SkillsTable.$convertersource);
-  @override
-  late final GeneratedColumnWithTypeConverter<SkillKindTable, String> kind =
-      GeneratedColumn<String>(
-        'kind',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<SkillKindTable>($SkillsTable.$converterkind);
-  static const VerificationMeta _titleMeta = const VerificationMeta('title');
-  @override
-  late final GeneratedColumn<String> title = GeneratedColumn<String>(
-    'title',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _slugMeta = const VerificationMeta('slug');
-  @override
-  late final GeneratedColumn<String> slug = GeneratedColumn<String>(
-    'slug',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _contentMeta = const VerificationMeta(
-    'content',
-  );
-  @override
-  late final GeneratedColumn<String> content = GeneratedColumn<String>(
-    'content',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _credentialDefinitionIdMeta =
-      const VerificationMeta('credentialDefinitionId');
-  @override
-  late final GeneratedColumn<String> credentialDefinitionId =
-      GeneratedColumn<String>(
-        'credential_definition_id',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-        defaultConstraints: GeneratedColumn.constraintIsAlways(
-          'REFERENCES skill_credential_definitions (id) ON DELETE SET NULL',
-        ),
-      );
-  static const VerificationMeta _isCredentialOptionalMeta =
-      const VerificationMeta('isCredentialOptional');
-  @override
-  late final GeneratedColumn<bool> isCredentialOptional = GeneratedColumn<bool>(
-    'is_credential_optional',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_credential_optional" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
-    'isEnabled',
-  );
-  @override
-  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
-    'is_enabled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_enabled" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    source,
-    kind,
-    title,
-    slug,
-    description,
-    content,
-    credentialDefinitionId,
-    isCredentialOptional,
-    isEnabled,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'skills';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SkillsTable> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    }
-    if (data.containsKey('workspace_id')) {
-      context.handle(
-        _workspaceIdMeta,
-        workspaceId.isAcceptableOrUnknown(
-          data['workspace_id']!,
-          _workspaceIdMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_workspaceIdMeta);
-    }
-    if (data.containsKey('title')) {
-      context.handle(
-        _titleMeta,
-        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_titleMeta);
-    }
-    if (data.containsKey('slug')) {
-      context.handle(
-        _slugMeta,
-        slug.isAcceptableOrUnknown(data['slug']!, _slugMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_slugMeta);
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_descriptionMeta);
-    }
-    if (data.containsKey('content')) {
-      context.handle(
-        _contentMeta,
-        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_contentMeta);
-    }
-    if (data.containsKey('credential_definition_id')) {
-      context.handle(
-        _credentialDefinitionIdMeta,
-        credentialDefinitionId.isAcceptableOrUnknown(
-          data['credential_definition_id']!,
-          _credentialDefinitionIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_credential_optional')) {
-      context.handle(
-        _isCredentialOptionalMeta,
-        isCredentialOptional.isAcceptableOrUnknown(
-          data['is_credential_optional']!,
-          _isCredentialOptionalMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_enabled')) {
-      context.handle(
-        _isEnabledMeta,
-        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {workspaceId, title},
-    {workspaceId, slug},
-  ];
-  @override
-  SkillsTable map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SkillsTable(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}updated_at'],
-      )!,
-      workspaceId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}workspace_id'],
-      )!,
-      source: $SkillsTable.$convertersource.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}source'],
-        )!,
-      ),
-      kind: $SkillsTable.$converterkind.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}kind'],
-        )!,
-      ),
-      title: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}title'],
-      )!,
-      slug: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}slug'],
-      )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      )!,
-      content: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}content'],
-      )!,
-      credentialDefinitionId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}credential_definition_id'],
-      ),
-      isCredentialOptional: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_credential_optional'],
-      )!,
-      isEnabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_enabled'],
-      )!,
-    );
-  }
-
-  @override
-  $SkillsTable createAlias(String alias) {
-    return $SkillsTable(attachedDatabase, alias);
-  }
-
-  static JsonTypeConverter2<SkillSourceTable, String, String> $convertersource =
-      const EnumNameConverter<SkillSourceTable>(SkillSourceTable.values);
-  static JsonTypeConverter2<SkillKindTable, String, String> $converterkind =
-      const EnumNameConverter<SkillKindTable>(SkillKindTable.values);
-}
-
-class SkillsTable extends DataClass implements Insertable<SkillsTable> {
-  /// Primary key column as string.
-  final String id;
-
-  /// When was created timestamp.
-  final DateTime createdAt;
-
-  /// When was last updated timestamp.
-  final DateTime updatedAt;
-  final String workspaceId;
-  final SkillSourceTable source;
-  final SkillKindTable kind;
-  final String title;
-  final String slug;
-  final String description;
-  final String content;
-  final String? credentialDefinitionId;
-  final bool isCredentialOptional;
-  final bool isEnabled;
-  const SkillsTable({
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.workspaceId,
-    required this.source,
-    required this.kind,
-    required this.title,
-    required this.slug,
-    required this.description,
-    required this.content,
-    this.credentialDefinitionId,
-    required this.isCredentialOptional,
-    required this.isEnabled,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    map['updated_at'] = Variable<DateTime>(updatedAt);
-    map['workspace_id'] = Variable<String>(workspaceId);
-    {
-      map['source'] = Variable<String>(
-        $SkillsTable.$convertersource.toSql(source),
-      );
-    }
-    {
-      map['kind'] = Variable<String>($SkillsTable.$converterkind.toSql(kind));
-    }
-    map['title'] = Variable<String>(title);
-    map['slug'] = Variable<String>(slug);
-    map['description'] = Variable<String>(description);
-    map['content'] = Variable<String>(content);
-    if (!nullToAbsent || credentialDefinitionId != null) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId,
-      );
-    }
-    map['is_credential_optional'] = Variable<bool>(isCredentialOptional);
-    map['is_enabled'] = Variable<bool>(isEnabled);
-    return map;
-  }
-
-  SkillsCompanion toCompanion(bool nullToAbsent) {
-    return SkillsCompanion(
-      id: Value(id),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-      workspaceId: Value(workspaceId),
-      source: Value(source),
-      kind: Value(kind),
-      title: Value(title),
-      slug: Value(slug),
-      description: Value(description),
-      content: Value(content),
-      credentialDefinitionId: credentialDefinitionId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(credentialDefinitionId),
-      isCredentialOptional: Value(isCredentialOptional),
-      isEnabled: Value(isEnabled),
-    );
-  }
-
-  factory SkillsTable.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SkillsTable(
-      id: serializer.fromJson<String>(json['id']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
-      workspaceId: serializer.fromJson<String>(json['workspaceId']),
-      source: $SkillsTable.$convertersource.fromJson(
-        serializer.fromJson<String>(json['source']),
-      ),
-      kind: $SkillsTable.$converterkind.fromJson(
-        serializer.fromJson<String>(json['kind']),
-      ),
-      title: serializer.fromJson<String>(json['title']),
-      slug: serializer.fromJson<String>(json['slug']),
-      description: serializer.fromJson<String>(json['description']),
-      content: serializer.fromJson<String>(json['content']),
-      credentialDefinitionId: serializer.fromJson<String?>(
-        json['credentialDefinitionId'],
-      ),
-      isCredentialOptional: serializer.fromJson<bool>(
-        json['isCredentialOptional'],
-      ),
-      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'updatedAt': serializer.toJson<DateTime>(updatedAt),
-      'workspaceId': serializer.toJson<String>(workspaceId),
-      'source': serializer.toJson<String>(
-        $SkillsTable.$convertersource.toJson(source),
-      ),
-      'kind': serializer.toJson<String>(
-        $SkillsTable.$converterkind.toJson(kind),
-      ),
-      'title': serializer.toJson<String>(title),
-      'slug': serializer.toJson<String>(slug),
-      'description': serializer.toJson<String>(description),
-      'content': serializer.toJson<String>(content),
-      'credentialDefinitionId': serializer.toJson<String?>(
-        credentialDefinitionId,
-      ),
-      'isCredentialOptional': serializer.toJson<bool>(isCredentialOptional),
-      'isEnabled': serializer.toJson<bool>(isEnabled),
-    };
-  }
-
-  SkillsTable copyWith({
-    String? id,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    String? workspaceId,
-    SkillSourceTable? source,
-    SkillKindTable? kind,
-    String? title,
-    String? slug,
-    String? description,
-    String? content,
-    Value<String?> credentialDefinitionId = const Value.absent(),
-    bool? isCredentialOptional,
-    bool? isEnabled,
-  }) => SkillsTable(
-    id: id ?? this.id,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    workspaceId: workspaceId ?? this.workspaceId,
-    source: source ?? this.source,
-    kind: kind ?? this.kind,
-    title: title ?? this.title,
-    slug: slug ?? this.slug,
-    description: description ?? this.description,
-    content: content ?? this.content,
-    credentialDefinitionId: credentialDefinitionId.present
-        ? credentialDefinitionId.value
-        : this.credentialDefinitionId,
-    isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
-    isEnabled: isEnabled ?? this.isEnabled,
-  );
-  SkillsTable copyWithCompanion(SkillsCompanion data) {
-    return SkillsTable(
-      id: data.id.present ? data.id.value : this.id,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      workspaceId: data.workspaceId.present
-          ? data.workspaceId.value
-          : this.workspaceId,
-      source: data.source.present ? data.source.value : this.source,
-      kind: data.kind.present ? data.kind.value : this.kind,
-      title: data.title.present ? data.title.value : this.title,
-      slug: data.slug.present ? data.slug.value : this.slug,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      content: data.content.present ? data.content.value : this.content,
-      credentialDefinitionId: data.credentialDefinitionId.present
-          ? data.credentialDefinitionId.value
-          : this.credentialDefinitionId,
-      isCredentialOptional: data.isCredentialOptional.present
-          ? data.isCredentialOptional.value
-          : this.isCredentialOptional,
-      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillsTable(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('source: $source, ')
-          ..write('kind: $kind, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('description: $description, ')
-          ..write('content: $content, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('isCredentialOptional: $isCredentialOptional, ')
-          ..write('isEnabled: $isEnabled')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    createdAt,
-    updatedAt,
-    workspaceId,
-    source,
-    kind,
-    title,
-    slug,
-    description,
-    content,
-    credentialDefinitionId,
-    isCredentialOptional,
-    isEnabled,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SkillsTable &&
-          other.id == this.id &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt &&
-          other.workspaceId == this.workspaceId &&
-          other.source == this.source &&
-          other.kind == this.kind &&
-          other.title == this.title &&
-          other.slug == this.slug &&
-          other.description == this.description &&
-          other.content == this.content &&
-          other.credentialDefinitionId == this.credentialDefinitionId &&
-          other.isCredentialOptional == this.isCredentialOptional &&
-          other.isEnabled == this.isEnabled);
-}
-
-class SkillsCompanion extends UpdateCompanion<SkillsTable> {
-  final Value<String> id;
-  final Value<DateTime> createdAt;
-  final Value<DateTime> updatedAt;
-  final Value<String> workspaceId;
-  final Value<SkillSourceTable> source;
-  final Value<SkillKindTable> kind;
-  final Value<String> title;
-  final Value<String> slug;
-  final Value<String> description;
-  final Value<String> content;
-  final Value<String?> credentialDefinitionId;
-  final Value<bool> isCredentialOptional;
-  final Value<bool> isEnabled;
-  final Value<int> rowid;
-  const SkillsCompanion({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.workspaceId = const Value.absent(),
-    this.source = const Value.absent(),
-    this.kind = const Value.absent(),
-    this.title = const Value.absent(),
-    this.slug = const Value.absent(),
-    this.description = const Value.absent(),
-    this.content = const Value.absent(),
-    this.credentialDefinitionId = const Value.absent(),
-    this.isCredentialOptional = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SkillsCompanion.insert({
-    this.id = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    required String workspaceId,
-    required SkillSourceTable source,
-    required SkillKindTable kind,
-    required String title,
-    required String slug,
-    required String description,
-    required String content,
-    this.credentialDefinitionId = const Value.absent(),
-    this.isCredentialOptional = const Value.absent(),
-    this.isEnabled = const Value.absent(),
-    this.rowid = const Value.absent(),
-  }) : workspaceId = Value(workspaceId),
-       source = Value(source),
-       kind = Value(kind),
-       title = Value(title),
-       slug = Value(slug),
-       description = Value(description),
-       content = Value(content);
-  static Insertable<SkillsTable> custom({
-    Expression<String>? id,
-    Expression<DateTime>? createdAt,
-    Expression<DateTime>? updatedAt,
-    Expression<String>? workspaceId,
-    Expression<String>? source,
-    Expression<String>? kind,
-    Expression<String>? title,
-    Expression<String>? slug,
-    Expression<String>? description,
-    Expression<String>? content,
-    Expression<String>? credentialDefinitionId,
-    Expression<bool>? isCredentialOptional,
-    Expression<bool>? isEnabled,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (workspaceId != null) 'workspace_id': workspaceId,
-      if (source != null) 'source': source,
-      if (kind != null) 'kind': kind,
-      if (title != null) 'title': title,
-      if (slug != null) 'slug': slug,
-      if (description != null) 'description': description,
-      if (content != null) 'content': content,
-      if (credentialDefinitionId != null)
-        'credential_definition_id': credentialDefinitionId,
-      if (isCredentialOptional != null)
-        'is_credential_optional': isCredentialOptional,
-      if (isEnabled != null) 'is_enabled': isEnabled,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SkillsCompanion copyWith({
-    Value<String>? id,
-    Value<DateTime>? createdAt,
-    Value<DateTime>? updatedAt,
-    Value<String>? workspaceId,
-    Value<SkillSourceTable>? source,
-    Value<SkillKindTable>? kind,
-    Value<String>? title,
-    Value<String>? slug,
-    Value<String>? description,
-    Value<String>? content,
-    Value<String?>? credentialDefinitionId,
-    Value<bool>? isCredentialOptional,
-    Value<bool>? isEnabled,
-    Value<int>? rowid,
-  }) {
-    return SkillsCompanion(
-      id: id ?? this.id,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      workspaceId: workspaceId ?? this.workspaceId,
-      source: source ?? this.source,
-      kind: kind ?? this.kind,
-      title: title ?? this.title,
-      slug: slug ?? this.slug,
-      description: description ?? this.description,
-      content: content ?? this.content,
-      credentialDefinitionId:
-          credentialDefinitionId ?? this.credentialDefinitionId,
-      isCredentialOptional: isCredentialOptional ?? this.isCredentialOptional,
-      isEnabled: isEnabled ?? this.isEnabled,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<DateTime>(updatedAt.value);
-    }
-    if (workspaceId.present) {
-      map['workspace_id'] = Variable<String>(workspaceId.value);
-    }
-    if (source.present) {
-      map['source'] = Variable<String>(
-        $SkillsTable.$convertersource.toSql(source.value),
-      );
-    }
-    if (kind.present) {
-      map['kind'] = Variable<String>(
-        $SkillsTable.$converterkind.toSql(kind.value),
-      );
-    }
-    if (title.present) {
-      map['title'] = Variable<String>(title.value);
-    }
-    if (slug.present) {
-      map['slug'] = Variable<String>(slug.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (content.present) {
-      map['content'] = Variable<String>(content.value);
-    }
-    if (credentialDefinitionId.present) {
-      map['credential_definition_id'] = Variable<String>(
-        credentialDefinitionId.value,
-      );
-    }
-    if (isCredentialOptional.present) {
-      map['is_credential_optional'] = Variable<bool>(
-        isCredentialOptional.value,
-      );
-    }
-    if (isEnabled.present) {
-      map['is_enabled'] = Variable<bool>(isEnabled.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SkillsCompanion(')
-          ..write('id: $id, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('workspaceId: $workspaceId, ')
-          ..write('source: $source, ')
-          ..write('kind: $kind, ')
-          ..write('title: $title, ')
-          ..write('slug: $slug, ')
-          ..write('description: $description, ')
-          ..write('content: $content, ')
-          ..write('credentialDefinitionId: $credentialDefinitionId, ')
-          ..write('isCredentialOptional: $isCredentialOptional, ')
-          ..write('isEnabled: $isEnabled, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10187,18 +11518,21 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ApiModelProvidersTable apiModelProviders =
       $ApiModelProvidersTable(this);
   late final $ApiModelsTable apiModels = $ApiModelsTable(this);
+  late final $AgentsTable agents = $AgentsTable(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
-  late final $MessagesTable messages = $MessagesTable(this);
+  late final $SkillCredentialDefinitionsTable skillCredentialDefinitions =
+      $SkillCredentialDefinitionsTable(this);
+  late final $SkillsTable skills = $SkillsTable(this);
+  late final $AgentSkillsTable agentSkills = $AgentSkillsTable(this);
   late final $McpServersTable mcpServers = $McpServersTable(this);
   late final $ToolsGroupsTable toolsGroups = $ToolsGroupsTable(this);
   late final $ToolsTable tools = $ToolsTable(this);
+  late final $AgentToolsTable agentTools = $AgentToolsTable(this);
+  late final $MessagesTable messages = $MessagesTable(this);
   late final $ConversationToolsTable conversationTools =
       $ConversationToolsTable(this);
   late final $WorkspaceCompactionSettingsTable workspaceCompactionSettings =
       $WorkspaceCompactionSettingsTable(this);
-  late final $SkillCredentialDefinitionsTable skillCredentialDefinitions =
-      $SkillCredentialDefinitionsTable(this);
-  late final $SkillsTable skills = $SkillsTable(this);
   late final $SkillTemplateToolsTable skillTemplateTools =
       $SkillTemplateToolsTable(this);
   late final $ConversationSkillsTable conversationSkills =
@@ -10208,6 +11542,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
+  );
+  late final Index agentSkillsWorkspaceSkill = Index(
+    'agent_skills_workspace_skill',
+    'CREATE UNIQUE INDEX agent_skills_workspace_skill ON agent_skills (agent_id, workspace_skill_id) WHERE workspace_skill_id IS NOT NULL',
+  );
+  late final Index agentSkillsAppSkill = Index(
+    'agent_skills_app_skill',
+    'CREATE UNIQUE INDEX agent_skills_app_skill ON agent_skills (agent_id, app_skill_identifier) WHERE app_skill_identifier IS NOT NULL',
+  );
+  late final Index agentToolsIdentity = Index(
+    'agent_tools_identity',
+    'CREATE UNIQUE INDEX agent_tools_identity ON agent_tools (agent_id, tool_id)',
   );
   late final Index toolsNativeIdentity = Index(
     'tools_native_identity',
@@ -10246,6 +11592,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ConversationDao conversationDao = ConversationDao(
     this as AppDatabase,
   );
+  late final AgentsDao agentsDao = AgentsDao(this as AppDatabase);
+  late final AgentToolsDao agentToolsDao = AgentToolsDao(this as AppDatabase);
   late final MessageDao messageDao = MessageDao(this as AppDatabase);
   late final WorkspaceToolsDao workspaceToolsDao = WorkspaceToolsDao(
     this as AppDatabase,
@@ -10281,19 +11629,25 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceModelSelections,
     apiModelProviders,
     apiModels,
+    agents,
     conversations,
-    messages,
+    skillCredentialDefinitions,
+    skills,
+    agentSkills,
     mcpServers,
     toolsGroups,
     tools,
+    agentTools,
+    messages,
     conversationTools,
     workspaceCompactionSettings,
-    skillCredentialDefinitions,
-    skills,
     skillTemplateTools,
     conversationSkills,
     appSkillWorkspaceSettings,
     workspaceModelSelectionsConnectionModel,
+    agentSkillsWorkspaceSkill,
+    agentSkillsAppSkill,
+    agentToolsIdentity,
     toolsNativeIdentity,
     toolsGroupIdentity,
     toolsGroupsMcpServerId,
@@ -10331,6 +11685,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
+      result: [TableUpdate('agents', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
       result: [TableUpdate('conversations', kind: UpdateKind.delete)],
     ),
     WritePropagation(
@@ -10342,10 +11703,47 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'conversations',
+        'agents',
         limitUpdateKind: UpdateKind.delete,
       ),
-      result: [TableUpdate('messages', kind: UpdateKind.delete)],
+      result: [TableUpdate('conversations', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('skill_credential_definitions', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('skills', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'skill_credential_definitions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('skills', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'agents',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('agent_skills', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'skills',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('agent_skills', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -10391,6 +11789,27 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'agents',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('agent_tools', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'tools',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('agent_tools', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('messages', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'conversations',
         limitUpdateKind: UpdateKind.delete,
       ),
@@ -10411,29 +11830,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('workspace_compaction_settings', kind: UpdateKind.delete),
       ],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'workspaces',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [
-        TableUpdate('skill_credential_definitions', kind: UpdateKind.delete),
-      ],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'workspaces',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skills', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'skill_credential_definitions',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('skills', kind: UpdateKind.update)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -10517,6 +11913,25 @@ final class $$WorkspacesTableReferences
     );
   }
 
+  static MultiTypedResultKey<$AgentsTable, List<AgentsTable>> _agentsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.agents,
+    aliasName: 'workspaces__id__agents__workspace_id',
+  );
+
+  $$AgentsTableProcessedTableManager get agentsRefs {
+    final manager = $$AgentsTableTableManager(
+      $_db,
+      $_db.agents,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_agentsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$ConversationsTable, List<ConversationsTable>>
   _conversationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.conversations,
@@ -10530,6 +11945,50 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $SkillCredentialDefinitionsTable,
+    List<SkillCredentialDefinitionsTable>
+  >
+  _skillCredentialDefinitionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.skillCredentialDefinitions,
+        aliasName: 'workspaces__id__skill_credential_definitions__workspace_id',
+      );
+
+  $$SkillCredentialDefinitionsTableProcessedTableManager
+  get skillCredentialDefinitionsRefs {
+    final manager = $$SkillCredentialDefinitionsTableTableManager(
+      $_db,
+      $_db.skillCredentialDefinitions,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _skillCredentialDefinitionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SkillsTable, List<SkillsTable>> _skillsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.skills,
+    aliasName: 'workspaces__id__skills__workspace_id',
+  );
+
+  $$SkillsTableProcessedTableManager get skillsRefs {
+    final manager = $$SkillsTableTableManager(
+      $_db,
+      $_db.skills,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_skillsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -10611,50 +12070,6 @@ final class $$WorkspacesTableReferences
     final cache = $_typedResult.readTableOrNull(
       _workspaceCompactionSettingsRefsTable($_db),
     );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillCredentialDefinitionsTable,
-    List<SkillCredentialDefinitionsTable>
-  >
-  _skillCredentialDefinitionsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillCredentialDefinitions,
-        aliasName: 'workspaces__id__skill_credential_definitions__workspace_id',
-      );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager
-  get skillCredentialDefinitionsRefs {
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillCredentialDefinitionsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$SkillsTable, List<SkillsTable>> _skillsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.skills,
-    aliasName: 'workspaces__id__skills__workspace_id',
-  );
-
-  $$SkillsTableProcessedTableManager get skillsRefs {
-    final manager = $$SkillsTableTableManager(
-      $_db,
-      $_db.skills,
-    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_skillsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -10751,6 +12166,31 @@ class $$WorkspacesTableFilterComposer
     return f(composer);
   }
 
+  Expression<bool> agentsRefs(
+    Expression<bool> Function($$AgentsTableFilterComposer f) f,
+  ) {
+    final $$AgentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableFilterComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<bool> conversationsRefs(
     Expression<bool> Function($$ConversationsTableFilterComposer f) f,
   ) {
@@ -10767,6 +12207,58 @@ class $$WorkspacesTableFilterComposer
           }) => $$ConversationsTableFilterComposer(
             $db: $db,
             $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> skillCredentialDefinitionsRefs(
+    Expression<bool> Function($$SkillCredentialDefinitionsTableFilterComposer f)
+    f,
+  ) {
+    final $$SkillCredentialDefinitionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.skillCredentialDefinitions,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SkillCredentialDefinitionsTableFilterComposer(
+                $db: $db,
+                $table: $db.skillCredentialDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> skillsRefs(
+    Expression<bool> Function($$SkillsTableFilterComposer f) f,
+  ) {
+    final $$SkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.skills,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -10877,58 +12369,6 @@ class $$WorkspacesTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
-    return f(composer);
-  }
-
-  Expression<bool> skillCredentialDefinitionsRefs(
-    Expression<bool> Function($$SkillCredentialDefinitionsTableFilterComposer f)
-    f,
-  ) {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.workspaceId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<bool> skillsRefs(
-    Expression<bool> Function($$SkillsTableFilterComposer f) f,
-  ) {
-    final $$SkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.workspaceId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
     return f(composer);
   }
 
@@ -11053,6 +12493,31 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> agentsRefs<T extends Object>(
+    Expression<T> Function($$AgentsTableAnnotationComposer a) f,
+  ) {
+    final $$AgentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> conversationsRefs<T extends Object>(
     Expression<T> Function($$ConversationsTableAnnotationComposer a) f,
   ) {
@@ -11069,6 +12534,60 @@ class $$WorkspacesTableAnnotationComposer
           }) => $$ConversationsTableAnnotationComposer(
             $db: $db,
             $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> skillCredentialDefinitionsRefs<T extends Object>(
+    Expression<T> Function(
+      $$SkillCredentialDefinitionsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.skillCredentialDefinitions,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.skillCredentialDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> skillsRefs<T extends Object>(
+    Expression<T> Function($$SkillsTableAnnotationComposer a) f,
+  ) {
+    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.skills,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11182,60 +12701,6 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> skillCredentialDefinitionsRefs<T extends Object>(
-    Expression<T> Function(
-      $$SkillCredentialDefinitionsTableAnnotationComposer a,
-    )
-    f,
-  ) {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.workspaceId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<T> skillsRefs<T extends Object>(
-    Expression<T> Function($$SkillsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.workspaceId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<T> appSkillWorkspaceSettingsRefs<T extends Object>(
     Expression<T> Function($$AppSkillWorkspaceSettingsTableAnnotationComposer a)
     f,
@@ -11279,13 +12744,14 @@ class $$WorkspacesTableTableManager
           WorkspacesTable,
           PrefetchHooks Function({
             bool serviceConnectionsRefs,
+            bool agentsRefs,
             bool conversationsRefs,
+            bool skillCredentialDefinitionsRefs,
+            bool skillsRefs,
             bool mcpServersRefs,
             bool toolsGroupsRefs,
             bool toolsRefs,
             bool workspaceCompactionSettingsRefs,
-            bool skillCredentialDefinitionsRefs,
-            bool skillsRefs,
             bool appSkillWorkspaceSettingsRefs,
           })
         > {
@@ -11347,28 +12813,30 @@ class $$WorkspacesTableTableManager
           prefetchHooksCallback:
               ({
                 serviceConnectionsRefs = false,
+                agentsRefs = false,
                 conversationsRefs = false,
+                skillCredentialDefinitionsRefs = false,
+                skillsRefs = false,
                 mcpServersRefs = false,
                 toolsGroupsRefs = false,
                 toolsRefs = false,
                 workspaceCompactionSettingsRefs = false,
-                skillCredentialDefinitionsRefs = false,
-                skillsRefs = false,
                 appSkillWorkspaceSettingsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (serviceConnectionsRefs) db.serviceConnections,
+                    if (agentsRefs) db.agents,
                     if (conversationsRefs) db.conversations,
+                    if (skillCredentialDefinitionsRefs)
+                      db.skillCredentialDefinitions,
+                    if (skillsRefs) db.skills,
                     if (mcpServersRefs) db.mcpServers,
                     if (toolsGroupsRefs) db.toolsGroups,
                     if (toolsRefs) db.tools,
                     if (workspaceCompactionSettingsRefs)
                       db.workspaceCompactionSettings,
-                    if (skillCredentialDefinitionsRefs)
-                      db.skillCredentialDefinitions,
-                    if (skillsRefs) db.skills,
                     if (appSkillWorkspaceSettingsRefs)
                       db.appSkillWorkspaceSettings,
                   ],
@@ -11396,6 +12864,27 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (agentsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          AgentsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._agentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).agentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (conversationsRefs)
                         await $_getPrefetchedData<
                           WorkspacesTable,
@@ -11411,6 +12900,48 @@ class $$WorkspacesTableTableManager
                                 table,
                                 p0,
                               ).conversationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (skillCredentialDefinitionsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          SkillCredentialDefinitionsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._skillCredentialDefinitionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).skillCredentialDefinitionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (skillsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          SkillsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._skillsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).skillsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -11501,48 +13032,6 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (skillCredentialDefinitionsRefs)
-                        await $_getPrefetchedData<
-                          WorkspacesTable,
-                          $WorkspacesTable,
-                          SkillCredentialDefinitionsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$WorkspacesTableReferences
-                              ._skillCredentialDefinitionsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WorkspacesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillCredentialDefinitionsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.workspaceId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (skillsRefs)
-                        await $_getPrefetchedData<
-                          WorkspacesTable,
-                          $WorkspacesTable,
-                          SkillsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$WorkspacesTableReferences
-                              ._skillsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$WorkspacesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.workspaceId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                       if (appSkillWorkspaceSettingsRefs)
                         await $_getPrefetchedData<
                           WorkspacesTable,
@@ -11586,13 +13075,14 @@ typedef $$WorkspacesTableProcessedTableManager =
       WorkspacesTable,
       PrefetchHooks Function({
         bool serviceConnectionsRefs,
+        bool agentsRefs,
         bool conversationsRefs,
+        bool skillCredentialDefinitionsRefs,
+        bool skillsRefs,
         bool mcpServersRefs,
         bool toolsGroupsRefs,
         bool toolsRefs,
         bool workspaceCompactionSettingsRefs,
-        bool skillCredentialDefinitionsRefs,
-        bool skillsRefs,
         bool appSkillWorkspaceSettingsRefs,
       })
     >;
@@ -13720,6 +15210,628 @@ typedef $$ApiModelsTableProcessedTableManager =
       ApiModelsTable,
       PrefetchHooks Function({bool modelProvider})
     >;
+typedef $$AgentsTableCreateCompanionBuilder =
+    AgentsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String name,
+      required String content,
+      Value<int> rowid,
+    });
+typedef $$AgentsTableUpdateCompanionBuilder =
+    AgentsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> name,
+      Value<String> content,
+      Value<int> rowid,
+    });
+
+final class $$AgentsTableReferences
+    extends BaseReferences<_$AppDatabase, $AgentsTable, AgentsTable> {
+  $$AgentsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias('agents__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$ConversationsTable, List<ConversationsTable>>
+  _conversationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.conversations,
+    aliasName: 'agents__id__conversations__agent_id',
+  );
+
+  $$ConversationsTableProcessedTableManager get conversationsRefs {
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.agentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AgentSkillsTable, List<AgentSkillsTable>>
+  _agentSkillsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.agentSkills,
+    aliasName: 'agents__id__agent_skills__agent_id',
+  );
+
+  $$AgentSkillsTableProcessedTableManager get agentSkillsRefs {
+    final manager = $$AgentSkillsTableTableManager(
+      $_db,
+      $_db.agentSkills,
+    ).filter((f) => f.agentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_agentSkillsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AgentToolsTable, List<AgentToolsTable>>
+  _agentToolsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.agentTools,
+    aliasName: 'agents__id__agent_tools__agent_id',
+  );
+
+  $$AgentToolsTableProcessedTableManager get agentToolsRefs {
+    final manager = $$AgentToolsTableTableManager(
+      $_db,
+      $_db.agentTools,
+    ).filter((f) => f.agentId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_agentToolsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$AgentsTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentsTable> {
+  $$AgentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> conversationsRefs(
+    Expression<bool> Function($$ConversationsTableFilterComposer f) f,
+  ) {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.agentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> agentSkillsRefs(
+    Expression<bool> Function($$AgentSkillsTableFilterComposer f) f,
+  ) {
+    final $$AgentSkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentSkills,
+      getReferencedColumn: (t) => t.agentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentSkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.agentSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> agentToolsRefs(
+    Expression<bool> Function($$AgentToolsTableFilterComposer f) f,
+  ) {
+    final $$AgentToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentTools,
+      getReferencedColumn: (t) => t.agentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.agentTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$AgentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentsTable> {
+  $$AgentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentsTable> {
+  $$AgentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> conversationsRefs<T extends Object>(
+    Expression<T> Function($$ConversationsTableAnnotationComposer a) f,
+  ) {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.agentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> agentSkillsRefs<T extends Object>(
+    Expression<T> Function($$AgentSkillsTableAnnotationComposer a) f,
+  ) {
+    final $$AgentSkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentSkills,
+      getReferencedColumn: (t) => t.agentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentSkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agentSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> agentToolsRefs<T extends Object>(
+    Expression<T> Function($$AgentToolsTableAnnotationComposer a) f,
+  ) {
+    final $$AgentToolsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentTools,
+      getReferencedColumn: (t) => t.agentId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentToolsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agentTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$AgentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AgentsTable,
+          AgentsTable,
+          $$AgentsTableFilterComposer,
+          $$AgentsTableOrderingComposer,
+          $$AgentsTableAnnotationComposer,
+          $$AgentsTableCreateCompanionBuilder,
+          $$AgentsTableUpdateCompanionBuilder,
+          (AgentsTable, $$AgentsTableReferences),
+          AgentsTable,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool conversationsRefs,
+            bool agentSkillsRefs,
+            bool agentToolsRefs,
+          })
+        > {
+  $$AgentsTableTableManager(_$AppDatabase db, $AgentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AgentsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                name: name,
+                content: content,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String name,
+                required String content,
+                Value<int> rowid = const Value.absent(),
+              }) => AgentsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                name: name,
+                content: content,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$AgentsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                conversationsRefs = false,
+                agentSkillsRefs = false,
+                agentToolsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (conversationsRefs) db.conversations,
+                    if (agentSkillsRefs) db.agentSkills,
+                    if (agentToolsRefs) db.agentTools,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable: $$AgentsTableReferences
+                                        ._workspaceIdTable(db),
+                                    referencedColumn: $$AgentsTableReferences
+                                        ._workspaceIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (conversationsRefs)
+                        await $_getPrefetchedData<
+                          AgentsTable,
+                          $AgentsTable,
+                          ConversationsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AgentsTableReferences
+                              ._conversationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AgentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.agentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (agentSkillsRefs)
+                        await $_getPrefetchedData<
+                          AgentsTable,
+                          $AgentsTable,
+                          AgentSkillsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AgentsTableReferences
+                              ._agentSkillsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AgentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).agentSkillsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.agentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (agentToolsRefs)
+                        await $_getPrefetchedData<
+                          AgentsTable,
+                          $AgentsTable,
+                          AgentToolsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AgentsTableReferences
+                              ._agentToolsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AgentsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).agentToolsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.agentId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$AgentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AgentsTable,
+      AgentsTable,
+      $$AgentsTableFilterComposer,
+      $$AgentsTableOrderingComposer,
+      $$AgentsTableAnnotationComposer,
+      $$AgentsTableCreateCompanionBuilder,
+      $$AgentsTableUpdateCompanionBuilder,
+      (AgentsTable, $$AgentsTableReferences),
+      AgentsTable,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool conversationsRefs,
+        bool agentSkillsRefs,
+        bool agentToolsRefs,
+      })
+    >;
 typedef $$ConversationsTableCreateCompanionBuilder =
     ConversationsCompanion Function({
       Value<String> id,
@@ -13728,6 +15840,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       required String workspaceId,
       required String title,
       Value<String?> modelId,
+      Value<String?> agentId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -13739,6 +15852,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String> workspaceId,
       Value<String> title,
       Value<String?> modelId,
+      Value<String?> agentId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -13781,6 +15895,23 @@ final class $$ConversationsTableReferences
       $_db.workspaceModelSelections,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_modelIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AgentsTable _agentIdTable(_$AppDatabase db) =>
+      db.agents.createAlias('conversations__agent_id__agents__id');
+
+  $$AgentsTableProcessedTableManager? get agentId {
+    final $_column = $_itemColumn<String>('agent_id');
+    if ($_column == null) return null;
+    final manager = $$AgentsTableTableManager(
+      $_db,
+      $_db.agents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_agentIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -13932,6 +16063,29 @@ class $$ConversationsTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return composer;
+  }
+
+  $$AgentsTableFilterComposer get agentId {
+    final $$AgentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableFilterComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return composer;
   }
 
@@ -14091,6 +16245,29 @@ class $$ConversationsTableOrderingComposer
         );
     return composer;
   }
+
+  $$AgentsTableOrderingComposer get agentId {
+    final $$AgentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ConversationsTableAnnotationComposer
@@ -14161,6 +16338,29 @@ class $$ConversationsTableAnnotationComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return composer;
+  }
+
+  $$AgentsTableAnnotationComposer get agentId {
+    final $$AgentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return composer;
   }
 
@@ -14258,6 +16458,7 @@ class $$ConversationsTableTableManager
           PrefetchHooks Function({
             bool workspaceId,
             bool modelId,
+            bool agentId,
             bool messagesRefs,
             bool conversationToolsRefs,
             bool conversationSkillsRefs,
@@ -14282,6 +16483,7 @@ class $$ConversationsTableTableManager
                 Value<String> workspaceId = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String?> modelId = const Value.absent(),
+                Value<String?> agentId = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -14291,6 +16493,7 @@ class $$ConversationsTableTableManager
                 workspaceId: workspaceId,
                 title: title,
                 modelId: modelId,
+                agentId: agentId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -14302,6 +16505,7 @@ class $$ConversationsTableTableManager
                 required String workspaceId,
                 required String title,
                 Value<String?> modelId = const Value.absent(),
+                Value<String?> agentId = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -14311,6 +16515,7 @@ class $$ConversationsTableTableManager
                 workspaceId: workspaceId,
                 title: title,
                 modelId: modelId,
+                agentId: agentId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -14326,6 +16531,7 @@ class $$ConversationsTableTableManager
               ({
                 workspaceId = false,
                 modelId = false,
+                agentId = false,
                 messagesRefs = false,
                 conversationToolsRefs = false,
                 conversationSkillsRefs = false,
@@ -14379,6 +16585,21 @@ class $$ConversationsTableTableManager
                                     referencedColumn:
                                         $$ConversationsTableReferences
                                             ._modelIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (agentId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.agentId,
+                                    referencedTable:
+                                        $$ConversationsTableReferences
+                                            ._agentIdTable(db),
+                                    referencedColumn:
+                                        $$ConversationsTableReferences
+                                            ._agentIdTable(db)
                                             .id,
                                   )
                                   as T;
@@ -14474,64 +16695,90 @@ typedef $$ConversationsTableProcessedTableManager =
       PrefetchHooks Function({
         bool workspaceId,
         bool modelId,
+        bool agentId,
         bool messagesRefs,
         bool conversationToolsRefs,
         bool conversationSkillsRefs,
       })
     >;
-typedef $$MessagesTableCreateCompanionBuilder =
-    MessagesCompanion Function({
+typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
+    SkillCredentialDefinitionsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      required String conversationId,
-      required String content,
-      required MessagesTableType messageType,
-      required bool isUser,
-      required MessageTableStatus status,
-      Value<String?> metadata,
+      required String workspaceId,
+      required String title,
+      required String slug,
+      required String attributesJson,
       Value<int> rowid,
     });
-typedef $$MessagesTableUpdateCompanionBuilder =
-    MessagesCompanion Function({
+typedef $$SkillCredentialDefinitionsTableUpdateCompanionBuilder =
+    SkillCredentialDefinitionsCompanion Function({
       Value<String> id,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
-      Value<String> conversationId,
-      Value<String> content,
-      Value<MessagesTableType> messageType,
-      Value<bool> isUser,
-      Value<MessageTableStatus> status,
-      Value<String?> metadata,
+      Value<String> workspaceId,
+      Value<String> title,
+      Value<String> slug,
+      Value<String> attributesJson,
       Value<int> rowid,
     });
 
-final class $$MessagesTableReferences
-    extends BaseReferences<_$AppDatabase, $MessagesTable, MessagesTable> {
-  $$MessagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+final class $$SkillCredentialDefinitionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SkillCredentialDefinitionsTable,
+          SkillCredentialDefinitionsTable
+        > {
+  $$SkillCredentialDefinitionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
 
-  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
-      .conversations
-      .createAlias('messages__conversation_id__conversations__id');
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        'skill_credential_definitions__workspace_id__workspaces__id',
+      );
 
-  $$ConversationsTableProcessedTableManager get conversationId {
-    final $_column = $_itemColumn<String>('conversation_id')!;
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
 
-    final manager = $$ConversationsTableTableManager(
+    final manager = $$WorkspacesTableTableManager(
       $_db,
-      $_db.conversations,
+      $_db.workspaces,
     ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$SkillsTable, List<SkillsTable>> _skillsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.skills,
+    aliasName:
+        'skill_credential_definitions__id__skills__credential_definition_id',
+  );
+
+  $$SkillsTableProcessedTableManager get skillsRefs {
+    final manager = $$SkillsTableTableManager($_db, $_db.skills).filter(
+      (f) => f.credentialDefinitionId.id.sqlEquals($_itemColumn<String>('id')!),
+    );
+
+    final cache = $_typedResult.readTableOrNull(_skillsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
-class $$MessagesTableFilterComposer
-    extends Composer<_$AppDatabase, $MessagesTable> {
-  $$MessagesTableFilterComposer({
+class $$SkillCredentialDefinitionsTableFilterComposer
+    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
+  $$SkillCredentialDefinitionsTableFilterComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -14553,47 +16800,35 @@ class $$MessagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get content => $composableBuilder(
-    column: $table.content,
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<MessagesTableType, MessagesTableType, String>
-  get messageType => $composableBuilder(
-    column: $table.messageType,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<bool> get isUser => $composableBuilder(
-    column: $table.isUser,
+  ColumnFilters<String> get slug => $composableBuilder(
+    column: $table.slug,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<MessageTableStatus, MessageTableStatus, String>
-  get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<String> get metadata => $composableBuilder(
-    column: $table.metadata,
+  ColumnFilters<String> get attributesJson => $composableBuilder(
+    column: $table.attributesJson,
     builder: (column) => ColumnFilters(column),
   );
 
-  $$ConversationsTableFilterComposer get conversationId {
-    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.conversationId,
-      referencedTable: $db.conversations,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$ConversationsTableFilterComposer(
+          }) => $$WorkspacesTableFilterComposer(
             $db: $db,
-            $table: $db.conversations,
+            $table: $db.workspaces,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14602,11 +16837,36 @@ class $$MessagesTableFilterComposer
     );
     return composer;
   }
+
+  Expression<bool> skillsRefs(
+    Expression<bool> Function($$SkillsTableFilterComposer f) f,
+  ) {
+    final $$SkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.credentialDefinitionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
-class $$MessagesTableOrderingComposer
-    extends Composer<_$AppDatabase, $MessagesTable> {
-  $$MessagesTableOrderingComposer({
+class $$SkillCredentialDefinitionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
+  $$SkillCredentialDefinitionsTableOrderingComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -14628,45 +16888,35 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get content => $composableBuilder(
-    column: $table.content,
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get messageType => $composableBuilder(
-    column: $table.messageType,
+  ColumnOrderings<String> get slug => $composableBuilder(
+    column: $table.slug,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isUser => $composableBuilder(
-    column: $table.isUser,
+  ColumnOrderings<String> get attributesJson => $composableBuilder(
+    column: $table.attributesJson,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get status => $composableBuilder(
-    column: $table.status,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get metadata => $composableBuilder(
-    column: $table.metadata,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$ConversationsTableOrderingComposer get conversationId {
-    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.conversationId,
-      referencedTable: $db.conversations,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$ConversationsTableOrderingComposer(
+          }) => $$WorkspacesTableOrderingComposer(
             $db: $db,
-            $table: $db.conversations,
+            $table: $db.workspaces,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14677,9 +16927,9 @@ class $$MessagesTableOrderingComposer
   }
 }
 
-class $$MessagesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $MessagesTable> {
-  $$MessagesTableAnnotationComposer({
+class $$SkillCredentialDefinitionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
+  $$SkillCredentialDefinitionsTableAnnotationComposer({
     required super.$db,
     required super.$table,
     super.joinBuilder,
@@ -14695,38 +16945,1244 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
 
-  GeneratedColumn<String> get content =>
-      $composableBuilder(column: $table.content, builder: (column) => column);
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<MessagesTableType, String> get messageType =>
-      $composableBuilder(
-        column: $table.messageType,
-        builder: (column) => column,
-      );
+  GeneratedColumn<String> get slug =>
+      $composableBuilder(column: $table.slug, builder: (column) => column);
 
-  GeneratedColumn<bool> get isUser =>
-      $composableBuilder(column: $table.isUser, builder: (column) => column);
+  GeneratedColumn<String> get attributesJson => $composableBuilder(
+    column: $table.attributesJson,
+    builder: (column) => column,
+  );
 
-  GeneratedColumnWithTypeConverter<MessageTableStatus, String> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => column);
-
-  GeneratedColumn<String> get metadata =>
-      $composableBuilder(column: $table.metadata, builder: (column) => column);
-
-  $$ConversationsTableAnnotationComposer get conversationId {
-    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
       composer: this,
-      getCurrentColumn: (t) => t.conversationId,
-      referencedTable: $db.conversations,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
       getReferencedColumn: (t) => t.id,
       builder:
           (
             joinBuilder, {
             $addJoinBuilderToRootComposer,
             $removeJoinBuilderFromRootComposer,
-          }) => $$ConversationsTableAnnotationComposer(
+          }) => $$WorkspacesTableAnnotationComposer(
             $db: $db,
-            $table: $db.conversations,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> skillsRefs<T extends Object>(
+    Expression<T> Function($$SkillsTableAnnotationComposer a) f,
+  ) {
+    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.credentialDefinitionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SkillCredentialDefinitionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SkillCredentialDefinitionsTable,
+          SkillCredentialDefinitionsTable,
+          $$SkillCredentialDefinitionsTableFilterComposer,
+          $$SkillCredentialDefinitionsTableOrderingComposer,
+          $$SkillCredentialDefinitionsTableAnnotationComposer,
+          $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
+          $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
+          (
+            SkillCredentialDefinitionsTable,
+            $$SkillCredentialDefinitionsTableReferences,
+          ),
+          SkillCredentialDefinitionsTable,
+          PrefetchHooks Function({bool workspaceId, bool skillsRefs})
+        > {
+  $$SkillCredentialDefinitionsTableTableManager(
+    _$AppDatabase db,
+    $SkillCredentialDefinitionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SkillCredentialDefinitionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$SkillCredentialDefinitionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SkillCredentialDefinitionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> slug = const Value.absent(),
+                Value<String> attributesJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SkillCredentialDefinitionsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                title: title,
+                slug: slug,
+                attributesJson: attributesJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String title,
+                required String slug,
+                required String attributesJson,
+                Value<int> rowid = const Value.absent(),
+              }) => SkillCredentialDefinitionsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                title: title,
+                slug: slug,
+                attributesJson: attributesJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SkillCredentialDefinitionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false, skillsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (skillsRefs) db.skills],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.workspaceId,
+                                referencedTable:
+                                    $$SkillCredentialDefinitionsTableReferences
+                                        ._workspaceIdTable(db),
+                                referencedColumn:
+                                    $$SkillCredentialDefinitionsTableReferences
+                                        ._workspaceIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (skillsRefs)
+                    await $_getPrefetchedData<
+                      SkillCredentialDefinitionsTable,
+                      $SkillCredentialDefinitionsTable,
+                      SkillsTable
+                    >(
+                      currentTable: table,
+                      referencedTable:
+                          $$SkillCredentialDefinitionsTableReferences
+                              ._skillsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$SkillCredentialDefinitionsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).skillsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.credentialDefinitionId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SkillCredentialDefinitionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SkillCredentialDefinitionsTable,
+      SkillCredentialDefinitionsTable,
+      $$SkillCredentialDefinitionsTableFilterComposer,
+      $$SkillCredentialDefinitionsTableOrderingComposer,
+      $$SkillCredentialDefinitionsTableAnnotationComposer,
+      $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
+      $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
+      (
+        SkillCredentialDefinitionsTable,
+        $$SkillCredentialDefinitionsTableReferences,
+      ),
+      SkillCredentialDefinitionsTable,
+      PrefetchHooks Function({bool workspaceId, bool skillsRefs})
+    >;
+typedef $$SkillsTableCreateCompanionBuilder =
+    SkillsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required SkillSourceTable source,
+      required SkillKindTable kind,
+      required String title,
+      required String slug,
+      required String description,
+      required String content,
+      Value<String?> credentialDefinitionId,
+      Value<bool> isCredentialOptional,
+      Value<bool> isEnabled,
+      Value<int> rowid,
+    });
+typedef $$SkillsTableUpdateCompanionBuilder =
+    SkillsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<SkillSourceTable> source,
+      Value<SkillKindTable> kind,
+      Value<String> title,
+      Value<String> slug,
+      Value<String> description,
+      Value<String> content,
+      Value<String?> credentialDefinitionId,
+      Value<bool> isCredentialOptional,
+      Value<bool> isEnabled,
+      Value<int> rowid,
+    });
+
+final class $$SkillsTableReferences
+    extends BaseReferences<_$AppDatabase, $SkillsTable, SkillsTable> {
+  $$SkillsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias('skills__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
+    _$AppDatabase db,
+  ) => db.skillCredentialDefinitions.createAlias(
+    'skills__credential_definition_id__skill_credential_definitions__id',
+  );
+
+  $$SkillCredentialDefinitionsTableProcessedTableManager?
+  get credentialDefinitionId {
+    final $_column = $_itemColumn<String>('credential_definition_id');
+    if ($_column == null) return null;
+    final manager = $$SkillCredentialDefinitionsTableTableManager(
+      $_db,
+      $_db.skillCredentialDefinitions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _credentialDefinitionIdTable($_db),
+    );
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$AgentSkillsTable, List<AgentSkillsTable>>
+  _agentSkillsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.agentSkills,
+    aliasName: 'skills__id__agent_skills__workspace_skill_id',
+  );
+
+  $$AgentSkillsTableProcessedTableManager get agentSkillsRefs {
+    final manager = $$AgentSkillsTableTableManager($_db, $_db.agentSkills)
+        .filter(
+          (f) => f.workspaceSkillId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_agentSkillsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $SkillTemplateToolsTable,
+    List<SkillTemplateToolsTable>
+  >
+  _skillTemplateToolsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.skillTemplateTools,
+        aliasName: 'skills__id__skill_template_tools__skill_id',
+      );
+
+  $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
+    final manager = $$SkillTemplateToolsTableTableManager(
+      $_db,
+      $_db.skillTemplateTools,
+    ).filter((f) => f.skillId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _skillTemplateToolsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConversationSkillsTable,
+    List<ConversationSkillsTable>
+  >
+  _conversationSkillsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.conversationSkills,
+        aliasName: 'skills__id__conversation_skills__workspace_skill_id',
+      );
+
+  $$ConversationSkillsTableProcessedTableManager get conversationSkillsRefs {
+    final manager =
+        $$ConversationSkillsTableTableManager(
+          $_db,
+          $_db.conversationSkills,
+        ).filter(
+          (f) => f.workspaceSkillId.id.sqlEquals($_itemColumn<String>('id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationSkillsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$SkillsTableFilterComposer
+    extends Composer<_$AppDatabase, $SkillsTable> {
+  $$SkillsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SkillSourceTable, SkillSourceTable, String>
+  get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SkillKindTable, SkillKindTable, String>
+  get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isCredentialOptional => $composableBuilder(
+    column: $table.isCredentialOptional,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SkillCredentialDefinitionsTableFilterComposer get credentialDefinitionId {
+    final $$SkillCredentialDefinitionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.credentialDefinitionId,
+          referencedTable: $db.skillCredentialDefinitions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SkillCredentialDefinitionsTableFilterComposer(
+                $db: $db,
+                $table: $db.skillCredentialDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  Expression<bool> agentSkillsRefs(
+    Expression<bool> Function($$AgentSkillsTableFilterComposer f) f,
+  ) {
+    final $$AgentSkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentSkills,
+      getReferencedColumn: (t) => t.workspaceSkillId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentSkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.agentSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> skillTemplateToolsRefs(
+    Expression<bool> Function($$SkillTemplateToolsTableFilterComposer f) f,
+  ) {
+    final $$SkillTemplateToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.skillTemplateTools,
+      getReferencedColumn: (t) => t.skillId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillTemplateToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.skillTemplateTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> conversationSkillsRefs(
+    Expression<bool> Function($$ConversationSkillsTableFilterComposer f) f,
+  ) {
+    final $$ConversationSkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversationSkills,
+      getReferencedColumn: (t) => t.workspaceSkillId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationSkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversationSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$SkillsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SkillsTable> {
+  $$SkillsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get slug => $composableBuilder(
+    column: $table.slug,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isCredentialOptional => $composableBuilder(
+    column: $table.isCredentialOptional,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SkillCredentialDefinitionsTableOrderingComposer get credentialDefinitionId {
+    final $$SkillCredentialDefinitionsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.credentialDefinitionId,
+          referencedTable: $db.skillCredentialDefinitions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SkillCredentialDefinitionsTableOrderingComposer(
+                $db: $db,
+                $table: $db.skillCredentialDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$SkillsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SkillsTable> {
+  $$SkillsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<SkillSourceTable, String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<SkillKindTable, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get slug =>
+      $composableBuilder(column: $table.slug, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<bool> get isCredentialOptional => $composableBuilder(
+    column: $table.isCredentialOptional,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SkillCredentialDefinitionsTableAnnotationComposer
+  get credentialDefinitionId {
+    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.credentialDefinitionId,
+          referencedTable: $db.skillCredentialDefinitions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.skillCredentialDefinitions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  Expression<T> agentSkillsRefs<T extends Object>(
+    Expression<T> Function($$AgentSkillsTableAnnotationComposer a) f,
+  ) {
+    final $$AgentSkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentSkills,
+      getReferencedColumn: (t) => t.workspaceSkillId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentSkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agentSkills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> skillTemplateToolsRefs<T extends Object>(
+    Expression<T> Function($$SkillTemplateToolsTableAnnotationComposer a) f,
+  ) {
+    final $$SkillTemplateToolsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.skillTemplateTools,
+          getReferencedColumn: (t) => t.skillId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SkillTemplateToolsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.skillTemplateTools,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> conversationSkillsRefs<T extends Object>(
+    Expression<T> Function($$ConversationSkillsTableAnnotationComposer a) f,
+  ) {
+    final $$ConversationSkillsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationSkills,
+          getReferencedColumn: (t) => t.workspaceSkillId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationSkillsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationSkills,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$SkillsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SkillsTable,
+          SkillsTable,
+          $$SkillsTableFilterComposer,
+          $$SkillsTableOrderingComposer,
+          $$SkillsTableAnnotationComposer,
+          $$SkillsTableCreateCompanionBuilder,
+          $$SkillsTableUpdateCompanionBuilder,
+          (SkillsTable, $$SkillsTableReferences),
+          SkillsTable,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool credentialDefinitionId,
+            bool agentSkillsRefs,
+            bool skillTemplateToolsRefs,
+            bool conversationSkillsRefs,
+          })
+        > {
+  $$SkillsTableTableManager(_$AppDatabase db, $SkillsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SkillsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SkillsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SkillsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<SkillSourceTable> source = const Value.absent(),
+                Value<SkillKindTable> kind = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> slug = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> credentialDefinitionId = const Value.absent(),
+                Value<bool> isCredentialOptional = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SkillsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                source: source,
+                kind: kind,
+                title: title,
+                slug: slug,
+                description: description,
+                content: content,
+                credentialDefinitionId: credentialDefinitionId,
+                isCredentialOptional: isCredentialOptional,
+                isEnabled: isEnabled,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required SkillSourceTable source,
+                required SkillKindTable kind,
+                required String title,
+                required String slug,
+                required String description,
+                required String content,
+                Value<String?> credentialDefinitionId = const Value.absent(),
+                Value<bool> isCredentialOptional = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SkillsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                source: source,
+                kind: kind,
+                title: title,
+                slug: slug,
+                description: description,
+                content: content,
+                credentialDefinitionId: credentialDefinitionId,
+                isCredentialOptional: isCredentialOptional,
+                isEnabled: isEnabled,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$SkillsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                credentialDefinitionId = false,
+                agentSkillsRefs = false,
+                skillTemplateToolsRefs = false,
+                conversationSkillsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (agentSkillsRefs) db.agentSkills,
+                    if (skillTemplateToolsRefs) db.skillTemplateTools,
+                    if (conversationSkillsRefs) db.conversationSkills,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.workspaceId,
+                                    referencedTable: $$SkillsTableReferences
+                                        ._workspaceIdTable(db),
+                                    referencedColumn: $$SkillsTableReferences
+                                        ._workspaceIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (credentialDefinitionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.credentialDefinitionId,
+                                    referencedTable: $$SkillsTableReferences
+                                        ._credentialDefinitionIdTable(db),
+                                    referencedColumn: $$SkillsTableReferences
+                                        ._credentialDefinitionIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (agentSkillsRefs)
+                        await $_getPrefetchedData<
+                          SkillsTable,
+                          $SkillsTable,
+                          AgentSkillsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SkillsTableReferences
+                              ._agentSkillsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SkillsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).agentSkillsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceSkillId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (skillTemplateToolsRefs)
+                        await $_getPrefetchedData<
+                          SkillsTable,
+                          $SkillsTable,
+                          SkillTemplateToolsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SkillsTableReferences
+                              ._skillTemplateToolsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SkillsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).skillTemplateToolsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.skillId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (conversationSkillsRefs)
+                        await $_getPrefetchedData<
+                          SkillsTable,
+                          $SkillsTable,
+                          ConversationSkillsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$SkillsTableReferences
+                              ._conversationSkillsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$SkillsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationSkillsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceSkillId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$SkillsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SkillsTable,
+      SkillsTable,
+      $$SkillsTableFilterComposer,
+      $$SkillsTableOrderingComposer,
+      $$SkillsTableAnnotationComposer,
+      $$SkillsTableCreateCompanionBuilder,
+      $$SkillsTableUpdateCompanionBuilder,
+      (SkillsTable, $$SkillsTableReferences),
+      SkillsTable,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool credentialDefinitionId,
+        bool agentSkillsRefs,
+        bool skillTemplateToolsRefs,
+        bool conversationSkillsRefs,
+      })
+    >;
+typedef $$AgentSkillsTableCreateCompanionBuilder =
+    AgentSkillsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String agentId,
+      Value<String?> workspaceSkillId,
+      Value<String?> appSkillIdentifier,
+      Value<int> rowid,
+    });
+typedef $$AgentSkillsTableUpdateCompanionBuilder =
+    AgentSkillsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> agentId,
+      Value<String?> workspaceSkillId,
+      Value<String?> appSkillIdentifier,
+      Value<int> rowid,
+    });
+
+final class $$AgentSkillsTableReferences
+    extends BaseReferences<_$AppDatabase, $AgentSkillsTable, AgentSkillsTable> {
+  $$AgentSkillsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AgentsTable _agentIdTable(_$AppDatabase db) =>
+      db.agents.createAlias('agent_skills__agent_id__agents__id');
+
+  $$AgentsTableProcessedTableManager get agentId {
+    final $_column = $_itemColumn<String>('agent_id')!;
+
+    final manager = $$AgentsTableTableManager(
+      $_db,
+      $_db.agents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_agentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SkillsTable _workspaceSkillIdTable(_$AppDatabase db) =>
+      db.skills.createAlias('agent_skills__workspace_skill_id__skills__id');
+
+  $$SkillsTableProcessedTableManager? get workspaceSkillId {
+    final $_column = $_itemColumn<String>('workspace_skill_id');
+    if ($_column == null) return null;
+    final manager = $$SkillsTableTableManager(
+      $_db,
+      $_db.skills,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceSkillIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AgentSkillsTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentSkillsTable> {
+  $$AgentSkillsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appSkillIdentifier => $composableBuilder(
+    column: $table.appSkillIdentifier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AgentsTableFilterComposer get agentId {
+    final $$AgentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableFilterComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SkillsTableFilterComposer get workspaceSkillId {
+    final $$SkillsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceSkillId,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableFilterComposer(
+            $db: $db,
+            $table: $db.skills,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -14737,54 +18193,194 @@ class $$MessagesTableAnnotationComposer
   }
 }
 
-class $$MessagesTableTableManager
+class $$AgentSkillsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentSkillsTable> {
+  $$AgentSkillsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appSkillIdentifier => $composableBuilder(
+    column: $table.appSkillIdentifier,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AgentsTableOrderingComposer get agentId {
+    final $$AgentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SkillsTableOrderingComposer get workspaceSkillId {
+    final $$SkillsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceSkillId,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableOrderingComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentSkillsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentSkillsTable> {
+  $$AgentSkillsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get appSkillIdentifier => $composableBuilder(
+    column: $table.appSkillIdentifier,
+    builder: (column) => column,
+  );
+
+  $$AgentsTableAnnotationComposer get agentId {
+    final $$AgentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SkillsTableAnnotationComposer get workspaceSkillId {
+    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceSkillId,
+      referencedTable: $db.skills,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SkillsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.skills,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentSkillsTableTableManager
     extends
         RootTableManager<
           _$AppDatabase,
-          $MessagesTable,
-          MessagesTable,
-          $$MessagesTableFilterComposer,
-          $$MessagesTableOrderingComposer,
-          $$MessagesTableAnnotationComposer,
-          $$MessagesTableCreateCompanionBuilder,
-          $$MessagesTableUpdateCompanionBuilder,
-          (MessagesTable, $$MessagesTableReferences),
-          MessagesTable,
-          PrefetchHooks Function({bool conversationId})
+          $AgentSkillsTable,
+          AgentSkillsTable,
+          $$AgentSkillsTableFilterComposer,
+          $$AgentSkillsTableOrderingComposer,
+          $$AgentSkillsTableAnnotationComposer,
+          $$AgentSkillsTableCreateCompanionBuilder,
+          $$AgentSkillsTableUpdateCompanionBuilder,
+          (AgentSkillsTable, $$AgentSkillsTableReferences),
+          AgentSkillsTable,
+          PrefetchHooks Function({bool agentId, bool workspaceSkillId})
         > {
-  $$MessagesTableTableManager(_$AppDatabase db, $MessagesTable table)
+  $$AgentSkillsTableTableManager(_$AppDatabase db, $AgentSkillsTable table)
     : super(
         TableManagerState(
           db: db,
           table: table,
           createFilteringComposer: () =>
-              $$MessagesTableFilterComposer($db: db, $table: table),
+              $$AgentSkillsTableFilterComposer($db: db, $table: table),
           createOrderingComposer: () =>
-              $$MessagesTableOrderingComposer($db: db, $table: table),
+              $$AgentSkillsTableOrderingComposer($db: db, $table: table),
           createComputedFieldComposer: () =>
-              $$MessagesTableAnnotationComposer($db: db, $table: table),
+              $$AgentSkillsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> conversationId = const Value.absent(),
-                Value<String> content = const Value.absent(),
-                Value<MessagesTableType> messageType = const Value.absent(),
-                Value<bool> isUser = const Value.absent(),
-                Value<MessageTableStatus> status = const Value.absent(),
-                Value<String?> metadata = const Value.absent(),
+                Value<String> agentId = const Value.absent(),
+                Value<String?> workspaceSkillId = const Value.absent(),
+                Value<String?> appSkillIdentifier = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => MessagesCompanion(
+              }) => AgentSkillsCompanion(
                 id: id,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                conversationId: conversationId,
-                content: content,
-                messageType: messageType,
-                isUser: isUser,
-                status: status,
-                metadata: metadata,
+                agentId: agentId,
+                workspaceSkillId: workspaceSkillId,
+                appSkillIdentifier: appSkillIdentifier,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -14792,34 +18388,28 @@ class $$MessagesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
-                required String conversationId,
-                required String content,
-                required MessagesTableType messageType,
-                required bool isUser,
-                required MessageTableStatus status,
-                Value<String?> metadata = const Value.absent(),
+                required String agentId,
+                Value<String?> workspaceSkillId = const Value.absent(),
+                Value<String?> appSkillIdentifier = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => MessagesCompanion.insert(
+              }) => AgentSkillsCompanion.insert(
                 id: id,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
-                conversationId: conversationId,
-                content: content,
-                messageType: messageType,
-                isUser: isUser,
-                status: status,
-                metadata: metadata,
+                agentId: agentId,
+                workspaceSkillId: workspaceSkillId,
+                appSkillIdentifier: appSkillIdentifier,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
                   e.readTable(table),
-                  $$MessagesTableReferences(db, table, e),
+                  $$AgentSkillsTableReferences(db, table, e),
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({conversationId = false}) {
+          prefetchHooksCallback: ({agentId = false, workspaceSkillId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -14839,15 +18429,28 @@ class $$MessagesTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (conversationId) {
+                    if (agentId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.conversationId,
-                                referencedTable: $$MessagesTableReferences
-                                    ._conversationIdTable(db),
-                                referencedColumn: $$MessagesTableReferences
-                                    ._conversationIdTable(db)
+                                currentColumn: table.agentId,
+                                referencedTable: $$AgentSkillsTableReferences
+                                    ._agentIdTable(db),
+                                referencedColumn: $$AgentSkillsTableReferences
+                                    ._agentIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (workspaceSkillId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.workspaceSkillId,
+                                referencedTable: $$AgentSkillsTableReferences
+                                    ._workspaceSkillIdTable(db),
+                                referencedColumn: $$AgentSkillsTableReferences
+                                    ._workspaceSkillIdTable(db)
                                     .id,
                               )
                               as T;
@@ -14864,19 +18467,19 @@ class $$MessagesTableTableManager
       );
 }
 
-typedef $$MessagesTableProcessedTableManager =
+typedef $$AgentSkillsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $MessagesTable,
-      MessagesTable,
-      $$MessagesTableFilterComposer,
-      $$MessagesTableOrderingComposer,
-      $$MessagesTableAnnotationComposer,
-      $$MessagesTableCreateCompanionBuilder,
-      $$MessagesTableUpdateCompanionBuilder,
-      (MessagesTable, $$MessagesTableReferences),
-      MessagesTable,
-      PrefetchHooks Function({bool conversationId})
+      $AgentSkillsTable,
+      AgentSkillsTable,
+      $$AgentSkillsTableFilterComposer,
+      $$AgentSkillsTableOrderingComposer,
+      $$AgentSkillsTableAnnotationComposer,
+      $$AgentSkillsTableCreateCompanionBuilder,
+      $$AgentSkillsTableUpdateCompanionBuilder,
+      (AgentSkillsTable, $$AgentSkillsTableReferences),
+      AgentSkillsTable,
+      PrefetchHooks Function({bool agentId, bool workspaceSkillId})
     >;
 typedef $$McpServersTableCreateCompanionBuilder =
     McpServersCompanion Function({
@@ -16128,6 +19731,24 @@ final class $$ToolsTableReferences
     );
   }
 
+  static MultiTypedResultKey<$AgentToolsTable, List<AgentToolsTable>>
+  _agentToolsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.agentTools,
+    aliasName: 'tools__id__agent_tools__tool_id',
+  );
+
+  $$AgentToolsTableProcessedTableManager get agentToolsRefs {
+    final manager = $$AgentToolsTableTableManager(
+      $_db,
+      $_db.agentTools,
+    ).filter((f) => f.toolId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_agentToolsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<
     $ConversationToolsTable,
     List<ConversationToolsTable>
@@ -16251,6 +19872,31 @@ class $$ToolsTableFilterComposer extends Composer<_$AppDatabase, $ToolsTable> {
           ),
     );
     return composer;
+  }
+
+  Expression<bool> agentToolsRefs(
+    Expression<bool> Function($$AgentToolsTableFilterComposer f) f,
+  ) {
+    final $$AgentToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentTools,
+      getReferencedColumn: (t) => t.toolId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.agentTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> conversationToolsRefs(
@@ -16469,6 +20115,31 @@ class $$ToolsTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> agentToolsRefs<T extends Object>(
+    Expression<T> Function($$AgentToolsTableAnnotationComposer a) f,
+  ) {
+    final $$AgentToolsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.agentTools,
+      getReferencedColumn: (t) => t.toolId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentToolsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agentTools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> conversationToolsRefs<T extends Object>(
     Expression<T> Function($$ConversationToolsTableAnnotationComposer a) f,
   ) {
@@ -16512,6 +20183,7 @@ class $$ToolsTableTableManager
           PrefetchHooks Function({
             bool workspaceId,
             bool workspaceToolsGroupId,
+            bool agentToolsRefs,
             bool conversationToolsRefs,
           })
         > {
@@ -16592,11 +20264,13 @@ class $$ToolsTableTableManager
               ({
                 workspaceId = false,
                 workspaceToolsGroupId = false,
+                agentToolsRefs = false,
                 conversationToolsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
+                    if (agentToolsRefs) db.agentTools,
                     if (conversationToolsRefs) db.conversationTools,
                   ],
                   addJoins:
@@ -16646,6 +20320,27 @@ class $$ToolsTableTableManager
                       },
                   getPrefetchedDataCallback: (items) async {
                     return [
+                      if (agentToolsRefs)
+                        await $_getPrefetchedData<
+                          ToolsTable,
+                          $ToolsTable,
+                          AgentToolsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ToolsTableReferences
+                              ._agentToolsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ToolsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).agentToolsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.toolId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (conversationToolsRefs)
                         await $_getPrefetchedData<
                           ToolsTable,
@@ -16690,8 +20385,834 @@ typedef $$ToolsTableProcessedTableManager =
       PrefetchHooks Function({
         bool workspaceId,
         bool workspaceToolsGroupId,
+        bool agentToolsRefs,
         bool conversationToolsRefs,
       })
+    >;
+typedef $$AgentToolsTableCreateCompanionBuilder =
+    AgentToolsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String agentId,
+      required String toolId,
+      required PermissionAccess permissions,
+      Value<int> rowid,
+    });
+typedef $$AgentToolsTableUpdateCompanionBuilder =
+    AgentToolsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> agentId,
+      Value<String> toolId,
+      Value<PermissionAccess> permissions,
+      Value<int> rowid,
+    });
+
+final class $$AgentToolsTableReferences
+    extends BaseReferences<_$AppDatabase, $AgentToolsTable, AgentToolsTable> {
+  $$AgentToolsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AgentsTable _agentIdTable(_$AppDatabase db) =>
+      db.agents.createAlias('agent_tools__agent_id__agents__id');
+
+  $$AgentsTableProcessedTableManager get agentId {
+    final $_column = $_itemColumn<String>('agent_id')!;
+
+    final manager = $$AgentsTableTableManager(
+      $_db,
+      $_db.agents,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_agentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ToolsTable _toolIdTable(_$AppDatabase db) =>
+      db.tools.createAlias('agent_tools__tool_id__tools__id');
+
+  $$ToolsTableProcessedTableManager get toolId {
+    final $_column = $_itemColumn<String>('tool_id')!;
+
+    final manager = $$ToolsTableTableManager(
+      $_db,
+      $_db.tools,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_toolIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AgentToolsTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentToolsTable> {
+  $$AgentToolsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<PermissionAccess, PermissionAccess, String>
+  get permissions => $composableBuilder(
+    column: $table.permissions,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  $$AgentsTableFilterComposer get agentId {
+    final $$AgentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableFilterComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ToolsTableFilterComposer get toolId {
+    final $$ToolsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.toolId,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableFilterComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentToolsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentToolsTable> {
+  $$AgentToolsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get permissions => $composableBuilder(
+    column: $table.permissions,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AgentsTableOrderingComposer get agentId {
+    final $$AgentsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableOrderingComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ToolsTableOrderingComposer get toolId {
+    final $$ToolsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.toolId,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableOrderingComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentToolsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentToolsTable> {
+  $$AgentToolsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<PermissionAccess, String> get permissions =>
+      $composableBuilder(
+        column: $table.permissions,
+        builder: (column) => column,
+      );
+
+  $$AgentsTableAnnotationComposer get agentId {
+    final $$AgentsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.agentId,
+      referencedTable: $db.agents,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AgentsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ToolsTableAnnotationComposer get toolId {
+    final $$ToolsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.toolId,
+      referencedTable: $db.tools,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ToolsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.tools,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AgentToolsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AgentToolsTable,
+          AgentToolsTable,
+          $$AgentToolsTableFilterComposer,
+          $$AgentToolsTableOrderingComposer,
+          $$AgentToolsTableAnnotationComposer,
+          $$AgentToolsTableCreateCompanionBuilder,
+          $$AgentToolsTableUpdateCompanionBuilder,
+          (AgentToolsTable, $$AgentToolsTableReferences),
+          AgentToolsTable,
+          PrefetchHooks Function({bool agentId, bool toolId})
+        > {
+  $$AgentToolsTableTableManager(_$AppDatabase db, $AgentToolsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentToolsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentToolsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentToolsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> agentId = const Value.absent(),
+                Value<String> toolId = const Value.absent(),
+                Value<PermissionAccess> permissions = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AgentToolsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                agentId: agentId,
+                toolId: toolId,
+                permissions: permissions,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String agentId,
+                required String toolId,
+                required PermissionAccess permissions,
+                Value<int> rowid = const Value.absent(),
+              }) => AgentToolsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                agentId: agentId,
+                toolId: toolId,
+                permissions: permissions,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AgentToolsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({agentId = false, toolId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (agentId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.agentId,
+                                referencedTable: $$AgentToolsTableReferences
+                                    ._agentIdTable(db),
+                                referencedColumn: $$AgentToolsTableReferences
+                                    ._agentIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+                    if (toolId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.toolId,
+                                referencedTable: $$AgentToolsTableReferences
+                                    ._toolIdTable(db),
+                                referencedColumn: $$AgentToolsTableReferences
+                                    ._toolIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AgentToolsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AgentToolsTable,
+      AgentToolsTable,
+      $$AgentToolsTableFilterComposer,
+      $$AgentToolsTableOrderingComposer,
+      $$AgentToolsTableAnnotationComposer,
+      $$AgentToolsTableCreateCompanionBuilder,
+      $$AgentToolsTableUpdateCompanionBuilder,
+      (AgentToolsTable, $$AgentToolsTableReferences),
+      AgentToolsTable,
+      PrefetchHooks Function({bool agentId, bool toolId})
+    >;
+typedef $$MessagesTableCreateCompanionBuilder =
+    MessagesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String conversationId,
+      required String content,
+      required MessagesTableType messageType,
+      required bool isUser,
+      required MessageTableStatus status,
+      Value<String?> metadata,
+      Value<int> rowid,
+    });
+typedef $$MessagesTableUpdateCompanionBuilder =
+    MessagesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> conversationId,
+      Value<String> content,
+      Value<MessagesTableType> messageType,
+      Value<bool> isUser,
+      Value<MessageTableStatus> status,
+      Value<String?> metadata,
+      Value<int> rowid,
+    });
+
+final class $$MessagesTableReferences
+    extends BaseReferences<_$AppDatabase, $MessagesTable, MessagesTable> {
+  $$MessagesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('messages__conversation_id__conversations__id');
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $MessagesTable> {
+  $$MessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MessagesTableType, MessagesTableType, String>
+  get messageType => $composableBuilder(
+    column: $table.messageType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<bool> get isUser => $composableBuilder(
+    column: $table.isUser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MessageTableStatus, MessageTableStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get metadata => $composableBuilder(
+    column: $table.metadata,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessagesTable> {
+  $$MessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get messageType => $composableBuilder(
+    column: $table.messageType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isUser => $composableBuilder(
+    column: $table.isUser,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get metadata => $composableBuilder(
+    column: $table.metadata,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessagesTable> {
+  $$MessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<MessagesTableType, String> get messageType =>
+      $composableBuilder(
+        column: $table.messageType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<bool> get isUser =>
+      $composableBuilder(column: $table.isUser, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<MessageTableStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get metadata =>
+      $composableBuilder(column: $table.metadata, builder: (column) => column);
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessagesTable,
+          MessagesTable,
+          $$MessagesTableFilterComposer,
+          $$MessagesTableOrderingComposer,
+          $$MessagesTableAnnotationComposer,
+          $$MessagesTableCreateCompanionBuilder,
+          $$MessagesTableUpdateCompanionBuilder,
+          (MessagesTable, $$MessagesTableReferences),
+          MessagesTable,
+          PrefetchHooks Function({bool conversationId})
+        > {
+  $$MessagesTableTableManager(_$AppDatabase db, $MessagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<MessagesTableType> messageType = const Value.absent(),
+                Value<bool> isUser = const Value.absent(),
+                Value<MessageTableStatus> status = const Value.absent(),
+                Value<String?> metadata = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessagesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                content: content,
+                messageType: messageType,
+                isUser: isUser,
+                status: status,
+                metadata: metadata,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String conversationId,
+                required String content,
+                required MessagesTableType messageType,
+                required bool isUser,
+                required MessageTableStatus status,
+                Value<String?> metadata = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessagesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                conversationId: conversationId,
+                content: content,
+                messageType: messageType,
+                isUser: isUser,
+                status: status,
+                metadata: metadata,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MessagesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({conversationId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (conversationId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.conversationId,
+                                referencedTable: $$MessagesTableReferences
+                                    ._conversationIdTable(db),
+                                referencedColumn: $$MessagesTableReferences
+                                    ._conversationIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessagesTable,
+      MessagesTable,
+      $$MessagesTableFilterComposer,
+      $$MessagesTableOrderingComposer,
+      $$MessagesTableAnnotationComposer,
+      $$MessagesTableCreateCompanionBuilder,
+      $$MessagesTableUpdateCompanionBuilder,
+      (MessagesTable, $$MessagesTableReferences),
+      MessagesTable,
+      PrefetchHooks Function({bool conversationId})
     >;
 typedef $$ConversationToolsTableCreateCompanionBuilder =
     ConversationToolsCompanion Function({
@@ -17547,1269 +22068,6 @@ typedef $$WorkspaceCompactionSettingsTableProcessedTableManager =
       ),
       WorkspaceCompactionSettingsTable,
       PrefetchHooks Function({bool workspaceId})
-    >;
-typedef $$SkillCredentialDefinitionsTableCreateCompanionBuilder =
-    SkillCredentialDefinitionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required String title,
-      required String slug,
-      required String attributesJson,
-      Value<int> rowid,
-    });
-typedef $$SkillCredentialDefinitionsTableUpdateCompanionBuilder =
-    SkillCredentialDefinitionsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<String> title,
-      Value<String> slug,
-      Value<String> attributesJson,
-      Value<int> rowid,
-    });
-
-final class $$SkillCredentialDefinitionsTableReferences
-    extends
-        BaseReferences<
-          _$AppDatabase,
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable
-        > {
-  $$SkillCredentialDefinitionsTableReferences(
-    super.$_db,
-    super.$_table,
-    super.$_typedResult,
-  );
-
-  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias(
-        'skill_credential_definitions__workspace_id__workspaces__id',
-      );
-
-  $$WorkspacesTableProcessedTableManager get workspaceId {
-    final $_column = $_itemColumn<String>('workspace_id')!;
-
-    final manager = $$WorkspacesTableTableManager(
-      $_db,
-      $_db.workspaces,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<$SkillsTable, List<SkillsTable>> _skillsRefsTable(
-    _$AppDatabase db,
-  ) => MultiTypedResultKey.fromTable(
-    db.skills,
-    aliasName:
-        'skill_credential_definitions__id__skills__credential_definition_id',
-  );
-
-  $$SkillsTableProcessedTableManager get skillsRefs {
-    final manager = $$SkillsTableTableManager($_db, $_db.skills).filter(
-      (f) => f.credentialDefinitionId.id.sqlEquals($_itemColumn<String>('id')!),
-    );
-
-    final cache = $_typedResult.readTableOrNull(_skillsRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$SkillCredentialDefinitionsTableFilterComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$WorkspacesTableFilterComposer get workspaceId {
-    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableFilterComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<bool> skillsRefs(
-    Expression<bool> Function($$SkillsTableFilterComposer f) f,
-  ) {
-    final $$SkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$SkillCredentialDefinitionsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$WorkspacesTableOrderingComposer get workspaceId {
-    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableOrderingComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$SkillCredentialDefinitionsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkillCredentialDefinitionsTable> {
-  $$SkillCredentialDefinitionsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get attributesJson => $composableBuilder(
-    column: $table.attributesJson,
-    builder: (column) => column,
-  );
-
-  $$WorkspacesTableAnnotationComposer get workspaceId {
-    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  Expression<T> skillsRefs<T extends Object>(
-    Expression<T> Function($$SkillsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skills,
-      getReferencedColumn: (t) => t.credentialDefinitionId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.skills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$SkillCredentialDefinitionsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkillCredentialDefinitionsTable,
-          SkillCredentialDefinitionsTable,
-          $$SkillCredentialDefinitionsTableFilterComposer,
-          $$SkillCredentialDefinitionsTableOrderingComposer,
-          $$SkillCredentialDefinitionsTableAnnotationComposer,
-          $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
-          $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
-          (
-            SkillCredentialDefinitionsTable,
-            $$SkillCredentialDefinitionsTableReferences,
-          ),
-          SkillCredentialDefinitionsTable,
-          PrefetchHooks Function({bool workspaceId, bool skillsRefs})
-        > {
-  $$SkillCredentialDefinitionsTableTableManager(
-    _$AppDatabase db,
-    $SkillCredentialDefinitionsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer: () =>
-              $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer: () =>
-              $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> workspaceId = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> attributesJson = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillCredentialDefinitionsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                title: title,
-                slug: slug,
-                attributesJson: attributesJson,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String workspaceId,
-                required String title,
-                required String slug,
-                required String attributesJson,
-                Value<int> rowid = const Value.absent(),
-              }) => SkillCredentialDefinitionsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                title: title,
-                slug: slug,
-                attributesJson: attributesJson,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$SkillCredentialDefinitionsTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({workspaceId = false, skillsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (skillsRefs) db.skills],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (workspaceId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.workspaceId,
-                                referencedTable:
-                                    $$SkillCredentialDefinitionsTableReferences
-                                        ._workspaceIdTable(db),
-                                referencedColumn:
-                                    $$SkillCredentialDefinitionsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                              )
-                              as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (skillsRefs)
-                    await $_getPrefetchedData<
-                      SkillCredentialDefinitionsTable,
-                      $SkillCredentialDefinitionsTable,
-                      SkillsTable
-                    >(
-                      currentTable: table,
-                      referencedTable:
-                          $$SkillCredentialDefinitionsTableReferences
-                              ._skillsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$SkillCredentialDefinitionsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).skillsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where(
-                            (e) => e.credentialDefinitionId == item.id,
-                          ),
-                      typedResults: items,
-                    ),
-                ];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$SkillCredentialDefinitionsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkillCredentialDefinitionsTable,
-      SkillCredentialDefinitionsTable,
-      $$SkillCredentialDefinitionsTableFilterComposer,
-      $$SkillCredentialDefinitionsTableOrderingComposer,
-      $$SkillCredentialDefinitionsTableAnnotationComposer,
-      $$SkillCredentialDefinitionsTableCreateCompanionBuilder,
-      $$SkillCredentialDefinitionsTableUpdateCompanionBuilder,
-      (
-        SkillCredentialDefinitionsTable,
-        $$SkillCredentialDefinitionsTableReferences,
-      ),
-      SkillCredentialDefinitionsTable,
-      PrefetchHooks Function({bool workspaceId, bool skillsRefs})
-    >;
-typedef $$SkillsTableCreateCompanionBuilder =
-    SkillsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      required String workspaceId,
-      required SkillSourceTable source,
-      required SkillKindTable kind,
-      required String title,
-      required String slug,
-      required String description,
-      required String content,
-      Value<String?> credentialDefinitionId,
-      Value<bool> isCredentialOptional,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-typedef $$SkillsTableUpdateCompanionBuilder =
-    SkillsCompanion Function({
-      Value<String> id,
-      Value<DateTime> createdAt,
-      Value<DateTime> updatedAt,
-      Value<String> workspaceId,
-      Value<SkillSourceTable> source,
-      Value<SkillKindTable> kind,
-      Value<String> title,
-      Value<String> slug,
-      Value<String> description,
-      Value<String> content,
-      Value<String?> credentialDefinitionId,
-      Value<bool> isCredentialOptional,
-      Value<bool> isEnabled,
-      Value<int> rowid,
-    });
-
-final class $$SkillsTableReferences
-    extends BaseReferences<_$AppDatabase, $SkillsTable, SkillsTable> {
-  $$SkillsTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
-      db.workspaces.createAlias('skills__workspace_id__workspaces__id');
-
-  $$WorkspacesTableProcessedTableManager get workspaceId {
-    final $_column = $_itemColumn<String>('workspace_id')!;
-
-    final manager = $$WorkspacesTableTableManager(
-      $_db,
-      $_db.workspaces,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $SkillCredentialDefinitionsTable _credentialDefinitionIdTable(
-    _$AppDatabase db,
-  ) => db.skillCredentialDefinitions.createAlias(
-    'skills__credential_definition_id__skill_credential_definitions__id',
-  );
-
-  $$SkillCredentialDefinitionsTableProcessedTableManager?
-  get credentialDefinitionId {
-    final $_column = $_itemColumn<String>('credential_definition_id');
-    if ($_column == null) return null;
-    final manager = $$SkillCredentialDefinitionsTableTableManager(
-      $_db,
-      $_db.skillCredentialDefinitions,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(
-      _credentialDefinitionIdTable($_db),
-    );
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $SkillTemplateToolsTable,
-    List<SkillTemplateToolsTable>
-  >
-  _skillTemplateToolsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.skillTemplateTools,
-        aliasName: 'skills__id__skill_template_tools__skill_id',
-      );
-
-  $$SkillTemplateToolsTableProcessedTableManager get skillTemplateToolsRefs {
-    final manager = $$SkillTemplateToolsTableTableManager(
-      $_db,
-      $_db.skillTemplateTools,
-    ).filter((f) => f.skillId.id.sqlEquals($_itemColumn<String>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _skillTemplateToolsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<
-    $ConversationSkillsTable,
-    List<ConversationSkillsTable>
-  >
-  _conversationSkillsRefsTable(_$AppDatabase db) =>
-      MultiTypedResultKey.fromTable(
-        db.conversationSkills,
-        aliasName: 'skills__id__conversation_skills__workspace_skill_id',
-      );
-
-  $$ConversationSkillsTableProcessedTableManager get conversationSkillsRefs {
-    final manager =
-        $$ConversationSkillsTableTableManager(
-          $_db,
-          $_db.conversationSkills,
-        ).filter(
-          (f) => f.workspaceSkillId.id.sqlEquals($_itemColumn<String>('id')!),
-        );
-
-    final cache = $_typedResult.readTableOrNull(
-      _conversationSkillsRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$SkillsTableFilterComposer
-    extends Composer<_$AppDatabase, $SkillsTable> {
-  $$SkillsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<SkillSourceTable, SkillSourceTable, String>
-  get source => $composableBuilder(
-    column: $table.source,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<SkillKindTable, SkillKindTable, String>
-  get kind => $composableBuilder(
-    column: $table.kind,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get content => $composableBuilder(
-    column: $table.content,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$WorkspacesTableFilterComposer get workspaceId {
-    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableFilterComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableFilterComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableFilterComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableFilterComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
-  Expression<bool> skillTemplateToolsRefs(
-    Expression<bool> Function($$SkillTemplateToolsTableFilterComposer f) f,
-  ) {
-    final $$SkillTemplateToolsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.skillTemplateTools,
-      getReferencedColumn: (t) => t.skillId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$SkillTemplateToolsTableFilterComposer(
-            $db: $db,
-            $table: $db.skillTemplateTools,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> conversationSkillsRefs(
-    Expression<bool> Function($$ConversationSkillsTableFilterComposer f) f,
-  ) {
-    final $$ConversationSkillsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.conversationSkills,
-      getReferencedColumn: (t) => t.workspaceSkillId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ConversationSkillsTableFilterComposer(
-            $db: $db,
-            $table: $db.conversationSkills,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$SkillsTableOrderingComposer
-    extends Composer<_$AppDatabase, $SkillsTable> {
-  $$SkillsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get source => $composableBuilder(
-    column: $table.source,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get kind => $composableBuilder(
-    column: $table.kind,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get title => $composableBuilder(
-    column: $table.title,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get slug => $composableBuilder(
-    column: $table.slug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get content => $composableBuilder(
-    column: $table.content,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isEnabled => $composableBuilder(
-    column: $table.isEnabled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$WorkspacesTableOrderingComposer get workspaceId {
-    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableOrderingComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableOrderingComposer get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableOrderingComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableOrderingComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-}
-
-class $$SkillsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SkillsTable> {
-  $$SkillsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<SkillSourceTable, String> get source =>
-      $composableBuilder(column: $table.source, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<SkillKindTable, String> get kind =>
-      $composableBuilder(column: $table.kind, builder: (column) => column);
-
-  GeneratedColumn<String> get title =>
-      $composableBuilder(column: $table.title, builder: (column) => column);
-
-  GeneratedColumn<String> get slug =>
-      $composableBuilder(column: $table.slug, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get content =>
-      $composableBuilder(column: $table.content, builder: (column) => column);
-
-  GeneratedColumn<bool> get isCredentialOptional => $composableBuilder(
-    column: $table.isCredentialOptional,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isEnabled =>
-      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
-
-  $$WorkspacesTableAnnotationComposer get workspaceId {
-    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.workspaceId,
-      referencedTable: $db.workspaces,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$WorkspacesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.workspaces,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$SkillCredentialDefinitionsTableAnnotationComposer
-  get credentialDefinitionId {
-    final $$SkillCredentialDefinitionsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.credentialDefinitionId,
-          referencedTable: $db.skillCredentialDefinitions,
-          getReferencedColumn: (t) => t.id,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillCredentialDefinitionsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillCredentialDefinitions,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return composer;
-  }
-
-  Expression<T> skillTemplateToolsRefs<T extends Object>(
-    Expression<T> Function($$SkillTemplateToolsTableAnnotationComposer a) f,
-  ) {
-    final $$SkillTemplateToolsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.skillTemplateTools,
-          getReferencedColumn: (t) => t.skillId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$SkillTemplateToolsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.skillTemplateTools,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-
-  Expression<T> conversationSkillsRefs<T extends Object>(
-    Expression<T> Function($$ConversationSkillsTableAnnotationComposer a) f,
-  ) {
-    final $$ConversationSkillsTableAnnotationComposer composer =
-        $composerBuilder(
-          composer: this,
-          getCurrentColumn: (t) => t.id,
-          referencedTable: $db.conversationSkills,
-          getReferencedColumn: (t) => t.workspaceSkillId,
-          builder:
-              (
-                joinBuilder, {
-                $addJoinBuilderToRootComposer,
-                $removeJoinBuilderFromRootComposer,
-              }) => $$ConversationSkillsTableAnnotationComposer(
-                $db: $db,
-                $table: $db.conversationSkills,
-                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-                joinBuilder: joinBuilder,
-                $removeJoinBuilderFromRootComposer:
-                    $removeJoinBuilderFromRootComposer,
-              ),
-        );
-    return f(composer);
-  }
-}
-
-class $$SkillsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SkillsTable,
-          SkillsTable,
-          $$SkillsTableFilterComposer,
-          $$SkillsTableOrderingComposer,
-          $$SkillsTableAnnotationComposer,
-          $$SkillsTableCreateCompanionBuilder,
-          $$SkillsTableUpdateCompanionBuilder,
-          (SkillsTable, $$SkillsTableReferences),
-          SkillsTable,
-          PrefetchHooks Function({
-            bool workspaceId,
-            bool credentialDefinitionId,
-            bool skillTemplateToolsRefs,
-            bool conversationSkillsRefs,
-          })
-        > {
-  $$SkillsTableTableManager(_$AppDatabase db, $SkillsTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SkillsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SkillsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SkillsTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                Value<String> workspaceId = const Value.absent(),
-                Value<SkillSourceTable> source = const Value.absent(),
-                Value<SkillKindTable> kind = const Value.absent(),
-                Value<String> title = const Value.absent(),
-                Value<String> slug = const Value.absent(),
-                Value<String> description = const Value.absent(),
-                Value<String> content = const Value.absent(),
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> isCredentialOptional = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillsCompanion(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                source: source,
-                kind: kind,
-                title: title,
-                slug: slug,
-                description: description,
-                content: content,
-                credentialDefinitionId: credentialDefinitionId,
-                isCredentialOptional: isCredentialOptional,
-                isEnabled: isEnabled,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-                Value<DateTime> updatedAt = const Value.absent(),
-                required String workspaceId,
-                required SkillSourceTable source,
-                required SkillKindTable kind,
-                required String title,
-                required String slug,
-                required String description,
-                required String content,
-                Value<String?> credentialDefinitionId = const Value.absent(),
-                Value<bool> isCredentialOptional = const Value.absent(),
-                Value<bool> isEnabled = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SkillsCompanion.insert(
-                id: id,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                workspaceId: workspaceId,
-                source: source,
-                kind: kind,
-                title: title,
-                slug: slug,
-                description: description,
-                content: content,
-                credentialDefinitionId: credentialDefinitionId,
-                isCredentialOptional: isCredentialOptional,
-                isEnabled: isEnabled,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) =>
-                    (e.readTable(table), $$SkillsTableReferences(db, table, e)),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({
-                workspaceId = false,
-                credentialDefinitionId = false,
-                skillTemplateToolsRefs = false,
-                conversationSkillsRefs = false,
-              }) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (skillTemplateToolsRefs) db.skillTemplateTools,
-                    if (conversationSkillsRefs) db.conversationSkills,
-                  ],
-                  addJoins:
-                      <
-                        T extends TableManagerState<
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic,
-                          dynamic
-                        >
-                      >(state) {
-                        if (workspaceId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.workspaceId,
-                                    referencedTable: $$SkillsTableReferences
-                                        ._workspaceIdTable(db),
-                                    referencedColumn: $$SkillsTableReferences
-                                        ._workspaceIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-                        if (credentialDefinitionId) {
-                          state =
-                              state.withJoin(
-                                    currentTable: table,
-                                    currentColumn: table.credentialDefinitionId,
-                                    referencedTable: $$SkillsTableReferences
-                                        ._credentialDefinitionIdTable(db),
-                                    referencedColumn: $$SkillsTableReferences
-                                        ._credentialDefinitionIdTable(db)
-                                        .id,
-                                  )
-                                  as T;
-                        }
-
-                        return state;
-                      },
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (skillTemplateToolsRefs)
-                        await $_getPrefetchedData<
-                          SkillsTable,
-                          $SkillsTable,
-                          SkillTemplateToolsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$SkillsTableReferences
-                              ._skillTemplateToolsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).skillTemplateToolsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.skillId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (conversationSkillsRefs)
-                        await $_getPrefetchedData<
-                          SkillsTable,
-                          $SkillsTable,
-                          ConversationSkillsTable
-                        >(
-                          currentTable: table,
-                          referencedTable: $$SkillsTableReferences
-                              ._conversationSkillsRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$SkillsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).conversationSkillsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.workspaceSkillId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$SkillsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SkillsTable,
-      SkillsTable,
-      $$SkillsTableFilterComposer,
-      $$SkillsTableOrderingComposer,
-      $$SkillsTableAnnotationComposer,
-      $$SkillsTableCreateCompanionBuilder,
-      $$SkillsTableUpdateCompanionBuilder,
-      (SkillsTable, $$SkillsTableReferences),
-      SkillsTable,
-      PrefetchHooks Function({
-        bool workspaceId,
-        bool credentialDefinitionId,
-        bool skillTemplateToolsRefs,
-        bool conversationSkillsRefs,
-      })
     >;
 typedef $$SkillTemplateToolsTableCreateCompanionBuilder =
     SkillTemplateToolsCompanion Function({
@@ -20142,24 +23400,10 @@ class $AppDatabaseManager {
       $$ApiModelProvidersTableTableManager(_db, _db.apiModelProviders);
   $$ApiModelsTableTableManager get apiModels =>
       $$ApiModelsTableTableManager(_db, _db.apiModels);
+  $$AgentsTableTableManager get agents =>
+      $$AgentsTableTableManager(_db, _db.agents);
   $$ConversationsTableTableManager get conversations =>
       $$ConversationsTableTableManager(_db, _db.conversations);
-  $$MessagesTableTableManager get messages =>
-      $$MessagesTableTableManager(_db, _db.messages);
-  $$McpServersTableTableManager get mcpServers =>
-      $$McpServersTableTableManager(_db, _db.mcpServers);
-  $$ToolsGroupsTableTableManager get toolsGroups =>
-      $$ToolsGroupsTableTableManager(_db, _db.toolsGroups);
-  $$ToolsTableTableManager get tools =>
-      $$ToolsTableTableManager(_db, _db.tools);
-  $$ConversationToolsTableTableManager get conversationTools =>
-      $$ConversationToolsTableTableManager(_db, _db.conversationTools);
-  $$WorkspaceCompactionSettingsTableTableManager
-  get workspaceCompactionSettings =>
-      $$WorkspaceCompactionSettingsTableTableManager(
-        _db,
-        _db.workspaceCompactionSettings,
-      );
   $$SkillCredentialDefinitionsTableTableManager
   get skillCredentialDefinitions =>
       $$SkillCredentialDefinitionsTableTableManager(
@@ -20168,6 +23412,26 @@ class $AppDatabaseManager {
       );
   $$SkillsTableTableManager get skills =>
       $$SkillsTableTableManager(_db, _db.skills);
+  $$AgentSkillsTableTableManager get agentSkills =>
+      $$AgentSkillsTableTableManager(_db, _db.agentSkills);
+  $$McpServersTableTableManager get mcpServers =>
+      $$McpServersTableTableManager(_db, _db.mcpServers);
+  $$ToolsGroupsTableTableManager get toolsGroups =>
+      $$ToolsGroupsTableTableManager(_db, _db.toolsGroups);
+  $$ToolsTableTableManager get tools =>
+      $$ToolsTableTableManager(_db, _db.tools);
+  $$AgentToolsTableTableManager get agentTools =>
+      $$AgentToolsTableTableManager(_db, _db.agentTools);
+  $$MessagesTableTableManager get messages =>
+      $$MessagesTableTableManager(_db, _db.messages);
+  $$ConversationToolsTableTableManager get conversationTools =>
+      $$ConversationToolsTableTableManager(_db, _db.conversationTools);
+  $$WorkspaceCompactionSettingsTableTableManager
+  get workspaceCompactionSettings =>
+      $$WorkspaceCompactionSettingsTableTableManager(
+        _db,
+        _db.workspaceCompactionSettings,
+      );
   $$SkillTemplateToolsTableTableManager get skillTemplateTools =>
       $$SkillTemplateToolsTableTableManager(_db, _db.skillTemplateTools);
   $$ConversationSkillsTableTableManager get conversationSkills =>

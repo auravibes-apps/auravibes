@@ -15,6 +15,7 @@ abstract class NewChatState with _$NewChatState {
     /// Stores the provider ID (or name-equivalent).
     /// - for display and filtering models
     String? providerId,
+    String? agentId,
     @Default(false) bool isLoading,
   }) = _NewChatState;
 }
@@ -37,6 +38,10 @@ class NewChatNotifier extends _$NewChatNotifier {
     );
   }
 
+  void setAgentId(String? agentId) {
+    state = state.copyWith(agentId: agentId);
+  }
+
   Future<ConversationEntity> startConversation(String message) async {
     final modelId = state.modelId;
     if (modelId == null) {
@@ -51,6 +56,7 @@ class NewChatNotifier extends _$NewChatNotifier {
             firstMessage: message,
             workspaceModelSelectionId: modelId,
             workspaceId: workspaceId,
+            agentId: state.agentId,
           );
     } finally {
       state = state.copyWith(isLoading: false);

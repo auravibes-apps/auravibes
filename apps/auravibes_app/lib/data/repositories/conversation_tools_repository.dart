@@ -271,6 +271,7 @@ class ConversationToolsRepository {
     return switch (access) {
       PermissionAccess.ask => ToolPermissionMode.alwaysAsk,
       PermissionAccess.granted => ToolPermissionMode.alwaysAllow,
+      PermissionAccess.denied => ToolPermissionMode.alwaysDeny,
     };
   }
 
@@ -278,6 +279,7 @@ class ConversationToolsRepository {
     return switch (mode) {
       ToolPermissionMode.alwaysAsk => PermissionAccess.ask,
       ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
+      ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
     };
   }
 
@@ -309,6 +311,10 @@ class ConversationToolsRepository {
         return ToolPermissionResult.disabledInConversation;
       }
 
+      if (conversationTool.permissionMode == ToolPermissionMode.alwaysDeny) {
+        return ToolPermissionResult.disabledInConversation;
+      }
+
       if (conversationTool.permissionMode == ToolPermissionMode.alwaysAsk) {
         return ToolPermissionResult.needsConfirmation;
       }
@@ -317,7 +323,36 @@ class ConversationToolsRepository {
       return ToolPermissionResult.granted;
     }
 
-    // 3. No conversation override - use workspace permission.
+    // 3. No conversation override - use selected agent permission if present.
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+    final agentId = conversation?.agentId;
+    if (agentId != null) {
+      final agentTool = await _database.agentToolsDao.getAgentTool(
+        agentId,
+        workspaceTool.id,
+      );
+      final agentAccess = agentTool?.permissions;
+      final agentMode = agentAccess == null
+          ? null
+          : _mapPermissionAccess(agentAccess);
+      if (agentMode == ToolPermissionMode.alwaysDeny) {
+        return ToolPermissionResult.disabledInWorkspace;
+      }
+      if (agentMode == ToolPermissionMode.alwaysAsk) {
+        return ToolPermissionResult.needsConfirmation;
+      }
+      if (agentMode == ToolPermissionMode.alwaysAllow) {
+        return ToolPermissionResult.granted;
+      }
+    }
+
+    // 4. No agent override - use workspace permission.
+    if (workspaceTool.permissionMode == ToolPermissionMode.alwaysDeny) {
+      return ToolPermissionResult.disabledInWorkspace;
+    }
+
     if (workspaceTool.permissionMode == ToolPermissionMode.alwaysAsk) {
       return ToolPermissionResult.needsConfirmation;
     }
