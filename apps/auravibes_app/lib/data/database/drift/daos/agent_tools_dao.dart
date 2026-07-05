@@ -39,6 +39,7 @@ class AgentToolsDao extends DatabaseAccessor<AppDatabase>
           updatedAt: Value(DateTime.now()),
           permissions: Value(permission),
         ),
+        target: [agentTools.agentId, agentTools.toolId],
       ),
     );
   }
