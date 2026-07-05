@@ -213,7 +213,7 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills
 
 class _AgentEntity extends AgentEntity {
   const _AgentEntity({required this.id, required this.workspaceId, required this.name, required this.content, required final  List<AgentSkillRef> skills, required this.createdAt, required this.updatedAt}): _skills = skills,super._();
-
+  
 
 @override final  String id;
 @override final  String workspaceId;
@@ -490,7 +490,7 @@ return $default(_that.name,_that.content,_that.skills);case _:
 
 class _AgentToCreate extends AgentToCreate {
   const _AgentToCreate({required this.name, required this.content, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
-
+  
 
 @override final  String name;
 @override final  String content;
@@ -564,7 +564,7 @@ as List<AgentSkillRef>,
 /// @nodoc
 mixin _$AgentToUpdate {
 
- String? get name; String? get content; List<AgentSkillRef>? get skills;
+ String get name; String get content; List<AgentSkillRef> get skills;
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -595,7 +595,7 @@ abstract mixin class $AgentToUpdateCopyWith<$Res>  {
   factory $AgentToUpdateCopyWith(AgentToUpdate value, $Res Function(AgentToUpdate) _then) = _$AgentToUpdateCopyWithImpl;
 @useResult
 $Res call({
- String? name, String? content, List<AgentSkillRef>? skills
+ String name, String content, List<AgentSkillRef> skills
 });
 
 
@@ -612,12 +612,12 @@ class _$AgentToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? content = freezed,Object? skills = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? content = null,Object? skills = null,}) {
   return _then(_self.copyWith(
-name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String?,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String?,skills: freezed == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
-as List<AgentSkillRef>?,
+name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
+as String,skills: null == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
+as List<AgentSkillRef>,
   ));
 }
 
@@ -702,7 +702,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  String? content,  List<AgentSkillRef>? skills)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String content,  List<AgentSkillRef> skills)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AgentToUpdate() when $default != null:
 return $default(_that.name,_that.content,_that.skills);case _:
@@ -723,7 +723,7 @@ return $default(_that.name,_that.content,_that.skills);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  String? content,  List<AgentSkillRef>? skills)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String content,  List<AgentSkillRef> skills)  $default,) {final _that = this;
 switch (_that) {
 case _AgentToUpdate():
 return $default(_that.name,_that.content,_that.skills);case _:
@@ -743,7 +743,7 @@ return $default(_that.name,_that.content,_that.skills);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  String? content,  List<AgentSkillRef>? skills)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String content,  List<AgentSkillRef> skills)?  $default,) {final _that = this;
 switch (_that) {
 case _AgentToUpdate() when $default != null:
 return $default(_that.name,_that.content,_that.skills);case _:
@@ -758,18 +758,16 @@ return $default(_that.name,_that.content,_that.skills);case _:
 
 
 class _AgentToUpdate extends AgentToUpdate {
-  const _AgentToUpdate({this.name, this.content, final  List<AgentSkillRef>? skills}): _skills = skills,super._();
+  const _AgentToUpdate({required this.name, required this.content, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
+  
 
-
-@override final  String? name;
-@override final  String? content;
- final  List<AgentSkillRef>? _skills;
-@override List<AgentSkillRef>? get skills {
-  final value = _skills;
-  if (value == null) return null;
+@override final  String name;
+@override final  String content;
+ final  List<AgentSkillRef> _skills;
+@override@JsonKey() List<AgentSkillRef> get skills {
   if (_skills is EqualUnmodifiableListView) return _skills;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(value);
+  return EqualUnmodifiableListView(_skills);
 }
 
 
@@ -803,7 +801,7 @@ abstract mixin class _$AgentToUpdateCopyWith<$Res> implements $AgentToUpdateCopy
   factory _$AgentToUpdateCopyWith(_AgentToUpdate value, $Res Function(_AgentToUpdate) _then) = __$AgentToUpdateCopyWithImpl;
 @override @useResult
 $Res call({
- String? name, String? content, List<AgentSkillRef>? skills
+ String name, String content, List<AgentSkillRef> skills
 });
 
 
@@ -820,12 +818,12 @@ class __$AgentToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? content = freezed,Object? skills = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? content = null,Object? skills = null,}) {
   return _then(_AgentToUpdate(
-name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String?,content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String?,skills: freezed == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
-as List<AgentSkillRef>?,
+name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
+as String,skills: null == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
+as List<AgentSkillRef>,
   ));
 }
 
@@ -997,7 +995,7 @@ return app(_that.identifier);case _:
 
 class UserAgentSkillRef implements AgentSkillRef {
   const UserAgentSkillRef(this.skillId);
-
+  
 
  final  String skillId;
 
@@ -1063,7 +1061,7 @@ as String,
 
 class AppAgentSkillRef implements AgentSkillRef {
   const AppAgentSkillRef(this.identifier);
-
+  
 
  final  String identifier;
 

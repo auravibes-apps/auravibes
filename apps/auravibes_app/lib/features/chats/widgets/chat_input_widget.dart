@@ -14,7 +14,7 @@ class ChatInputWidget extends HookConsumerWidget {
     required this.onSendMessage,
     required this.onToolsPress,
     required this.modelControl,
-    this.agentControl,
+    required this.agentControl,
     this.onSkillsPress,
     this.onContinueAgent,
     this.disabledHint,
@@ -35,7 +35,7 @@ class ChatInputWidget extends HookConsumerWidget {
   final VoidCallback? onSkillsPress;
   final VoidCallback? onContinueAgent;
   final Widget modelControl;
-  final Widget? agentControl;
+  final Widget agentControl;
   final Widget? disabledHint;
   final VoidCallback? onStop;
   final VoidCallback? onCompact;
@@ -125,23 +125,20 @@ class ChatInputWidget extends HookConsumerWidget {
                                     child: modelControl,
                                   ),
                                 ),
-                                if (agentControl case final agentControl?)
-                                  AuraIconButton(
-                                    icon: Icons.smart_toy_outlined,
-                                    onPressed: () => _showSelectorSheet(
-                                      context: context,
-                                      title: const TextLocale(
-                                        LocaleKeys.agents_title,
-                                      ),
-                                      child: agentControl,
+                                AuraIconButton(
+                                  icon: Icons.smart_toy_outlined,
+                                  onPressed: () => _showSelectorSheet(
+                                    context: context,
+                                    title: const TextLocale(
+                                      LocaleKeys.agents_title,
                                     ),
+                                    child: agentControl,
                                   ),
+                                ),
                               ] else ...[
                                 Flexible(child: modelControl),
-                                if (agentControl case final agentControl?) ...[
-                                  const AuraSizedBox(width: .xs),
-                                  Flexible(child: agentControl),
-                                ],
+                                const AuraSizedBox(width: .xs),
+                                Flexible(child: agentControl),
                               ],
                               const AuraSizedBox(width: .xs),
                               AuraPopupMenuButton(

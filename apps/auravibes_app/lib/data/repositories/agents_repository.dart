@@ -51,16 +51,10 @@ class AgentsRepository {
       agentId,
       AgentsCompanion(
         updatedAt: Value(DateTime.now()),
-        name: switch (agent.name) {
-          null => const Value.absent(),
-          final name => Value(name.trim()),
-        },
-        content: switch (agent.content) {
-          null => const Value.absent(),
-          final content => Value(content.trim()),
-        },
+        name: Value(agent.name.trim()),
+        content: Value(agent.content.trim()),
       ),
-      skills: agent.skills?.map(_mapSkillRefToCompanion).toList(),
+      agent.skills.map(_mapSkillRefToCompanion).toList(),
     );
 
     return _mapToAgent(updated);
@@ -90,11 +84,9 @@ class AgentsRepository {
   }
 
   String _agentUpdateValidationMessage(AgentToUpdate agent) {
-    final name = agent.name;
-    if (name != null && name.trim().isEmpty) return _agentNameEmpty;
+    if (agent.name.trim().isEmpty) return _agentNameEmpty;
 
-    final content = agent.content;
-    if (content != null && content.trim().isEmpty) return _agentContentEmpty;
+    if (agent.content.trim().isEmpty) return _agentContentEmpty;
 
     return _unknownAgentValidationError;
   }

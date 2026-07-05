@@ -37,14 +37,14 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
 
   Future<AgentsTable> updateAgent(
     String agentId,
-    AgentsCompanion agent, {
-    List<AgentSkillsCompanion>? skills,
-  }) async {
+    AgentsCompanion agent,
+    List<AgentSkillsCompanion> skills,
+  ) async {
     return transaction(() async {
       final _ = await (update(
         agents,
       )..where((tbl) => tbl.id.equals(agentId))).write(agent);
-      if (skills != null) await _replaceSkills(agentId, skills);
+      await _replaceSkills(agentId, skills);
 
       final updated = await getAgentById(agentId);
       if (updated == null) throw StateError('Updated agent was not found');

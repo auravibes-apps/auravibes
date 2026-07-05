@@ -31,21 +31,13 @@ abstract class AgentToCreate with _$AgentToCreate {
 @freezed
 abstract class AgentToUpdate with _$AgentToUpdate {
   const factory AgentToUpdate({
-    String? name,
-    String? content,
-    List<AgentSkillRef>? skills,
+    required String name,
+    required String content,
+    @Default([]) List<AgentSkillRef> skills,
   }) = _AgentToUpdate;
   const AgentToUpdate._();
 
-  bool get isValid {
-    final name = this.name;
-    if (name != null && name.trim().isEmpty) return false;
-
-    final content = this.content;
-    if (content != null && content.trim().isEmpty) return false;
-
-    return name != null || content != null || skills != null;
-  }
+  bool get isValid => name.trim().isNotEmpty && content.trim().isNotEmpty;
 }
 
 @freezed
