@@ -1,9 +1,10 @@
+import 'dart:async';
+
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/settings/notifiers/accent_hue.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/flavor.dart';
 import 'package:auravibes_app/main/main_locale.dart';
-import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -24,20 +25,16 @@ Future<void> main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final container = ProviderContainer();
 
-  final appDatabase = container.read(
-    appDatabaseProvider,
-  );
-
-  // Load defaults after the database connection is established.
-  await appDatabase.initializeWithDefaults();
-  final _ = container.read(modelSyncServiceProvider);
-
   runApp(
     UncontrolledProviderScope(
       container: container,
       child: const MainLocale(child: MyApp()),
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(container.read(modelSyncServiceProvider).performFullSync());
+  });
 }
 
 class AppFlavorResolver {
