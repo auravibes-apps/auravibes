@@ -1,11 +1,14 @@
 // ignore_for_file: provider_dependencies
+
 // Required: widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
@@ -13,8 +16,31 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
+
+import '../../../helpers/test_provider_scope.dart';
+
+@Dependencies([
+  conversationSelected,
+  conversationCompactionExecutionState,
+  messageConversationById,
+])
+Widget buildSubject({
+  required List<String> messages,
+  required List<Object> overrides,
+  Map<String, MessageEntity>? messageEntitiesById,
+  String conversationId = 'conv-1',
+  List<PendingToolCall> pendingToolCalls = const [],
+}) {
+  return _ChatMessagesTestSubject(
+    conversationId: conversationId,
+    messages: messages,
+    overrides: overrides,
+    pendingToolCalls: pendingToolCalls,
+    messageEntitiesById: messageEntitiesById,
+  );
+}
 
 @Dependencies([
   conversationSelected,
@@ -22,49 +48,6 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   messageConversationById,
 ])
 void main() {
-  Widget buildSubject({
-    required List<String> messages,
-    required List<Object> overrides,
-    Map<String, MessageEntity>? messageEntitiesById,
-    String conversationId = 'conv-1',
-    List<PendingToolCall> pendingToolCalls = const [],
-  }) {
-    return EasyLocalization(
-      child: ProviderScope(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue(conversationId),
-          pendingToolCallsProvider.overrideWith((ref) => pendingToolCalls),
-          ...overrides.cast(),
-        ],
-        child: Builder(
-          builder: (context) {
-            return MaterialApp(
-              home: Theme(
-                data: ThemeData(extensions: [AuraTheme.light]),
-                child: Material(
-                  child: ChatMessagesWidget(
-                    messages: messages,
-                    messageEntitiesById: messageEntitiesById,
-                    pendingToolCalls: pendingToolCalls,
-                  ),
-                ),
-              ),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
-            );
-          },
-        ),
-      ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
-    );
-  }
-
   MessageEntity _createMessage({
     String id = 'msg-1',
     String content = 'Hello',
@@ -149,7 +132,6 @@ void main() {
         tester,
         buildSubject(
           messages: ['msg-1'],
-          messageEntitiesById: {'msg-1': message},
           overrides: [
             messageConversationByIdProvider.overrideWith(
               (ref, id) => throw StateError('should not read message provider'),
@@ -162,6 +144,7 @@ void main() {
               ),
             ),
           ],
+          messageEntitiesById: {'msg-1': message},
         ),
       );
 
@@ -402,9 +385,6 @@ void main() {
         tester,
         buildSubject(
           messages: ['msg-1'],
-          pendingToolCalls: const [
-            PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
-          ],
           overrides: [
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
@@ -414,6 +394,9 @@ void main() {
                 hasPendingTools: true,
               ),
             ),
+          ],
+          pendingToolCalls: const [
+            PendingToolCall(toolCall: toolCall, messageId: 'msg-1'),
           ],
         ),
       );
@@ -781,4 +764,77 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
   });
+}
+
+class _MockConversationRepository extends Mock
+    implements ConversationRepository {}
+
+@Dependencies([
+  conversationSelected,
+  conversationCompactionExecutionState,
+  messageConversationById,
+])
+class _ChatMessagesTestSubject extends StatelessWidget {
+  const _ChatMessagesTestSubject({
+    required this.conversationId,
+    required this.messages,
+    required this.overrides,
+    required this.pendingToolCalls,
+    this.messageEntitiesById,
+  });
+
+  final String conversationId;
+  final Map<String, MessageEntity>? messageEntitiesById;
+  final List<String> messages;
+  final List<Object> overrides;
+  final List<PendingToolCall> pendingToolCalls;
+
+  @override
+  Widget build(BuildContext context) {
+    final conversationRepository = _MockConversationRepository();
+    when(
+      () => conversationRepository.watchConversationById(conversationId),
+    ).thenAnswer((_) => Stream.value(null));
+    when(
+      () => conversationRepository.watchChildConversations(conversationId),
+    ).thenAnswer((_) => Stream.value(const []));
+
+    return TestProviderScope(
+      overrides: [
+        conversationSelectedProvider.overrideWithValue(conversationId),
+        conversationRepositoryProvider.overrideWithValue(
+          conversationRepository,
+        ),
+        pendingToolCallsProvider.overrideWith((ref) => pendingToolCalls),
+        ...overrides.cast(),
+      ],
+      child: EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
+              home: Theme(
+                data: ThemeData(extensions: [AuraTheme.light]),
+                child: Material(
+                  child: ChatMessagesWidget(
+                    messages: messages,
+                    messageEntitiesById: messageEntitiesById,
+                    pendingToolCalls: pendingToolCalls,
+                  ),
+                ),
+              ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
+            );
+          },
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      ),
+    );
+  }
 }

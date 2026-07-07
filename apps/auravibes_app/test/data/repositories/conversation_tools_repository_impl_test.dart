@@ -896,6 +896,22 @@ void main() {
             'tool-1',
           ),
         ).thenAnswer((_) async => true);
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            'ws-1',
+            'tool-1',
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'tool-1',
+            workspaceId: 'ws-1',
+            toolId: 'tool-1',
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+          ),
+        );
 
         final result = await fixture.repository.isToolAvailableForConversation(
           'conv-1',
@@ -984,6 +1000,22 @@ void main() {
           ),
         ],
       );
+      when(
+        () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          'ws-1',
+          'write_file',
+        ),
+      ).thenAnswer(
+        (_) async => WorkspaceToolEntity(
+          id: 'tool-2',
+          workspaceId: 'ws-1',
+          toolId: 'write_file',
+          isEnabled: true,
+          permissionMode: ToolPermissionMode.alwaysAllow,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
 
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
@@ -1017,6 +1049,22 @@ void main() {
             updatedAt: DateTime(2026),
           ),
         ],
+      );
+      when(
+        () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          'ws-1',
+          'read_file',
+        ),
+      ).thenAnswer(
+        (_) async => WorkspaceToolEntity(
+          id: 'tool-1',
+          workspaceId: 'ws-1',
+          toolId: 'read_file',
+          isEnabled: true,
+          permissionMode: ToolPermissionMode.alwaysAllow,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
       );
 
       final result = await fixture.repository.getAvailableToolsForConversation(
@@ -1064,6 +1112,12 @@ void main() {
           'ws-1',
         ),
       ).thenAnswer((_) async => [wsTool]);
+      when(
+        () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          'ws-1',
+          'read_file',
+        ),
+      ).thenAnswer((_) async => wsTool);
 
       final _ = await fixture.database.conversationToolsDao
           .upsertConversationTool(
@@ -1096,6 +1150,12 @@ void main() {
           'ws-1',
         ),
       ).thenAnswer((_) async => [wsTool]);
+      when(
+        () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+          'ws-1',
+          'read_file',
+        ),
+      ).thenAnswer((_) async => wsTool);
 
       final result = await fixture.repository
           .getAvailableToolEntitiesForConversation(
@@ -1203,6 +1263,22 @@ void main() {
               updatedAt: DateTime(2026),
             ),
           ],
+        );
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            any(),
+            'read_file',
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'tool-1',
+            workspaceId: workspace.id,
+            toolId: 'read_file',
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+          ),
         );
 
         final tools = await fixture.repository.getEnabledConversationTools(
