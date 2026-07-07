@@ -20,6 +20,8 @@ export 'src/providers/agent_runtime_provider.dart';
 export 'src/providers/agent_tool_provider.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;
 export 'src/skill_context_messages.dart';
+export 'src/sub_agents/sub_agent_runner.dart';
+export 'src/sub_agents/sub_agent_tool_specs.dart';
 export 'src/tool_call_actions.dart'
     hide ApproveToolCallService, SkipToolCallService;
 export 'src/tool_calls.dart';

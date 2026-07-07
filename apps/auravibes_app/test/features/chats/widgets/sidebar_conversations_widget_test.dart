@@ -531,6 +531,20 @@ class _RecordingConversationRepository implements ConversationRepository {
     return activeController.stream;
   }
 
+  @override
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) {
+    return const Stream.empty();
+  }
+
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async {
+    return const [];
+  }
+
   Future<void> close() async {
     final _ = await Future.wait(
       _controllers

@@ -5,6 +5,8 @@ import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
+import 'package:auravibes_app/features/agents/usecases/run_sub_agent_tool_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -57,6 +59,7 @@ class ResolvedToolService {
     listAppSkillCredentialCandidatesUsecase,
     AppSkillRegistry? appSkillRegistry,
     SkillCredentialsRepository? skillCredentialsRepository,
+    agent.SubAgentRunner? subAgentRunner,
     SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
   }) : _delegate = agent.ResolvedToolRunner<ResolvedTool>(
          provider: AppResolvedToolProvider(
@@ -73,6 +76,7 @@ class ResolvedToolService {
                listAppSkillCredentialCandidatesUsecase,
            appSkillRegistry: appSkillRegistry,
            skillCredentialsRepository: skillCredentialsRepository,
+           subAgentRunner: subAgentRunner,
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
          ),
        );
@@ -107,6 +111,7 @@ class AppResolvedToolProvider
     this.listAppSkillCredentialCandidatesUsecase,
     this.appSkillRegistry,
     this.skillCredentialsRepository,
+    this.subAgentRunner,
     this.onSkillsManagerToolSuccess,
   });
 
@@ -123,6 +128,7 @@ class AppResolvedToolProvider
   listAppSkillCredentialCandidatesUsecase;
   final AppSkillRegistry? appSkillRegistry;
   final SkillCredentialsRepository? skillCredentialsRepository;
+  final agent.SubAgentRunner? subAgentRunner;
   final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess;
 
   @override
@@ -236,6 +242,28 @@ class AppResolvedToolProvider
     required String toolSlug,
     required Map<String, dynamic> arguments,
   }) async {
+    if (skillSlug == agent.agentsSkillSlug) {
+      final runner = subAgentRunner;
+      if (runner == null) {
+        throw StateError('SubAgentRunner is not configured.');
+      }
+      final operation = CancelableOperation<Object?>.fromFuture(
+        _runSubAgentTool(
+          runner: runner,
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          toolSlug: toolSlug,
+          arguments: arguments,
+        ),
+      );
+      agentCancellationRuntime.registerCancelableOperation(
+        conversationId,
+        operation,
+      );
+
+      return operation.valueOrCancellation();
+    }
+
     if (skillSlug != skillsManagerSlug) {
       final usecase = runAppSkillToolUsecase;
       if (usecase == null) {
@@ -449,6 +477,27 @@ class _SkillControlToolDependencies {
   final SkillCredentialsRepository? skillCredentialsRepository;
 }
 
+Future<Object?> _runSubAgentTool({
+  required agent.SubAgentRunner runner,
+  required String conversationId,
+  required String workspaceId,
+  required String toolSlug,
+  required Map<String, dynamic> arguments,
+}) {
+  return switch (toolSlug) {
+    agent.listAgentsToolName => runner.listAgents(
+      workspaceId,
+      arguments: arguments,
+    ),
+    agent.runSubAgentToolName => runner.run(
+      parentConversationId: conversationId,
+      workspaceId: workspaceId,
+      arguments: arguments,
+    ),
+    _ => throw StateError('Unknown sub-agent tool: $toolSlug'),
+  };
+}
+
 Future<Object> _listSkillCredentials({
   required String workspaceId,
   required String conversationId,
@@ -526,8 +575,11 @@ Future<Object> _listSkillCredentials({
 }
 
 final resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
+  final agentCancellationRuntime = ref.watch(agentCancellationRuntimeProvider);
+  final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
+
   return ResolvedToolService(
-    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+    agentCancellationRuntime: agentCancellationRuntime,
     mcpToolCaller: ref.watch(mcpToolCallerProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     loadConversationSkillUsecase: ref.watch(
@@ -551,6 +603,29 @@ final resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
     ),
     appSkillRegistry: ref.watch(appSkillRegistryProvider),
     skillCredentialsRepository: ref.watch(skillCredentialsRepositoryProvider),
+    subAgentRunner: agent.SubAgentRunner(
+      agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
+      conversationStore: AppSubAgentConversationStore(
+        ref.watch(conversationRepositoryProvider),
+      ),
+      messageStore: AppSubAgentMessageStore(
+        ref.watch(messageRepositoryProvider),
+      ),
+      activeTracker: activeSubAgents,
+      continueAgentTurn: agent.subAgentTurnRunner.call,
+      onChildStarted: ({required parentId, required childId}) {
+        agentCancellationRuntime.registerCleanup(parentId, () {
+          if (activeSubAgents.parentOf(childId) != parentId) return;
+
+          agentCancellationRuntime.requestStopOnStart(childId);
+          activeSubAgents.finish(
+            parentId: parentId,
+            childId: childId,
+            status: agent.SubAgentCompletionStatus.stopped,
+          );
+        });
+      },
+    ),
     onSkillsManagerToolSuccess:
         ({
           required workspaceId,

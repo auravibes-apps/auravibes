@@ -19,6 +19,22 @@ class ToolResolverService {
   final AgentToolNameResolver _resolver;
 
   ResolvedTool? resolveTool(String compositeToolName) {
+    if (compositeToolName == listAgentsToolName) {
+      return ResolvedTool.skillNative(
+        tableId: compositeToolName,
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: compositeToolName,
+      );
+    }
+
+    if (compositeToolName == runSubAgentToolName) {
+      return ResolvedTool.skillNative(
+        tableId: compositeToolName,
+        skillSlug: agentsSkillSlug,
+        toolIdentifier: compositeToolName,
+      );
+    }
+
     final resolved = _resolver.resolve(compositeToolName);
     if (resolved == null) return null;
 

@@ -185,11 +185,17 @@ abstract class MessageToCreate with _$MessageToCreate {
       return true;
     }
 
+    final metadata = this.metadata;
+
+    if (status == MessageStatus.unfinished && !isUser) {
+      return metadata == null ||
+          metadata.trim().isEmpty ||
+          safeJsonDecode(metadata) != null;
+    }
+
     if (status == MessageStatus.sent) {
       return false;
     }
-
-    final metadata = this.metadata;
 
     return !isUser &&
         metadata != null &&

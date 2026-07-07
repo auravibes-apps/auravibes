@@ -85,4 +85,5 @@ final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
       monitoringService: ref.watch(monitoringServiceProvider),
     );
   },
+  dependencies: [sendMessageUsecaseProvider],
 );

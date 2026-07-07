@@ -22,7 +22,8 @@ mixin _$ConversationEntity {
  DateTime get createdAt;/// Timestamp when the conversation was last updated.
  DateTime get updatedAt;/// ID of the AI model used for this conversation.
  String? get modelId;/// ID of the selected agent used for this conversation.
- String? get agentId;
+ String? get agentId;/// Parent conversation id for hidden child/sub-agent conversations.
+ String? get parentConversationId;
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,16 +34,16 @@ $ConversationEntityCopyWith<ConversationEntity> get copyWith => _$ConversationEn
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,modelId,agentId);
+int get hashCode => Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,modelId,agentId,parentConversationId);
 
 @override
 String toString() {
-  return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, modelId: $modelId, agentId: $agentId)';
+  return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId)';
 }
 
 
@@ -53,7 +54,7 @@ abstract mixin class $ConversationEntityCopyWith<$Res>  {
   factory $ConversationEntityCopyWith(ConversationEntity value, $Res Function(ConversationEntity) _then) = _$ConversationEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, String? modelId, String? agentId
+ String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, String? modelId, String? agentId, String? parentConversationId
 });
 
 
@@ -70,7 +71,7 @@ class _$ConversationEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? modelId = freezed,Object? agentId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? modelId = freezed,Object? agentId = freezed,Object? parentConversationId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -80,6 +81,7 @@ as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: ca
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
+as String?,parentConversationId: freezed == parentConversationId ? _self.parentConversationId : parentConversationId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -165,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  String? modelId,  String? agentId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  String? modelId,  String? agentId,  String? parentConversationId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationEntity() when $default != null:
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.modelId,_that.agentId);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.modelId,_that.agentId,_that.parentConversationId);case _:
   return orElse();
 
 }
@@ -186,10 +188,10 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.crea
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  String? modelId,  String? agentId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  String? modelId,  String? agentId,  String? parentConversationId)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationEntity():
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.modelId,_that.agentId);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.modelId,_that.agentId,_that.parentConversationId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +208,10 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.crea
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  String? modelId,  String? agentId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  String? modelId,  String? agentId,  String? parentConversationId)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationEntity() when $default != null:
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.modelId,_that.agentId);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.modelId,_that.agentId,_that.parentConversationId);case _:
   return null;
 
 }
@@ -221,7 +223,7 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.crea
 
 
 class _ConversationEntity extends ConversationEntity {
-  const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned, required this.createdAt, required this.updatedAt, this.modelId, this.agentId}): super._();
+  const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned, required this.createdAt, required this.updatedAt, this.modelId, this.agentId, this.parentConversationId}): super._();
   
 
 /// Unique identifier for the conversation.
@@ -240,6 +242,8 @@ class _ConversationEntity extends ConversationEntity {
 @override final  String? modelId;
 /// ID of the selected agent used for this conversation.
 @override final  String? agentId;
+/// Parent conversation id for hidden child/sub-agent conversations.
+@override final  String? parentConversationId;
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -251,16 +255,16 @@ _$ConversationEntityCopyWith<_ConversationEntity> get copyWith => __$Conversatio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,modelId,agentId);
+int get hashCode => Object.hash(runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,modelId,agentId,parentConversationId);
 
 @override
 String toString() {
-  return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, modelId: $modelId, agentId: $agentId)';
+  return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId)';
 }
 
 
@@ -271,7 +275,7 @@ abstract mixin class _$ConversationEntityCopyWith<$Res> implements $Conversation
   factory _$ConversationEntityCopyWith(_ConversationEntity value, $Res Function(_ConversationEntity) _then) = __$ConversationEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, String? modelId, String? agentId
+ String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, String? modelId, String? agentId, String? parentConversationId
 });
 
 
@@ -288,7 +292,7 @@ class __$ConversationEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? modelId = freezed,Object? agentId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? modelId = freezed,Object? agentId = freezed,Object? parentConversationId = freezed,}) {
   return _then(_ConversationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -298,6 +302,7 @@ as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: ca
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
+as String?,parentConversationId: freezed == parentConversationId ? _self.parentConversationId : parentConversationId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -312,7 +317,8 @@ mixin _$ConversationToCreate {
  String get title;/// ID of the workspace this conversation belongs to.
  String get workspaceId;/// ID of the AI model used for this conversation.
  String? get modelId;/// ID of the selected agent used for this conversation.
- String? get agentId;/// Whether this conversation is pinned.
+ String? get agentId;/// Parent conversation id for hidden child/sub-agent conversations.
+ String? get parentConversationId;/// Whether this conversation is pinned.
  bool? get isPinned;
 /// Create a copy of ConversationToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -324,16 +330,16 @@ $ConversationToCreateCopyWith<ConversationToCreate> get copyWith => _$Conversati
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,workspaceId,modelId,agentId,isPinned);
+int get hashCode => Object.hash(runtimeType,title,workspaceId,modelId,agentId,parentConversationId,isPinned);
 
 @override
 String toString() {
-  return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, isPinned: $isPinned)';
+  return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId, isPinned: $isPinned)';
 }
 
 
@@ -344,7 +350,7 @@ abstract mixin class $ConversationToCreateCopyWith<$Res>  {
   factory $ConversationToCreateCopyWith(ConversationToCreate value, $Res Function(ConversationToCreate) _then) = _$ConversationToCreateCopyWithImpl;
 @useResult
 $Res call({
- String title, String workspaceId, String? modelId, String? agentId, bool? isPinned
+ String title, String workspaceId, String? modelId, String? agentId, String? parentConversationId, bool? isPinned
 });
 
 
@@ -361,12 +367,13 @@ class _$ConversationToCreateCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? workspaceId = null,Object? modelId = freezed,Object? agentId = freezed,Object? isPinned = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? title = null,Object? workspaceId = null,Object? modelId = freezed,Object? agentId = freezed,Object? parentConversationId = freezed,Object? isPinned = freezed,}) {
   return _then(_self.copyWith(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
+as String?,parentConversationId: freezed == parentConversationId ? _self.parentConversationId : parentConversationId // ignore: cast_nullable_to_non_nullable
 as String?,isPinned: freezed == isPinned ? _self.isPinned : isPinned // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));
@@ -453,10 +460,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  String workspaceId,  String? modelId,  String? agentId,  bool? isPinned)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String title,  String workspaceId,  String? modelId,  String? agentId,  String? parentConversationId,  bool? isPinned)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationToCreate() when $default != null:
-return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.isPinned);case _:
+return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.parentConversationId,_that.isPinned);case _:
   return orElse();
 
 }
@@ -474,10 +481,10 @@ return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  String workspaceId,  String? modelId,  String? agentId,  bool? isPinned)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String title,  String workspaceId,  String? modelId,  String? agentId,  String? parentConversationId,  bool? isPinned)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToCreate():
-return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.isPinned);case _:
+return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.parentConversationId,_that.isPinned);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -494,10 +501,10 @@ return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  String workspaceId,  String? modelId,  String? agentId,  bool? isPinned)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String title,  String workspaceId,  String? modelId,  String? agentId,  String? parentConversationId,  bool? isPinned)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationToCreate() when $default != null:
-return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.isPinned);case _:
+return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.parentConversationId,_that.isPinned);case _:
   return null;
 
 }
@@ -509,7 +516,7 @@ return $default(_that.title,_that.workspaceId,_that.modelId,_that.agentId,_that.
 
 
 class _ConversationToCreate extends ConversationToCreate {
-  const _ConversationToCreate({required this.title, required this.workspaceId, this.modelId, this.agentId, this.isPinned}): super._();
+  const _ConversationToCreate({required this.title, required this.workspaceId, this.modelId, this.agentId, this.parentConversationId, this.isPinned}): super._();
   
 
 /// Human-readable title of the conversation.
@@ -520,6 +527,8 @@ class _ConversationToCreate extends ConversationToCreate {
 @override final  String? modelId;
 /// ID of the selected agent used for this conversation.
 @override final  String? agentId;
+/// Parent conversation id for hidden child/sub-agent conversations.
+@override final  String? parentConversationId;
 /// Whether this conversation is pinned.
 @override final  bool? isPinned;
 
@@ -533,16 +542,16 @@ _$ConversationToCreateCopyWith<_ConversationToCreate> get copyWith => __$Convers
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,workspaceId,modelId,agentId,isPinned);
+int get hashCode => Object.hash(runtimeType,title,workspaceId,modelId,agentId,parentConversationId,isPinned);
 
 @override
 String toString() {
-  return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, isPinned: $isPinned)';
+  return 'ConversationToCreate(title: $title, workspaceId: $workspaceId, modelId: $modelId, agentId: $agentId, parentConversationId: $parentConversationId, isPinned: $isPinned)';
 }
 
 
@@ -553,7 +562,7 @@ abstract mixin class _$ConversationToCreateCopyWith<$Res> implements $Conversati
   factory _$ConversationToCreateCopyWith(_ConversationToCreate value, $Res Function(_ConversationToCreate) _then) = __$ConversationToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String title, String workspaceId, String? modelId, String? agentId, bool? isPinned
+ String title, String workspaceId, String? modelId, String? agentId, String? parentConversationId, bool? isPinned
 });
 
 
@@ -570,12 +579,13 @@ class __$ConversationToCreateCopyWithImpl<$Res>
 
 /// Create a copy of ConversationToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? workspaceId = null,Object? modelId = freezed,Object? agentId = freezed,Object? isPinned = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? title = null,Object? workspaceId = null,Object? modelId = freezed,Object? agentId = freezed,Object? parentConversationId = freezed,Object? isPinned = freezed,}) {
   return _then(_ConversationToCreate(
 title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
+as String?,parentConversationId: freezed == parentConversationId ? _self.parentConversationId : parentConversationId // ignore: cast_nullable_to_non_nullable
 as String?,isPinned: freezed == isPinned ? _self.isPinned : isPinned // ignore: cast_nullable_to_non_nullable
 as bool?,
   ));

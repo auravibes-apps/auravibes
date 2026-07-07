@@ -36,6 +36,16 @@ class _FakeConversationRepository implements ConversationRepository {
   }) => _byWorkspaceController.stream;
 
   @override
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) => const Stream.empty();
+
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async => const [];
+
+  @override
   Future<ConversationEntity> createConversation(
     ConversationToCreate conversation,
   ) {

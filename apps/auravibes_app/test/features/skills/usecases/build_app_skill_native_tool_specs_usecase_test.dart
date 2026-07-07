@@ -1,3 +1,4 @@
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
@@ -107,6 +108,30 @@ void main() {
           'skill__app__brave__llm_context',
         ]),
       );
+    });
+
+    test('builds agents skill with list_agents only', () async {
+      final listUsecase = _MockListAvailableSkillsUsecase();
+      final usecase = BuildAppSkillNativeToolSpecsUsecase(
+        listUsecase,
+        const _FakeAppSkillCandidates({}),
+      );
+      when(
+        () => listUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          workspaceId: any(named: 'workspaceId'),
+          filter: SkillLoadFilter.loaded,
+        ),
+      ).thenAnswer((_) async => [_appSkill(agent.agentsSkillSlug)]);
+
+      final specs = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(specs.map((spec) => spec.name), [
+        'skill__app__agents__list_agents',
+      ]);
     });
 
     test(

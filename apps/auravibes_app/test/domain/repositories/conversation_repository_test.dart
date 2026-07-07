@@ -21,6 +21,20 @@ class _StubConversationRepository implements ConversationRepository {
   }
 
   @override
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) {
+    return const Stream.empty();
+  }
+
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async {
+    return const [];
+  }
+
+  @override
   Stream<ConversationEntity?> watchConversationById(String id) {
     return Stream.value(conversationById);
   }

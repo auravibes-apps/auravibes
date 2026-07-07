@@ -113,7 +113,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   /// Database creation strategy.
   @override
@@ -130,6 +130,23 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 3) {
           await m.createTable(agentTools);
+        }
+        if (from < 4) {
+          await m.addColumn(
+            conversations,
+            conversations.parentConversationId,
+          );
+        }
+        if (from >= 2 && from < 5) {
+          await m.addColumn(agents, agents.description);
+          await m.addColumn(agents, agents.isEnabled);
+          await m.addColumn(agents, agents.visibility);
+        }
+        if (from < 5) {
+          await customStatement(
+            'UPDATE agents SET description = substr(trim(content), 1, 512) '
+            'WHERE length(description) = 0',
+          );
         }
       },
     );

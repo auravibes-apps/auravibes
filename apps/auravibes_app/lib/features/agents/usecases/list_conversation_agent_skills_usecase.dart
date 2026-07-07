@@ -31,6 +31,13 @@ class ListConversationAgentSkillsUsecase {
 
     final agent = await _agentsRepository.getAgentById(agentId);
     if (agent == null || agent.workspaceId != workspaceId) return const [];
+    if (!agent.isEnabled) return const [];
+    final isSubAgentConversation = conversation?.parentConversationId != null;
+    if (isSubAgentConversation) {
+      if (!agent.appearsInSubAgentList) return const [];
+    } else if (!agent.appearsInChatSelector) {
+      return const [];
+    }
 
     final resolved = await _resolveAgentSkillsUsecase.call(
       workspaceId: workspaceId,

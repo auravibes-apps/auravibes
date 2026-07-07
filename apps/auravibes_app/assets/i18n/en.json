@@ -167,6 +167,16 @@
     "empty_title": "No agents",
     "empty_subtitle": "Create agents to reuse prompts and skill sets across chats.",
     "name_label": "Name",
+    "description_label": "When to use",
+    "edit_description": "Edit usage description",
+    "description_empty": "Describe when this agent should be used",
+    "enabled_label": "Enabled",
+    "disabled_label": "Disabled",
+    "enabled_description": "Disabled agents stay saved but cannot be selected or delegated to.",
+    "visibility_label": "Visible in",
+    "visibility_chat_selector": "Chat selector",
+    "visibility_sub_agent_list": "Sub-agent list",
+    "visibility_both": "Both",
     "prompt_label": "System prompt",
     "edit_prompt": "Edit prompt",
     "prompt_empty": "No system prompt yet",
@@ -229,6 +239,7 @@
     },
     "new_chat": {
       "starting": "Starting conversation...",
+      "start_error": "Could not start the conversation. Please try again.",
       "no_model_selected": "Select a model to enable messaging."
     },
     "chat_conversation": {
@@ -480,6 +491,11 @@
           "description": "Create a reusable user credential definition."
         }
       }
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Inspect enabled workspace agents.",
+      "content": "Use this skill to list enabled agents and filter them by type. Loading this skill adds only list_agents to the conversation. run_sub_agent is a harness tool and stays available without loading this skill."
     }
   },
   "tool_confirmation": {

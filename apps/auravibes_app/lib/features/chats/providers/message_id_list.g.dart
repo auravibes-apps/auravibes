@@ -91,6 +91,88 @@ final class ChatMessagesByConversationFamily extends $Family
   String toString() => r'chatMessagesByConversationProvider';
 }
 
+@ProviderFor(latestAssistantMessageByConversation)
+final latestAssistantMessageByConversationProvider =
+    LatestAssistantMessageByConversationFamily._();
+
+final class LatestAssistantMessageByConversationProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<MessageEntity?>,
+          MessageEntity?,
+          Stream<MessageEntity?>
+        >
+    with $FutureModifier<MessageEntity?>, $StreamProvider<MessageEntity?> {
+  LatestAssistantMessageByConversationProvider._({
+    required LatestAssistantMessageByConversationFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'latestAssistantMessageByConversationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() =>
+      _$latestAssistantMessageByConversationHash();
+
+  @override
+  String toString() {
+    return r'latestAssistantMessageByConversationProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<MessageEntity?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<MessageEntity?> create(Ref ref) {
+    final argument = this.argument as String;
+    return latestAssistantMessageByConversation(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is LatestAssistantMessageByConversationProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$latestAssistantMessageByConversationHash() =>
+    r'30326a1f9e549e7654a95dcd0a6ff95245f7a47b';
+
+final class LatestAssistantMessageByConversationFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<MessageEntity?>, String> {
+  LatestAssistantMessageByConversationFamily._()
+    : super(
+        retry: null,
+        name: r'latestAssistantMessageByConversationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  LatestAssistantMessageByConversationProvider call(String conversationId) =>
+      LatestAssistantMessageByConversationProvider._(
+        argument: conversationId,
+        from: this,
+      );
+
+  @override
+  String toString() => r'latestAssistantMessageByConversationProvider';
+}
+
 @ProviderFor(chatMessages)
 final chatMessagesProvider = ChatMessagesProvider._();
 
@@ -643,4 +725,4 @@ final class PendingToolCallsProvider
   }
 }
 
-String _$pendingToolCallsHash() => r'209edaaba0b30403550a411f743e635b791e2192';
+String _$pendingToolCallsHash() => r'35fccbd7c54a28956366b01d86417470dc79fc73';

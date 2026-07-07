@@ -7,13 +7,14 @@
 import 'dart:async';
 
 import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentIterationContext, AgentIterationOrigin;
+    show AgentIterationContext, AgentIterationOrigin, SubAgentCompletionStatus;
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -49,16 +50,21 @@ class ChatConversationScreen extends ConsumerWidget {
     required this.workspaceId,
     required this.chatId,
     super.key,
+    this.showInputComposer = true,
   });
 
   final String workspaceId;
   final String chatId;
+  final bool showInputComposer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ProviderScope(
       overrides: [conversationSelectedProvider.overrideWithValue(chatId)],
-      child: _ChatConversationScreen(workspaceId: workspaceId),
+      child: _ChatConversationScreen(
+        workspaceId: workspaceId,
+        showInputComposer: showInputComposer,
+      ),
     );
   }
 }
@@ -75,9 +81,13 @@ class ChatConversationScreen extends ConsumerWidget {
   pendingToolCalls,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
-  const _ChatConversationScreen({required this.workspaceId});
+  const _ChatConversationScreen({
+    required this.workspaceId,
+    required this.showInputComposer,
+  });
 
   final String workspaceId;
+  final bool showInputComposer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -122,6 +132,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
     return _LoadedChatConversation(
       workspaceId: workspaceId,
       conversation: conversationResult.conversation,
+      showInputComposer: showInputComposer,
     );
   }
 }
@@ -141,10 +152,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
   const _LoadedChatConversation({
     required this.workspaceId,
     required this.conversation,
+    required this.showInputComposer,
   });
 
   final String workspaceId;
   final ConversationEntity conversation;
+  final bool showInputComposer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -233,54 +246,61 @@ class _LoadedChatConversation extends HookConsumerWidget {
           if (queuedDrafts.isNotEmpty)
             ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
           if (hasPendingApprovals) const ChatToolApprovalCard(),
-          Offstage(
-            offstage: hasPendingApprovals,
-            child: ChatInputWidget(
-              onSendMessage: onSendMessage,
-              onToolsPress: onToolsPress,
-              modelControl: CompactWorkspaceModelSelector(
-                workspaceId: workspaceId,
-                workspaceModelSelectionId: conversation.modelId,
-                onChanged: (modelId) {
-                  unawaited(
-                    ref
-                        .read(conversationChatProvider(workspaceId).notifier)
-                        .setModel(modelId),
-                  );
-                },
+          if (showInputComposer)
+            Offstage(
+              offstage: hasPendingApprovals,
+              child: ChatInputWidget(
+                onSendMessage: onSendMessage,
+                onToolsPress: onToolsPress,
+                modelControl: CompactWorkspaceModelSelector(
+                  workspaceId: workspaceId,
+                  workspaceModelSelectionId: conversation.modelId,
+                  onChanged: (modelId) {
+                    unawaited(
+                      ref
+                          .read(conversationChatProvider(workspaceId).notifier)
+                          .setModel(modelId),
+                    );
+                  },
+                ),
+                agentControl: CompactAgentSelector(
+                  workspaceId: workspaceId,
+                  agentId: conversation.agentId,
+                  onChanged: (agentId) {
+                    unawaited(
+                      ref
+                          .read(conversationChatProvider(workspaceId).notifier)
+                          .setAgent(agentId),
+                    );
+                  },
+                ),
+                onSkillsPress: () => _showSkillsModal(
+                  context: context,
+                  workspaceId: workspaceId,
+                  conversationId: conversation.id,
+                ),
+                onContinueAgent: isInputBusy
+                    ? null
+                    : () => unawaited(
+                        _continueAgent(context, ref, conversation.id),
+                      ),
+                isBusy: isInputBusy,
+                showStopButton: isInputBusy && !hidesStoppedRun,
+                onStop: onStop,
+                onCompact: onCompact,
+                isCompacting: isCompacting,
               ),
-              agentControl: CompactAgentSelector(
-                workspaceId: workspaceId,
-                agentId: conversation.agentId,
-                onChanged: (agentId) {
-                  unawaited(
-                    ref
-                        .read(conversationChatProvider(workspaceId).notifier)
-                        .setAgent(agentId),
-                  );
-                },
-              ),
-              onSkillsPress: () => _showSkillsModal(
-                context: context,
-                workspaceId: workspaceId,
-                conversationId: conversation.id,
-              ),
-              onContinueAgent: isInputBusy
-                  ? null
-                  : () => unawaited(
-                      _continueAgent(context, ref, conversation.id),
-                    ),
-              isBusy: isInputBusy,
-              showStopButton: isInputBusy && !hidesStoppedRun,
-              onStop: onStop,
-              onCompact: onCompact,
-              isCompacting: isCompacting,
             ),
-          ),
         ],
       ),
       appBar: AuraAppBarWithDrawer(
         title: Text(conversation.title),
+        leading: showInputComposer
+            ? null
+            : AuraIconButton(
+                icon: Icons.arrow_back,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
       ),
     );
   }
@@ -497,6 +517,11 @@ Future<void> _continueAgent(
 @Dependencies([conversationSelected])
 Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
   final conversationId = ref.read(conversationSelectedProvider);
+  final childIds = ref
+      .read(activeSubAgentRuntimeProvider.notifier)
+      .childrenOf(conversationId);
+  Object? stopError;
+  StackTrace? stopStackTrace;
   try {
     await ref
         .read(auraAgentServiceProvider)
@@ -504,14 +529,48 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
         .stop(
           conversationId: conversationId,
         );
-  } catch (error, stackTrace) {
-    FlutterError.reportError(
-      FlutterErrorDetails(
-        exception: error,
-        stack: stackTrace,
-        library: 'chat_conversation_screen',
-        context: ErrorDescription('while stopping a conversation'),
-      ),
+  } on Object catch (error, stackTrace) {
+    stopError = error;
+    stopStackTrace = stackTrace;
+    _logger.severe(
+      'Failed to stop conversation $conversationId',
+      error,
+      stackTrace,
+    );
+  }
+
+  for (final childId in childIds) {
+    try {
+      await ref
+          .read(auraAgentServiceProvider)
+          .agent
+          .stop(
+            conversationId: childId,
+          );
+    } on Object catch (error, stackTrace) {
+      stopError ??= error;
+      stopStackTrace ??= stackTrace;
+      _logger.severe(
+        'Failed to stop child conversation $childId',
+        error,
+        stackTrace,
+      );
+    } finally {
+      ref
+          .read(activeSubAgentRuntimeProvider.notifier)
+          .finish(
+            parentId: conversationId,
+            childId: childId,
+            status: SubAgentCompletionStatus.stopped,
+          );
+    }
+  }
+
+  if (stopError != null) {
+    _logger.severe(
+      'Stop conversation completed with errors for $conversationId',
+      stopError,
+      stopStackTrace,
     );
     if (!context.mounted) return;
 
@@ -536,19 +595,11 @@ Future<void> _sendMessage(
     await ref
         .read(sendMessageUsecaseProvider)
         .call(conversationId: conversationId, content: message);
-  } on Exception catch (error, stackTrace) {
+  } on Object catch (error, stackTrace) {
     _logger.severe(
       'Failed to send message for conversation $conversationId',
       error,
       stackTrace,
-    );
-    FlutterError.reportError(
-      FlutterErrorDetails(
-        exception: error,
-        stack: stackTrace,
-        library: 'chat_conversation_screen',
-        context: ErrorDescription('while sending a message'),
-      ),
     );
     if (!context.mounted) return;
 
@@ -592,6 +643,7 @@ Future<void> _manualCompact(
 
 @Dependencies([
   chatMessages,
+  conversationSelected,
   conversationCompactionExecutionState,
   messageConversationById,
 ])

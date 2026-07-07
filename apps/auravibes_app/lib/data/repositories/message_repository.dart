@@ -32,6 +32,15 @@ class MessageRepository {
     return messageTables.map(_mapToMessage).toList();
   }
 
+  Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
+    List<String> conversationIds,
+  ) async {
+    final messageTables = await _database.messageDao
+        .getLatestAssistantMessagesByConversations(conversationIds);
+
+    return messageTables.map(_mapToMessage).toList();
+  }
+
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
   ) {
@@ -72,6 +81,14 @@ class MessageRepository {
             },
           ),
         );
+  }
+
+  Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) {
+    return _database.messageDao
+        .watchLatestAssistantMessageByConversation(conversationId)
+        .map((message) => message == null ? null : _mapToMessage(message));
   }
 
   Future<List<MessageEntity>> getMessagesByConversationPaginated(
@@ -145,8 +162,8 @@ class MessageRepository {
         throw MessageNotFoundException(id);
       }
       final metadata = message.metadata ?? existingMessage.metadata;
-      final hasToolCalls = metadata?.toolCalls.isNotEmpty ?? false;
-      if (existingMessage.content.trim().isEmpty && !hasToolCalls) {
+      if (existingMessage.content.trim().isEmpty &&
+          !_hasMessagePayload(metadata)) {
         throw const MessageValidationException(
           _messageContentCannotBeEmpty,
         );
@@ -236,6 +253,17 @@ class MessageRepository {
       updatedAt: messageTable.updatedAt,
       metadata: MessageMetadataEntity.fromJsonString(messageTable.metadata),
     );
+  }
+
+  bool _hasMessagePayload(MessageMetadataEntity? metadata) {
+    if (metadata == null) return false;
+
+    return metadata.toolCalls.isNotEmpty ||
+        (metadata.thinking?.trim().isNotEmpty ?? false) ||
+        metadata.modelMetadata.isNotEmpty ||
+        metadata.promptTokens != null ||
+        metadata.completionTokens != null ||
+        metadata.totalTokens != null;
   }
 
   /// Maps a [MessageEntity] domain entity to a [MessagesCompanion]

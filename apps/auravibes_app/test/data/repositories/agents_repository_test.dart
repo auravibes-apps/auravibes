@@ -34,6 +34,7 @@ void main() {
       fixture.workspaceId,
       AgentToCreate(
         name: '  Helper  ',
+        description: '  Use for helper work  ',
         content: '  Prompt  ',
         skills: [AgentSkillRef.user(firstSkill.id)],
       ),
@@ -52,6 +53,7 @@ void main() {
       created.id,
       AgentToUpdate(
         name: 'Updated',
+        description: 'Use for updated helper work',
         content: 'New prompt',
         skills: [
           AgentSkillRef.user(secondSkill.id),
@@ -79,20 +81,32 @@ void main() {
     expect(
       () => fixture.agentsRepository.createAgent(
         fixture.workspaceId,
-        const AgentToCreate(name: '', content: 'Prompt'),
+        const AgentToCreate(
+          name: '',
+          description: 'Use for helper work',
+          content: 'Prompt',
+        ),
       ),
       throwsA(isA<AgentValidationException>()),
     );
 
     final agent = await fixture.agentsRepository.createAgent(
       fixture.workspaceId,
-      const AgentToCreate(name: 'Helper', content: 'Prompt'),
+      const AgentToCreate(
+        name: 'Helper',
+        description: 'Use for helper work',
+        content: 'Prompt',
+      ),
     );
 
     expect(
       () => fixture.agentsRepository.updateAgent(
         agent.id,
-        const AgentToUpdate(name: 'Helper', content: ''),
+        const AgentToUpdate(
+          name: 'Helper',
+          description: 'Use for helper work',
+          content: '',
+        ),
       ),
       throwsA(isA<AgentValidationException>()),
     );
@@ -104,7 +118,11 @@ void main() {
 
     final agent = await fixture.agentsRepository.createAgent(
       fixture.workspaceId,
-      const AgentToCreate(name: 'Helper', content: 'Prompt'),
+      const AgentToCreate(
+        name: 'Helper',
+        description: 'Use for helper work',
+        content: 'Prompt',
+      ),
     );
     final firstToolId = await fixture.createTool('first_tool');
     final secondToolId = await fixture.createTool('second_tool');
@@ -191,6 +209,7 @@ void main() {
       fixture.workspaceId,
       AgentToCreate(
         name: 'Helper',
+        description: 'Use for helper work',
         content: 'Prompt',
         skills: [AgentSkillRef.user(skill.id)],
       ),
@@ -205,6 +224,7 @@ void main() {
       agent.id,
       AgentToUpdate(
         name: 'Updated',
+        description: 'Use for updated helper work',
         content: 'Prompt',
         skills: [AgentSkillRef.user(skill.id)],
       ),
@@ -269,6 +289,7 @@ void main() {
       otherWorkspace.id,
       AgentToCreate(
         name: 'Other Agent',
+        description: 'Use for other workspace work',
         content: 'Prompt',
         skills: [AgentSkillRef.user(skill.id)],
       ),

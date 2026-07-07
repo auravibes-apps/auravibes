@@ -4,12 +4,14 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
+import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -43,12 +45,14 @@ class NewChatScreen extends ConsumerWidget {
     }
 
     void handleSendMessage(String message) {
+      final monitoringService = ref.read(monitoringServiceProvider);
+      final sendNewMessageUsecase = ref.read(sendNewMessageUsecaseProvider);
       unawaited(
         (() async {
           try {
             final conversation = await ref
                 .read(newChatProvider(workspaceId).notifier)
-                .startConversation(message);
+                .startConversation(message, sendNewMessageUsecase);
 
             if (context.mounted) {
               ConversationRoute(
@@ -56,11 +60,18 @@ class NewChatScreen extends ConsumerWidget {
                 chatId: conversation.id,
               ).replace(context);
             }
-          } on Exception catch (e) {
+          } on Object catch (error, stackTrace) {
+            monitoringService.trackError(
+              'Failed to start new conversation',
+              error: error,
+              stackTrace: stackTrace,
+            );
             if (context.mounted) {
               final _ = showAuraSnackBar(
                 context: context,
-                content: Text('Error: $e'),
+                content: const TextLocale(
+                  LocaleKeys.chats_screens_new_chat_start_error,
+                ),
                 variant: AuraSnackBarVariant.error,
               );
             }

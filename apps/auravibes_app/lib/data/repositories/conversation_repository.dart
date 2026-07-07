@@ -8,6 +8,7 @@ import 'package:drift/drift.dart';
 const _conversationTitleEmpty = 'Conversation title cannot be empty';
 const _agentIdEmpty = 'Agent ID cannot be empty';
 const _modelIdEmpty = 'Model ID cannot be empty';
+const _parentConversationIdEmpty = 'Parent conversation ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
@@ -29,6 +30,24 @@ class ConversationRepository {
     return _database.conversationDao
         .watchConversationById(id)
         .map((row) => row != null ? _mapToConversation(row) : null);
+  }
+
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) {
+    return _database.conversationDao
+        .watchChildConversations(parentConversationId)
+        .map((rows) => rows.map(_mapToConversation).toList());
+  }
+
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async {
+    final rows = await _database.conversationDao.getChildConversations(
+      parentConversationId,
+    );
+
+    return rows.map(_mapToConversation).toList();
   }
 
   Future<ConversationEntity?> getConversationById(String id) async {
@@ -121,6 +140,11 @@ class ConversationRepository {
       return _agentIdEmpty;
     }
 
+    final parentConversationId = conversation.parentConversationId;
+    if (parentConversationId != null && parentConversationId.isEmpty) {
+      return _parentConversationIdEmpty;
+    }
+
     return _unknownValidationError;
   }
 
@@ -161,6 +185,7 @@ class ConversationRepository {
       updatedAt: conversationTable.updatedAt,
       modelId: conversationTable.modelId,
       agentId: conversationTable.agentId,
+      parentConversationId: conversationTable.parentConversationId,
     );
   }
 
@@ -172,6 +197,7 @@ class ConversationRepository {
       title: Value(conversation.title),
       modelId: Value(conversation.modelId),
       agentId: Value(conversation.agentId),
+      parentConversationId: Value(conversation.parentConversationId),
       isPinned: Value(conversation.isPinned ?? false),
     );
   }

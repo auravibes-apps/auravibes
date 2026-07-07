@@ -3272,6 +3272,18 @@ class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _contentMeta = const VerificationMeta(
     'content',
   );
@@ -3283,6 +3295,33 @@ class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _visibilityMeta = const VerificationMeta(
+    'visibility',
+  );
+  @override
+  late final GeneratedColumn<String> visibility = GeneratedColumn<String>(
+    'visibility',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('both'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3290,7 +3329,10 @@ class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
     updatedAt,
     workspaceId,
     name,
+    description,
     content,
+    isEnabled,
+    visibility,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3338,6 +3380,15 @@ class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
     if (data.containsKey('content')) {
       context.handle(
         _contentMeta,
@@ -3345,6 +3396,18 @@ class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
       );
     } else if (isInserting) {
       context.missing(_contentMeta);
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    if (data.containsKey('visibility')) {
+      context.handle(
+        _visibilityMeta,
+        visibility.isAcceptableOrUnknown(data['visibility']!, _visibilityMeta),
+      );
     }
     return context;
   }
@@ -3375,9 +3438,21 @@ class $AgentsTable extends Agents with TableInfo<$AgentsTable, AgentsTable> {
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
       content: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}content'],
+      )!,
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      visibility: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}visibility'],
       )!,
     );
   }
@@ -3399,14 +3474,20 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
   final DateTime updatedAt;
   final String workspaceId;
   final String name;
+  final String description;
   final String content;
+  final bool isEnabled;
+  final String visibility;
   const AgentsTable({
     required this.id,
     required this.createdAt,
     required this.updatedAt,
     required this.workspaceId,
     required this.name,
+    required this.description,
     required this.content,
+    required this.isEnabled,
+    required this.visibility,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3416,7 +3497,10 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['workspace_id'] = Variable<String>(workspaceId);
     map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
     map['content'] = Variable<String>(content);
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['visibility'] = Variable<String>(visibility);
     return map;
   }
 
@@ -3427,7 +3511,10 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
       updatedAt: Value(updatedAt),
       workspaceId: Value(workspaceId),
       name: Value(name),
+      description: Value(description),
       content: Value(content),
+      isEnabled: Value(isEnabled),
+      visibility: Value(visibility),
     );
   }
 
@@ -3442,7 +3529,10 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       workspaceId: serializer.fromJson<String>(json['workspaceId']),
       name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
       content: serializer.fromJson<String>(json['content']),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      visibility: serializer.fromJson<String>(json['visibility']),
     );
   }
   @override
@@ -3454,7 +3544,10 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'workspaceId': serializer.toJson<String>(workspaceId),
       'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
       'content': serializer.toJson<String>(content),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'visibility': serializer.toJson<String>(visibility),
     };
   }
 
@@ -3464,14 +3557,20 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
     DateTime? updatedAt,
     String? workspaceId,
     String? name,
+    String? description,
     String? content,
+    bool? isEnabled,
+    String? visibility,
   }) => AgentsTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     workspaceId: workspaceId ?? this.workspaceId,
     name: name ?? this.name,
+    description: description ?? this.description,
     content: content ?? this.content,
+    isEnabled: isEnabled ?? this.isEnabled,
+    visibility: visibility ?? this.visibility,
   );
   AgentsTable copyWithCompanion(AgentsCompanion data) {
     return AgentsTable(
@@ -3482,7 +3581,14 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
           ? data.workspaceId.value
           : this.workspaceId,
       name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
       content: data.content.present ? data.content.value : this.content,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      visibility: data.visibility.present
+          ? data.visibility.value
+          : this.visibility,
     );
   }
 
@@ -3494,14 +3600,26 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('name: $name, ')
-          ..write('content: $content')
+          ..write('description: $description, ')
+          ..write('content: $content, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('visibility: $visibility')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, createdAt, updatedAt, workspaceId, name, content);
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    name,
+    description,
+    content,
+    isEnabled,
+    visibility,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3511,7 +3629,10 @@ class AgentsTable extends DataClass implements Insertable<AgentsTable> {
           other.updatedAt == this.updatedAt &&
           other.workspaceId == this.workspaceId &&
           other.name == this.name &&
-          other.content == this.content);
+          other.description == this.description &&
+          other.content == this.content &&
+          other.isEnabled == this.isEnabled &&
+          other.visibility == this.visibility);
 }
 
 class AgentsCompanion extends UpdateCompanion<AgentsTable> {
@@ -3520,7 +3641,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
   final Value<DateTime> updatedAt;
   final Value<String> workspaceId;
   final Value<String> name;
+  final Value<String> description;
   final Value<String> content;
+  final Value<bool> isEnabled;
+  final Value<String> visibility;
   final Value<int> rowid;
   const AgentsCompanion({
     this.id = const Value.absent(),
@@ -3528,7 +3652,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
     this.updatedAt = const Value.absent(),
     this.workspaceId = const Value.absent(),
     this.name = const Value.absent(),
+    this.description = const Value.absent(),
     this.content = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.visibility = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AgentsCompanion.insert({
@@ -3537,7 +3664,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
     this.updatedAt = const Value.absent(),
     required String workspaceId,
     required String name,
+    this.description = const Value.absent(),
     required String content,
+    this.isEnabled = const Value.absent(),
+    this.visibility = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
        name = Value(name),
@@ -3548,7 +3678,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
     Expression<DateTime>? updatedAt,
     Expression<String>? workspaceId,
     Expression<String>? name,
+    Expression<String>? description,
     Expression<String>? content,
+    Expression<bool>? isEnabled,
+    Expression<String>? visibility,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3557,7 +3690,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (workspaceId != null) 'workspace_id': workspaceId,
       if (name != null) 'name': name,
+      if (description != null) 'description': description,
       if (content != null) 'content': content,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (visibility != null) 'visibility': visibility,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3568,7 +3704,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
     Value<DateTime>? updatedAt,
     Value<String>? workspaceId,
     Value<String>? name,
+    Value<String>? description,
     Value<String>? content,
+    Value<bool>? isEnabled,
+    Value<String>? visibility,
     Value<int>? rowid,
   }) {
     return AgentsCompanion(
@@ -3577,7 +3716,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
       updatedAt: updatedAt ?? this.updatedAt,
       workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
+      description: description ?? this.description,
       content: content ?? this.content,
+      isEnabled: isEnabled ?? this.isEnabled,
+      visibility: visibility ?? this.visibility,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3600,8 +3742,17 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
     if (content.present) {
       map['content'] = Variable<String>(content.value);
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (visibility.present) {
+      map['visibility'] = Variable<String>(visibility.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -3617,7 +3768,10 @@ class AgentsCompanion extends UpdateCompanion<AgentsTable> {
           ..write('updatedAt: $updatedAt, ')
           ..write('workspaceId: $workspaceId, ')
           ..write('name: $name, ')
+          ..write('description: $description, ')
           ..write('content: $content, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('visibility: $visibility, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3715,6 +3869,20 @@ class $ConversationsTable extends Conversations
       'REFERENCES agents (id) ON DELETE SET NULL',
     ),
   );
+  static const VerificationMeta _parentConversationIdMeta =
+      const VerificationMeta('parentConversationId');
+  @override
+  late final GeneratedColumn<String> parentConversationId =
+      GeneratedColumn<String>(
+        'parent_conversation_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES conversations (id) ON DELETE CASCADE',
+        ),
+      );
   static const VerificationMeta _isPinnedMeta = const VerificationMeta(
     'isPinned',
   );
@@ -3739,6 +3907,7 @@ class $ConversationsTable extends Conversations
     title,
     modelId,
     agentId,
+    parentConversationId,
     isPinned,
   ];
   @override
@@ -3799,6 +3968,15 @@ class $ConversationsTable extends Conversations
         agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta),
       );
     }
+    if (data.containsKey('parent_conversation_id')) {
+      context.handle(
+        _parentConversationIdMeta,
+        parentConversationId.isAcceptableOrUnknown(
+          data['parent_conversation_id']!,
+          _parentConversationIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_pinned')) {
       context.handle(
         _isPinnedMeta,
@@ -3842,6 +4020,10 @@ class $ConversationsTable extends Conversations
         DriftSqlType.string,
         data['${effectivePrefix}agent_id'],
       ),
+      parentConversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_conversation_id'],
+      ),
       isPinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_pinned'],
@@ -3869,6 +4051,7 @@ class ConversationsTable extends DataClass
   final String title;
   final String? modelId;
   final String? agentId;
+  final String? parentConversationId;
   final bool isPinned;
   const ConversationsTable({
     required this.id,
@@ -3878,6 +4061,7 @@ class ConversationsTable extends DataClass
     required this.title,
     this.modelId,
     this.agentId,
+    this.parentConversationId,
     required this.isPinned,
   });
   @override
@@ -3893,6 +4077,9 @@ class ConversationsTable extends DataClass
     }
     if (!nullToAbsent || agentId != null) {
       map['agent_id'] = Variable<String>(agentId);
+    }
+    if (!nullToAbsent || parentConversationId != null) {
+      map['parent_conversation_id'] = Variable<String>(parentConversationId);
     }
     map['is_pinned'] = Variable<bool>(isPinned);
     return map;
@@ -3911,6 +4098,9 @@ class ConversationsTable extends DataClass
       agentId: agentId == null && nullToAbsent
           ? const Value.absent()
           : Value(agentId),
+      parentConversationId: parentConversationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentConversationId),
       isPinned: Value(isPinned),
     );
   }
@@ -3928,6 +4118,9 @@ class ConversationsTable extends DataClass
       title: serializer.fromJson<String>(json['title']),
       modelId: serializer.fromJson<String?>(json['modelId']),
       agentId: serializer.fromJson<String?>(json['agentId']),
+      parentConversationId: serializer.fromJson<String?>(
+        json['parentConversationId'],
+      ),
       isPinned: serializer.fromJson<bool>(json['isPinned']),
     );
   }
@@ -3942,6 +4135,7 @@ class ConversationsTable extends DataClass
       'title': serializer.toJson<String>(title),
       'modelId': serializer.toJson<String?>(modelId),
       'agentId': serializer.toJson<String?>(agentId),
+      'parentConversationId': serializer.toJson<String?>(parentConversationId),
       'isPinned': serializer.toJson<bool>(isPinned),
     };
   }
@@ -3954,6 +4148,7 @@ class ConversationsTable extends DataClass
     String? title,
     Value<String?> modelId = const Value.absent(),
     Value<String?> agentId = const Value.absent(),
+    Value<String?> parentConversationId = const Value.absent(),
     bool? isPinned,
   }) => ConversationsTable(
     id: id ?? this.id,
@@ -3963,6 +4158,9 @@ class ConversationsTable extends DataClass
     title: title ?? this.title,
     modelId: modelId.present ? modelId.value : this.modelId,
     agentId: agentId.present ? agentId.value : this.agentId,
+    parentConversationId: parentConversationId.present
+        ? parentConversationId.value
+        : this.parentConversationId,
     isPinned: isPinned ?? this.isPinned,
   );
   ConversationsTable copyWithCompanion(ConversationsCompanion data) {
@@ -3976,6 +4174,9 @@ class ConversationsTable extends DataClass
       title: data.title.present ? data.title.value : this.title,
       modelId: data.modelId.present ? data.modelId.value : this.modelId,
       agentId: data.agentId.present ? data.agentId.value : this.agentId,
+      parentConversationId: data.parentConversationId.present
+          ? data.parentConversationId.value
+          : this.parentConversationId,
       isPinned: data.isPinned.present ? data.isPinned.value : this.isPinned,
     );
   }
@@ -3990,6 +4191,7 @@ class ConversationsTable extends DataClass
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
+          ..write('parentConversationId: $parentConversationId, ')
           ..write('isPinned: $isPinned')
           ..write(')'))
         .toString();
@@ -4004,6 +4206,7 @@ class ConversationsTable extends DataClass
     title,
     modelId,
     agentId,
+    parentConversationId,
     isPinned,
   );
   @override
@@ -4017,6 +4220,7 @@ class ConversationsTable extends DataClass
           other.title == this.title &&
           other.modelId == this.modelId &&
           other.agentId == this.agentId &&
+          other.parentConversationId == this.parentConversationId &&
           other.isPinned == this.isPinned);
 }
 
@@ -4028,6 +4232,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   final Value<String> title;
   final Value<String?> modelId;
   final Value<String?> agentId;
+  final Value<String?> parentConversationId;
   final Value<bool> isPinned;
   final Value<int> rowid;
   const ConversationsCompanion({
@@ -4038,6 +4243,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     this.title = const Value.absent(),
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.parentConversationId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -4049,6 +4255,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     required String title,
     this.modelId = const Value.absent(),
     this.agentId = const Value.absent(),
+    this.parentConversationId = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : workspaceId = Value(workspaceId),
@@ -4061,6 +4268,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Expression<String>? title,
     Expression<String>? modelId,
     Expression<String>? agentId,
+    Expression<String>? parentConversationId,
     Expression<bool>? isPinned,
     Expression<int>? rowid,
   }) {
@@ -4072,6 +4280,8 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       if (title != null) 'title': title,
       if (modelId != null) 'model_id': modelId,
       if (agentId != null) 'agent_id': agentId,
+      if (parentConversationId != null)
+        'parent_conversation_id': parentConversationId,
       if (isPinned != null) 'is_pinned': isPinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -4085,6 +4295,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     Value<String>? title,
     Value<String?>? modelId,
     Value<String?>? agentId,
+    Value<String?>? parentConversationId,
     Value<bool>? isPinned,
     Value<int>? rowid,
   }) {
@@ -4096,6 +4307,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
       title: title ?? this.title,
       modelId: modelId ?? this.modelId,
       agentId: agentId ?? this.agentId,
+      parentConversationId: parentConversationId ?? this.parentConversationId,
       isPinned: isPinned ?? this.isPinned,
       rowid: rowid ?? this.rowid,
     );
@@ -4125,6 +4337,11 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
     if (agentId.present) {
       map['agent_id'] = Variable<String>(agentId.value);
     }
+    if (parentConversationId.present) {
+      map['parent_conversation_id'] = Variable<String>(
+        parentConversationId.value,
+      );
+    }
     if (isPinned.present) {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
@@ -4144,6 +4361,7 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
           ..write('title: $title, ')
           ..write('modelId: $modelId, ')
           ..write('agentId: $agentId, ')
+          ..write('parentConversationId: $parentConversationId, ')
           ..write('isPinned: $isPinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -11710,6 +11928,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
         'workspaces',
         limitUpdateKind: UpdateKind.delete,
       ),
@@ -15217,7 +15442,10 @@ typedef $$AgentsTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       required String workspaceId,
       required String name,
+      Value<String> description,
       required String content,
+      Value<bool> isEnabled,
+      Value<String> visibility,
       Value<int> rowid,
     });
 typedef $$AgentsTableUpdateCompanionBuilder =
@@ -15227,7 +15455,10 @@ typedef $$AgentsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<String> workspaceId,
       Value<String> name,
+      Value<String> description,
       Value<String> content,
+      Value<bool> isEnabled,
+      Value<String> visibility,
       Value<int> rowid,
     });
 
@@ -15336,8 +15567,23 @@ class $$AgentsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<String> get content => $composableBuilder(
     column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get visibility => $composableBuilder(
+    column: $table.visibility,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15469,8 +15715,23 @@ class $$AgentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get content => $composableBuilder(
     column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get visibility => $composableBuilder(
+    column: $table.visibility,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -15519,8 +15780,21 @@ class $$AgentsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<String> get visibility => $composableBuilder(
+    column: $table.visibility,
+    builder: (column) => column,
+  );
 
   $$WorkspacesTableAnnotationComposer get workspaceId {
     final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
@@ -15659,7 +15933,10 @@ class $$AgentsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> workspaceId = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String> description = const Value.absent(),
                 Value<String> content = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<String> visibility = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AgentsCompanion(
                 id: id,
@@ -15667,7 +15944,10 @@ class $$AgentsTableTableManager
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
                 name: name,
+                description: description,
                 content: content,
+                isEnabled: isEnabled,
+                visibility: visibility,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -15677,7 +15957,10 @@ class $$AgentsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 required String workspaceId,
                 required String name,
+                Value<String> description = const Value.absent(),
                 required String content,
+                Value<bool> isEnabled = const Value.absent(),
+                Value<String> visibility = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AgentsCompanion.insert(
                 id: id,
@@ -15685,7 +15968,10 @@ class $$AgentsTableTableManager
                 updatedAt: updatedAt,
                 workspaceId: workspaceId,
                 name: name,
+                description: description,
                 content: content,
+                isEnabled: isEnabled,
+                visibility: visibility,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -15841,6 +16127,7 @@ typedef $$ConversationsTableCreateCompanionBuilder =
       required String title,
       Value<String?> modelId,
       Value<String?> agentId,
+      Value<String?> parentConversationId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -15853,6 +16140,7 @@ typedef $$ConversationsTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String?> modelId,
       Value<String?> agentId,
+      Value<String?> parentConversationId,
       Value<bool> isPinned,
       Value<int> rowid,
     });
@@ -15912,6 +16200,26 @@ final class $$ConversationsTableReferences
       $_db.agents,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_agentIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _parentConversationIdTable(_$AppDatabase db) => db
+      .conversations
+      .createAlias('conversations__parent_conversation_id__conversations__id');
+
+  $$ConversationsTableProcessedTableManager? get parentConversationId {
+    final $_column = $_itemColumn<String>('parent_conversation_id');
+    if ($_column == null) return null;
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _parentConversationIdTable($_db),
+    );
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -16080,6 +16388,29 @@ class $$ConversationsTableFilterComposer
           }) => $$AgentsTableFilterComposer(
             $db: $db,
             $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get parentConversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -16268,6 +16599,29 @@ class $$ConversationsTableOrderingComposer
     );
     return composer;
   }
+
+  $$ConversationsTableOrderingComposer get parentConversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ConversationsTableAnnotationComposer
@@ -16355,6 +16709,29 @@ class $$ConversationsTableAnnotationComposer
           }) => $$AgentsTableAnnotationComposer(
             $db: $db,
             $table: $db.agents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableAnnotationComposer get parentConversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.parentConversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -16459,6 +16836,7 @@ class $$ConversationsTableTableManager
             bool workspaceId,
             bool modelId,
             bool agentId,
+            bool parentConversationId,
             bool messagesRefs,
             bool conversationToolsRefs,
             bool conversationSkillsRefs,
@@ -16484,6 +16862,7 @@ class $$ConversationsTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
+                Value<String?> parentConversationId = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion(
@@ -16494,6 +16873,7 @@ class $$ConversationsTableTableManager
                 title: title,
                 modelId: modelId,
                 agentId: agentId,
+                parentConversationId: parentConversationId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -16506,6 +16886,7 @@ class $$ConversationsTableTableManager
                 required String title,
                 Value<String?> modelId = const Value.absent(),
                 Value<String?> agentId = const Value.absent(),
+                Value<String?> parentConversationId = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ConversationsCompanion.insert(
@@ -16516,6 +16897,7 @@ class $$ConversationsTableTableManager
                 title: title,
                 modelId: modelId,
                 agentId: agentId,
+                parentConversationId: parentConversationId,
                 isPinned: isPinned,
                 rowid: rowid,
               ),
@@ -16532,6 +16914,7 @@ class $$ConversationsTableTableManager
                 workspaceId = false,
                 modelId = false,
                 agentId = false,
+                parentConversationId = false,
                 messagesRefs = false,
                 conversationToolsRefs = false,
                 conversationSkillsRefs = false,
@@ -16600,6 +16983,21 @@ class $$ConversationsTableTableManager
                                     referencedColumn:
                                         $$ConversationsTableReferences
                                             ._agentIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (parentConversationId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.parentConversationId,
+                                    referencedTable:
+                                        $$ConversationsTableReferences
+                                            ._parentConversationIdTable(db),
+                                    referencedColumn:
+                                        $$ConversationsTableReferences
+                                            ._parentConversationIdTable(db)
                                             .id,
                                   )
                                   as T;
@@ -16696,6 +17094,7 @@ typedef $$ConversationsTableProcessedTableManager =
         bool workspaceId,
         bool modelId,
         bool agentId,
+        bool parentConversationId,
         bool messagesRefs,
         bool conversationToolsRefs,
         bool conversationSkillsRefs,

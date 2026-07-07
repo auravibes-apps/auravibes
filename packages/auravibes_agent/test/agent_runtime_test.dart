@@ -42,8 +42,24 @@ void main() {
       expect(runtime.isCancellationRequested('c1'), isTrue);
       expect(calls, ['first', 'async', 'late']);
 
-      runtime.clear('c1');
+      runtime.forceClear('c1');
       expect(runtime.isCancellationRequested('c1'), isFalse);
     },
   );
+
+  test('cancellation runtime ignores normal stop requested before start', () {
+    final runtime = AgentCancellationRuntime()..requestStop('c1');
+
+    final _ = runtime.start('c1');
+
+    expect(runtime.isCancellationRequested('c1'), isFalse);
+  });
+
+  test('cancellation runtime preserves explicit stop-on-start request', () {
+    final runtime = AgentCancellationRuntime()..requestStopOnStart('c1');
+
+    final _ = runtime.start('c1');
+
+    expect(runtime.isCancellationRequested('c1'), isTrue);
+  });
 }

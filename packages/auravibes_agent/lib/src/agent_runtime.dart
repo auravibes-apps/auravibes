@@ -53,12 +53,18 @@ abstract interface class AgentConversationDataProvider {
 
 class AgentCancellationRuntime {
   final _entries = <String, _AgentCancellationEntry>{};
+  final _pendingStops = <String>{};
 
-  void start(String conversationId) {
-    final _ = _entries.putIfAbsent(
-      conversationId,
-      _AgentCancellationEntry.new,
-    );
+  Object start(String conversationId) {
+    final token = Object();
+    final entry = _AgentCancellationEntry(token);
+    if (_pendingStops.remove(conversationId)) {
+      entry.requestStop();
+    }
+    _entries.remove(conversationId)?.requestStop();
+    _entries[conversationId] = entry;
+
+    return token;
   }
 
   bool isCancellationRequested(String conversationId) {
@@ -72,8 +78,30 @@ class AgentCancellationRuntime {
     entry.requestStop();
   }
 
-  void clear(String conversationId) {
+  void requestStopOnStart(String conversationId) {
+    final entry = _entries[conversationId];
+    if (entry == null) {
+      final _ = _pendingStops.add(conversationId);
+
+      return;
+    }
+
+    entry.requestStop();
+  }
+
+  void clear(String conversationId, Object token) {
+    if (_entries[conversationId]?.token != token) return;
+
+    _clearEntry(conversationId);
+  }
+
+  void forceClear(String conversationId) {
+    _clearEntry(conversationId);
+  }
+
+  void _clearEntry(String conversationId) {
     final entry = _entries.remove(conversationId);
+    _pendingStops.remove(conversationId);
     entry?.requestStop();
   }
 
@@ -84,7 +112,7 @@ class AgentCancellationRuntime {
     _entries
         .putIfAbsent(
           conversationId,
-          _AgentCancellationEntry.new,
+          () => _AgentCancellationEntry(Object()),
         )
         .registerCleanup(cleanup);
   }
@@ -107,6 +135,9 @@ class AgentRateLimitRetryRuntime {
 }
 
 class _AgentCancellationEntry {
+  _AgentCancellationEntry(this.token);
+
+  final Object token;
   final _cleanupCallbacks = <FutureOr<void> Function()>[];
   bool _isCancellationRequested = false;
 

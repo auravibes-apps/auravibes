@@ -1,8 +1,12 @@
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_skills/auravibes_skills.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -31,12 +35,14 @@ const _currentWorkspaceSentence = 'current workspace.';
 class BuildAppSkillNativeToolSpecsUsecase {
   const BuildAppSkillNativeToolSpecsUsecase(
     this._listAvailableSkillsUsecase,
-    this._listAppSkillCredentialCandidatesUsecase,
-  );
+    this._listAppSkillCredentialCandidatesUsecase, [
+    this._conversationRepository,
+  ]);
 
   final ListAvailableSkillsUsecase _listAvailableSkillsUsecase;
   final ListAppSkillCredentialCandidatesUsecase
   _listAppSkillCredentialCandidatesUsecase;
+  final ConversationRepository? _conversationRepository;
 
   Future<List<ToolSpec>> call({
     required String conversationId,
@@ -48,6 +54,12 @@ class BuildAppSkillNativeToolSpecsUsecase {
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
     );
+    final conversation = await _conversationRepository?.getConversationById(
+      conversationId,
+    );
+    final isUnknownConversation =
+        _conversationRepository != null && conversation == null;
+    final isSubAgentConversation = conversation?.parentConversationId != null;
     final skillKeys = <String>{};
     final runtimeSkills =
         [
@@ -63,6 +75,19 @@ class BuildAppSkillNativeToolSpecsUsecase {
     final specs = <ToolSpec>[
       if (hasSkillsManager) ..._skillsManagerToolSpecs,
     ];
+    final hasSubAgents = runtimeSkills.any(
+      (skill) =>
+          skill.source == SkillSource.app &&
+          skill.slug == agent.agentsSkillSlug,
+    );
+    if (hasSubAgents && !isUnknownConversation && !isSubAgentConversation) {
+      final subAgentsSkill = _appSkillRegistry.getBySlug(
+        agent.agentsSkillSlug,
+      );
+      if (subAgentsSkill != null) {
+        specs.addAll(_appSkillToolSpecs(subAgentsSkill, const []));
+      }
+    }
 
     for (final skill in serviceSkillDefinitions) {
       final isLoaded = runtimeSkills.any(
@@ -450,5 +475,8 @@ final buildAppSkillNativeToolSpecsUsecaseProvider =
       return BuildAppSkillNativeToolSpecsUsecase(
         ref.watch(listAvailableSkillsUsecaseProvider),
         ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
+        ref.watch(conversationRepositoryProvider),
       );
     });
+
+const _appSkillRegistry = AppSkillRegistry();

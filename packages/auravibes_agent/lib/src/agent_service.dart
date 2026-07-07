@@ -50,7 +50,7 @@ class AgentService {
       throw Exception('Conversation not found');
     }
 
-    agentCancellationRuntime.start(conversationId);
+    final cancellationToken = agentCancellationRuntime.start(conversationId);
 
     try {
       return await _runLoop(
@@ -59,7 +59,7 @@ class AgentService {
         context: context,
       );
     } finally {
-      agentCancellationRuntime.clear(conversationId);
+      agentCancellationRuntime.clear(conversationId, cancellationToken);
     }
   }
 

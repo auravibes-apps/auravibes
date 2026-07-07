@@ -545,6 +545,34 @@ void main() {
       );
     });
 
+    test(
+      'patchMessage allows sent status for thinking-only assistant message',
+      () async {
+        final created = await repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.unfinished,
+            metadata: '{"thinking":"reasoning"}',
+          ),
+        );
+
+        final patched = await repository.patchMessage(
+          created.id,
+          const MessagePatch(
+            metadata: MessageMetadataEntity(thinking: 'reasoning'),
+            status: MessageStatus.sent,
+          ),
+        );
+
+        expect(patched.status, MessageStatus.sent);
+        expect(patched.content, isEmpty);
+        expect(patched.metadata?.thinking, 'reasoning');
+      },
+    );
+
     test('patchMessage rejects sent status for blank content', () async {
       final created = await repository.createMessage(
         const MessageToCreate(
@@ -660,21 +688,21 @@ void main() {
     );
 
     test(
-      'createMessage rejects empty assistant content with blank metadata',
-      () {
-        expect(
-          () => repository.createMessage(
-            const MessageToCreate(
-              conversationId: 'conv-1',
-              content: '',
-              messageType: MessageType.text,
-              isUser: false,
-              status: MessageStatus.unfinished,
-              metadata: '   ',
-            ),
+      'createMessage allows empty unfinished assistant placeholder',
+      () async {
+        final created = await repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: false,
+            status: MessageStatus.unfinished,
+            metadata: '   ',
           ),
-          throwsA(isA<MessageValidationException>()),
         );
+
+        expect(created.content, isEmpty);
+        expect(created.status, MessageStatus.unfinished);
       },
     );
 

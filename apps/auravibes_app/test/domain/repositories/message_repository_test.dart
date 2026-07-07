@@ -28,6 +28,26 @@ class _StubMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
+    List<String> conversationIds,
+  ) async {
+    return messagesByConversation.where((message) => !message.isUser).toList();
+  }
+
+  @override
+  Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) {
+    for (final message in messagesByConversation.reversed) {
+      if (!message.isUser) {
+        return Stream.value(message);
+      }
+    }
+
+    return Stream.value(null);
+  }
+
+  @override
   Stream<List<MessageEntity>> watchMessagesByConversation(
     String conversationId,
   ) {

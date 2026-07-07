@@ -40,7 +40,9 @@ class CompactAgentSelector extends ConsumerWidget {
               value: '',
               child: TextLocale(LocaleKeys.agents_selector_none),
             ),
-            for (final agent in value)
+            for (final agent in value.where(
+              (agent) => agent.appearsInChatSelector,
+            ))
               AuraDropdownOption(value: agent.id, child: Text(agent.name)),
           ],
           value: agentId ?? '',

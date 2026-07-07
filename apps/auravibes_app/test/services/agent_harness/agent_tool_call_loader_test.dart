@@ -1,9 +1,11 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,6 +29,16 @@ void main() {
         messageRepository: messageRepository,
         toolResolverService: const ToolResolverService(),
       );
+    });
+
+    test('resolves bare agent tool names to app skill tools', () {
+      final tool = const ToolResolverService().resolveTool(
+        agent.listAgentsToolName,
+      );
+
+      expect(tool?.type, ResolvedToolType.skillNative);
+      expect(tool?.skillSlug, agent.agentsSkillSlug);
+      expect(tool?.fullName, 'skill__app__agents__list_agents');
     });
 
     test(

@@ -47,6 +47,12 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
             GoRouteData.$route(
               path: 'chats/:chatId',
               factory: $ConversationRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'sub-agents/:subAgentConversationId',
+                  factory: $SubAgentConversationRoute._fromState,
+                ),
+              ],
             ),
             GoRouteData.$route(path: 'chats', factory: $ChatsRoute._fromState),
           ],
@@ -216,6 +222,35 @@ mixin $ConversationRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats/${Uri.encodeComponent(_self.chatId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $SubAgentConversationRoute on GoRouteData {
+  static SubAgentConversationRoute _fromState(GoRouterState state) =>
+      SubAgentConversationRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        chatId: state.pathParameters['chatId']!,
+        subAgentConversationId: state.pathParameters['subAgentConversationId']!,
+      );
+
+  SubAgentConversationRoute get _self => this as SubAgentConversationRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats/${Uri.encodeComponent(_self.chatId)}/sub-agents/${Uri.encodeComponent(_self.subAgentConversationId)}',
   );
 
   @override

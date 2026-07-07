@@ -177,6 +177,89 @@ final class ConversationsStreamFamily extends $Family
   String toString() => r'conversationsStreamProvider';
 }
 
+@ProviderFor(childConversationsStream)
+final childConversationsStreamProvider = ChildConversationsStreamFamily._();
+
+final class ChildConversationsStreamProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<ConversationEntity>>,
+          List<ConversationEntity>,
+          Stream<List<ConversationEntity>>
+        >
+    with
+        $FutureModifier<List<ConversationEntity>>,
+        $StreamProvider<List<ConversationEntity>> {
+  ChildConversationsStreamProvider._({
+    required ChildConversationsStreamFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'childConversationsStreamProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$childConversationsStreamHash();
+
+  @override
+  String toString() {
+    return r'childConversationsStreamProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<ConversationEntity>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<ConversationEntity>> create(Ref ref) {
+    final argument = this.argument as String;
+    return childConversationsStream(ref, parentConversationId: argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ChildConversationsStreamProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$childConversationsStreamHash() =>
+    r'd746e86ac8317db688e95440d48278f24c9feb84';
+
+final class ChildConversationsStreamFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<ConversationEntity>>, String> {
+  ChildConversationsStreamFamily._()
+    : super(
+        retry: null,
+        name: r'childConversationsStreamProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  ChildConversationsStreamProvider call({
+    required String parentConversationId,
+  }) => ChildConversationsStreamProvider._(
+    argument: parentConversationId,
+    from: this,
+  );
+
+  @override
+  String toString() => r'childConversationsStreamProvider';
+}
+
 @ProviderFor(streamingTitle)
 final streamingTitleProvider = StreamingTitleFamily._();
 

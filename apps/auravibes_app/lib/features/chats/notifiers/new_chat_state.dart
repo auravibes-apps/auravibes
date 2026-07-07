@@ -42,7 +42,10 @@ class NewChatNotifier extends _$NewChatNotifier {
     state = state.copyWith(agentId: agentId);
   }
 
-  Future<ConversationEntity> startConversation(String message) async {
+  Future<ConversationEntity> startConversation(
+    String message,
+    SendNewMessageUsecase sendNewMessageUsecase,
+  ) async {
     final modelId = state.modelId;
     if (modelId == null) {
       throw Exception('Please select a chat model');
@@ -50,14 +53,12 @@ class NewChatNotifier extends _$NewChatNotifier {
 
     state = state.copyWith(isLoading: true);
     try {
-      return ref
-          .read(sendNewMessageUsecaseProvider)
-          .call(
-            firstMessage: message,
-            workspaceModelSelectionId: modelId,
-            workspaceId: workspaceId,
-            agentId: state.agentId,
-          );
+      return sendNewMessageUsecase.call(
+        firstMessage: message,
+        workspaceModelSelectionId: modelId,
+        workspaceId: workspaceId,
+        agentId: state.agentId,
+      );
     } finally {
       state = state.copyWith(isLoading: false);
     }

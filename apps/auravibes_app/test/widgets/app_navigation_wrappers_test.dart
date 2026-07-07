@@ -734,6 +734,20 @@ class _FakeConversationRepository implements ConversationRepository {
     return controller.stream;
   }
 
+  @override
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) {
+    return const Stream.empty();
+  }
+
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async {
+    return const [];
+  }
+
   Future<void> close() async {
     _processPendingRemovals();
 

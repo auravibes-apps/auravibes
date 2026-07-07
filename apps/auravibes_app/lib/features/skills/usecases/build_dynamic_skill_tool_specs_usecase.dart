@@ -85,7 +85,7 @@ class BuildDynamicSkillToolSpecsUsecase {
       return '$action a skill. No skills are currently eligible.';
     }
 
-    final buffer = StringBuffer('$action a skill by slug. Eligible skills:');
+    final buffer = StringBuffer(_actionDescription(action));
     for (final skill in skills) {
       buffer.write(
         ' ${skill.title} (${skill.slug}, ${skill.source.name}, '
@@ -94,6 +94,19 @@ class BuildDynamicSkillToolSpecsUsecase {
     }
 
     return buffer.toString();
+  }
+
+  String _actionDescription(String action) {
+    return switch (action) {
+      'Load' =>
+        'Load a skill by slug. Loading adds skill tools to this conversation '
+            'so they can be called. Eligible skills:',
+      'Unload' =>
+        'Unload a skill by slug. Unloading removes skill tools from this '
+            'conversation; do not unload if you still need to call those '
+            'tools. Eligible loaded skills:',
+      _ => '$action a skill by slug. Eligible skills:',
+    };
   }
 
   ToolSpec _buildListCredentialsSpec(List<AvailableSkill> skills) {

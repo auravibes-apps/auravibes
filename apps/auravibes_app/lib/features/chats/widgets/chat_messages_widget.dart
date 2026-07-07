@@ -3,16 +3,23 @@
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
 
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/agents/usecases/sub_agent_tools.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
@@ -27,6 +34,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 @Dependencies([
+  conversationSelected,
   conversationCompactionExecutionState,
   messageConversationById,
 ])
@@ -48,6 +56,24 @@ class ChatMessagesWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
     final controller = useScrollController();
+    final parentConversationId = ref.watch(conversationSelectedProvider);
+    final childConversations =
+        ref
+            .watch(
+              childConversationsStreamProvider(
+                parentConversationId: parentConversationId,
+              ),
+            )
+            .value ??
+        const <ConversationEntity>[];
+    final workspaceId = ref
+        .watch(
+          conversationByIdStreamProvider(
+            conversationId: parentConversationId,
+          ),
+        )
+        .value
+        ?.workspaceId;
     final compactionState = ref.watch(
       conversationCompactionExecutionStateProvider,
     );
@@ -72,6 +98,9 @@ class ChatMessagesWidget extends HookConsumerWidget {
           messageId: messageId,
           baseMessage: messageEntitiesById?[messageId],
           pendingToolCalls: pendingToolCalls,
+          parentConversationId: parentConversationId,
+          childConversations: childConversations,
+          workspaceId: workspaceId,
         );
       },
       itemCount: itemCount,
@@ -90,11 +119,17 @@ class _ChatMessageRow extends HookConsumerWidget {
     required this.messageId,
     required this.baseMessage,
     required this.pendingToolCalls,
+    required this.parentConversationId,
+    required this.childConversations,
+    required this.workspaceId,
   });
 
   final String messageId;
   final MessageEntity? baseMessage;
   final List<PendingToolCall> pendingToolCalls;
+  final String parentConversationId;
+  final List<ConversationEntity> childConversations;
+  final String? workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -158,6 +193,9 @@ class _ChatMessageRow extends HookConsumerWidget {
             _ToolCallWidget(
               toolCall: toolCall,
               messageId: message.id,
+              parentConversationId: parentConversationId,
+              childConversations: childConversations,
+              workspaceId: workspaceId,
               isAwaitingApproval: pendingToolCalls.any(
                 (pending) =>
                     pending.messageId == message.id &&
@@ -352,12 +390,18 @@ class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({
     required this.toolCall,
     required this.messageId,
+    required this.parentConversationId,
+    required this.childConversations,
+    required this.workspaceId,
     required this.isAwaitingApproval,
     super.key,
   });
 
   final MessageToolCallEntity toolCall;
   final String messageId;
+  final String parentConversationId;
+  final List<ConversationEntity> childConversations;
+  final String? workspaceId;
   final bool isAwaitingApproval;
 
   @override
@@ -372,45 +416,77 @@ class _ToolCallWidget extends ConsumerWidget {
 
     final decodedArgs = tryDecodeToolMetadata(toolCall.argumentsRaw);
     final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);
+    final subAgentConversationId =
+        _subAgentConversationId(toolCall) ??
+        _activeSubAgentConversationId(ref, parentConversationId, toolCall) ??
+        _persistedSubAgentConversationId(toolCall, childConversations);
+
+    final parentWorkspaceId = workspaceId;
+    final openSubAgent =
+        parentWorkspaceId == null || subAgentConversationId == null
+        ? null
+        : () => SubAgentConversationRoute(
+            workspaceId: parentWorkspaceId,
+            chatId: parentConversationId,
+            subAgentConversationId: subAgentConversationId,
+          ).go(context);
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: displayName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (decodedArgs != null) ...[
+                const TextSpan(text: ' "'),
+                TextSpan(text: decodedArgs),
+                const TextSpan(text: '"'),
+              ],
+            ],
+          ),
+        ),
+        _ToolCallStatusIndicator(
+          statusText: TextLocale(_getStatusLocaleKey()),
+          icon: _getStatusIcon(),
+          color: _getStatusColor(context),
+        ),
+        if (decodedResponse != null)
+          Padding(
+            padding: EdgeInsets.only(
+              top: context.auraTheme.fromSpacing(.xs),
+            ),
+            child: ToolCallResponsePreview(
+              toolName: toolCall.name,
+              content: decodedResponse,
+              showExpandButton: openSubAgent == null,
+            ),
+          ),
+      ],
+    );
+
+    if (openSubAgent != null) {
+      return AuraContainer(
+        child: AuraTile(
+          child: content,
+          onTap: openSubAgent,
+          variant: AuraTileVariant.surface,
+          size: AuraTileSize.small,
+          trailing: const AuraIcon(Icons.chevron_right),
+        ),
+        padding: .none,
+        margin: .small,
+        variant: AuraContainerVariant.transparent,
+      );
+    }
 
     return AuraContainer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: displayName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (decodedArgs != null) ...[
-                  const TextSpan(text: ' "'),
-                  TextSpan(text: decodedArgs),
-                  const TextSpan(text: '"'),
-                ],
-              ],
-            ),
-          ),
-          _ToolCallStatusIndicator(
-            statusText: TextLocale(_getStatusLocaleKey()),
-            icon: _getStatusIcon(),
-            color: _getStatusColor(context),
-          ),
-          if (decodedResponse != null)
-            Padding(
-              padding: EdgeInsets.only(
-                top: context.auraTheme.fromSpacing(.xs),
-              ),
-              child: ToolCallResponsePreview(
-                toolName: toolCall.name,
-                content: decodedResponse,
-              ),
-            ),
-        ],
-      ),
+      child: content,
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
@@ -468,6 +544,76 @@ class _ToolCallWidget extends ConsumerWidget {
       ToolCallResultStatus.executionError => context.auraColors.error,
     };
   }
+}
+
+String? _persistedSubAgentConversationId(
+  MessageToolCallEntity toolCall,
+  List<ConversationEntity> children,
+) {
+  if (!_isRunSubAgentTool(toolCall.name)) return null;
+  final title = _subAgentTitle(toolCall);
+  if (title == null) return null;
+
+  final matches = children.where((child) => child.title == title).toList();
+
+  return matches.length == 1 ? matches.single.id : null;
+}
+
+String? _activeSubAgentConversationId(
+  WidgetRef ref,
+  String parentConversationId,
+  MessageToolCallEntity toolCall,
+) {
+  if (!_isRunSubAgentTool(toolCall.name) || toolCall.responseRaw != null) {
+    return null;
+  }
+
+  return ref.watch(
+    activeSubAgentRuntimeProvider.select(
+      (state) {
+        final childIds = state[parentConversationId] ?? const <String>{};
+
+        return childIds.length == 1 ? childIds.single : null;
+      },
+    ),
+  );
+}
+
+String? _subAgentConversationId(MessageToolCallEntity toolCall) {
+  if (!_isRunSubAgentTool(toolCall.name)) return null;
+
+  final responseRaw = toolCall.responseRaw;
+  if (responseRaw == null) return null;
+
+  try {
+    final decoded = jsonDecode(responseRaw);
+    if (decoded case {'conversationId': final String conversationId}) {
+      return conversationId;
+    }
+  } on Object {
+    return null;
+  }
+
+  return null;
+}
+
+bool _isRunSubAgentTool(String toolName) {
+  return toolName == runSubAgentToolName ||
+      toolName.endsWith('__$runSubAgentToolName');
+}
+
+String? _subAgentTitle(MessageToolCallEntity toolCall) {
+  try {
+    final decoded = jsonDecode(toolCall.argumentsRaw);
+    if (decoded case {'title': final String title}) {
+      final normalized = title.trim();
+      if (normalized.isNotEmpty) return normalized;
+    }
+  } on Object {
+    return null;
+  }
+
+  return null;
 }
 
 void _showCompactionDetails(BuildContext context, MessageEntity message) {

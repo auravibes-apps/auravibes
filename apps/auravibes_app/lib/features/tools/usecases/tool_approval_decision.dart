@@ -1,4 +1,5 @@
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
@@ -44,6 +45,13 @@ class ResolveToolApprovalDecisionUsecase {
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
+    if (_isRunSubAgentTool(resolvedTool)) {
+      return ToolApprovalDecision(
+        toolCallId: toolCallId,
+        permissionResult: ToolPermissionResult.granted,
+      );
+    }
+
     final permissionTableId = await resolvePermissionTableId(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -103,6 +111,14 @@ class ResolveToolApprovalDecisionUsecase {
 
     return workspaceTool?.id;
   }
+}
+
+bool _isRunSubAgentTool(ResolvedTool resolvedTool) {
+  if (resolvedTool.fullName == agent.runSubAgentToolName) return true;
+
+  return resolvedTool.isSkillNative &&
+      resolvedTool.skillSlug == agent.agentsSkillSlug &&
+      resolvedTool.toolIdentifier == agent.runSubAgentToolName;
 }
 
 final resolveToolApprovalDecisionUsecaseProvider =
