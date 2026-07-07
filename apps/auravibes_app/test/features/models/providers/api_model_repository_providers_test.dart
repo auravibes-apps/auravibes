@@ -78,6 +78,17 @@ class _FakeApiModelRepository implements ApiModelRepository {
   }
 }
 
+class _CountingModelApiService extends ModelApiService {
+  int fetchCount = 0;
+
+  @override
+  Future<ModelApiResponse> fetchAllModels() async {
+    fetchCount++;
+
+    return ModelApiResponse(providers: []);
+  }
+}
+
 void main() {
   group('apiModelRepositoryProvider', () {
     test('returns ApiModelRepository from container', () {
@@ -243,6 +254,24 @@ void main() {
       expect(service, isA<ModelSyncService>());
 
       container.dispose();
+    });
+
+    test('does not sync when provider is created', () async {
+      final apiService = _CountingModelApiService();
+      final container = ProviderContainer(
+        overrides: [
+          apiModelRepositoryProvider.overrideWithValue(
+            _FakeApiModelRepository(),
+          ),
+          modelApiServiceProvider.overrideWithValue(apiService),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final _ = container.read(modelSyncServiceProvider);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(apiService.fetchCount, 0);
     });
   });
 

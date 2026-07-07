@@ -15,6 +15,10 @@ void main() {
     bool isBusy = false,
     bool? showStopButton,
     VoidCallback? onStop,
+    Widget modelSheetControl = const SizedBox.shrink(),
+    Widget agentSheetControl = const SizedBox.shrink(),
+    Widget modelCompactControl = const SizedBox.shrink(),
+    Widget agentCompactControl = const SizedBox.shrink(),
   }) {
     return EasyLocalization(
       child: ProviderScope(
@@ -28,8 +32,10 @@ void main() {
                     child: ChatInputWidget(
                       onSendMessage: onSendMessage,
                       onToolsPress: onToolsPress,
-                      modelControl: const SizedBox.shrink(),
-                      agentControl: const SizedBox.shrink(),
+                      modelSheetControl: modelSheetControl,
+                      agentSheetControl: agentSheetControl,
+                      modelCompactControl: modelCompactControl,
+                      agentCompactControl: agentCompactControl,
                       disabled: disabled,
                       isBusy: isBusy,
                       showStopButton: showStopButton,
@@ -206,6 +212,84 @@ void main() {
     await tester.pump();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+  });
+
+  testWidgets('compact controls use menu model agent layout', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        agentCompactControl: const Text('compact agent'),
+        agentSheetControl: const Text('sheet agent'),
+      ),
+    );
+
+    expect(find.text('compact model'), findsOneWidget);
+    expect(find.text('compact agent'), findsOneWidget);
+    expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+
+    await tester.tap(find.text('compact model'));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet model'), findsOneWidget);
+  });
+
+  testWidgets('desktop uses menu model agent layout', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        modelCompactControl: const Text('compact model'),
+        modelSheetControl: const Text('sheet model'),
+        agentCompactControl: const Text('compact agent'),
+        agentSheetControl: const Text('sheet agent'),
+      ),
+    );
+
+    expect(find.text('compact model'), findsOneWidget);
+    expect(find.text('compact agent'), findsOneWidget);
+    expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    await tester.tap(find.text('compact model'));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet model'), findsOneWidget);
+  });
+
+  testWidgets('compact agent control opens sheet control', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+        agentCompactControl: const Text('compact agent'),
+        agentSheetControl: const Text('sheet agent'),
+      ),
+    );
+
+    await tester.tap(find.text('compact agent'));
+    final pumpCount = await tester.pumpAndSettle();
+    expect(pumpCount, greaterThanOrEqualTo(0));
+
+    expect(find.text('sheet agent'), findsOneWidget);
   });
 }
 

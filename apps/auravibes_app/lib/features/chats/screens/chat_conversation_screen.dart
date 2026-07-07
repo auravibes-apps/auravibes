@@ -252,7 +252,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
               child: ChatInputWidget(
                 onSendMessage: onSendMessage,
                 onToolsPress: onToolsPress,
-                modelControl: CompactWorkspaceModelSelector(
+                modelSheetControl: CompactWorkspaceModelSelector(
                   workspaceId: workspaceId,
                   workspaceModelSelectionId: conversation.modelId,
                   onChanged: (modelId) {
@@ -262,8 +262,9 @@ class _LoadedChatConversation extends HookConsumerWidget {
                           .setModel(modelId),
                     );
                   },
+                  sheetMode: true,
                 ),
-                agentControl: CompactAgentSelector(
+                agentSheetControl: CompactAgentSelector(
                   workspaceId: workspaceId,
                   agentId: conversation.agentId,
                   onChanged: (agentId) {
@@ -273,6 +274,31 @@ class _LoadedChatConversation extends HookConsumerWidget {
                           .setAgent(agentId),
                     );
                   },
+                  sheetMode: true,
+                ),
+                modelCompactControl: CompactWorkspaceModelSelector(
+                  workspaceId: workspaceId,
+                  workspaceModelSelectionId: conversation.modelId,
+                  onChanged: (modelId) {
+                    unawaited(
+                      ref
+                          .read(conversationChatProvider(workspaceId).notifier)
+                          .setModel(modelId),
+                    );
+                  },
+                  compactMode: true,
+                ),
+                agentCompactControl: CompactAgentSelector(
+                  workspaceId: workspaceId,
+                  agentId: conversation.agentId,
+                  onChanged: (agentId) {
+                    unawaited(
+                      ref
+                          .read(conversationChatProvider(workspaceId).notifier)
+                          .setAgent(agentId),
+                    );
+                  },
+                  compactMode: true,
                 ),
                 onSkillsPress: () => _showSkillsModal(
                   context: context,
