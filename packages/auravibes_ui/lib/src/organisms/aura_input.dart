@@ -40,6 +40,7 @@ class AuraInput extends StatefulWidget {
     this.onTapOutside,
     this.focusNode,
     this.semanticLabel,
+    this.header,
     this.footer,
   }) : assert(
          controller == null || initialValue == null,
@@ -129,7 +130,10 @@ class AuraInput extends StatefulWidget {
   /// A semantic label for the input field.
   final String? semanticLabel;
 
-  ///
+  /// Optional content displayed inside the input shell above the editable text.
+  final Widget? header;
+
+  /// Optional content displayed inside the input shell below the editable text.
   final Widget? footer;
 
   @override
@@ -180,6 +184,7 @@ class _AuraInputState extends State<AuraInput> {
     final fieldState = _convertToFieldState(widget.state);
     final prefixIcon = widget.prefixIcon;
     final suffixIcon = widget.suffixIcon;
+    final header = widget.header;
     final footer = widget.footer;
 
     return AuraFieldWrapper(
@@ -187,6 +192,7 @@ class _AuraInputState extends State<AuraInput> {
         padding: _getPadding(),
         child: Column(
           children: [
+            ?header,
             Row(
               children: [
                 if (prefixIcon != null) ...[

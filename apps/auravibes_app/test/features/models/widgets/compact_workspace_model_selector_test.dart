@@ -59,6 +59,31 @@ void main() {
     expect(find.text('Claude Sonnet 4'), findsOneWidget);
   });
 
+  testWidgets('compact mode shows selected model chip', (tester) async {
+    await _pumpSubject(
+      tester,
+      _buildSubject(
+        groupedModels: {
+          'anthropic-work': [
+            _makeSelection(
+              'sel-1',
+              connectionId: 'anthropic-work',
+              modelId: 'claude-sonnet-4',
+              providerName: 'Anthropic',
+              modelName: 'Claude Sonnet 4',
+            ),
+          ],
+        },
+        selectedId: 'sel-1',
+        compactMode: true,
+      ),
+    );
+
+    expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    expect(find.byIcon(Icons.memory_outlined), findsOneWidget);
+    expect(find.text('Claude Sonnet 4'), findsOneWidget);
+  });
+
   testWidgets('shows empty provider placeholder', (tester) async {
     await _pumpSubject(tester, _buildSubject(groupedModels: {}));
 
@@ -109,6 +134,54 @@ void main() {
     expect(find.text('Claude Sonnet 4'), findsWidgets);
     expect(find.text('Claude Opus 4'), findsNothing);
   });
+
+  testWidgets('sheet mode filters models without dropdown', (tester) async {
+    String? selected;
+    await _pumpSubject(
+      tester,
+      _buildSubject(
+        groupedModels: {
+          'anthropic-work': [
+            _makeSelection(
+              'sel-1',
+              connectionId: 'anthropic-work',
+              modelId: 'claude-sonnet-4',
+              providerName: 'Anthropic',
+              modelName: 'Claude Sonnet 4',
+            ),
+          ],
+          'openai-work': [
+            _makeSelection(
+              'sel-2',
+              connectionId: 'openai-work',
+              modelId: 'gpt-5.5',
+              providerName: 'OpenAI',
+              modelName: 'GPT 5.5',
+            ),
+          ],
+        },
+        selectedId: 'sel-1',
+        onChanged: (value) => selected = value,
+        sheetMode: true,
+      ),
+    );
+
+    expect(find.byType(AuraDropdownSelector<String>), findsNothing);
+    expect(find.text('Claude Sonnet 4'), findsOneWidget);
+
+    await tester.enterText(find.byType(EditableText), 'gpt');
+    await tester.pump();
+
+    expect(find.text('GPT 5.5'), findsOneWidget);
+    expect(find.text('gpt-5.5'), findsOneWidget);
+    expect(find.text('OpenAI - Test'), findsOneWidget);
+    expect(find.text('Claude Sonnet 4'), findsOneWidget);
+
+    await tester.tap(find.text('GPT 5.5'));
+    await tester.pump();
+
+    expect(selected, 'sel-2');
+  });
 }
 
 Future<void> _pumpSubject(WidgetTester tester, Widget subject) async {
@@ -124,6 +197,8 @@ Widget _buildSubject({
   groupedModelsStream,
   String? selectedId,
   ValueChanged<String?>? onChanged,
+  bool compactMode = false,
+  bool sheetMode = false,
 }) {
   assert(
     groupedModels != null || groupedModelsStream != null,
@@ -140,6 +215,8 @@ Widget _buildSubject({
             workspaceId: 'ws-1',
             workspaceModelSelectionId: selectedId,
             onChanged: onChanged ?? (_) => fail('Unexpected model change'),
+            compactMode: compactMode,
+            sheetMode: sheetMode,
           ),
         ),
       ),
