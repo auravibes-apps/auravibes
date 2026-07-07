@@ -108,34 +108,49 @@ void main() {
     },
   );
 
-  test(
-    'stopVoiceRecording returns attachment for streamed recording',
-    () async {
-      final platform = _FakeRecordPlatform();
-      RecordPlatform.instance = platform;
-      final service = LocalChatAttachmentService();
-
-      await service.startVoiceRecording();
-      platform.addStreamBytes([1, 2, 3, 4]);
-      final attachment = await service.stopVoiceRecording();
-
-      expect(platform.startStreamCalled, isTrue);
-      if (attachment == null) fail('Expected voice attachment.');
-      expect(attachment.displayName, endsWith('.wav'));
-      expect(File(attachment.localPath).existsSync(), isTrue);
-    },
-  );
-
-  test('cancelVoiceRecording stops streamed recording', () async {
+  test('stopVoiceRecording returns attachment for recorded audio', () async {
     final platform = _FakeRecordPlatform();
     RecordPlatform.instance = platform;
     final service = LocalChatAttachmentService();
 
     await service.startVoiceRecording();
+
+    if (Platform.isMacOS) {
+      platform.addStreamBytes([1, 2, 3, 4]);
+    } else {
+      final outputPath = platform.outputPath;
+      if (outputPath == null) fail('Expected recording path.');
+
+      final _ = await File(outputPath).writeAsBytes([1, 2, 3, 4]);
+    }
+
+    final attachment = await service.stopVoiceRecording();
+
+    expect(platform.startStreamCalled, Platform.isMacOS);
+    if (attachment == null) fail('Expected voice attachment.');
+    expect(attachment.displayName, endsWith('.wav'));
+    expect(File(attachment.localPath).existsSync(), isTrue);
+  });
+
+  test('cancelVoiceRecording stops and cleans recording', () async {
+    final platform = _FakeRecordPlatform();
+    RecordPlatform.instance = platform;
+    final service = LocalChatAttachmentService();
+
+    await service.startVoiceRecording();
+
+    final outputPath = platform.outputPath;
+    if (!Platform.isMacOS && outputPath != null) {
+      final _ = await File(outputPath).writeAsBytes([1, 2, 3, 4]);
+    }
+
     await service.cancelVoiceRecording();
 
-    expect(platform.startStreamCalled, isTrue);
+    expect(platform.startStreamCalled, Platform.isMacOS);
     expect(platform.stopCalled, isTrue);
+    if (!Platform.isMacOS && outputPath != null) {
+      expect(File(outputPath).existsSync(), isFalse);
+    }
   });
 
   test('waitForRecordedFile waits until recorder flushes file', () async {
