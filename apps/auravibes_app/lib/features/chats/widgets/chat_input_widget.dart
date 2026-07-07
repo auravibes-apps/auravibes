@@ -82,7 +82,6 @@ class ChatInputWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // NOSONAR: UI composition with local hook callbacks.
     final controller = useTextEditingController();
     final focusNode = useFocusNode();
     final attachments = useState(<MessageAttachmentToCreate>[]);
@@ -93,277 +92,34 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
 
-    void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
-      unawaited(
-        ref
-            .read(localChatAttachmentUsecaseProvider)
-            .deleteAttachment(attachment.localPath),
-      );
-    }
-
-    useEffect(
-      () {
-        return () {
-          if (isRecording.value || isStartingRecording.value) {
-            unawaited(
-              ref
-                  .read(localChatAttachmentUsecaseProvider)
-                  .cancelVoiceRecording(),
-            );
-          }
-          attachments.value.forEach(deleteUnsentAttachment);
-          recordingTimer.value?.cancel();
-        };
-      },
-      const [],
-    );
-
     final isTextEmpty = useListenableSelector(
       controller,
       () => controller.text.trim().isEmpty,
     );
     final isEmpty = isTextEmpty && attachments.value.isEmpty;
-
-    void clearRecordingState() {
-      recordingTimer.value?.cancel();
-      recordingTimer.value = null;
-      recordingElapsed.value = Duration.zero;
-      isRecording.value = false;
-      isStartingRecording.value = false;
-    }
-
-    MessageAttachmentToCreate withVoiceDisplayName(
-      MessageAttachmentToCreate attachment,
-      Iterable<MessageAttachmentToCreate> existingAttachments,
-    ) {
-      return attachment.copyWith(
-        displayName: uniqueAttachmentDisplayName(
-          _voiceRecordLabelKey.tr(),
-          existingAttachments.map((attachment) => attachment.displayName),
-        ),
-      );
-    }
-
-    final sendMessage = useCallback(
-      () async {
-        if (disabled || isSending.value || isEmpty && !isRecording.value) {
-          return;
-        }
-
-        isSending.value = true;
-        try {
-          final message = controller.text.trim();
-          final draftAttachments = [...attachments.value];
-          if (isRecording.value) {
-            if (isStartingRecording.value) {
-              try {
-                await recordingStart.value;
-              } on Object catch (_) {
-                clearRecordingState();
-
-                return;
-              }
-            }
-
-            final MessageAttachmentToCreate? attachment;
-            try {
-              attachment = await ref
-                  .read(localChatAttachmentUsecaseProvider)
-                  .stopVoiceRecording();
-            } on Object catch (_) {
-              clearRecordingState();
-
-              return;
-            }
-            clearRecordingState();
-            if (attachment != null) {
-              draftAttachments.add(
-                withVoiceDisplayName(attachment, draftAttachments),
-              );
-            }
-          }
-
-          if (message.isEmpty && draftAttachments.isEmpty) return;
-
-          try {
-            await onSendMessage(
-              ChatDraft(text: message, attachments: draftAttachments),
-            );
-          } on Object catch (error, stackTrace) {
-            _logger.warning('Failed to send draft', error, stackTrace);
-
-            return;
-          }
-          controller.clear();
-          attachments.value = const [];
-        } finally {
-          isSending.value = false;
-        }
-      },
-      [
-        attachments.value,
-        controller,
-        disabled,
-        isSending.value,
-        isRecording.value,
-        isStartingRecording.value,
-        onSendMessage,
-        ref,
-        isEmpty,
-      ],
+    final actions = _ChatInputActions(
+      ref: ref,
+      controller: controller,
+      focusNode: focusNode,
+      attachments: attachments,
+      isSending: isSending,
+      isRecording: isRecording,
+      isStartingRecording: isStartingRecording,
+      recordingElapsed: recordingElapsed,
+      recordingTimer: recordingTimer,
+      recordingStart: recordingStart,
+      modalitiesInput: modalitiesInput,
+      onSendMessage: onSendMessage,
+      disabled: disabled,
+      isEmpty: isEmpty,
     );
 
-    Future<void> addPath(String path, {required String displayName}) async {
-      final attachment = await ref
-          .read(localChatAttachmentUsecaseProvider)
-          .copyIntoAppStorage(
-            path,
-            displayName: uniqueAttachmentDisplayName(
-              displayName,
-              attachments.value.map((attachment) => attachment.displayName),
-            ),
-          );
-      if (!supportsAttachmentModality(
-        attachment.modality,
-        modalitiesInput,
-        mimeType: attachment.mimeType,
-      )) {
-        deleteUnsentAttachment(attachment);
-        _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
-
-        return;
-      }
-      attachments.value = [...attachments.value, attachment];
-    }
-
-    void pickFiles() {
-      unawaited(
-        (() async {
-          try {
-            final allowedExtensions = filePickerAllowedExtensions(
-              modalitiesInput,
-            );
-            final result = await fp.FilePicker.pickFiles(
-              allowMultiple: true,
-              allowedExtensions: allowedExtensions,
-              type: allowedExtensions == null
-                  ? fp.FileType.any
-                  : fp.FileType.custom,
-            );
-            for (final file in result?.files ?? const <fp.PlatformFile>[]) {
-              final path = file.path;
-              if (path == null) continue;
-
-              await addPath(path, displayName: file.name);
-            }
-          } on Object catch (error, stackTrace) {
-            _logger.warning('Failed to attach files', error, stackTrace);
-          }
-        })(),
-      );
-    }
-
-    void pickImage(ImageSource source) {
-      unawaited(
-        (() async {
-          try {
-            final file = await ImagePicker().pickImage(source: source);
-            if (file == null) return;
-
-            await addPath(
-              file.path,
-              displayName: _imageAttachmentLabelKey.tr(),
-            );
-          } on Object catch (error, stackTrace) {
-            _logger.warning('Failed to attach image', error, stackTrace);
-          }
-        })(),
-      );
-    }
-
-    void startRecording() {
-      unawaited(
-        (() async {
-          if (disabled || isRecording.value || isStartingRecording.value) {
-            return;
-          }
-
-          final service = ref.read(localChatAttachmentUsecaseProvider);
-          focusNode.unfocus();
-          isRecording.value = true;
-          isStartingRecording.value = true;
-          recordingElapsed.value = Duration.zero;
-          final start = service.startVoiceRecording();
-          recordingStart.value = start;
-          try {
-            await start;
-            final startedAt = DateTime.now();
-            isStartingRecording.value = false;
-            recordingTimer.value?.cancel();
-            recordingTimer.value = Timer.periodic(
-              const Duration(seconds: 1),
-              (_) {
-                recordingElapsed.value = DateTime.now().difference(startedAt);
-              },
-            );
-          } on Object catch (_) {
-            clearRecordingState();
-          }
-        })(),
-      );
-    }
-
-    void stopRecording() {
-      unawaited(
-        (() async {
-          if (isStartingRecording.value) {
-            try {
-              await recordingStart.value;
-            } on Object catch (_) {
-              clearRecordingState();
-
-              return;
-            }
-          }
-
-          final MessageAttachmentToCreate? attachment;
-          try {
-            attachment = await ref
-                .read(localChatAttachmentUsecaseProvider)
-                .stopVoiceRecording();
-          } on Object catch (_) {
-            clearRecordingState();
-
-            return;
-          }
-          clearRecordingState();
-          if (attachment == null) {
-            _logger.warning('Voice recording stopped without attachment');
-
-            return;
-          }
-
-          attachments.value = [
-            ...attachments.value,
-            withVoiceDisplayName(attachment, attachments.value),
-          ];
-          _logger.fine('Added voice attachment to draft');
-        })(),
-      );
-    }
-
-    void cancelRecording() {
-      unawaited(
-        (() async {
-          if (isStartingRecording.value) return;
-
-          await ref
-              .read(localChatAttachmentUsecaseProvider)
-              .cancelVoiceRecording();
-          clearRecordingState();
-        })(),
-      );
-    }
+    useEffect(
+      () {
+        return actions.disposeDraft;
+      },
+      const [],
+    );
 
     final shouldShowStopButton = showStopButton ?? isBusy;
     const supportsLocalAttachments = !kIsWeb;
@@ -403,7 +159,7 @@ class ChatInputWidget extends HookConsumerWidget {
               readOnly: isRecording.value,
               maxLines: 2,
               onSubmitted: (value) {
-                unawaited(sendMessage());
+                unawaited(actions.sendMessage());
               },
               onTapOutside: (_) => focusNode.unfocus(),
               focusNode: focusNode,
@@ -428,7 +184,7 @@ class ChatInputWidget extends HookConsumerWidget {
                         _AttachmentChips(
                           attachments: attachments.value,
                           onRemove: (attachment) {
-                            deleteUnsentAttachment(attachment);
+                            actions.deleteUnsentAttachment(attachment);
                             attachments.value = [
                               for (final item in attachments.value)
                                 if (item != attachment) item,
@@ -463,7 +219,7 @@ class ChatInputWidget extends HookConsumerWidget {
                                   titleKey: _attachFileKey,
                                   icon: Icons.attach_file,
                                   enabled: supportsFile,
-                                  onTap: pickFiles,
+                                  onTap: actions.pickFiles,
                                 ),
                                 if (!isMacOS)
                                   _attachmentMenuItem(
@@ -472,7 +228,9 @@ class ChatInputWidget extends HookConsumerWidget {
                                     enabled:
                                         supportsLocalAttachments &&
                                         supportsImage,
-                                    onTap: () => pickImage(ImageSource.gallery),
+                                    onTap: () => actions.pickImage(
+                                      ImageSource.gallery,
+                                    ),
                                   ),
                                 if (defaultTargetPlatform ==
                                         TargetPlatform.android ||
@@ -483,7 +241,9 @@ class ChatInputWidget extends HookConsumerWidget {
                                     enabled:
                                         supportsLocalAttachments &&
                                         supportsImage,
-                                    onTap: () => pickImage(ImageSource.camera),
+                                    onTap: () => actions.pickImage(
+                                      ImageSource.camera,
+                                    ),
                                   ),
                                 AuraPopupMenuItem(
                                   title: const TextLocale(
@@ -549,7 +309,7 @@ class ChatInputWidget extends HookConsumerWidget {
                               ),
                               child: AuraIconButton(
                                 icon: Icons.close_rounded,
-                                onPressed: cancelRecording,
+                                onPressed: actions.cancelRecording,
                                 disabled: isStartingRecording.value,
                                 tooltip: _cancelRecordingKey.tr(),
                               ),
@@ -567,7 +327,7 @@ class ChatInputWidget extends HookConsumerWidget {
                               ),
                               child: AuraIconButton(
                                 icon: Icons.stop_rounded,
-                                onPressed: stopRecording,
+                                onPressed: actions.stopRecording,
                                 disabled: isStartingRecording.value,
                                 tint: AuraTint.error,
                                 tooltip: _stopRecordingKey.tr(),
@@ -581,7 +341,7 @@ class ChatInputWidget extends HookConsumerWidget {
                               ),
                               child: AuraIconButton(
                                 icon: Icons.mic_none_outlined,
-                                onPressed: startRecording,
+                                onPressed: actions.startRecording,
                                 disabled: disabled,
                                 tooltip: _recordVoiceKey.tr(),
                               ),
@@ -608,7 +368,7 @@ class ChatInputWidget extends HookConsumerWidget {
                             const AuraSizedBox(width: .xs),
                           ],
                           AuraButton(
-                            onPressed: () => unawaited(sendMessage()),
+                            onPressed: () => unawaited(actions.sendMessage()),
                             child: const AuraIcon(Icons.arrow_upward),
                             size: AuraButtonSize.small,
                             disabled:
@@ -629,6 +389,264 @@ class ChatInputWidget extends HookConsumerWidget {
         ),
         onTap: focusNode.requestFocus,
         behavior: HitTestBehavior.translucent,
+      ),
+    );
+  }
+}
+
+class _ChatInputActions {
+  const _ChatInputActions({
+    required this.ref,
+    required this.controller,
+    required this.focusNode,
+    required this.attachments,
+    required this.isSending,
+    required this.isRecording,
+    required this.isStartingRecording,
+    required this.recordingElapsed,
+    required this.recordingTimer,
+    required this.recordingStart,
+    required this.modalitiesInput,
+    required this.onSendMessage,
+    required this.disabled,
+    required this.isEmpty,
+  });
+
+  final WidgetRef ref;
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final ValueNotifier<List<MessageAttachmentToCreate>> attachments;
+  final ValueNotifier<bool> isSending;
+  final ValueNotifier<bool> isRecording;
+  final ValueNotifier<bool> isStartingRecording;
+  final ValueNotifier<Duration> recordingElapsed;
+  final ObjectRef<Timer?> recordingTimer;
+  final ObjectRef<Future<void>?> recordingStart;
+  final List<String> modalitiesInput;
+  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
+  final bool disabled;
+  final bool isEmpty;
+
+  void disposeDraft() {
+    if (isRecording.value || isStartingRecording.value) {
+      unawaited(
+        ref.read(localChatAttachmentUsecaseProvider).cancelVoiceRecording(),
+      );
+    }
+    attachments.value.forEach(deleteUnsentAttachment);
+    recordingTimer.value?.cancel();
+  }
+
+  void deleteUnsentAttachment(MessageAttachmentToCreate attachment) {
+    unawaited(
+      ref
+          .read(localChatAttachmentUsecaseProvider)
+          .deleteAttachment(attachment.localPath),
+    );
+  }
+
+  void clearRecordingState() {
+    recordingTimer.value?.cancel();
+    recordingTimer.value = null;
+    recordingElapsed.value = Duration.zero;
+    isRecording.value = false;
+    isStartingRecording.value = false;
+  }
+
+  Future<void> sendMessage() async {
+    if (disabled || isSending.value || isEmpty && !isRecording.value) return;
+
+    isSending.value = true;
+    try {
+      final message = controller.text.trim();
+      final draftAttachments = [...attachments.value];
+      if (isRecording.value) {
+        final attachment = await _stopRecordingAttachment();
+        if (attachment != null) {
+          draftAttachments.add(
+            _withVoiceDisplayName(attachment, draftAttachments),
+          );
+        }
+      }
+
+      if (message.isEmpty && draftAttachments.isEmpty) return;
+
+      try {
+        await onSendMessage(
+          ChatDraft(text: message, attachments: draftAttachments),
+        );
+      } on Object catch (error, stackTrace) {
+        _logger.warning('Failed to send draft', error, stackTrace);
+
+        return;
+      }
+      controller.clear();
+      attachments.value = const [];
+    } finally {
+      isSending.value = false;
+    }
+  }
+
+  Future<void> addPath(String path, {required String displayName}) async {
+    final attachment = await ref
+        .read(localChatAttachmentUsecaseProvider)
+        .copyIntoAppStorage(
+          path,
+          displayName: uniqueAttachmentDisplayName(
+            displayName,
+            attachments.value.map((attachment) => attachment.displayName),
+          ),
+        );
+    if (!supportsAttachmentModality(
+      attachment.modality,
+      modalitiesInput,
+      mimeType: attachment.mimeType,
+    )) {
+      deleteUnsentAttachment(attachment);
+      _logger.warning('Unsupported attachment type: ${attachment.mimeType}');
+
+      return;
+    }
+    attachments.value = [...attachments.value, attachment];
+  }
+
+  void pickFiles() {
+    unawaited(
+      (() async {
+        try {
+          final allowedExtensions = filePickerAllowedExtensions(
+            modalitiesInput,
+          );
+          final result = await fp.FilePicker.pickFiles(
+            allowMultiple: true,
+            allowedExtensions: allowedExtensions,
+            type: allowedExtensions == null
+                ? fp.FileType.any
+                : fp.FileType.custom,
+          );
+          for (final file in result?.files ?? const <fp.PlatformFile>[]) {
+            final path = file.path;
+            if (path == null) continue;
+
+            await addPath(path, displayName: file.name);
+          }
+        } on Object catch (error, stackTrace) {
+          _logger.warning('Failed to attach files', error, stackTrace);
+        }
+      })(),
+    );
+  }
+
+  void pickImage(ImageSource source) {
+    unawaited(
+      (() async {
+        try {
+          final file = await ImagePicker().pickImage(source: source);
+          if (file == null) return;
+
+          await addPath(file.path, displayName: _imageAttachmentLabelKey.tr());
+        } on Object catch (error, stackTrace) {
+          _logger.warning('Failed to attach image', error, stackTrace);
+        }
+      })(),
+    );
+  }
+
+  void startRecording() {
+    unawaited(
+      (() async {
+        if (disabled || isRecording.value || isStartingRecording.value) return;
+
+        final service = ref.read(localChatAttachmentUsecaseProvider);
+        focusNode.unfocus();
+        isRecording.value = true;
+        isStartingRecording.value = true;
+        recordingElapsed.value = Duration.zero;
+        final start = service.startVoiceRecording();
+        recordingStart.value = start;
+        try {
+          await start;
+          final startedAt = DateTime.now();
+          isStartingRecording.value = false;
+          recordingTimer.value?.cancel();
+          recordingTimer.value = Timer.periodic(
+            const Duration(seconds: 1),
+            (_) {
+              recordingElapsed.value = DateTime.now().difference(startedAt);
+            },
+          );
+        } on Object catch (_) {
+          clearRecordingState();
+        }
+      })(),
+    );
+  }
+
+  void stopRecording() {
+    unawaited(
+      (() async {
+        final attachment = await _stopRecordingAttachment();
+        if (attachment == null) {
+          _logger.warning('Voice recording stopped without attachment');
+
+          return;
+        }
+
+        attachments.value = [
+          ...attachments.value,
+          _withVoiceDisplayName(attachment, attachments.value),
+        ];
+        _logger.fine('Added voice attachment to draft');
+      })(),
+    );
+  }
+
+  void cancelRecording() {
+    unawaited(
+      (() async {
+        if (isStartingRecording.value) return;
+
+        await ref
+            .read(localChatAttachmentUsecaseProvider)
+            .cancelVoiceRecording();
+        clearRecordingState();
+      })(),
+    );
+  }
+
+  Future<MessageAttachmentToCreate?> _stopRecordingAttachment() async {
+    if (isStartingRecording.value) {
+      try {
+        await recordingStart.value;
+      } on Object catch (_) {
+        clearRecordingState();
+
+        return null;
+      }
+    }
+
+    try {
+      final attachment = await ref
+          .read(localChatAttachmentUsecaseProvider)
+          .stopVoiceRecording();
+      clearRecordingState();
+
+      return attachment;
+    } on Object catch (_) {
+      clearRecordingState();
+
+      return null;
+    }
+  }
+
+  MessageAttachmentToCreate _withVoiceDisplayName(
+    MessageAttachmentToCreate attachment,
+    Iterable<MessageAttachmentToCreate> existingAttachments,
+  ) {
+    return attachment.copyWith(
+      displayName: uniqueAttachmentDisplayName(
+        _voiceRecordLabelKey.tr(),
+        existingAttachments.map((attachment) => attachment.displayName),
       ),
     );
   }
