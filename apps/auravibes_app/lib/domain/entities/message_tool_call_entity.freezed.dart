@@ -501,7 +501,7 @@ return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.di
 
 class _MessageAttachmentEntity implements MessageAttachmentEntity {
   const _MessageAttachmentEntity({required this.id, required this.messageId, required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, required this.createdAt, required this.updatedAt});
-
+  
 
 @override final  String id;
 @override final  String messageId;
@@ -781,7 +781,7 @@ return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,
 
 class _MessageAttachmentToCreate implements MessageAttachmentToCreate {
   const _MessageAttachmentToCreate({required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes});
-
+  
 
 @override final  String localPath;
 @override final  String fileName;
