@@ -162,11 +162,4 @@ class AppDatabase extends _$AppDatabase {
 
     return 'auravibes_app_$hashPrefix';
   }
-
-  /// Initializes the database with default data.
-  ///
-  /// Workspaces are intentionally user-created during first-run onboarding.
-  Future<void> initializeWithDefaults() async {
-    return;
-  }
 }
