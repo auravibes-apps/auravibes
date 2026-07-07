@@ -82,19 +82,37 @@ class NewChatScreen extends ConsumerWidget {
             ChatInputWidget(
               onSendMessage: handleSendMessage,
               onToolsPress: onToolsPress,
-              modelControl: CompactWorkspaceModelSelector(
+              modelSheetControl: CompactWorkspaceModelSelector(
                 workspaceId: workspaceId,
                 workspaceModelSelectionId: state.modelId,
                 onChanged: (modelId) => ref
                     .read(newChatProvider(workspaceId).notifier)
                     .setModelId(modelId),
+                sheetMode: true,
               ),
-              agentControl: CompactAgentSelector(
+              agentSheetControl: CompactAgentSelector(
                 workspaceId: workspaceId,
                 agentId: state.agentId,
                 onChanged: (agentId) => ref
                     .read(newChatProvider(workspaceId).notifier)
                     .setAgentId(agentId),
+                sheetMode: true,
+              ),
+              modelCompactControl: CompactWorkspaceModelSelector(
+                workspaceId: workspaceId,
+                workspaceModelSelectionId: state.modelId,
+                onChanged: (modelId) => ref
+                    .read(newChatProvider(workspaceId).notifier)
+                    .setModelId(modelId),
+                compactMode: true,
+              ),
+              agentCompactControl: CompactAgentSelector(
+                workspaceId: workspaceId,
+                agentId: state.agentId,
+                onChanged: (agentId) => ref
+                    .read(newChatProvider(workspaceId).notifier)
+                    .setAgentId(agentId),
+                compactMode: true,
               ),
               disabled: state.isLoading || state.modelId == null,
             ),
