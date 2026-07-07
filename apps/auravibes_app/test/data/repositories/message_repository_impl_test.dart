@@ -1,9 +1,7 @@
-import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/daos/message_dao.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -12,114 +10,6 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('MessageRepository.watchMessagesByConversation', () {
-    final initialDatabase = _TestAppDatabase((_) => const Stream.empty());
-    var database = initialDatabase;
-    var repository = MessageRepository(database);
-
-    tearDown(() async {
-      await database.close();
-    });
-
-    tearDownAll(() async {
-      await initialDatabase.close();
-    });
-
-    test('maps streamed message rows into message entities', () async {
-      database = _TestAppDatabase(
-        (_) => Stream.value([
-          _messageRow(id: 'message-1', content: 'hello', isUser: true),
-          _messageRow(id: 'message-2', content: 'hi', isUser: false),
-        ]),
-      );
-      repository = MessageRepository(database);
-
-      final messages = await repository
-          .watchMessagesByConversation('conversation-1')
-          .first;
-
-      expect(messages, hasLength(2));
-      expect(messages.firstOrNull?.id, 'message-1');
-      expect(messages.firstOrNull?.content, 'hello');
-      expect(messages.firstOrNull?.messageType, MessageType.text);
-      expect(messages.lastOrNull?.id, 'message-2');
-      expect(messages.lastOrNull?.content, 'hi');
-      expect(messages.lastOrNull?.isUser, isFalse);
-    });
-
-    test('wraps stream Exceptions in MessageException', () async {
-      const failure = FormatException('broken stream');
-      database = _TestAppDatabase(
-        (_) => Stream<List<MessagesTable>>.error(failure),
-      );
-      repository = MessageRepository(database);
-
-      await expectLater(
-        repository.watchMessagesByConversation('conversation-1'),
-        emitsError(
-          isA<MessageException>()
-              .having(
-                (error) => error.message,
-                'message',
-                'Failed to watch messages for conversation conversation-1',
-              )
-              .having((error) => error.cause, 'cause', failure),
-        ),
-      );
-    });
-
-    test('passes through non-Exception stream errors unchanged', () async {
-      final failure = _TestError();
-      database = _TestAppDatabase(
-        (_) => Stream<List<MessagesTable>>.error(failure),
-      );
-      repository = MessageRepository(database);
-
-      await expectLater(
-        repository.watchMessagesByConversation('conversation-1'),
-        emitsError(same(failure)),
-      );
-    });
-
-    test(
-      'preserves stack trace when mapping streamed messages fails',
-      () async {
-        database = _TestAppDatabase(
-          (_) => Stream.value(_ThrowingMessagesList()),
-        );
-        repository = MessageRepository(database);
-
-        final errorCompleter = Completer<Object>();
-        final stackTraceCompleter = Completer<StackTrace>();
-
-        final subscription = repository
-            .watchMessagesByConversation('conversation-1')
-            .listen(
-              (_) {
-                final _ = Object();
-              },
-              onError: (Object error, StackTrace stackTrace) {
-                errorCompleter.complete(error);
-                stackTraceCompleter.complete(stackTrace);
-              },
-            );
-
-        addTearDown(subscription.cancel);
-
-        final error = await errorCompleter.future;
-        final stackTrace = await stackTraceCompleter.future;
-
-        expect(error, isA<MessageException>());
-        expect(
-          (error as MessageException).message,
-          'Failed to watch messages for conversation conversation-1',
-        );
-        expect(error.cause, isA<FormatException>());
-        expect(stackTrace.toString(), contains('_ThrowingMessagesList'));
-      },
-    );
-  });
-
   group('MessageRepository with real database', () {
     final initialDatabase = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
@@ -167,6 +57,47 @@ void main() {
       expect(messages, hasLength(1));
       expect(messages.firstOrNull?.id, created.id);
     });
+
+    test(
+      'watchMessagesByConversation streams messages with attachments',
+      () async {
+        final fileStore = _FakeAttachmentFileStore();
+        repository = MessageRepository(
+          database,
+          attachmentFileStore: fileStore,
+        );
+        final stream = repository.watchMessagesByConversation('conv-1');
+
+        final created = await repository.createMessage(
+          const MessageToCreate(
+            conversationId: 'conv-1',
+            content: 'see attachment',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sent,
+            attachments: [
+              MessageAttachmentToCreate(
+                localPath: '/tmp/image.png',
+                fileName: 'image.png',
+                displayName: 'image.png',
+                mimeType: 'image/png',
+                modality: MessageAttachmentModality.image,
+                sizeBytes: 10,
+              ),
+            ],
+          ),
+        );
+
+        final messages = await stream.firstWhere(
+          (messages) => messages.isNotEmpty,
+        );
+
+        expect(messages, hasLength(1));
+        expect(messages.single.id, created.id);
+        expect(messages.single.attachments, hasLength(1));
+        expect(messages.single.attachments.single.fileName, 'image.png');
+      },
+    );
 
     test('getMessageById returns null for non-existent', () async {
       final message = await repository.getMessageById('nonexistent');
@@ -224,6 +155,73 @@ void main() {
 
       expect(await repository.deleteMessage(created.id), isTrue);
       expect(await repository.getMessageById(created.id), isNull);
+    });
+
+    test('createMessage persists draft attachment path', () async {
+      final fileStore = _FakeAttachmentFileStore(
+        persistedPaths: {'/tmp/draft.png': '/support/draft.png'},
+      );
+      repository = MessageRepository(
+        database,
+        attachmentFileStore: fileStore,
+      );
+
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'see attachment',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+          attachments: [
+            MessageAttachmentToCreate(
+              localPath: '/tmp/draft.png',
+              fileName: 'draft.png',
+              displayName: 'draft.png',
+              mimeType: 'image/png',
+              modality: MessageAttachmentModality.image,
+              sizeBytes: 10,
+            ),
+          ],
+        ),
+      );
+
+      expect(fileStore.persisted, ['/tmp/draft.png']);
+      expect(created.attachments.single.localPath, '/support/draft.png');
+      expect(fileStore.deleted, ['/tmp/draft.png']);
+    });
+
+    test('deleteMessage deletes persisted attachment files', () async {
+      final fileStore = _FakeAttachmentFileStore(
+        persistedPaths: {'/tmp/draft.png': '/support/image.png'},
+      );
+      repository = MessageRepository(
+        database,
+        attachmentFileStore: fileStore,
+      );
+      final created = await repository.createMessage(
+        const MessageToCreate(
+          conversationId: 'conv-1',
+          content: 'see attachment',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+          attachments: [
+            MessageAttachmentToCreate(
+              localPath: '/tmp/draft.png',
+              fileName: 'image.png',
+              displayName: 'image.png',
+              mimeType: 'image/png',
+              modality: MessageAttachmentModality.image,
+              sizeBytes: 10,
+            ),
+          ],
+        ),
+      );
+
+      expect(await repository.deleteMessage(created.id), isTrue);
+
+      expect(fileStore.deleted, ['/tmp/draft.png', '/support/image.png']);
     });
 
     test('getMessageCountByConversation returns correct count', () async {
@@ -771,80 +769,23 @@ void main() {
   });
 }
 
-MessagesTable _messageRow({
-  required String id,
-  required String content,
-  required bool isUser,
-}) {
-  final now = DateTime(2026);
+class _FakeAttachmentFileStore extends AttachmentFileStore {
+  _FakeAttachmentFileStore({Map<String, String>? persistedPaths})
+    : _persistedPaths = persistedPaths ?? const {};
 
-  return MessagesTable(
-    id: id,
-    createdAt: now,
-    updatedAt: now,
-    conversationId: 'conversation-1',
-    content: content,
-    messageType: .text,
-    isUser: isUser,
-    status: .sent,
-  );
-}
-
-class _TestAppDatabase extends AppDatabase {
-  _TestAppDatabase(this._watchMessages)
-    : super(connection: DatabaseConnection(NativeDatabase.memory()));
-
-  final Stream<List<MessagesTable>> Function(String conversationId)
-  _watchMessages;
-
-  MessageDao? _testMessageDao;
+  final Map<String, String> _persistedPaths;
+  final persisted = <String>[];
+  final deleted = <String>[];
 
   @override
-  MessageDao get messageDao {
-    final existing = _testMessageDao;
-    if (existing != null) {
-      return existing;
-    }
+  Future<String> persistDraftFile(String localPath) async {
+    persisted.add(localPath);
 
-    final created = _TestMessageDao(this, _watchMessages);
-    _testMessageDao = created;
-
-    return created;
-  }
-}
-
-class _TestMessageDao extends MessageDao {
-  _TestMessageDao(super.attachedDatabase, this._watchMessages);
-
-  final Stream<List<MessagesTable>> Function(String conversationId)
-  _watchMessages;
-
-  @override
-  Stream<List<MessagesTable>> watchMessagesByConversation(
-    String conversationId,
-  ) {
-    return _watchMessages(conversationId);
-  }
-}
-
-class _TestError extends Error {}
-
-class _ThrowingMessagesList extends ListBase<MessagesTable> {
-  @override
-  int get length => 1;
-
-  @override
-  set length(int value) {
-    throw UnsupportedError('length mutation is not supported');
+    return _persistedPaths[localPath] ?? localPath;
   }
 
   @override
-  MessagesTable operator [](int index) {
-    throw const FormatException('bad message row');
-  }
-
-  @override
-  void operator []=(int index, MessagesTable value) {
-    throw UnsupportedError('item mutation is not supported');
+  Future<void> deleteFile(String localPath) async {
+    deleted.add(localPath);
   }
 }

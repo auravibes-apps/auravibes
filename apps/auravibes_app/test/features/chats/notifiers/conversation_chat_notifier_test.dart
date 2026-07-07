@@ -87,6 +87,48 @@ void main() {
     );
 
     test(
+      'waits for conversation stream before resolving result',
+      () async {
+        final controller = StreamController<ConversationEntity?>();
+        addTearDown(controller.close);
+        final completer = Completer<AsyncValue<ConversationResult>>();
+
+        final container = ProviderContainer(
+          overrides: [
+            conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+            conversationByIdStreamProvider.overrideWith(
+              (ref, conversationId) => controller.stream,
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final sub = container.listen<AsyncValue<ConversationResult>>(
+          conversationChatProvider('ws-1'),
+          (_, next) {
+            if (next is AsyncData<ConversationResult>) {
+              completer.complete(next);
+            }
+          },
+          fireImmediately: true,
+        );
+
+        expect(
+          container.read(conversationChatProvider('ws-1')).isLoading,
+          true,
+        );
+
+        controller.add(conversation);
+
+        final result =
+            (await completer.future).value ??
+            fail('Expected conversation result');
+        sub.close();
+        expect(result, isA<ConversationFound>());
+      },
+    );
+
+    test(
       'returns ConversationWorkspaceMismatch for wrong workspace',
       () async {
         final completer = Completer<AsyncValue<ConversationResult>>();

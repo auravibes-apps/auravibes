@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_agent/auravibes_agent.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -17,7 +18,7 @@ class ConversationSendQueueRuntime implements AgentSendQueueRuntime {
   factory ConversationSendQueueRuntime({
     required ConversationQueuedDraft Function({
       required String conversationId,
-      required String content,
+      required ChatDraft draft,
     })
     enqueue,
     required List<ConversationQueuedDraft> Function(String conversationId)
@@ -39,7 +40,7 @@ class ConversationSendQueueRuntime implements AgentSendQueueRuntime {
 
   final ConversationQueuedDraft Function({
     required String conversationId,
-    required String content,
+    required ChatDraft draft,
   })
   enqueue;
   final List<ConversationQueuedDraft> Function(String conversationId)

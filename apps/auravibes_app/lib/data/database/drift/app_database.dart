@@ -30,6 +30,7 @@ import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dar
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_app/data/database/drift/tables/message_attachments.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
@@ -66,6 +67,7 @@ part 'app_database.g.dart';
     AgentSkills,
     AgentTools,
     Messages,
+    MessageAttachments,
     Tools,
     ToolsGroups,
     ConversationTools,
@@ -113,7 +115,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   /// Database creation strategy.
   @override
@@ -130,6 +132,16 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 3) {
           await m.createTable(agentTools);
+        }
+        if (from < 4) {
+          await m.createTable(messageAttachments);
+        }
+        if (from == 4) {
+          await m.addColumn(messageAttachments, messageAttachments.displayName);
+          await customStatement(
+            'UPDATE message_attachments SET display_name = file_name '
+            'WHERE display_name IS NULL OR length(display_name) = 0;',
+          );
         }
       },
     );

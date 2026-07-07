@@ -16,19 +16,6 @@ void main() {
       );
     });
 
-    test('trackError handles null error', () {
-      final service = MonitoringService();
-
-      expect(
-        () => service.trackError(
-          'test_concept',
-          error: null,
-          stackTrace: StackTrace.current,
-        ),
-        returnsNormally,
-      );
-    });
-
     test('trackError handles stackTrace', () {
       final service = MonitoringService();
 

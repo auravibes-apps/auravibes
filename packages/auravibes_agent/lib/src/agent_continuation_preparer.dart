@@ -46,7 +46,8 @@ abstract interface class AgentContinuationProvider<
     required String workspaceId,
   });
 
-  List<TChatMessage> buildChatHistory({
+  Future<List<TChatMessage>> buildChatHistory({
+    required TModel model,
     required List<TMessage> messages,
     required List<TChatMessage> skillContextMessages,
   });
@@ -92,7 +93,8 @@ class AgentContinuationPreparer<TModel, TMessage, TChatMessage, TTool> {
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
     );
-    final chatHistory = provider.buildChatHistory(
+    final chatHistory = await provider.buildChatHistory(
+      model: projectedModel,
       messages: messages,
       skillContextMessages: skillContextMessages,
     );

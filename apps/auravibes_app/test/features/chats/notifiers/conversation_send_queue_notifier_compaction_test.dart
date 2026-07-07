@@ -1,5 +1,6 @@
 // ignore_for_file: cascade_invocations
 // Required: Test readability.
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -23,15 +24,15 @@ void main() {
 
         final first = notifier.enqueue(
           conversationId: 'conv-1',
-          content: 'First queued',
+          draft: const ChatDraft(text: 'First queued'),
         );
         final second = notifier.enqueue(
           conversationId: 'conv-1',
-          content: 'Second queued',
+          draft: const ChatDraft(text: 'Second queued'),
         );
         final third = notifier.enqueue(
           conversationId: 'conv-1',
-          content: 'Third queued',
+          draft: const ChatDraft(text: 'Third queued'),
         );
 
         expect(notifier.dequeue('conv-1')?.id, first.id);
@@ -46,15 +47,15 @@ void main() {
 
       final conv1First = notifier.enqueue(
         conversationId: 'conv-1',
-        content: 'Conv1 First',
+        draft: const ChatDraft(text: 'Conv1 First'),
       );
       final conv2First = notifier.enqueue(
         conversationId: 'conv-2',
-        content: 'Conv2 First',
+        draft: const ChatDraft(text: 'Conv2 First'),
       );
       final _ = notifier.enqueue(
         conversationId: 'conv-1',
-        content: 'Conv1 Second',
+        draft: const ChatDraft(text: 'Conv1 Second'),
       );
 
       expect(notifier.dequeue('conv-1')?.id, conv1First.id);
@@ -68,11 +69,11 @@ void main() {
 
         final compactingConvMsg = notifier.enqueue(
           conversationId: 'compacting-conv',
-          content: 'Sent during compaction',
+          draft: const ChatDraft(text: 'Sent during compaction'),
         );
         final otherConvMsg = notifier.enqueue(
           conversationId: 'other-conv',
-          content: 'Sent to other',
+          draft: const ChatDraft(text: 'Sent to other'),
         );
 
         expect(notifier.peek('compacting-conv')?.id, compactingConvMsg.id);
@@ -91,15 +92,15 @@ void main() {
 
         final first = notifier.enqueue(
           conversationId: 'conv-1',
-          content: 'First',
+          draft: const ChatDraft(text: 'First'),
         );
         final second = notifier.enqueue(
           conversationId: 'conv-1',
-          content: 'Second',
+          draft: const ChatDraft(text: 'Second'),
         );
         final third = notifier.enqueue(
           conversationId: 'conv-1',
-          content: 'Third',
+          draft: const ChatDraft(text: 'Third'),
         );
 
         final all = notifier.dequeueAll('conv-1');
@@ -113,8 +114,14 @@ void main() {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
       notifier
-        ..enqueue(conversationId: 'conv-1', content: 'A')
-        ..enqueue(conversationId: 'conv-2', content: 'B')
+        ..enqueue(
+          conversationId: 'conv-1',
+          draft: const ChatDraft(text: 'A'),
+        )
+        ..enqueue(
+          conversationId: 'conv-2',
+          draft: const ChatDraft(text: 'B'),
+        )
         ..dequeueAll('conv-1')
         ..dequeueAll('conv-2');
 

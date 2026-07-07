@@ -157,6 +157,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
   @override
   void dispose() {
+    _visible = false;
     widget.controller._state = null;
     if (_ownsFocusNode) {
       _requiredFocusNode.dispose();

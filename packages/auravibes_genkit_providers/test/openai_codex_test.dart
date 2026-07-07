@@ -496,6 +496,79 @@ void main() {
       throwsA(isA<GenkitException>()),
     );
   });
+
+  test('serializes media content parts', () async {
+    Map<String, dynamic>? capturedBody;
+    final ai = Genkit(
+      plugins: [
+        OpenAICodexProvider(
+          accessTokenProvider: () => 'oauth-token',
+          models: const ['gpt-5.5'],
+          httpClient: _FakeClient((request) async {
+            capturedBody = await _readBody(request);
+
+            return _jsonResponse({
+              'status': 'completed',
+              'output_text': 'Done.',
+            });
+          }),
+        ),
+      ],
+    );
+
+    final _ = await ai.generate<Object?, Object?>(
+      model: openAICodexModel('gpt-5.5'),
+      messages: [
+        Message(
+          role: Role.user,
+          content: [
+            TextPart(text: 'Review these.'),
+            MediaPart(
+              media: Media(
+                contentType: 'image/png',
+                url: 'data:image/png;base64,aW1hZ2U=',
+              ),
+            ),
+            MediaPart(
+              media: Media(
+                contentType: 'application/pdf',
+                url: 'data:application/pdf;base64,cGRm',
+              ),
+              metadata: {'filename': 'doc.pdf'},
+            ),
+            MediaPart(
+              media: Media(
+                contentType: 'audio/wav',
+                url: 'data:audio/wav;base64,YXVkaW8=',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    expect(capturedBody?['input'], [
+      {
+        'role': 'user',
+        'content': [
+          {'type': 'input_text', 'text': 'Review these.'},
+          {
+            'type': 'input_image',
+            'image_url': 'data:image/png;base64,aW1hZ2U=',
+          },
+          {
+            'type': 'input_file',
+            'file_data': 'data:application/pdf;base64,cGRm',
+            'filename': 'doc.pdf',
+          },
+          {
+            'type': 'input_audio',
+            'input_audio': {'data': 'YXVkaW8=', 'format': 'wav'},
+          },
+        ],
+      },
+    ]);
+  });
 }
 
 Future<Map<String, dynamic>> _readBody(http.BaseRequest request) async {

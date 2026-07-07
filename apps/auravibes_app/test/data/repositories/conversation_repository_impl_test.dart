@@ -3,6 +3,8 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
+import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -316,6 +318,47 @@ void main() {
         verify(() => mockDao.deleteConversation('conv-1')).called(1);
       });
 
+      test('deletes persisted attachment files', () async {
+        final fileStore = _FakeAttachmentFileStore();
+        repository = ConversationRepository(
+          database,
+          attachmentFileStore: fileStore,
+        );
+        final message = await database.messageDao.insertMessage(
+          const MessagesCompanion(
+            conversationId: Value('conv-1'),
+            content: Value('see attachment'),
+            messageType: Value(MessagesTableType.text),
+            isUser: Value(true),
+            status: Value(MessageTableStatus.sent),
+          ),
+        );
+        final _ = await database
+            .into(database.messageAttachments)
+            .insert(
+              MessageAttachmentsCompanion(
+                messageId: Value(message.id),
+                localPath: const Value('/support/image.png'),
+                fileName: const Value('image.png'),
+                displayName: const Value('image.png'),
+                mimeType: const Value('image/png'),
+                modality: const Value('image'),
+                sizeBytes: const Value(10),
+              ),
+            );
+        when(
+          () => mockDao.getConversationById('conv-1'),
+        ).thenAnswer((_) async => createConversationRow());
+        when(
+          () => mockDao.deleteConversation('conv-1'),
+        ).thenAnswer((_) async => true);
+
+        final result = await repository.deleteConversation('conv-1');
+
+        expect(result, true);
+        expect(fileStore.deleted, ['/support/image.png']);
+      });
+
       test('returns false when not found', () async {
         when(
           () => mockDao.getConversationById('nonexistent'),
@@ -337,4 +380,13 @@ class _TestAppDatabase extends AppDatabase {
 
   @override
   ConversationDao get conversationDao => _conversationDao;
+}
+
+class _FakeAttachmentFileStore extends AttachmentFileStore {
+  final deleted = <String>[];
+
+  @override
+  Future<void> deleteFile(String localPath) async {
+    deleted.add(localPath);
+  }
 }

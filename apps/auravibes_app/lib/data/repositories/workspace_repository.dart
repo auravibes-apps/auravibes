@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -12,10 +13,14 @@ import 'package:drift/drift.dart';
 /// using the Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
 class WorkspaceRepository {
-  WorkspaceRepository(this._database);
+  WorkspaceRepository(
+    this._database, {
+    AttachmentFileStore? attachmentFileStore,
+  }) : _attachmentFileStore = attachmentFileStore ?? AttachmentFileStore();
 
   /// The database instance for workspace operations.
   final AppDatabase _database;
+  final AttachmentFileStore _attachmentFileStore;
 
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
@@ -100,8 +105,43 @@ class WorkspaceRepository {
       return false; // Return false instead of throwing for delete operations.
     }
 
-    // ON DELETE CASCADE at the schema level handles all related data.
-    return _database.workspaceDao.deleteWorkspace(id);
+    final attachmentPaths = await _attachmentPathsForWorkspace(id);
+    final deleted = await _database.workspaceDao.deleteWorkspace(id);
+    if (deleted) {
+      final _ = await Future.wait(
+        attachmentPaths.map(_deleteAttachmentFile),
+      );
+    }
+
+    return deleted;
+  }
+
+  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
+    final rows = await (_database.select(_database.messageAttachments).join([
+      innerJoin(
+        _database.messages,
+        _database.messages.id.equalsExp(
+          _database.messageAttachments.messageId,
+        ),
+      ),
+      innerJoin(
+        _database.conversations,
+        _database.conversations.id.equalsExp(_database.messages.conversationId),
+      ),
+    ])..where(_database.conversations.workspaceId.equals(id))).get();
+
+    return [
+      for (final row in rows)
+        row.readTable(_database.messageAttachments).localPath,
+    ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   Future<bool> workspaceExists(String id) {

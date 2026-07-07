@@ -1,6 +1,7 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -120,7 +121,7 @@ void main() {
     test('startConversation throws when no model selected', () {
       final notifier = container.read(newChatProvider('ws-1').notifier);
       expect(
-        () => notifier.startConversation('hello'),
+        () => notifier.startConversation(const ChatDraft(text: 'hello')),
         throwsA(isA<Exception>()),
       );
     });
@@ -145,7 +146,7 @@ void main() {
       sendContainer.read(newChatProvider('ws-1').notifier).setModelId('m1');
       final result = await sendContainer
           .read(newChatProvider('ws-1').notifier)
-          .startConversation('hello');
+          .startConversation(const ChatDraft(text: 'hello'));
 
       expect(result, isA<ConversationEntity>());
       expect(result.id, 'new-conv');
@@ -170,7 +171,7 @@ void main() {
       try {
         final _ = await sendContainer
             .read(newChatProvider('ws-1').notifier)
-            .startConversation('hello');
+            .startConversation(const ChatDraft(text: 'hello'));
       } on Object catch (_) {}
 
       expect(
@@ -201,7 +202,7 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   @override
   Future<ConversationEntity> call({
     required String workspaceId,
-    required String firstMessage,
+    required ChatDraft draft,
     required String workspaceModelSelectionId,
     String? agentId,
   }) async {
@@ -236,7 +237,7 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
   @override
   Future<ConversationEntity> call({
     required String workspaceId,
-    required String firstMessage,
+    required ChatDraft draft,
     required String workspaceModelSelectionId,
     String? agentId,
   }) async {

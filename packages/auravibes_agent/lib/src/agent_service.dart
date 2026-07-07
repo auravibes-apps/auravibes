@@ -202,6 +202,7 @@ class AgentService {
         (queuedDraft) => data.createQueuedUserMessage(
           conversationId: conversationId,
           content: queuedDraft.content,
+          payload: queuedDraft.payload,
         ),
       ),
     );

@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$WorkspaceModelSelectionEntity {
 
- String get id; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get modelConnectionId; String? get modelName; bool get supportsReasoning; bool get supportsToolCalls;
+ String get id; String get modelId; DateTime get createdAt; DateTime get updatedAt; String get modelConnectionId; String? get modelName; List<String> get modalitiesInput; List<String> get modalitiesOutput; bool get supportsReasoning; bool get supportsToolCalls;
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $WorkspaceModelSelectionEntityCopyWith<WorkspaceModelSelectionEntity> get copyWi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&const DeepCollectionEquality().equals(other.modalitiesInput, modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, modalitiesOutput)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,supportsReasoning,supportsToolCalls);
+int get hashCode => Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,const DeepCollectionEquality().hash(modalitiesInput),const DeepCollectionEquality().hash(modalitiesOutput),supportsReasoning,supportsToolCalls);
 
 @override
 String toString() {
-  return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, supportsReasoning: $supportsReasoning, supportsToolCalls: $supportsToolCalls)';
+  return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, supportsReasoning: $supportsReasoning, supportsToolCalls: $supportsToolCalls)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $WorkspaceModelSelectionEntityCopyWith<$Res>  {
   factory $WorkspaceModelSelectionEntityCopyWith(WorkspaceModelSelectionEntity value, $Res Function(WorkspaceModelSelectionEntity) _then) = _$WorkspaceModelSelectionEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, bool supportsReasoning, bool supportsToolCalls
+ String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, List<String> modalitiesInput, List<String> modalitiesOutput, bool supportsReasoning, bool supportsToolCalls
 });
 
 
@@ -62,7 +62,7 @@ class _$WorkspaceModelSelectionEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? supportsReasoning = null,Object? supportsToolCalls = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? supportsToolCalls = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -70,7 +70,9 @@ as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: 
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,modelConnectionId: null == modelConnectionId ? _self.modelConnectionId : modelConnectionId // ignore: cast_nullable_to_non_nullable
 as String,modelName: freezed == modelName ? _self.modelName : modelName // ignore: cast_nullable_to_non_nullable
-as String?,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
+as String?,modalitiesInput: null == modalitiesInput ? _self.modalitiesInput : modalitiesInput // ignore: cast_nullable_to_non_nullable
+as List<String>,modalitiesOutput: null == modalitiesOutput ? _self.modalitiesOutput : modalitiesOutput // ignore: cast_nullable_to_non_nullable
+as List<String>,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -157,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  bool supportsReasoning,  bool supportsToolCalls)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  bool supportsToolCalls)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionEntity() when $default != null:
-return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.supportsReasoning,_that.supportsToolCalls);case _:
+return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.supportsToolCalls);case _:
   return orElse();
 
 }
@@ -178,10 +180,10 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  bool supportsReasoning,  bool supportsToolCalls)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  bool supportsToolCalls)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionEntity():
-return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.supportsReasoning,_that.supportsToolCalls);case _:
+return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.supportsToolCalls);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -198,10 +200,10 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  bool supportsReasoning,  bool supportsToolCalls)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String modelId,  DateTime createdAt,  DateTime updatedAt,  String modelConnectionId,  String? modelName,  List<String> modalitiesInput,  List<String> modalitiesOutput,  bool supportsReasoning,  bool supportsToolCalls)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceModelSelectionEntity() when $default != null:
-return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.supportsReasoning,_that.supportsToolCalls);case _:
+return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.modelConnectionId,_that.modelName,_that.modalitiesInput,_that.modalitiesOutput,_that.supportsReasoning,_that.supportsToolCalls);case _:
   return null;
 
 }
@@ -213,7 +215,7 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 
 
 class _WorkspaceModelSelectionEntity implements WorkspaceModelSelectionEntity {
-  const _WorkspaceModelSelectionEntity({required this.id, required this.modelId, required this.createdAt, required this.updatedAt, required this.modelConnectionId, this.modelName, this.supportsReasoning = false, this.supportsToolCalls = true});
+  const _WorkspaceModelSelectionEntity({required this.id, required this.modelId, required this.createdAt, required this.updatedAt, required this.modelConnectionId, this.modelName, final  List<String> modalitiesInput = const [], final  List<String> modalitiesOutput = const [], this.supportsReasoning = false, this.supportsToolCalls = true}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput;
   
 
 @override final  String id;
@@ -222,6 +224,20 @@ class _WorkspaceModelSelectionEntity implements WorkspaceModelSelectionEntity {
 @override final  DateTime updatedAt;
 @override final  String modelConnectionId;
 @override final  String? modelName;
+ final  List<String> _modalitiesInput;
+@override@JsonKey() List<String> get modalitiesInput {
+  if (_modalitiesInput is EqualUnmodifiableListView) return _modalitiesInput;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_modalitiesInput);
+}
+
+ final  List<String> _modalitiesOutput;
+@override@JsonKey() List<String> get modalitiesOutput {
+  if (_modalitiesOutput is EqualUnmodifiableListView) return _modalitiesOutput;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_modalitiesOutput);
+}
+
 @override@JsonKey() final  bool supportsReasoning;
 @override@JsonKey() final  bool supportsToolCalls;
 
@@ -235,16 +251,16 @@ _$WorkspaceModelSelectionEntityCopyWith<_WorkspaceModelSelectionEntity> get copy
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceModelSelectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.modelConnectionId, modelConnectionId) || other.modelConnectionId == modelConnectionId)&&(identical(other.modelName, modelName) || other.modelName == modelName)&&const DeepCollectionEquality().equals(other._modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other._modalitiesOutput, _modalitiesOutput)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,supportsReasoning,supportsToolCalls);
+int get hashCode => Object.hash(runtimeType,id,modelId,createdAt,updatedAt,modelConnectionId,modelName,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),supportsReasoning,supportsToolCalls);
 
 @override
 String toString() {
-  return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, supportsReasoning: $supportsReasoning, supportsToolCalls: $supportsToolCalls)';
+  return 'WorkspaceModelSelectionEntity(id: $id, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, modelConnectionId: $modelConnectionId, modelName: $modelName, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, supportsReasoning: $supportsReasoning, supportsToolCalls: $supportsToolCalls)';
 }
 
 
@@ -255,7 +271,7 @@ abstract mixin class _$WorkspaceModelSelectionEntityCopyWith<$Res> implements $W
   factory _$WorkspaceModelSelectionEntityCopyWith(_WorkspaceModelSelectionEntity value, $Res Function(_WorkspaceModelSelectionEntity) _then) = __$WorkspaceModelSelectionEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, bool supportsReasoning, bool supportsToolCalls
+ String id, String modelId, DateTime createdAt, DateTime updatedAt, String modelConnectionId, String? modelName, List<String> modalitiesInput, List<String> modalitiesOutput, bool supportsReasoning, bool supportsToolCalls
 });
 
 
@@ -272,7 +288,7 @@ class __$WorkspaceModelSelectionEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? supportsReasoning = null,Object? supportsToolCalls = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? supportsToolCalls = null,}) {
   return _then(_WorkspaceModelSelectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -280,7 +296,9 @@ as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: 
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,modelConnectionId: null == modelConnectionId ? _self.modelConnectionId : modelConnectionId // ignore: cast_nullable_to_non_nullable
 as String,modelName: freezed == modelName ? _self.modelName : modelName // ignore: cast_nullable_to_non_nullable
-as String?,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
+as String?,modalitiesInput: null == modalitiesInput ? _self._modalitiesInput : modalitiesInput // ignore: cast_nullable_to_non_nullable
+as List<String>,modalitiesOutput: null == modalitiesOutput ? _self._modalitiesOutput : modalitiesOutput // ignore: cast_nullable_to_non_nullable
+as List<String>,supportsReasoning: null == supportsReasoning ? _self.supportsReasoning : supportsReasoning // ignore: cast_nullable_to_non_nullable
 as bool,supportsToolCalls: null == supportsToolCalls ? _self.supportsToolCalls : supportsToolCalls // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

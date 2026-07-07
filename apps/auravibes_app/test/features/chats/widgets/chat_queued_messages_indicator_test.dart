@@ -1,4 +1,5 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
@@ -75,8 +76,14 @@ void main() {
 
   testWidgets('renders queued draft content', (tester) async {
     final drafts = [
-      const ConversationQueuedDraft(id: 'q-1', content: 'Hello'),
-      const ConversationQueuedDraft(id: 'q-2', content: 'World'),
+      ConversationQueuedDraft(
+        id: 'q-1',
+        draft: const ChatDraft(text: 'Hello'),
+      ),
+      ConversationQueuedDraft(
+        id: 'q-2',
+        draft: const ChatDraft(text: 'World'),
+      ),
     ];
 
     await pumpAndInit(tester, buildSubject(queuedDrafts: drafts));
@@ -87,8 +94,14 @@ void main() {
 
   testWidgets('renders count badge with draft count', (tester) async {
     final drafts = [
-      const ConversationQueuedDraft(id: 'q-1', content: 'Hello'),
-      const ConversationQueuedDraft(id: 'q-2', content: 'World'),
+      ConversationQueuedDraft(
+        id: 'q-1',
+        draft: const ChatDraft(text: 'Hello'),
+      ),
+      ConversationQueuedDraft(
+        id: 'q-2',
+        draft: const ChatDraft(text: 'World'),
+      ),
     ];
 
     await pumpAndInit(tester, buildSubject(queuedDrafts: drafts));
@@ -99,8 +112,14 @@ void main() {
 
   testWidgets('renders close icon buttons for each draft', (tester) async {
     final drafts = [
-      const ConversationQueuedDraft(id: 'q-1', content: 'Hello'),
-      const ConversationQueuedDraft(id: 'q-2', content: 'World'),
+      ConversationQueuedDraft(
+        id: 'q-1',
+        draft: const ChatDraft(text: 'Hello'),
+      ),
+      ConversationQueuedDraft(
+        id: 'q-2',
+        draft: const ChatDraft(text: 'World'),
+      ),
     ];
 
     await pumpAndInit(tester, buildSubject(queuedDrafts: drafts));

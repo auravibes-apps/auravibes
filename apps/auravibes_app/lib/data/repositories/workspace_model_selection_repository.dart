@@ -93,6 +93,8 @@ class WorkspaceModelSelectionRepository {
         updatedAt: withProvider.model.updatedAt,
         modelConnectionId: withProvider.model.modelConnectionId,
         modelName: withProvider.apiModel?.name,
+        modalitiesInput: withProvider.apiModel?.modalitiesInput ?? [],
+        modalitiesOutput: withProvider.apiModel?.modalitiesOutput ?? [],
         supportsReasoning: withProvider.apiModel?.supportsReasoning ?? false,
         supportsToolCalls: withProvider.apiModel?.supportsToolCalls ?? false,
       ),

@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
@@ -59,14 +60,17 @@ class AppAgentConversationDataProvider implements AgentDataProvider {
   Future<AgentCreatedMessage> createQueuedUserMessage({
     required String conversationId,
     required String content,
+    Object? payload,
   }) async {
+    final draft = payload is ChatDraft ? payload : ChatDraft(text: content);
     final message = await messageRepository.createMessage(
       MessageToCreate(
         conversationId: conversationId,
-        content: content,
+        content: draft.text,
         messageType: MessageType.text,
         isUser: true,
         status: MessageStatus.sending,
+        attachments: draft.attachments,
       ),
     );
 

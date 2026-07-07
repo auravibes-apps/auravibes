@@ -28,11 +28,9 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
   @override
   Future<ConversationResult> build(String workspaceId) async {
     final conversationId = ref.watch(conversationSelectedProvider);
-    final asyncConv = ref.watch(
-      conversationByIdStreamProvider(conversationId: conversationId),
+    final conversation = await ref.watch(
+      conversationByIdStreamProvider(conversationId: conversationId).future,
     );
-
-    final conversation = asyncConv.value;
 
     if (conversation == null) {
       return const ConversationNotFound();

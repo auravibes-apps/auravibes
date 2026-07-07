@@ -379,6 +379,7 @@ class _FakeAgentConversationDataProvider
   Future<AgentCreatedMessage> createQueuedUserMessage({
     required String conversationId,
     required String content,
+    Object? payload,
   }) async {
     createdContents.add(content);
 

@@ -8800,6 +8800,624 @@ class MessagesCompanion extends UpdateCompanion<MessagesTable> {
   }
 }
 
+class $MessageAttachmentsTable extends MessageAttachments
+    with TableInfo<$MessageAttachmentsTable, MessageAttachmentsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessageAttachmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _messageIdMeta = const VerificationMeta(
+    'messageId',
+  );
+  @override
+  late final GeneratedColumn<String> messageId = GeneratedColumn<String>(
+    'message_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES messages (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _localPathMeta = const VerificationMeta(
+    'localPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPath = GeneratedColumn<String>(
+    'local_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fileNameMeta = const VerificationMeta(
+    'fileName',
+  );
+  @override
+  late final GeneratedColumn<String> fileName = GeneratedColumn<String>(
+    'file_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modalityMeta = const VerificationMeta(
+    'modality',
+  );
+  @override
+  late final GeneratedColumn<String> modality = GeneratedColumn<String>(
+    'modality',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    messageId,
+    localPath,
+    fileName,
+    displayName,
+    mimeType,
+    modality,
+    sizeBytes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'message_attachments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MessageAttachmentsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('message_id')) {
+      context.handle(
+        _messageIdMeta,
+        messageId.isAcceptableOrUnknown(data['message_id']!, _messageIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageIdMeta);
+    }
+    if (data.containsKey('local_path')) {
+      context.handle(
+        _localPathMeta,
+        localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localPathMeta);
+    }
+    if (data.containsKey('file_name')) {
+      context.handle(
+        _fileNameMeta,
+        fileName.isAcceptableOrUnknown(data['file_name']!, _fileNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fileNameMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('modality')) {
+      context.handle(
+        _modalityMeta,
+        modality.isAcceptableOrUnknown(data['modality']!, _modalityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modalityMeta);
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sizeBytesMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MessageAttachmentsTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MessageAttachmentsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      messageId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message_id'],
+      )!,
+      localPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_path'],
+      )!,
+      fileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}file_name'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      )!,
+      modality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}modality'],
+      )!,
+      sizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size_bytes'],
+      )!,
+    );
+  }
+
+  @override
+  $MessageAttachmentsTable createAlias(String alias) {
+    return $MessageAttachmentsTable(attachedDatabase, alias);
+  }
+}
+
+class MessageAttachmentsTable extends DataClass
+    implements Insertable<MessageAttachmentsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String messageId;
+  final String localPath;
+  final String fileName;
+  final String displayName;
+  final String mimeType;
+  final String modality;
+  final int sizeBytes;
+  const MessageAttachmentsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.messageId,
+    required this.localPath,
+    required this.fileName,
+    required this.displayName,
+    required this.mimeType,
+    required this.modality,
+    required this.sizeBytes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['message_id'] = Variable<String>(messageId);
+    map['local_path'] = Variable<String>(localPath);
+    map['file_name'] = Variable<String>(fileName);
+    map['display_name'] = Variable<String>(displayName);
+    map['mime_type'] = Variable<String>(mimeType);
+    map['modality'] = Variable<String>(modality);
+    map['size_bytes'] = Variable<int>(sizeBytes);
+    return map;
+  }
+
+  MessageAttachmentsCompanion toCompanion(bool nullToAbsent) {
+    return MessageAttachmentsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      messageId: Value(messageId),
+      localPath: Value(localPath),
+      fileName: Value(fileName),
+      displayName: Value(displayName),
+      mimeType: Value(mimeType),
+      modality: Value(modality),
+      sizeBytes: Value(sizeBytes),
+    );
+  }
+
+  factory MessageAttachmentsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MessageAttachmentsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      messageId: serializer.fromJson<String>(json['messageId']),
+      localPath: serializer.fromJson<String>(json['localPath']),
+      fileName: serializer.fromJson<String>(json['fileName']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      modality: serializer.fromJson<String>(json['modality']),
+      sizeBytes: serializer.fromJson<int>(json['sizeBytes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'messageId': serializer.toJson<String>(messageId),
+      'localPath': serializer.toJson<String>(localPath),
+      'fileName': serializer.toJson<String>(fileName),
+      'displayName': serializer.toJson<String>(displayName),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'modality': serializer.toJson<String>(modality),
+      'sizeBytes': serializer.toJson<int>(sizeBytes),
+    };
+  }
+
+  MessageAttachmentsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? messageId,
+    String? localPath,
+    String? fileName,
+    String? displayName,
+    String? mimeType,
+    String? modality,
+    int? sizeBytes,
+  }) => MessageAttachmentsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    messageId: messageId ?? this.messageId,
+    localPath: localPath ?? this.localPath,
+    fileName: fileName ?? this.fileName,
+    displayName: displayName ?? this.displayName,
+    mimeType: mimeType ?? this.mimeType,
+    modality: modality ?? this.modality,
+    sizeBytes: sizeBytes ?? this.sizeBytes,
+  );
+  MessageAttachmentsTable copyWithCompanion(MessageAttachmentsCompanion data) {
+    return MessageAttachmentsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      localPath: data.localPath.present ? data.localPath.value : this.localPath,
+      fileName: data.fileName.present ? data.fileName.value : this.fileName,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      modality: data.modality.present ? data.modality.value : this.modality,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageAttachmentsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('messageId: $messageId, ')
+          ..write('localPath: $localPath, ')
+          ..write('fileName: $fileName, ')
+          ..write('displayName: $displayName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('modality: $modality, ')
+          ..write('sizeBytes: $sizeBytes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    messageId,
+    localPath,
+    fileName,
+    displayName,
+    mimeType,
+    modality,
+    sizeBytes,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MessageAttachmentsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.messageId == this.messageId &&
+          other.localPath == this.localPath &&
+          other.fileName == this.fileName &&
+          other.displayName == this.displayName &&
+          other.mimeType == this.mimeType &&
+          other.modality == this.modality &&
+          other.sizeBytes == this.sizeBytes);
+}
+
+class MessageAttachmentsCompanion
+    extends UpdateCompanion<MessageAttachmentsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> messageId;
+  final Value<String> localPath;
+  final Value<String> fileName;
+  final Value<String> displayName;
+  final Value<String> mimeType;
+  final Value<String> modality;
+  final Value<int> sizeBytes;
+  final Value<int> rowid;
+  const MessageAttachmentsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.messageId = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.fileName = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.modality = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MessageAttachmentsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String messageId,
+    required String localPath,
+    required String fileName,
+    this.displayName = const Value.absent(),
+    required String mimeType,
+    required String modality,
+    required int sizeBytes,
+    this.rowid = const Value.absent(),
+  }) : messageId = Value(messageId),
+       localPath = Value(localPath),
+       fileName = Value(fileName),
+       mimeType = Value(mimeType),
+       modality = Value(modality),
+       sizeBytes = Value(sizeBytes);
+  static Insertable<MessageAttachmentsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? messageId,
+    Expression<String>? localPath,
+    Expression<String>? fileName,
+    Expression<String>? displayName,
+    Expression<String>? mimeType,
+    Expression<String>? modality,
+    Expression<int>? sizeBytes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (messageId != null) 'message_id': messageId,
+      if (localPath != null) 'local_path': localPath,
+      if (fileName != null) 'file_name': fileName,
+      if (displayName != null) 'display_name': displayName,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (modality != null) 'modality': modality,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MessageAttachmentsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? messageId,
+    Value<String>? localPath,
+    Value<String>? fileName,
+    Value<String>? displayName,
+    Value<String>? mimeType,
+    Value<String>? modality,
+    Value<int>? sizeBytes,
+    Value<int>? rowid,
+  }) {
+    return MessageAttachmentsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      messageId: messageId ?? this.messageId,
+      localPath: localPath ?? this.localPath,
+      fileName: fileName ?? this.fileName,
+      displayName: displayName ?? this.displayName,
+      mimeType: mimeType ?? this.mimeType,
+      modality: modality ?? this.modality,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (messageId.present) {
+      map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (localPath.present) {
+      map['local_path'] = Variable<String>(localPath.value);
+    }
+    if (fileName.present) {
+      map['file_name'] = Variable<String>(fileName.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (modality.present) {
+      map['modality'] = Variable<String>(modality.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessageAttachmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('messageId: $messageId, ')
+          ..write('localPath: $localPath, ')
+          ..write('fileName: $fileName, ')
+          ..write('displayName: $displayName, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('modality: $modality, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ConversationToolsTable extends ConversationTools
     with TableInfo<$ConversationToolsTable, ConversationToolsTable> {
   @override
@@ -11529,6 +12147,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ToolsTable tools = $ToolsTable(this);
   late final $AgentToolsTable agentTools = $AgentToolsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
+  late final $MessageAttachmentsTable messageAttachments =
+      $MessageAttachmentsTable(this);
   late final $ConversationToolsTable conversationTools =
       $ConversationToolsTable(this);
   late final $WorkspaceCompactionSettingsTable workspaceCompactionSettings =
@@ -11639,6 +12259,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tools,
     agentTools,
     messages,
+    messageAttachments,
     conversationTools,
     workspaceCompactionSettings,
     skillTemplateTools,
@@ -11807,6 +12428,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('messages', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'messages',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('message_attachments', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -20863,6 +21491,30 @@ final class $$MessagesTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $MessageAttachmentsTable,
+    List<MessageAttachmentsTable>
+  >
+  _messageAttachmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.messageAttachments,
+        aliasName: 'messages__id__message_attachments__message_id',
+      );
+
+  $$MessageAttachmentsTableProcessedTableManager get messageAttachmentsRefs {
+    final manager = $$MessageAttachmentsTableTableManager(
+      $_db,
+      $_db.messageAttachments,
+    ).filter((f) => f.messageId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _messageAttachmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$MessagesTableFilterComposer
@@ -20937,6 +21589,31 @@ class $$MessagesTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> messageAttachmentsRefs(
+    Expression<bool> Function($$MessageAttachmentsTableFilterComposer f) f,
+  ) {
+    final $$MessageAttachmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.messageAttachments,
+      getReferencedColumn: (t) => t.messageId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessageAttachmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.messageAttachments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -21071,6 +21748,32 @@ class $$MessagesTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> messageAttachmentsRefs<T extends Object>(
+    Expression<T> Function($$MessageAttachmentsTableAnnotationComposer a) f,
+  ) {
+    final $$MessageAttachmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.messageAttachments,
+          getReferencedColumn: (t) => t.messageId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MessageAttachmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.messageAttachments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$MessagesTableTableManager
@@ -21086,7 +21789,10 @@ class $$MessagesTableTableManager
           $$MessagesTableUpdateCompanionBuilder,
           (MessagesTable, $$MessagesTableReferences),
           MessagesTable,
-          PrefetchHooks Function({bool conversationId})
+          PrefetchHooks Function({
+            bool conversationId,
+            bool messageAttachmentsRefs,
+          })
         > {
   $$MessagesTableTableManager(_$AppDatabase db, $MessagesTable table)
     : super(
@@ -21155,7 +21861,460 @@ class $$MessagesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({conversationId = false}) {
+          prefetchHooksCallback:
+              ({conversationId = false, messageAttachmentsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (messageAttachmentsRefs) db.messageAttachments,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (conversationId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.conversationId,
+                                    referencedTable: $$MessagesTableReferences
+                                        ._conversationIdTable(db),
+                                    referencedColumn: $$MessagesTableReferences
+                                        ._conversationIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (messageAttachmentsRefs)
+                        await $_getPrefetchedData<
+                          MessagesTable,
+                          $MessagesTable,
+                          MessageAttachmentsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$MessagesTableReferences
+                              ._messageAttachmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$MessagesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).messageAttachmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.messageId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$MessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MessagesTable,
+      MessagesTable,
+      $$MessagesTableFilterComposer,
+      $$MessagesTableOrderingComposer,
+      $$MessagesTableAnnotationComposer,
+      $$MessagesTableCreateCompanionBuilder,
+      $$MessagesTableUpdateCompanionBuilder,
+      (MessagesTable, $$MessagesTableReferences),
+      MessagesTable,
+      PrefetchHooks Function({bool conversationId, bool messageAttachmentsRefs})
+    >;
+typedef $$MessageAttachmentsTableCreateCompanionBuilder =
+    MessageAttachmentsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String messageId,
+      required String localPath,
+      required String fileName,
+      Value<String> displayName,
+      required String mimeType,
+      required String modality,
+      required int sizeBytes,
+      Value<int> rowid,
+    });
+typedef $$MessageAttachmentsTableUpdateCompanionBuilder =
+    MessageAttachmentsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> messageId,
+      Value<String> localPath,
+      Value<String> fileName,
+      Value<String> displayName,
+      Value<String> mimeType,
+      Value<String> modality,
+      Value<int> sizeBytes,
+      Value<int> rowid,
+    });
+
+final class $$MessageAttachmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MessageAttachmentsTable,
+          MessageAttachmentsTable
+        > {
+  $$MessageAttachmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $MessagesTable _messageIdTable(_$AppDatabase db) =>
+      db.messages.createAlias('message_attachments__message_id__messages__id');
+
+  $$MessagesTableProcessedTableManager get messageId {
+    final $_column = $_itemColumn<String>('message_id')!;
+
+    final manager = $$MessagesTableTableManager(
+      $_db,
+      $_db.messages,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_messageIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MessageAttachmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $MessageAttachmentsTable> {
+  $$MessageAttachmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modality => $composableBuilder(
+    column: $table.modality,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$MessagesTableFilterComposer get messageId {
+    final $$MessagesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.messageId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableFilterComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageAttachmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MessageAttachmentsTable> {
+  $$MessageAttachmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fileName => $composableBuilder(
+    column: $table.fileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modality => $composableBuilder(
+    column: $table.modality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$MessagesTableOrderingComposer get messageId {
+    final $$MessagesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.messageId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableOrderingComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageAttachmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MessageAttachmentsTable> {
+  $$MessageAttachmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get localPath =>
+      $composableBuilder(column: $table.localPath, builder: (column) => column);
+
+  GeneratedColumn<String> get fileName =>
+      $composableBuilder(column: $table.fileName, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<String> get modality =>
+      $composableBuilder(column: $table.modality, builder: (column) => column);
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  $$MessagesTableAnnotationComposer get messageId {
+    final $$MessagesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.messageId,
+      referencedTable: $db.messages,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MessagesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.messages,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MessageAttachmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MessageAttachmentsTable,
+          MessageAttachmentsTable,
+          $$MessageAttachmentsTableFilterComposer,
+          $$MessageAttachmentsTableOrderingComposer,
+          $$MessageAttachmentsTableAnnotationComposer,
+          $$MessageAttachmentsTableCreateCompanionBuilder,
+          $$MessageAttachmentsTableUpdateCompanionBuilder,
+          (MessageAttachmentsTable, $$MessageAttachmentsTableReferences),
+          MessageAttachmentsTable,
+          PrefetchHooks Function({bool messageId})
+        > {
+  $$MessageAttachmentsTableTableManager(
+    _$AppDatabase db,
+    $MessageAttachmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MessageAttachmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MessageAttachmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MessageAttachmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> messageId = const Value.absent(),
+                Value<String> localPath = const Value.absent(),
+                Value<String> fileName = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<String> modality = const Value.absent(),
+                Value<int> sizeBytes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MessageAttachmentsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                messageId: messageId,
+                localPath: localPath,
+                fileName: fileName,
+                displayName: displayName,
+                mimeType: mimeType,
+                modality: modality,
+                sizeBytes: sizeBytes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String messageId,
+                required String localPath,
+                required String fileName,
+                Value<String> displayName = const Value.absent(),
+                required String mimeType,
+                required String modality,
+                required int sizeBytes,
+                Value<int> rowid = const Value.absent(),
+              }) => MessageAttachmentsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                messageId: messageId,
+                localPath: localPath,
+                fileName: fileName,
+                displayName: displayName,
+                mimeType: mimeType,
+                modality: modality,
+                sizeBytes: sizeBytes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$MessageAttachmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({messageId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -21175,16 +22334,18 @@ class $$MessagesTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (conversationId) {
+                    if (messageId) {
                       state =
                           state.withJoin(
                                 currentTable: table,
-                                currentColumn: table.conversationId,
-                                referencedTable: $$MessagesTableReferences
-                                    ._conversationIdTable(db),
-                                referencedColumn: $$MessagesTableReferences
-                                    ._conversationIdTable(db)
-                                    .id,
+                                currentColumn: table.messageId,
+                                referencedTable:
+                                    $$MessageAttachmentsTableReferences
+                                        ._messageIdTable(db),
+                                referencedColumn:
+                                    $$MessageAttachmentsTableReferences
+                                        ._messageIdTable(db)
+                                        .id,
                               )
                               as T;
                     }
@@ -21200,19 +22361,19 @@ class $$MessagesTableTableManager
       );
 }
 
-typedef $$MessagesTableProcessedTableManager =
+typedef $$MessageAttachmentsTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $MessagesTable,
-      MessagesTable,
-      $$MessagesTableFilterComposer,
-      $$MessagesTableOrderingComposer,
-      $$MessagesTableAnnotationComposer,
-      $$MessagesTableCreateCompanionBuilder,
-      $$MessagesTableUpdateCompanionBuilder,
-      (MessagesTable, $$MessagesTableReferences),
-      MessagesTable,
-      PrefetchHooks Function({bool conversationId})
+      $MessageAttachmentsTable,
+      MessageAttachmentsTable,
+      $$MessageAttachmentsTableFilterComposer,
+      $$MessageAttachmentsTableOrderingComposer,
+      $$MessageAttachmentsTableAnnotationComposer,
+      $$MessageAttachmentsTableCreateCompanionBuilder,
+      $$MessageAttachmentsTableUpdateCompanionBuilder,
+      (MessageAttachmentsTable, $$MessageAttachmentsTableReferences),
+      MessageAttachmentsTable,
+      PrefetchHooks Function({bool messageId})
     >;
 typedef $$ConversationToolsTableCreateCompanionBuilder =
     ConversationToolsCompanion Function({
@@ -23424,6 +24585,8 @@ class $AppDatabaseManager {
       $$AgentToolsTableTableManager(_db, _db.agentTools);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
+  $$MessageAttachmentsTableTableManager get messageAttachments =>
+      $$MessageAttachmentsTableTableManager(_db, _db.messageAttachments);
   $$ConversationToolsTableTableManager get conversationTools =>
       $$ConversationToolsTableTableManager(_db, _db.conversationTools);
   $$WorkspaceCompactionSettingsTableTableManager

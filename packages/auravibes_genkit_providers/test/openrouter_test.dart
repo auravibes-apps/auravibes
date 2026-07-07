@@ -390,6 +390,122 @@ void main() {
 
     expect(stream.onResult, throwsA(isA<TimeoutException>()));
   });
+
+  test('serializes media content parts', () async {
+    Map<String, dynamic>? capturedBody;
+    final client = _FakeClient((request) async {
+      capturedBody = await _readBody(request);
+
+      return _jsonResponse({
+        'choices': [
+          {
+            'finish_reason': 'stop',
+            'message': {'role': 'assistant', 'content': 'Done.'},
+          },
+        ],
+      });
+    });
+    final ai = Genkit(
+      plugins: [
+        openRouter(
+          apiKey: 'key',
+          models: const [
+            ChatCompletionsModelDefinition(name: 'openai/gpt-5.4'),
+          ],
+          httpClient: client,
+        ),
+      ],
+    );
+
+    final _ = await ai.generate<OpenRouterOptions, Object?>(
+      model: openRouter.model('openai/gpt-5.4'),
+      messages: [
+        Message(
+          role: Role.user,
+          content: [
+            TextPart(text: 'Review these.'),
+            MediaPart(
+              media: Media(
+                contentType: 'image/png',
+                url: 'data:image/png;base64,aW1hZ2U=',
+              ),
+            ),
+            MediaPart(
+              media: Media(
+                contentType: 'application/pdf',
+                url: 'data:application/pdf;base64,cGRm',
+              ),
+              metadata: {'filename': 'doc.pdf'},
+            ),
+            MediaPart(
+              media: Media(
+                contentType: 'audio/mpeg',
+                url: 'data:audio/mpeg;base64,YXVkaW8=',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    expect(capturedBody?['messages'], [
+      {
+        'role': 'user',
+        'content': [
+          {'type': 'text', 'text': 'Review these.'},
+          {
+            'type': 'image_url',
+            'image_url': {'url': 'data:image/png;base64,aW1hZ2U='},
+          },
+          {
+            'type': 'file',
+            'file': {
+              'file_data': 'data:application/pdf;base64,cGRm',
+              'filename': 'doc.pdf',
+            },
+          },
+          {
+            'type': 'input_audio',
+            'input_audio': {'data': 'YXVkaW8=', 'format': 'mp3'},
+          },
+        ],
+      },
+    ]);
+  });
+
+  test('rejects non-base64 data URLs for file inputs', () async {
+    final ai = Genkit(
+      plugins: [
+        openRouter(
+          apiKey: 'key',
+          models: const [
+            ChatCompletionsModelDefinition(name: 'openai/gpt-5.4'),
+          ],
+          httpClient: _FakeClient((_) async => _jsonResponse({})),
+        ),
+      ],
+    );
+
+    final _ = await expectLater(
+      ai.generate<OpenRouterOptions, Object?>(
+        model: openRouter.model('openai/gpt-5.4'),
+        messages: [
+          Message(
+            role: Role.user,
+            content: [
+              MediaPart(
+                media: Media(
+                  contentType: 'application/pdf',
+                  url: 'data:application/pdf,cGRm',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      throwsA(isA<GenkitException>()),
+    );
+  });
 }
 
 ChatCompletionsPlugin _timeoutProvider() {
