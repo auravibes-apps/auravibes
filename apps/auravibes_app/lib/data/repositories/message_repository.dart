@@ -308,7 +308,7 @@ class MessageRepository {
   ) async {
     final _ = await Future.wait(
       attachments.map((attachment) {
-        return _attachmentFileStore.deleteFile(attachment.localPath);
+        return _deleteAttachmentFile(attachment.localPath);
       }),
     );
   }
@@ -318,9 +318,17 @@ class MessageRepository {
   ) async {
     final _ = await Future.wait(
       attachments.map((attachment) {
-        return _attachmentFileStore.deleteFile(attachment.localPath);
+        return _deleteAttachmentFile(attachment.localPath);
       }),
     );
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   void _validateMessagePatch(MessagePatch message) {

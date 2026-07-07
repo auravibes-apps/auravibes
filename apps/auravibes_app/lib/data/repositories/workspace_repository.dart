@@ -109,7 +109,7 @@ class WorkspaceRepository {
     final deleted = await _database.workspaceDao.deleteWorkspace(id);
     if (deleted) {
       final _ = await Future.wait(
-        attachmentPaths.map(_attachmentFileStore.deleteFile),
+        attachmentPaths.map(_deleteAttachmentFile),
       );
     }
 
@@ -134,6 +134,14 @@ class WorkspaceRepository {
       for (final row in rows)
         row.readTable(_database.messageAttachments).localPath,
     ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   Future<bool> workspaceExists(String id) {

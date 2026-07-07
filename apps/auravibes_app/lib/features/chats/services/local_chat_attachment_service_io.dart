@@ -78,11 +78,15 @@ class LocalChatAttachmentService {
 
     final devices = await _recorder.listInputDevices();
 
-    final device = Platform.isMacOS
-        ? devices
-              .where((device) => device.type == InputDeviceType.builtIn)
-              .firstOrNull
-        : null;
+    InputDevice? device;
+    if (Platform.isMacOS) {
+      for (final inputDevice in devices) {
+        if (inputDevice.type == InputDeviceType.builtIn) {
+          device = inputDevice;
+          break;
+        }
+      }
+    }
     _logger.fine('Voice recording input devices: $devices');
 
     final directory = await getTemporaryDirectory();

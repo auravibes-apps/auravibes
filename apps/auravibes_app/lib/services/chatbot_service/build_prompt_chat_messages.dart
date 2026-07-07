@@ -84,8 +84,13 @@ class BuildPromptChatMessages {
   }
 
   String _safeFileName(String fileName) {
+    final normalizedFileName = fileName.replaceAll(
+      String.fromCharCode(0x5C),
+      '/',
+    );
+
     return p
-        .basename(fileName.replaceAll(r'\', '/'))
+        .basename(normalizedFileName)
         .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
   }
 

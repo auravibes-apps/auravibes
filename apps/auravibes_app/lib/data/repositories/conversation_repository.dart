@@ -100,7 +100,7 @@ class ConversationRepository {
     final deleted = await _database.conversationDao.deleteConversation(id);
     if (deleted) {
       final _ = await Future.wait(
-        attachmentPaths.map(_attachmentFileStore.deleteFile),
+        attachmentPaths.map(_deleteAttachmentFile),
       );
     }
 
@@ -121,6 +121,14 @@ class ConversationRepository {
       for (final row in rows)
         row.readTable(_database.messageAttachments).localPath,
     ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   Future<bool> _conversationExists(String id) async {

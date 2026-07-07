@@ -285,6 +285,7 @@ class _ChatInputActions {
           ChatDraft(text: message, attachments: draftAttachments),
         );
       } on Object catch (error, stackTrace) {
+        attachments.value = draftAttachments;
         _logger.warning('Failed to send draft', error, stackTrace);
 
         return;
