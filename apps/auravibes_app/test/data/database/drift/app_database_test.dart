@@ -55,21 +55,6 @@ void main() {
       expect(fixture.database, isNotNull);
     });
 
-    test('initializeWithDefaults leaves workspace list empty', () async {
-      await fixture.database.initializeWithDefaults();
-
-      final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();
-      expect(workspaces, isEmpty);
-    });
-
-    test('initializeWithDefaults remains idempotent', () async {
-      await fixture.database.initializeWithDefaults();
-      await fixture.database.initializeWithDefaults();
-
-      final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();
-      expect(workspaces, isEmpty);
-    });
-
     test('DAOs are accessible', () {
       expect(fixture.database.workspaceDao, isNotNull);
       expect(fixture.database.modelConnectionsDao, isNotNull);
@@ -141,33 +126,10 @@ void main() {
       expect(workspaces, hasLength(2));
     });
 
-    test(
-      'initializeWithDefaults after manual insert does not add another',
-      () async {
-        final _ = await fixture.database
-            .into(fixture.database.workspaces)
-            .insert(
-              WorkspacesCompanion.insert(
-                name: 'Manual',
-                type: WorkspaceType.local,
-              ),
-            );
-        await fixture.database.initializeWithDefaults();
-
-        final workspaces = await fixture.database.workspaceDao
-            .getAllWorkspaces();
-        expect(workspaces, hasLength(1));
-        expect(workspaces.firstOrNull?.name, 'Manual');
-        expect(workspaces.firstOrNull?.type, WorkspaceType.local);
-      },
-    );
-
     test('database can be closed and recreated', () async {
-      await fixture.database.initializeWithDefaults();
       await fixture.close();
 
       final db2 = AppDatabase(connection: createTestConnection());
-      await db2.initializeWithDefaults();
       final workspaces = await db2.workspaceDao.getAllWorkspaces();
       expect(workspaces, isEmpty);
       await db2.close();

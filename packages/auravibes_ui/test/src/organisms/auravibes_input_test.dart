@@ -193,6 +193,26 @@ void main() {
       expect(find.byIcon(Icons.clear), findsOneWidget);
     });
 
+    testWidgets('displays header above field and footer below', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraInput(
+              header: Text('Header'),
+              footer: Text('Footer'),
+            ),
+          ),
+        ),
+      );
+
+      final headerTop = tester.getTopLeft(find.text('Header')).dy;
+      final fieldTop = tester.getTopLeft(find.byType(TextFormField)).dy;
+      final footerTop = tester.getTopLeft(find.text('Footer')).dy;
+
+      expect(headerTop, lessThan(fieldTop));
+      expect(footerTop, greaterThan(fieldTop));
+    });
+
     group('AuraInputSize enum', () {
       test('has all expected values', () {
         expect(AuraInputSize.values, hasLength(3));

@@ -41,7 +41,7 @@ ModelSyncService modelSyncService(Ref ref) {
 
   final service = ModelSyncService(
     syncApiModelsUseCase: syncApiModelsUseCase,
-  )..performFullSync();
+  );
 
   final timer = Timer.periodic(
     const Duration(hours: 5),
