@@ -40,6 +40,7 @@ void main() {
             }) => Future.value(''),
       ),
       agentCancellationRuntime: agent.AgentCancellationRuntime(),
+      onToolCallChanged: _noop,
     );
 
     const messageId = 'message-1';
@@ -94,6 +95,7 @@ void main() {
               }) => Future.value(''),
         ),
         agentCancellationRuntime: agent.AgentCancellationRuntime(),
+        onToolCallChanged: _noop,
       );
     });
 
@@ -290,3 +292,7 @@ void main() {
     });
   });
 }
+
+var _noopCalls = 0;
+
+void _noop() => _noopCalls += 1;

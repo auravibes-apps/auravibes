@@ -76,6 +76,8 @@ void main() {
 
     expect(find.text('Prompt'), findsOneWidget);
     expect(find.text('Edit prompt'), findsOneWidget);
+    await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Skills'), findsOneWidget);
     await tester.drag(find.byType(ListView).first, const Offset(0, -500));
     final _ = await tester.pumpAndSettle();

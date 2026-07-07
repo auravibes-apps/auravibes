@@ -16,6 +16,7 @@ void main() {
     var provider = AppToolCallActionsDataProvider(
       messageRepository: messageRepository,
       agentToolResumeService: agentToolResumeService,
+      onToolCallChanged: _noop,
     );
 
     const messageId = 'message-1';
@@ -52,6 +53,7 @@ void main() {
       provider = AppToolCallActionsDataProvider(
         messageRepository: messageRepository,
         agentToolResumeService: agentToolResumeService,
+        onToolCallChanged: _noop,
       );
     });
 
@@ -161,3 +163,7 @@ void main() {
     });
   });
 }
+
+var _noopCalls = 0;
+
+void _noop() => _noopCalls += 1;

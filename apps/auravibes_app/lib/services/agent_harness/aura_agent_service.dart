@@ -29,8 +29,8 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
     final toolCallActions = AppToolCallActionsDataProvider(
       messageRepository: ref.watch(messageRepositoryProvider),
       agentToolResumeService: agentToolResumeService,
-      activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
       onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
+      activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
     );
 
     final service = agent.AuraAgentService<ResolvedTool>(

@@ -11,14 +11,14 @@ class AppToolCallActionsDataProvider
   const AppToolCallActionsDataProvider({
     required this.messageRepository,
     required this.agentToolResumeService,
+    required this.onToolCallChanged,
     this.activeSubAgents,
-    this.onToolCallChanged,
   });
 
   final MessageRepository messageRepository;
   final AgentToolResumeService agentToolResumeService;
   final ActiveSubAgentRuntime? activeSubAgents;
-  final void Function()? onToolCallChanged;
+  final void Function() onToolCallChanged;
 
   @override
   Future<bool> skipToolCall({
@@ -43,7 +43,7 @@ class AppToolCallActionsDataProvider
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );
-    onToolCallChanged?.call();
+    onToolCallChanged();
 
     return true;
   }
@@ -77,7 +77,7 @@ class AppToolCallActionsDataProvider
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );
-    onToolCallChanged?.call();
+    onToolCallChanged();
     final parentId = activeSubAgents?.parentOf(message.conversationId);
     if (parentId != null) {
       activeSubAgents?.finish(
