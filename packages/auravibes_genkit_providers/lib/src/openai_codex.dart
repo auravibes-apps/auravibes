@@ -103,8 +103,8 @@ class OpenAICodexProvider extends GenkitPlugin {
               in response.stream
                   .transform(utf8.decoder)
                   .transform(const LineSplitter())) {
-            if (!line.startsWith('data:')) continue;
-            final data = line.replaceFirst('data:', '').trim();
+            if (!line.startsWith(_dataUrlPrefix)) continue;
+            final data = line.replaceFirst(_dataUrlPrefix, '').trim();
             if (data.isEmpty || data == '[DONE]') continue;
 
             final event = _decodeStreamEvent(data);
@@ -218,6 +218,7 @@ ModelRef<Object?> openAICodexModel(String name) {
 const _codexInstructions =
     'You are a coding assistant. '
     'Answer clearly and use tools when appropriate.';
+const _dataUrlPrefix = 'data:';
 
 List<Map<String, dynamic>> _messageToInput(Message message) {
   if (message.role == Role.tool) {
@@ -314,7 +315,7 @@ Map<String, dynamic> _mediaToInput(Part part, Media media) {
 
 String? _dataUrlPayload(String url) {
   final comma = url.indexOf(',');
-  if (!url.startsWith('data:') || comma < 0) return null;
+  if (!url.startsWith(_dataUrlPrefix) || comma < 0) return null;
   final header = url.replaceRange(comma, url.length, '');
   if (!header.contains(';base64')) return null;
 

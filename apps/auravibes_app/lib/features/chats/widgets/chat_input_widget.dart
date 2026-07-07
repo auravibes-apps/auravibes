@@ -82,6 +82,7 @@ class ChatInputWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // NOSONAR: UI composition with local hook callbacks.
     final controller = useTextEditingController();
     final focusNode = useFocusNode();
     final attachments = useState(<MessageAttachmentToCreate>[]);
