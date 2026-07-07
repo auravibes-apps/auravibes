@@ -1,20 +1,48 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
+  test('uniqueAttachmentDisplayName keeps first label unchanged', () {
+    expect(
+      uniqueAttachmentDisplayName('Voice Record', const []),
+      'Voice Record',
+    );
+  });
+
+  test('uniqueAttachmentDisplayName numbers repeated labels', () {
+    expect(
+      uniqueAttachmentDisplayName('Voice Record', const ['Voice Record']),
+      'Voice Record (1)',
+    );
+    expect(
+      uniqueAttachmentDisplayName('Image', const ['Image', 'Image (1)']),
+      'Image (2)',
+    );
+  });
+
+  test('uniqueAttachmentDisplayName preserves file extensions', () {
+    expect(
+      uniqueAttachmentDisplayName('blueprint.pdf', const ['blueprint.pdf']),
+      'blueprint (1).pdf',
+    );
+  });
+
   Widget buildSubject({
-    required void Function(String) onSendMessage,
+    required void Function(ChatDraft) onSendMessage,
     VoidCallback onToolsPress = _noop,
     bool disabled = false,
     bool isBusy = false,
     bool? showStopButton,
     VoidCallback? onStop,
+    List<String> modalitiesInput = const [],
   }) {
     return EasyLocalization(
       child: ProviderScope(
@@ -30,6 +58,7 @@ void main() {
                       onToolsPress: onToolsPress,
                       modelControl: const SizedBox.shrink(),
                       agentControl: const SizedBox.shrink(),
+                      modalitiesInput: modalitiesInput,
                       disabled: disabled,
                       isBusy: isBusy,
                       showStopButton: showStopButton,
@@ -61,6 +90,11 @@ void main() {
     await tester.pump();
     await tester.pump();
     await tester.pump();
+  }
+
+  void overridePlatform(TargetPlatform platform) {
+    debugDefaultTargetPlatformOverride = platform;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
   }
 
   testWidgets('renders without error', (tester) async {
@@ -110,6 +144,114 @@ void main() {
     await tester.pump();
 
     expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+  });
+
+  testWidgets('hides mic button when audio is unsupported', (tester) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    expect(find.byIcon(Icons.mic_none_outlined), findsNothing);
+  });
+
+  testWidgets('shows mic button outside menu when audio is supported', (
+    tester,
+  ) async {
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'audio'],
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    expect(
+      find.byIcon(Icons.mic_none_outlined),
+      kIsWeb ? findsNothing : findsOneWidget,
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.build_circle_outlined), findsOneWidget);
+    expect(
+      find.byIcon(Icons.mic_none_outlined),
+      kIsWeb ? findsNothing : findsOneWidget,
+    );
+  });
+
+  testWidgets('shows file and hides photo attachment on macOS', (
+    tester,
+  ) async {
+    overridePlatform(TargetPlatform.macOS);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'image'],
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.attach_file), findsOneWidget);
+    expect(find.byIcon(Icons.photo_outlined), findsNothing);
+    expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('shows file attachment for audio on macOS', (tester) async {
+    overridePlatform(TargetPlatform.macOS);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'audio'],
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.attach_file), findsOneWidget);
+    expect(find.byIcon(Icons.photo_outlined), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('keeps photo attachment visible outside macOS', (tester) async {
+    overridePlatform(TargetPlatform.linux);
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['text', 'image'],
+        onSendMessage: (_) {
+          final _ = Object();
+        },
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.attach_file), findsOneWidget);
+    expect(find.byIcon(Icons.photo_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.photo_camera_outlined), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('shows stop button when isBusy and onStop provided', (

@@ -1,7 +1,10 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -71,7 +74,30 @@ class _SendNewMessageUsecaseFixture {
     when(
       () => sendMessageUsecase.call(
         conversationId: any(named: 'conversationId'),
-        content: any(named: 'content'),
+        draft: any<ChatDraft>(named: 'draft'),
+      ),
+    ).thenAnswer((_) => Future<void>.value());
+    when(
+      () => sendMessageUsecase.createUserMessage(
+        conversationId: any(named: 'conversationId'),
+        draft: any<ChatDraft>(named: 'draft'),
+      ),
+    ).thenAnswer(
+      (_) async => MessageEntity(
+        id: 'message-1',
+        conversationId: 'conv-1',
+        content: 'Hello',
+        messageType: MessageType.text,
+        isUser: true,
+        status: MessageStatus.sending,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+    );
+    when(
+      () => sendMessageUsecase.continueFromUserMessage(
+        conversationId: any(named: 'conversationId'),
+        messageId: any(named: 'messageId'),
       ),
     ).thenAnswer((_) => Future<void>.value());
     when(
@@ -134,7 +160,7 @@ void main() {
     test('creates conversation and returns it', () async {
       final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
-        firstMessage: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
@@ -153,7 +179,7 @@ void main() {
       expect(
         () => fixture.usecase.call(
           workspaceId: 'ws-1',
-          firstMessage: 'Hello',
+          draft: const ChatDraft(text: 'Hello'),
           workspaceModelSelectionId: 'missing',
         ),
         throwsA(isA<Exception>()),
@@ -163,7 +189,7 @@ void main() {
     test('calls generateTitle with correct args', () async {
       final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
-        firstMessage: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
@@ -179,41 +205,41 @@ void main() {
       );
     });
 
-    test('calls sendMessage with correct args', () async {
+    test('creates first message with correct args', () async {
       final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
-        firstMessage: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
       expect(
         () => verify(
-          () => fixture.sendMessageUsecase.call(
+          () => fixture.sendMessageUsecase.createUserMessage(
             conversationId: 'conv-1',
-            content: 'Hello',
+            draft: const ChatDraft(text: 'Hello'),
           ),
         ).called(1),
         returnsNormally,
       );
     });
 
-    test('tracks error when sendMessage fails', () async {
+    test('tracks and rethrows when message creation fails', () async {
+      final exception = Exception('Send failed');
       when(
-        () => fixture.sendMessageUsecase.call(
+        () => fixture.sendMessageUsecase.createUserMessage(
           conversationId: any(named: 'conversationId'),
-          content: any(named: 'content'),
+          draft: any<ChatDraft>(named: 'draft'),
         ),
-      ).thenAnswer((_) async => throw Exception('Send failed'));
+      ).thenThrow(exception);
 
-      final result = await fixture.usecase.call(
-        workspaceId: 'ws-1',
-        firstMessage: 'Hello',
-        workspaceModelSelectionId: 'model-sel-1',
+      await expectLater(
+        fixture.usecase.call(
+          workspaceId: 'ws-1',
+          draft: const ChatDraft(text: 'Hello'),
+          workspaceModelSelectionId: 'model-sel-1',
+        ),
+        throwsA(same(exception)),
       );
-
-      expect(result.id, 'conv-1');
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
 
       verify(
         () => fixture.monitoringService.trackError(
@@ -227,7 +253,7 @@ void main() {
     test('creates conversation with correct workspaceId and modelId', () async {
       final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
-        firstMessage: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
@@ -240,7 +266,7 @@ void main() {
     test('retrieves model selection with correct ID', () async {
       final _ = await fixture.usecase.call(
         workspaceId: 'ws-1',
-        firstMessage: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
@@ -264,7 +290,7 @@ void main() {
       try {
         final _ = await fixture.usecase.call(
           workspaceId: 'ws-1',
-          firstMessage: 'Hello',
+          draft: const ChatDraft(text: 'Hello'),
           workspaceModelSelectionId: 'missing',
         );
         fail('Expected exception');
@@ -276,7 +302,7 @@ void main() {
     test('returns same conversation from repo', () async {
       final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
-        firstMessage: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 

@@ -1,19 +1,92 @@
 // Required: Existing test and UI helpers keep compact return flow.
+import 'dart:convert';
+
 import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_attachment_bytes.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:genkit/genkit.dart';
+import 'package:path/path.dart' as p;
 
 class BuildPromptChatMessages {
-  const BuildPromptChatMessages();
+  const BuildPromptChatMessages({this.modalitiesInput = const []});
+
+  final List<String> modalitiesInput;
 
   static const _agentBuilder = agent.BuildPromptChatMessages();
 
-  List<ChatMessage> call(List<MessageEntity> messages) {
-    final agentMessages = messages.map(_toAgentPromptMessage).toList();
+  Future<List<ChatMessage>> call(List<MessageEntity> messages) async {
+    final chatMessages = <ChatMessage>[];
+    for (final message in messages) {
+      for (final chatMessage in _agentBuilder.call([
+        _toAgentPromptMessage(message),
+      ])) {
+        chatMessages.add(
+          await _withAttachments(_toChatMessage(chatMessage), message),
+        );
+      }
+    }
 
-    return _agentBuilder.call(agentMessages).map(_toChatMessage).toList();
+    return chatMessages;
+  }
+
+  Future<ChatMessage> _withAttachments(
+    ChatMessage message,
+    MessageEntity entity,
+  ) async {
+    if (!entity.isUser || entity.attachments.isEmpty) return message;
+
+    final mediaParts = <MediaPart>[];
+    var totalBytes = 0;
+    for (final attachment in entity.attachments) {
+      if (!_supportsAttachment(attachment)) continue;
+      final part = await _toMediaPart(attachment);
+      if (part == null) continue;
+      final encodedBytes = part.media.url.length;
+      if (totalBytes + encodedBytes > maxChatPromptAttachmentBytes) {
+        continue;
+      }
+      totalBytes += encodedBytes;
+      mediaParts.add(part);
+    }
+
+    return ChatMessage(
+      role: message.role,
+      parts: [
+        if (message.content.isNotEmpty) TextPart(text: message.content),
+        ...message.parts,
+        ...mediaParts,
+      ],
+      metadata: message.metadata,
+    );
+  }
+
+  bool _supportsAttachment(MessageAttachmentEntity attachment) {
+    return supportsAttachmentModality(
+      attachment.modality,
+      modalitiesInput,
+      mimeType: attachment.mimeType,
+    );
+  }
+
+  Future<MediaPart?> _toMediaPart(MessageAttachmentEntity attachment) async {
+    final bytes = await readChatAttachmentBytes(attachment.localPath);
+    if (bytes == null) return null;
+
+    final dataUrl = 'data:${attachment.mimeType};base64,${base64Encode(bytes)}';
+
+    return MediaPart(
+      media: Media(contentType: attachment.mimeType, url: dataUrl),
+      metadata: {'filename': _safeFileName(attachment.fileName)},
+    );
+  }
+
+  String _safeFileName(String fileName) {
+    return p
+        .basename(fileName.replaceAll(r'\', '/'))
+        .replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
   }
 
   agent.AgentPromptMessage _toAgentPromptMessage(MessageEntity message) {

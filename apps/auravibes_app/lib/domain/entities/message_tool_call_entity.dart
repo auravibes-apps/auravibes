@@ -72,6 +72,36 @@ String? _toolCallResultStatusToJson(ToolCallResultStatus? status) {
 
 enum CompactionKind { manual, auto }
 
+enum MessageAttachmentModality { image, audio, file }
+
+@freezed
+abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
+  const factory MessageAttachmentEntity({
+    required String id,
+    required String messageId,
+    required String localPath,
+    required String fileName,
+    required String displayName,
+    required String mimeType,
+    required MessageAttachmentModality modality,
+    required int sizeBytes,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) = _MessageAttachmentEntity;
+}
+
+@freezed
+abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
+  const factory MessageAttachmentToCreate({
+    required String localPath,
+    required String fileName,
+    required String displayName,
+    required String mimeType,
+    required MessageAttachmentModality modality,
+    required int sizeBytes,
+  }) = _MessageAttachmentToCreate;
+}
+
 @freezed
 abstract class MessageMetadataEntity with _$MessageMetadataEntity {
   const factory MessageMetadataEntity({
@@ -143,11 +173,15 @@ abstract class MessageEntity with _$MessageEntity {
 
     /// Additional metadata for the message (JSON).
     MessageMetadataEntity? metadata,
+
+    @Default(<MessageAttachmentEntity>[])
+    List<MessageAttachmentEntity> attachments,
   }) = _MessageEntity;
   const MessageEntity._();
 
   /// Returns true if the message has valid content.
-  bool get hasValidContent => content.trim().isNotEmpty;
+  bool get hasValidContent =>
+      content.trim().isNotEmpty || attachments.isNotEmpty;
 
   /// Returns true if the message is in a valid state.
   bool get isValid {
@@ -176,25 +210,23 @@ abstract class MessageToCreate with _$MessageToCreate {
 
     /// Additional metadata for the message (JSON).
     String? metadata,
+
+    @Default(<MessageAttachmentToCreate>[])
+    List<MessageAttachmentToCreate> attachments,
   }) = _MessageToCreate;
   const MessageToCreate._();
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
-    if (content.trim().isNotEmpty) {
-      return true;
-    }
-
-    if (status == MessageStatus.sent) {
-      return false;
-    }
-
     final metadata = this.metadata;
 
-    return !isUser &&
-        metadata != null &&
-        metadata.trim().isNotEmpty &&
-        safeJsonDecode(metadata) != null;
+    return content.trim().isNotEmpty ||
+        attachments.isNotEmpty ||
+        status != MessageStatus.sent &&
+            !isUser &&
+            metadata != null &&
+            metadata.trim().isNotEmpty &&
+            safeJsonDecode(metadata) != null;
   }
 
   /// Returns true if the message is in a valid state.

@@ -10,6 +10,7 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -138,9 +139,11 @@ class _ChatMessageRow extends HookConsumerWidget {
         message.metadata?.toolCalls ?? const <MessageToolCallEntity>[];
     final hasVisibleToolCalls = visibleToolCalls.isNotEmpty;
     final hasContent = message.content.trim().isNotEmpty;
+    final hasAttachments = message.attachments.isNotEmpty;
     final thinking = message.metadata?.thinking?.trim();
     final hasThinking = thinking != null && thinking.isNotEmpty;
-    final showTextBubble = hasContent || hasThinking || !hasVisibleToolCalls;
+    final showTextBubble =
+        hasContent || hasThinking || (!hasVisibleToolCalls && !hasAttachments);
     final status = _mapMessageStatus(message.status, isStreaming);
 
     return AnimatedSize(
@@ -154,6 +157,7 @@ class _ChatMessageRow extends HookConsumerWidget {
               hasThinking: hasThinking,
               status: status,
             ),
+          if (hasAttachments) _MessageAttachments(message: message),
           for (final toolCall in visibleToolCalls)
             _ToolCallWidget(
               toolCall: toolCall,
@@ -201,6 +205,52 @@ class _ChatMessageRow extends HookConsumerWidget {
       MessageStatus.sent => AuraMessageDeliveryStatus.sent,
       MessageStatus.error => AuraMessageDeliveryStatus.error,
     };
+  }
+}
+
+class _MessageAttachments extends StatelessWidget {
+  const _MessageAttachments({required this.message});
+
+  final MessageEntity message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Wrap(
+        spacing: context.auraTheme.fromSpacing(.xs),
+        runSpacing: context.auraTheme.fromSpacing(.xs),
+        children: [
+          for (final attachment in message.attachments)
+            _AttachmentPreview(attachment: attachment),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentPreview extends StatelessWidget {
+  const _AttachmentPreview({required this.attachment});
+
+  final MessageAttachmentEntity attachment;
+
+  @override
+  Widget build(BuildContext context) {
+    if (attachment.modality == MessageAttachmentModality.image) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        child: ChatAttachmentImage(localPath: attachment.localPath),
+      );
+    }
+
+    return Chip(
+      avatar: Icon(
+        attachment.modality == MessageAttachmentModality.audio
+            ? Icons.mic_none_outlined
+            : Icons.insert_drive_file_outlined,
+      ),
+      label: Text(attachment.displayName),
+    );
   }
 }
 

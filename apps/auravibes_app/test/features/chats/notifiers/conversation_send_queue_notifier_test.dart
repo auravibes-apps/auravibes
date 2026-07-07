@@ -1,3 +1,4 @@
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -19,11 +20,11 @@ void main() {
 
       final first = notifier.enqueue(
         conversationId: 'conversation-1',
-        content: 'First queued message',
+        draft: const ChatDraft(text: 'First queued message'),
       );
       final second = notifier.enqueue(
         conversationId: 'conversation-1',
-        content: 'Second queued message',
+        draft: const ChatDraft(text: 'Second queued message'),
       );
 
       expect(
@@ -40,11 +41,11 @@ void main() {
 
       final first = notifier.enqueue(
         conversationId: 'conv-1',
-        content: 'First',
+        draft: const ChatDraft(text: 'First'),
       );
       final second = notifier.enqueue(
         conversationId: 'conv-1',
-        content: 'Second',
+        draft: const ChatDraft(text: 'Second'),
       );
 
       notifier.remove(conversationId: 'conv-1', draftId: first.id);
@@ -57,7 +58,10 @@ void main() {
     test('remove with unknown draftId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'First');
+      final _ = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
       notifier.remove(conversationId: 'conv-1', draftId: 'nonexistent');
 
       final state = container.read(conversationSendQueueProvider);
@@ -69,7 +73,7 @@ void main() {
 
       final draft = notifier.enqueue(
         conversationId: 'conv-1',
-        content: 'First',
+        draft: const ChatDraft(text: 'First'),
       );
 
       notifier.remove(conversationId: 'unknown', draftId: draft.id);
@@ -83,7 +87,7 @@ void main() {
 
       final draft = notifier.enqueue(
         conversationId: 'conv-1',
-        content: 'Only one',
+        draft: const ChatDraft(text: 'Only one'),
       );
 
       notifier.remove(conversationId: 'conv-1', draftId: draft.id);
@@ -95,11 +99,17 @@ void main() {
     test('clear removes all drafts for a conversation', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'First');
-      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'Second');
+      final _ = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
+      final _ = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Second'),
+      );
       final _ = notifier.enqueue(
         conversationId: 'conv-2',
-        content: 'Other conv',
+        draft: const ChatDraft(text: 'Other conv'),
       );
       notifier.clear('conv-1');
 
@@ -111,7 +121,10 @@ void main() {
     test('clear with unknown conversationId is no-op', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
-      final _ = notifier.enqueue(conversationId: 'conv-1', content: 'First');
+      final _ = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
       notifier.clear('unknown');
 
       final state = container.read(conversationSendQueueProvider);

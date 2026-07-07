@@ -108,7 +108,7 @@ class CompactConversationUsecase {
           .where((m) => range.messageIds.contains(m.id))
           .toList();
 
-      final chatHistory = _buildCompactionPrompt(compactableMessages);
+      final chatHistory = await _buildCompactionPrompt(compactableMessages);
 
       String summaryText;
       try {
@@ -145,10 +145,12 @@ class CompactConversationUsecase {
     }
   }
 
-  List<ChatMessage> _buildCompactionPrompt(List<MessageEntity> messages) {
+  Future<List<ChatMessage>> _buildCompactionPrompt(
+    List<MessageEntity> messages,
+  ) async {
     return [
       ChatMessage.system(_compactionSystemPrompt),
-      ..._buildPromptChatMessages(messages),
+      ...await _buildPromptChatMessages.call(messages),
       ChatMessage.user(
         'Please create a comprehensive summary of the above conversation. '
         'Preserve all goals, decisions, technical details, and current status.',

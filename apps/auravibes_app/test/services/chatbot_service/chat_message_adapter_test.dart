@@ -9,7 +9,7 @@ void main() {
   group('BuildPromptChatMessages', () {
     const adapter = BuildPromptChatMessages();
 
-    test('converts user message', () {
+    test('converts user message', () async {
       final messages = [
         MessageEntity(
           id: 'u1',
@@ -23,13 +23,13 @@ void main() {
         ),
       ];
 
-      final result = adapter(messages);
+      final result = await adapter(messages);
 
       expect(result, hasLength(1));
       expect(result.single.role.name, 'user');
     });
 
-    test('converts assistant message without tool calls', () {
+    test('converts assistant message without tool calls', () async {
       final messages = [
         MessageEntity(
           id: 'a1',
@@ -43,13 +43,13 @@ void main() {
         ),
       ];
 
-      final result = adapter(messages);
+      final result = await adapter(messages);
 
       expect(result, hasLength(1));
       expect(result.single.role.name, 'model');
     });
 
-    test('converts assistant message with resolved tool calls', () {
+    test('converts assistant message with resolved tool calls', () async {
       final messages = [
         MessageEntity(
           id: 'a1',
@@ -74,7 +74,7 @@ void main() {
         ),
       ];
 
-      final result = adapter(messages);
+      final result = await adapter(messages);
 
       expect(result, hasLength(2));
 
@@ -93,7 +93,7 @@ void main() {
       );
     });
 
-    test('skips unresolved tool call results', () {
+    test('skips unresolved tool call results', () async {
       final messages = [
         MessageEntity(
           id: 'a1',
@@ -116,14 +116,14 @@ void main() {
         ),
       ];
 
-      final result = adapter(messages);
+      final result = await adapter(messages);
 
       expect(result, hasLength(1));
       expect(result.single.toolCalls, hasLength(1));
       expect(result.single.parts.whereType<ToolResponsePart>(), isEmpty);
     });
 
-    test('converts multiple messages in order', () {
+    test('converts multiple messages in order', () async {
       final messages = [
         MessageEntity(
           id: 'u1',
@@ -147,7 +147,7 @@ void main() {
         ),
       ];
 
-      final result = adapter(messages);
+      final result = await adapter(messages);
 
       expect(result, hasLength(2));
       expect(result.firstOrNull?.role.name, 'user');

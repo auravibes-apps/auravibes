@@ -77,6 +77,7 @@ class _FakeAgentProvider implements AgentDataProvider, AgentModelProvider {
   Future<AgentCreatedMessage> createQueuedUserMessage({
     required String conversationId,
     required String content,
+    Object? payload,
   }) async {
     createdContents.add(content);
 

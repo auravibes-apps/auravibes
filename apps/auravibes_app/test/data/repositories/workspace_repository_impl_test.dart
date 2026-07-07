@@ -1,5 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNull;
@@ -163,6 +166,51 @@ void main() {
       expect(getResult, isNull);
     });
 
+    test('should delete attachment files when deleting workspace', () async {
+      final fileStore = _FakeAttachmentFileStore();
+      repository = WorkspaceRepository(
+        database,
+        attachmentFileStore: fileStore,
+      );
+      const workspace = WorkspaceToCreate(
+        name: 'Test Workspace',
+        type: WorkspaceType.local,
+      );
+      final createdWorkspace = await repository.createWorkspace(workspace);
+      final conversation = await database.conversationDao.insertConversation(
+        ConversationsCompanion(
+          workspaceId: Value(createdWorkspace.id),
+          title: const Value('Conversation'),
+        ),
+      );
+      final message = await database.messageDao.insertMessage(
+        MessagesCompanion(
+          conversationId: Value(conversation.id),
+          content: const Value('see attachment'),
+          messageType: const Value(MessagesTableType.text),
+          isUser: const Value(true),
+          status: const Value(MessageTableStatus.sent),
+        ),
+      );
+      final _ = await database
+          .into(database.messageAttachments)
+          .insert(
+            MessageAttachmentsCompanion(
+              messageId: Value(message.id),
+              localPath: const Value('/support/image.png'),
+              fileName: const Value('image.png'),
+              displayName: const Value('image.png'),
+              mimeType: const Value('image/png'),
+              modality: Value(MessageAttachmentModality.image.name),
+              sizeBytes: const Value(10),
+            ),
+          );
+
+      expect(await repository.deleteWorkspace(createdWorkspace.id), isTrue);
+
+      expect(fileStore.deleted, ['/support/image.png']);
+    });
+
     test('should search workspaces by name', () async {
       // Arrange.
       const workspace1 = WorkspaceToCreate(
@@ -219,4 +267,13 @@ void main() {
       );
     });
   });
+}
+
+class _FakeAttachmentFileStore extends AttachmentFileStore {
+  final deleted = <String>[];
+
+  @override
+  Future<void> deleteFile(String localPath) async {
+    deleted.add(localPath);
+  }
 }

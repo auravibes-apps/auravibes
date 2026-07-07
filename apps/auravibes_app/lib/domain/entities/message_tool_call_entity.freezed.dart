@@ -296,6 +296,562 @@ as ToolCallResultStatus?,
 
 }
 
+/// @nodoc
+mixin _$MessageAttachmentEntity {
+
+ String get id; String get messageId; String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes; DateTime get createdAt; DateTime get updatedAt;
+/// Create a copy of MessageAttachmentEntity
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageAttachmentEntityCopyWith<MessageAttachmentEntity> get copyWith => _$MessageAttachmentEntityCopyWithImpl<MessageAttachmentEntity>(this as MessageAttachmentEntity, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+
+@override
+String toString() {
+  return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $MessageAttachmentEntityCopyWith<$Res>  {
+  factory $MessageAttachmentEntityCopyWith(MessageAttachmentEntity value, $Res Function(MessageAttachmentEntity) _then) = _$MessageAttachmentEntityCopyWithImpl;
+@useResult
+$Res call({
+ String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageAttachmentEntityCopyWithImpl<$Res>
+    implements $MessageAttachmentEntityCopyWith<$Res> {
+  _$MessageAttachmentEntityCopyWithImpl(this._self, this._then);
+
+  final MessageAttachmentEntity _self;
+  final $Res Function(MessageAttachmentEntity) _then;
+
+/// Create a copy of MessageAttachmentEntity
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
+as String,localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
+as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
+as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
+as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
+as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
+as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [MessageAttachmentEntity].
+extension MessageAttachmentEntityPatterns on MessageAttachmentEntity {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MessageAttachmentEntity value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _MessageAttachmentEntity() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MessageAttachmentEntity value)  $default,){
+final _that = this;
+switch (_that) {
+case _MessageAttachmentEntity():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MessageAttachmentEntity value)?  $default,){
+final _that = this;
+switch (_that) {
+case _MessageAttachmentEntity() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _MessageAttachmentEntity() when $default != null:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+switch (_that) {
+case _MessageAttachmentEntity():
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String messageId,  String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+switch (_that) {
+case _MessageAttachmentEntity() when $default != null:
+return $default(_that.id,_that.messageId,_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes,_that.createdAt,_that.updatedAt);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _MessageAttachmentEntity implements MessageAttachmentEntity {
+  const _MessageAttachmentEntity({required this.id, required this.messageId, required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes, required this.createdAt, required this.updatedAt});
+
+
+@override final  String id;
+@override final  String messageId;
+@override final  String localPath;
+@override final  String fileName;
+@override final  String displayName;
+@override final  String mimeType;
+@override final  MessageAttachmentModality modality;
+@override final  int sizeBytes;
+@override final  DateTime createdAt;
+@override final  DateTime updatedAt;
+
+/// Create a copy of MessageAttachmentEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$MessageAttachmentEntityCopyWith<_MessageAttachmentEntity> get copyWith => __$MessageAttachmentEntityCopyWithImpl<_MessageAttachmentEntity>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+
+@override
+String toString() {
+  return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$MessageAttachmentEntityCopyWith<$Res> implements $MessageAttachmentEntityCopyWith<$Res> {
+  factory _$MessageAttachmentEntityCopyWith(_MessageAttachmentEntity value, $Res Function(_MessageAttachmentEntity) _then) = __$MessageAttachmentEntityCopyWithImpl;
+@override @useResult
+$Res call({
+ String id, String messageId, String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes, DateTime createdAt, DateTime updatedAt
+});
+
+
+
+
+}
+/// @nodoc
+class __$MessageAttachmentEntityCopyWithImpl<$Res>
+    implements _$MessageAttachmentEntityCopyWith<$Res> {
+  __$MessageAttachmentEntityCopyWithImpl(this._self, this._then);
+
+  final _MessageAttachmentEntity _self;
+  final $Res Function(_MessageAttachmentEntity) _then;
+
+/// Create a copy of MessageAttachmentEntity
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
+  return _then(_MessageAttachmentEntity(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
+as String,localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
+as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
+as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
+as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
+as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
+as int,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as DateTime,
+  ));
+}
+
+
+}
+
+/// @nodoc
+mixin _$MessageAttachmentToCreate {
+
+ String get localPath; String get fileName; String get displayName; String get mimeType; MessageAttachmentModality get modality; int get sizeBytes;
+/// Create a copy of MessageAttachmentToCreate
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$MessageAttachmentToCreateCopyWith<MessageAttachmentToCreate> get copyWith => _$MessageAttachmentToCreateCopyWithImpl<MessageAttachmentToCreate>(this as MessageAttachmentToCreate, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+
+@override
+String toString() {
+  return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $MessageAttachmentToCreateCopyWith<$Res>  {
+  factory $MessageAttachmentToCreateCopyWith(MessageAttachmentToCreate value, $Res Function(MessageAttachmentToCreate) _then) = _$MessageAttachmentToCreateCopyWithImpl;
+@useResult
+$Res call({
+ String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes
+});
+
+
+
+
+}
+/// @nodoc
+class _$MessageAttachmentToCreateCopyWithImpl<$Res>
+    implements $MessageAttachmentToCreateCopyWith<$Res> {
+  _$MessageAttachmentToCreateCopyWithImpl(this._self, this._then);
+
+  final MessageAttachmentToCreate _self;
+  final $Res Function(MessageAttachmentToCreate) _then;
+
+/// Create a copy of MessageAttachmentToCreate
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
+  return _then(_self.copyWith(
+localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
+as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
+as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
+as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
+as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [MessageAttachmentToCreate].
+extension MessageAttachmentToCreatePatterns on MessageAttachmentToCreate {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _MessageAttachmentToCreate value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _MessageAttachmentToCreate() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _MessageAttachmentToCreate value)  $default,){
+final _that = this;
+switch (_that) {
+case _MessageAttachmentToCreate():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _MessageAttachmentToCreate value)?  $default,){
+final _that = this;
+switch (_that) {
+case _MessageAttachmentToCreate() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _MessageAttachmentToCreate() when $default != null:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)  $default,) {final _that = this;
+switch (_that) {
+case _MessageAttachmentToCreate():
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String localPath,  String fileName,  String displayName,  String mimeType,  MessageAttachmentModality modality,  int sizeBytes)?  $default,) {final _that = this;
+switch (_that) {
+case _MessageAttachmentToCreate() when $default != null:
+return $default(_that.localPath,_that.fileName,_that.displayName,_that.mimeType,_that.modality,_that.sizeBytes);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+
+
+class _MessageAttachmentToCreate implements MessageAttachmentToCreate {
+  const _MessageAttachmentToCreate({required this.localPath, required this.fileName, required this.displayName, required this.mimeType, required this.modality, required this.sizeBytes});
+
+
+@override final  String localPath;
+@override final  String fileName;
+@override final  String displayName;
+@override final  String mimeType;
+@override final  MessageAttachmentModality modality;
+@override final  int sizeBytes;
+
+/// Create a copy of MessageAttachmentToCreate
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$MessageAttachmentToCreateCopyWith<_MessageAttachmentToCreate> get copyWith => __$MessageAttachmentToCreateCopyWithImpl<_MessageAttachmentToCreate>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+
+@override
+String toString() {
+  return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$MessageAttachmentToCreateCopyWith<$Res> implements $MessageAttachmentToCreateCopyWith<$Res> {
+  factory _$MessageAttachmentToCreateCopyWith(_MessageAttachmentToCreate value, $Res Function(_MessageAttachmentToCreate) _then) = __$MessageAttachmentToCreateCopyWithImpl;
+@override @useResult
+$Res call({
+ String localPath, String fileName, String displayName, String mimeType, MessageAttachmentModality modality, int sizeBytes
+});
+
+
+
+
+}
+/// @nodoc
+class __$MessageAttachmentToCreateCopyWithImpl<$Res>
+    implements _$MessageAttachmentToCreateCopyWith<$Res> {
+  __$MessageAttachmentToCreateCopyWithImpl(this._self, this._then);
+
+  final _MessageAttachmentToCreate _self;
+  final $Res Function(_MessageAttachmentToCreate) _then;
+
+/// Create a copy of MessageAttachmentToCreate
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
+  return _then(_MessageAttachmentToCreate(
+localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
+as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
+as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String,mimeType: null == mimeType ? _self.mimeType : mimeType // ignore: cast_nullable_to_non_nullable
+as String,modality: null == modality ? _self.modality : modality // ignore: cast_nullable_to_non_nullable
+as MessageAttachmentModality,sizeBytes: null == sizeBytes ? _self.sizeBytes : sizeBytes // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+
+}
+
 
 /// @nodoc
 mixin _$MessageMetadataEntity {
@@ -625,7 +1181,7 @@ mixin _$MessageEntity {
  MessageStatus get status;/// Timestamp when the message was created.
  DateTime get createdAt;/// Timestamp when the message was last updated.
  DateTime get updatedAt;/// Additional metadata for the message (JSON).
- MessageMetadataEntity? get metadata;
+ MessageMetadataEntity? get metadata; List<MessageAttachmentEntity> get attachments;
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -636,16 +1192,16 @@ $MessageEntityCopyWith<MessageEntity> get copyWith => _$MessageEntityCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata);
+int get hashCode => Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(attachments));
 
 @override
 String toString() {
-  return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata)';
+  return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -656,7 +1212,7 @@ abstract mixin class $MessageEntityCopyWith<$Res>  {
   factory $MessageEntityCopyWith(MessageEntity value, $Res Function(MessageEntity) _then) = _$MessageEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata
+ String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments
 });
 
 
@@ -673,7 +1229,7 @@ class _$MessageEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
@@ -684,7 +1240,8 @@ as bool,status: null == status ? _self.status : status // ignore: cast_nullable_
 as MessageStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as MessageMetadataEntity?,
+as MessageMetadataEntity?,attachments: null == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<MessageAttachmentEntity>,
   ));
 }
 /// Create a copy of MessageEntity
@@ -781,10 +1338,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageEntity() when $default != null:
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments);case _:
   return orElse();
 
 }
@@ -802,10 +1359,10 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments)  $default,) {final _that = this;
 switch (_that) {
 case _MessageEntity():
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -822,10 +1379,10 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  DateTime createdAt,  DateTime updatedAt,  MessageMetadataEntity? metadata,  List<MessageAttachmentEntity> attachments)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageEntity() when $default != null:
-return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata);case _:
+return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.createdAt,_that.updatedAt,_that.metadata,_that.attachments);case _:
   return null;
 
 }
@@ -837,7 +1394,7 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 
 
 class _MessageEntity extends MessageEntity {
-  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata}): super._();
+  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata, final  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[]}): _attachments = attachments,super._();
   
 
 /// Unique identifier for the message.
@@ -858,6 +1415,13 @@ class _MessageEntity extends MessageEntity {
 @override final  DateTime updatedAt;
 /// Additional metadata for the message (JSON).
 @override final  MessageMetadataEntity? metadata;
+ final  List<MessageAttachmentEntity> _attachments;
+@override@JsonKey() List<MessageAttachmentEntity> get attachments {
+  if (_attachments is EqualUnmodifiableListView) return _attachments;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_attachments);
+}
+
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -869,16 +1433,16 @@ _$MessageEntityCopyWith<_MessageEntity> get copyWith => __$MessageEntityCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other._attachments, _attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata);
+int get hashCode => Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(_attachments));
 
 @override
 String toString() {
-  return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata)';
+  return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -889,7 +1453,7 @@ abstract mixin class _$MessageEntityCopyWith<$Res> implements $MessageEntityCopy
   factory _$MessageEntityCopyWith(_MessageEntity value, $Res Function(_MessageEntity) _then) = __$MessageEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata
+ String id, String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, DateTime createdAt, DateTime updatedAt, MessageMetadataEntity? metadata, List<MessageAttachmentEntity> attachments
 });
 
 
@@ -906,7 +1470,7 @@ class __$MessageEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,}) {
   return _then(_MessageEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
@@ -917,7 +1481,8 @@ as bool,status: null == status ? _self.status : status // ignore: cast_nullable_
 as MessageStatus,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as MessageMetadataEntity?,
+as MessageMetadataEntity?,attachments: null == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<MessageAttachmentEntity>,
   ));
 }
 
@@ -944,7 +1509,7 @@ mixin _$MessageToCreate {
  String get content;/// Type of the message.
  MessageType get messageType;/// Whether this message was sent by the user.
  bool get isUser; MessageStatus get status;/// Additional metadata for the message (JSON).
- String? get metadata;
+ String? get metadata; List<MessageAttachmentToCreate> get attachments;
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -955,16 +1520,16 @@ $MessageToCreateCopyWith<MessageToCreate> get copyWith => _$MessageToCreateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata);
+int get hashCode => Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata,const DeepCollectionEquality().hash(attachments));
 
 @override
 String toString() {
-  return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata)';
+  return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -975,7 +1540,7 @@ abstract mixin class $MessageToCreateCopyWith<$Res>  {
   factory $MessageToCreateCopyWith(MessageToCreate value, $Res Function(MessageToCreate) _then) = _$MessageToCreateCopyWithImpl;
 @useResult
 $Res call({
- String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, String? metadata
+ String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, String? metadata, List<MessageAttachmentToCreate> attachments
 });
 
 
@@ -992,7 +1557,7 @@ class _$MessageToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,Object? attachments = null,}) {
   return _then(_self.copyWith(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -1000,7 +1565,8 @@ as String,messageType: null == messageType ? _self.messageType : messageType // 
 as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as MessageStatus,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,attachments: null == attachments ? _self.attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<MessageAttachmentToCreate>,
   ));
 }
 
@@ -1085,10 +1651,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata,  List<MessageAttachmentToCreate> attachments)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageToCreate() when $default != null:
-return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata);case _:
+return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata,_that.attachments);case _:
   return orElse();
 
 }
@@ -1106,10 +1672,10 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata,  List<MessageAttachmentToCreate> attachments)  $default,) {final _that = this;
 switch (_that) {
 case _MessageToCreate():
-return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata);case _:
+return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata,_that.attachments);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1126,10 +1692,10 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String conversationId,  String content,  MessageType messageType,  bool isUser,  MessageStatus status,  String? metadata,  List<MessageAttachmentToCreate> attachments)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageToCreate() when $default != null:
-return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata);case _:
+return $default(_that.conversationId,_that.content,_that.messageType,_that.isUser,_that.status,_that.metadata,_that.attachments);case _:
   return null;
 
 }
@@ -1141,7 +1707,7 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 
 
 class _MessageToCreate extends MessageToCreate {
-  const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.metadata}): super._();
+  const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.metadata, final  List<MessageAttachmentToCreate> attachments = const <MessageAttachmentToCreate>[]}): _attachments = attachments,super._();
   
 
 /// ID of the conversation this message belongs to.
@@ -1155,6 +1721,13 @@ class _MessageToCreate extends MessageToCreate {
 @override final  MessageStatus status;
 /// Additional metadata for the message (JSON).
 @override final  String? metadata;
+ final  List<MessageAttachmentToCreate> _attachments;
+@override@JsonKey() List<MessageAttachmentToCreate> get attachments {
+  if (_attachments is EqualUnmodifiableListView) return _attachments;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_attachments);
+}
+
 
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -1166,16 +1739,16 @@ _$MessageToCreateCopyWith<_MessageToCreate> get copyWith => __$MessageToCreateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other._attachments, _attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata);
+int get hashCode => Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata,const DeepCollectionEquality().hash(_attachments));
 
 @override
 String toString() {
-  return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata)';
+  return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -1186,7 +1759,7 @@ abstract mixin class _$MessageToCreateCopyWith<$Res> implements $MessageToCreate
   factory _$MessageToCreateCopyWith(_MessageToCreate value, $Res Function(_MessageToCreate) _then) = __$MessageToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, String? metadata
+ String conversationId, String content, MessageType messageType, bool isUser, MessageStatus status, String? metadata, List<MessageAttachmentToCreate> attachments
 });
 
 
@@ -1203,7 +1776,7 @@ class __$MessageToCreateCopyWithImpl<$Res>
 
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,Object? attachments = null,}) {
   return _then(_MessageToCreate(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -1211,7 +1784,8 @@ as String,messageType: null == messageType ? _self.messageType : messageType // 
 as MessageType,isUser: null == isUser ? _self.isUser : isUser // ignore: cast_nullable_to_non_nullable
 as bool,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as MessageStatus,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,attachments: null == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
+as List<MessageAttachmentToCreate>,
   ));
 }
 

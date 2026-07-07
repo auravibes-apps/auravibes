@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
@@ -9,7 +12,7 @@ void main() {
   group('BuildPromptChatMessages', () {
     const usecase = BuildPromptChatMessages();
 
-    test('adds tool response messages after assistant tool calls', () {
+    test('adds tool response messages after assistant tool calls', () async {
       final messages = [
         MessageEntity(
           id: 'user-1',
@@ -44,7 +47,7 @@ void main() {
         ),
       ];
 
-      final result = usecase.call(messages);
+      final result = await usecase.call(messages);
 
       expect(result, hasLength(3));
       expect(result.firstOrNull?.role.name, 'user');
@@ -71,7 +74,7 @@ void main() {
       );
     });
 
-    test('groups resolved tool responses in one user message', () {
+    test('groups resolved tool responses in one user message', () async {
       final messages = [
         MessageEntity(
           id: 'assistant-1',
@@ -103,7 +106,7 @@ void main() {
         ),
       ];
 
-      final result = usecase.call(messages);
+      final result = await usecase.call(messages);
 
       expect(result, hasLength(2));
       expect(result.firstOrNull?.role.name, 'model');
@@ -122,12 +125,12 @@ void main() {
 
     test(
       'falls back to result status response when raw response is absent',
-      () {
+      () async {
         final messages = [
           MessageEntity(
             id: 'assistant-1',
             conversationId: 'conversation-1',
-            content: '',
+            content: 'hello',
             messageType: MessageType.text,
             isUser: false,
             status: MessageStatus.sent,
@@ -146,7 +149,7 @@ void main() {
           ),
         ];
 
-        final result = usecase.call(messages);
+        final result = await usecase.call(messages);
 
         expect(result, hasLength(2));
         final resultMessage = result[1];
@@ -166,7 +169,7 @@ void main() {
       },
     );
 
-    test('maps compaction summary to system role', () {
+    test('maps compaction summary to system role', () async {
       final messages = [
         MessageEntity(
           id: 'summary-1',
@@ -181,14 +184,14 @@ void main() {
         ),
       ];
 
-      final result = usecase.call(messages);
+      final result = await usecase.call(messages);
 
       expect(result, hasLength(1));
       expect(result.single.role.name, 'system');
       expect(result.single.text, '<compaction summary content>');
     });
 
-    test('skips non-summary system messages', () {
+    test('skips non-summary system messages', () async {
       final messages = [
         MessageEntity(
           id: 'system-error-1',
@@ -202,12 +205,12 @@ void main() {
         ),
       ];
 
-      final result = usecase.call(messages);
+      final result = await usecase.call(messages);
 
       expect(result, isEmpty);
     });
 
-    test('maps assistant thinking metadata to thinking part', () {
+    test('maps assistant thinking metadata to thinking part', () async {
       final messages = [
         MessageEntity(
           id: 'assistant-1',
@@ -224,7 +227,7 @@ void main() {
         ),
       ];
 
-      final result = usecase.call(messages);
+      final result = await usecase.call(messages);
 
       expect(result, hasLength(1));
       expect(result.single.text, 'Final answer');
@@ -234,7 +237,7 @@ void main() {
       );
     });
 
-    test('maps assistant model metadata to model message metadata', () {
+    test('maps assistant model metadata to model message metadata', () async {
       final messages = [
         MessageEntity(
           id: 'assistant-1',
@@ -252,11 +255,66 @@ void main() {
         ),
       ];
 
-      final result = usecase.call(messages);
+      final result = await usecase.call(messages);
 
       expect(result.single.metadata, {
         '_anthropic_thinking_signature': 'signature',
       });
     });
+
+    test(
+      'skips oversized attachments and keeps later valid attachments',
+      () async {
+        final directory = await Directory.systemTemp.createTemp();
+        addTearDown(() => directory.delete(recursive: true));
+        final smallFile = File('${directory.path}/small.png');
+        final _ = await smallFile.writeAsBytes([1, 2, 3]);
+
+        const usecase = BuildPromptChatMessages(modalitiesInput: ['image']);
+        final result = await usecase.call([
+          MessageEntity(
+            id: 'user-1',
+            conversationId: 'conversation-1',
+            content: '',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sent,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+            attachments: [
+              MessageAttachmentEntity(
+                id: 'attachment-1',
+                messageId: 'user-1',
+                localPath: '${directory.path}/missing.png',
+                fileName: 'large.png',
+                displayName: 'large.png',
+                mimeType: 'image/png',
+                modality: MessageAttachmentModality.image,
+                sizeBytes: maxChatPromptAttachmentBytes + 1,
+                createdAt: DateTime(2025),
+                updatedAt: DateTime(2025),
+              ),
+              MessageAttachmentEntity(
+                id: 'attachment-2',
+                messageId: 'user-1',
+                localPath: smallFile.path,
+                fileName: 'small.png',
+                displayName: 'small.png',
+                mimeType: 'image/png',
+                modality: MessageAttachmentModality.image,
+                sizeBytes: 3,
+                createdAt: DateTime(2025),
+                updatedAt: DateTime(2025),
+              ),
+            ],
+          ),
+        ]);
+
+        final mediaPart = result.single.parts.whereType<MediaPart>().single;
+        expect(mediaPart.media.contentType, 'image/png');
+        expect(mediaPart.media.url, startsWith('data:image/png;base64,'));
+        expect(mediaPart.metadata, {'filename': 'small.png'});
+      },
+    );
   });
 }
