@@ -6,6 +6,47 @@ import 'package:test/test.dart';
 
 void main() {
   group('SubAgentRunner', () {
+    test('sub-agent turn runner delegates and clears current runner', () async {
+      final turnRunner = SubAgentTurnRunner();
+      var calls = 0;
+      Future<AgentIterationDecision> runner({
+        required String conversationId,
+        required AgentIterationContext context,
+      }) async {
+        calls += 1;
+
+        return AgentIterationDecision.done;
+      }
+
+      expect(
+        () => turnRunner.call(
+          conversationId: 'child',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+          ),
+        ),
+        throwsStateError,
+      );
+
+      turnRunner.runner = runner;
+
+      final result = await turnRunner(
+        conversationId: 'child',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      expect(calls, 1);
+      turnRunner.clear(({required conversationId, required context}) async {
+        return AgentIterationDecision.done;
+      });
+      expect(turnRunner.runner, isNotNull);
+      turnRunner.clear(runner);
+      expect(turnRunner.runner, isNull);
+    });
+
     test('lists enabled agent catalog entries', () async {
       final runner = _runner(
         catalog: const _Catalog(
@@ -166,6 +207,44 @@ void main() {
       expect(conversations.createdChildren, isEmpty);
     });
 
+    test('rejects missing title, prompt, and parent conversation', () async {
+      final conversations = _ConversationStore();
+      final runner = _runner(conversations: conversations);
+
+      final missingTitle =
+          jsonDecode(
+                await runner.run(
+                  parentConversationId: 'parent',
+                  workspaceId: 'w1',
+                  arguments: const {'prompt': 'Do it'},
+                ),
+              )
+              as Map<String, Object?>;
+      final missingPrompt =
+          jsonDecode(
+                await runner.run(
+                  parentConversationId: 'parent',
+                  workspaceId: 'w1',
+                  arguments: const {'title': 'Task'},
+                ),
+              )
+              as Map<String, Object?>;
+      final missingParent =
+          jsonDecode(
+                await runner.run(
+                  parentConversationId: 'missing',
+                  workspaceId: 'w1',
+                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
+                ),
+              )
+              as Map<String, Object?>;
+
+      expect(missingTitle['content'], 'Missing title.');
+      expect(missingPrompt['content'], 'Missing prompt.');
+      expect(missingParent['content'], 'Parent conversation not found.');
+      expect(conversations.createdChildren, isEmpty);
+    });
+
     test('rejects oversized title and prompt without creating child', () async {
       final conversations = _ConversationStore();
       final runner = _runner(conversations: conversations);
@@ -198,6 +277,44 @@ void main() {
       expect(titleResult['content'], 'Title is too long.');
       expect(promptResult['content'], 'Prompt is too long.');
       expect(conversations.createdChildren, isEmpty);
+    });
+
+    test('returns done with agentId and child-start callback', () async {
+      var started = <String>[];
+      final runner = _runner(
+        catalog: const _Catalog(
+          entries: [
+            SubAgentCatalogEntry(
+              id: 'agent-1',
+              workspaceId: 'w1',
+              name: 'Agent',
+              description: 'Runs tasks.',
+              types: ['sub_agent'],
+            ),
+          ],
+        ),
+        onChildStarted: ({required parentId, required childId}) {
+          started = [parentId, childId];
+        },
+      );
+
+      final result =
+          jsonDecode(
+                await runner.run(
+                  parentConversationId: 'parent',
+                  workspaceId: 'w1',
+                  arguments: const {
+                    'title': ' Task ',
+                    'prompt': ' Do it ',
+                    'agentId': ' agent-1 ',
+                  },
+                ),
+              )
+              as Map<String, Object?>;
+
+      expect(result['status'], 'done');
+      expect(result['agentId'], 'agent-1');
+      expect(started, ['parent', 'child']);
     });
 
     test(
@@ -271,6 +388,56 @@ void main() {
       expect(result['status'], 'stopped');
     });
 
+    test('returns error when approval wait completes with error', () async {
+      final tracker = _Tracker();
+      final runner = _runner(
+        tracker: tracker,
+        continueTurn: ({required conversationId, required context}) async {
+          Timer.run(() {
+            tracker.finish(
+              parentId: 'parent',
+              childId: 'child',
+              status: SubAgentCompletionStatus.error,
+            );
+          });
+
+          return AgentIterationDecision.waitForToolApproval;
+        },
+      );
+
+      final result =
+          jsonDecode(
+                await runner.run(
+                  parentConversationId: 'parent',
+                  workspaceId: 'w1',
+                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
+                ),
+              )
+              as Map<String, Object?>;
+
+      expect(result['conversationId'], 'child');
+      expect(result['status'], 'error');
+      expect(result['content'], 'Sub-agent failed.');
+    });
+
+    test('returns error when prompt creation throws', () async {
+      final runner = _runner(messages: _ThrowingMessages());
+
+      final result =
+          jsonDecode(
+                await runner.run(
+                  parentConversationId: 'parent',
+                  workspaceId: 'w1',
+                  arguments: const {'title': 'Task', 'prompt': 'Do it'},
+                ),
+              )
+              as Map<String, Object?>;
+
+      expect(result['conversationId'], 'child');
+      expect(result['status'], 'error');
+      expect(result['content'], 'Sub-agent failed.');
+    });
+
     test('returns stopped when child is stopped during continuation', () async {
       final tracker = _Tracker();
       final runner = _runner(
@@ -308,6 +475,7 @@ SubAgentRunner _runner({
   _Messages? messages,
   _Tracker? tracker,
   ContinueSubAgentTurn? continueTurn,
+  SubAgentChildStarted? onChildStarted,
 }) {
   return SubAgentRunner(
     agentCatalog: catalog,
@@ -319,6 +487,7 @@ SubAgentRunner _runner({
         ({required conversationId, required context}) async {
           return AgentIterationDecision.done;
         },
+    onChildStarted: onChildStarted,
   );
 }
 
@@ -391,6 +560,16 @@ class _Messages implements SubAgentMessageStore {
   @override
   Future<String> latestAssistantContent(String conversationId) async {
     return latestContent;
+  }
+}
+
+class _ThrowingMessages extends _Messages {
+  @override
+  Future<SubAgentMessageRecord> createUserPrompt({
+    required String conversationId,
+    required String prompt,
+  }) async {
+    throw StateError('boom');
   }
 }
 
