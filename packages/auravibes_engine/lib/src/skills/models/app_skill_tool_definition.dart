@@ -1,7 +1,7 @@
 import 'package:auravibes_engine/src/skills/models/app_skill_tool_callback.dart';
 import 'package:auravibes_engine/src/skills/models/app_skill_url_template.dart';
 
-const defaultAppSkillToolInputJsonSchema = {
+const Map<String, dynamic> defaultAppSkillToolInputJsonSchema = {
   'type': 'object',
   'properties': <String, Object?>{},
   'additionalProperties': false,
