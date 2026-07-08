@@ -93,50 +93,24 @@ class SubAgentRunner {
     required String workspaceId,
     required Map<String, dynamic> arguments,
   }) async {
-    final title = arguments['title'];
-    final prompt = arguments['prompt'];
-    if (title is! String || title.trim().isEmpty) {
-      return _error('Missing title.');
-    }
-    if (prompt is! String || prompt.trim().isEmpty) {
-      return _error('Missing prompt.');
-    }
-    final trimmedTitle = title.trim();
-    final trimmedPrompt = prompt.trim();
-    if (trimmedTitle.length > maxSubAgentTitleLength) {
-      return _error('Title is too long.');
-    }
-    if (trimmedPrompt.length > maxSubAgentPromptLength) {
-      return _error('Prompt is too long.');
-    }
+    final request = _SubAgentRunRequest.from(arguments);
+    if (request.error != null) return _error(request.error!);
 
     final parent = await conversationStore.getConversation(
       parentConversationId,
     );
-    if (parent == null || parent.workspaceId != workspaceId) {
-      return _error('Parent conversation not found.');
-    }
-    if (parent.parentConversationId != null) {
-      return _error('Sub-agents cannot start sub-agents.');
-    }
+    final parentError = _parentError(parent, workspaceId);
+    if (parentError != null) return _error(parentError);
 
-    final rawAgentId = arguments['agentId'];
-    final agentId = rawAgentId is String && rawAgentId.trim().isNotEmpty
-        ? rawAgentId.trim()
-        : null;
-    if (agentId != null) {
-      final agent = await agentCatalog.getSubAgent(agentId);
-      if (agent == null || agent.workspaceId != workspaceId) {
-        return _error('Unknown agent.', agentId: agentId);
-      }
-    }
+    final agentError = await _agentError(request.agentId, workspaceId);
+    if (agentError != null) return agentError;
 
     final child = await conversationStore.createChildConversation(
       parentConversationId: parentConversationId,
       workspaceId: workspaceId,
-      modelId: parent.modelId,
-      agentId: agentId,
-      title: trimmedTitle,
+      modelId: parent!.modelId,
+      agentId: request.agentId,
+      title: request.title,
     );
     activeTracker.start(parentId: parentConversationId, childId: child.id);
     onChildStarted?.call(parentId: parentConversationId, childId: child.id);
@@ -144,7 +118,7 @@ class SubAgentRunner {
     try {
       final message = await messageStore.createUserPrompt(
         conversationId: child.id,
-        prompt: trimmedPrompt,
+        prompt: request.prompt,
       );
       final decision = await continueAgentTurn(
         conversationId: child.id,
@@ -156,10 +130,13 @@ class SubAgentRunner {
       if (activeTracker.isStopped(child.id)) {
         completionStatus = SubAgentCompletionStatus.stopped;
 
-        return _result(child.id, 'stopped', agentId: agentId);
+        return _result(child.id, 'stopped', agentId: request.agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
-        final waitResult = await _waitForToolApproval(child.id, agentId);
+        final waitResult = await _waitForToolApproval(
+          child.id,
+          request.agentId,
+        );
         if (waitResult != null) {
           completionStatus = waitResult.status;
 
@@ -167,11 +144,11 @@ class SubAgentRunner {
         }
       }
 
-      return _result(child.id, 'done', agentId: agentId);
+      return _result(child.id, 'done', agentId: request.agentId);
     } on Object {
       completionStatus = SubAgentCompletionStatus.error;
 
-      return _failedResult(child.id, agentId);
+      return _failedResult(child.id, request.agentId);
     } finally {
       activeTracker.finish(
         parentId: parentConversationId,
@@ -179,6 +156,28 @@ class SubAgentRunner {
         status: completionStatus,
       );
     }
+  }
+
+  String? _parentError(SubAgentConversationRecord? parent, String workspaceId) {
+    if (parent == null || parent.workspaceId != workspaceId) {
+      return 'Parent conversation not found.';
+    }
+    if (parent.parentConversationId != null) {
+      return 'Sub-agents cannot start sub-agents.';
+    }
+
+    return null;
+  }
+
+  Future<String?> _agentError(String? agentId, String workspaceId) async {
+    if (agentId == null) return null;
+
+    final agent = await agentCatalog.getSubAgent(agentId);
+    if (agent == null || agent.workspaceId != workspaceId) {
+      return _error('Unknown agent.', agentId: agentId);
+    }
+
+    return null;
   }
 
   Future<_SubAgentWaitResult?> _waitForToolApproval(
@@ -232,6 +231,57 @@ final class _SubAgentWaitResult {
 
   final SubAgentCompletionStatus status;
   final String content;
+}
+
+final class _SubAgentRunRequest {
+  const _SubAgentRunRequest({
+    required this.title,
+    required this.prompt,
+    required this.agentId,
+  }) : error = null;
+
+  factory _SubAgentRunRequest.from(Map<String, dynamic> arguments) {
+    final title = arguments['title'];
+    if (title is! String || title.trim().isEmpty) {
+      return const _SubAgentRunRequest.error('Missing title.');
+    }
+
+    final prompt = arguments['prompt'];
+    if (prompt is! String || prompt.trim().isEmpty) {
+      return const _SubAgentRunRequest.error('Missing prompt.');
+    }
+
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.length > maxSubAgentTitleLength) {
+      return const _SubAgentRunRequest.error('Title is too long.');
+    }
+
+    final trimmedPrompt = prompt.trim();
+    if (trimmedPrompt.length > maxSubAgentPromptLength) {
+      return const _SubAgentRunRequest.error('Prompt is too long.');
+    }
+
+    final rawAgentId = arguments['agentId'];
+    final agentId = rawAgentId is String && rawAgentId.trim().isNotEmpty
+        ? rawAgentId.trim()
+        : null;
+
+    return _SubAgentRunRequest(
+      title: trimmedTitle,
+      prompt: trimmedPrompt,
+      agentId: agentId,
+    );
+  }
+
+  const _SubAgentRunRequest.error(String this.error)
+    : title = '',
+      prompt = '',
+      agentId = null;
+
+  final String title;
+  final String prompt;
+  final String? agentId;
+  final String? error;
 }
 
 abstract interface class SubAgentCatalog {
