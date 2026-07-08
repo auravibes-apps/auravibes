@@ -103,8 +103,8 @@ class OpenAICodexProvider extends GenkitPlugin {
               in response.stream
                   .transform(utf8.decoder)
                   .transform(const LineSplitter())) {
-            if (!line.startsWith('data:')) continue;
-            final data = line.replaceFirst('data:', '').trim();
+            if (!line.startsWith(_dataUrlPrefix)) continue;
+            final data = line.replaceFirst(_dataUrlPrefix, '').trim();
             if (data.isEmpty || data == '[DONE]') continue;
 
             final event = _decodeStreamEvent(data);
@@ -218,6 +218,7 @@ ModelRef<Object?> openAICodexModel(String name) {
 const _codexInstructions =
     'You are a coding assistant. '
     'Answer clearly and use tools when appropriate.';
+const _dataUrlPrefix = 'data:';
 
 List<Map<String, dynamic>> _messageToInput(Message message) {
   if (message.role == Role.tool) {
@@ -270,10 +271,7 @@ Object _contentToInput(List<Part> parts) {
     } else if (part.isMedia) {
       final media = part.media;
       if (media == null) continue;
-      content.add({
-        'type': 'input_image',
-        'image_url': media.url,
-      });
+      content.add(_mediaToInput(part, media));
     }
   }
 
@@ -283,6 +281,62 @@ Object _contentToInput(List<Part> parts) {
   }
 
   return content;
+}
+
+Map<String, dynamic> _mediaToInput(Part part, Media media) {
+  final contentType = media.contentType ?? '';
+  if (contentType.startsWith('image/')) {
+    return {'type': 'input_image', 'image_url': media.url};
+  }
+
+  final data = _dataUrlPayload(media.url);
+  if (data == null) {
+    throw GenkitException(
+      'OpenAI Responses media inputs require a data URL for files and audio.',
+      status: StatusCodes.INVALID_ARGUMENT,
+    );
+  }
+  if (contentType.startsWith('audio/')) {
+    final format = _audioFormat(contentType, 'OpenAI Responses');
+
+    return {
+      'type': 'input_audio',
+      'input_audio': {'data': data, 'format': format},
+    };
+  }
+
+  return {
+    'type': 'input_file',
+    'file_data': media.url,
+    if (part.metadata?['filename'] case final String filename)
+      'filename': filename,
+  };
+}
+
+String? _dataUrlPayload(String url) {
+  final comma = url.indexOf(',');
+  if (!url.startsWith(_dataUrlPrefix) || comma < 0) return null;
+  final header = url.replaceRange(comma, url.length, '');
+  if (!header.contains(';base64')) return null;
+
+  final payload = url.replaceRange(0, comma + 1, '');
+  try {
+    final _ = base64Decode(payload);
+  } on FormatException {
+    return null;
+  }
+
+  return payload;
+}
+
+String _audioFormat(String contentType, String providerName) {
+  if (contentType == 'audio/mpeg' || contentType == 'audio/mp3') return 'mp3';
+  if (contentType == 'audio/wav' || contentType == 'audio/x-wav') return 'wav';
+
+  throw GenkitException(
+    '$providerName audio input supports only mp3 and wav.',
+    status: StatusCodes.INVALID_ARGUMENT,
+  );
 }
 
 Map<String, dynamic> _toolToJson(ToolDefinition tool) {

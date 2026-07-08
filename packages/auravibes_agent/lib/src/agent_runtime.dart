@@ -3,9 +3,11 @@ import 'dart:async';
 class AgentQueuedDraft {
   const AgentQueuedDraft({
     required this.content,
+    this.payload,
   });
 
   final String content;
+  final Object? payload;
 }
 
 class AgentCreatedMessage {
@@ -46,6 +48,7 @@ abstract interface class AgentConversationDataProvider {
   Future<AgentCreatedMessage> createQueuedUserMessage({
     required String conversationId,
     required String content,
+    Object? payload,
   });
 
   Future<void> markMessagesSent(List<String> messageIds);

@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -139,6 +140,8 @@ WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(
   return model.copyWith(
     workspaceModelSelection: model.workspaceModelSelection.copyWith(
       modelName: openAIModel.name,
+      modalitiesInput: codexInputModalities(openAIModel),
+      modalitiesOutput: openAIModel.modalitiesOutput,
       supportsReasoning: openAIModel.supportsReasoning,
       supportsToolCalls: openAIModel.supportsToolCalls,
     ),

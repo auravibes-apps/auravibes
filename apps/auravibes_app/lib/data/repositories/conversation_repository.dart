@@ -2,6 +2,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:drift/drift.dart';
 
@@ -13,9 +14,13 @@ const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
 class ConversationRepository {
-  ConversationRepository(this._database);
+  ConversationRepository(
+    this._database, {
+    AttachmentFileStore? attachmentFileStore,
+  }) : _attachmentFileStore = attachmentFileStore ?? AttachmentFileStore();
 
   final AppDatabase _database;
+  final AttachmentFileStore _attachmentFileStore;
 
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -110,7 +115,39 @@ class ConversationRepository {
   Future<bool> deleteConversation(String id) async {
     if (!await _conversationExists(id)) return false;
 
-    return _database.conversationDao.deleteConversation(id);
+    final attachmentPaths = await _attachmentPathsForConversation(id);
+    final deleted = await _database.conversationDao.deleteConversation(id);
+    if (deleted) {
+      final _ = await Future.wait(
+        attachmentPaths.map(_deleteAttachmentFile),
+      );
+    }
+
+    return deleted;
+  }
+
+  Future<List<String>> _attachmentPathsForConversation(String id) async {
+    final rows = await (_database.select(_database.messageAttachments).join([
+      innerJoin(
+        _database.messages,
+        _database.messages.id.equalsExp(
+          _database.messageAttachments.messageId,
+        ),
+      ),
+    ])..where(_database.messages.conversationId.equals(id))).get();
+
+    return [
+      for (final row in rows)
+        row.readTable(_database.messageAttachments).localPath,
+    ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   Future<bool> _conversationExists(String id) async {

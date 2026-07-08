@@ -13,12 +13,14 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
@@ -28,6 +30,7 @@ import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indica
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_context_usage_pill.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
@@ -182,10 +185,8 @@ class _LoadedChatConversation extends HookConsumerWidget {
       [ref, stopRequested],
     );
 
-    final onSendMessage = useCallback<void Function(String)>(
-      (message) {
-        unawaited(_sendMessage(context, ref, message));
-      },
+    final onSendMessage = useCallback<Future<void> Function(ChatDraft)>(
+      (draft) => _sendMessage(context, ref, draft),
       [ref],
     );
 
@@ -205,6 +206,13 @@ class _LoadedChatConversation extends HookConsumerWidget {
       ),
     );
     final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
+    final selectedModelId = conversation.modelId;
+    final selectedModelAsync = selectedModelId == null
+        ? null
+        : ref.watch(workspaceModelSelectionByIdProvider(selectedModelId));
+    final modalitiesInput =
+        selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
+        const <String>[];
     final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? const [];
     final hasPendingApprovals = pendingCalls.isNotEmpty;
     final compactionState = ref.watch(
@@ -257,9 +265,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
                   workspaceModelSelectionId: conversation.modelId,
                   onChanged: (modelId) {
                     unawaited(
-                      ref
-                          .read(conversationChatProvider(workspaceId).notifier)
-                          .setModel(modelId),
+                      _setModelWithAttachmentWarning(
+                        context: context,
+                        ref: ref,
+                        workspaceId: workspaceId,
+                        modelId: modelId,
+                      ),
                     );
                   },
                   sheetMode: true,
@@ -300,6 +311,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
                   },
                   compactMode: true,
                 ),
+                modalitiesInput: modalitiesInput,
                 onSkillsPress: () => _showSkillsModal(
                   context: context,
                   workspaceId: workspaceId,
@@ -490,6 +502,81 @@ void _showToolsModal({
   );
 }
 
+@Dependencies([chatMessages, ConversationChatNotifier])
+Future<void> _setModelWithAttachmentWarning({
+  required BuildContext context,
+  required WidgetRef ref,
+  required String workspaceId,
+  required String? modelId,
+}) async {
+  if (modelId == null) {
+    await ref
+        .read(conversationChatProvider(workspaceId).notifier)
+        .setModel(null);
+
+    return;
+  }
+
+  final selectedModel = await ref.read(
+    workspaceModelSelectionByIdProvider(modelId).future,
+  );
+  final supported =
+      selectedModel?.workspaceModelSelection.modalitiesInput ?? [];
+  final messages = ref.read(chatMessagesProvider).value ?? const [];
+  final missing = <String>{};
+  for (final message in messages) {
+    for (final attachment in message.attachments) {
+      final modality = attachment.modality.name;
+      if (!supportsAttachmentModality(
+        attachment.modality,
+        supported,
+        mimeType: attachment.mimeType,
+      )) {
+        final _ = missing.add(modality);
+      }
+    }
+  }
+
+  if (missing.isNotEmpty && context.mounted) {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          LocaleKeys
+              .chats_screens_chat_conversation_switch_model_unsupported_title
+              .tr(),
+        ),
+        content: Text(
+          LocaleKeys
+              .chats_screens_chat_conversation_switch_model_unsupported_body
+              .tr(namedArgs: {'modalities': missing.join(', ')}),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              LocaleKeys.chats_screens_chat_conversation_switch_model_cancel
+                  .tr(),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              LocaleKeys.chats_screens_chat_conversation_switch_model_confirm
+                  .tr(),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+  }
+
+  await ref
+      .read(conversationChatProvider(workspaceId).notifier)
+      .setModel(modelId);
+}
+
 @Dependencies([conversationBusyState])
 Future<void> _continueAgent(
   BuildContext context,
@@ -614,14 +701,14 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
 Future<void> _sendMessage(
   BuildContext context,
   WidgetRef ref,
-  String message,
+  ChatDraft draft,
 ) async {
   final conversationId = ref.read(conversationSelectedProvider);
   try {
     await ref
         .read(sendMessageUsecaseProvider)
-        .call(conversationId: conversationId, content: message);
-  } on Object catch (error, stackTrace) {
+        .call(conversationId: conversationId, draft: draft);
+  } on Exception catch (error, stackTrace) {
     _logger.severe(
       'Failed to send message for conversation $conversationId',
       error,

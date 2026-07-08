@@ -24,6 +24,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
@@ -63,6 +64,7 @@ void registerTestFallbackValues() {
   registerFallbackValue(_FakeMcpServerToCreate());
   registerFallbackValue(_FakeMessagePatch());
   registerFallbackValue(_FakeMessageToCreate());
+  registerFallbackValue(const ChatDraft(text: ''));
   registerFallbackValue(_FakeModelConnectionFilter());
   registerFallbackValue(_FakeServiceConnectionsCompanion());
   registerFallbackValue(_FakeModelConnectionToCreate());

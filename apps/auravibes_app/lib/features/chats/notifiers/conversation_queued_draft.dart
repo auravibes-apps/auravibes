@@ -1,15 +1,24 @@
 import 'package:auravibes_agent/auravibes_agent.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_queued_draft.g.dart';
 
 class ConversationQueuedDraft extends AgentQueuedDraft {
-  const ConversationQueuedDraft({
+  ConversationQueuedDraft({
     required this.id,
-    required super.content,
-  });
+    required ChatDraft draft,
+  }) : super(content: _contentForDraft(draft), payload: draft);
 
   final String id;
+}
+
+String _contentForDraft(ChatDraft draft) {
+  if (draft.text.isNotEmpty) return draft.text;
+
+  return draft.attachments
+      .map((attachment) => attachment.displayName)
+      .join(', ');
 }
 
 @riverpod
@@ -23,19 +32,19 @@ class ConversationSendQueue extends _$ConversationSendQueue {
 
   ConversationQueuedDraft enqueue({
     required String conversationId,
-    required String content,
+    required ChatDraft draft,
   }) {
-    final draft = ConversationQueuedDraft(
+    final queuedDraft = ConversationQueuedDraft(
       id: 'queued-${_nextDraftId++}',
-      content: content,
+      draft: draft,
     );
 
     state = {
       ...state,
-      conversationId: [...state[conversationId] ?? const [], draft],
+      conversationId: [...state[conversationId] ?? const [], queuedDraft],
     };
 
-    return draft;
+    return queuedDraft;
   }
 
   ConversationQueuedDraft? peek(String conversationId) {

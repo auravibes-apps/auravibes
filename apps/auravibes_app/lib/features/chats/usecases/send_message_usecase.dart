@@ -1,8 +1,12 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'dart:async';
+
 import 'package:auravibes_agent/auravibes_agent.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -30,15 +34,17 @@ class SendMessageUsecase {
 
   Future<void> call({
     required String conversationId,
-    required String content,
+    required ChatDraft draft,
   }) async {
+    if (draft.isEmpty) return;
+
     final busyState = await getConversationBusyStateUsecase.call(
       conversationId: conversationId,
     );
     if (busyState.isBusy) {
       final _ = sendQueueRuntime.enqueue(
         conversationId: conversationId,
-        content: content,
+        draft: draft,
       );
 
       return;
@@ -46,29 +52,74 @@ class SendMessageUsecase {
 
     await _sendNow(
       conversationId: conversationId,
-      content: content,
+      draft: draft,
     );
   }
 
   Future<void> _sendNow({
     required String conversationId,
-    required String content,
+    required ChatDraft draft,
   }) async {
-    final createdMessage = await messageRepository.createMessage(
+    final createdMessage = await createUserMessage(
+      conversationId: conversationId,
+      draft: draft,
+    );
+    await continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: createdMessage.id,
+    );
+  }
+
+  Future<MessageEntity> createUserMessage({
+    required String conversationId,
+    required ChatDraft draft,
+  }) {
+    if (draft.isEmpty) return Future.error(ArgumentError('Draft is empty'));
+
+    return messageRepository.createMessage(
       .new(
         conversationId: conversationId,
-        content: content,
+        content: draft.text,
         messageType: .text,
         isUser: true,
         status: .sending,
+        attachments: draft.attachments,
       ),
     );
+  }
+
+  Future<void> continueFromUserMessage({
+    required String conversationId,
+    required String messageId,
+  }) async {
     final _ = await continueAgentTurn(
       conversationId: conversationId,
       context: AgentIterationContext(
         origin: AgentIterationOrigin.userMessage,
-        ackMessageIds: [createdMessage.id],
+        ackMessageIds: [messageId],
       ),
+    );
+  }
+}
+
+extension SendMessageUsecaseNewConversation on SendMessageUsecase {
+  Future<void> sendFirstMessage({
+    required String conversationId,
+    required ChatDraft draft,
+    required void Function(Object error, StackTrace stackTrace) onContinueError,
+  }) async {
+    if (draft.isEmpty) return;
+
+    final createdMessage = await createUserMessage(
+      conversationId: conversationId,
+      draft: draft,
+    );
+
+    unawaited(
+      continueFromUserMessage(
+        conversationId: conversationId,
+        messageId: createdMessage.id,
+      ).catchError(onContinueError),
     );
   }
 }

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:auravibes_agent/auravibes_agent.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -59,7 +62,7 @@ void main() {
     test('forwards the created user message id as the ack target', () async {
       await fixture.usecase.call(
         conversationId: 'conversation-1',
-        content: 'Hello',
+        draft: const ChatDraft(text: 'Hello'),
       );
 
       expect(
@@ -92,7 +95,7 @@ void main() {
 
         await fixture.usecase.call(
           conversationId: 'conversation-1',
-          content: 'Queued hello',
+          draft: const ChatDraft(text: 'Queued hello'),
         );
 
         final _ = verifyNever(
@@ -113,6 +116,43 @@ void main() {
         );
       },
     );
+
+    test('sendFirstMessage returns after persisting user message', () async {
+      final completer = Completer<void>();
+      final errors = <Object>[];
+      when(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
+      ).thenAnswer(
+        (_) async {
+          await completer.future;
+
+          return AgentIterationDecision.done;
+        },
+      );
+
+      await fixture.usecase.sendFirstMessage(
+        conversationId: 'conversation-1',
+        draft: const ChatDraft(text: 'Hello'),
+        onContinueError: (error, stackTrace) => errors.add(error),
+      );
+
+      verify(() => fixture.messageRepository.createMessage(any())).called(1);
+      verify(
+        () => fixture.runAgentIterationUsecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        ),
+      ).called(1);
+      expect(errors, isEmpty);
+
+      completer.complete();
+    });
   });
 }
 

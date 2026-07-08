@@ -3,21 +3,25 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('new_chat_screen');
 
 class NewChatScreen extends ConsumerWidget {
   const NewChatScreen({required this.workspaceId, super.key});
@@ -44,40 +48,43 @@ class NewChatScreen extends ConsumerWidget {
       }
     }
 
-    void handleSendMessage(String message) {
-      final monitoringService = ref.read(monitoringServiceProvider);
-      final sendNewMessageUsecase = ref.read(sendNewMessageUsecaseProvider);
-      unawaited(
-        (() async {
-          try {
-            final conversation = await ref
-                .read(newChatProvider(workspaceId).notifier)
-                .startConversation(message, sendNewMessageUsecase);
+    final selectedModelId = state.modelId;
+    final selectedModelAsync = selectedModelId == null
+        ? null
+        : ref.watch(workspaceModelSelectionByIdProvider(selectedModelId));
+    final modalitiesInput =
+        selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
+        const <String>[];
 
-            if (context.mounted) {
-              ConversationRoute(
-                workspaceId: workspaceId,
-                chatId: conversation.id,
-              ).replace(context);
-            }
-          } on Object catch (error, stackTrace) {
-            monitoringService.trackError(
-              'Failed to start new conversation',
-              error: error,
-              stackTrace: stackTrace,
-            );
-            if (context.mounted) {
-              final _ = showAuraSnackBar(
-                context: context,
-                content: const TextLocale(
-                  LocaleKeys.chats_screens_new_chat_start_error,
-                ),
-                variant: AuraSnackBarVariant.error,
-              );
-            }
-          }
-        })(),
-      );
+    Future<void> handleSendMessage(ChatDraft draft) async {
+      try {
+        final conversation = await ref
+            .read(newChatProvider(workspaceId).notifier)
+            .startConversation(draft, ref.read(sendNewMessageUsecaseProvider));
+
+        if (context.mounted) {
+          ConversationRoute(
+            workspaceId: workspaceId,
+            chatId: conversation.id,
+          ).replace(context);
+        }
+      } on Exception catch (error, stackTrace) {
+        _logger.severe(
+          'Failed to start conversation for workspace $workspaceId',
+          error,
+          stackTrace,
+        );
+        if (context.mounted) {
+          final _ = showAuraSnackBar(
+            context: context,
+            content: const TextLocale(
+              LocaleKeys.chats_screens_chat_conversation_send_error,
+            ),
+            variant: AuraSnackBarVariant.error,
+          );
+        }
+        Error.throwWithStackTrace(error, stackTrace);
+      }
     }
 
     return AuraScreen(
@@ -125,6 +132,7 @@ class NewChatScreen extends ConsumerWidget {
                     .setAgentId(agentId),
                 compactMode: true,
               ),
+              modalitiesInput: modalitiesInput,
               disabled: state.isLoading || state.modelId == null,
             ),
           ],

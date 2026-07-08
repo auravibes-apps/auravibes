@@ -14,6 +14,8 @@ abstract class WorkspaceModelSelectionEntity
     required DateTime updatedAt,
     required String modelConnectionId,
     String? modelName,
+    @Default([]) List<String> modalitiesInput,
+    @Default([]) List<String> modalitiesOutput,
     @Default(false) bool supportsReasoning,
     @Default(true) bool supportsToolCalls,
   }) = _WorkspaceModelSelectionEntity;

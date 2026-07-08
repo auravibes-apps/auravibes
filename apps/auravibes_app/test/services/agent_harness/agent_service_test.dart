@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -158,7 +159,7 @@ void main() {
                 .read(conversationSendQueueProvider.notifier)
                 .enqueue(
                   conversationId: 'conversation-1',
-                  content: 'Queued during stream',
+                  draft: const ChatDraft(text: 'Queued during stream'),
                 );
 
             return const ContinueAgentResult(
@@ -407,7 +408,7 @@ void main() {
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
-                content: 'Queued follow-up',
+                draft: const ChatDraft(text: 'Queued follow-up'),
               );
           fixture.agentCancellationRuntime.requestStop('conversation-1');
 
@@ -446,7 +447,7 @@ void main() {
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
-              content: 'Queued follow-up',
+              draft: const ChatDraft(text: 'Queued follow-up'),
             );
         when(
           () => fixture.messageRepository.createMessage(any()),
@@ -556,7 +557,7 @@ void main() {
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
-              content: 'Queued follow-up',
+              draft: const ChatDraft(text: 'Queued follow-up'),
             );
 
         when(
@@ -645,7 +646,7 @@ void main() {
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
-                content: 'Queued follow-up',
+                draft: const ChatDraft(text: 'Queued follow-up'),
               );
 
           return AgentIterationDecision.continueIteration;
@@ -678,13 +679,13 @@ void main() {
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
-              content: 'Queued follow-up 1',
+              draft: const ChatDraft(text: 'Queued follow-up 1'),
             );
         final _ = fixture.container
             .read(conversationSendQueueProvider.notifier)
             .enqueue(
               conversationId: 'conversation-1',
-              content: 'Queued follow-up 2',
+              draft: const ChatDraft(text: 'Queued follow-up 2'),
             );
 
         var callCount = 0;
@@ -878,7 +879,7 @@ void main() {
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
-                content: 'Queued follow-up',
+                draft: const ChatDraft(text: 'Queued follow-up'),
               );
 
           when(
@@ -924,7 +925,7 @@ void main() {
               .read(conversationSendQueueProvider.notifier)
               .enqueue(
                 conversationId: 'conversation-1',
-                content: 'Queued follow-up',
+                draft: const ChatDraft(text: 'Queued follow-up'),
               );
           when(
             () => fixture.messageRepository.createMessage(any()),

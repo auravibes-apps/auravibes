@@ -1,5 +1,6 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -43,7 +44,7 @@ class NewChatNotifier extends _$NewChatNotifier {
   }
 
   Future<ConversationEntity> startConversation(
-    String message,
+    ChatDraft draft,
     SendNewMessageUsecase sendNewMessageUsecase,
   ) async {
     final modelId = state.modelId;
@@ -54,7 +55,7 @@ class NewChatNotifier extends _$NewChatNotifier {
     state = state.copyWith(isLoading: true);
     try {
       return sendNewMessageUsecase.call(
-        firstMessage: message,
+        draft: draft,
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,
         agentId: state.agentId,

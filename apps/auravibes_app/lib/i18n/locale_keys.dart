@@ -310,6 +310,34 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.select_model_selctor';
   static const chats_screens_chat_conversation_message_placeholder =
       'chats_screens.chat_conversation.message_placeholder';
+  static const chats_screens_chat_conversation_attach_file =
+      'chats_screens.chat_conversation.attach_file';
+  static const chats_screens_chat_conversation_attach_photo =
+      'chats_screens.chat_conversation.attach_photo';
+  static const chats_screens_chat_conversation_attach_camera =
+      'chats_screens.chat_conversation.attach_camera';
+  static const chats_screens_chat_conversation_record_voice =
+      'chats_screens.chat_conversation.record_voice';
+  static const chats_screens_chat_conversation_stop_recording =
+      'chats_screens.chat_conversation.stop_recording';
+  static const chats_screens_chat_conversation_cancel_recording =
+      'chats_screens.chat_conversation.cancel_recording';
+  static const chats_screens_chat_conversation_recording_status =
+      'chats_screens.chat_conversation.recording_status';
+  static const chats_screens_chat_conversation_voice_record_label =
+      'chats_screens.chat_conversation.voice_record_label';
+  static const chats_screens_chat_conversation_image_attachment_label =
+      'chats_screens.chat_conversation.image_attachment_label';
+  static const chats_screens_chat_conversation_attachment_unsupported =
+      'chats_screens.chat_conversation.attachment_unsupported';
+  static const chats_screens_chat_conversation_switch_model_unsupported_title =
+      'chats_screens.chat_conversation.switch_model_unsupported_title';
+  static const chats_screens_chat_conversation_switch_model_unsupported_body =
+      'chats_screens.chat_conversation.switch_model_unsupported_body';
+  static const chats_screens_chat_conversation_switch_model_cancel =
+      'chats_screens.chat_conversation.switch_model_cancel';
+  static const chats_screens_chat_conversation_switch_model_confirm =
+      'chats_screens.chat_conversation.switch_model_confirm';
   static const chats_screens_chat_conversation_stop_generation =
       'chats_screens.chat_conversation.stop_generation';
   static const chats_screens_chat_conversation_stop_error =

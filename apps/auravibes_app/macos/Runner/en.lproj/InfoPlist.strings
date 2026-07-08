@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "AuraVibes needs camera access to attach photos to chat messages.";
+"NSMicrophoneUsageDescription" = "AuraVibes needs microphone access to record voice attachments.";
+"NSPhotoLibraryUsageDescription" = "AuraVibes needs photo library access to attach images to chat messages.";

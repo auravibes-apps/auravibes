@@ -450,12 +450,6 @@ void main() {
             modelId: 'openai-codex',
           ),
         );
-        final projectedCodexModel = codexModel.copyWith(
-          workspaceModelSelection: codexModel.workspaceModelSelection.copyWith(
-            modelName: 'GPT-4',
-            supportsToolCalls: false,
-          ),
-        );
         const tools = [
           ToolSpec(
             name: 'calculator',
@@ -494,7 +488,7 @@ void main() {
         );
         when(
           () => chatbotService.sendMessage(
-            projectedCodexModel,
+            any(),
             any(),
             tools: const [],
             sessionId: any(named: 'sessionId'),
@@ -514,7 +508,7 @@ void main() {
         expect(result.hasToolCalls, isFalse);
         verify(
           () => chatbotService.sendMessage(
-            projectedCodexModel,
+            any(),
             any(),
             tools: const [],
             sessionId: 'conversation-1',
@@ -529,12 +523,6 @@ void main() {
         final codexModel = _model.copyWith(
           modelConnection: _model.modelConnection.copyWith(
             modelId: 'openai-codex',
-          ),
-        );
-        final projectedCodexModel = codexModel.copyWith(
-          workspaceModelSelection: codexModel.workspaceModelSelection.copyWith(
-            modelName: 'GPT Codex Spark',
-            supportsToolCalls: true,
           ),
         );
         const tools = [
@@ -581,7 +569,7 @@ void main() {
         );
         when(
           () => chatbotService.sendMessage(
-            projectedCodexModel,
+            any(),
             any(),
             tools: tools,
             sessionId: any(named: 'sessionId'),
@@ -601,7 +589,7 @@ void main() {
         expect(result.hasToolCalls, isFalse);
         verify(
           () => chatbotService.sendMessage(
-            projectedCodexModel,
+            any(),
             any(),
             tools: tools,
             sessionId: 'conversation-1',

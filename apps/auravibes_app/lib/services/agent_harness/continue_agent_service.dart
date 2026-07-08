@@ -26,6 +26,7 @@ import 'package:auravibes_app/services/agent_harness/build_skill_context_message
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
+import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
@@ -536,6 +537,8 @@ class AppAgentContinuationProvider
         modelName: openAIModel.name,
         supportsReasoning: openAIModel.supportsReasoning,
         supportsToolCalls: openAIModel.supportsToolCalls,
+        modalitiesInput: codexInputModalities(openAIModel),
+        modalitiesOutput: openAIModel.modalitiesOutput,
       ),
     );
   }
@@ -568,13 +571,16 @@ class AppAgentContinuationProvider
   }
 
   @override
-  List<ChatMessage> buildChatHistory({
+  Future<List<ChatMessage>> buildChatHistory({
+    required WorkspaceModelSelectionWithConnectionEntity model,
     required List<MessageEntity> messages,
     required List<ChatMessage> skillContextMessages,
-  }) {
+  }) async {
     return [
       ...skillContextMessages,
-      ...const BuildPromptChatMessages()(messages),
+      ...await BuildPromptChatMessages(
+        modalitiesInput: model.workspaceModelSelection.modalitiesInput,
+      )(messages),
     ];
   }
 

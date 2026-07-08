@@ -15,7 +15,7 @@ class MonitoringService {
 
   void trackError(
     String concept, {
-    required Object? error,
+    required Object error,
     required StackTrace stackTrace,
   }) {
     if (!enableConsoleLogging) {
@@ -28,7 +28,7 @@ class MonitoringService {
     // Implement error tracking logic here, e.g. send to Sentry.
   }
 
-  String _sanitize(Object? value) {
+  String _sanitize(Object value) {
     final normalized = redactLogValue(
       value,
     ).replaceAll(RegExp(r'\s+'), ' ').trim();

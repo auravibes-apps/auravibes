@@ -108,10 +108,11 @@ class _FakeAgentContinuationProvider
   }
 
   @override
-  List<_Chat> buildChatHistory({
+  Future<List<_Chat>> buildChatHistory({
     required List<String> messages,
+    required _Model model,
     required List<_Chat> skillContextMessages,
-  }) {
+  }) async {
     return [...skillContextMessages, ...messages.map(_Chat.new)];
   }
 
