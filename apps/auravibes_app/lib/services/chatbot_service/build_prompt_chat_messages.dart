@@ -1,12 +1,12 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'dart:convert';
 
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_attachment_bytes.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:genkit/genkit.dart';
 import 'package:path/path.dart' as p;
 

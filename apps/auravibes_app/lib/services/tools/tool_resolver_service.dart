@@ -1,9 +1,9 @@
 // Required: Existing argument values intentionally repeat.
-import 'package:auravibes_agent/auravibes_agent.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 class ToolResolverService {
   const ToolResolverService([this._resolver = _defaultResolver]);

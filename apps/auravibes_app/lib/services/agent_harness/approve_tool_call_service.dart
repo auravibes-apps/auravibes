@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -10,9 +9,11 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:logging/logging.dart';
 
 final _logger = Logger('approve_tool_call_service');
@@ -125,7 +126,7 @@ class AppApproveToolCallDataProvider
     await _patchToolCall(
       messageId: messageId,
       toolCallId: toolCallId,
-      resultStatus: _toAppResultStatus(resultStatus),
+      resultStatus: toAppToolCallResultStatus(resultStatus),
       responseRaw: responseRaw,
     );
   }
@@ -184,26 +185,6 @@ class AppApproveToolCallDataProvider
       stackTrace: stackTrace,
     );
   }
-}
-
-ToolCallResultStatus _toAppResultStatus(agent.AgentToolResultStatus status) {
-  return switch (status) {
-    agent.AgentToolResultStatus.success => ToolCallResultStatus.success,
-    agent.AgentToolResultStatus.toolNotFound =>
-      ToolCallResultStatus.toolNotFound,
-    agent.AgentToolResultStatus.executionError =>
-      ToolCallResultStatus.executionError,
-    agent.AgentToolResultStatus.disabledInConversation =>
-      ToolCallResultStatus.disabledInConversation,
-    agent.AgentToolResultStatus.disabledByAgent =>
-      ToolCallResultStatus.disabledByAgent,
-    agent.AgentToolResultStatus.disabledInWorkspace =>
-      ToolCallResultStatus.disabledInWorkspace,
-    agent.AgentToolResultStatus.notConfigured =>
-      ToolCallResultStatus.notConfigured,
-    agent.AgentToolResultStatus.stoppedByUser =>
-      ToolCallResultStatus.stoppedByUser,
-  };
 }
 
 void _logToolExecutionError({

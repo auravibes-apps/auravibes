@@ -1,5 +1,5 @@
-import 'package:auravibes_agent/auravibes_agent.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_queued_draft.g.dart';

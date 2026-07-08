@@ -1,6 +1,6 @@
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 const String _createTemplateTitleKey =
     LocaleKeys.app_skills_skills_manager_tools_create_skill_template_tool_title;

@@ -1,10 +1,10 @@
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
 class AppToolCallActionsDataProvider
     implements agent.SkipToolCallProvider, agent.StopPendingToolCallsProvider {

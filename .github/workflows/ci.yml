@@ -195,18 +195,10 @@ jobs:
             package: packages/auravibes_ui
             targets: test
             source_prefix: packages/auravibes_ui
-          - id: custom-providers
-            package: packages/auravibes_genkit_providers
+          - id: engine
+            package: packages/auravibes_engine
             targets: test
-            source_prefix: packages/auravibes_genkit_providers
-          - id: agent
-            package: packages/auravibes_agent
-            targets: test
-            source_prefix: packages/auravibes_agent
-          - id: skills
-            package: packages/auravibes_skills
-            targets: test
-            source_prefix: packages/auravibes_skills
+            source_prefix: packages/auravibes_engine
           - id: app-core-data-domain
             package: apps/auravibes_app
             targets: test/core test/data test/domain test/flavors_test.dart

@@ -1,9 +1,9 @@
 // Required: Existing test and UI helpers keep compact return flow.
-import 'package:auravibes_skills/auravibes_skills.dart'
+import 'package:auravibes_engine/auravibes_engine.dart'
     show UrlRequestMethod, UrlResponseFormat;
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-export 'package:auravibes_skills/auravibes_skills.dart'
+export 'package:auravibes_engine/auravibes_engine.dart'
     show UrlRequestMethod, UrlResponseFormat;
 
 part 'url_request_method.freezed.dart';

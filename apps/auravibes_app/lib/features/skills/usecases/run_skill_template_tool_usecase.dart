@@ -7,7 +7,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_url_template_usecase.dart';
-import 'package:auravibes_skills/auravibes_skills.dart' as package_skills;
+import 'package:auravibes_engine/auravibes_engine.dart' as package_skills;
 import 'package:riverpod/riverpod.dart';
 
 class RunSkillTemplateToolUsecase {

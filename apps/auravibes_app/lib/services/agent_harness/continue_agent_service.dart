@@ -3,34 +3,23 @@
 
 import 'dart:async';
 
-import 'package:auravibes_agent/auravibes_agent.dart'
-    hide BuildPromptChatMessages;
-import 'package:auravibes_app/data/repositories/api_model_repository.dart';
-import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
-import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
-import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
-import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
-import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
-import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:auravibes_app/services/codex_input_modalities.dart';
-import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
@@ -42,30 +31,26 @@ class ContinueAgentService
   ContinueAgentService({
     required this.chatbotService,
     required this.messageRepository,
-    required this.workspaceModelSelectionsRepository,
-    required this.conversationRepository,
-    required this.loadConversationToolSpecsUsecase,
+    required this.agentContinuationProvider,
     required this.messagesStreamingRuntime,
     required this.conversationStreamingRuntime,
     required this.agentCancellationRuntime,
     required this.monitoringService,
-    required this.selectPromptMessagesUsecase,
-    required this.apiModelRepository,
-    required this.buildSkillContextMessagesUsecase,
   });
 
   final ChatbotService chatbotService;
   final MessageRepository messageRepository;
-  final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
-  final ConversationRepository conversationRepository;
-  final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
+  final AgentContinuationProvider<
+    WorkspaceModelSelectionWithConnectionEntity,
+    MessageEntity,
+    ChatMessage,
+    ToolSpec
+  >
+  agentContinuationProvider;
   final MessagesStreamingRuntime messagesStreamingRuntime;
   final ConversationStreamingRuntime conversationStreamingRuntime;
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
-  final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
-  final ApiModelRepository apiModelRepository;
-  final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
 
   Future<ContinueAgentResult> call({
     required String conversationId,
@@ -107,15 +92,7 @@ class ContinueAgentService
           ChatMessage,
           ToolSpec
         >(
-          provider: AppAgentContinuationProvider(
-            conversationRepository: conversationRepository,
-            workspaceModelSelectionsRepository:
-                workspaceModelSelectionsRepository,
-            apiModelRepository: apiModelRepository,
-            selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-            buildSkillContextMessagesUsecase: buildSkillContextMessagesUsecase,
-            loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
-          ),
+          provider: agentContinuationProvider,
         )
         .call(conversationId: conversationId);
   }
@@ -441,168 +418,15 @@ final continueAgentServiceProvider = Provider<ContinueAgentService>((ref) {
   return ContinueAgentService(
     chatbotService: ref.watch(chatbotServiceProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
-    workspaceModelSelectionsRepository: ref.watch(
-      workspaceModelSelectionRepositoryProvider,
-    ),
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    loadConversationToolSpecsUsecase: ref.watch(
-      loadConversationToolSpecsUsecaseProvider,
-    ),
+    agentContinuationProvider: ref.watch(appAgentContinuationProvider),
     messagesStreamingRuntime: ref.watch(messagesStreamingRuntimeProvider),
     conversationStreamingRuntime: ref.watch(
       conversationStreamingRuntimeProvider,
     ),
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
-    selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
-    apiModelRepository: ref.watch(apiModelRepositoryProvider),
-    buildSkillContextMessagesUsecase: ref.watch(
-      buildSkillContextMessagesServiceProvider,
-    ),
   );
 });
-
-extension on ChatMessage {
-  bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;
-}
-
-class AppAgentContinuationProvider
-    implements
-        AgentContinuationProvider<
-          WorkspaceModelSelectionWithConnectionEntity,
-          MessageEntity,
-          ChatMessage,
-          ToolSpec
-        > {
-  const AppAgentContinuationProvider({
-    required this.conversationRepository,
-    required this.workspaceModelSelectionsRepository,
-    required this.apiModelRepository,
-    required this.selectPromptMessagesUsecase,
-    required this.buildSkillContextMessagesUsecase,
-    required this.loadConversationToolSpecsUsecase,
-  });
-
-  final ConversationRepository conversationRepository;
-  final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
-  final ApiModelRepository apiModelRepository;
-  final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
-  final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
-  final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
-
-  @override
-  Future<AgentConversationReference?> loadConversation(
-    String conversationId,
-  ) async {
-    final conversation = await conversationRepository.getConversationById(
-      conversationId,
-    );
-    if (conversation == null) return null;
-
-    return AgentConversationReference(
-      workspaceId: conversation.workspaceId,
-      modelId: conversation.modelId,
-    );
-  }
-
-  @override
-  Future<WorkspaceModelSelectionWithConnectionEntity?> loadSelectedModel(
-    String modelId,
-  ) {
-    return workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
-      modelId,
-    );
-  }
-
-  @override
-  Future<WorkspaceModelSelectionWithConnectionEntity> projectSelectedModel(
-    WorkspaceModelSelectionWithConnectionEntity model,
-  ) async {
-    if (!isOpenAICodexProvider(model.modelConnection.modelId)) {
-      return model;
-    }
-    final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
-      'openai',
-      model.workspaceModelSelection.modelId,
-    );
-    if (openAIModel == null) {
-      throw Exception('OpenAI model catalog is unavailable');
-    }
-    if (!openAIModel.isCodexRuntimeModel) {
-      throw Exception('Selected Codex model is not supported');
-    }
-
-    return model.copyWith(
-      workspaceModelSelection: model.workspaceModelSelection.copyWith(
-        modelName: openAIModel.name,
-        supportsReasoning: openAIModel.supportsReasoning,
-        supportsToolCalls: openAIModel.supportsToolCalls,
-        modalitiesInput: codexInputModalities(openAIModel),
-        modalitiesOutput: openAIModel.modalitiesOutput,
-      ),
-    );
-  }
-
-  @override
-  Future<List<MessageEntity>> selectPromptMessages(String conversationId) {
-    return selectPromptMessagesUsecase.call(conversationId);
-  }
-
-  @override
-  Future<List<ChatMessage>> buildSkillContextMessages({
-    required String conversationId,
-    required String workspaceId,
-  }) {
-    return buildSkillContextMessagesUsecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-  }
-
-  @override
-  Future<List<ToolSpec>> loadTools({
-    required String conversationId,
-    required String workspaceId,
-  }) {
-    return loadConversationToolSpecsUsecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>> buildChatHistory({
-    required WorkspaceModelSelectionWithConnectionEntity model,
-    required List<MessageEntity> messages,
-    required List<ChatMessage> skillContextMessages,
-  }) async {
-    return [
-      ...skillContextMessages,
-      ...await BuildPromptChatMessages(
-        modalitiesInput: model.workspaceModelSelection.modalitiesInput,
-      )(messages),
-    ];
-  }
-
-  @override
-  bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) {
-    return isOpenAICodexProvider(model.modelConnection.modelId) &&
-        !model.workspaceModelSelection.supportsToolCalls;
-  }
-
-  @override
-  bool isSystemMessage(ChatMessage message) {
-    return message.role == ChatMessageRole.system;
-  }
-
-  @override
-  bool isSkillContextMessage(ChatMessage message) => message.isSkillContext;
-
-  @override
-  bool isUserMessage(ChatMessage message) {
-    return message.role == ChatMessageRole.user;
-  }
-}
 
 class _AppChunkSink implements AgentChunkSink<ChatResult<ChatMessage>> {
   const _AppChunkSink(this._controller, this._future);

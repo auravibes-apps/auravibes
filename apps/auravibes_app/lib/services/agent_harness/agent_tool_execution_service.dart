@@ -1,18 +1,18 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     hide ToolToCall;
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -80,7 +80,7 @@ class AppAllowedToolsDataProvider
     );
 
     return agent.AgentToolApprovalDecision(
-      permissionResult: _toAgentPermissionResult(
+      permissionResult: toAgentToolPermissionResult(
         decision.permissionResult,
       ),
     );
@@ -175,7 +175,7 @@ class AppAllowedToolsDataProvider
       if (update == null) return toolCall;
 
       return toolCall.copyWith(
-        resultStatus: _toAppResultStatus(update.resultStatus),
+        resultStatus: toAppToolCallResultStatus(update.resultStatus),
         responseRaw: update.responseRaw,
       );
     }).toList();
@@ -187,44 +187,6 @@ class AppAllowedToolsDataProvider
       ),
     );
   }
-}
-
-agent.AgentToolPermissionResult _toAgentPermissionResult(
-  ToolPermissionResult result,
-) {
-  return switch (result) {
-    ToolPermissionResult.granted => agent.AgentToolPermissionResult.granted,
-    ToolPermissionResult.needsConfirmation =>
-      agent.AgentToolPermissionResult.needsConfirmation,
-    ToolPermissionResult.disabledInConversation =>
-      agent.AgentToolPermissionResult.disabledInConversation,
-    ToolPermissionResult.disabledByAgent =>
-      agent.AgentToolPermissionResult.disabledByAgent,
-    ToolPermissionResult.disabledInWorkspace =>
-      agent.AgentToolPermissionResult.disabledInWorkspace,
-    ToolPermissionResult.notConfigured =>
-      agent.AgentToolPermissionResult.notConfigured,
-  };
-}
-
-ToolCallResultStatus _toAppResultStatus(agent.AgentToolResultStatus status) {
-  return switch (status) {
-    agent.AgentToolResultStatus.success => ToolCallResultStatus.success,
-    agent.AgentToolResultStatus.toolNotFound =>
-      ToolCallResultStatus.toolNotFound,
-    agent.AgentToolResultStatus.executionError =>
-      ToolCallResultStatus.executionError,
-    agent.AgentToolResultStatus.disabledInConversation =>
-      ToolCallResultStatus.disabledInConversation,
-    agent.AgentToolResultStatus.disabledByAgent =>
-      ToolCallResultStatus.disabledByAgent,
-    agent.AgentToolResultStatus.disabledInWorkspace =>
-      ToolCallResultStatus.disabledInWorkspace,
-    agent.AgentToolResultStatus.notConfigured =>
-      ToolCallResultStatus.notConfigured,
-    agent.AgentToolResultStatus.stoppedByUser =>
-      ToolCallResultStatus.stoppedByUser,
-  };
 }
 
 void _logToolExecutionError({

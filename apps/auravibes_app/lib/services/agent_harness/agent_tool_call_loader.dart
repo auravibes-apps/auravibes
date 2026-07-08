@@ -1,17 +1,19 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
+// ignore: unused-code, existing app harness tests import these helper aliases.
 typedef ToolToCall = agent.AgentToolToCall<ResolvedTool>;
 
+// ignore: unused-code, existing app harness tests import these helper aliases.
 typedef LoadLatestMessageToolCallsResult =
     agent.LoadLatestMessageToolCallsResult<ResolvedTool>;
 
@@ -65,25 +67,11 @@ class AppAgentToolCallProvider
               id: toolCall.id,
               name: toolCall.name,
               argumentsRaw: toolCall.argumentsRaw,
-              resultStatus: _toAgentToolCallResultStatus(toolCall.resultStatus),
+              resultStatus: toAgentToolCallResultStatus(toolCall.resultStatus),
             ),
       ],
     );
   }
-}
-
-agent.AgentToolCallResultStatus? _toAgentToolCallResultStatus(
-  ToolCallResultStatus? status,
-) {
-  return switch (status) {
-    null => null,
-    ToolCallResultStatus.success => agent.AgentToolCallResultStatus.success,
-    ToolCallResultStatus.skippedByUser =>
-      agent.AgentToolCallResultStatus.skippedByUser,
-    ToolCallResultStatus.stoppedByUser =>
-      agent.AgentToolCallResultStatus.stoppedByUser,
-    _ => agent.AgentToolCallResultStatus.failed,
-  };
 }
 
 final agentToolCallLoaderProvider = Provider<AgentToolCallLoader>((ref) {

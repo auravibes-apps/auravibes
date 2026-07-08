@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:async/async.dart';
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -26,10 +25,12 @@ import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_u
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
+import 'package:auravibes_app/services/agent_harness/sub_agent_turn_runtime.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
 const _conversationRepositoryNotConfigured =
@@ -577,6 +578,7 @@ Future<Object> _listSkillCredentials({
 final resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
   final agentCancellationRuntime = ref.watch(agentCancellationRuntimeProvider);
   final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
+  final subAgentTurnRuntime = ref.watch(subAgentTurnRuntimeProvider);
 
   return ResolvedToolService(
     agentCancellationRuntime: agentCancellationRuntime,
@@ -612,7 +614,7 @@ final resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
         ref.watch(messageRepositoryProvider),
       ),
       activeTracker: activeSubAgents,
-      continueAgentTurn: agent.subAgentTurnRunner.call,
+      continueAgentTurn: subAgentTurnRuntime.call,
       onChildStarted: ({required parentId, required childId}) {
         agentCancellationRuntime.registerCleanup(parentId, () {
           if (activeSubAgents.parentOf(childId) != parentId) return;

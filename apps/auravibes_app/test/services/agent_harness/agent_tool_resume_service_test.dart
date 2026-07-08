@@ -1,9 +1,9 @@
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -16,7 +16,7 @@ void main() {
     var messageRepository = MockMessageRepository();
     var conversationRepository = MockConversationRepository();
     var toolExecutionService = MockAgentToolExecutionService();
-    var agentService = MockAgentService();
+    var agentService = MockAppAgentService();
     var usecase = AgentToolResumeService(
       messageRepository: messageRepository,
       conversationRepository: conversationRepository,
@@ -52,7 +52,7 @@ void main() {
       messageRepository = MockMessageRepository();
       conversationRepository = MockConversationRepository();
       toolExecutionService = MockAgentToolExecutionService();
-      agentService = MockAgentService();
+      agentService = MockAppAgentService();
 
       usecase = AgentToolResumeService(
         messageRepository: messageRepository,
@@ -134,7 +134,7 @@ void main() {
       );
     });
 
-    test('invokes AgentService on continueIteration', () async {
+    test('invokes AppAgentService on continueIteration', () async {
       when(() => messageRepository.getMessageById(messageId)).thenAnswer(
         (_) async => message,
       );
