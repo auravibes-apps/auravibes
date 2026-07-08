@@ -141,11 +141,27 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(messageAttachments);
         }
         if (from == 4) {
-          await m.addColumn(messageAttachments, messageAttachments.displayName);
-          await customStatement(
-            'UPDATE message_attachments SET display_name = file_name '
-            'WHERE display_name IS NULL OR length(display_name) = 0;',
+          final hasMessageAttachments = await _tableExists(
+            'message_attachments',
           );
+          if (hasMessageAttachments) {
+            final hasDisplayName = await _columnExists(
+              'message_attachments',
+              'display_name',
+            );
+            if (!hasDisplayName) {
+              await m.addColumn(
+                messageAttachments,
+                messageAttachments.displayName,
+              );
+            }
+            await customStatement(
+              'UPDATE message_attachments SET display_name = file_name '
+              'WHERE display_name IS NULL OR length(display_name) = 0;',
+            );
+          } else {
+            await m.createTable(messageAttachments);
+          }
         }
         if (from >= 2 && from < 5) {
           await m.addColumn(agents, agents.description);
@@ -188,5 +204,20 @@ class AppDatabase extends _$AppDatabase {
         .join();
 
     return 'auravibes_app_$hashPrefix';
+  }
+
+  Future<bool> _tableExists(String tableName) async {
+    final rows = await customSelect(
+      'SELECT 1 FROM sqlite_master WHERE type = ? AND name = ?',
+      variables: [const Variable<String>('table'), Variable<String>(tableName)],
+    ).get();
+
+    return rows.isNotEmpty;
+  }
+
+  Future<bool> _columnExists(String tableName, String columnName) async {
+    final columns = await customSelect('PRAGMA table_info($tableName)').get();
+
+    return columns.any((column) => column.read<String>('name') == columnName);
   }
 }
