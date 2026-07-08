@@ -1,4 +1,3 @@
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_spec.dart';
@@ -7,7 +6,7 @@ import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 const skillsManagerSlug = 'skills_manager';
@@ -77,12 +76,11 @@ class BuildAppSkillNativeToolSpecsUsecase {
     ];
     final hasSubAgents = runtimeSkills.any(
       (skill) =>
-          skill.source == SkillSource.app &&
-          skill.slug == agent.agentsSkillSlug,
+          skill.source == SkillSource.app && skill.slug == agentsSkillSlug,
     );
     if (hasSubAgents && !isUnknownConversation && !isSubAgentConversation) {
       final subAgentsSkill = _appSkillRegistry.getBySlug(
-        agent.agentsSkillSlug,
+        agentsSkillSlug,
       );
       if (subAgentsSkill != null) {
         specs.addAll(_appSkillToolSpecs(subAgentsSkill, const []));
@@ -135,12 +133,7 @@ Map<String, Object?> _schemaFor(
   List<AppSkillCredentialCandidate> candidates,
 ) {
   final schema = Map<String, Object?>.from(
-    tool.inputJsonSchema ??
-        const {
-          'type': 'object',
-          'properties': <String, Object?>{},
-          'additionalProperties': false,
-        },
+    tool.inputJsonSchema,
   );
   final properties = Map<String, Object?>.from(
     (schema['properties'] as Map?) ?? const <String, Object?>{},

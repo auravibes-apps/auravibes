@@ -1,5 +1,3 @@
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentIterationContext;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
@@ -24,6 +22,7 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
@@ -33,7 +32,6 @@ import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart'
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
-import 'package:auravibes_app/services/agent_harness/agent_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
@@ -47,6 +45,8 @@ import 'package:auravibes_app/services/model_provider_services/model_provider.da
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentIterationContext;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -189,7 +189,7 @@ class MockResolveToolApprovalDecisionUsecase extends Mock
 class MockAgentToolResumeService extends Mock
     implements AgentToolResumeService {}
 
-class MockAgentService extends Mock implements AgentService {}
+class MockAppAgentService extends Mock implements AppAgentService {}
 
 class MockAgentToolExecutionService extends Mock
     implements AgentToolExecutionService {}

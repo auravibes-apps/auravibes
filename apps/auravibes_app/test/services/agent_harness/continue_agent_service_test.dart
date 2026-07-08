@@ -1,12 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show
-        AgentCancellationRuntime,
-        AgentIterationContext,
-        AgentIterationOrigin,
-        skillContextMetadataKind;
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -16,10 +10,17 @@ import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        AgentCancellationRuntime,
+        AgentIterationContext,
+        AgentIterationOrigin,
+        skillContextMetadataKind;
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
@@ -52,9 +53,15 @@ void main() {
     var usecase = ContinueAgentService(
       chatbotService: chatbotService,
       messageRepository: messageRepository,
-      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-      conversationRepository: conversationRepository,
-      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      agentContinuationProvider: _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      ),
       messagesStreamingRuntime: MessagesStreamingRuntime(
         startSubscription: (_, messageId) {
           startedSubscriptionMessageIds.add(messageId);
@@ -76,10 +83,6 @@ void main() {
       ),
       agentCancellationRuntime: agentCancellationRuntime,
       monitoringService: monitoringService,
-      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-      apiModelRepository: apiModelRepository,
-      buildSkillContextMessagesUsecase:
-          const _FakeBuildSkillContextMessagesService([]),
     );
 
     setUp(() {
@@ -104,9 +107,16 @@ void main() {
       usecase = ContinueAgentService(
         chatbotService: chatbotService,
         messageRepository: messageRepository,
-        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-        conversationRepository: conversationRepository,
-        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        agentContinuationProvider: _appAgentContinuationAdapter(
+          conversationRepository: conversationRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          apiModelRepository: apiModelRepository,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesService([]),
+        ),
         messagesStreamingRuntime: MessagesStreamingRuntime(
           startSubscription: (_, messageId) {
             startedSubscriptionMessageIds.add(messageId);
@@ -128,10 +138,6 @@ void main() {
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
-        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-        apiModelRepository: apiModelRepository,
-        buildSkillContextMessagesUsecase:
-            const _FakeBuildSkillContextMessagesService([]),
       );
 
       when(
@@ -240,10 +246,22 @@ void main() {
         usecase = ContinueAgentService(
           chatbotService: chatbotService,
           messageRepository: messageRepository,
-          workspaceModelSelectionsRepository:
-              workspaceModelSelectionsRepository,
-          conversationRepository: conversationRepository,
-          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          agentContinuationProvider: _appAgentContinuationAdapter(
+            conversationRepository: conversationRepository,
+            workspaceModelSelectionsRepository:
+                workspaceModelSelectionsRepository,
+            apiModelRepository: apiModelRepository,
+            selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+            loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+            buildSkillContextMessagesUsecase:
+                const _FakeBuildSkillContextMessagesService([
+                  ChatMessage(
+                    role: ChatMessageRole.user,
+                    content: _skillContextXml,
+                    metadata: {'kind': skillContextMetadataKind},
+                  ),
+                ]),
+          ),
           messagesStreamingRuntime: MessagesStreamingRuntime(
             startSubscription: (_, messageId) {
               startedSubscriptionMessageIds.add(messageId);
@@ -265,16 +283,6 @@ void main() {
           ),
           agentCancellationRuntime: agentCancellationRuntime,
           monitoringService: monitoringService,
-          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-          apiModelRepository: apiModelRepository,
-          buildSkillContextMessagesUsecase:
-              const _FakeBuildSkillContextMessagesService([
-                ChatMessage(
-                  role: ChatMessageRole.user,
-                  content: _skillContextXml,
-                  metadata: {'kind': skillContextMetadataKind},
-                ),
-              ]),
         );
         when(
           () => chatbotService.sendMessage(
@@ -1001,9 +1009,15 @@ void main() {
     var usecase = ContinueAgentService(
       chatbotService: chatbotService,
       messageRepository: messageRepository,
-      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-      conversationRepository: conversationRepository,
-      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      agentContinuationProvider: _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      ),
       messagesStreamingRuntime: MessagesStreamingRuntime(
         startSubscription: (_, _) {
           final _ = Object();
@@ -1026,10 +1040,6 @@ void main() {
       ),
       agentCancellationRuntime: agentCancellationRuntime,
       monitoringService: monitoringService,
-      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-      apiModelRepository: apiModelRepository,
-      buildSkillContextMessagesUsecase:
-          const _FakeBuildSkillContextMessagesService([]),
     );
 
     setUp(() {
@@ -1048,9 +1058,16 @@ void main() {
       usecase = ContinueAgentService(
         chatbotService: chatbotService,
         messageRepository: messageRepository,
-        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-        conversationRepository: conversationRepository,
-        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        agentContinuationProvider: _appAgentContinuationAdapter(
+          conversationRepository: conversationRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          apiModelRepository: apiModelRepository,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesService([]),
+        ),
         messagesStreamingRuntime: MessagesStreamingRuntime(
           startSubscription: (_, _) {
             final _ = Object();
@@ -1073,10 +1090,6 @@ void main() {
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
-        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-        apiModelRepository: apiModelRepository,
-        buildSkillContextMessagesUsecase:
-            const _FakeBuildSkillContextMessagesService([]),
       );
 
       when(
@@ -1244,9 +1257,15 @@ void main() {
     var usecase = ContinueAgentService(
       chatbotService: chatbotService,
       messageRepository: messageRepository,
-      workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-      conversationRepository: conversationRepository,
-      loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+      agentContinuationProvider: _appAgentContinuationAdapter(
+        conversationRepository: conversationRepository,
+        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+        apiModelRepository: apiModelRepository,
+        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        buildSkillContextMessagesUsecase:
+            const _FakeBuildSkillContextMessagesService([]),
+      ),
       messagesStreamingRuntime: MessagesStreamingRuntime(
         startSubscription: (_, _) {
           final _ = Object();
@@ -1269,10 +1288,6 @@ void main() {
       ),
       agentCancellationRuntime: agentCancellationRuntime,
       monitoringService: monitoringService,
-      selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-      apiModelRepository: apiModelRepository,
-      buildSkillContextMessagesUsecase:
-          const _FakeBuildSkillContextMessagesService([]),
     );
 
     setUp(() {
@@ -1291,9 +1306,16 @@ void main() {
       usecase = ContinueAgentService(
         chatbotService: chatbotService,
         messageRepository: messageRepository,
-        workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
-        conversationRepository: conversationRepository,
-        loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+        agentContinuationProvider: _appAgentContinuationAdapter(
+          conversationRepository: conversationRepository,
+          workspaceModelSelectionsRepository:
+              workspaceModelSelectionsRepository,
+          apiModelRepository: apiModelRepository,
+          selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+          loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+          buildSkillContextMessagesUsecase:
+              const _FakeBuildSkillContextMessagesService([]),
+        ),
         messagesStreamingRuntime: MessagesStreamingRuntime(
           startSubscription: (_, _) {
             final _ = Object();
@@ -1316,10 +1338,6 @@ void main() {
         ),
         agentCancellationRuntime: agentCancellationRuntime,
         monitoringService: monitoringService,
-        selectPromptMessagesUsecase: selectPromptMessagesUsecase,
-        apiModelRepository: apiModelRepository,
-        buildSkillContextMessagesUsecase:
-            const _FakeBuildSkillContextMessagesService([]),
       );
 
       when(
@@ -1425,6 +1443,26 @@ final _unfinishedAssistantMessage = MessageEntity(
 
 const _skillContextXml =
     '<skill><name>Skills Manager</name><content>Manage skills.</content></skill>';
+
+AppAgentContinuationAdapter _appAgentContinuationAdapter({
+  required MockConversationRepository conversationRepository,
+  required MockWorkspaceModelSelectionRepository
+  workspaceModelSelectionsRepository,
+  required MockApiModelRepository apiModelRepository,
+  required MockSelectPromptMessagesUsecase selectPromptMessagesUsecase,
+  required MockLoadConversationToolSpecsUsecase
+  loadConversationToolSpecsUsecase,
+  required BuildSkillContextMessagesService buildSkillContextMessagesUsecase,
+}) {
+  return AppAgentContinuationAdapter(
+    conversationRepository: conversationRepository,
+    workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+    apiModelRepository: apiModelRepository,
+    selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+    buildSkillContextMessagesUsecase: buildSkillContextMessagesUsecase,
+    loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+  );
+}
 
 final _model = WorkspaceModelSelectionWithConnectionEntity(
   workspaceModelSelection: WorkspaceModelSelectionEntity(

@@ -2,15 +2,15 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
-import 'package:auravibes_app/services/agent_harness/aura_agent_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:riverpod/riverpod.dart';
 
 typedef ContinueAgentTurn =

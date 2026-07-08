@@ -1,7 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentCancellationRuntime, AgentIterationDecision;
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     hide ToolToCall;
 import 'package:auravibes_app/domain/enums/message_type.dart';
@@ -14,6 +12,8 @@ import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart'
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentCancellationRuntime, AgentIterationDecision;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
@@ -13,7 +12,7 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -141,7 +140,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result.map((spec) => spec.name), [agent.runSubAgentToolName]);
+      expect(result.map((spec) => spec.name), [runSubAgentToolName]);
     });
 
     test(
@@ -167,7 +166,7 @@ void main() {
           workspaceId: 'ws-1',
         );
 
-        expect(result.map((spec) => spec.name), [agent.runSubAgentToolName]);
+        expect(result.map((spec) => spec.name), [runSubAgentToolName]);
         verify(
           () => syncUsecase.call(
             conversationId: 'conv-1',
@@ -370,7 +369,7 @@ void main() {
       expect(result.map((spec) => spec.name), [
         loadSkillToolName,
         unloadSkillToolName,
-        agent.runSubAgentToolName,
+        runSubAgentToolName,
       ]);
     });
 
@@ -410,7 +409,7 @@ void main() {
         loadSkillToolName,
         unloadSkillToolName,
         listSkillCredentialsToolName,
-        agent.runSubAgentToolName,
+        runSubAgentToolName,
       ]);
     });
   });

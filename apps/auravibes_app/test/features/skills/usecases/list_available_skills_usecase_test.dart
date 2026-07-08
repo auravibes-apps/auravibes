@@ -9,7 +9,7 @@ import 'package:auravibes_app/features/skills/usecases/check_skill_credential_re
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

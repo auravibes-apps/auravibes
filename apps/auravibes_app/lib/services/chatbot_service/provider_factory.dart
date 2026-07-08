@@ -3,7 +3,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
-import 'package:auravibes_genkit_providers/auravibes_genkit_providers.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_anthropic/genkit_anthropic.dart';
 import 'package:genkit_openai/genkit_openai.dart';

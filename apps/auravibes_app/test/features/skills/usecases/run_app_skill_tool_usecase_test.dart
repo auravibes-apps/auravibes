@@ -14,7 +14,7 @@ import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

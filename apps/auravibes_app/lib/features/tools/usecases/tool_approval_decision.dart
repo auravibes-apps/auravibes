@@ -1,5 +1,4 @@
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
@@ -9,6 +8,7 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.d
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
 class ToolApprovalDecision {

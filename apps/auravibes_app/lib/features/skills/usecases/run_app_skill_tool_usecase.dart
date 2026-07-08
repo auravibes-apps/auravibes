@@ -9,7 +9,7 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 

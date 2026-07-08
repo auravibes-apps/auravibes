@@ -1,4 +1,3 @@
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -6,6 +5,7 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:collection/collection.dart';
 
 class AppSubAgentCatalog implements agent.SubAgentCatalog {

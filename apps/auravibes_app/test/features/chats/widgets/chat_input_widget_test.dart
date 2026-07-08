@@ -1,4 +1,6 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'dart:async';
+
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -36,7 +38,7 @@ void main() {
   });
 
   Widget buildSubject({
-    required void Function(ChatDraft) onSendMessage,
+    required FutureOr<void> Function(ChatDraft) onSendMessage,
     VoidCallback onToolsPress = _noop,
     bool disabled = false,
     bool isBusy = false,
@@ -115,6 +117,35 @@ void main() {
 
     expect(find.byType(ChatInputWidget), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
+  });
+
+  testWidgets('clears text as soon as send is accepted', (tester) async {
+    final sendCompleter = Completer<void>();
+    ChatDraft? sentDraft;
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        onSendMessage: (draft) {
+          sentDraft = draft;
+
+          return sendCompleter.future;
+        },
+      ),
+    );
+
+    await tester.enterText(find.byType(EditableText), 'Hello agent');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.pump();
+
+    expect(sentDraft?.text, 'Hello agent');
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      isEmpty,
+    );
+
+    sendCompleter.complete();
   });
 
   testWidgets('shows tools button when onToolsPress provided', (tester) async {

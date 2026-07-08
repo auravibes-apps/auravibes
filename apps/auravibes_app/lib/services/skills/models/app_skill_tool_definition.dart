@@ -1,2 +1,2 @@
-export 'package:auravibes_skills/auravibes_skills.dart'
+export 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillToolDefinition;

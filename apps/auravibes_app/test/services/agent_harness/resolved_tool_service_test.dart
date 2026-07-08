@@ -1,8 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:async/async.dart';
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentCancellationRuntime, AgentResolvedToolKind;
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
@@ -20,7 +18,7 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
-import 'package:auravibes_skills/auravibes_skills.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';

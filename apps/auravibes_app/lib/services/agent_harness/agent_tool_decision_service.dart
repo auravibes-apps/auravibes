@@ -1,8 +1,8 @@
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
 class AppAgentToolCallDataProvider implements agent.AgentToolDecisionProvider {

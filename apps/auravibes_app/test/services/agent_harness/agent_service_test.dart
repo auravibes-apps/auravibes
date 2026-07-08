@@ -1,17 +1,17 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_agent/auravibes_agent.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:auravibes_app/services/agent_harness/agent_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,7 +23,7 @@ import '../../test_mocks.dart';
 void main() {
   setUpAll(registerTestFallbackValues);
 
-  group('AgentService', () {
+  group('AppAgentService', () {
     var fixture = _AgentServiceFixture();
 
     setUp(() {
@@ -318,7 +318,7 @@ void main() {
       final startTime = DateTime(2026);
       var currentTime = startTime;
       final delays = <Duration>[];
-      fixture.usecase = AgentService(
+      fixture.usecase = AppAgentService(
         continueAgentService: fixture.continueAgentUsecase,
         toolExecutionService: fixture.runAllowedToolsUsecase,
         autoCompactConversationUsecase:
@@ -1012,9 +1012,9 @@ void main() {
       addTearDown(database.close);
       addTearDown(container.dispose);
 
-      final usecase = container.read(agentServiceProvider);
+      final usecase = container.read(appAgentServiceProvider);
 
-      expect(usecase, isA<AgentService>());
+      expect(usecase, isA<AppAgentService>());
     });
   });
 }
@@ -1048,7 +1048,7 @@ class _AgentServiceFixture {
       container: container,
       agentCancellationRuntime: agentCancellationRuntime,
       rateLimitRetryRuntime: rateLimitRetryRuntime,
-      usecase: AgentService(
+      usecase: AppAgentService(
         continueAgentService: continueAgentUsecase,
         toolExecutionService: runAllowedToolsUsecase,
         autoCompactConversationUsecase: maybeAutoCompactConversationUsecase,
@@ -1083,7 +1083,7 @@ class _AgentServiceFixture {
   final ProviderContainer container;
   final AgentCancellationRuntime agentCancellationRuntime;
   final ConversationRateLimitRetryRuntime rateLimitRetryRuntime;
-  AgentService usecase;
+  AppAgentService usecase;
 
   void dispose() {
     container.dispose();

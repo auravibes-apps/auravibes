@@ -1,4 +1,3 @@
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
@@ -9,6 +8,7 @@ import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart'
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 

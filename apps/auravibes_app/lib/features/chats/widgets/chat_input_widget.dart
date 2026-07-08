@@ -280,10 +280,10 @@ class _ChatInputActions {
 
       if (message.isEmpty && draftAttachments.isEmpty) return;
 
+      final draft = ChatDraft(text: message, attachments: draftAttachments);
+      FutureOr<void> sendResult;
       try {
-        await onSendMessage(
-          ChatDraft(text: message, attachments: draftAttachments),
-        );
+        sendResult = onSendMessage(draft);
       } on Object catch (error, stackTrace) {
         attachments.value = draftAttachments;
         _logger.warning('Failed to send draft', error, stackTrace);
@@ -292,6 +292,17 @@ class _ChatInputActions {
       }
       controller.clear();
       attachments.value = const [];
+      try {
+        await sendResult;
+      } on Object catch (error, stackTrace) {
+        if (controller.text.isEmpty && attachments.value.isEmpty) {
+          controller.text = message;
+          attachments.value = draftAttachments;
+        }
+        _logger.warning('Failed to send draft', error, stackTrace);
+
+        return;
+      }
     } finally {
       isSending.value = false;
     }

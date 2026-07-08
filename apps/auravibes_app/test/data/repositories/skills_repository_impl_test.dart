@@ -1,8 +1,6 @@
 import 'dart:convert';
 
 import 'package:async/async.dart';
-import 'package:auravibes_agent/auravibes_agent.dart'
-    show AgentCancellationRuntime, skillContextMetadataKind;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
@@ -54,7 +52,9 @@ import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
-import 'package:auravibes_skills/auravibes_skills.dart'
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AgentCancellationRuntime, skillContextMetadataKind;
+import 'package:auravibes_engine/auravibes_engine.dart'
     show ResolveSkillUrlTemplate, RunSkillUrlTemplate;
 import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';

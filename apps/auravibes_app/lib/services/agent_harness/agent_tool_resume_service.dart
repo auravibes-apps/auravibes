@@ -1,10 +1,10 @@
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/services/agent_harness/agent_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
 class AgentToolResumeService extends agent.AgentToolResumeRunner {
@@ -12,7 +12,7 @@ class AgentToolResumeService extends agent.AgentToolResumeRunner {
     required MessageRepository messageRepository,
     required ConversationRepository conversationRepository,
     required AgentToolExecutionService toolExecutionService,
-    required AgentService agentService,
+    required AppAgentService agentService,
     ActiveSubAgentRuntime? activeSubAgents,
   }) : super(
          provider: AppAgentToolResumeProvider(
@@ -37,7 +37,7 @@ class AppAgentToolResumeProvider implements agent.AgentToolResumeProvider {
   final MessageRepository messageRepository;
   final ConversationRepository conversationRepository;
   final AgentToolExecutionService toolExecutionService;
-  final AgentService agentService;
+  final AppAgentService agentService;
   final ActiveSubAgentRuntime? activeSubAgents;
 
   @override
@@ -106,7 +106,7 @@ final agentToolResumeServiceProvider = Provider<AgentToolResumeService>((ref) {
     messageRepository: ref.watch(messageRepositoryProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     toolExecutionService: ref.watch(agentToolExecutionServiceProvider),
-    agentService: ref.watch(agentServiceProvider),
+    agentService: ref.watch(appAgentServiceProvider),
     activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
   );
 });

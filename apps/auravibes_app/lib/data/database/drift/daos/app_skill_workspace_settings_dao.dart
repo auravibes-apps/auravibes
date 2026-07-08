@@ -1,6 +1,6 @@
-import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:drift/drift.dart';
 
 part 'app_skill_workspace_settings_dao.g.dart';
