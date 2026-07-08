@@ -142,6 +142,69 @@ void main() {
       expect(agent.read<String>('visibility'), 'both');
     });
 
+    test('migration from schema 4 adds attachment display names', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 4
+        ..execute('''
+          CREATE TABLE message_attachments (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            message_id TEXT NOT NULL,
+            local_path TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            modality TEXT NOT NULL,
+            size_bytes INTEGER NOT NULL
+          );
+        ''')
+        ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            content TEXT NOT NULL
+          );
+        ''')
+        ..execute(
+          'INSERT INTO message_attachments '
+          '(id, created_at, updated_at, message_id, local_path, file_name, '
+          'mime_type, modality, size_bytes) '
+          'VALUES (?, 0, 0, ?, ?, ?, ?, ?, ?)',
+          [
+            'attachment-1',
+            'message-1',
+            '/tmp/image.png',
+            'image.png',
+            'image/png',
+            'image',
+            10,
+          ],
+        );
+      fixture.database = AppDatabase(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(message_attachments)')
+          .get();
+      final attachment = await fixture.database
+          .customSelect(
+            'SELECT display_name FROM message_attachments WHERE id = ?',
+            variables: [const Variable<String>('attachment-1')],
+          )
+          .getSingle();
+
+      expect(
+        columns.map((column) => column.read<String>('name')),
+        contains('display_name'),
+      );
+      expect(attachment.read<String>('display_name'), 'image.png');
+    });
+
     test(
       'migration from schema 3 adds child conversations and agent defaults',
       () async {
