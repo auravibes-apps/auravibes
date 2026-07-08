@@ -155,56 +155,23 @@ class SubAgentRunner {
       );
       if (activeTracker.isStopped(child.id)) {
         completionStatus = SubAgentCompletionStatus.stopped;
-        final assistant = await messageStore.latestAssistantContent(child.id);
 
-        return jsonEncode({
-          'conversationId': child.id,
-          'status': 'stopped',
-          'content': assistant,
-          'agentId': ?agentId,
-        });
+        return _result(child.id, 'stopped', agentId: agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
-        final status = await activeTracker.waitForCompletion(child.id);
-        if (status == SubAgentCompletionStatus.stopped) {
-          completionStatus = SubAgentCompletionStatus.stopped;
-          final assistant = await messageStore.latestAssistantContent(child.id);
+        final waitResult = await _waitForToolApproval(child.id, agentId);
+        if (waitResult != null) {
+          completionStatus = waitResult.status;
 
-          return jsonEncode({
-            'conversationId': child.id,
-            'status': 'stopped',
-            'content': assistant,
-            'agentId': ?agentId,
-          });
-        }
-        if (status == SubAgentCompletionStatus.error) {
-          completionStatus = SubAgentCompletionStatus.error;
-
-          return jsonEncode({
-            'conversationId': child.id,
-            'status': 'error',
-            'content': 'Sub-agent failed.',
-            'agentId': ?agentId,
-          });
+          return waitResult.content;
         }
       }
-      final assistant = await messageStore.latestAssistantContent(child.id);
 
-      return jsonEncode({
-        'conversationId': child.id,
-        'status': 'done',
-        'content': assistant,
-        'agentId': ?agentId,
-      });
+      return _result(child.id, 'done', agentId: agentId);
     } on Object {
       completionStatus = SubAgentCompletionStatus.error;
 
-      return jsonEncode({
-        'conversationId': child.id,
-        'status': 'error',
-        'content': 'Sub-agent failed.',
-        'agentId': ?agentId,
-      });
+      return _failedResult(child.id, agentId);
     } finally {
       activeTracker.finish(
         parentId: parentConversationId,
@@ -213,6 +180,58 @@ class SubAgentRunner {
       );
     }
   }
+
+  Future<_SubAgentWaitResult?> _waitForToolApproval(
+    String conversationId,
+    String? agentId,
+  ) async {
+    final status = await activeTracker.waitForCompletion(conversationId);
+    if (status == SubAgentCompletionStatus.stopped) {
+      return _SubAgentWaitResult(
+        SubAgentCompletionStatus.stopped,
+        await _result(conversationId, 'stopped', agentId: agentId),
+      );
+    }
+    if (status == SubAgentCompletionStatus.error) {
+      return _SubAgentWaitResult(
+        SubAgentCompletionStatus.error,
+        _failedResult(conversationId, agentId),
+      );
+    }
+
+    return null;
+  }
+
+  Future<String> _result(
+    String conversationId,
+    String status, {
+    String? agentId,
+  }) async {
+    final assistant = await messageStore.latestAssistantContent(conversationId);
+
+    return jsonEncode({
+      'conversationId': conversationId,
+      'status': status,
+      'content': assistant,
+      'agentId': ?agentId,
+    });
+  }
+
+  String _failedResult(String conversationId, String? agentId) {
+    return jsonEncode({
+      'conversationId': conversationId,
+      'status': 'error',
+      'content': 'Sub-agent failed.',
+      'agentId': ?agentId,
+    });
+  }
+}
+
+final class _SubAgentWaitResult {
+  const _SubAgentWaitResult(this.status, this.content);
+
+  final SubAgentCompletionStatus status;
+  final String content;
 }
 
 abstract interface class SubAgentCatalog {

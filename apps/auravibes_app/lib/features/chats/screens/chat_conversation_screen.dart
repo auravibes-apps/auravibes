@@ -333,13 +333,17 @@ class _LoadedChatConversation extends HookConsumerWidget {
       ),
       appBar: AuraAppBarWithDrawer(
         title: Text(conversation.title),
-        leading: showInputComposer
-            ? null
-            : AuraIconButton(
-                icon: Icons.arrow_back,
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+        leading: _leading(context),
       ),
+    );
+  }
+
+  Widget? _leading(BuildContext context) {
+    if (showInputComposer) return null;
+
+    return AuraIconButton(
+      icon: Icons.arrow_back,
+      onPressed: () => Navigator.of(context).pop(),
     );
   }
 }

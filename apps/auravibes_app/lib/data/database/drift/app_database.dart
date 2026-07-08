@@ -134,39 +134,13 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(agentTools);
         }
         if (from < 4) {
-          await m.addColumn(
-            conversations,
-            conversations.parentConversationId,
-          );
-          await m.createTable(messageAttachments);
+          await _upgradeToSchema4(m);
         }
         if (from == 4) {
-          final hasMessageAttachments = await _tableExists(
-            'message_attachments',
-          );
-          if (hasMessageAttachments) {
-            final hasDisplayName = await _columnExists(
-              'message_attachments',
-              'display_name',
-            );
-            if (!hasDisplayName) {
-              await m.addColumn(
-                messageAttachments,
-                messageAttachments.displayName,
-              );
-            }
-            await customStatement(
-              'UPDATE message_attachments SET display_name = file_name '
-              'WHERE display_name IS NULL OR length(display_name) = 0;',
-            );
-          } else {
-            await m.createTable(messageAttachments);
-          }
+          await _upgradeSplitSchema4(m);
         }
         if (from >= 2 && from < 5) {
-          await m.addColumn(agents, agents.description);
-          await m.addColumn(agents, agents.isEnabled);
-          await m.addColumn(agents, agents.visibility);
+          await _upgradeAgentsToSchema5(m);
         }
         if (from < 5) {
           await customStatement(
@@ -176,6 +150,41 @@ class AppDatabase extends _$AppDatabase {
         }
       },
     );
+  }
+
+  Future<void> _upgradeToSchema4(Migrator m) async {
+    await m.addColumn(
+      conversations,
+      conversations.parentConversationId,
+    );
+    await m.createTable(messageAttachments);
+  }
+
+  Future<void> _upgradeSplitSchema4(Migrator m) async {
+    final hasMessageAttachments = await _tableExists('message_attachments');
+    if (!hasMessageAttachments) {
+      await m.createTable(messageAttachments);
+
+      return;
+    }
+
+    final hasDisplayName = await _columnExists(
+      'message_attachments',
+      'display_name',
+    );
+    if (!hasDisplayName) {
+      await m.addColumn(messageAttachments, messageAttachments.displayName);
+    }
+    await customStatement(
+      'UPDATE message_attachments SET display_name = file_name '
+      'WHERE display_name IS NULL OR length(display_name) = 0;',
+    );
+  }
+
+  Future<void> _upgradeAgentsToSchema5(Migrator m) async {
+    await m.addColumn(agents, agents.description);
+    await m.addColumn(agents, agents.isEnabled);
+    await m.addColumn(agents, agents.visibility);
   }
 
   /// Creates a database connection using drift_flutter.

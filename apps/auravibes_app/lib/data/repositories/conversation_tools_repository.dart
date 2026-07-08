@@ -336,39 +336,10 @@ class ConversationToolsRepository {
     final isChildConversation = conversation?.parentConversationId != null;
 
     if (isChildConversation) {
-      final agentResult = await _agentToolPermissionResult(
+      return _childConversationToolPermissionResult(
         conversationId: conversationId,
-        toolId: workspaceTool.id,
-      );
-      if (agentResult == ToolPermissionResult.disabledByAgent) {
-        return ToolPermissionResult.disabledByAgent;
-      }
-
-      final parentConversationTool = await getConversationTool(
-        permissionConversationId,
-        workspaceTool.id,
-      );
-      final parentResult = parentConversationTool == null
-          ? null
-          : _conversationToolPermissionResult(parentConversationTool);
-      if (parentResult == ToolPermissionResult.disabledInConversation) {
-        return ToolPermissionResult.disabledInConversation;
-      }
-
-      final childConversationTool = await getConversationTool(
-        conversationId,
-        workspaceTool.id,
-      );
-      if (childConversationTool != null) {
-        return _conversationToolPermissionResult(childConversationTool);
-      }
-
-      if (agentResult != null) return agentResult;
-      if (parentResult != null) return parentResult;
-
-      return _permissionModeResult(
-        workspaceTool.permissionMode,
-        denyResult: ToolPermissionResult.disabledInWorkspace,
+        parentConversationId: permissionConversationId,
+        workspaceTool: workspaceTool,
       );
     }
 
@@ -392,6 +363,52 @@ class ConversationToolsRepository {
       workspaceTool.permissionMode,
       denyResult: ToolPermissionResult.disabledInWorkspace,
     );
+  }
+
+  Future<ToolPermissionResult> _childConversationToolPermissionResult({
+    required String conversationId,
+    required String parentConversationId,
+    required WorkspaceToolEntity workspaceTool,
+  }) async {
+    final agentResult = await _agentToolPermissionResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (agentResult == ToolPermissionResult.disabledByAgent) {
+      return ToolPermissionResult.disabledByAgent;
+    }
+
+    final parentResult = await _conversationToolResult(
+      conversationId: parentConversationId,
+      toolId: workspaceTool.id,
+    );
+    if (parentResult == ToolPermissionResult.disabledInConversation) {
+      return ToolPermissionResult.disabledInConversation;
+    }
+
+    final childResult = await _conversationToolResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (childResult != null) return childResult;
+    if (agentResult != null) return agentResult;
+    if (parentResult != null) return parentResult;
+
+    return _permissionModeResult(
+      workspaceTool.permissionMode,
+      denyResult: ToolPermissionResult.disabledInWorkspace,
+    );
+  }
+
+  Future<ToolPermissionResult?> _conversationToolResult({
+    required String conversationId,
+    required String toolId,
+  }) async {
+    final conversationTool = await getConversationTool(conversationId, toolId);
+
+    return conversationTool == null
+        ? null
+        : _conversationToolPermissionResult(conversationTool);
   }
 
   ToolPermissionResult _conversationToolPermissionResult(
