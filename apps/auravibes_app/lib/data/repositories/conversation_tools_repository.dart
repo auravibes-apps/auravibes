@@ -194,14 +194,7 @@ class ConversationToolsRepository {
     // Check if workspace has tool enabled.
     final workspaceEnabled = await _workspaceToolsRepository
         .isWorkspaceToolEnabled(workspaceId, toolId);
-
-    // Check if conversation has disabled override for this tool.
-    final conversationDisabled = await _dao.isConversationToolDisabled(
-      await _conversationPermissionConversationId(conversationId),
-      toolId,
-    );
-
-    if (!workspaceEnabled || conversationDisabled) return false;
+    if (!workspaceEnabled) return false;
 
     final permission = await checkToolPermission(
       conversationId: conversationId,

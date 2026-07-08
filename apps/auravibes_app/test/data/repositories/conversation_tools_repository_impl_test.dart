@@ -947,6 +947,22 @@ void main() {
             'tool-1',
           ),
         ).thenAnswer((_) async => true);
+        when(
+          () => fixture.mockWorkspaceToolsRepository.getWorkspaceTool(
+            'ws-1',
+            'tool-1',
+          ),
+        ).thenAnswer(
+          (_) async => WorkspaceToolEntity(
+            id: 'tool-1',
+            workspaceId: 'ws-1',
+            toolId: 'tool-1',
+            isEnabled: true,
+            permissionMode: ToolPermissionMode.alwaysAllow,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+          ),
+        );
 
         final _ = await fixture.database.conversationToolsDao
             .upsertConversationTool(
