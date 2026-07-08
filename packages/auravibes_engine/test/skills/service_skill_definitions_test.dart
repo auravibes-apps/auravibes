@@ -105,7 +105,7 @@ void main() {
         (skill) => skill.slug == 'searxng',
       );
       final tool = searXng.nativeTools.single;
-      final properties = tool.inputJsonSchema!['properties'] as Map;
+      final properties = tool.inputJsonSchema['properties'] as Map;
 
       expect(searXng.requiresCredential, isTrue);
       expect(tool.requiresCredential, isTrue);
@@ -150,7 +150,7 @@ Map<String, Object?> _properties(String skillSlug, String toolSlug) {
   final tool = skill.nativeTools.singleWhere((tool) => tool.slug == toolSlug);
 
   return Map<String, Object?>.from(
-    tool.inputJsonSchema!['properties']! as Map,
+    tool.inputJsonSchema['properties']! as Map,
   );
 }
 

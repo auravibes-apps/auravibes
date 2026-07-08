@@ -135,12 +135,7 @@ Map<String, Object?> _schemaFor(
   List<AppSkillCredentialCandidate> candidates,
 ) {
   final schema = Map<String, Object?>.from(
-    tool.inputJsonSchema ??
-        const {
-          'type': 'object',
-          'properties': <String, Object?>{},
-          'additionalProperties': false,
-        },
+    tool.inputJsonSchema,
   );
   final properties = Map<String, Object?>.from(
     (schema['properties'] as Map?) ?? const <String, Object?>{},
