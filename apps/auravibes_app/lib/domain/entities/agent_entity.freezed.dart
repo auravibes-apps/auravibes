@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AgentEntity {
 
- String get id; String get workspaceId; String get name; String get content; List<AgentSkillRef> get skills; DateTime get createdAt; DateTime get updatedAt;
+ String get id; String get workspaceId; String get name; String get content; List<AgentSkillRef> get skills; DateTime get createdAt; DateTime get updatedAt; String get description; bool get isEnabled; AgentVisibility get visibility;
 /// Create a copy of AgentEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AgentEntityCopyWith<AgentEntity> get copyWith => _$AgentEntityCopyWithImpl<Agen
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.skills, skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.skills, skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(skills),createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(skills),createdAt,updatedAt,description,isEnabled,visibility);
 
 @override
 String toString() {
-  return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled, visibility: $visibility)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AgentEntityCopyWith<$Res>  {
   factory $AgentEntityCopyWith(AgentEntity value, $Res Function(AgentEntity) _then) = _$AgentEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String workspaceId, String name, String content, List<AgentSkillRef> skills, DateTime createdAt, DateTime updatedAt
+ String id, String workspaceId, String name, String content, List<AgentSkillRef> skills, DateTime createdAt, DateTime updatedAt, String description, bool isEnabled, AgentVisibility visibility
 });
 
 
@@ -62,7 +62,7 @@ class _$AgentEntityCopyWithImpl<$Res>
 
 /// Create a copy of AgentEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? content = null,Object? skills = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? content = null,Object? skills = null,Object? createdAt = null,Object? updatedAt = null,Object? description = null,Object? isEnabled = null,Object? visibility = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -71,7 +71,10 @@ as String,content: null == content ? _self.content : content // ignore: cast_nul
 as String,skills: null == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
 as List<AgentSkillRef>,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,visibility: null == visibility ? _self.visibility : visibility // ignore: cast_nullable_to_non_nullable
+as AgentVisibility,
   ));
 }
 
@@ -156,10 +159,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String content,  List<AgentSkillRef> skills,  DateTime createdAt,  DateTime updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String content,  List<AgentSkillRef> skills,  DateTime createdAt,  DateTime updatedAt,  String description,  bool isEnabled,  AgentVisibility visibility)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AgentEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills,_that.createdAt,_that.updatedAt,_that.description,_that.isEnabled,_that.visibility);case _:
   return orElse();
 
 }
@@ -177,10 +180,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String content,  List<AgentSkillRef> skills,  DateTime createdAt,  DateTime updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String workspaceId,  String name,  String content,  List<AgentSkillRef> skills,  DateTime createdAt,  DateTime updatedAt,  String description,  bool isEnabled,  AgentVisibility visibility)  $default,) {final _that = this;
 switch (_that) {
 case _AgentEntity():
-return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills,_that.createdAt,_that.updatedAt,_that.description,_that.isEnabled,_that.visibility);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +200,10 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String content,  List<AgentSkillRef> skills,  DateTime createdAt,  DateTime updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String workspaceId,  String name,  String content,  List<AgentSkillRef> skills,  DateTime createdAt,  DateTime updatedAt,  String description,  bool isEnabled,  AgentVisibility visibility)?  $default,) {final _that = this;
 switch (_that) {
 case _AgentEntity() when $default != null:
-return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills,_that.createdAt,_that.updatedAt);case _:
+return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills,_that.createdAt,_that.updatedAt,_that.description,_that.isEnabled,_that.visibility);case _:
   return null;
 
 }
@@ -212,7 +215,7 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills
 
 
 class _AgentEntity extends AgentEntity {
-  const _AgentEntity({required this.id, required this.workspaceId, required this.name, required this.content, required final  List<AgentSkillRef> skills, required this.createdAt, required this.updatedAt}): _skills = skills,super._();
+  const _AgentEntity({required this.id, required this.workspaceId, required this.name, required this.content, required final  List<AgentSkillRef> skills, required this.createdAt, required this.updatedAt, this.description = '', this.isEnabled = true, this.visibility = AgentVisibility.both}): _skills = skills,super._();
   
 
 @override final  String id;
@@ -228,6 +231,9 @@ class _AgentEntity extends AgentEntity {
 
 @override final  DateTime createdAt;
 @override final  DateTime updatedAt;
+@override@JsonKey() final  String description;
+@override@JsonKey() final  bool isEnabled;
+@override@JsonKey() final  AgentVisibility visibility;
 
 /// Create a copy of AgentEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -239,16 +245,16 @@ _$AgentEntityCopyWith<_AgentEntity> get copyWith => __$AgentEntityCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._skills, _skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._skills, _skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(_skills),createdAt,updatedAt);
+int get hashCode => Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(_skills),createdAt,updatedAt,description,isEnabled,visibility);
 
 @override
 String toString() {
-  return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt)';
+  return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled, visibility: $visibility)';
 }
 
 
@@ -259,7 +265,7 @@ abstract mixin class _$AgentEntityCopyWith<$Res> implements $AgentEntityCopyWith
   factory _$AgentEntityCopyWith(_AgentEntity value, $Res Function(_AgentEntity) _then) = __$AgentEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String workspaceId, String name, String content, List<AgentSkillRef> skills, DateTime createdAt, DateTime updatedAt
+ String id, String workspaceId, String name, String content, List<AgentSkillRef> skills, DateTime createdAt, DateTime updatedAt, String description, bool isEnabled, AgentVisibility visibility
 });
 
 
@@ -276,7 +282,7 @@ class __$AgentEntityCopyWithImpl<$Res>
 
 /// Create a copy of AgentEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? content = null,Object? skills = null,Object? createdAt = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? content = null,Object? skills = null,Object? createdAt = null,Object? updatedAt = null,Object? description = null,Object? isEnabled = null,Object? visibility = null,}) {
   return _then(_AgentEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
@@ -285,7 +291,10 @@ as String,content: null == content ? _self.content : content // ignore: cast_nul
 as String,skills: null == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
 as List<AgentSkillRef>,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,visibility: null == visibility ? _self.visibility : visibility // ignore: cast_nullable_to_non_nullable
+as AgentVisibility,
   ));
 }
 
@@ -295,7 +304,7 @@ as DateTime,
 /// @nodoc
 mixin _$AgentToCreate {
 
- String get name; String get content; List<AgentSkillRef> get skills;
+ String get name; String get description; String get content; bool get isEnabled; AgentVisibility get visibility; List<AgentSkillRef> get skills;
 /// Create a copy of AgentToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -306,16 +315,16 @@ $AgentToCreateCopyWith<AgentToCreate> get copyWith => _$AgentToCreateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.skills, skills));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other.skills, skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,content,const DeepCollectionEquality().hash(skills));
+int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(skills));
 
 @override
 String toString() {
-  return 'AgentToCreate(name: $name, content: $content, skills: $skills)';
+  return 'AgentToCreate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
 }
 
 
@@ -326,7 +335,7 @@ abstract mixin class $AgentToCreateCopyWith<$Res>  {
   factory $AgentToCreateCopyWith(AgentToCreate value, $Res Function(AgentToCreate) _then) = _$AgentToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, String content, List<AgentSkillRef> skills
+ String name, String description, String content, bool isEnabled, AgentVisibility visibility, List<AgentSkillRef> skills
 });
 
 
@@ -343,11 +352,14 @@ class _$AgentToCreateCopyWithImpl<$Res>
 
 /// Create a copy of AgentToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? content = null,Object? skills = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? visibility = null,Object? skills = null,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,skills: null == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
+as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,visibility: null == visibility ? _self.visibility : visibility // ignore: cast_nullable_to_non_nullable
+as AgentVisibility,skills: null == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
 as List<AgentSkillRef>,
   ));
 }
@@ -433,10 +445,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String content,  List<AgentSkillRef> skills)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String description,  String content,  bool isEnabled,  AgentVisibility visibility,  List<AgentSkillRef> skills)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AgentToCreate() when $default != null:
-return $default(_that.name,_that.content,_that.skills);case _:
+return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that.visibility,_that.skills);case _:
   return orElse();
 
 }
@@ -454,10 +466,10 @@ return $default(_that.name,_that.content,_that.skills);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String content,  List<AgentSkillRef> skills)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String description,  String content,  bool isEnabled,  AgentVisibility visibility,  List<AgentSkillRef> skills)  $default,) {final _that = this;
 switch (_that) {
 case _AgentToCreate():
-return $default(_that.name,_that.content,_that.skills);case _:
+return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that.visibility,_that.skills);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -474,10 +486,10 @@ return $default(_that.name,_that.content,_that.skills);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String content,  List<AgentSkillRef> skills)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String description,  String content,  bool isEnabled,  AgentVisibility visibility,  List<AgentSkillRef> skills)?  $default,) {final _that = this;
 switch (_that) {
 case _AgentToCreate() when $default != null:
-return $default(_that.name,_that.content,_that.skills);case _:
+return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that.visibility,_that.skills);case _:
   return null;
 
 }
@@ -489,11 +501,14 @@ return $default(_that.name,_that.content,_that.skills);case _:
 
 
 class _AgentToCreate extends AgentToCreate {
-  const _AgentToCreate({required this.name, required this.content, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
+  const _AgentToCreate({required this.name, required this.description, required this.content, this.isEnabled = true, this.visibility = AgentVisibility.both, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
   
 
 @override final  String name;
+@override final  String description;
 @override final  String content;
+@override@JsonKey() final  bool isEnabled;
+@override@JsonKey() final  AgentVisibility visibility;
  final  List<AgentSkillRef> _skills;
 @override@JsonKey() List<AgentSkillRef> get skills {
   if (_skills is EqualUnmodifiableListView) return _skills;
@@ -512,16 +527,16 @@ _$AgentToCreateCopyWith<_AgentToCreate> get copyWith => __$AgentToCreateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._skills, _skills));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other._skills, _skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,content,const DeepCollectionEquality().hash(_skills));
+int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(_skills));
 
 @override
 String toString() {
-  return 'AgentToCreate(name: $name, content: $content, skills: $skills)';
+  return 'AgentToCreate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
 }
 
 
@@ -532,7 +547,7 @@ abstract mixin class _$AgentToCreateCopyWith<$Res> implements $AgentToCreateCopy
   factory _$AgentToCreateCopyWith(_AgentToCreate value, $Res Function(_AgentToCreate) _then) = __$AgentToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String content, List<AgentSkillRef> skills
+ String name, String description, String content, bool isEnabled, AgentVisibility visibility, List<AgentSkillRef> skills
 });
 
 
@@ -549,11 +564,14 @@ class __$AgentToCreateCopyWithImpl<$Res>
 
 /// Create a copy of AgentToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? content = null,Object? skills = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? visibility = null,Object? skills = null,}) {
   return _then(_AgentToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,skills: null == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
+as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,visibility: null == visibility ? _self.visibility : visibility // ignore: cast_nullable_to_non_nullable
+as AgentVisibility,skills: null == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
 as List<AgentSkillRef>,
   ));
 }
@@ -564,7 +582,7 @@ as List<AgentSkillRef>,
 /// @nodoc
 mixin _$AgentToUpdate {
 
- String get name; String get content; List<AgentSkillRef> get skills;
+ String get name; String get description; String get content; bool get isEnabled; AgentVisibility get visibility; List<AgentSkillRef> get skills;
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -575,16 +593,16 @@ $AgentToUpdateCopyWith<AgentToUpdate> get copyWith => _$AgentToUpdateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.skills, skills));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other.skills, skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,content,const DeepCollectionEquality().hash(skills));
+int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(skills));
 
 @override
 String toString() {
-  return 'AgentToUpdate(name: $name, content: $content, skills: $skills)';
+  return 'AgentToUpdate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
 }
 
 
@@ -595,7 +613,7 @@ abstract mixin class $AgentToUpdateCopyWith<$Res>  {
   factory $AgentToUpdateCopyWith(AgentToUpdate value, $Res Function(AgentToUpdate) _then) = _$AgentToUpdateCopyWithImpl;
 @useResult
 $Res call({
- String name, String content, List<AgentSkillRef> skills
+ String name, String description, String content, bool isEnabled, AgentVisibility visibility, List<AgentSkillRef> skills
 });
 
 
@@ -612,11 +630,14 @@ class _$AgentToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? content = null,Object? skills = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? visibility = null,Object? skills = null,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,skills: null == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
+as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,visibility: null == visibility ? _self.visibility : visibility // ignore: cast_nullable_to_non_nullable
+as AgentVisibility,skills: null == skills ? _self.skills : skills // ignore: cast_nullable_to_non_nullable
 as List<AgentSkillRef>,
   ));
 }
@@ -702,10 +723,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String content,  List<AgentSkillRef> skills)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String description,  String content,  bool isEnabled,  AgentVisibility visibility,  List<AgentSkillRef> skills)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AgentToUpdate() when $default != null:
-return $default(_that.name,_that.content,_that.skills);case _:
+return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that.visibility,_that.skills);case _:
   return orElse();
 
 }
@@ -723,10 +744,10 @@ return $default(_that.name,_that.content,_that.skills);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String content,  List<AgentSkillRef> skills)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String description,  String content,  bool isEnabled,  AgentVisibility visibility,  List<AgentSkillRef> skills)  $default,) {final _that = this;
 switch (_that) {
 case _AgentToUpdate():
-return $default(_that.name,_that.content,_that.skills);case _:
+return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that.visibility,_that.skills);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -743,10 +764,10 @@ return $default(_that.name,_that.content,_that.skills);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String content,  List<AgentSkillRef> skills)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String description,  String content,  bool isEnabled,  AgentVisibility visibility,  List<AgentSkillRef> skills)?  $default,) {final _that = this;
 switch (_that) {
 case _AgentToUpdate() when $default != null:
-return $default(_that.name,_that.content,_that.skills);case _:
+return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that.visibility,_that.skills);case _:
   return null;
 
 }
@@ -758,11 +779,14 @@ return $default(_that.name,_that.content,_that.skills);case _:
 
 
 class _AgentToUpdate extends AgentToUpdate {
-  const _AgentToUpdate({required this.name, required this.content, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
+  const _AgentToUpdate({required this.name, required this.description, required this.content, this.isEnabled = true, this.visibility = AgentVisibility.both, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
   
 
 @override final  String name;
+@override final  String description;
 @override final  String content;
+@override@JsonKey() final  bool isEnabled;
+@override@JsonKey() final  AgentVisibility visibility;
  final  List<AgentSkillRef> _skills;
 @override@JsonKey() List<AgentSkillRef> get skills {
   if (_skills is EqualUnmodifiableListView) return _skills;
@@ -781,16 +805,16 @@ _$AgentToUpdateCopyWith<_AgentToUpdate> get copyWith => __$AgentToUpdateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._skills, _skills));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other._skills, _skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,content,const DeepCollectionEquality().hash(_skills));
+int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(_skills));
 
 @override
 String toString() {
-  return 'AgentToUpdate(name: $name, content: $content, skills: $skills)';
+  return 'AgentToUpdate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
 }
 
 
@@ -801,7 +825,7 @@ abstract mixin class _$AgentToUpdateCopyWith<$Res> implements $AgentToUpdateCopy
   factory _$AgentToUpdateCopyWith(_AgentToUpdate value, $Res Function(_AgentToUpdate) _then) = __$AgentToUpdateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String content, List<AgentSkillRef> skills
+ String name, String description, String content, bool isEnabled, AgentVisibility visibility, List<AgentSkillRef> skills
 });
 
 
@@ -818,11 +842,14 @@ class __$AgentToUpdateCopyWithImpl<$Res>
 
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? content = null,Object? skills = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? visibility = null,Object? skills = null,}) {
   return _then(_AgentToUpdate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
-as String,skills: null == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
+as String,isEnabled: null == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
+as bool,visibility: null == visibility ? _self.visibility : visibility // ignore: cast_nullable_to_non_nullable
+as AgentVisibility,skills: null == skills ? _self._skills : skills // ignore: cast_nullable_to_non_nullable
 as List<AgentSkillRef>,
   ));
 }

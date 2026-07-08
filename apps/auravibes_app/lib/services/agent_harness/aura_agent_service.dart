@@ -3,6 +3,7 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
@@ -18,7 +19,9 @@ import 'package:auravibes_app/services/agent_harness/skip_tool_call_service.dart
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([pendingToolCalls])
 final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
   (ref) {
     final continueAgentService = ref.watch(continueAgentServiceProvider);
@@ -26,9 +29,11 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
     final toolCallActions = AppToolCallActionsDataProvider(
       messageRepository: ref.watch(messageRepositoryProvider),
       agentToolResumeService: agentToolResumeService,
+      onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
+      activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
     );
 
-    return agent.AuraAgentService<ResolvedTool>(
+    final service = agent.AuraAgentService<ResolvedTool>(
       data: AppAgentConversationDataProvider(
         conversationRepository: ref.watch(conversationRepositoryProvider),
         messageRepository: ref.watch(messageRepositoryProvider),
@@ -54,6 +59,7 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
           agentToolResumeService: agentToolResumeService,
           runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
           agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+          onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
         ),
         skips: toolCallActions,
         stopPending: toolCallActions,
@@ -65,7 +71,16 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
         retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
       ),
     );
+
+    final subAgentTurnRunner = service.agent.continueTurn;
+    agent.subAgentTurnRunner.runner = subAgentTurnRunner;
+    final _ = ref.onDispose(
+      () => agent.subAgentTurnRunner.clear(subAgentTurnRunner),
+    );
+
+    return service;
   },
+  dependencies: [pendingToolCallsProvider],
 );
 
 class AppAgentRuntimeProvider implements agent.AgentRuntimeProvider {

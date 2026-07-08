@@ -100,7 +100,16 @@ class _AgentsList extends ConsumerWidget {
         return AuraTile(
           child: AuraColumn(
             children: [
-              Text(agent.name),
+              Row(
+                children: [
+                  Expanded(child: Text(agent.name)),
+                  if (!agent.isEnabled)
+                    AuraBadge.text(
+                      child: const TextLocale(LocaleKeys.agents_disabled_label),
+                      variant: AuraBadgeVariant.neutral,
+                    ),
+                ],
+              ),
               AuraText(
                 child: Text(
                   LocaleKeys.agents_skill_count.plural(
@@ -108,6 +117,10 @@ class _AgentsList extends ConsumerWidget {
                     context: context,
                   ),
                 ),
+                style: AuraTextStyle.bodySmall,
+              ),
+              AuraText(
+                child: Text(agent.visibility.localizedLabel(context)),
                 style: AuraTextStyle.bodySmall,
               ),
             ],
@@ -169,5 +182,19 @@ class _AgentsList extends ConsumerWidget {
 
     final _ = await ref.read(deleteAgentUsecaseProvider).call(agentId);
     final _ = ref.invalidate(agentsProvider(workspaceId));
+  }
+}
+
+extension _AgentVisibilityLabel on AgentVisibility {
+  String localizedLabel(BuildContext context) {
+    return switch (this) {
+      AgentVisibility.chatSelector =>
+        LocaleKeys.agents_visibility_chat_selector.tr(context: context),
+      AgentVisibility.subAgentList =>
+        LocaleKeys.agents_visibility_sub_agent_list.tr(context: context),
+      AgentVisibility.both => LocaleKeys.agents_visibility_both.tr(
+        context: context,
+      ),
+    };
   }
 }

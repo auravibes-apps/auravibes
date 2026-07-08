@@ -139,6 +139,7 @@ class _ApprovalCardContent extends ConsumerWidget {
             displayName: displayName,
             toolName: toolCall.name,
             argumentsRaw: toolCall.argumentsRaw,
+            sourceLabel: current.sourceLabel,
           ),
           _ConfirmationButtons(
             toolCall: toolCall,
@@ -231,11 +232,13 @@ class _ToolCallInfo extends StatelessWidget {
     required this.displayName,
     required this.toolName,
     required this.argumentsRaw,
+    required this.sourceLabel,
   });
 
   final String displayName;
   final String toolName;
   final String argumentsRaw;
+  final String? sourceLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -269,6 +272,15 @@ class _ToolCallInfo extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+          if (sourceLabel case final sourceLabel? when sourceLabel.isNotEmpty)
+            Text(
+              sourceLabel,
+              style: TextStyle(
+                color: auraColors.onSurfaceVariant,
+                fontSize: context.auraTheme.typography.fontSizeXs,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           if (decodedArgs != null) ...[
             const AuraSizedBox(height: .xs),
             Text(
@@ -344,7 +356,25 @@ Object? _redactCredentialValues(Object? value) {
     };
   }
 
+  if (value is String) {
+    final decoded = _tryDecodeJsonString(value);
+    if (decoded == null) return value;
+
+    return _redactCredentialValues(decoded);
+  }
+
   return value;
+}
+
+Object? _tryDecodeJsonString(String value) {
+  final trimmed = value.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+
+  try {
+    return jsonDecode(trimmed);
+  } on Exception {
+    return null;
+  }
 }
 
 bool _isSensitiveKey(Object? key) {

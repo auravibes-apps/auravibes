@@ -847,4 +847,18 @@ class _StubConversationRepository implements ConversationRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) {
+    return const Stream.empty();
+  }
+
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) async {
+    return const [];
+  }
 }

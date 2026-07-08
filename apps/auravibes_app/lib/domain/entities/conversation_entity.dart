@@ -35,6 +35,9 @@ abstract class ConversationEntity with _$ConversationEntity {
 
     /// ID of the selected agent used for this conversation.
     String? agentId,
+
+    /// Parent conversation id for hidden child/sub-agent conversations.
+    String? parentConversationId,
   }) = _ConversationEntity;
   const ConversationEntity._();
 
@@ -62,6 +65,9 @@ abstract class ConversationToCreate with _$ConversationToCreate {
     /// ID of the selected agent used for this conversation.
     String? agentId,
 
+    /// Parent conversation id for hidden child/sub-agent conversations.
+    String? parentConversationId,
+
     /// Whether this conversation is pinned.
     bool? isPinned,
   }) = _ConversationToCreate;
@@ -74,11 +80,13 @@ abstract class ConversationToCreate with _$ConversationToCreate {
   bool get isValid {
     final modelId = this.modelId;
     final agentId = this.agentId;
+    final parentConversationId = this.parentConversationId;
 
     return hasValidTitle &&
         workspaceId.isNotEmpty &&
         (modelId == null || modelId.isNotEmpty) &&
-        (agentId == null || agentId.isNotEmpty);
+        (agentId == null || agentId.isNotEmpty) &&
+        (parentConversationId == null || parentConversationId.isNotEmpty);
   }
 }
 

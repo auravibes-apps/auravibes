@@ -15,5 +15,11 @@ class Agents extends Table with TableMixin {
 
   TextColumn get name => text()();
 
+  TextColumn get description => text().withDefault(const Constant(''))();
+
   TextColumn get content => text()();
+
+  BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
+
+  TextColumn get visibility => text().withDefault(const Constant('both'))();
 }

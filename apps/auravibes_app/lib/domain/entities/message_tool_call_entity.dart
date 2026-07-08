@@ -218,15 +218,30 @@ abstract class MessageToCreate with _$MessageToCreate {
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
+    if (content.trim().isNotEmpty) {
+      return true;
+    }
+
+    if (attachments.isNotEmpty) {
+      return true;
+    }
+
     final metadata = this.metadata;
 
-    return content.trim().isNotEmpty ||
-        attachments.isNotEmpty ||
-        status != MessageStatus.sent &&
-            !isUser &&
-            metadata != null &&
-            metadata.trim().isNotEmpty &&
-            safeJsonDecode(metadata) != null;
+    if (status == MessageStatus.unfinished && !isUser) {
+      return metadata == null ||
+          metadata.trim().isEmpty ||
+          safeJsonDecode(metadata) != null;
+    }
+
+    if (status == MessageStatus.sent) {
+      return false;
+    }
+
+    return !isUser &&
+        metadata != null &&
+        metadata.trim().isNotEmpty &&
+        safeJsonDecode(metadata) != null;
   }
 
   /// Returns true if the message is in a valid state.

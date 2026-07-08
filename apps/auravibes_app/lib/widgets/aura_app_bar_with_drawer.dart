@@ -10,11 +10,13 @@ class AuraAppBarWithDrawer extends StatelessWidget
     super.key,
     this.actions,
     this.bottom,
+    this.leading,
   });
 
   final Widget title;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -22,15 +24,19 @@ class AuraAppBarWithDrawer extends StatelessWidget
       title: title,
       actions: actions,
       bottom: bottom,
-      leading: AuraIconButton(
-        icon: Icons.menu,
-        onPressed: () {
-          final controller = ResponsiveSlidingDrawerProvider.maybeOf(context);
-          if (controller != null) {
-            controller.toggle();
-          }
-        },
-      ),
+      leading:
+          leading ??
+          AuraIconButton(
+            icon: Icons.menu,
+            onPressed: () {
+              final controller = ResponsiveSlidingDrawerProvider.maybeOf(
+                context,
+              );
+              if (controller != null) {
+                controller.toggle();
+              }
+            },
+          ),
     );
   }
 

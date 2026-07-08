@@ -50,10 +50,38 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     return query.watch();
   }
 
+  Stream<List<ConversationsTable>> watchChildConversations(
+    String parentConversationId,
+  ) {
+    return _buildChildrenQuery(parentConversationId).watch();
+  }
+
+  Future<List<ConversationsTable>> getChildConversations(
+    String parentConversationId,
+  ) {
+    return _buildChildrenQuery(parentConversationId).get();
+  }
+
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
   _buildWorkspaceQuery(String workspaceId) {
     return (select(conversations)
-      ..where((tbl) => tbl.workspaceId.equals(workspaceId))
+      ..where(
+        (tbl) =>
+            tbl.workspaceId.equals(workspaceId) &
+            tbl.parentConversationId.isNull(),
+      )
+      ..orderBy([
+        (tbl) => OrderingTerm(
+          expression: tbl.updatedAt,
+          mode: OrderingMode.desc,
+        ),
+      ]));
+  }
+
+  SimpleSelectStatement<$ConversationsTable, ConversationsTable>
+  _buildChildrenQuery(String parentConversationId) {
+    return (select(conversations)
+      ..where((tbl) => tbl.parentConversationId.equals(parentConversationId))
       ..orderBy([
         (tbl) => OrderingTerm(
           expression: tbl.updatedAt,

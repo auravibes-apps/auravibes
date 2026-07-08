@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
@@ -127,7 +128,7 @@ void main() {
   group('LoadConversationToolSpecsUsecase', () {
     setUpAll(registerTestFallbackValues);
 
-    test('returns empty list when no tools', () async {
+    test('returns always-on run_sub_agent when no tools', () async {
       final usecase = LoadConversationToolSpecsUsecase(
         conversationToolsRepository: _FakeConversationToolsRepository([]),
         buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
@@ -140,7 +141,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, isEmpty);
+      expect(result.map((spec) => spec.name), [agent.runSubAgentToolName]);
     });
 
     test(
@@ -166,7 +167,7 @@ void main() {
           workspaceId: 'ws-1',
         );
 
-        expect(result, isEmpty);
+        expect(result.map((spec) => spec.name), [agent.runSubAgentToolName]);
         verify(
           () => syncUsecase.call(
             conversationId: 'conv-1',
@@ -199,7 +200,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(1));
+      expect(result, hasLength(2));
       expect(result.firstOrNull?.name, 'tool-1');
     });
 
@@ -254,7 +255,7 @@ void main() {
         conversationId: 'conv-1',
         workspaceId: 'ws-1',
       );
-      expect(result, hasLength(3));
+      expect(result, hasLength(4));
     });
 
     test('constructor stores dependencies', () {
@@ -369,6 +370,7 @@ void main() {
       expect(result.map((spec) => spec.name), [
         loadSkillToolName,
         unloadSkillToolName,
+        agent.runSubAgentToolName,
       ]);
     });
 
@@ -408,6 +410,7 @@ void main() {
         loadSkillToolName,
         unloadSkillToolName,
         listSkillCredentialsToolName,
+        agent.runSubAgentToolName,
       ]);
     });
   });

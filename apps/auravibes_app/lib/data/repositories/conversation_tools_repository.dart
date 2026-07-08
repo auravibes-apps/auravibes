@@ -194,44 +194,40 @@ class ConversationToolsRepository {
     // Check if workspace has tool enabled.
     final workspaceEnabled = await _workspaceToolsRepository
         .isWorkspaceToolEnabled(workspaceId, toolId);
+    if (!workspaceEnabled) return false;
 
-    // Check if conversation has disabled override for this tool.
-    final conversationDisabled = await _dao.isConversationToolDisabled(
-      conversationId,
-      toolId,
+    final permission = await checkToolPermission(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolId: toolId,
     );
 
-    // Tool is available if workspace enabled AND not conversation disabled.
-    return workspaceEnabled && !conversationDisabled;
+    return _isPermissionAvailable(permission);
   }
 
   Future<List<String>> getAvailableToolsForConversation(
     String conversationId,
     String workspaceId,
   ) async {
-    // Get workspace enabled tools.
-    final workspaceEnabledTools = await _workspaceToolsRepository
-        .getEnabledWorkspaceTools(workspaceId);
-
-    // Get conversation disabled tools.
-    final conversationTools = await _dao.getDisabledConversationTools(
+    final availableTools = await _getAvailableWorkspaceToolsForConversation(
       conversationId,
+      workspaceId,
     );
 
-    // Extract workspace tool row ids from disabled tools.
-    final disabledWorkspaceToolIds = conversationTools
-        .where((tool) => !tool.isEnabled)
-        .map((tool) => tool.toolId)
-        .toSet();
-
-    // Available tools = workspace enabled tools - disabled tools.
-    return workspaceEnabledTools
-        .where((tool) => !disabledWorkspaceToolIds.contains(tool.id))
-        .map((tool) => tool.toolId)
-        .toList();
+    return availableTools.map((tool) => tool.toolId).toList();
   }
 
   Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
+    String conversationId,
+    String workspaceId,
+  ) {
+    return _getAvailableWorkspaceToolsForConversation(
+      conversationId,
+      workspaceId,
+    );
+  }
+
+  Future<List<WorkspaceToolEntity>> _getAvailableWorkspaceToolsForConversation(
     String conversationId,
     String workspaceId,
   ) async {
@@ -241,7 +237,7 @@ class ConversationToolsRepository {
 
     // Get conversation disabled tools.
     final conversationTools = await _dao.getDisabledConversationTools(
-      conversationId,
+      await _conversationPermissionConversationId(conversationId),
     );
 
     // Extract workspace tool row ids from disabled tools.
@@ -250,10 +246,38 @@ class ConversationToolsRepository {
         .map((tool) => tool.toolId)
         .toSet();
 
-    // Available tools = workspace enabled tools - disabled tools.
-    return workspaceEnabledTools
-        .where((tool) => !disabledWorkspaceToolIds.contains(tool.id))
+    final permissionEntries = await Future.wait(
+      workspaceEnabledTools.map((tool) async {
+        if (disabledWorkspaceToolIds.contains(tool.id)) return null;
+
+        final permission = await checkToolPermission(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          toolId: tool.toolId,
+        );
+
+        return (
+          tool: tool,
+          isAvailable: _isPermissionAvailable(permission),
+        );
+      }),
+    );
+
+    return permissionEntries.nonNulls
+        .where((entry) => entry.isAvailable)
+        .map((entry) => entry.tool)
         .toList();
+  }
+
+  bool _isPermissionAvailable(ToolPermissionResult permission) {
+    return switch (permission) {
+      ToolPermissionResult.granted ||
+      ToolPermissionResult.needsConfirmation => true,
+      ToolPermissionResult.notConfigured ||
+      ToolPermissionResult.disabledInWorkspace ||
+      ToolPermissionResult.disabledInConversation ||
+      ToolPermissionResult.disabledByAgent => false,
+    };
   }
 
   ConversationToolEntity _tableToEntity(ConversationToolsTable table) {
@@ -297,26 +321,87 @@ class ConversationToolsRepository {
       return ToolPermissionResult.notConfigured;
     }
 
-    final conversationTool = await getConversationTool(
+    final conversation = await _database.conversationDao.getConversationById(
       conversationId,
+    );
+    final permissionConversationId =
+        conversation?.parentConversationId ?? conversationId;
+    final isChildConversation = conversation?.parentConversationId != null;
+
+    if (isChildConversation) {
+      return _childConversationToolPermissionResult(
+        conversationId: conversationId,
+        parentConversationId: permissionConversationId,
+        workspaceTool: workspaceTool,
+      );
+    }
+
+    final conversationTool = await getConversationTool(
+      permissionConversationId,
       workspaceTool.id,
     );
     if (conversationTool != null) {
       return _conversationToolPermissionResult(conversationTool);
     }
 
-    final agentResult = await _agentToolPermissionResult(
-      conversationId: conversationId,
-      toolId: workspaceTool.id,
-    );
-    if (agentResult != null) {
-      return agentResult;
+    if (!isChildConversation) {
+      final agentResult = await _agentToolPermissionResult(
+        conversationId: conversationId,
+        toolId: workspaceTool.id,
+      );
+      if (agentResult != null) return agentResult;
     }
 
     return _permissionModeResult(
       workspaceTool.permissionMode,
       denyResult: ToolPermissionResult.disabledInWorkspace,
     );
+  }
+
+  Future<ToolPermissionResult> _childConversationToolPermissionResult({
+    required String conversationId,
+    required String parentConversationId,
+    required WorkspaceToolEntity workspaceTool,
+  }) async {
+    final agentResult = await _agentToolPermissionResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (agentResult == ToolPermissionResult.disabledByAgent) {
+      return ToolPermissionResult.disabledByAgent;
+    }
+
+    final parentResult = await _conversationToolResult(
+      conversationId: parentConversationId,
+      toolId: workspaceTool.id,
+    );
+    if (parentResult == ToolPermissionResult.disabledInConversation) {
+      return ToolPermissionResult.disabledInConversation;
+    }
+
+    final childResult = await _conversationToolResult(
+      conversationId: conversationId,
+      toolId: workspaceTool.id,
+    );
+    if (childResult != null) return childResult;
+    if (agentResult != null) return agentResult;
+    if (parentResult != null) return parentResult;
+
+    return _permissionModeResult(
+      workspaceTool.permissionMode,
+      denyResult: ToolPermissionResult.disabledInWorkspace,
+    );
+  }
+
+  Future<ToolPermissionResult?> _conversationToolResult({
+    required String conversationId,
+    required String toolId,
+  }) async {
+    final conversationTool = await getConversationTool(conversationId, toolId);
+
+    return conversationTool == null
+        ? null
+        : _conversationToolPermissionResult(conversationTool);
   }
 
   ToolPermissionResult _conversationToolPermissionResult(
@@ -356,6 +441,16 @@ class ConversationToolsRepository {
       _mapPermissionAccess(agentTool.permissions),
       denyResult: ToolPermissionResult.disabledByAgent,
     );
+  }
+
+  Future<String> _conversationPermissionConversationId(
+    String conversationId,
+  ) async {
+    final conversation = await _database.conversationDao.getConversationById(
+      conversationId,
+    );
+
+    return conversation?.parentConversationId ?? conversationId;
   }
 
   ToolPermissionResult _permissionModeResult(

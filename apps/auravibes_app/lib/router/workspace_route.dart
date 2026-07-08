@@ -2,6 +2,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
@@ -21,6 +22,7 @@ import 'package:auravibes_app/features/workspaces/screens/workspace_management_s
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 part 'workspace_route.g.dart';
 
@@ -48,7 +50,14 @@ class IntroRoute extends GoRouteData with $IntroRoute {
         TypedStatefulShellBranch(
           routes: [
             TypedGoRoute<NewChatRoute>(path: 'chat/new'),
-            TypedGoRoute<ConversationRoute>(path: 'chats/:chatId'),
+            TypedGoRoute<ConversationRoute>(
+              path: 'chats/:chatId',
+              routes: [
+                TypedGoRoute<SubAgentConversationRoute>(
+                  path: 'sub-agents/:subAgentConversationId',
+                ),
+              ],
+            ),
             TypedGoRoute<ChatsRoute>(path: 'chats'),
           ],
         ),
@@ -210,6 +219,59 @@ class ConversationRoute extends GoRouteData with $ConversationRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ChatConversationScreen(workspaceId: workspaceId, chatId: chatId);
+  }
+}
+
+class SubAgentConversationRoute extends GoRouteData
+    with $SubAgentConversationRoute {
+  SubAgentConversationRoute({
+    required this.workspaceId,
+    required this.chatId,
+    required this.subAgentConversationId,
+  });
+
+  final String workspaceId;
+  final String chatId;
+  final String subAgentConversationId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return _SubAgentConversationGate(
+      workspaceId: workspaceId,
+      parentConversationId: chatId,
+      chatId: subAgentConversationId,
+    );
+  }
+}
+
+class _SubAgentConversationGate extends ConsumerWidget {
+  const _SubAgentConversationGate({
+    required this.workspaceId,
+    required this.parentConversationId,
+    required this.chatId,
+  });
+
+  final String workspaceId;
+  final String parentConversationId;
+  final String chatId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conversation = ref.watch(
+      conversationByIdStreamProvider(conversationId: chatId),
+    );
+
+    return switch (conversation) {
+      AsyncData(:final value)
+          when value?.workspaceId == workspaceId &&
+              value?.parentConversationId == parentConversationId =>
+        ChatConversationScreen(
+          workspaceId: workspaceId,
+          chatId: chatId,
+          showInputComposer: false,
+        ),
+      _ => const SizedBox.shrink(),
+    };
   }
 }
 

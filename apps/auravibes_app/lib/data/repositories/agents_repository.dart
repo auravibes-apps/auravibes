@@ -3,6 +3,9 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:drift/drift.dart';
 
 const _agentContentEmpty = 'Agent content cannot be empty';
+const _agentDescriptionEmpty = 'Agent description cannot be empty';
+const _agentDescriptionTooLong =
+    'Agent description cannot exceed 512 characters';
 const _agentNameEmpty = 'Agent name cannot be empty';
 const _unknownAgentValidationError = 'Unknown validation error';
 
@@ -17,6 +20,12 @@ class AgentsRepository {
         .asyncMap(
           _mapAgentRows,
         );
+  }
+
+  Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) async {
+    final rows = await _database.agentsDao.getAgentsByWorkspace(workspaceId);
+
+    return _mapAgentRows(rows);
   }
 
   Future<AgentEntity?> getAgentById(String agentId) async {
@@ -36,7 +45,10 @@ class AgentsRepository {
       AgentsCompanion(
         workspaceId: Value(workspaceId),
         name: Value(agent.name.trim()),
+        description: Value(agent.description.trim()),
         content: Value(agent.content.trim()),
+        isEnabled: Value(agent.isEnabled),
+        visibility: Value(agent.visibility.name),
       ),
       agent.skills.map(_mapSkillRefToCompanion).toList(),
     );
@@ -52,7 +64,10 @@ class AgentsRepository {
       AgentsCompanion(
         updatedAt: Value(DateTime.now()),
         name: Value(agent.name.trim()),
+        description: Value(agent.description.trim()),
         content: Value(agent.content.trim()),
+        isEnabled: Value(agent.isEnabled),
+        visibility: Value(agent.visibility.name),
       ),
       agent.skills.map(_mapSkillRefToCompanion).toList(),
     );
@@ -72,6 +87,10 @@ class AgentsRepository {
 
   String _agentCreateValidationMessage(AgentToCreate agent) {
     if (agent.name.trim().isEmpty) return _agentNameEmpty;
+    if (agent.description.trim().isEmpty) return _agentDescriptionEmpty;
+    if (agent.description.trim().length > agentDescriptionMaxLength) {
+      return _agentDescriptionTooLong;
+    }
     if (agent.content.trim().isEmpty) return _agentContentEmpty;
 
     return _unknownAgentValidationError;
@@ -85,6 +104,10 @@ class AgentsRepository {
 
   String _agentUpdateValidationMessage(AgentToUpdate agent) {
     if (agent.name.trim().isEmpty) return _agentNameEmpty;
+    if (agent.description.trim().isEmpty) return _agentDescriptionEmpty;
+    if (agent.description.trim().length > agentDescriptionMaxLength) {
+      return _agentDescriptionTooLong;
+    }
 
     if (agent.content.trim().isEmpty) return _agentContentEmpty;
 
@@ -123,6 +146,9 @@ class AgentsRepository {
       skills: skills.map(_mapSkillRef).toList(),
       createdAt: table.createdAt,
       updatedAt: table.updatedAt,
+      description: table.description,
+      isEnabled: table.isEnabled,
+      visibility: _agentVisibilityFromStorage(table.visibility),
     );
   }
 
@@ -134,6 +160,10 @@ class AgentsRepository {
     if (appSkillIdentifier == null) throw StateError('Agent skill is invalid');
 
     return AgentSkillRef.app(appSkillIdentifier);
+  }
+
+  AgentVisibility _agentVisibilityFromStorage(String value) {
+    return AgentVisibility.values.asNameMap()[value] ?? AgentVisibility.both;
   }
 
   AgentSkillsCompanion _mapSkillRefToCompanion(AgentSkillRef ref) {

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
+import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -59,7 +60,7 @@ class NewChatScreen extends ConsumerWidget {
       try {
         final conversation = await ref
             .read(newChatProvider(workspaceId).notifier)
-            .startConversation(draft);
+            .startConversation(draft, ref.read(sendNewMessageUsecaseProvider));
 
         if (context.mounted) {
           ConversationRoute(

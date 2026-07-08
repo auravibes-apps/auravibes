@@ -28,6 +28,7 @@ class AppApproveToolCallDataProvider
     required this.agentToolResumeService,
     required this.runResolvedToolUsecase,
     required this.agentCancellationRuntime,
+    required this.onToolCallChanged,
   });
 
   final MessageRepository messageRepository;
@@ -38,6 +39,7 @@ class AppApproveToolCallDataProvider
   final AgentToolResumeService agentToolResumeService;
   final ResolvedToolService runResolvedToolUsecase;
   final agent.AgentCancellationRuntime agentCancellationRuntime;
+  final void Function() onToolCallChanged;
 
   @override
   Future<agent.AgentApprovableToolCall?> loadToolCall({
@@ -153,6 +155,7 @@ class AppApproveToolCallDataProvider
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );
+    onToolCallChanged();
   }
 
   @override

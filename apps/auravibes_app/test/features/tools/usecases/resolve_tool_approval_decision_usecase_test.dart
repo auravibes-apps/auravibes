@@ -1,3 +1,4 @@
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -209,6 +210,29 @@ void main() {
           expect(decision.permissionTableId, 'skill-tool-2');
         },
       );
+
+      test('grants run_sub_agent without permission lookup', () async {
+        final decision = await fixture.usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'tc-1',
+          resolvedTool: ResolvedTool.skillNative(
+            tableId: agent.runSubAgentToolName,
+            skillSlug: agent.agentsSkillSlug,
+            toolIdentifier: agent.runSubAgentToolName,
+          ),
+        );
+
+        expect(decision.permissionResult, ToolPermissionResult.granted);
+        expect(decision.permissionTableId, isNull);
+        final _ = verifyNever(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolId: any(named: 'toolId'),
+          ),
+        );
+      });
     });
 
     group('MCP tools', () {

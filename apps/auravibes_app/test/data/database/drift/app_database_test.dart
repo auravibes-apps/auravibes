@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 QueryExecutor createTestConnection() {
   return DatabaseConnection.delayed(
@@ -87,6 +88,197 @@ void main() {
       final strategy = fixture.database.migration;
       expect(strategy.onCreate, isNotNull);
     });
+
+    test('migration from schema 4 backfills agent defaults', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 4
+        ..execute('''
+          CREATE TABLE workspaces (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            url TEXT NULL
+          );
+        ''')
+        ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            content TEXT NOT NULL
+          );
+        ''')
+        ..execute(
+          'INSERT INTO workspaces '
+          '(id, created_at, updated_at, name, type) '
+          'VALUES (?, 0, 0, ?, ?)',
+          ['ws-1', 'Workspace', 'local'],
+        )
+        ..execute(
+          'INSERT INTO agents '
+          '(id, created_at, updated_at, workspace_id, name, content) '
+          'VALUES (?, 0, 0, ?, ?, ?)',
+          ['agent-1', 'ws-1', 'Agent', '  Prompt text  '],
+        );
+      fixture.database = AppDatabase(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+
+      final agent = await fixture.database
+          .customSelect(
+            'SELECT description, is_enabled, visibility FROM agents '
+            'WHERE id = ?',
+            variables: [const Variable<String>('agent-1')],
+          )
+          .getSingle();
+
+      expect(agent.read<String>('description'), 'Prompt text');
+      expect(agent.read<bool>('is_enabled'), isTrue);
+      expect(agent.read<String>('visibility'), 'both');
+    });
+
+    test('migration from schema 4 adds attachment display names', () async {
+      await fixture.close();
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 4
+        ..execute('''
+          CREATE TABLE message_attachments (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            message_id TEXT NOT NULL,
+            local_path TEXT NOT NULL,
+            file_name TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            modality TEXT NOT NULL,
+            size_bytes INTEGER NOT NULL
+          );
+        ''')
+        ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            content TEXT NOT NULL
+          );
+        ''')
+        ..execute(
+          'INSERT INTO message_attachments '
+          '(id, created_at, updated_at, message_id, local_path, file_name, '
+          'mime_type, modality, size_bytes) '
+          'VALUES (?, 0, 0, ?, ?, ?, ?, ?, ?)',
+          [
+            'attachment-1',
+            'message-1',
+            '/tmp/image.png',
+            'image.png',
+            'image/png',
+            'image',
+            10,
+          ],
+        );
+      fixture.database = AppDatabase(
+        connection: NativeDatabase.opened(sqliteDb),
+      );
+
+      final columns = await fixture.database
+          .customSelect('PRAGMA table_info(message_attachments)')
+          .get();
+      final attachment = await fixture.database
+          .customSelect(
+            'SELECT display_name FROM message_attachments WHERE id = ?',
+            variables: [const Variable<String>('attachment-1')],
+          )
+          .getSingle();
+
+      expect(
+        columns.map((column) => column.read<String>('name')),
+        contains('display_name'),
+      );
+      expect(attachment.read<String>('display_name'), 'image.png');
+    });
+
+    test(
+      'migration from schema 3 adds child conversations and agent defaults',
+      () async {
+        await fixture.close();
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 3
+          ..execute('''
+          CREATE TABLE workspaces (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            url TEXT NULL
+          );
+        ''')
+          ..execute('''
+          CREATE TABLE agents (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            workspace_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            content TEXT NOT NULL
+          );
+        ''')
+          ..execute('''
+          CREATE TABLE conversations (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            workspace_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            model_id TEXT NULL,
+            agent_id TEXT NULL,
+            is_pinned INTEGER NOT NULL DEFAULT 0
+          );
+        ''')
+          ..execute(
+            'INSERT INTO workspaces '
+            '(id, created_at, updated_at, name, type) '
+            'VALUES (?, 0, 0, ?, ?)',
+            ['ws-1', 'Workspace', 'local'],
+          )
+          ..execute(
+            'INSERT INTO agents '
+            '(id, created_at, updated_at, workspace_id, name, content) '
+            'VALUES (?, 0, 0, ?, ?, ?)',
+            ['agent-1', 'ws-1', 'Agent', '  Prompt text  '],
+          );
+        fixture.database = AppDatabase(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+
+        final agent = await fixture.database
+            .customSelect(
+              'SELECT description, is_enabled, visibility FROM agents '
+              'WHERE id = ?',
+              variables: [const Variable<String>('agent-1')],
+            )
+            .getSingle();
+        final columns = await fixture.database
+            .customSelect('PRAGMA table_info(conversations)')
+            .get();
+
+        expect(agent.read<String>('description'), 'Prompt text');
+        expect(agent.read<bool>('is_enabled'), isTrue);
+        expect(agent.read<String>('visibility'), 'both');
+        expect(
+          columns.map((column) => column.read<String>('name')),
+          contains('parent_conversation_id'),
+        );
+      },
+    );
 
     test('can insert workspace and query back', () async {
       final _ = await fixture.database

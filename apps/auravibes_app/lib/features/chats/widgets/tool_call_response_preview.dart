@@ -15,6 +15,7 @@ class ToolCallResponsePreview extends StatefulWidget {
     required this.toolName,
     required this.content,
     super.key,
+    this.showExpandButton = true,
   });
 
   /// The name of the tool that generated the response.
@@ -22,6 +23,8 @@ class ToolCallResponsePreview extends StatefulWidget {
 
   /// The raw response content to display.
   final String content;
+
+  final bool showExpandButton;
 
   /// Maximum number of lines to show in the preview.
   static const int maxPreviewLines = 3;
@@ -106,7 +109,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
         ),
 
         // Show more button (only if content exceeds max lines).
-        if (_exceedsMaxLines)
+        if (_exceedsMaxLines && widget.showExpandButton)
           Padding(
             padding: EdgeInsets.only(
               top: context.auraTheme.fromSpacing(.xs),

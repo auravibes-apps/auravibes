@@ -81,8 +81,16 @@ class BuildSkillContextMessagesService {
 
     final agent = await _agentsRepository.getAgentById(agentId);
     if (agent?.workspaceId != workspaceId) return null;
+    final selectedAgent = agent;
+    if (selectedAgent == null || !selectedAgent.isEnabled) return null;
+    final isSubAgentConversation = conversation?.parentConversationId != null;
+    if (isSubAgentConversation) {
+      if (!selectedAgent.appearsInSubAgentList) return null;
+    } else if (!selectedAgent.appearsInChatSelector) {
+      return null;
+    }
 
-    return agent;
+    return selectedAgent;
   }
 }
 

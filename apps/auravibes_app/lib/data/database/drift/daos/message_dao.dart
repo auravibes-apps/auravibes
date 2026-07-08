@@ -41,6 +41,78 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     String conversationId,
   ) => _messagesByConversationQuery(conversationId).get();
 
+  Future<List<MessagesTable>> getLatestAssistantMessagesByConversations(
+    List<String> conversationIds,
+  ) async {
+    if (conversationIds.isEmpty) return const [];
+
+    final placeholders = List.filled(conversationIds.length, '?').join(', ');
+    final rows = await customSelect(
+      '''
+      SELECT * FROM (
+        SELECT *,
+          ROW_NUMBER() OVER (
+            PARTITION BY conversation_id
+            ORDER BY created_at DESC, id DESC
+          ) AS row_number
+        FROM messages
+        WHERE is_user = 0 AND conversation_id IN ($placeholders)
+      )
+      WHERE row_number = 1
+      ''',
+      variables: [
+        for (final conversationId in conversationIds) Variable(conversationId),
+      ],
+      readsFrom: {messages},
+    ).get();
+
+    return rows
+        .map(
+          (row) => MessagesTable(
+            id: row.read<String>('id'),
+            createdAt: row.read<DateTime>('created_at'),
+            updatedAt: row.read<DateTime>('updated_at'),
+            conversationId: row.read<String>('conversation_id'),
+            content: row.read<String>('content'),
+            messageType: _messageTypeFromStorage(
+              row.read<String>('message_type'),
+            ),
+            isUser: row.read<bool>('is_user'),
+            status: MessageTableStatus.fromString(row.read<String>('status')),
+            metadata: row.readNullable<String>('metadata'),
+          ),
+        )
+        .toList();
+  }
+
+  MessagesTableType _messageTypeFromStorage(String value) {
+    return MessagesTableType.values.asNameMap()[value] ??
+        MessagesTableType.text;
+  }
+
+  Stream<MessagesTable?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) {
+    return (select(messages)
+          ..where(
+            (tbl) =>
+                tbl.conversationId.equals(conversationId) &
+                tbl.isUser.equals(false),
+          )
+          ..orderBy([
+            (tbl) => OrderingTerm(
+              expression: tbl.createdAt,
+              mode: OrderingMode.desc,
+            ),
+            (tbl) => OrderingTerm(
+              expression: tbl.id,
+              mode: OrderingMode.desc,
+            ),
+          ])
+          ..limit(1))
+        .watchSingleOrNull();
+  }
+
   Stream<List<MessagesTable>> watchMessagesByConversation(
     String conversationId,
   ) => _messagesByConversationQuery(conversationId).watch();

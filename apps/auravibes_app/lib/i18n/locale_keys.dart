@@ -213,6 +213,18 @@ abstract class LocaleKeys {
   static const agents_empty_title = 'agents.empty_title';
   static const agents_empty_subtitle = 'agents.empty_subtitle';
   static const agents_name_label = 'agents.name_label';
+  static const agents_description_label = 'agents.description_label';
+  static const agents_edit_description = 'agents.edit_description';
+  static const agents_description_empty = 'agents.description_empty';
+  static const agents_enabled_label = 'agents.enabled_label';
+  static const agents_disabled_label = 'agents.disabled_label';
+  static const agents_enabled_description = 'agents.enabled_description';
+  static const agents_visibility_label = 'agents.visibility_label';
+  static const agents_visibility_chat_selector =
+      'agents.visibility_chat_selector';
+  static const agents_visibility_sub_agent_list =
+      'agents.visibility_sub_agent_list';
+  static const agents_visibility_both = 'agents.visibility_both';
   static const agents_prompt_label = 'agents.prompt_label';
   static const agents_edit_prompt = 'agents.edit_prompt';
   static const agents_prompt_empty = 'agents.prompt_empty';
@@ -290,6 +302,8 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.add_chat';
   static const chats_screens_new_chat_starting =
       'chats_screens.new_chat.starting';
+  static const chats_screens_new_chat_start_error =
+      'chats_screens.new_chat.start_error';
   static const chats_screens_new_chat_no_model_selected =
       'chats_screens.new_chat.no_model_selected';
   static const chats_screens_chat_conversation_select_model_selctor =
@@ -626,6 +640,9 @@ abstract class LocaleKeys {
       'app_skills.skills_manager.tools.create_skill_credential_definition.title';
   static const app_skills_skills_manager_tools_create_skill_credential_definition_description =
       'app_skills.skills_manager.tools.create_skill_credential_definition.description';
+  static const app_skills_agents_title = 'app_skills.agents.title';
+  static const app_skills_agents_description = 'app_skills.agents.description';
+  static const app_skills_agents_content = 'app_skills.agents.content';
   static const tool_confirmation_allow_once = 'tool_confirmation.allow_once';
   static const tool_confirmation_allow_conversation =
       'tool_confirmation.allow_conversation';

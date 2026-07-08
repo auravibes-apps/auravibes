@@ -408,5 +408,15 @@ class _FakeConversationRepository implements ConversationRepository {
   }) => throw UnimplementedError();
 
   @override
+  Stream<List<ConversationEntity>> watchChildConversations(
+    String parentConversationId,
+  ) => throw UnimplementedError();
+
+  @override
+  Future<List<ConversationEntity>> getChildConversations(
+    String parentConversationId,
+  ) => throw UnimplementedError();
+
+  @override
   Future<bool> deleteConversation(String id) => throw UnimplementedError();
 }

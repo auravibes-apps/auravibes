@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -31,6 +32,16 @@ Stream<List<MessageEntity>> chatMessagesByConversation(
   return ref
       .watch(messageRepositoryProvider)
       .watchMessagesByConversation(conversationId);
+}
+
+@riverpod
+Stream<MessageEntity?> latestAssistantMessageByConversation(
+  Ref ref,
+  String conversationId,
+) {
+  return ref
+      .watch(messageRepositoryProvider)
+      .watchLatestAssistantMessageByConversation(conversationId);
 }
 
 @Riverpod(dependencies: [conversationSelected])
@@ -160,10 +171,14 @@ class PendingToolCall {
   const PendingToolCall({
     required this.toolCall,
     required this.messageId,
+    this.sourceConversationId = '',
+    this.sourceLabel,
   });
 
   final MessageToolCallEntity toolCall;
   final String messageId;
+  final String sourceConversationId;
+  final String? sourceLabel;
 }
 
 @Riverpod(dependencies: [chatMessages])
@@ -212,7 +227,79 @@ Future<int?> conversationContextLimit(Ref ref) async {
 )
 Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   final conversationId = ref.watch(conversationSelectedProvider);
-  final messages = ref.watch(chatMessagesProvider).value;
+  final activeChildren = ref.watch(
+    activeSubAgentRuntimeProvider.select(
+      (state) => state[conversationId] ?? const <String>{},
+    ),
+  );
+  final childConversations =
+      ref
+          .watch(
+            childConversationsStreamProvider(
+              parentConversationId: conversationId,
+            ),
+          )
+          .value ??
+      const [];
+  final conversations = [
+    conversationId,
+    ...{
+      ...activeChildren,
+      ...childConversations.map((conversation) => conversation.id),
+    },
+  ];
+  final currentMessages = ref.watch(chatMessagesProvider).value;
+  final inactiveChildIds = conversations
+      .where((id) => id != conversationId && !activeChildren.contains(id))
+      .toList();
+  final inactiveChildMessages = inactiveChildIds.isEmpty
+      ? const <MessageEntity>[]
+      : await ref
+            .watch(messageRepositoryProvider)
+            .getLatestAssistantMessagesByConversations(inactiveChildIds);
+  final childMessagesByConversationId = <String, List<MessageEntity>>{
+    for (final message in inactiveChildMessages)
+      message.conversationId: [message],
+  };
+  for (final childId in activeChildren) {
+    final message = ref
+        .watch(latestAssistantMessageByConversationProvider(childId))
+        .value;
+    childMessagesByConversationId[childId] = message == null
+        ? const <MessageEntity>[]
+        : [message];
+  }
+  final pendingByConversation = await Future.wait(
+    conversations.map((sourceConversationId) {
+      final messages = sourceConversationId == conversationId
+          ? currentMessages
+          : childMessagesByConversationId[sourceConversationId];
+      final sourceConversation = sourceConversationId == conversationId
+          ? null
+          : childConversations.firstWhereOrNull(
+              (conversation) => conversation.id == sourceConversationId,
+            );
+
+      return _pendingToolCallsForConversation(
+        ref,
+        conversationId: sourceConversationId,
+        workspaceId: sourceConversation?.workspaceId,
+        messages: messages,
+        sourceLabel: sourceConversation?.title,
+      );
+    }),
+  );
+
+  return pendingByConversation.expand((pending) => pending).toList();
+}
+
+Future<List<PendingToolCall>> _pendingToolCallsForConversation(
+  Ref ref, {
+  required String conversationId,
+  required String? workspaceId,
+  required List<MessageEntity>? messages,
+  required String? sourceLabel,
+}) async {
   if (messages == null || messages.isEmpty) return const [];
 
   final latestAssistantMessage = messages.lastWhereOrNull(
@@ -226,11 +313,12 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
   final pendingCalls = toolCalls.where((tc) => tc.isAwaitingApproval).toList();
   if (pendingCalls.isEmpty) return const [];
 
-  final conversation = await ref.watch(
-    conversationByIdStreamProvider(conversationId: conversationId).future,
-  );
-  final workspaceId = conversation?.workspaceId;
-  if (workspaceId == null) {
+  final resolvedWorkspaceId =
+      workspaceId ??
+      (await ref.watch(
+        conversationByIdStreamProvider(conversationId: conversationId).future,
+      ))?.workspaceId;
+  if (resolvedWorkspaceId == null) {
     debugPrint(
       '[pendingToolCalls] No workspaceId for conversation $conversationId; '
       'returning pending tool calls as needing confirmation',
@@ -241,6 +329,8 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
           (toolCall) => PendingToolCall(
             toolCall: toolCall,
             messageId: latestAssistantMessage.id,
+            sourceConversationId: conversationId,
+            sourceLabel: sourceLabel,
           ),
         )
         .toList();
@@ -259,7 +349,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
       try {
         final decision = await decisionUsecase(
           conversationId: conversationId,
-          workspaceId: workspaceId,
+          workspaceId: resolvedWorkspaceId,
           toolCallId: toolCall.id,
           resolvedTool: resolvedTool,
         );
@@ -282,6 +372,8 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
         (e) => PendingToolCall(
           toolCall: e.toolCall,
           messageId: latestAssistantMessage.id,
+          sourceConversationId: conversationId,
+          sourceLabel: sourceLabel,
         ),
       )
       .toList();

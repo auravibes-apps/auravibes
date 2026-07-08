@@ -111,6 +111,61 @@ class _StreamingMessageRepository implements MessageRepository {
   ) => _controller.stream;
 
   @override
+  Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) {
+    return _controller.stream.map((messages) {
+      for (final message in messages.reversed) {
+        if (!message.isUser) {
+          return message;
+        }
+      }
+
+      return null;
+    });
+  }
+
+  @override
+  Null noSuchMethod(Invocation invocation) => null;
+}
+
+class _StaticMessageRepository implements MessageRepository {
+  const _StaticMessageRepository(this._messagesByConversationId);
+
+  final Map<String, List<MessageEntity>> _messagesByConversationId;
+
+  @override
+  Future<List<MessageEntity>> getMessagesByConversation(
+    String conversationId,
+  ) async {
+    return _messagesByConversationId[conversationId] ?? const [];
+  }
+
+  @override
+  Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
+    List<String> conversationIds,
+  ) async {
+    return [
+      for (final conversationId in conversationIds)
+        ...(_messagesByConversationId[conversationId] ?? const []),
+    ];
+  }
+
+  @override
+  Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) {
+    final messages = _messagesByConversationId[conversationId] ?? const [];
+    for (final message in messages.reversed) {
+      if (!message.isUser) {
+        return Stream.value(message);
+      }
+    }
+
+    return Stream.value(null);
+  }
+
+  @override
   Null noSuchMethod(Invocation invocation) => null;
 }
 
@@ -127,6 +182,9 @@ void main() {
         hooks.ProviderScope(
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
+            childConversationsStreamProvider(
+              parentConversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data([])),
             messageRepositoryProvider.overrideWithValue(repository),
           ],
           child: hooks.Consumer(
@@ -249,6 +307,9 @@ void main() {
       container = ProviderContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
           chatMessagesProvider.overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
@@ -310,6 +371,9 @@ void main() {
       container = ProviderContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
           chatMessagesProvider.overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
@@ -353,6 +417,67 @@ void main() {
       );
     });
 
+    test('includes child conversation pending tool calls', () async {
+      final childMessages = [
+        _assistantMessage(
+          id: 'child-msg-1',
+          conversationId: 'child-1',
+          toolCalls: [
+            _pendingToolCall(
+              id: 'child-tc-needs-confirm',
+              name: 'native_ws-tool-url_url',
+            ),
+          ],
+        ),
+      ];
+      final childConversation = ConversationEntity(
+        id: 'child-1',
+        title: 'Child agent',
+        workspaceId: 'ws-1',
+        isPinned: false,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        parentConversationId: 'conv-1',
+      );
+
+      container = ProviderContainer(
+        overrides: [
+          conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(AsyncValue.data([childConversation])),
+          chatMessagesProvider.overrideWithValue(
+            const AsyncValue<List<MessageEntity>>.data([]),
+          ),
+          chatMessagesByConversationProvider('child-1').overrideWithValue(
+            AsyncValue.data(childMessages),
+          ),
+          conversationByIdStreamProvider(
+            conversationId: 'child-1',
+          ).overrideWithValue(AsyncValue.data(childConversation)),
+          messageRepositoryProvider.overrideWithValue(
+            _StaticMessageRepository({'child-1': childMessages}),
+          ),
+          resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+            _FakeResolveToolApprovalDecisionUsecase({
+              'child-tc-needs-confirm': const ToolApprovalDecision(
+                toolCallId: 'child-tc-needs-confirm',
+                permissionResult: ToolPermissionResult.needsConfirmation,
+                permissionTableId: 'url',
+              ),
+            }),
+          ),
+        ],
+      );
+
+      final result = await container.read(pendingToolCallsProvider.future);
+
+      expect(result, hasLength(1));
+      expect(result.single.toolCall.id, 'child-tc-needs-confirm');
+      expect(result.single.sourceConversationId, 'child-1');
+      expect(result.single.sourceLabel, 'Child agent');
+    });
+
     test('excludes skipped tools from approval UI', () async {
       final messages = [
         _assistantMessage(
@@ -376,6 +501,9 @@ void main() {
       container = ProviderContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
           chatMessagesProvider.overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
@@ -426,6 +554,9 @@ void main() {
       container = ProviderContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
+          childConversationsStreamProvider(
+            parentConversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data([])),
           chatMessagesProvider.overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
@@ -501,6 +632,9 @@ void main() {
         container = ProviderContainer(
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
+            childConversationsStreamProvider(
+              parentConversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data([])),
             chatMessagesProvider.overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
@@ -533,6 +667,9 @@ void main() {
         container = ProviderContainer(
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
+            childConversationsStreamProvider(
+              parentConversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data([])),
             chatMessagesProvider.overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
@@ -598,6 +735,9 @@ void main() {
         container = ProviderContainer(
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
+            childConversationsStreamProvider(
+              parentConversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data([])),
             chatMessagesProvider.overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
@@ -664,6 +804,9 @@ void main() {
         container = ProviderContainer(
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
+            childConversationsStreamProvider(
+              parentConversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data([])),
             chatMessagesProvider.overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),

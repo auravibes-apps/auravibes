@@ -167,6 +167,16 @@
     "empty_title": "No hay agentes",
     "empty_subtitle": "Crea agentes para reutilizar prompts y grupos de habilidades en chats.",
     "name_label": "Nombre",
+    "description_label": "Cuándo usarlo",
+    "edit_description": "Editar descripción de uso",
+    "description_empty": "Describe cuándo se debe usar este agente",
+    "enabled_label": "Activado",
+    "disabled_label": "Desactivado",
+    "enabled_description": "Los agentes desactivados quedan guardados, pero no se pueden seleccionar ni delegar.",
+    "visibility_label": "Visible en",
+    "visibility_chat_selector": "Selector de chat",
+    "visibility_sub_agent_list": "Lista de subagentes",
+    "visibility_both": "Ambos",
     "prompt_label": "Prompt de sistema",
     "edit_prompt": "Editar prompt",
     "prompt_empty": "Aún no hay prompt de sistema",
@@ -229,6 +239,7 @@
     },
     "new_chat": {
       "starting": "Iniciando conversación...",
+      "start_error": "No se pudo iniciar la conversación. Inténtalo de nuevo.",
       "no_model_selected": "Selecciona un modelo para habilitar mensajes."
     },
     "chat_conversation": {
@@ -494,6 +505,11 @@
           "description": "Crea una definición reutilizable de credencial de usuario."
         }
       }
+    },
+    "agents": {
+      "title": "Agentes",
+      "description": "Inspecciona los agentes activos del espacio de trabajo.",
+      "content": "Usa esta habilidad para listar agentes activos y filtrarlos por tipo. Cargar esta habilidad agrega solo list_agents a la conversación. run_sub_agent es una herramienta del harness y sigue disponible sin cargar esta habilidad."
     }
   },
   "tool_confirmation": {

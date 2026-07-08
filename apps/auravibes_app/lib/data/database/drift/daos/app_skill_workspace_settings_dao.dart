@@ -1,3 +1,4 @@
+import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:drift/drift.dart';
@@ -26,7 +27,9 @@ class AppSkillWorkspaceSettingsDao extends DatabaseAccessor<AppDatabase>
   ) async {
     final setting = await getSetting(workspaceId, appSkillIdentifier);
 
-    return setting?.isEnabled ?? appSkillIdentifier == 'skills_manager';
+    return setting?.isEnabled ??
+        appSkillIdentifier == 'skills_manager' ||
+            appSkillIdentifier == agent.agentsSkillSlug;
   }
 
   Future<AppSkillWorkspaceSettingsTable> setAppSkillEnabled(

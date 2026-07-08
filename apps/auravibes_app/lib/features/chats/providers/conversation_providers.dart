@@ -28,6 +28,16 @@ Stream<List<ConversationEntity>> conversationsStream(
 }
 
 @riverpod
+Stream<List<ConversationEntity>> childConversationsStream(
+  Ref ref, {
+  required String parentConversationId,
+}) {
+  final repo = ref.watch(conversationRepositoryProvider);
+
+  return repo.watchChildConversations(parentConversationId);
+}
+
+@riverpod
 String? streamingTitle(Ref ref, String conversationId) {
   final titles = ref.watch(titlesStreamsProvider);
 

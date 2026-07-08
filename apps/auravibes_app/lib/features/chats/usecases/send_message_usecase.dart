@@ -124,15 +124,18 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
   }
 }
 
-final sendMessageUsecaseProvider = Provider<SendMessageUsecase>((ref) {
-  final agentService = ref.watch(auraAgentServiceProvider);
+final sendMessageUsecaseProvider = Provider<SendMessageUsecase>(
+  (ref) {
+    final agentService = ref.watch(auraAgentServiceProvider);
 
-  return SendMessageUsecase(
-    continueAgentTurn: agentService.agent.continueTurn,
-    messageRepository: ref.watch(messageRepositoryProvider),
-    getConversationBusyStateUsecase: ref.watch(
-      getConversationBusyStateUsecaseProvider,
-    ),
-    sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-  );
-});
+    return SendMessageUsecase(
+      continueAgentTurn: agentService.agent.continueTurn,
+      messageRepository: ref.watch(messageRepositoryProvider),
+      getConversationBusyStateUsecase: ref.watch(
+        getConversationBusyStateUsecaseProvider,
+      ),
+      sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+    );
+  },
+  dependencies: [auraAgentServiceProvider],
+);

@@ -71,6 +71,28 @@ class _FakeMessageRepository implements MessageRepository {
   }
 
   @override
+  Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
+    List<String> conversationIds,
+  ) async {
+    return const [];
+  }
+
+  @override
+  Stream<MessageEntity?> watchLatestAssistantMessageByConversation(
+    String conversationId,
+  ) {
+    return _controller.stream.map((messages) {
+      for (final message in messages.reversed) {
+        if (!message.isUser) {
+          return message;
+        }
+      }
+
+      return null;
+    });
+  }
+
+  @override
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) async => const [];

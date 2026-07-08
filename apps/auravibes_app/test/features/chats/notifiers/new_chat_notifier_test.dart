@@ -121,7 +121,10 @@ void main() {
     test('startConversation throws when no model selected', () {
       final notifier = container.read(newChatProvider('ws-1').notifier);
       expect(
-        () => notifier.startConversation(const ChatDraft(text: 'hello')),
+        () => notifier.startConversation(
+          const ChatDraft(text: 'hello'),
+          _FakeSendNewMessageUsecase(),
+        ),
         throwsA(isA<Exception>()),
       );
     });
@@ -146,7 +149,10 @@ void main() {
       sendContainer.read(newChatProvider('ws-1').notifier).setModelId('m1');
       final result = await sendContainer
           .read(newChatProvider('ws-1').notifier)
-          .startConversation(const ChatDraft(text: 'hello'));
+          .startConversation(
+            const ChatDraft(text: 'hello'),
+            _FakeSendNewMessageUsecase(),
+          );
 
       expect(result, isA<ConversationEntity>());
       expect(result.id, 'new-conv');
@@ -171,7 +177,10 @@ void main() {
       try {
         final _ = await sendContainer
             .read(newChatProvider('ws-1').notifier)
-            .startConversation(const ChatDraft(text: 'hello'));
+            .startConversation(
+              const ChatDraft(text: 'hello'),
+              _ErrorSendNewMessageUsecase(),
+            );
       } on Object catch (_) {}
 
       expect(

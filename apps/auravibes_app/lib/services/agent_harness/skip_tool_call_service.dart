@@ -3,6 +3,7 @@ import 'package:auravibes_agent/auravibes_agent.dart' as agent;
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 
 class AppToolCallActionsDataProvider
@@ -10,10 +11,14 @@ class AppToolCallActionsDataProvider
   const AppToolCallActionsDataProvider({
     required this.messageRepository,
     required this.agentToolResumeService,
+    required this.onToolCallChanged,
+    this.activeSubAgents,
   });
 
   final MessageRepository messageRepository;
   final AgentToolResumeService agentToolResumeService;
+  final ActiveSubAgentRuntime? activeSubAgents;
+  final void Function() onToolCallChanged;
 
   @override
   Future<bool> skipToolCall({
@@ -38,6 +43,7 @@ class AppToolCallActionsDataProvider
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );
+    onToolCallChanged();
 
     return true;
   }
@@ -71,5 +77,14 @@ class AppToolCallActionsDataProvider
         metadata: metadata.copyWith(toolCalls: updatedToolCalls),
       ),
     );
+    onToolCallChanged();
+    final parentId = activeSubAgents?.parentOf(message.conversationId);
+    if (parentId != null) {
+      activeSubAgents?.finish(
+        parentId: parentId,
+        childId: message.conversationId,
+        status: agent.SubAgentCompletionStatus.stopped,
+      );
+    }
   }
 }

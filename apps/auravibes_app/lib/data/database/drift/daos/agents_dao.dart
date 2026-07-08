@@ -15,6 +15,12 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
             ..orderBy([(tbl) => OrderingTerm(expression: tbl.name)]))
           .watch();
 
+  Future<List<AgentsTable>> getAgentsByWorkspace(String workspaceId) =>
+      (select(agents)
+            ..where((tbl) => tbl.workspaceId.equals(workspaceId))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.name)]))
+          .get();
+
   Future<AgentsTable?> getAgentById(String agentId) => (select(
     agents,
   )..where((tbl) => tbl.id.equals(agentId))).getSingleOrNull();

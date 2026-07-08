@@ -39,9 +39,12 @@ class AgentDetailScreen extends ConsumerStatefulWidget {
 
 class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
   final _selectedSkills = <AgentSkillRef>{};
   final _toolPermissionModes = <String, AgentToolPermissionMode>{};
+  bool _isEnabled = true;
+  AgentVisibility _visibility = AgentVisibility.both;
   bool _loaded = false;
   bool _toolOverridesLoaded = false;
   bool _saving = false;
@@ -49,6 +52,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _descriptionController.dispose();
     _contentController.dispose();
     super.dispose();
   }
@@ -160,7 +164,13 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       children: [
         _PromptCard(
           nameController: _nameController,
+          descriptionController: _descriptionController,
           contentController: _contentController,
+          isEnabled: _isEnabled,
+          visibility: _visibility,
+          onEnabledChanged: (value) => setState(() => _isEnabled = value),
+          onVisibilityChanged: (value) => setState(() => _visibility = value),
+          onEditDescription: () => unawaited(_editDescription()),
           onEditPrompt: () => unawaited(_editPrompt()),
         ),
         const SizedBox(height: 16),
@@ -235,7 +245,10 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   void _initialize(AgentEntity agent) {
     _loaded = true;
     _nameController.text = agent.name;
+    _descriptionController.text = agent.description;
     _contentController.text = agent.content;
+    _isEnabled = agent.isEnabled;
+    _visibility = agent.visibility;
     _selectedSkills
       ..clear()
       ..addAll(agent.skills);
@@ -271,6 +284,17 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     if (markdown == null) return;
 
     _contentController.text = markdown;
+  }
+
+  Future<void> _editDescription() async {
+    final markdown = await showMarkdownEditor(
+      context,
+      initialMarkdown: _descriptionController.text,
+      maxCharacters: agentDescriptionMaxLength,
+    );
+    if (markdown == null) return;
+
+    _descriptionController.text = markdown;
   }
 
   Future<void> _confirmEnableSkill(WorkspaceSkill skill) async {
@@ -310,7 +334,10 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
               widget.workspaceId,
               AgentToCreate(
                 name: _nameController.text,
+                description: _descriptionController.text,
                 content: _contentController.text,
+                isEnabled: _isEnabled,
+                visibility: _visibility,
                 skills: _selectedSkills.toList(),
               ),
             )
@@ -318,7 +345,10 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
               agentId,
               AgentToUpdate(
                 name: _nameController.text,
+                description: _descriptionController.text,
                 content: _contentController.text,
+                isEnabled: _isEnabled,
+                visibility: _visibility,
                 skills: _selectedSkills.toList(),
               ),
             );
@@ -343,12 +373,24 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
 class _PromptCard extends StatelessWidget {
   const _PromptCard({
     required this.nameController,
+    required this.descriptionController,
     required this.contentController,
+    required this.isEnabled,
+    required this.visibility,
+    required this.onEnabledChanged,
+    required this.onVisibilityChanged,
+    required this.onEditDescription,
     required this.onEditPrompt,
   });
 
   final TextEditingController nameController;
+  final TextEditingController descriptionController;
   final TextEditingController contentController;
+  final bool isEnabled;
+  final AgentVisibility visibility;
+  final ValueChanged<bool> onEnabledChanged;
+  final ValueChanged<AgentVisibility> onVisibilityChanged;
+  final VoidCallback onEditDescription;
   final VoidCallback onEditPrompt;
 
   @override
@@ -367,6 +409,57 @@ class _PromptCard extends StatelessWidget {
           AuraInput(
             controller: nameController,
             label: Text(LocaleKeys.agents_name_label.tr(context: context)),
+          ),
+          Row(
+            children: [
+              const Expanded(
+                child: AuraColumn(
+                  children: [
+                    AuraText(
+                      child: TextLocale(LocaleKeys.agents_enabled_label),
+                    ),
+                    AuraText(
+                      child: TextLocale(LocaleKeys.agents_enabled_description),
+                      style: AuraTextStyle.bodySmall,
+                    ),
+                  ],
+                  spacing: .xs,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              ),
+              AuraSwitch(value: isEnabled, onChanged: onEnabledChanged),
+            ],
+          ),
+          AuraRadioGroup<AgentVisibility>(
+            value: visibility,
+            onChanged: (value) {
+              if (value == null) return;
+              onVisibilityChanged(value);
+            },
+            options: const [
+              AuraRadioOption(
+                value: AgentVisibility.chatSelector,
+                label: TextLocale(LocaleKeys.agents_visibility_chat_selector),
+              ),
+              AuraRadioOption(
+                value: AgentVisibility.subAgentList,
+                label: TextLocale(LocaleKeys.agents_visibility_sub_agent_list),
+              ),
+              AuraRadioOption(
+                value: AgentVisibility.both,
+                label: TextLocale(LocaleKeys.agents_visibility_both),
+              ),
+            ],
+            label: const AuraText(
+              child: TextLocale(LocaleKeys.agents_visibility_label),
+            ),
+          ),
+          MarkdownPreviewField(
+            controller: descriptionController,
+            titleKey: LocaleKeys.agents_description_label,
+            editKey: LocaleKeys.agents_edit_description,
+            emptyKey: LocaleKeys.agents_description_empty,
+            onEdit: onEditDescription,
           ),
           MarkdownPreviewField(
             controller: contentController,
