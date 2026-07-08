@@ -1,5 +1,4 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 const String _createTemplateTitleKey =
@@ -133,18 +132,18 @@ Only create user skills from explicit user intent.
       contentKey: LocaleKeys.app_skills_skills_manager_content,
     ),
     AppSkillDefinition(
-      identifier: agent.agentsSkillSlug,
-      slug: agent.agentsSkillSlug,
+      identifier: agentsSkillSlug,
+      slug: agentsSkillSlug,
       title: 'Agents',
       description: 'Inspect enabled workspace agents.',
       content: 'Use this skill to list enabled agents and filter them by type.',
       nativeTools: [
         AppSkillToolDefinition(
-          slug: agent.listAgentsToolSpec.name,
-          title: agent.listAgentsToolSpec.name,
-          description: agent.listAgentsToolSpec.description,
+          slug: listAgentsToolSpec.name,
+          title: listAgentsToolSpec.name,
+          description: listAgentsToolSpec.description,
           inputJsonSchema: Map<String, dynamic>.from(
-            agent.listAgentsToolSpec.inputJsonSchema,
+            listAgentsToolSpec.inputJsonSchema,
           ),
         ),
       ],

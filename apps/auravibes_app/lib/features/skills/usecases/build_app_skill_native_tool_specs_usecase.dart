@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -77,12 +76,11 @@ class BuildAppSkillNativeToolSpecsUsecase {
     ];
     final hasSubAgents = runtimeSkills.any(
       (skill) =>
-          skill.source == SkillSource.app &&
-          skill.slug == agent.agentsSkillSlug,
+          skill.source == SkillSource.app && skill.slug == agentsSkillSlug,
     );
     if (hasSubAgents && !isUnknownConversation && !isSubAgentConversation) {
       final subAgentsSkill = _appSkillRegistry.getBySlug(
-        agent.agentsSkillSlug,
+        agentsSkillSlug,
       );
       if (subAgentsSkill != null) {
         specs.addAll(_appSkillToolSpecs(subAgentsSkill, const []));
