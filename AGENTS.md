@@ -5,6 +5,7 @@
 - Agents run from repo root. Treat this file as the required entrypoint.
 - Nested `AGENTS.md` files are package-local hints, not architecture canon.
 - Check `git status --short` before and after edits.
+- Do not revert unrelated changes.
 
 ## Commands
 
@@ -27,6 +28,7 @@
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
 - Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
 - Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
+- If verification cannot run, say why and name the next command to run.
 - Generated-code changes require generator output review.
 
 ## Project Rules
@@ -40,7 +42,7 @@
 ## Architecture
 
 - Load `.agents/skills/app-architecture/SKILL.md` before adding, moving, or reviewing code in `apps/auravibes_app`.
-- Load `.agents/skills/package-architecture/SKILL.md` before adding, moving, or reviewing code in `packages/auravibes_engine` or `packages/auravibes_ui`.
+- Load `.agents/skills/package-architecture/SKILL.md` before adding, moving, or reviewing code in `packages/auravibes_engine`, `packages/auravibes_ui`, or `widgetbook`.
 - Keep durable architecture docs under `doc/architecture/`; update them only when package boundaries, layer rules, or file placement rules change.
 
 ## PR Gates

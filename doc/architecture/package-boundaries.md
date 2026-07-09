@@ -6,16 +6,16 @@ Package boundaries should stop architecture drift. If a package cannot be reused
 
 ```text
 apps/auravibes_app
-  may import all workspace packages
+  may import auravibes_engine and auravibes_ui; must not import widgetbook
 
 packages/auravibes_ui
-  may not import app, domain, data, Riverpod app providers, or localization keys
+  may not import app, domain, data, Riverpod app providers, auravibes_engine, or localization keys
 
 packages/auravibes_engine
   may not import Flutter, Riverpod, app, UI, Drift, or localization
 
 widgetbook
-  may import auravibes_ui and story-only helpers
+  may import Flutter, Widgetbook packages, hooks_riverpod for ProviderScope, auravibes_ui, and story-only helpers
 ```
 
 ## `auravibes_app`
