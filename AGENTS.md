@@ -1,76 +1,51 @@
 # AuraVibes Agent Instructions
 
-## Scope
+## Entrypoint
 
-- Flutter monorepo managed by Melos. Use `fvm` for Dart and Flutter commands.
-- Root rules apply repo-wide. Nearest nested `AGENTS.md` adds more specific rules.
-- Keep changes surgical. Every changed line must trace to the user request.
-- Check `git status --short` before and after edits. Do not revert unrelated changes.
+- Agents run from repo root. Treat this file as the required entrypoint.
+- Nested `AGENTS.md` files are package-local hints, not architecture canon.
+- Check `git status --short` before and after edits.
+- Do not revert unrelated changes.
 
 ## Commands
 
-- Bootstrap dependencies: `fvm dart run melos bootstrap`
-- Focused package test, from package directory: `fvm flutter test test/path/to/file_test.dart --no-pub`
-- Quick repo validation for shared or app logic: `fvm dart run melos run validate:quick`
-- Full non-coverage validation: `fvm dart run melos run validate`
-- CI-parity tests when needed: `fvm dart run melos run test:ci`
-- Dependency validation: `fvm dart run dependency_validator`
-- Import sorting check: `fvm dart run import_sorter:main --exit-if-changed`
-- Code generation: `fvm dart run melos run generate`
-- Localization generation: `fvm dart run melos run generate:localization`
+| Task                    | Command                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| Bootstrap               | `fvm dart run melos bootstrap`                                               |
+| App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
+| Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
+| Quick validation        | `fvm dart run melos run validate:quick`                                      |
+| Full validation         | `fvm dart run melos run validate`                                            |
+| CI tests                | `fvm dart run melos run test:ci`                                             |
+| Dependency check        | `fvm dart run dependency_validator`                                          |
+| Import sort check       | `fvm dart run import_sorter:main --exit-if-changed`                          |
+| Code generation         | `fvm dart run melos run generate`                                            |
+| Localization generation | `fvm dart run melos run generate:localization`                               |
 
 ## Verification
 
-- Run the smallest focused test or check that proves the change.
-- Use `validate:quick` for fast analyzer + format coverage before claiming done for shared behavior, app logic, or broad refactors.
-- For generated-code drift, run the relevant generator and verify `git diff --check` plus a clean generated diff.
-- For CI static-analysis parity, also run dependency validation and import sorting.
-- Docs-only changes can use `git diff --check`.
-- If verification cannot run, say why and name the command that should run next.
+- Run the smallest focused check that proves the change.
+- For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
+- Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
+- Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
+- If verification cannot run, say why and name the next command to run.
+- Generated-code changes require generator output review.
 
-## Code Quality Gate
+## Project Rules
 
-- Prefer the smallest change that solves the request.
-- Do not add public APIs, abstractions, providers, config, or dependencies unless the task requires them.
-- Add or update focused tests when behavior changes.
-- Do not silence analyzer or lint failures unless the ignore is narrow and documented.
-- Do not leave unused files, unused code, unnecessary nullable parameters, unsorted imports, or format drift.
-- If touching shared architecture, verify usecase, provider, widget, repository, and generated-code boundaries still hold.
-
-## CI And PR Gates
-
-- PR titles must follow Conventional Commits, for example `fix: Correct typo`, `feat(ui): Add button`, or `refactor!: Drop legacy API`.
-- Static analysis CI runs format, analyze, unused files, unused code, unnecessary nullable, dependency validation, and import sorting.
-- Generated Artifacts CI fails if bootstrap or code generation changes tracked files.
+- Add dependencies with `fvm flutter pub add ...` from the target package; never use `any` constraints.
+- Do not hand-edit generated files: `*.g.dart`, `*.freezed.dart`, `locale_keys.dart`, plugin registrants, Drift worker output.
+- Drift schema changes require `schemaVersion` bump and migration logic.
+- User-facing strings must be localized; user-facing errors use typed exceptions carrying localization keys.
 - If `.fvmrc` changes, run `fvm use` and commit the resulting `.vscode/settings.json` sync.
-- Before opening or updating a PR with code changes, prefer `fvm dart run melos run validate`, `fvm dart run dependency_validator`, and `fvm dart run import_sorter:main --exit-if-changed`.
-
-## Dependencies
-
-- Add dependencies with `fvm flutter pub add ...` from the target package.
-- Avoid the dependency constraint `any` in `pubspec.yaml`; always specify version constraints.
-- Do not manually edit dependency blocks unless fixing lockfile or generated constraint drift.
-
-## Generated Files
-
-- Do not hand-edit generated files such as `*.g.dart`, `*.freezed.dart`, `locale_keys.dart`, generated plugin registrants, or Drift worker output.
-- Update source files, run the relevant generator, then inspect generated diffs.
-- Freezed, Riverpod, Drift, JSON serialization, and localization source changes usually require generation.
-- Drift schema changes require a `schemaVersion` bump and migration logic.
-
-## Repo Standards
-
-- Ignore directives must include a short justification.
-- Use Dart shorthand only when the target type is obvious and readability improves.
-- Keep user-facing strings localized. No hardcoded English in UI.
-- User-facing errors use typed exceptions carrying localization keys.
 
 ## Architecture
 
-- Business rules, validation, and orchestration live in domain usecases.
-- Providers expose dependencies or state for UI consumption; they do not own business rules.
-- Widgets render. Keep widgets small and focused.
-- Repository queries feeding live-updating UI return `Stream`; use `Future` only for one-shot reads.
-- New `AsyncValue` code uses Dart switch patterns. Do not add new `.when()` usage.
-- Data mutations use Riverpod `Mutation` or the existing explicit mutation pattern.
-- Database cascades belong in the Drift schema with `ON DELETE CASCADE`, not manual app-code deletes.
+- Load `.agents/skills/app-architecture/SKILL.md` before adding, moving, or reviewing code in `apps/auravibes_app`.
+- Load `.agents/skills/package-architecture/SKILL.md` before adding, moving, or reviewing code in `packages/auravibes_engine`, `packages/auravibes_ui`, or `widgetbook`.
+- Keep durable architecture docs under `doc/architecture/`; update them only when package boundaries, layer rules, or file placement rules change.
+
+## PR Gates
+
+- PR titles use Conventional Commits, for example `fix: Correct typo`, `feat(ui): Add button`, or `refactor!: Drop legacy API`.
+- Before opening or updating a PR with code changes, prefer `fvm dart run melos run validate`, `fvm dart run dependency_validator`, and `fvm dart run import_sorter:main --exit-if-changed`.
