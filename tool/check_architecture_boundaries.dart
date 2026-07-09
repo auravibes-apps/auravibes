@@ -48,6 +48,7 @@ void main() {
 
   if (violations.isEmpty) {
     stdout.writeln('Architecture boundaries OK.');
+
     return;
   }
 
