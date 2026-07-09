@@ -3,6 +3,7 @@
 ## Scope
 
 - Applies to `packages/auravibes_ui`.
+- Root-run agents must load `.agents/skills/package-architecture/SKILL.md`; it is the package architecture source of truth.
 - Read `STYLE_GUIDE.md` before modifying UI components.
 - This package must stay domain-agnostic and reusable across projects.
 
@@ -19,3 +20,4 @@
 - Match existing atom/molecule patterns before adding new APIs.
 - Do not add business-specific names, copy, localization keys, or app feature logic.
 - Keep public API additions minimal and backed by tests when behavior changes.
+- Do not add unique UI package architecture rules here; update the root skill instead.
