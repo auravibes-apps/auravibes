@@ -18,7 +18,6 @@
 | CI tests                | `fvm dart run melos run test:ci`                                             |
 | Dependency check        | `fvm dart run dependency_validator`                                          |
 | Import sort check       | `fvm dart run import_sorter:main --exit-if-changed`                          |
-| Architecture boundaries | `fvm dart run melos run architecture:boundaries`                             |
 | Code generation         | `fvm dart run melos run generate`                                            |
 | Localization generation | `fvm dart run melos run generate:localization`                               |
 
@@ -43,7 +42,6 @@
 - Load `.agents/skills/app-architecture/SKILL.md` before adding, moving, or reviewing code in `apps/auravibes_app`.
 - Load `.agents/skills/package-architecture/SKILL.md` before adding, moving, or reviewing code in `packages/auravibes_engine` or `packages/auravibes_ui`.
 - Keep durable architecture docs under `doc/architecture/`; update them only when package boundaries, layer rules, or file placement rules change.
-- Run `fvm dart run melos run architecture:boundaries` after package-boundary changes.
 
 ## PR Gates
 

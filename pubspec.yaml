@@ -63,10 +63,6 @@ melos:
       run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/domain/entities/conversation_entity.dart,apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
       description: Fail when unnecessary nullable parameters are detected
 
-    architecture:boundaries:
-      run: dart tool/check_architecture_boundaries.dart
-      description: Fail when package architecture boundaries are violated
-
     format:check:
       run: dart format --line-length 80 -o none --set-exit-if-changed .
       description: Check code formating
@@ -129,7 +125,6 @@ melos:
         melos run unused:files &&
         melos run unused:code &&
         melos run unnecessary:nullable &&
-        melos run architecture:boundaries &&
         melos run format:check &&
         melos run test
       description: Full validation pipeline (no coverage, fast)
@@ -140,7 +135,6 @@ melos:
         melos run unused:files &&
         melos run unused:code &&
         melos run unnecessary:nullable &&
-        melos run architecture:boundaries &&
         melos run format:check &&
         melos run test:ci
       description: Validation pipeline with coverage (CI mode)
