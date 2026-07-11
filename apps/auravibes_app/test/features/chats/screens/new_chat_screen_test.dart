@@ -1,8 +1,11 @@
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -76,7 +79,9 @@ void main() {
           TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
-              child: const NewChatScreen(workspaceId: 'test-ws'),
+              child: const Portal(
+                child: NewChatScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               newChatProvider('test-ws').overrideWithValue(
@@ -88,6 +93,17 @@ void main() {
               agentsProvider('test-ws').overrideWith(
                 (ref) => Stream.value(const []),
               ),
+              allWorkspacesProvider.overrideWith(
+                (ref) => Stream.value([
+                  WorkspaceEntity(
+                    id: 'test-ws',
+                    name: 'Personal',
+                    type: WorkspaceType.local,
+                    createdAt: DateTime(2026),
+                    updatedAt: DateTime(2026),
+                  ),
+                ]),
+              ),
             ],
           ),
         );
@@ -97,6 +113,11 @@ void main() {
       expect(find.byType(NewChatScreen), findsOneWidget);
       expect(find.byType(AuraScreen), findsOneWidget);
       expect(find.byType(ChatInputWidget), findsOneWidget);
+      expect(
+        find.byKey(const Key('new_chat_workspace_selector')),
+        findsOneWidget,
+      );
+      expect(find.text('Personal'), findsOneWidget);
     });
 
     testWidgets('shows loading overlay while conversation starts', (
@@ -107,7 +128,9 @@ void main() {
           TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
-              child: const NewChatScreen(workspaceId: 'test-ws'),
+              child: const Portal(
+                child: NewChatScreen(workspaceId: 'test-ws'),
+              ),
             ),
             overrides: [
               newChatProvider('test-ws').overrideWithValue(
@@ -118,6 +141,17 @@ void main() {
               ),
               agentsProvider('test-ws').overrideWith(
                 (ref) => Stream.value(const []),
+              ),
+              allWorkspacesProvider.overrideWith(
+                (ref) => Stream.value([
+                  WorkspaceEntity(
+                    id: 'test-ws',
+                    name: 'Personal',
+                    type: WorkspaceType.local,
+                    createdAt: DateTime(2026),
+                    updatedAt: DateTime(2026),
+                  ),
+                ]),
               ),
             ],
           ),

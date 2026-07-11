@@ -1,0 +1,4 @@
+class: RevokeWorkspaceInviteRequest
+fields:
+  workspaceId: int
+  inviteId: int

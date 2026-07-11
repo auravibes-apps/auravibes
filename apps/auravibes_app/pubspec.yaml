@@ -13,6 +13,7 @@ environment:
 dependencies:
   async: ^2.13.0
   auravibes_engine: ^0.0.1
+  auravibes_server_client: ^0.0.1
   auravibes_ui: ^0.0.2
   characters: ^1.4.1
   collection: ^1.19.1
@@ -26,7 +27,7 @@ dependencies:
   easy_localization: ^3.0.8
   easy_localization_loader: ^2.0.2
   equatable: ^2.1.0
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0-beta.7
   flutter:
     sdk: flutter
   flutter_hooks: ^0.21.3+1
@@ -59,6 +60,7 @@ dependencies:
   riverpod_annotation: 4.0.3
   rxdart: ^0.28.0
   schemantic: ^0.2.0
+  serverpod_auth_core_client: 4.0.0-beta.0
   shared_preferences: ^2.5.4
   sqlite3_flutter_libs: ^0.6.0
   textf: ^2.0.0-dev.2

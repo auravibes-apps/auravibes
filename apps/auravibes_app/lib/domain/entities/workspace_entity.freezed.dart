@@ -20,7 +20,9 @@ mixin _$WorkspaceEntity {
  WorkspaceType get type;/// Timestamp when the workspace was created.
  DateTime get createdAt;/// Timestamp when the workspace was last updated.
  DateTime get updatedAt;/// URL for remote workspaces, null for local workspaces.
- String? get url;
+ String? get url;/// Cloud workspace identifier for mirrored cloud workspaces.
+ String? get cloudWorkspaceId;/// Cloud account identifier used to access this local mirror.
+ String? get cloudAccountId;
 /// Create a copy of WorkspaceEntity
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -31,16 +33,16 @@ $WorkspaceEntityCopyWith<WorkspaceEntity> get copyWith => _$WorkspaceEntityCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url);
+int get hashCode => Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url,cloudWorkspaceId,cloudAccountId);
 
 @override
 String toString() {
-  return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url)';
+  return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -51,7 +53,7 @@ abstract mixin class $WorkspaceEntityCopyWith<$Res>  {
   factory $WorkspaceEntityCopyWith(WorkspaceEntity value, $Res Function(WorkspaceEntity) _then) = _$WorkspaceEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, WorkspaceType type, DateTime createdAt, DateTime updatedAt, String? url
+ String id, String name, WorkspaceType type, DateTime createdAt, DateTime updatedAt, String? url, String? cloudWorkspaceId, String? cloudAccountId
 });
 
 
@@ -68,7 +70,7 @@ class _$WorkspaceEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? createdAt = null,Object? updatedAt = null,Object? url = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? type = null,Object? createdAt = null,Object? updatedAt = null,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -76,6 +78,8 @@ as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non
 as WorkspaceType,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,cloudWorkspaceId: freezed == cloudWorkspaceId ? _self.cloudWorkspaceId : cloudWorkspaceId // ignore: cast_nullable_to_non_nullable
+as String?,cloudAccountId: freezed == cloudAccountId ? _self.cloudAccountId : cloudAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -161,10 +165,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  WorkspaceType type,  DateTime createdAt,  DateTime updatedAt,  String? url)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  WorkspaceType type,  DateTime createdAt,  DateTime updatedAt,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceEntity() when $default != null:
-return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_that.url);case _:
+return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   return orElse();
 
 }
@@ -182,10 +186,10 @@ return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  WorkspaceType type,  DateTime createdAt,  DateTime updatedAt,  String? url)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  WorkspaceType type,  DateTime createdAt,  DateTime updatedAt,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceEntity():
-return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_that.url);case _:
+return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +206,10 @@ return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  WorkspaceType type,  DateTime createdAt,  DateTime updatedAt,  String? url)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  WorkspaceType type,  DateTime createdAt,  DateTime updatedAt,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceEntity() when $default != null:
-return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_that.url);case _:
+return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   return null;
 
 }
@@ -217,7 +221,7 @@ return $default(_that.id,_that.name,_that.type,_that.createdAt,_that.updatedAt,_
 
 
 class _WorkspaceEntity extends WorkspaceEntity {
-  const _WorkspaceEntity({required this.id, required this.name, required this.type, required this.createdAt, required this.updatedAt, this.url}): super._();
+  const _WorkspaceEntity({required this.id, required this.name, required this.type, required this.createdAt, required this.updatedAt, this.url, this.cloudWorkspaceId, this.cloudAccountId}): super._();
   
 
 /// Unique identifier for the workspace.
@@ -232,6 +236,10 @@ class _WorkspaceEntity extends WorkspaceEntity {
 @override final  DateTime updatedAt;
 /// URL for remote workspaces, null for local workspaces.
 @override final  String? url;
+/// Cloud workspace identifier for mirrored cloud workspaces.
+@override final  String? cloudWorkspaceId;
+/// Cloud account identifier used to access this local mirror.
+@override final  String? cloudAccountId;
 
 /// Create a copy of WorkspaceEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -243,16 +251,16 @@ _$WorkspaceEntityCopyWith<_WorkspaceEntity> get copyWith => __$WorkspaceEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url);
+int get hashCode => Object.hash(runtimeType,id,name,type,createdAt,updatedAt,url,cloudWorkspaceId,cloudAccountId);
 
 @override
 String toString() {
-  return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url)';
+  return 'WorkspaceEntity(id: $id, name: $name, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -263,7 +271,7 @@ abstract mixin class _$WorkspaceEntityCopyWith<$Res> implements $WorkspaceEntity
   factory _$WorkspaceEntityCopyWith(_WorkspaceEntity value, $Res Function(_WorkspaceEntity) _then) = __$WorkspaceEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, WorkspaceType type, DateTime createdAt, DateTime updatedAt, String? url
+ String id, String name, WorkspaceType type, DateTime createdAt, DateTime updatedAt, String? url, String? cloudWorkspaceId, String? cloudAccountId
 });
 
 
@@ -280,7 +288,7 @@ class __$WorkspaceEntityCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? type = null,Object? createdAt = null,Object? updatedAt = null,Object? url = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? type = null,Object? createdAt = null,Object? updatedAt = null,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
   return _then(_WorkspaceEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -288,6 +296,8 @@ as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non
 as WorkspaceType,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,cloudWorkspaceId: freezed == cloudWorkspaceId ? _self.cloudWorkspaceId : cloudWorkspaceId // ignore: cast_nullable_to_non_nullable
+as String?,cloudAccountId: freezed == cloudAccountId ? _self.cloudAccountId : cloudAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -301,7 +311,9 @@ mixin _$WorkspaceToCreate {
 /// Human-readable name of the workspace.
  String get name;/// Type of workspace (local or remote).
  WorkspaceType get type;/// URL for remote workspaces, null for local workspaces.
- String? get url;
+ String? get url;/// Cloud workspace identifier for mirrored cloud workspaces.
+ String? get cloudWorkspaceId;/// Cloud account identifier that owns this local mirror.
+ String? get cloudAccountId;
 /// Create a copy of WorkspaceToCreate
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -312,16 +324,16 @@ $WorkspaceToCreateCopyWith<WorkspaceToCreate> get copyWith => _$WorkspaceToCreat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url);
+int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
 
 @override
 String toString() {
-  return 'WorkspaceToCreate(name: $name, type: $type, url: $url)';
+  return 'WorkspaceToCreate(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -332,7 +344,7 @@ abstract mixin class $WorkspaceToCreateCopyWith<$Res>  {
   factory $WorkspaceToCreateCopyWith(WorkspaceToCreate value, $Res Function(WorkspaceToCreate) _then) = _$WorkspaceToCreateCopyWithImpl;
 @useResult
 $Res call({
- String name, WorkspaceType type, String? url
+ String name, WorkspaceType type, String? url, String? cloudWorkspaceId, String? cloudAccountId
 });
 
 
@@ -349,11 +361,13 @@ class _$WorkspaceToCreateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceToCreate
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? type = null,Object? url = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? type = null,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as WorkspaceType,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,cloudWorkspaceId: freezed == cloudWorkspaceId ? _self.cloudWorkspaceId : cloudWorkspaceId // ignore: cast_nullable_to_non_nullable
+as String?,cloudAccountId: freezed == cloudAccountId ? _self.cloudAccountId : cloudAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -439,10 +453,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  WorkspaceType type,  String? url)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  WorkspaceType type,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspaceToCreate() when $default != null:
-return $default(_that.name,_that.type,_that.url);case _:
+return $default(_that.name,_that.type,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   return orElse();
 
 }
@@ -460,10 +474,10 @@ return $default(_that.name,_that.type,_that.url);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  WorkspaceType type,  String? url)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  WorkspaceType type,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceToCreate():
-return $default(_that.name,_that.type,_that.url);case _:
+return $default(_that.name,_that.type,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -480,10 +494,10 @@ return $default(_that.name,_that.type,_that.url);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  WorkspaceType type,  String? url)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  WorkspaceType type,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspaceToCreate() when $default != null:
-return $default(_that.name,_that.type,_that.url);case _:
+return $default(_that.name,_that.type,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   return null;
 
 }
@@ -495,7 +509,7 @@ return $default(_that.name,_that.type,_that.url);case _:
 
 
 class _WorkspaceToCreate extends WorkspaceToCreate {
-  const _WorkspaceToCreate({required this.name, required this.type, this.url}): super._();
+  const _WorkspaceToCreate({required this.name, required this.type, this.url, this.cloudWorkspaceId, this.cloudAccountId}): super._();
   
 
 /// Human-readable name of the workspace.
@@ -504,6 +518,10 @@ class _WorkspaceToCreate extends WorkspaceToCreate {
 @override final  WorkspaceType type;
 /// URL for remote workspaces, null for local workspaces.
 @override final  String? url;
+/// Cloud workspace identifier for mirrored cloud workspaces.
+@override final  String? cloudWorkspaceId;
+/// Cloud account identifier that owns this local mirror.
+@override final  String? cloudAccountId;
 
 /// Create a copy of WorkspaceToCreate
 /// with the given fields replaced by the non-null parameter values.
@@ -515,16 +533,16 @@ _$WorkspaceToCreateCopyWith<_WorkspaceToCreate> get copyWith => __$WorkspaceToCr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url);
+int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
 
 @override
 String toString() {
-  return 'WorkspaceToCreate(name: $name, type: $type, url: $url)';
+  return 'WorkspaceToCreate(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -535,7 +553,7 @@ abstract mixin class _$WorkspaceToCreateCopyWith<$Res> implements $WorkspaceToCr
   factory _$WorkspaceToCreateCopyWith(_WorkspaceToCreate value, $Res Function(_WorkspaceToCreate) _then) = __$WorkspaceToCreateCopyWithImpl;
 @override @useResult
 $Res call({
- String name, WorkspaceType type, String? url
+ String name, WorkspaceType type, String? url, String? cloudWorkspaceId, String? cloudAccountId
 });
 
 
@@ -552,11 +570,13 @@ class __$WorkspaceToCreateCopyWithImpl<$Res>
 
 /// Create a copy of WorkspaceToCreate
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? type = null,Object? url = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? type = null,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
   return _then(_WorkspaceToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as WorkspaceType,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,cloudWorkspaceId: freezed == cloudWorkspaceId ? _self.cloudWorkspaceId : cloudWorkspaceId // ignore: cast_nullable_to_non_nullable
+as String?,cloudAccountId: freezed == cloudAccountId ? _self.cloudAccountId : cloudAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -567,7 +587,7 @@ as String?,
 /// @nodoc
 mixin _$WorkspacePatch {
 
- String? get name; WorkspaceType? get type; String? get url;
+ String? get name; WorkspaceType? get type; String? get url; String? get cloudWorkspaceId; String? get cloudAccountId;
 /// Create a copy of WorkspacePatch
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -578,16 +598,16 @@ $WorkspacePatchCopyWith<WorkspacePatch> get copyWith => _$WorkspacePatchCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url);
+int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
 
 @override
 String toString() {
-  return 'WorkspacePatch(name: $name, type: $type, url: $url)';
+  return 'WorkspacePatch(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -598,7 +618,7 @@ abstract mixin class $WorkspacePatchCopyWith<$Res>  {
   factory $WorkspacePatchCopyWith(WorkspacePatch value, $Res Function(WorkspacePatch) _then) = _$WorkspacePatchCopyWithImpl;
 @useResult
 $Res call({
- String? name, WorkspaceType? type, String? url
+ String? name, WorkspaceType? type, String? url, String? cloudWorkspaceId, String? cloudAccountId
 });
 
 
@@ -615,11 +635,13 @@ class _$WorkspacePatchCopyWithImpl<$Res>
 
 /// Create a copy of WorkspacePatch
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? type = freezed,Object? url = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? type = freezed,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
   return _then(_self.copyWith(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as WorkspaceType?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,cloudWorkspaceId: freezed == cloudWorkspaceId ? _self.cloudWorkspaceId : cloudWorkspaceId // ignore: cast_nullable_to_non_nullable
+as String?,cloudAccountId: freezed == cloudAccountId ? _self.cloudAccountId : cloudAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -705,10 +727,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  WorkspaceType? type,  String? url)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? name,  WorkspaceType? type,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _WorkspacePatch() when $default != null:
-return $default(_that.name,_that.type,_that.url);case _:
+return $default(_that.name,_that.type,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   return orElse();
 
 }
@@ -726,10 +748,10 @@ return $default(_that.name,_that.type,_that.url);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  WorkspaceType? type,  String? url)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? name,  WorkspaceType? type,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)  $default,) {final _that = this;
 switch (_that) {
 case _WorkspacePatch():
-return $default(_that.name,_that.type,_that.url);case _:
+return $default(_that.name,_that.type,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -746,10 +768,10 @@ return $default(_that.name,_that.type,_that.url);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  WorkspaceType? type,  String? url)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? name,  WorkspaceType? type,  String? url,  String? cloudWorkspaceId,  String? cloudAccountId)?  $default,) {final _that = this;
 switch (_that) {
 case _WorkspacePatch() when $default != null:
-return $default(_that.name,_that.type,_that.url);case _:
+return $default(_that.name,_that.type,_that.url,_that.cloudWorkspaceId,_that.cloudAccountId);case _:
   return null;
 
 }
@@ -761,12 +783,14 @@ return $default(_that.name,_that.type,_that.url);case _:
 
 
 class _WorkspacePatch extends WorkspacePatch {
-  const _WorkspacePatch({this.name, this.type, this.url}): super._();
+  const _WorkspacePatch({this.name, this.type, this.url, this.cloudWorkspaceId, this.cloudAccountId}): super._();
   
 
 @override final  String? name;
 @override final  WorkspaceType? type;
 @override final  String? url;
+@override final  String? cloudWorkspaceId;
+@override final  String? cloudAccountId;
 
 /// Create a copy of WorkspacePatch
 /// with the given fields replaced by the non-null parameter values.
@@ -778,16 +802,16 @@ _$WorkspacePatchCopyWith<_WorkspacePatch> get copyWith => __$WorkspacePatchCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspacePatch&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.cloudWorkspaceId, cloudWorkspaceId) || other.cloudWorkspaceId == cloudWorkspaceId)&&(identical(other.cloudAccountId, cloudAccountId) || other.cloudAccountId == cloudAccountId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,type,url);
+int get hashCode => Object.hash(runtimeType,name,type,url,cloudWorkspaceId,cloudAccountId);
 
 @override
 String toString() {
-  return 'WorkspacePatch(name: $name, type: $type, url: $url)';
+  return 'WorkspacePatch(name: $name, type: $type, url: $url, cloudWorkspaceId: $cloudWorkspaceId, cloudAccountId: $cloudAccountId)';
 }
 
 
@@ -798,7 +822,7 @@ abstract mixin class _$WorkspacePatchCopyWith<$Res> implements $WorkspacePatchCo
   factory _$WorkspacePatchCopyWith(_WorkspacePatch value, $Res Function(_WorkspacePatch) _then) = __$WorkspacePatchCopyWithImpl;
 @override @useResult
 $Res call({
- String? name, WorkspaceType? type, String? url
+ String? name, WorkspaceType? type, String? url, String? cloudWorkspaceId, String? cloudAccountId
 });
 
 
@@ -815,11 +839,13 @@ class __$WorkspacePatchCopyWithImpl<$Res>
 
 /// Create a copy of WorkspacePatch
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? type = freezed,Object? url = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = freezed,Object? type = freezed,Object? url = freezed,Object? cloudWorkspaceId = freezed,Object? cloudAccountId = freezed,}) {
   return _then(_WorkspacePatch(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as WorkspaceType?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
+as String?,cloudWorkspaceId: freezed == cloudWorkspaceId ? _self.cloudWorkspaceId : cloudWorkspaceId // ignore: cast_nullable_to_non_nullable
+as String?,cloudAccountId: freezed == cloudAccountId ? _self.cloudAccountId : cloudAccountId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

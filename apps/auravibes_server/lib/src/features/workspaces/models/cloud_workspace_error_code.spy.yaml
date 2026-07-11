@@ -1,0 +1,21 @@
+enum: CloudWorkspaceErrorCode
+serialized: byName
+values:
+  - authenticationRequired
+  - emailAccountRequired
+  - workspaceNotFound
+  - membershipRequired
+  - permissionDenied
+  - invalidRole
+  - ownerRequired
+  - ownerCannotLeave
+  - ownerCannotBeRemoved
+  - ownershipTransferRequired
+  - inviteNotFound
+  - inviteExpired
+  - inviteRevoked
+  - inviteEmailMismatch
+  - duplicateInvite
+  - duplicateMembership
+  - confirmationNameMismatch
+  - validationFailed

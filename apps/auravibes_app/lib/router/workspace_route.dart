@@ -6,6 +6,12 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
+import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_add_screen.dart';
+import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_forgot_password_screen.dart';
+import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_login_screen.dart';
+import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_register_screen.dart';
+import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
+import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
@@ -18,6 +24,7 @@ import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:flutter/widgets.dart';
@@ -68,6 +75,23 @@ class IntroRoute extends GoRouteData with $IntroRoute {
               routes: [
                 TypedGoRoute<WorkspaceManagementRoute>(
                   path: 'manage-workspaces',
+                  routes: [
+                    TypedGoRoute<WorkspaceCreateRoute>(path: 'create'),
+                    TypedGoRoute<CloudWorkspaceDetailRoute>(
+                      path: 'cloud/:cloudAccountId/:cloudWorkspaceId',
+                    ),
+                  ],
+                ),
+                TypedGoRoute<CloudAccountsRoute>(
+                  path: 'cloud-accounts',
+                  routes: [
+                    TypedGoRoute<CloudAccountAddRoute>(path: 'add'),
+                    TypedGoRoute<CloudAccountLoginRoute>(path: 'login'),
+                    TypedGoRoute<CloudAccountRegisterRoute>(path: 'register'),
+                    TypedGoRoute<CloudAccountForgotPasswordRoute>(
+                      path: 'forgot-password',
+                    ),
+                  ],
                 ),
                 TypedGoRoute<ToolsRoute>(
                   path: 'tools',
@@ -518,6 +542,101 @@ class MoreRoute extends GoRouteData with $MoreRoute {
   }
 }
 
+class CloudAccountsRoute extends GoRouteData with $CloudAccountsRoute {
+  CloudAccountsRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CloudAccountsScreen(workspaceId: workspaceId);
+  }
+}
+
+class CloudWorkspaceDetailRoute extends GoRouteData
+    with $CloudWorkspaceDetailRoute {
+  CloudWorkspaceDetailRoute({
+    required this.workspaceId,
+    required this.cloudAccountId,
+    required this.cloudWorkspaceId,
+  });
+
+  final String workspaceId;
+  final String cloudAccountId;
+  final int cloudWorkspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CloudWorkspaceDetailScreen(
+      workspaceId: workspaceId,
+      cloudAccountId: cloudAccountId,
+      cloudWorkspaceId: cloudWorkspaceId,
+    );
+  }
+}
+
+class CloudAccountAddRoute extends GoRouteData with $CloudAccountAddRoute {
+  CloudAccountAddRoute({required this.workspaceId, this.returnPath});
+
+  final String workspaceId;
+  final String? returnPath;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CloudAccountAddScreen(
+      workspaceId: workspaceId,
+      returnPath: returnPath,
+    );
+  }
+}
+
+class CloudAccountLoginRoute extends GoRouteData with $CloudAccountLoginRoute {
+  CloudAccountLoginRoute({required this.workspaceId, this.returnPath});
+
+  final String workspaceId;
+  final String? returnPath;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CloudAccountLoginScreen(
+      workspaceId: workspaceId,
+      returnPath: returnPath,
+    );
+  }
+}
+
+class CloudAccountRegisterRoute extends GoRouteData
+    with $CloudAccountRegisterRoute {
+  CloudAccountRegisterRoute({required this.workspaceId, this.returnPath});
+
+  final String workspaceId;
+  final String? returnPath;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CloudAccountRegisterScreen(
+      workspaceId: workspaceId,
+      returnPath: returnPath,
+    );
+  }
+}
+
+class CloudAccountForgotPasswordRoute extends GoRouteData
+    with $CloudAccountForgotPasswordRoute {
+  CloudAccountForgotPasswordRoute({required this.workspaceId, this.returnPath});
+
+  final String workspaceId;
+  final String? returnPath;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CloudAccountForgotPasswordScreen(
+      workspaceId: workspaceId,
+      returnPath: returnPath,
+    );
+  }
+}
+
 class WorkspaceManagementRoute extends GoRouteData
     with $WorkspaceManagementRoute {
   WorkspaceManagementRoute({required this.workspaceId});
@@ -527,5 +646,16 @@ class WorkspaceManagementRoute extends GoRouteData
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return WorkspaceManagementScreen(workspaceId: workspaceId);
+  }
+}
+
+class WorkspaceCreateRoute extends GoRouteData with $WorkspaceCreateRoute {
+  WorkspaceCreateRoute({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return CreateWorkspaceScreen(workspaceId: workspaceId);
   }
 }

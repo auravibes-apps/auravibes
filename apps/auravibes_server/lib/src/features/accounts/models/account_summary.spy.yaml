@@ -1,0 +1,4 @@
+class: AccountSummary
+fields:
+  userId: String
+  email: String

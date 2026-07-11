@@ -4,15 +4,14 @@
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
-import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_dropdown_item.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:collection/collection.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -202,7 +201,7 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
           navigationItems: widget.navigationItems,
           onNavigationTap: widget.onNavigationTap,
           selectedIndex: widget.selectedIndex,
-          header: _WorkspaceDropdownHeader(workspaceId: widget.workspaceId),
+          header: _WorkspaceHeader(workspaceId: widget.workspaceId),
           middleSection: SidebarConversationsWidget(
             workspaceId: widget.workspaceId,
           ),
@@ -218,45 +217,28 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   }
 }
 
-class _WorkspaceDropdownHeader extends ConsumerWidget {
-  const _WorkspaceDropdownHeader({required this.workspaceId});
+class _WorkspaceHeader extends ConsumerWidget {
+  const _WorkspaceHeader({required this.workspaceId});
 
   final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspacesAsync = ref.watch(allWorkspacesProvider);
-    final switcherState = ref.watch(workspaceSwitcherProvider);
-
-    final Widget dropdownWidget;
+    final Widget header;
     switch (workspacesAsync) {
       case AsyncData(:final value):
-        final items = value
-            .map(
-              (w) => WorkspaceDropdownItem(
-                id: w.id,
-                name: w.name,
-              ),
-            )
-            .toList();
-
-        final isLoading = switcherState.status == SwitchStatus.loading;
-        final errorKey = switcherState.errorLocalizationKey;
-
-        dropdownWidget = WorkspaceDropdown(
-          workspaces: items,
-          activeWorkspaceId: workspaceId,
-          onSelected: (item) {
-            if (item.id == workspaceId) return;
-            ref
-                .read(workspaceSwitcherProvider.notifier)
-                .switchToWorkspace(item.id);
-          },
-          isLoading: isLoading,
-          errorLocalizationKey: errorKey,
+        final workspace = value
+            .where((item) => item.id == workspaceId)
+            .firstOrNull;
+        header = AuraText(
+          child: Text(
+            workspace?.name ?? LocaleKeys.workspace_management_loading.tr(),
+          ),
+          style: AuraTextStyle.heading6,
         );
       case AsyncLoading():
-        dropdownWidget = const AuraContainer(
+        header = const AuraContainer(
           child: Center(
             child: TextLocale(LocaleKeys.workspace_management_loading),
           ),
@@ -264,7 +246,7 @@ class _WorkspaceDropdownHeader extends ConsumerWidget {
         );
       case AsyncError(:final error):
         debugPrint('Workspace dropdown stream error: $error');
-        dropdownWidget = const AuraText(
+        header = const AuraText(
           child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         );
     }
@@ -272,7 +254,7 @@ class _WorkspaceDropdownHeader extends ConsumerWidget {
     return SafeArea(
       bottom: false,
       child: AuraPadding(
-        child: dropdownWidget,
+        child: header,
         padding: .small,
       ),
     );

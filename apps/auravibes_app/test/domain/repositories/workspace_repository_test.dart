@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubWorkspaceRepository implements WorkspaceRepository {
@@ -74,6 +75,48 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<bool> deleteWorkspace(String id) async => deleteResult;
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async => null;
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
+    String cloudWorkspaceId,
+  ) async => allWorkspaces
+      .where((w) => w.cloudWorkspaceId == cloudWorkspaceId)
+      .firstOrNull;
+
+  @override
+  Future<WorkspaceEntity> upsertCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String name,
+    required String serverUrl,
+  }) {
+    return createWorkspace(
+      WorkspaceToCreate(
+        name: name,
+        type: WorkspaceType.remote,
+        url: serverUrl,
+        cloudWorkspaceId: cloudWorkspaceId,
+        cloudAccountId: cloudAccountId,
+      ),
+    );
+  }
+
+  @override
+  Future<bool> deleteCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async => deleteResult;
+
+  @override
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId,
+  ) async => 0;
 
   @override
   Future<bool> workspaceExists(String id) async => existsResult;

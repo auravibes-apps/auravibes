@@ -1,0 +1,18 @@
+class: WorkspaceInvite
+table: workspace_invite
+fields:
+  workspaceId: int
+  email: String
+  role: String
+  invitedByUserId: String
+  acceptedByUserId: String?
+  createdAt: DateTime
+  expiresAt: DateTime?
+  acceptedAt: DateTime?
+  declinedAt: DateTime?
+  revokedAt: DateTime?
+  pendingKey: String?
+indexes:
+  workspace_invite_pending_key_idx:
+    fields: pendingKey
+    unique: true

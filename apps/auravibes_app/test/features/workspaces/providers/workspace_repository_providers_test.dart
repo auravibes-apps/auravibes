@@ -85,6 +85,44 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> patchWorkspaceTimestamp(String id) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
+    String cloudWorkspaceId,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<WorkspaceEntity> upsertCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String name,
+    required String serverUrl,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<bool> deleteCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(String cloudAccountId) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {

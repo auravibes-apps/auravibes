@@ -5,7 +5,9 @@ environment:
 
 workspace:
   - apps/auravibes_app
+  - apps/auravibes_server
   - packages/auravibes_engine
+  - packages/auravibes_server_client
   - packages/auravibes_ui
   - widgetbook
 

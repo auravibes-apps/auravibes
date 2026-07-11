@@ -66,6 +66,38 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                 GoRouteData.$route(
                   path: 'manage-workspaces',
                   factory: $WorkspaceManagementRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'create',
+                      factory: $WorkspaceCreateRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: 'cloud/:cloudAccountId/:cloudWorkspaceId',
+                      factory: $CloudWorkspaceDetailRoute._fromState,
+                    ),
+                  ],
+                ),
+                GoRouteData.$route(
+                  path: 'cloud-accounts',
+                  factory: $CloudAccountsRoute._fromState,
+                  routes: [
+                    GoRouteData.$route(
+                      path: 'add',
+                      factory: $CloudAccountAddRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: 'login',
+                      factory: $CloudAccountLoginRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: 'register',
+                      factory: $CloudAccountRegisterRoute._fromState,
+                    ),
+                    GoRouteData.$route(
+                      path: 'forgot-password',
+                      factory: $CloudAccountForgotPasswordRoute._fromState,
+                    ),
+                  ],
                 ),
                 GoRouteData.$route(
                   path: 'tools',
@@ -328,6 +360,210 @@ mixin $WorkspaceManagementRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $WorkspaceCreateRoute on GoRouteData {
+  static WorkspaceCreateRoute _fromState(GoRouterState state) =>
+      WorkspaceCreateRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  WorkspaceCreateRoute get _self => this as WorkspaceCreateRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces/create',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CloudWorkspaceDetailRoute on GoRouteData {
+  static CloudWorkspaceDetailRoute _fromState(GoRouterState state) =>
+      CloudWorkspaceDetailRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        cloudAccountId: state.pathParameters['cloudAccountId']!,
+        cloudWorkspaceId: int.parse(state.pathParameters['cloudWorkspaceId']!),
+      );
+
+  CloudWorkspaceDetailRoute get _self => this as CloudWorkspaceDetailRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/manage-workspaces/cloud/${Uri.encodeComponent(_self.cloudAccountId)}/${Uri.encodeComponent(_self.cloudWorkspaceId.toString())}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CloudAccountsRoute on GoRouteData {
+  static CloudAccountsRoute _fromState(GoRouterState state) =>
+      CloudAccountsRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  CloudAccountsRoute get _self => this as CloudAccountsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CloudAccountAddRoute on GoRouteData {
+  static CloudAccountAddRoute _fromState(GoRouterState state) =>
+      CloudAccountAddRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        returnPath: state.uri.queryParameters['return-path'],
+      );
+
+  CloudAccountAddRoute get _self => this as CloudAccountAddRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/add',
+    queryParams: {
+      if (_self.returnPath != null) 'return-path': _self.returnPath,
+    },
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CloudAccountLoginRoute on GoRouteData {
+  static CloudAccountLoginRoute _fromState(GoRouterState state) =>
+      CloudAccountLoginRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        returnPath: state.uri.queryParameters['return-path'],
+      );
+
+  CloudAccountLoginRoute get _self => this as CloudAccountLoginRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/login',
+    queryParams: {
+      if (_self.returnPath != null) 'return-path': _self.returnPath,
+    },
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CloudAccountRegisterRoute on GoRouteData {
+  static CloudAccountRegisterRoute _fromState(GoRouterState state) =>
+      CloudAccountRegisterRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        returnPath: state.uri.queryParameters['return-path'],
+      );
+
+  CloudAccountRegisterRoute get _self => this as CloudAccountRegisterRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/register',
+    queryParams: {
+      if (_self.returnPath != null) 'return-path': _self.returnPath,
+    },
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $CloudAccountForgotPasswordRoute on GoRouteData {
+  static CloudAccountForgotPasswordRoute _fromState(GoRouterState state) =>
+      CloudAccountForgotPasswordRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+        returnPath: state.uri.queryParameters['return-path'],
+      );
+
+  CloudAccountForgotPasswordRoute get _self =>
+      this as CloudAccountForgotPasswordRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/more/cloud-accounts/forgot-password',
+    queryParams: {
+      if (_self.returnPath != null) 'return-path': _self.returnPath,
+    },
   );
 
   @override

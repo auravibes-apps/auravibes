@@ -1,0 +1,3 @@
+class: AcceptWorkspaceInviteRequest
+fields:
+  inviteId: int

@@ -30,6 +30,12 @@ abstract class WorkspaceEntity with _$WorkspaceEntity {
 
     /// URL for remote workspaces, null for local workspaces.
     String? url,
+
+    /// Cloud workspace identifier for mirrored cloud workspaces.
+    String? cloudWorkspaceId,
+
+    /// Cloud account identifier used to access this local mirror.
+    String? cloudAccountId,
   }) = _WorkspaceEntity;
   const WorkspaceEntity._();
 }
@@ -46,6 +52,12 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
 
     /// URL for remote workspaces, null for local workspaces.
     String? url,
+
+    /// Cloud workspace identifier for mirrored cloud workspaces.
+    String? cloudWorkspaceId,
+
+    /// Cloud account identifier that owns this local mirror.
+    String? cloudAccountId,
   }) = _WorkspaceToCreate;
   const WorkspaceToCreate._();
 
@@ -61,9 +73,17 @@ abstract class WorkspaceToCreate with _$WorkspaceToCreate {
   /// Returns true if the workspace has a valid URL (for remote workspaces).
   bool get hasValidUrl {
     final url = this.url;
-    if (isLocal && url == null) return true;
+    final cloudWorkspaceId = this.cloudWorkspaceId;
+    final cloudAccountId = this.cloudAccountId;
+    final hasCloudMirror = cloudWorkspaceId != null && cloudAccountId != null;
+    if (isLocal && url == null && !hasCloudMirror) return true;
 
-    return !isLocal && url != null && url.isNotEmpty;
+    return isRemote &&
+        ((url != null && url.isNotEmpty) ||
+            (cloudWorkspaceId != null &&
+                cloudWorkspaceId.isNotEmpty &&
+                cloudAccountId != null &&
+                cloudAccountId.isNotEmpty));
   }
 
   /// Returns true if the workspace is in a valid state.
@@ -80,40 +100,72 @@ abstract class WorkspacePatch with _$WorkspacePatch {
     String? name,
     WorkspaceType? type,
     String? url,
+    String? cloudWorkspaceId,
+    String? cloudAccountId,
   }) = _WorkspacePatch;
   const WorkspacePatch._();
 
   String? validationErrorFor(WorkspaceEntity current) {
     final name = this.name;
     final url = this.url;
+    final cloudWorkspaceId = this.cloudWorkspaceId;
+    final cloudAccountId = this.cloudAccountId;
 
-    if (name == null && type == null && url == null) {
+    if (name == null &&
+        type == null &&
+        url == null &&
+        cloudWorkspaceId == null &&
+        cloudAccountId == null) {
       return 'At least one field must be provided';
     }
 
-    if (name != null && name.isEmpty) {
-      return 'Workspace name cannot be empty';
-    }
-
-    if (url != null && url.isEmpty) {
-      return 'Workspace URL cannot be empty';
-    }
+    final fieldError = _fieldValidationError(
+      name: name,
+      url: url,
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+    );
+    if (fieldError != null) return fieldError;
 
     final mergedName = name ?? current.name;
     final mergedType = type ?? current.type;
     final mergedUrl = url ?? current.url;
+    final mergedCloudWorkspaceId = cloudWorkspaceId ?? current.cloudWorkspaceId;
+    final mergedCloudAccountId = cloudAccountId ?? current.cloudAccountId;
+    final hasCloudMirror =
+        mergedCloudWorkspaceId != null && mergedCloudAccountId != null;
 
     if (mergedName.isEmpty) {
       return 'Workspace name cannot be empty';
     }
 
-    if (mergedType == WorkspaceType.local && mergedUrl != null) {
-      return 'Local workspace cannot have a URL';
+    if (mergedType == WorkspaceType.local &&
+        (mergedUrl != null || hasCloudMirror)) {
+      return 'Local workspace cannot have remote metadata';
     }
 
     if (mergedType == WorkspaceType.remote &&
-        (mergedUrl == null || mergedUrl.isEmpty)) {
-      return 'Remote workspace must have a URL';
+        (mergedUrl == null || mergedUrl.isEmpty) &&
+        !hasCloudMirror) {
+      return 'Remote workspace must have a URL or cloud ID';
+    }
+
+    return null;
+  }
+
+  String? _fieldValidationError({
+    required String? name,
+    required String? url,
+    required String? cloudWorkspaceId,
+    required String? cloudAccountId,
+  }) {
+    if (name != null && name.isEmpty) return 'Workspace name cannot be empty';
+    if (url != null && url.isEmpty) return 'Workspace URL cannot be empty';
+    if (cloudWorkspaceId != null && cloudWorkspaceId.isEmpty) {
+      return 'Cloud workspace ID cannot be empty';
+    }
+    if (cloudAccountId != null && cloudAccountId.isEmpty) {
+      return 'Cloud account ID cannot be empty';
     }
 
     return null;

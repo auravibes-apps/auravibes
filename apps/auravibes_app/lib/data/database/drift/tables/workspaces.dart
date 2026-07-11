@@ -17,4 +17,10 @@ class Workspaces extends Table with TableMixin {
 
   /// URL for remote workspaces, null for local workspaces.
   TextColumn get url => text().nullable()();
+
+  /// Cloud workspace identifier for mirrored cloud workspaces.
+  TextColumn get cloudWorkspaceId => text().nullable()();
+
+  /// Cloud account identifier that owns this local mirror.
+  TextColumn get cloudAccountId => text().nullable()();
 }

@@ -115,7 +115,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   /// Database creation strategy.
   @override
@@ -147,6 +147,10 @@ class AppDatabase extends _$AppDatabase {
             'UPDATE agents SET description = substr(trim(content), 1, 512) '
             'WHERE length(description) = 0',
           );
+        }
+        if (from < 6) {
+          await m.addColumn(workspaces, workspaces.cloudWorkspaceId);
+          await m.addColumn(workspaces, workspaces.cloudAccountId);
         }
       },
     );

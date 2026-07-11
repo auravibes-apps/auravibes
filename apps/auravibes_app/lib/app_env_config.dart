@@ -7,4 +7,8 @@ class AppEnvConfig {
   );
 
   static const dbHashSource = String.fromEnvironment('DB_HASH_SOURCE');
+
+  static const auravibesServerUrl = String.fromEnvironment(
+    'AURAVIBES_SERVER_URL',
+  );
 }

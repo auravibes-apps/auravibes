@@ -55,12 +55,21 @@ void main() {
       final names = columns.map((r) => r.read<String>('name')).toSet();
       expect(
         names,
-        containsAll(['id', 'created_at', 'updated_at', 'name', 'type', 'url']),
+        containsAll([
+          'id',
+          'created_at',
+          'updated_at',
+          'name',
+          'type',
+          'url',
+          'cloud_workspace_id',
+          'cloud_account_id',
+        ]),
       );
     });
 
-    test('has 6 columns', () {
-      expect(columns.length, 6);
+    test('has 8 columns', () {
+      expect(columns.length, 8);
     });
 
     test('name is not null', () {
@@ -137,6 +146,8 @@ void main() {
       expect(table.name, isNotNull);
       expect(table.type, isNotNull);
       expect(table.url, isNotNull);
+      expect(table.cloudWorkspaceId, isNotNull);
+      expect(table.cloudAccountId, isNotNull);
     });
 
     test('column names match expected snake_case', () {
@@ -144,11 +155,13 @@ void main() {
       expect(table.name.name, 'name');
       expect(table.type.name, 'type');
       expect(table.url.name, 'url');
+      expect(table.cloudWorkspaceId.name, 'cloud_workspace_id');
+      expect(table.cloudAccountId.name, 'cloud_account_id');
     });
 
     test(r'$columns returns all columns including TableMixin', () {
       final table = fixture.database.workspaces;
-      expect(table.$columns.length, 6);
+      expect(table.$columns.length, 8);
     });
 
     test('table name is workspaces', () {

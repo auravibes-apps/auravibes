@@ -1,0 +1,7 @@
+class: CloudWorkspaceSummary
+fields:
+  id: int
+  name: String
+  role: String
+  createdAt: DateTime
+  updatedAt: DateTime

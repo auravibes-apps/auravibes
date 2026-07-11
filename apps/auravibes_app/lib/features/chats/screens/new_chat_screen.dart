@@ -11,6 +11,8 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -139,9 +141,57 @@ class NewChatScreen extends ConsumerWidget {
         ),
         message: LocaleKeys.chats_screens_new_chat_starting.tr(),
       ),
-      appBar: const AuraAppBarWithDrawer(
-        title: TextLocale(LocaleKeys.home_screen_actions_start_new_chat),
+      appBar: AuraAppBarWithDrawer(
+        title: _WorkspaceSelector(workspaceId: workspaceId),
       ),
+    );
+  }
+}
+
+class _WorkspaceSelector extends ConsumerWidget {
+  const _WorkspaceSelector({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final workspaces = ref.watch(allWorkspacesProvider);
+
+    return SizedBox(
+      width: 240,
+      child: switch (workspaces) {
+        AsyncData(:final value) => AuraDropdownSelector<String>(
+          options: [
+            for (final workspace in value)
+              AuraDropdownOption(
+                value: workspace.id,
+                child: Text(workspace.name),
+              ),
+          ],
+          key: const Key('new_chat_workspace_selector'),
+          value: workspaceId,
+          onChanged: (value) {
+            if (value != null && value != workspaceId) {
+              ref
+                  .read(workspaceSwitcherProvider.notifier)
+                  .switchToWorkspace(value);
+            }
+          },
+          semanticLabel: LocaleKeys.workspace_management_title.tr(),
+        ),
+        AsyncLoading() => const AuraDropdownSelector<String>(
+          options: [],
+          placeholder: AuraSpinner(size: AuraSpinnerSize.small),
+          isEnabled: false,
+        ),
+        AsyncError() => AuraDropdownSelector<String>(
+          options: [
+            AuraDropdownOption(value: workspaceId, child: Text(workspaceId)),
+          ],
+          value: workspaceId,
+          isEnabled: false,
+        ),
+      },
     );
   }
 }

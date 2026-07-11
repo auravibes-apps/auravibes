@@ -20,7 +20,7 @@ final _logger = Logger('WorkspaceSwitcher');
 /// action is a transient mutation, not initialized state. Per the Mutation
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
-@riverpod
+@Riverpod(keepAlive: true)
 class WorkspaceSwitcher extends _$WorkspaceSwitcher {
   Timer? _debounceTimer;
 

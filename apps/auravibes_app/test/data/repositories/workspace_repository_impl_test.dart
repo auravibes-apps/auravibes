@@ -261,9 +261,77 @@ void main() {
           isA<WorkspaceValidationException>().having(
             (error) => error.message,
             'message',
-            'Remote workspace must have a URL',
+            'Remote workspace must have a URL or cloud ID',
           ),
         ),
+      );
+    });
+
+    test('should upsert cloud mirror without duplicate rows', () async {
+      final first = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'cloud-1',
+        cloudAccountId: 'account-1',
+        name: 'Cloud One',
+        serverUrl: 'http://localhost:8080/',
+      );
+
+      final second = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'cloud-1',
+        cloudAccountId: 'account-1',
+        name: 'Cloud One Renamed',
+        serverUrl: 'http://localhost:8080/',
+      );
+
+      expect(second.id, first.id);
+      expect(second.name, 'Cloud One Renamed');
+      expect(await repository.getWorkspaceCount(), 1);
+    });
+
+    test(
+      'should block connecting same cloud workspace with another account',
+      () async {
+        final _ = await repository.upsertCloudWorkspaceMirror(
+          cloudWorkspaceId: 'cloud-1',
+          cloudAccountId: 'account-1',
+          name: 'Cloud One',
+          serverUrl: 'http://localhost:8080/',
+        );
+
+        await expectLater(
+          repository.upsertCloudWorkspaceMirror(
+            cloudWorkspaceId: 'cloud-1',
+            cloudAccountId: 'account-2',
+            name: 'Cloud One',
+            serverUrl: 'http://localhost:8080/',
+          ),
+          throwsA(isA<WorkspaceCloudAlreadyConnectedException>()),
+        );
+      },
+    );
+
+    test('should delete cloud mirrors for removed account', () async {
+      final _ = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'cloud-1',
+        cloudAccountId: 'account-1',
+        name: 'Cloud One',
+        serverUrl: 'http://localhost:8080/',
+      );
+      final _ = await repository.upsertCloudWorkspaceMirror(
+        cloudWorkspaceId: 'cloud-2',
+        cloudAccountId: 'account-2',
+        name: 'Cloud Two',
+        serverUrl: 'http://localhost:8080/',
+      );
+
+      final deleted = await repository.deleteCloudWorkspaceMirrorsForAccount(
+        'account-1',
+      );
+
+      expect(deleted, 1);
+      expect(await repository.getWorkspaceCount(), 1);
+      expect(
+        await repository.getCloudWorkspaceMirrorByCloudId('cloud-1'),
+        isNull,
       );
     });
   });

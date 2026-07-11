@@ -11,6 +11,7 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/usecases/usecases.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -97,6 +98,53 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<bool> patchWorkspaceTimestamp(String id) async => true;
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async => null;
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
+    String cloudWorkspaceId,
+  ) async => _workspaces.firstWhereOrNull(
+    (w) => w.cloudWorkspaceId == cloudWorkspaceId,
+  );
+
+  @override
+  Future<WorkspaceEntity> upsertCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String name,
+    required String serverUrl,
+  }) {
+    return createWorkspace(
+      WorkspaceToCreate(
+        name: name,
+        type: WorkspaceType.remote,
+        url: serverUrl,
+        cloudWorkspaceId: cloudWorkspaceId,
+        cloudAccountId: cloudAccountId,
+      ),
+    );
+  }
+
+  @override
+  Future<bool> deleteCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async => true;
+
+  @override
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId,
+  ) async {
+    final before = _workspaces.length;
+    _workspaces.removeWhere((w) => w.cloudAccountId == cloudAccountId);
+
+    return before - _workspaces.length;
+  }
 }
 
 class _WorkspaceManagementModeFixture {
@@ -132,19 +180,7 @@ void main() {
       expect(state.editingWorkspace, isNull);
     });
 
-    test('setMode changes mode', () {
-      final notifier = fixture.container.read(
-        workspaceManagementModeProvider.notifier,
-      );
-
-      notifier.setMode(ManagementMode.create);
-
-      final state = fixture.container.read(workspaceManagementModeProvider);
-      expect(state.mode, ManagementMode.create);
-      expect(state.editingWorkspace, isNull);
-    });
-
-    test('setMode with editingWorkspace', () {
+    test('editWorkspace changes mode and workspace', () {
       final workspace = WorkspaceEntity(
         id: 'ws-1',
         name: 'Test',
@@ -156,7 +192,7 @@ void main() {
         workspaceManagementModeProvider.notifier,
       );
 
-      notifier.setMode(ManagementMode.edit, editingWorkspace: workspace);
+      notifier.editWorkspace(workspace);
 
       final state = fixture.container.read(workspaceManagementModeProvider);
       expect(state.mode, ManagementMode.edit);
@@ -175,7 +211,7 @@ void main() {
         workspaceManagementModeProvider.notifier,
       );
 
-      notifier.setMode(ManagementMode.edit, editingWorkspace: workspace);
+      notifier.editWorkspace(workspace);
       notifier.clearEditing();
 
       final state = fixture.container.read(workspaceManagementModeProvider);

@@ -1,0 +1,3 @@
+class: ListCloudWorkspaceInvitesRequest
+fields:
+  workspaceId: int

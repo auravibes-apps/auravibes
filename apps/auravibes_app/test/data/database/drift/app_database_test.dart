@@ -49,7 +49,7 @@ void main() {
     });
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 5);
+      expect(fixture.database.schemaVersion, 6);
     });
 
     test('creates successfully with in-memory connection', () {
@@ -146,6 +146,16 @@ void main() {
       await fixture.close();
       final sqliteDb = sqlite.sqlite3.openInMemory()
         ..userVersion = 4
+        ..execute('''
+          CREATE TABLE workspaces (
+            id TEXT NOT NULL PRIMARY KEY,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            url TEXT NULL
+          );
+        ''')
         ..execute('''
           CREATE TABLE message_attachments (
             id TEXT NOT NULL PRIMARY KEY,

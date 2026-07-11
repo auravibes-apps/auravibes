@@ -1,0 +1,4 @@
+class: DeleteCloudWorkspaceRequest
+fields:
+  workspaceId: int
+  confirmationName: String

@@ -1,0 +1,4 @@
+class: RemoveWorkspaceMemberRequest
+fields:
+  workspaceId: int
+  userId: String

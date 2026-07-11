@@ -55,7 +55,7 @@ final class WorkspaceManagementModeProvider
 }
 
 String _$workspaceManagementModeHash() =>
-    r'4bcac3379d519251888be5993e715094500c865b';
+    r'35252618bd4f4a99ef01883e8810e5cfb14e2b89';
 
 /// Notifier that tracks the workspace-management UI mode and
 /// which workspace is currently being edited.

@@ -1,0 +1,4 @@
+class: RenameCloudWorkspaceRequest
+fields:
+  workspaceId: int
+  name: String

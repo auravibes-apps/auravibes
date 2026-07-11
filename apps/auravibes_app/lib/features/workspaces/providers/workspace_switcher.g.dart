@@ -41,7 +41,7 @@ final class WorkspaceSwitcherProvider
         argument: null,
         retry: null,
         name: r'workspaceSwitcherProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -62,7 +62,7 @@ final class WorkspaceSwitcherProvider
   }
 }
 
-String _$workspaceSwitcherHash() => r'ad0d402008d309915a6ad184e7ed20ad0cc30c44';
+String _$workspaceSwitcherHash() => r'ce5bbd3fcb1ec7c6fc175ede22d11ee9c5de34a8';
 
 /// Provider that manages workspace switching with debounce, loading guard,
 /// error handling, and structured logging of switch timing.
