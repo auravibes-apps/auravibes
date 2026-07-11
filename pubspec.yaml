@@ -88,7 +88,6 @@ melos:
 
     test:ci:
       exec: flutter test --coverage --concurrency=2 --timeout=30s --reporter=compact
-      concurrency: 1
       packageFilters:
         dirExists: test
       description: Run tests in CI mode (coverage + optimized settings)

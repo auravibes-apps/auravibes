@@ -139,7 +139,8 @@ jobs:
               path = lines[sf_index].delete_prefix('SF:')
               path = File.join(package_dir, path) if path.start_with?('lib/')
               excluded = path.end_with?('.g.dart', '.freezed.dart', '.mocks.dart') ||
-                path.end_with?('/drift_worker.js')
+                path.end_with?('/drift_worker.js') ||
+                path.start_with?('apps/auravibes_server/lib/src/generated/')
               next if excluded
               abort "Non-repository coverage path: #{path}" if path.start_with?('/')
 
