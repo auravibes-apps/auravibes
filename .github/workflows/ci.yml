@@ -314,13 +314,17 @@ jobs:
           File.write(input, "#{output}\n")
           RUBY
 
-      - name: 📤 Upload Coverage
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - name: 📦 Stage Coverage
+        run: |
+          mkdir -p "coverage-artifacts/${{ matrix.id }}"
+          cp "${{ matrix.package }}/coverage/lcov.info" \
+            "coverage-artifacts/${{ matrix.id }}/lcov.info"
+
+      - name: 📤 Store Coverage
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          name: coverage-${{ matrix.id }}
-          path: ${{ matrix.package }}/coverage/lcov.info
-          if-no-files-found: error
-          retention-days: 7
+          path: coverage-artifacts/${{ matrix.id }}/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.id }}
 
   sonar:
     name: SonarCloud
@@ -398,12 +402,61 @@ jobs:
             exit 1
           fi
 
-      - name: 📥 Download Coverage
+      - name: 📥 Restore UI coverage
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          pattern: coverage-*
-          path: coverage-artifacts
+          path: coverage-artifacts/ui/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-ui
+
+      - name: 📥 Restore engine coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/engine/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-engine
+
+      - name: 📥 Restore app core coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/app-core-data-domain/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-core-data-domain
+
+      - name: 📥 Restore app chats coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/app-features-chats/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-features-chats
+
+      - name: 📥 Restore app tools coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/app-features-tools/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-features-tools
+
+      - name: 📥 Restore other app feature coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/app-features-other/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-features-other
+
+      - name: 📥 Restore app services coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/app-services-routing/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-services-routing
+
+      - name: 📥 Restore app widget coverage
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: coverage-artifacts/app-presentation-widgets/lcov.info
+          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-presentation-widgets
 
       - name: ☁️ SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
