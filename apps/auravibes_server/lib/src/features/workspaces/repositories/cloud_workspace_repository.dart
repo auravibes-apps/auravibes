@@ -181,24 +181,11 @@ class CloudWorkspaceRepository {
 
   Future<WorkspaceInvite> createInvite(
     Session session, {
-    required int workspaceId,
-    required String email,
-    required String role,
-    required String invitedByUserId,
-    required DateTime now,
-    required DateTime expiresAt,
+    required WorkspaceInvite invite,
     Transaction? transaction,
   }) => WorkspaceInvite.db.insertRow(
     session,
-    WorkspaceInvite(
-      workspaceId: workspaceId,
-      email: email,
-      role: role,
-      invitedByUserId: invitedByUserId,
-      createdAt: now,
-      expiresAt: expiresAt,
-      pendingKey: '$workspaceId:$email',
-    ),
+    invite,
     transaction: transaction,
   );
 

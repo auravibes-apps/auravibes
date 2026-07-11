@@ -119,21 +119,13 @@ abstract class WorkspacePatch with _$WorkspacePatch {
       return 'At least one field must be provided';
     }
 
-    if (name != null && name.isEmpty) {
-      return 'Workspace name cannot be empty';
-    }
-
-    if (url != null && url.isEmpty) {
-      return 'Workspace URL cannot be empty';
-    }
-
-    if (cloudWorkspaceId != null && cloudWorkspaceId.isEmpty) {
-      return 'Cloud workspace ID cannot be empty';
-    }
-
-    if (cloudAccountId != null && cloudAccountId.isEmpty) {
-      return 'Cloud account ID cannot be empty';
-    }
+    final fieldError = _fieldValidationError(
+      name: name,
+      url: url,
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+    );
+    if (fieldError != null) return fieldError;
 
     final mergedName = name ?? current.name;
     final mergedType = type ?? current.type;
@@ -156,6 +148,24 @@ abstract class WorkspacePatch with _$WorkspacePatch {
         (mergedUrl == null || mergedUrl.isEmpty) &&
         !hasCloudMirror) {
       return 'Remote workspace must have a URL or cloud ID';
+    }
+
+    return null;
+  }
+
+  String? _fieldValidationError({
+    required String? name,
+    required String? url,
+    required String? cloudWorkspaceId,
+    required String? cloudAccountId,
+  }) {
+    if (name != null && name.isEmpty) return 'Workspace name cannot be empty';
+    if (url != null && url.isEmpty) return 'Workspace URL cannot be empty';
+    if (cloudWorkspaceId != null && cloudWorkspaceId.isEmpty) {
+      return 'Cloud workspace ID cannot be empty';
+    }
+    if (cloudAccountId != null && cloudAccountId.isEmpty) {
+      return 'Cloud account ID cannot be empty';
     }
 
     return null;

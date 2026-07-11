@@ -147,12 +147,15 @@ class CloudWorkspaceUseCases {
         }
         return _repository.createInvite(
           session,
-          workspaceId: workspace.id!,
-          email: email,
-          role: role,
-          invitedByUserId: userId,
-          now: now,
-          expiresAt: now.add(_inviteLifetime),
+          invite: WorkspaceInvite(
+            workspaceId: workspace.id!,
+            email: email,
+            role: role,
+            invitedByUserId: userId,
+            createdAt: now,
+            expiresAt: now.add(_inviteLifetime),
+            pendingKey: '${workspace.id}:$email',
+          ),
           transaction: transaction,
         );
       },
