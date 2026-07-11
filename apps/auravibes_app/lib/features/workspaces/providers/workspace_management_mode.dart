@@ -25,8 +25,11 @@ class WorkspaceManagementMode extends _$WorkspaceManagementMode {
     return const WorkspaceManagementState();
   }
 
-  void setMode(ManagementMode mode, {WorkspaceEntity? editingWorkspace}) {
-    state = state.copyWith(mode: mode, editingWorkspace: editingWorkspace);
+  void editWorkspace(WorkspaceEntity workspace) {
+    state = state.copyWith(
+      mode: ManagementMode.edit,
+      editingWorkspace: workspace,
+    );
   }
 
   void clearEditing() {

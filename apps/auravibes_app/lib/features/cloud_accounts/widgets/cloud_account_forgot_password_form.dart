@@ -11,9 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class CloudAccountForgotPasswordForm extends ConsumerStatefulWidget {
-  const CloudAccountForgotPasswordForm({this.onFinished, super.key});
+  const CloudAccountForgotPasswordForm({required this.onFinished, super.key});
 
-  final VoidCallback? onFinished;
+  final VoidCallback onFinished;
 
   @override
   ConsumerState<CloudAccountForgotPasswordForm> createState() =>
@@ -154,7 +154,7 @@ class _CloudAccountForgotPasswordFormState
         newPassword: _password.text,
       );
       if (!mounted) return;
-      widget.onFinished?.call();
+      widget.onFinished();
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _errorKey = _passwordResetErrorKey(error));

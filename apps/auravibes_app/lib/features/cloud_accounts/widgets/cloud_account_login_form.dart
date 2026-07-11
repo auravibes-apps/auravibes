@@ -12,9 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class CloudAccountLoginForm extends ConsumerStatefulWidget {
-  const CloudAccountLoginForm({this.onSignedIn, super.key});
+  const CloudAccountLoginForm({required this.onSignedIn, super.key});
 
-  final ValueChanged<CloudAccountSession>? onSignedIn;
+  final ValueChanged<CloudAccountSession> onSignedIn;
 
   @override
   ConsumerState<CloudAccountLoginForm> createState() =>
@@ -87,7 +87,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
               password: _password.text,
             );
         ref.invalidate(cloudAccountsProvider);
-        widget.onSignedIn?.call(account);
+        widget.onSignedIn(account);
       });
     } on Object catch (error) {
       if (!mounted) return;

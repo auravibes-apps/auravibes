@@ -180,19 +180,7 @@ void main() {
       expect(state.editingWorkspace, isNull);
     });
 
-    test('setMode changes mode', () {
-      final notifier = fixture.container.read(
-        workspaceManagementModeProvider.notifier,
-      );
-
-      notifier.setMode(ManagementMode.create);
-
-      final state = fixture.container.read(workspaceManagementModeProvider);
-      expect(state.mode, ManagementMode.create);
-      expect(state.editingWorkspace, isNull);
-    });
-
-    test('setMode with editingWorkspace', () {
+    test('editWorkspace changes mode and workspace', () {
       final workspace = WorkspaceEntity(
         id: 'ws-1',
         name: 'Test',
@@ -204,7 +192,7 @@ void main() {
         workspaceManagementModeProvider.notifier,
       );
 
-      notifier.setMode(ManagementMode.edit, editingWorkspace: workspace);
+      notifier.editWorkspace(workspace);
 
       final state = fixture.container.read(workspaceManagementModeProvider);
       expect(state.mode, ManagementMode.edit);
@@ -223,7 +211,7 @@ void main() {
         workspaceManagementModeProvider.notifier,
       );
 
-      notifier.setMode(ManagementMode.edit, editingWorkspace: workspace);
+      notifier.editWorkspace(workspace);
       notifier.clearEditing();
 
       final state = fixture.container.read(workspaceManagementModeProvider);

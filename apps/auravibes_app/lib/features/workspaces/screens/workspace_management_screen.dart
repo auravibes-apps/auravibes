@@ -3,7 +3,6 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
-import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
@@ -97,10 +96,7 @@ class _WorkspaceList extends ConsumerWidget {
               onTap: () => _switch(ref, workspace.id),
               onEdit: () => ref
                   .read(workspaceManagementModeProvider.notifier)
-                  .setMode(
-                    ManagementMode.edit,
-                    editingWorkspace: workspace,
-                  ),
+                  .editWorkspace(workspace),
               onDelete: () => _confirmDelete(context, ref, workspace),
             ),
         Padding(

@@ -14,9 +14,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class CloudAccountRegisterForm extends ConsumerStatefulWidget {
-  const CloudAccountRegisterForm({this.onSignedIn, super.key});
+  const CloudAccountRegisterForm({required this.onSignedIn, super.key});
 
-  final ValueChanged<CloudAccountSession>? onSignedIn;
+  final ValueChanged<CloudAccountSession> onSignedIn;
 
   @override
   ConsumerState<CloudAccountRegisterForm> createState() =>
@@ -155,7 +155,7 @@ class _CloudAccountRegisterFormState
           password: _password.text,
         );
         ref.invalidate(cloudAccountsProvider);
-        widget.onSignedIn?.call(account);
+        widget.onSignedIn(account);
       });
     } on Object catch (error) {
       if (!mounted) return;
