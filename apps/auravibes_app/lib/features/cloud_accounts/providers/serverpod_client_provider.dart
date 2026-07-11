@@ -16,10 +16,6 @@ final cloudAccountsProvider = FutureProvider<List<CloudAccountSession>>((ref) {
   return ref.watch(serverpodAuthStoreProvider).listAccounts();
 });
 
-final preferredCloudAccountIdProvider = FutureProvider<String?>((ref) {
-  return ref.watch(serverpodAuthStoreProvider).preferredAccountId();
-});
-
 final FutureProviderFamily<Client?, String> serverpodClientForAccountProvider =
     FutureProvider.family<Client?, String>((ref, userId) async {
       const serverUrl = AppEnvConfig.auravibesServerUrl;
