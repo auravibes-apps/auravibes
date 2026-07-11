@@ -1,0 +1,3 @@
+class: ListWorkspaceMembersRequest
+fields:
+  workspaceId: int

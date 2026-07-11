@@ -1,4 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -31,38 +32,41 @@ void main() {
     _expectProgressStepColor(tester, 0, AuraTheme.light.colors.primary);
     _expectProgressStepColor(tester, 1, AuraTheme.light.colors.outlineVariant);
 
-    await tester.tap(find.byKey(_continueKey));
+    await _tapVisible(tester, find.byKey(_continueKey));
     await _pumpUntilFound(tester, find.byKey(_continueKey));
-    await tester.tap(find.byKey(_continueKey));
+    await _tapVisible(tester, find.byKey(_continueKey));
     await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
 
     await tester.enterText(find.byType(TextField), 'ab');
-    await tester.tap(find.byKey(_createWorkspaceKey));
+    await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(
       tester,
       find.text('Workspace name must be at least 3 characters'),
     );
 
     await tester.enterText(find.byType(TextField), 'a' * 21);
-    await tester.tap(find.byKey(_createWorkspaceKey));
+    await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(
       tester,
       find.text('Workspace name must be at most 20 characters'),
     );
 
     await tester.enterText(find.byType(TextField), 'Project');
-    await tester.tap(find.byKey(_createWorkspaceKey));
+    await _tapVisible(tester, find.byKey(_createWorkspaceKey));
     await _pumpUntilFound(tester, find.text('Ready to start'));
 
     final workspaces = await fixture.database.workspaceDao.getAllWorkspaces();
     expect(workspaces.single.name, 'Project');
 
-    await tester.tap(find.byKey(_skipAiKey));
+    await _tapVisible(tester, find.byKey(_skipAiKey));
     await _pumpUntilFound(tester, find.textContaining('new chat:'));
 
-    fixture.router.go('/intro');
+    final connectFixture = _IntroFixture();
+    addTearDown(connectFixture.dispose);
+
+    await tester.pumpWidget(connectFixture.buildApp());
     await _createWorkspace(tester, 'Connect');
-    await tester.tap(find.byKey(_connectAiKey));
+    await _tapVisible(tester, find.byKey(_connectAiKey));
     await _pumpUntilFound(
       tester,
       find.text('service connection: modelProvider'),
@@ -102,17 +106,22 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   expect(finder, findsOneWidget);
 }
 
+Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.tap(finder);
+}
+
 Future<void> _createWorkspace(WidgetTester tester, String name) async {
   await _pumpUntilFound(tester, find.byKey(_continueKey));
   expect(find.text('Welcome to AuraVibes'), findsOneWidget);
 
-  await tester.tap(find.byKey(_continueKey));
+  await _tapVisible(tester, find.byKey(_continueKey));
   await _pumpUntilFound(tester, find.byKey(_continueKey));
-  await tester.tap(find.byKey(_continueKey));
+  await _tapVisible(tester, find.byKey(_continueKey));
   await _pumpUntilFound(tester, find.byKey(_createWorkspaceKey));
 
   await tester.enterText(find.byType(TextField), name);
-  await tester.tap(find.byKey(_createWorkspaceKey));
+  await _tapVisible(tester, find.byKey(_createWorkspaceKey));
   await _pumpUntilFound(tester, find.text('Ready to start'));
 }
 
@@ -124,7 +133,10 @@ class _IntroFixture {
 
   _IntroFixture._(this.database)
     : container = ProviderContainer(
-        overrides: [appDatabaseProvider.overrideWithValue(database)],
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          cloudAccountsProvider.overrideWith((ref) async => const []),
+        ],
       ),
       router = GoRouter(
         routes: [

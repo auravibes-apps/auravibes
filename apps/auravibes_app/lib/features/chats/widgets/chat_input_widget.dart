@@ -339,7 +339,6 @@ class _ChatInputActions {
             modalitiesInput,
           );
           final result = await fp.FilePicker.pickFiles(
-            allowMultiple: true,
             allowedExtensions: allowedExtensions,
             type: allowedExtensions == null
                 ? fp.FileType.any

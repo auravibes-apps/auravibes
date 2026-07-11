@@ -1,0 +1,8 @@
+class: PendingWorkspaceInviteSummary
+fields:
+  id: int
+  workspaceId: int
+  workspaceName: String
+  email: String
+  role: String
+  createdAt: DateTime

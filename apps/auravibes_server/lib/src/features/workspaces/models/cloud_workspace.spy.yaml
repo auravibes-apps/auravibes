@@ -1,0 +1,8 @@
+class: CloudWorkspace
+table: cloud_workspace
+fields:
+  name: String
+  ownerUserId: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  deletedAt: DateTime?

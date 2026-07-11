@@ -1,0 +1,3 @@
+class: GetCloudWorkspaceDetailRequest
+fields:
+  workspaceId: int

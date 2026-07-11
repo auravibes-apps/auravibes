@@ -17,6 +17,18 @@ abstract class LocaleKeys {
       'navigation_drawer.resize_handle_hint';
   static const intro_flow_welcome_title = 'intro_flow.welcome.title';
   static const intro_flow_welcome_body = 'intro_flow.welcome.body';
+  static const intro_flow_choice_title = 'intro_flow.choice.title';
+  static const intro_flow_choice_body = 'intro_flow.choice.body';
+  static const intro_flow_choice_local_title = 'intro_flow.choice.local_title';
+  static const intro_flow_choice_local_body = 'intro_flow.choice.local_body';
+  static const intro_flow_choice_cloud_create_title =
+      'intro_flow.choice.cloud_create_title';
+  static const intro_flow_choice_cloud_create_body =
+      'intro_flow.choice.cloud_create_body';
+  static const intro_flow_choice_cloud_connect_title =
+      'intro_flow.choice.cloud_connect_title';
+  static const intro_flow_choice_cloud_connect_body =
+      'intro_flow.choice.cloud_connect_body';
   static const intro_flow_workspace_context_title =
       'intro_flow.workspace_context.title';
   static const intro_flow_workspace_context_body =
@@ -684,6 +696,7 @@ abstract class LocaleKeys {
   static const common_close = 'common.close';
   static const common_close_dialog = 'common.close_dialog';
   static const common_reload = 'common.reload';
+  static const common_details = 'common.details';
   static const common_show_more = 'common.show_more';
   static const common_error_title = 'common.error_title';
   static const common_error_message = 'common.error_message';
@@ -944,4 +957,150 @@ abstract class LocaleKeys {
       'workspace_management.edit_tooltip';
   static const workspace_management_delete_tooltip =
       'workspace_management.delete_tooltip';
+  static const workspace_management_cloud_title =
+      'workspace_management.cloud_title';
+  static const workspace_management_cloud_connect =
+      'workspace_management.cloud_connect';
+  static const workspace_management_cloud_email =
+      'workspace_management.cloud_email';
+  static const workspace_management_cloud_password =
+      'workspace_management.cloud_password';
+  static const workspace_management_cloud_code =
+      'workspace_management.cloud_code';
+  static const workspace_management_cloud_login =
+      'workspace_management.cloud_login';
+  static const workspace_management_cloud_register =
+      'workspace_management.cloud_register';
+  static const workspace_management_cloud_finish_register =
+      'workspace_management.cloud_finish_register';
+  static const workspace_management_cloud_remove_account =
+      'workspace_management.cloud_remove_account';
+  static const workspace_management_cloud_load_error =
+      'workspace_management.cloud_load_error';
+  static const workspace_management_cloud_name =
+      'workspace_management.cloud_name';
+  static const workspace_management_cloud_accept =
+      'workspace_management.cloud_accept';
+  static const workspace_management_cloud_decline =
+      'workspace_management.cloud_decline';
+  static const workspace_management_cloud_attach =
+      'workspace_management.cloud_attach';
+  static const workspace_management_cloud_detach =
+      'workspace_management.cloud_detach';
+  static const workspace_management_cloud_connected =
+      'workspace_management.cloud_connected';
+  static const workspace_management_cloud_connected_account =
+      'workspace_management.cloud_connected_account';
+  static const workspace_management_cloud_connected_elsewhere =
+      'workspace_management.cloud_connected_elsewhere';
+  static const workspace_management_cloud_already_connected_error =
+      'workspace_management.cloud_already_connected_error';
+  static const workspace_management_cloud_billing_note =
+      'workspace_management.cloud_billing_note';
+  static const workspace_management_cloud_members =
+      'workspace_management.cloud_members';
+  static const workspace_management_cloud_role_owner =
+      'workspace_management.cloud_role_owner';
+  static const workspace_management_cloud_role_admin =
+      'workspace_management.cloud_role_admin';
+  static const workspace_management_cloud_role_member =
+      'workspace_management.cloud_role_member';
+  static const workspace_management_cloud_invite =
+      'workspace_management.cloud_invite';
+  static const workspace_management_cloud_error =
+      'workspace_management.cloud_error';
+  static const workspace_management_local_target =
+      'workspace_management.local_target';
+  static const workspace_management_target_label =
+      'workspace_management.target_label';
+  static const workspace_management_cloud_available_section =
+      'workspace_management.cloud_available_section';
+  static const workspace_management_cloud_add_hint =
+      'workspace_management.cloud_add_hint';
+  static const cloud_workspaces_title = 'cloud_workspaces.title';
+  static const cloud_workspaces_subtitle = 'cloud_workspaces.subtitle';
+  static const cloud_workspaces_detail_title = 'cloud_workspaces.detail_title';
+  static const cloud_workspaces_pending_invites =
+      'cloud_workspaces.pending_invites';
+  static const cloud_workspaces_rename = 'cloud_workspaces.rename';
+  static const cloud_workspaces_leave = 'cloud_workspaces.leave';
+  static const cloud_workspaces_leave_confirm =
+      'cloud_workspaces.leave_confirm';
+  static const cloud_workspaces_delete = 'cloud_workspaces.delete';
+  static const cloud_workspaces_delete_confirm =
+      'cloud_workspaces.delete_confirm';
+  static const cloud_workspaces_transfer_ownership =
+      'cloud_workspaces.transfer_ownership';
+  static const cloud_workspaces_transfer_confirm =
+      'cloud_workspaces.transfer_confirm';
+  static const cloud_workspaces_change_role = 'cloud_workspaces.change_role';
+  static const cloud_workspaces_remove_member =
+      'cloud_workspaces.remove_member';
+  static const cloud_workspaces_renew_invite = 'cloud_workspaces.renew_invite';
+  static const cloud_workspaces_revoke_invite =
+      'cloud_workspaces.revoke_invite';
+  static const cloud_workspaces_connected_section =
+      'cloud_workspaces.connected_section';
+  static const cloud_workspaces_local_section =
+      'cloud_workspaces.local_section';
+  static const cloud_workspaces_remove_confirm =
+      'cloud_workspaces.remove_confirm';
+  static const cloud_accounts_title = 'cloud_accounts.title';
+  static const cloud_accounts_register = 'cloud_accounts.register';
+  static const cloud_accounts_add = 'cloud_accounts.add';
+  static const cloud_accounts_add_another = 'cloud_accounts.add_another';
+  static const cloud_accounts_add_title = 'cloud_accounts.add_title';
+  static const cloud_accounts_add_body = 'cloud_accounts.add_body';
+  static const cloud_accounts_return_hint = 'cloud_accounts.return_hint';
+  static const cloud_accounts_login_existing = 'cloud_accounts.login_existing';
+  static const cloud_accounts_create_new = 'cloud_accounts.create_new';
+  static const cloud_accounts_forgot_password =
+      'cloud_accounts.forgot_password';
+  static const cloud_accounts_empty = 'cloud_accounts.empty';
+  static const cloud_accounts_not_configured = 'cloud_accounts.not_configured';
+  static const cloud_accounts_load_error = 'cloud_accounts.load_error';
+  static const cloud_accounts_no_workspaces = 'cloud_accounts.no_workspaces';
+  static const cloud_accounts_check_email_title =
+      'cloud_accounts.check_email_title';
+  static const cloud_accounts_check_email_body =
+      'cloud_accounts.check_email_body';
+  static const cloud_accounts_dev_code_hint = 'cloud_accounts.dev_code_hint';
+  static const cloud_accounts_edit_email = 'cloud_accounts.edit_email';
+  static const cloud_accounts_password_hint = 'cloud_accounts.password_hint';
+  static const cloud_accounts_new_password = 'cloud_accounts.new_password';
+  static const cloud_accounts_password_policy_error =
+      'cloud_accounts.password_policy_error';
+  static const cloud_accounts_code_expired_error =
+      'cloud_accounts.code_expired_error';
+  static const cloud_accounts_code_invalid_error =
+      'cloud_accounts.code_invalid_error';
+  static const cloud_accounts_too_many_attempts_error =
+      'cloud_accounts.too_many_attempts_error';
+  static const cloud_accounts_request_failed = 'cloud_accounts.request_failed';
+  static const cloud_accounts_server_unreachable_error =
+      'cloud_accounts.server_unreachable_error';
+  static const cloud_accounts_login_failed_error =
+      'cloud_accounts.login_failed_error';
+  static const cloud_accounts_resend_code = 'cloud_accounts.resend_code';
+  static const cloud_accounts_code_resent = 'cloud_accounts.code_resent';
+  static const cloud_accounts_password_reset_intro =
+      'cloud_accounts.password_reset_intro';
+  static const cloud_accounts_password_reset_body =
+      'cloud_accounts.password_reset_body';
+  static const cloud_accounts_send_password_reset_code =
+      'cloud_accounts.send_password_reset_code';
+  static const cloud_accounts_finish_password_reset =
+      'cloud_accounts.finish_password_reset';
+  static const cloud_accounts_status_signed_in =
+      'cloud_accounts.status_signed_in';
+  static const cloud_accounts_status_needs_sign_in =
+      'cloud_accounts.status_needs_sign_in';
+  static const cloud_accounts_session_expired =
+      'cloud_accounts.session_expired';
+  static const cloud_accounts_sign_in_again = 'cloud_accounts.sign_in_again';
+  static const cloud_accounts_remove = 'cloud_accounts.remove';
+  static const cloud_accounts_remove_title = 'cloud_accounts.remove_title';
+  static const cloud_accounts_remove_message = 'cloud_accounts.remove_message';
+  static const cloud_accounts_remove_local_mirrors_warning =
+      'cloud_accounts.remove_local_mirrors_warning';
 }

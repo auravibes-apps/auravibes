@@ -1,5 +1,6 @@
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -26,7 +27,15 @@ class MoreScreen extends StatelessWidget {
             titleKey: LocaleKeys.more_screen_workspaces_title,
             subtitleKey: LocaleKeys.more_screen_workspaces_subtitle,
             onTap: () => context.push(
-              '/workspaces/$workspaceId/more/manage-workspaces',
+              WorkspaceManagementRoute(workspaceId: workspaceId).location,
+            ),
+          ),
+          _SectionTile(
+            icon: Icons.manage_accounts_outlined,
+            titleKey: LocaleKeys.cloud_accounts_title,
+            subtitleKey: LocaleKeys.cloud_accounts_empty,
+            onTap: () => context.push(
+              CloudAccountsRoute(workspaceId: workspaceId).location,
             ),
           ),
           _SectionTile(

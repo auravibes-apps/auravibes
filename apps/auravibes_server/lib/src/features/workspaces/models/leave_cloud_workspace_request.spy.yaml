@@ -1,0 +1,3 @@
+class: LeaveCloudWorkspaceRequest
+fields:
+  workspaceId: int

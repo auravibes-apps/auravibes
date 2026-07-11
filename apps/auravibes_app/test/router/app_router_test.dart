@@ -179,6 +179,85 @@ void main() {
     });
   });
 
+  group('Cloud account routes', () {
+    test('cloud accounts route location is correct', () {
+      expect(
+        CloudAccountsRoute(workspaceId: 'ws-1').location,
+        '/workspaces/ws-1/more/cloud-accounts',
+      );
+    });
+
+    test('add account route location is correct', () {
+      expect(
+        CloudAccountAddRoute(workspaceId: 'ws-1').location,
+        '/workspaces/ws-1/more/cloud-accounts/add',
+      );
+    });
+
+    test('login route location is correct', () {
+      expect(
+        CloudAccountLoginRoute(workspaceId: 'ws-1').location,
+        '/workspaces/ws-1/more/cloud-accounts/login',
+      );
+    });
+
+    test('register route location is correct', () {
+      expect(
+        CloudAccountRegisterRoute(workspaceId: 'ws-1').location,
+        '/workspaces/ws-1/more/cloud-accounts/register',
+      );
+    });
+
+    test('forgot password route location is correct', () {
+      expect(
+        CloudAccountForgotPasswordRoute(workspaceId: 'ws-1').location,
+        '/workspaces/ws-1/more/cloud-accounts/forgot-password',
+      );
+    });
+
+    test('add account route encodes return path', () {
+      expect(
+        CloudAccountAddRoute(
+          workspaceId: 'ws-1',
+          returnPath: '/workspaces/ws-1/more/manage-workspaces',
+        ).location,
+        '/workspaces/ws-1/more/cloud-accounts/add'
+        '?return-path=%2Fworkspaces%2Fws-1%2Fmore%2Fmanage-workspaces',
+      );
+    });
+
+    test('forgot password route encodes return path', () {
+      expect(
+        CloudAccountForgotPasswordRoute(
+          workspaceId: 'ws-1',
+          returnPath: '/workspaces/ws-1/more/cloud-accounts',
+        ).location,
+        '/workspaces/ws-1/more/cloud-accounts/forgot-password'
+        '?return-path=%2Fworkspaces%2Fws-1%2Fmore%2Fcloud-accounts',
+      );
+    });
+  });
+
+  group('Cloud workspace routes', () {
+    test('cloud workspace hub route location is correct', () {
+      expect(
+        WorkspaceCreateRoute(workspaceId: 'ws-1').location,
+        '/workspaces/ws-1/more/manage-workspaces/create',
+      );
+    });
+
+    test('cloud workspace detail route carries account and workspace ids', () {
+      expect(
+        CloudWorkspaceDetailRoute(
+          workspaceId: 'ws-1',
+          cloudAccountId: 'account-1',
+          cloudWorkspaceId: 42,
+        ).location,
+        '/workspaces/ws-1/more/manage-workspaces/cloud/account-1/42',
+      );
+    });
+  });
+
   group('MyShellRouteData', () {
     test('can be constructed as const', () {
       const data = MyShellRouteData();

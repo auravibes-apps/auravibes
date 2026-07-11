@@ -1,0 +1,11 @@
+class: CloudWorkspaceCapabilities
+fields:
+  canViewMembers: bool
+  canInviteMembers: bool
+  canInviteAdmins: bool
+  canManageMembers: bool
+  canManageAdmins: bool
+  canRename: bool
+  canTransferOwnership: bool
+  canLeave: bool
+  canDelete: bool

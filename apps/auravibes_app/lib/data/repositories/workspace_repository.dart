@@ -116,6 +116,98 @@ class WorkspaceRepository {
     return deleted;
   }
 
+  Future<WorkspaceEntity?> getCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async {
+    final row =
+        await (_database.select(_database.workspaces)..where(
+              (workspace) =>
+                  workspace.cloudWorkspaceId.equals(cloudWorkspaceId) &
+                  workspace.cloudAccountId.equals(cloudAccountId),
+            ))
+            .getSingleOrNull();
+
+    return row == null ? null : _mapToWorkspace(row);
+  }
+
+  Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
+    String cloudWorkspaceId,
+  ) async {
+    final row =
+        await (_database.select(_database.workspaces)..where(
+              (workspace) =>
+                  workspace.cloudWorkspaceId.equals(cloudWorkspaceId),
+            ))
+            .getSingleOrNull();
+
+    return row == null ? null : _mapToWorkspace(row);
+  }
+
+  Future<WorkspaceEntity> upsertCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String name,
+    required String serverUrl,
+  }) async {
+    final existing = await getCloudWorkspaceMirrorByCloudId(cloudWorkspaceId);
+    if (existing != null && existing.cloudAccountId != cloudAccountId) {
+      throw const WorkspaceCloudAlreadyConnectedException();
+    }
+
+    if (existing == null) {
+      return createWorkspace(
+        WorkspaceToCreate(
+          name: name,
+          type: WorkspaceType.remote,
+          url: serverUrl,
+          cloudWorkspaceId: cloudWorkspaceId,
+          cloudAccountId: cloudAccountId,
+        ),
+      );
+    }
+
+    return patchWorkspace(
+      existing.id,
+      WorkspacePatch(
+        name: name,
+        type: WorkspaceType.remote,
+        url: serverUrl,
+        cloudWorkspaceId: cloudWorkspaceId,
+        cloudAccountId: cloudAccountId,
+      ),
+    );
+  }
+
+  Future<bool> deleteCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async {
+    final existing = await getCloudWorkspaceMirror(
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+    );
+    if (existing == null) return false;
+
+    return deleteWorkspace(existing.id);
+  }
+
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId,
+  ) async {
+    final mirrors =
+        await (_database.select(_database.workspaces)..where(
+              (workspace) => workspace.cloudAccountId.equals(cloudAccountId),
+            ))
+            .get();
+    var deleted = 0;
+    for (final mirror in mirrors) {
+      if (await deleteWorkspace(mirror.id)) deleted++;
+    }
+
+    return deleted;
+  }
+
   Future<List<String>> _attachmentPathsForWorkspace(String id) async {
     final rows = await (_database.select(_database.messageAttachments).join([
       innerJoin(
@@ -196,6 +288,8 @@ class WorkspaceRepository {
       createdAt: workspacesTable.createdAt,
       updatedAt: workspacesTable.updatedAt,
       url: workspacesTable.url,
+      cloudWorkspaceId: workspacesTable.cloudWorkspaceId,
+      cloudAccountId: workspacesTable.cloudAccountId,
     );
   }
 
@@ -209,6 +303,8 @@ class WorkspaceRepository {
       name: Value(workspace.name),
       type: Value(workspace.type),
       url: Value(workspace.url),
+      cloudWorkspaceId: Value(workspace.cloudWorkspaceId),
+      cloudAccountId: Value(workspace.cloudAccountId),
     );
   }
 
@@ -227,6 +323,8 @@ class WorkspaceRepository {
       name: Value.absentIfNull(workspace.name),
       type: Value.absentIfNull(workspace.type),
       url: Value.absentIfNull(workspace.url),
+      cloudWorkspaceId: Value.absentIfNull(workspace.cloudWorkspaceId),
+      cloudAccountId: Value.absentIfNull(workspace.cloudAccountId),
     );
   }
 
@@ -236,13 +334,20 @@ class WorkspaceRepository {
   /// Returns a string describing the validation error.
   String _getValidationErrorToCreate(WorkspaceToCreate workspace) {
     if (workspace.name.isEmpty) return 'Workspace name cannot be empty';
-    if (workspace.type == WorkspaceType.local && workspace.url != null) {
-      return 'Local workspace cannot have a URL';
+    if (workspace.type == WorkspaceType.local &&
+        (workspace.url != null || workspace.cloudWorkspaceId != null)) {
+      return 'Local workspace cannot have remote metadata';
     }
     final url = workspace.url;
+    final cloudWorkspaceId = workspace.cloudWorkspaceId;
+    final cloudAccountId = workspace.cloudAccountId;
     if (workspace.type == WorkspaceType.remote &&
-        (url == null || url.isEmpty)) {
-      return 'Remote workspace must have a URL';
+        (url == null || url.isEmpty) &&
+        (cloudWorkspaceId == null ||
+            cloudWorkspaceId.isEmpty ||
+            cloudAccountId == null ||
+            cloudAccountId.isEmpty)) {
+      return 'Remote workspace must have a URL or cloud ID';
     }
 
     return 'Unknown validation error';
@@ -303,5 +408,14 @@ class WorkspaceDeleteActiveException extends WorkspaceException {
         'Cannot delete the currently active workspace. '
         'Switch to another workspace first.',
         localizationKey: LocaleKeys.workspace_management_delete_active_error,
+      );
+}
+
+class WorkspaceCloudAlreadyConnectedException extends WorkspaceException {
+  const WorkspaceCloudAlreadyConnectedException()
+    : super(
+        'Cloud workspace is already connected through another account.',
+        localizationKey:
+            LocaleKeys.workspace_management_cloud_already_connected_error,
       );
 }

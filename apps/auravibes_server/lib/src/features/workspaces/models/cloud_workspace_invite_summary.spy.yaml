@@ -1,0 +1,8 @@
+class: CloudWorkspaceInviteSummary
+fields:
+  id: int
+  email: String
+  role: String
+  invitedByUserId: String
+  createdAt: DateTime
+  expiresAt: DateTime

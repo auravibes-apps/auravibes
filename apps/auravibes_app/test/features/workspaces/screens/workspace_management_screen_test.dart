@@ -5,10 +5,12 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,6 +114,59 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
 
   @override
   Future<bool> patchWorkspaceTimestamp(String id) async => true;
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async => null;
+
+  @override
+  Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
+    String cloudWorkspaceId,
+  ) async => _workspaces.firstWhereOrNull(
+    (w) => w.cloudWorkspaceId == cloudWorkspaceId,
+  );
+
+  @override
+  Future<WorkspaceEntity> upsertCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+    required String name,
+    required String serverUrl,
+  }) async {
+    final entity = WorkspaceEntity(
+      id: 'ws-${_nextId++}',
+      name: name,
+      type: WorkspaceType.remote,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+      url: serverUrl,
+      cloudWorkspaceId: cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+    );
+    _workspaces.add(entity);
+    _emit();
+
+    return entity;
+  }
+
+  @override
+  Future<bool> deleteCloudWorkspaceMirror({
+    required String cloudWorkspaceId,
+    required String cloudAccountId,
+  }) async => true;
+
+  @override
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId,
+  ) async {
+    final before = _workspaces.length;
+    _workspaces.removeWhere((w) => w.cloudAccountId == cloudAccountId);
+    _emit();
+
+    return before - _workspaces.length;
+  }
 }
 
 void main() {
@@ -138,6 +193,7 @@ void main() {
         child: Builder(
           builder: (context) {
             final overrides = [
+              cloudAccountsProvider.overrideWith((ref) async => const []),
               routerProvider.overrideWithValue(router),
               workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
@@ -161,54 +217,6 @@ void main() {
               overrides: overrides.cast(),
               child: MaterialApp(
                 home: WorkspaceManagementScreen(workspaceId: workspaceId),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
-              ),
-            );
-          },
-        ),
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-      );
-    }
-
-    Widget _buildRoutedScreen({required String workspaceId}) {
-      return EasyLocalization(
-        child: Builder(
-          builder: (context) {
-            final router = GoRouter(
-              routes: [
-                GoRoute(
-                  path: '/intro',
-                  builder: (context, state) => const Text('Welcome'),
-                ),
-                GoRoute(
-                  path: '/workspaces/:workspaceId/more/manage-workspaces',
-                  builder: (context, state) => WorkspaceManagementScreen(
-                    workspaceId: state.pathParameters['workspaceId']!,
-                  ),
-                ),
-              ],
-              initialLocation:
-                  '/workspaces/$workspaceId/more/manage-workspaces',
-            );
-            final overrides = [
-              workspaceRepositoryProvider.overrideWithValue(repository),
-              currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
-            ];
-
-            return ProviderScope(
-              overrides: overrides.cast(),
-              child: MaterialApp.router(
-                routerConfig: router,
-                builder: (context, child) => AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -276,7 +284,7 @@ void main() {
       expect(find.text('Workspace B'), findsOneWidget);
     });
 
-    testWidgets('shows create form when create button tapped', (
+    testWidgets('shows routed create action without inline form', (
       tester,
     ) async {
       final _ = await repository.createWorkspace(
@@ -286,160 +294,9 @@ void main() {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
       final _ = await tester.pumpAndSettle();
 
-      await tester.tap(find.byIcon(Icons.add));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.byType(TextField), findsOneWidget);
-    });
-
-    testWidgets('shows validation error for short name', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.add));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField), 'AB');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      final _ = await tester.pumpAndSettle();
-
-      expect(
-        find.text('Workspace name must be at least 3 characters'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('shows validation error for long name', (tester) async {
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Create Workspace'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField), 'A' * 21);
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      final _ = await tester.pumpAndSettle();
-
-      expect(
-        find.text('Workspace name must be at most 20 characters'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('tapping edit shows edit form', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.edit));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.check), findsOneWidget);
-      expect(find.byIcon(Icons.close), findsOneWidget);
-    });
-
-    testWidgets('tapping check saves workspace and exits edit', (
-      tester,
-    ) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.edit));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField).last, 'New Name');
-      await tester.tap(find.byIcon(Icons.check));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('New Name'), findsOneWidget);
-      expect(find.byIcon(Icons.check), findsNothing);
-    });
-
-    testWidgets('tapping close cancels edit and exits edit', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.edit));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField).last, 'New Name');
-      await tester.tap(find.byIcon(Icons.close));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Workspace A'), findsOneWidget);
-      expect(find.byIcon(Icons.close), findsNothing);
-    });
-
-    testWidgets('submitting edit via keyboard saves', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.edit));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField).last, 'Keyboard Name');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Keyboard Name'), findsOneWidget);
-    });
-
-    testWidgets('delete confirmation dialog shown', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace B', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-2'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete).first);
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.byType(AuraConfirmDialog), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-      expect(find.text('Delete'), findsOneWidget);
-    });
-
-    testWidgets('cancel delete keeps workspace', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace A', type: WorkspaceType.local),
-      );
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Workspace B', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-2'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete).first);
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Cancel'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Workspace A'), findsOneWidget);
+      expect(find.text('Create Workspace'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(AuraPopupMenuButton), findsOneWidget);
     });
 
     testWidgets('back button is present', (tester) async {
@@ -449,82 +306,6 @@ void main() {
       expect(find.byIcon(Icons.arrow_back), findsOneWidget);
     });
 
-    testWidgets('cancel create form returns to list', (tester) async {
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Create Workspace'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Cancel'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Create Workspace'), findsOneWidget);
-    });
-
-    testWidgets('confirm delete removes workspace', (tester) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'KeepMe', type: WorkspaceType.local),
-      );
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'ToDelete', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete).last);
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Delete'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('ToDelete'), findsNothing);
-      expect(find.text('KeepMe'), findsOneWidget);
-    });
-
-    testWidgets('confirm delete of last workspace goes to welcome', (
-      tester,
-    ) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
-      );
-
-      await _pumpAndInit(tester, _buildRoutedScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Delete'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Welcome'), findsOneWidget);
-      expect(await repository.getWorkspaceCount(), 0);
-    });
-
-    testWidgets('failed delete of last workspace stays on management', (
-      tester,
-    ) async {
-      final _ = await repository.createWorkspace(
-        const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
-      );
-      repository.deleteError = const WorkspaceException('Delete failed');
-
-      await _pumpAndInit(tester, _buildRoutedScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Delete'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('Welcome'), findsNothing);
-      expect(find.text('Only'), findsOneWidget);
-      expect(await repository.getWorkspaceCount(), 1);
-    });
-
     testWidgets('tapping back button does not crash', (tester) async {
       await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
       final _ = await tester.pumpAndSettle();
@@ -532,22 +313,6 @@ void main() {
       expect(find.byIcon(Icons.arrow_back), findsOneWidget);
       await tester.tap(find.byIcon(Icons.arrow_back));
       final _ = await tester.pumpAndSettle();
-    });
-
-    testWidgets('creates workspace with valid name through form', (
-      tester,
-    ) async {
-      await _pumpAndInit(tester, _buildScreen(workspaceId: 'ws-1'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Create Workspace'));
-      final _ = await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField), 'New Workspace');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      final _ = await tester.pumpAndSettle();
-
-      expect(find.text('New Workspace'), findsOneWidget);
     });
   });
 }

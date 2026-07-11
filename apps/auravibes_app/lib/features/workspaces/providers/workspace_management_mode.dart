@@ -11,6 +11,8 @@ part 'workspace_management_mode.g.dart';
 final createWorkspaceMutation = Mutation<WorkspaceEntity>();
 final editWorkspaceMutation = Mutation<WorkspaceEntity>();
 final deleteWorkspaceMutation = Mutation<void>();
+final cloudAccountMutation = Mutation<void>();
+final cloudWorkspaceMutation = Mutation<void>();
 
 // ─── UI mode notifier ───.
 

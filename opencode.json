@@ -38,6 +38,16 @@
       "command": ["npx", "-y", "@devqxi/pubdev-mcp-server"],
       "enabled": true
     },
+    "serverpod": {
+      "enabled": true,
+      "type": "local",
+      "command": [
+        "serverpod",
+        "mcp-server",
+        "--server-dir",
+        "apps/auravibes_server"
+      ]
+    },
     "sonarqube": {
       "type": "local",
       "command": ["sonar", "run", "mcp"],

@@ -70,6 +70,28 @@ class $WorkspacesTable extends Workspaces
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cloudWorkspaceIdMeta = const VerificationMeta(
+    'cloudWorkspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> cloudWorkspaceId = GeneratedColumn<String>(
+    'cloud_workspace_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cloudAccountIdMeta = const VerificationMeta(
+    'cloudAccountId',
+  );
+  @override
+  late final GeneratedColumn<String> cloudAccountId = GeneratedColumn<String>(
+    'cloud_account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -78,6 +100,8 @@ class $WorkspacesTable extends Workspaces
     name,
     type,
     url,
+    cloudWorkspaceId,
+    cloudAccountId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -120,6 +144,24 @@ class $WorkspacesTable extends Workspaces
         url.isAcceptableOrUnknown(data['url']!, _urlMeta),
       );
     }
+    if (data.containsKey('cloud_workspace_id')) {
+      context.handle(
+        _cloudWorkspaceIdMeta,
+        cloudWorkspaceId.isAcceptableOrUnknown(
+          data['cloud_workspace_id']!,
+          _cloudWorkspaceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_account_id')) {
+      context.handle(
+        _cloudAccountIdMeta,
+        cloudAccountId.isAcceptableOrUnknown(
+          data['cloud_account_id']!,
+          _cloudAccountIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -155,6 +197,14 @@ class $WorkspacesTable extends Workspaces
         DriftSqlType.string,
         data['${effectivePrefix}url'],
       ),
+      cloudWorkspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cloud_workspace_id'],
+      ),
+      cloudAccountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cloud_account_id'],
+      ),
     );
   }
 
@@ -186,6 +236,12 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
 
   /// URL for remote workspaces, null for local workspaces.
   final String? url;
+
+  /// Cloud workspace identifier for mirrored cloud workspaces.
+  final String? cloudWorkspaceId;
+
+  /// Cloud account identifier that owns this local mirror.
+  final String? cloudAccountId;
   const WorkspacesTable({
     required this.id,
     required this.createdAt,
@@ -193,6 +249,8 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
     required this.name,
     required this.type,
     this.url,
+    this.cloudWorkspaceId,
+    this.cloudAccountId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -209,6 +267,12 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
     if (!nullToAbsent || url != null) {
       map['url'] = Variable<String>(url);
     }
+    if (!nullToAbsent || cloudWorkspaceId != null) {
+      map['cloud_workspace_id'] = Variable<String>(cloudWorkspaceId);
+    }
+    if (!nullToAbsent || cloudAccountId != null) {
+      map['cloud_account_id'] = Variable<String>(cloudAccountId);
+    }
     return map;
   }
 
@@ -220,6 +284,12 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
       name: Value(name),
       type: Value(type),
       url: url == null && nullToAbsent ? const Value.absent() : Value(url),
+      cloudWorkspaceId: cloudWorkspaceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudWorkspaceId),
+      cloudAccountId: cloudAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudAccountId),
     );
   }
 
@@ -237,6 +307,8 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
         serializer.fromJson<String>(json['type']),
       ),
       url: serializer.fromJson<String?>(json['url']),
+      cloudWorkspaceId: serializer.fromJson<String?>(json['cloudWorkspaceId']),
+      cloudAccountId: serializer.fromJson<String?>(json['cloudAccountId']),
     );
   }
   @override
@@ -251,6 +323,8 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
         $WorkspacesTable.$convertertype.toJson(type),
       ),
       'url': serializer.toJson<String?>(url),
+      'cloudWorkspaceId': serializer.toJson<String?>(cloudWorkspaceId),
+      'cloudAccountId': serializer.toJson<String?>(cloudAccountId),
     };
   }
 
@@ -261,6 +335,8 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
     String? name,
     WorkspaceType? type,
     Value<String?> url = const Value.absent(),
+    Value<String?> cloudWorkspaceId = const Value.absent(),
+    Value<String?> cloudAccountId = const Value.absent(),
   }) => WorkspacesTable(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -268,6 +344,12 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
     name: name ?? this.name,
     type: type ?? this.type,
     url: url.present ? url.value : this.url,
+    cloudWorkspaceId: cloudWorkspaceId.present
+        ? cloudWorkspaceId.value
+        : this.cloudWorkspaceId,
+    cloudAccountId: cloudAccountId.present
+        ? cloudAccountId.value
+        : this.cloudAccountId,
   );
   WorkspacesTable copyWithCompanion(WorkspacesCompanion data) {
     return WorkspacesTable(
@@ -277,6 +359,12 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
       name: data.name.present ? data.name.value : this.name,
       type: data.type.present ? data.type.value : this.type,
       url: data.url.present ? data.url.value : this.url,
+      cloudWorkspaceId: data.cloudWorkspaceId.present
+          ? data.cloudWorkspaceId.value
+          : this.cloudWorkspaceId,
+      cloudAccountId: data.cloudAccountId.present
+          ? data.cloudAccountId.value
+          : this.cloudAccountId,
     );
   }
 
@@ -288,13 +376,24 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
           ..write('updatedAt: $updatedAt, ')
           ..write('name: $name, ')
           ..write('type: $type, ')
-          ..write('url: $url')
+          ..write('url: $url, ')
+          ..write('cloudWorkspaceId: $cloudWorkspaceId, ')
+          ..write('cloudAccountId: $cloudAccountId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, createdAt, updatedAt, name, type, url);
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    name,
+    type,
+    url,
+    cloudWorkspaceId,
+    cloudAccountId,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -304,7 +403,9 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
           other.updatedAt == this.updatedAt &&
           other.name == this.name &&
           other.type == this.type &&
-          other.url == this.url);
+          other.url == this.url &&
+          other.cloudWorkspaceId == this.cloudWorkspaceId &&
+          other.cloudAccountId == this.cloudAccountId);
 }
 
 class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
@@ -314,6 +415,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
   final Value<String> name;
   final Value<WorkspaceType> type;
   final Value<String?> url;
+  final Value<String?> cloudWorkspaceId;
+  final Value<String?> cloudAccountId;
   final Value<int> rowid;
   const WorkspacesCompanion({
     this.id = const Value.absent(),
@@ -322,6 +425,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
     this.name = const Value.absent(),
     this.type = const Value.absent(),
     this.url = const Value.absent(),
+    this.cloudWorkspaceId = const Value.absent(),
+    this.cloudAccountId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspacesCompanion.insert({
@@ -331,6 +436,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
     required String name,
     required WorkspaceType type,
     this.url = const Value.absent(),
+    this.cloudWorkspaceId = const Value.absent(),
+    this.cloudAccountId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : name = Value(name),
        type = Value(type);
@@ -341,6 +448,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
     Expression<String>? name,
     Expression<String>? type,
     Expression<String>? url,
+    Expression<String>? cloudWorkspaceId,
+    Expression<String>? cloudAccountId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -350,6 +459,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
       if (name != null) 'name': name,
       if (type != null) 'type': type,
       if (url != null) 'url': url,
+      if (cloudWorkspaceId != null) 'cloud_workspace_id': cloudWorkspaceId,
+      if (cloudAccountId != null) 'cloud_account_id': cloudAccountId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -361,6 +472,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
     Value<String>? name,
     Value<WorkspaceType>? type,
     Value<String?>? url,
+    Value<String?>? cloudWorkspaceId,
+    Value<String?>? cloudAccountId,
     Value<int>? rowid,
   }) {
     return WorkspacesCompanion(
@@ -370,6 +483,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
       name: name ?? this.name,
       type: type ?? this.type,
       url: url ?? this.url,
+      cloudWorkspaceId: cloudWorkspaceId ?? this.cloudWorkspaceId,
+      cloudAccountId: cloudAccountId ?? this.cloudAccountId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -397,6 +512,12 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
     if (url.present) {
       map['url'] = Variable<String>(url.value);
     }
+    if (cloudWorkspaceId.present) {
+      map['cloud_workspace_id'] = Variable<String>(cloudWorkspaceId.value);
+    }
+    if (cloudAccountId.present) {
+      map['cloud_account_id'] = Variable<String>(cloudAccountId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -412,6 +533,8 @@ class WorkspacesCompanion extends UpdateCompanion<WorkspacesTable> {
           ..write('name: $name, ')
           ..write('type: $type, ')
           ..write('url: $url, ')
+          ..write('cloudWorkspaceId: $cloudWorkspaceId, ')
+          ..write('cloudAccountId: $cloudAccountId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -12725,6 +12848,8 @@ typedef $$WorkspacesTableCreateCompanionBuilder =
       required String name,
       required WorkspaceType type,
       Value<String?> url,
+      Value<String?> cloudWorkspaceId,
+      Value<String?> cloudAccountId,
       Value<int> rowid,
     });
 typedef $$WorkspacesTableUpdateCompanionBuilder =
@@ -12735,6 +12860,8 @@ typedef $$WorkspacesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<WorkspaceType> type,
       Value<String?> url,
+      Value<String?> cloudWorkspaceId,
+      Value<String?> cloudAccountId,
       Value<int> rowid,
     });
 
@@ -12991,6 +13118,16 @@ class $$WorkspacesTableFilterComposer
 
   ColumnFilters<String> get url => $composableBuilder(
     column: $table.url,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cloudWorkspaceId => $composableBuilder(
+    column: $table.cloudWorkspaceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cloudAccountId => $composableBuilder(
+    column: $table.cloudAccountId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -13291,6 +13428,16 @@ class $$WorkspacesTableOrderingComposer
     column: $table.url,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get cloudWorkspaceId => $composableBuilder(
+    column: $table.cloudWorkspaceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cloudAccountId => $composableBuilder(
+    column: $table.cloudAccountId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$WorkspacesTableAnnotationComposer
@@ -13319,6 +13466,16 @@ class $$WorkspacesTableAnnotationComposer
 
   GeneratedColumn<String> get url =>
       $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get cloudWorkspaceId => $composableBuilder(
+    column: $table.cloudWorkspaceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cloudAccountId => $composableBuilder(
+    column: $table.cloudAccountId,
+    builder: (column) => column,
+  );
 
   Expression<T> serviceConnectionsRefs<T extends Object>(
     Expression<T> Function($$ServiceConnectionsTableAnnotationComposer a) f,
@@ -13627,6 +13784,8 @@ class $$WorkspacesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<WorkspaceType> type = const Value.absent(),
                 Value<String?> url = const Value.absent(),
+                Value<String?> cloudWorkspaceId = const Value.absent(),
+                Value<String?> cloudAccountId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspacesCompanion(
                 id: id,
@@ -13635,6 +13794,8 @@ class $$WorkspacesTableTableManager
                 name: name,
                 type: type,
                 url: url,
+                cloudWorkspaceId: cloudWorkspaceId,
+                cloudAccountId: cloudAccountId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -13645,6 +13806,8 @@ class $$WorkspacesTableTableManager
                 required String name,
                 required WorkspaceType type,
                 Value<String?> url = const Value.absent(),
+                Value<String?> cloudWorkspaceId = const Value.absent(),
+                Value<String?> cloudAccountId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => WorkspacesCompanion.insert(
                 id: id,
@@ -13653,6 +13816,8 @@ class $$WorkspacesTableTableManager
                 name: name,
                 type: type,
                 url: url,
+                cloudWorkspaceId: cloudWorkspaceId,
+                cloudAccountId: cloudAccountId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

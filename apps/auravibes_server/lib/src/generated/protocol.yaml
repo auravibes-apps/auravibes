@@ -1,0 +1,31 @@
+emailIdp:
+  - login:
+  - startRegistration:
+  - verifyRegistrationCode:
+  - finishRegistration:
+  - startPasswordReset:
+  - verifyPasswordResetCode:
+  - finishPasswordReset:
+  - hasAccount:
+jwtRefresh:
+  - refreshAccessToken:
+account:
+  - currentUser:
+cloudWorkspace:
+  - listAuthorizedWorkspaces:
+  - listPendingInvites:
+  - getWorkspaceDetail:
+  - listMembers:
+  - listWorkspaceInvites:
+  - createWorkspace:
+  - inviteMember:
+  - renewInvite:
+  - revokeInvite:
+  - acceptInvite:
+  - declineInvite:
+  - renameWorkspace:
+  - leaveWorkspace:
+  - transferOwnership:
+  - updateMemberRole:
+  - removeMember:
+  - deleteWorkspace:

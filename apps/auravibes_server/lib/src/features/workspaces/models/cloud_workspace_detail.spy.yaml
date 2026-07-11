@@ -1,0 +1,6 @@
+class: CloudWorkspaceDetail
+fields:
+  workspace: CloudWorkspaceSummary
+  ownerUserId: String
+  ownerEmail: String?
+  capabilities: CloudWorkspaceCapabilities

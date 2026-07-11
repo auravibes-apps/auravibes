@@ -7,7 +7,11 @@
       "type": "dart",
       "flutterMode": "debug",
       "cwd": "apps/auravibes_app",
-      "toolArgs": ["--flavor", "dev"],
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/"
+      ],
       "program": "lib/main.dart"
     },
     {
@@ -19,9 +23,18 @@
       "toolArgs": [
         "--flavor",
         "dev",
+        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/",
         "--dart-define=DB_HASH_SOURCE=${workspaceFolder}"
       ],
       "program": "lib/main.dart"
+    },
+    {
+      "name": "AuraVibes Server",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/auravibes_server",
+      "program": "bin/main.dart",
+      "args": ["--mode", "development", "--apply-migrations"]
     },
     {
       "name": "Widgetbook",

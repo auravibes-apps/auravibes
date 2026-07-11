@@ -1,0 +1,6 @@
+class: CloudWorkspaceMemberSummary
+fields:
+  userId: String
+  email: String?
+  role: String
+  createdAt: DateTime

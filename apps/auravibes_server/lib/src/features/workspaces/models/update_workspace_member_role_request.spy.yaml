@@ -1,0 +1,5 @@
+class: UpdateWorkspaceMemberRoleRequest
+fields:
+  workspaceId: int
+  userId: String
+  role: String
