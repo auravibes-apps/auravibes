@@ -4,8 +4,13 @@ on:
     branches: [main]
 
 jobs:
+  build-platforms:
+    if: contains(github.event.head_commit.message, 'chore(release)')
+    uses: ./.github/workflows/build-matrix.yml
+
   release:
     name: Create release and update changelog
+    needs: build-platforms
     permissions:
       contents: write
     if: contains(github.event.head_commit.message, 'chore(release)')
