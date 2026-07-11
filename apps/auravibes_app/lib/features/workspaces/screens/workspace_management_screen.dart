@@ -245,8 +245,11 @@ class _WorkspaceList extends ConsumerWidget {
     );
     final accountId = workspace.cloudAccountId;
     if (confirmed != true || accountId == null) return;
+    if (!context.mounted) return;
+
     if (workspace.id == activeWorkspaceId) {
       _showError(context, const WorkspaceDeleteActiveException());
+
       return;
     }
 

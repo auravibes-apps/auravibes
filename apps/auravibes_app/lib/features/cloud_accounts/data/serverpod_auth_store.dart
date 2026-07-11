@@ -100,10 +100,23 @@ class ServerpodAuthStore {
 
   static String _authKey(String userId) => '$_authPrefix$userId';
 
-  Future<void> _mutateIndex(Future<void> Function() mutation) {
-    final result = _indexMutation.then((_) => mutation());
-    _indexMutation = result.then<void>((_) {}, onError: (_, _) {});
-    return result;
+  Future<void> _mutateIndex(Future<void> Function() mutation) async {
+    final previousMutation = _indexMutation;
+    final result = () async {
+      await previousMutation;
+      await mutation();
+    }();
+    _indexMutation = _completeMutation(result);
+
+    await result;
+  }
+
+  static Future<void> _completeMutation(Future<void> result) async {
+    try {
+      await result;
+    } on Object {
+      // Keep the queue usable after a failed mutation.
+    }
   }
 }
 
