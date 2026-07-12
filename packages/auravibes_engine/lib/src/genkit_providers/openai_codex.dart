@@ -325,35 +325,50 @@ class _CodexStreamAccumulator {
   List<Part> addEvent(Map<String, dynamic> event) {
     final type = event['type'] as String?;
     if (type == 'response.failed') {
-      final details = _failedEventDetails(event);
-      throw GenkitException(
-        'OpenAI Codex API error: ${jsonEncode(details['error'])}',
-        status: StatusCodes.INTERNAL,
-        details: jsonEncode(details),
-        stackTrace: StackTrace.current,
-      );
+      _throwFailedEvent(event);
     }
     if (type == 'response.completed') {
-      final response = event['response'] as Map<String, dynamic>?;
-      _usage = _usageFromJson(response?['usage'] as Map<String, dynamic>?);
-      _finishReasonValue = FinishReason.stop;
+      _complete(event);
 
       return const [];
     }
     if (type == 'response.output_item.done') {
-      final item = event['item'] as Map<String, dynamic>?;
-      if (item?['type'] == 'function_call') {
-        _tools.addAll(
-          _toolRequestsFromResponse({
-            'output': [item],
-          }),
-        );
-      }
+      _addTool(event);
 
       return const [];
     }
-    if (type != 'response.output_text.delta') return const [];
 
+    return type == 'response.output_text.delta' ? _addText(event) : const [];
+  }
+
+  Never _throwFailedEvent(Map<String, dynamic> event) {
+    final details = _failedEventDetails(event);
+    throw GenkitException(
+      'OpenAI Codex API error: ${jsonEncode(details['error'])}',
+      status: StatusCodes.INTERNAL,
+      details: jsonEncode(details),
+      stackTrace: StackTrace.current,
+    );
+  }
+
+  void _complete(Map<String, dynamic> event) {
+    final response = event['response'] as Map<String, dynamic>?;
+    _usage = _usageFromJson(response?['usage'] as Map<String, dynamic>?);
+    _finishReasonValue = FinishReason.stop;
+  }
+
+  void _addTool(Map<String, dynamic> event) {
+    final item = event['item'] as Map<String, dynamic>?;
+    if (item?['type'] != 'function_call') return;
+
+    _tools.addAll(
+      _toolRequestsFromResponse({
+        'output': [item],
+      }),
+    );
+  }
+
+  List<Part> _addText(Map<String, dynamic> event) {
     final delta = event['delta'];
     if (delta is! String || delta.isEmpty) return const [];
 

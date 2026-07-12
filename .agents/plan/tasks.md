@@ -771,6 +771,19 @@ the approved plan file.
 - `pass` - engine forbidden-import and stale-API searches; no forbidden package
   dependency or compatibility shim remains.
 - `pass` - `git diff --check`.
+
+## Sonar Follow-Up
+
+- SonarCloud PR 647 reports 32 open issues. Thirty-one belong to unrelated
+  external plugins or generated platform sources. The one migration-local issue
+  is `dart:S3776` in `OpenAICodexCodec.stream` event handling.
+- Split the event-specific branches into private accumulator methods without
+  changing SSE parsing, emitted chunks, tool accumulation, usage, or errors.
+- `pass` - `fvm dart test test/genkit_providers/provider_codecs_test.dart`
+  from `packages/auravibes_engine` (5 tests), including streamed text, tool,
+  completion, and failure events.
+- `pass` - `fvm dart run melos run validate:quick`.
+- `pass` - `git diff --check`.
 - `reviewed` - final `git status --short`; all listed changes belong to the
   approved migration, task ledger/instructions, or approved plan. No unrelated
   tracked change was reverted.

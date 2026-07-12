@@ -116,6 +116,49 @@ void main() {
     expect(chunks.single.text, 'Hi');
     expect(response.message?.text, 'Hi');
   });
+
+  test('Codex retains streamed tool calls', () async {
+    const codec = OpenAICodexCodec();
+    final response = await codec.stream(
+      (_) async => ProviderTransportResponse(
+        statusCode: 200,
+        body: Stream.value(
+          utf8.encode(
+            'data: {"type":"response.output_item.done","item": '
+            '{"type":"function_call","call_id":"call-1",'
+            '"name":"search","arguments":"{\\"query\\":\\"dart\\"}"}}\n',
+          ),
+        ),
+      ),
+      const {},
+      (_) {},
+    );
+
+    final tool = response.message!.content.single.toolRequest!;
+    expect(tool.ref, 'call-1');
+    expect(tool.name, 'search');
+    expect(tool.input, {'query': 'dart'});
+  });
+
+  test('Codex surfaces streamed failures', () async {
+    const codec = OpenAICodexCodec();
+
+    await expectLater(
+      codec.stream(
+        (_) async => ProviderTransportResponse(
+          statusCode: 200,
+          body: Stream.value(
+            utf8.encode(
+              'data: {"type":"response.failed","error":{"message":"no"}}\n',
+            ),
+          ),
+        ),
+        const {},
+        (_) {},
+      ),
+      throwsA(isA<GenkitException>()),
+    );
+  });
 }
 
 ProviderTransportResponse _response(Map<String, Object?> body) {
