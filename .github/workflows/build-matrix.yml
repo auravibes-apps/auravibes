@@ -1,180 +1,14 @@
 name: Platform Build Matrix
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/auravibes_app/lib/**'
-      - 'apps/auravibes_app/pubspec.yaml'
-      - 'apps/auravibes_app/pubspec.lock'
-      - 'packages/**'
-      - 'pubspec.yaml'
-      - 'pubspec.lock'
-      - '.fvm/**'
-      - '.github/workflows/build-matrix.yml'
-      - 'apps/auravibes_app/macos/**'
-      - 'apps/auravibes_app/ios/**'
-      - 'apps/auravibes_app/android/**'
-      - 'apps/auravibes_app/windows/**'
-      - 'apps/auravibes_app/linux/**'
-      - 'apps/auravibes_app/web/**'
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 env:
   FLUTTER_WORKING_DIRECTORY: apps/auravibes_app
 
 jobs:
-  # Detect which platforms need building based on changed files
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      common: ${{ steps.filter.outputs.common }}
-      macos: ${{ steps.filter.outputs.macos }}
-      ios: ${{ steps.filter.outputs.ios }}
-      android: ${{ steps.filter.outputs.android }}
-      windows: ${{ steps.filter.outputs.windows }}
-      linux: ${{ steps.filter.outputs.linux }}
-      web: ${{ steps.filter.outputs.web }}
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: 🔍 Detect changed paths
-        uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            common:
-              - 'apps/auravibes_app/lib/**'
-              - 'apps/auravibes_app/pubspec.yaml'
-              - 'apps/auravibes_app/pubspec.lock'
-              - 'packages/**'
-              - 'pubspec.yaml'
-              - 'pubspec.lock'
-              - '.fvm/**'
-              - '.github/workflows/build-matrix.yml'
-            macos:
-              - 'apps/auravibes_app/macos/**'
-            ios:
-              - 'apps/auravibes_app/ios/**'
-            android:
-              - 'apps/auravibes_app/android/**'
-            windows:
-              - 'apps/auravibes_app/windows/**'
-            linux:
-              - 'apps/auravibes_app/linux/**'
-            web:
-              - 'apps/auravibes_app/web/**'
-
-  # macOS Build
-  build-macos:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.macos == 'true' }}
-    runs-on: macos-latest
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Melos Bootstrap
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
-
-      - name: 🏗️ Configure macOS Build
-        run: flutter build macos --debug --flavor prod --config-only
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
-
-      - name: 🏗️ Build macOS (No Codesign)
-        run: >-
-          xcodebuild -project macos/Runner.xcodeproj -scheme Runner
-          -configuration Debug-prod -derivedDataPath build/macos
-          CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
-          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
-
-      - name: 📤 Upload macOS Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: macos-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/macos/Build/Products/Debug-prod/auravibes.app
-          retention-days: 7
-
-  # iOS Build
-  build-ios:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.ios == 'true' }}
-    runs-on: macos-latest
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Melos Bootstrap
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
-
-      - name: 🏗️ Build iOS (No Codesign)
-        run: flutter build ios --debug --no-codesign
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
-
-      - name: 📤 Upload iOS Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ios-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/ios/iphoneos/Runner.app
-          retention-days: 7
-
-  # Android Build
-  build-android:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.android == 'true' }}
+  build-linux-targets:
+    name: Build Android, Linux, and Web
     runs-on: ubuntu-latest
     steps:
       - name: 📚 Git Checkout
@@ -196,8 +30,13 @@ jobs:
       - name: ☕ Setup Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
+
+      - name: 📦 Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libsecret-1-dev
 
       - name: 🔗 Create FVM symlink for CI
         run: |
@@ -209,24 +48,66 @@ jobs:
         with:
           run-bootstrap: true
 
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
-
       - name: 🏗️ Build Android APK
-        run: flutter build apk --debug --flavor prod --verbose
+        run: flutter build apk --debug --flavor prod --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-      - name: 📤 Upload Android Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: android-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/app/outputs/flutter-apk/app-prod-debug.apk
-          retention-days: 7
+      - name: 🏗️ Build Linux
+        run: flutter build linux --debug --no-pub
+        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
 
-  # Windows Build
+      - name: 🏗️ Build Web
+        run: flutter build web --release --no-pub
+        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+  build-apple-targets:
+    name: Build macOS and iOS
+    runs-on: macos-latest
+    steps:
+      - name: 📚 Git Checkout
+        uses: actions/checkout@v7
+
+      - name: 🔧 Setup FVM
+        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        id: fvm-config-action
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
+          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
+          cache: true
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
+
+      - name: 🔗 Create FVM symlink for CI
+        run: |
+          mkdir -p .fvm
+          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
+
+      - name: 📦 Melos Bootstrap
+        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
+        with:
+          run-bootstrap: true
+
+      - name: 🏗️ Configure macOS Build
+        run: flutter build macos --debug --flavor prod --config-only --no-pub
+        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+      - name: 🏗️ Build macOS (No Codesign)
+        run: >-
+          xcodebuild -project macos/Runner.xcodeproj -scheme Runner
+          -configuration Debug-prod -derivedDataPath build/macos
+          CODE_SIGN_STYLE=Manual CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
+      - name: 🏗️ Build iOS (No Codesign)
+        run: flutter build ios --debug --no-codesign --no-pub
+        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
+
   build-windows:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.windows == 'true' }}
+    name: Build Windows
     runs-on: windows-latest
     steps:
       - name: 📚 Git Checkout
@@ -246,124 +127,17 @@ jobs:
           pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
 
       - name: 🔗 Create FVM symlink for CI
+        shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path .fvm | Out-Null
           if (Test-Path .fvm\flutter_sdk) { Remove-Item .fvm\flutter_sdk -Recurse -Force }
           New-Item -ItemType Junction -Path .fvm\flutter_sdk -Target "$env:FLUTTER_ROOT" | Out-Null
-        shell: pwsh
 
       - name: 📦 Melos Bootstrap
         uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
 
       - name: 🏗️ Build Windows
-        run: flutter build windows --debug
+        run: flutter build windows --debug --no-pub
         working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
-
-      - name: 📤 Upload Windows Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: windows-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/windows/x64/runner/Debug/
-          retention-days: 7
-
-  # Linux Build
-  build-linux:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.linux == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
-
-      - name: 📦 Install Linux Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libstdc++-12-dev libsqlite3-dev libwebkit2gtk-4.1-dev libsecret-1-dev
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Melos Bootstrap
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
-
-      - name: 🏗️ Build Linux
-        run: flutter build linux --debug
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
-
-      - name: 📤 Upload Linux Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: linux-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/linux/x64/debug/bundle/
-          retention-days: 7
-
-  # Web Build
-  build-web:
-    needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.common == 'true' || needs.detect-changes.outputs.web == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@v7
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
-        id: fvm-config-action
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-${{ hashFiles('pubspec.lock') }}"
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Melos Bootstrap
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
-
-      - name: 🏗️ Build Web
-        run: flutter build web --release
-        working-directory: ${{ env.FLUTTER_WORKING_DIRECTORY }}
-
-      - name: 📤 Upload Web Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: web-build
-          path: ${{ env.FLUTTER_WORKING_DIRECTORY }}/build/web/
-          retention-days: 7

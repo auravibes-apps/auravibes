@@ -2,23 +2,17 @@ name: Flutter Test CI
 
 on:
   push:
-    branches:
-      - main
-      - dev
-      - stage
+    branches: [main, dev, stage]
   pull_request:
-    branches:
-      - main
-      - dev
-      - stage
+    branches: [main, dev, stage]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  generated-artifacts:
-    name: Generated Artifacts
+  build:
+    name: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,6 +21,7 @@ jobs:
       - name: 📚 Git Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: 🔧 Check FVM artifact drift
@@ -49,9 +44,6 @@ jobs:
       - name: 🔍 Detect Flutter channel
         id: channel-detect
         run: |
-          # fvm-config-action may output a pre-release version string
-          # (for example 3.44.0-0.3.pre) but still report stable channel.
-          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
           version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
           if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
             echo "channel=beta" >> "$GITHUB_OUTPUT"
@@ -65,16 +57,17 @@ jobs:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.channel-detect.outputs.channel }}
           cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
-          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
+          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
+          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:"
+
       - name: 🔗 Create FVM symlink for CI
         run: |
           mkdir -p .fvm
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
-      - uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
+      - name: 📦 Bootstrap workspace
+        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
         with:
           run-bootstrap: true
 
@@ -86,80 +79,6 @@ jobs:
             git diff --stat
             git diff --exit-code
           fi
-
-      - name: 🛠️ Generate Code
-        run: melos run generate --no-select
-
-      - name: 📦 Check generated artifact drift
-        run: |
-          if ! git diff --quiet; then
-            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
-            git diff --name-only
-            git diff --stat
-            git diff --exit-code
-          fi
-
-  static-analysis:
-    name: Static Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          persist-credentials: false
-
-      - name: 🔧 Check FVM artifact drift
-        run: |
-          flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
-          vscode_sdk_path="$(ruby -rjson -e 'puts JSON.parse(File.read(".vscode/settings.json")).fetch("dart.flutterSdkPath")')"
-          expected_path=".fvm/versions/${flutter_version}"
-
-          if [ "$vscode_sdk_path" != "$expected_path" ]; then
-            echo "::error::.vscode/settings.json is out of sync with .fvmrc. Run 'fvm use' and commit tracked changes."
-            echo "Expected dart.flutterSdkPath: ${expected_path}"
-            echo "Actual dart.flutterSdkPath: ${vscode_sdk_path}"
-            exit 1
-          fi
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
-        id: fvm-config-action
-
-      - name: 🔍 Detect Flutter channel
-        id: channel-detect
-        run: |
-          # fvm-config-action may output a pre-release version string
-          # (for example 3.44.0-0.3.pre) but still report stable channel.
-          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
-          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
-          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
-            echo "channel=beta" >> "$GITHUB_OUTPUT"
-          else
-            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.channel-detect.outputs.channel }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
-          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
 
       - name: ✨ Check Formatting
         run: melos run format:check
@@ -182,163 +101,58 @@ jobs:
       - name: 📝 Import Sorting
         run: dart run import_sorter:main --exit-if-changed
 
-  tests-coverage:
-    name: Coverage Tests (${{ matrix.id }})
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: ui
-            package: packages/auravibes_ui
-            targets: test
-            source_prefix: packages/auravibes_ui
-          - id: engine
-            package: packages/auravibes_engine
-            targets: test
-            source_prefix: packages/auravibes_engine
-          - id: app-core-data-domain
-            package: apps/auravibes_app
-            targets: test/core test/data test/domain test/flavors_test.dart
-            source_prefix: apps/auravibes_app
-          - id: app-features-chats
-            package: apps/auravibes_app
-            targets: test/features/chats
-            source_prefix: apps/auravibes_app
-          - id: app-features-tools
-            package: apps/auravibes_app
-            targets: test/features/tools
-            source_prefix: apps/auravibes_app
-          - id: app-features-other
-            package: apps/auravibes_app
-            targets: test/features/agents test/features/models test/features/service_connections test/features/settings test/features/skills/usecases test/features/workspaces
-            source_prefix: apps/auravibes_app
-          - id: app-services-routing
-            package: apps/auravibes_app
-            targets: test/notifiers test/providers test/router test/services test/utils
-            source_prefix: apps/auravibes_app
-          - id: app-presentation-widgets
-            package: apps/auravibes_app
-            targets: test/widgets
-            source_prefix: apps/auravibes_app
+      - name: 🛠️ Generate Code
+        run: melos run generate --no-select
 
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          persist-credentials: false
-
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
-        id: fvm-config-action
-
-      - name: 🔍 Detect Flutter channel
-        id: channel-detect
+      - name: 📦 Check generated artifact drift
         run: |
-          # fvm-config-action may output a pre-release version string
-          # (for example 3.44.0-0.3.pre) but still report stable channel.
-          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
-          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
-          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
-            echo "channel=beta" >> "$GITHUB_OUTPUT"
-          else
-            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
+          if ! git diff --quiet; then
+            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
+            git diff --name-only
+            git diff --stat
+            git diff --exit-code
           fi
 
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.channel-detect.outputs.channel }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
-          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
+      - name: 🧪 Run all tests with coverage
+        run: melos run test:ci --no-select
 
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 🧪 Run Coverage Tests
-        working-directory: ${{ matrix.package }}
-        run: flutter test ${{ matrix.targets }} --coverage --concurrency=2 --timeout=30s --reporter=compact --no-pub
-
-      - name: 🧭 Normalize LCOV source paths for Sonar
-        working-directory: ${{ matrix.package }}
-        env:
-          SOURCE_PREFIX: ${{ matrix.source_prefix }}
+      - name: 🧭 Merge LCOV reports for Sonar
         run: |
           ruby <<'RUBY'
-          input = 'coverage/lcov.info'
-          prefix = ENV.fetch('SOURCE_PREFIX')
+          package_dirs = Dir.glob('{apps,packages,widgetbook}/*')
+            .select { |path| File.directory?(File.join(path, 'test')) }
+          abort 'No tested workspace packages found' if package_dirs.empty?
 
-          records = []
-          current = []
-
-          File.foreach(input, chomp: true) do |line|
-            current << line
-            next unless line == 'end_of_record'
-
-            records << current
-            current = []
+          reports = package_dirs.map do |package_dir|
+            report = File.join(package_dir, 'coverage/lcov.info')
+            abort "Missing coverage report: #{report}" unless File.file?(report)
+            [package_dir, report]
           end
 
-          records << current unless current.empty?
+          merged = reports.flat_map do |package_dir, report|
+            records = File.read(report).split("end_of_record\n")
+            records.filter_map do |record|
+              lines = record.lines(chomp: true)
+              sf_index = lines.index { |line| line.start_with?('SF:') }
+              next if sf_index.nil?
 
-          filtered = records.filter_map do |record|
-            sf_index = record.index { |line| line.start_with?('SF:') }
-            next if sf_index.nil?
+              path = lines[sf_index].delete_prefix('SF:')
+              path = File.join(package_dir, path) if path.start_with?('lib/')
+              excluded = path.end_with?('.g.dart', '.freezed.dart', '.mocks.dart') ||
+                path.end_with?('/drift_worker.js') ||
+                path.start_with?('apps/auravibes_server/lib/src/generated/')
+              next if excluded
+              abort "Non-repository coverage path: #{path}" if path.start_with?('/')
 
-            path = record[sf_index].delete_prefix('SF:')
-            path = path.sub(%r{\Alib/}, "#{prefix}/lib/")
-
-            excluded = path.end_with?('.g.dart') ||
-              path.end_with?('.freezed.dart') ||
-              path.end_with?('.mocks.dart') ||
-              path.end_with?('/drift_worker.js')
-            next if excluded
-
-            record[sf_index] = "SF:#{path}"
-            record
+              lines[sf_index] = "SF:#{path}"
+              "#{lines.join("\n")}\nend_of_record\n"
+            end
           end
 
-          output = filtered.map { |record| record.join("\n") }.join("\n")
-          File.write(input, "#{output}\n")
+          abort 'Merged coverage report has no source records' if merged.empty?
+          Dir.mkdir('coverage') unless Dir.exist?('coverage')
+          File.write('coverage/lcov.info', merged.join)
           RUBY
-
-      - name: 📦 Stage Coverage
-        run: |
-          mkdir -p "coverage-artifacts/${{ matrix.id }}"
-          cp "${{ matrix.package }}/coverage/lcov.info" \
-            "coverage-artifacts/${{ matrix.id }}/lcov.info"
-
-      - name: 📤 Store Coverage
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/${{ matrix.id }}/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.id }}
-
-  sonar:
-    name: SonarCloud
-    runs-on: ubuntu-latest
-    needs: tests-coverage
-    permissions:
-      contents: read
-
-    steps:
-      - name: 📚 Git Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-        with:
-          persist-credentials: false
-          fetch-depth: 0
 
       - name: 🔐 Check Sonar token availability
         id: check-sonar-token
@@ -351,113 +165,6 @@ jobs:
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 🔧 Setup FVM
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
-        id: fvm-config-action
-
-      - name: 🔍 Detect Flutter channel
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        id: channel-detect
-        run: |
-          # fvm-config-action may output a pre-release version string
-          # (for example 3.44.0-0.3.pre) but still report stable channel.
-          # For .pre/.dev/-beta builds force beta; otherwise keep action output.
-          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
-          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
-            echo "channel=beta" >> "$GITHUB_OUTPUT"
-          else
-            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: 🐦 Setup Flutter
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.channel-detect.outputs.channel }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:" # optional, change this to force refresh cache
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:" # optional, change this to force refresh cache of dart pub get dependencies
-          # pub-cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:" # optional, change this to specify the cache path
-
-      - name: 🔗 Create FVM symlink for CI
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Bootstrap workspace dependencies
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
-        with:
-          run-bootstrap: true
-
-      - name: 🔎 Verify package config exists
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        run: |
-          if [ ! -f .dart_tool/package_config.json ]; then
-            echo "::error::Missing .dart_tool/package_config.json. Sonar Dart import resolution will fail without bootstrap."
-            exit 1
-          fi
-
-      - name: 📥 Restore UI coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/ui/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-ui
-
-      - name: 📥 Restore engine coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/engine/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-engine
-
-      - name: 📥 Restore app core coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/app-core-data-domain/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-core-data-domain
-
-      - name: 📥 Restore app chats coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/app-features-chats/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-features-chats
-
-      - name: 📥 Restore app tools coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/app-features-tools/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-features-tools
-
-      - name: 📥 Restore other app feature coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/app-features-other/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-features-other
-
-      - name: 📥 Restore app services coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/app-services-routing/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-services-routing
-
-      - name: 📥 Restore app widget coverage
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: coverage-artifacts/app-presentation-widgets/lcov.info
-          key: coverage-${{ github.run_id }}-${{ github.run_attempt }}-app-presentation-widgets
-
       - name: ☁️ SonarCloud Scan
         if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
         uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e
@@ -465,28 +172,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.dart.lcov.reportPaths=coverage-artifacts/**/lcov.info
+            -Dsonar.dart.lcov.reportPaths=coverage/lcov.info
             -Dsonar.scanner.skipJreProvisioning=true
-
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs:
-      - generated-artifacts
-      - static-analysis
-      - tests-coverage
-      - sonar
-    if: ${{ always() }}
-
-    steps:
-      - name: ✅ Verify required CI jobs
-        run: |
-          if [ "${{ needs.generated-artifacts.result }}" != "success" ] || \
-             [ "${{ needs.static-analysis.result }}" != "success" ] || \
-             [ "${{ needs.tests-coverage.result }}" != "success" ] || \
-             [ "${{ needs.sonar.result }}" != "success" ]; then
-            echo "::error::One or more required CI jobs failed."
-            exit 1
-          fi
