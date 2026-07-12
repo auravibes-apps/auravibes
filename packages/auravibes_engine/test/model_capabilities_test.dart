@@ -41,4 +41,45 @@ void main() {
     expect(model.isCodexRuntimeModel, isTrue);
     expect(() => model.inputModalities.add('audio'), throwsUnsupportedError);
   });
+
+  test('rejects malformed required catalog fields clearly', () {
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'limit': {'context': '400000', 'output': 128000},
+        'modalities': {
+          'input': ['text'],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+  });
+
+  test('rejects malformed modality values clearly', () {
+    expect(
+      () => ModelCapabilities.fromJson('openai', {
+        'id': 'gpt-5.5',
+        'name': 'GPT-5.5',
+        'limit': {'context': 400000, 'output': 128000},
+        'modalities': {
+          'input': ['text', 1],
+          'output': ['text'],
+        },
+      }),
+      throwsFormatException,
+    );
+  });
 }

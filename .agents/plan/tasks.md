@@ -772,6 +772,13 @@ the approved plan file.
   dependency or compatibility shim remains.
 - `pass` - `git diff --check`.
 
+## PR Review Follow-Up
+
+- `PR-647-002` - Copilot correctly identified low-signal casts in
+  `ModelCapabilities.fromJson`. Required catalog fields and optional typed
+  fields now validate at the engine boundary and throw field-specific
+  `FormatException` values for malformed provider payloads.
+
 ## Sonar Follow-Up
 
 - SonarCloud PR 647 reports 32 open issues. Thirty-one belong to unrelated

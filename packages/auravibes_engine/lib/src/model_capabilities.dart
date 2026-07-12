@@ -29,31 +29,29 @@ final class ModelCapabilities {
     Map<String, dynamic> json, [
     Set<String> canonicalModelIds = const {},
   ]) {
-    final cost = json['cost'] as Map<String, dynamic>?;
-    final limit = json['limit'] as Map<String, dynamic>;
-    final modalities = json['modalities'] as Map<String, dynamic>;
-    final id = json['id'] as String;
+    final cost = _optionalMap(json, 'cost');
+    final limit = _requiredMap(json, 'limit');
+    final modalities = _requiredMap(json, 'modalities');
+    final id = _requiredString(json, 'id');
 
     return ModelCapabilities(
       id: id,
-      name: json['name'] as String,
-      limitContext: limit['context'] as int,
-      limitOutput: limit['output'] as int,
-      inputModalities: (modalities['input'] as List<dynamic>? ?? const [])
-          .cast(),
-      outputModalities: (modalities['output'] as List<dynamic>? ?? const [])
-          .cast(),
-      family: json['family'] as String?,
-      costInput: (cost?['input'] as num?)?.toDouble(),
-      costCacheRead: (cost?['cache_read'] as num?)?.toDouble(),
-      costOutput: (cost?['output'] as num?)?.toDouble(),
-      openWeights: json['open_weights'] as bool?,
-      supportsReasoning: json['reasoning'] as bool? ?? false,
+      name: _requiredString(json, 'name'),
+      limitContext: _requiredInt(limit, 'limit.context'),
+      limitOutput: _requiredInt(limit, 'limit.output'),
+      inputModalities: _optionalStrings(modalities, 'input'),
+      outputModalities: _optionalStrings(modalities, 'output'),
+      family: _optionalString(json, 'family'),
+      costInput: _optionalNum(cost, 'input')?.toDouble(),
+      costCacheRead: _optionalNum(cost, 'cache_read')?.toDouble(),
+      costOutput: _optionalNum(cost, 'output')?.toDouble(),
+      openWeights: _optionalBool(json, 'open_weights'),
+      supportsReasoning: _optionalBool(json, 'reasoning') ?? false,
       isCanonical:
           canonicalModelIds.isEmpty ||
           canonicalModelIds.contains('$providerId/$id'),
       supportsPriorityMode: _supportsPriorityMode(json),
-      supportsToolCalls: json['tool_call'] as bool? ?? false,
+      supportsToolCalls: _optionalBool(json, 'tool_call') ?? false,
     );
   }
 
@@ -87,11 +85,77 @@ final class ModelCapabilities {
 }
 
 bool _supportsPriorityMode(Map<String, dynamic> json) {
-  final experimental = json['experimental'] as Map<String, dynamic>?;
-  final modes = experimental?['modes'] as Map<String, dynamic>?;
-  final fast = modes?['fast'] as Map<String, dynamic>?;
-  final provider = fast?['provider'] as Map<String, dynamic>?;
-  final body = provider?['body'] as Map<String, dynamic>?;
+  final experimental = _optionalMap(json, 'experimental');
+  final modes = experimental == null
+      ? null
+      : _optionalMap(experimental, 'modes');
+  final fast = modes == null ? null : _optionalMap(modes, 'fast');
+  final provider = fast == null ? null : _optionalMap(fast, 'provider');
+  final body = provider == null ? null : _optionalMap(provider, 'body');
 
   return body?['service_tier'] == 'priority';
+}
+
+Map<String, dynamic> _requiredMap(Map<String, dynamic> json, String field) {
+  final value = json[field];
+  if (value is Map && value.keys.every((key) => key is String)) {
+    return Map<String, dynamic>.from(value);
+  }
+
+  throw FormatException('Model capability "$field" must be an object.');
+}
+
+Map<String, dynamic>? _optionalMap(Map<String, dynamic> json, String field) {
+  if (!json.containsKey(field) || json[field] == null) return null;
+
+  return _requiredMap(json, field);
+}
+
+String _requiredString(Map<String, dynamic> json, String field) {
+  final value = json[field];
+  if (value is String) return value;
+
+  throw FormatException('Model capability "$field" must be a string.');
+}
+
+String? _optionalString(Map<String, dynamic> json, String field) {
+  if (!json.containsKey(field) || json[field] == null) return null;
+
+  return _requiredString(json, field);
+}
+
+int _requiredInt(Map<String, dynamic> json, String field) {
+  final key = field.substring(field.lastIndexOf('.') + 1);
+  final value = json[key];
+  if (value is int) return value;
+
+  throw FormatException('Model capability "$field" must be an integer.');
+}
+
+List<String> _optionalStrings(Map<String, dynamic> json, String field) {
+  if (!json.containsKey(field) || json[field] == null) return const [];
+  final value = json[field];
+  if (value is List && value.every((item) => item is String)) {
+    return value.cast<String>();
+  }
+
+  throw FormatException('Model capability "$field" must be a string array.');
+}
+
+num? _optionalNum(Map<String, dynamic>? json, String field) {
+  if (json == null || !json.containsKey(field) || json[field] == null) {
+    return null;
+  }
+  final value = json[field];
+  if (value is num) return value;
+
+  throw FormatException('Model capability "cost.$field" must be a number.');
+}
+
+bool? _optionalBool(Map<String, dynamic> json, String field) {
+  if (!json.containsKey(field) || json[field] == null) return null;
+  final value = json[field];
+  if (value is bool) return value;
+
+  throw FormatException('Model capability "$field" must be a boolean.');
 }
