@@ -29,6 +29,49 @@ void main() {
       expect(model.name, 'GPT-4');
     });
 
+    test('parses full model JSON fixture', () {
+      final model = ApiModelEntity.fromJson(
+        'openai',
+        {
+          ...baseJson,
+          'family': 'gpt-4',
+          'reasoning': true,
+          'tool_call': true,
+          'experimental': {
+            'modes': {
+              'fast': {
+                'provider': {
+                  'body': {'service_tier': 'priority'},
+                },
+              },
+            },
+          },
+        },
+        {'openai/gpt-4'},
+      );
+
+      expect(
+        model,
+        const ApiModelEntity(
+          modelProvider: 'openai',
+          id: 'gpt-4',
+          name: 'GPT-4',
+          limitContext: 128000,
+          limitOutput: 4096,
+          modalitiesInput: ['text', 'image'],
+          modalitiesOutput: ['text'],
+          family: 'gpt-4',
+          costInput: 30,
+          costCacheRead: 15,
+          costOutput: 60,
+          openWeights: false,
+          supportsReasoning: true,
+          supportsPriorityMode: true,
+          supportsToolCalls: true,
+        ),
+      );
+    });
+
     test('parses cost fields as doubles', () {
       final model = ApiModelEntity.fromJson('openai', baseJson);
       expect(model.costInput, 30.0);

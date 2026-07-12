@@ -103,6 +103,7 @@ class _ApprovalCardContent extends ConsumerWidget {
       data: (name) => name,
       orElse: () => ToolNameFormatter.formatDisplayName(
         ToolNameFormatter.parse(toolCall.name),
+        rawName: toolCall.name,
       ),
     );
 

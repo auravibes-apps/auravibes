@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 /// Represents the result status of a tool call execution.
@@ -47,20 +48,23 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   /// contain the actual output.
   String toResponseString() {
     return switch (this) {
-      ToolCallResultStatus.running => '',
-      ToolCallResultStatus.success => '',
-      ToolCallResultStatus.skippedByUser => 'Tool was skipped by the user.',
-      ToolCallResultStatus.stoppedByUser =>
-        'Tool execution was stopped by the user.',
-      ToolCallResultStatus.toolNotFound => 'Tool not found.',
+      ToolCallResultStatus.running ||
+      ToolCallResultStatus.skippedByUser ||
+      ToolCallResultStatus.stoppedByUser => agentLifecycle.modelFallback,
+      ToolCallResultStatus.success =>
+        AgentToolResultStatus.success.modelFallback,
+      ToolCallResultStatus.toolNotFound =>
+        AgentToolResultStatus.toolNotFound.modelFallback,
       ToolCallResultStatus.disabledInWorkspace =>
-        'Tool is disabled in workspace.',
+        AgentToolResultStatus.disabledInWorkspace.modelFallback,
       ToolCallResultStatus.disabledInConversation =>
-        'Tool is disabled for this conversation.',
+        AgentToolResultStatus.disabledInConversation.modelFallback,
       ToolCallResultStatus.disabledByAgent =>
-        'Tool is denied by the selected agent.',
-      ToolCallResultStatus.notConfigured => 'Tool is not configured.',
-      ToolCallResultStatus.executionError => 'Tool execution failed.',
+        AgentToolResultStatus.disabledByAgent.modelFallback,
+      ToolCallResultStatus.notConfigured =>
+        AgentToolResultStatus.notConfigured.modelFallback,
+      ToolCallResultStatus.executionError =>
+        AgentToolResultStatus.executionError.modelFallback,
     };
   }
 
@@ -68,7 +72,15 @@ extension ToolCallResultStatusX on ToolCallResultStatus {
   ///
   /// When true, no response should be sent to the AI for any tools
   /// in this message.
-  bool get stopsAgentLoop => this == ToolCallResultStatus.stoppedByUser;
+  bool get stopsAgentLoop => agentLifecycle.stopsAgentLoop;
+
+  AgentToolCallLifecycle get agentLifecycle => switch (this) {
+    ToolCallResultStatus.running => AgentToolCallLifecycle.pending,
+    ToolCallResultStatus.success => AgentToolCallLifecycle.success,
+    ToolCallResultStatus.skippedByUser => AgentToolCallLifecycle.skippedByUser,
+    ToolCallResultStatus.stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
+    _ => AgentToolCallLifecycle.failed,
+  };
 
   /// Returns the locale key for displaying this status in the UI.
   ///

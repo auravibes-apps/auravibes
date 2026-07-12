@@ -4,9 +4,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:async/async.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
-import 'package:auravibes_app/services/url/models/url_response.dart';
+import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:dio/dio.dart';
 
 class UrlService {
@@ -68,6 +68,7 @@ class UrlService {
           receiveTimeout: request.timeout,
           headers: effectiveHeaders,
           responseType: ResponseType.stream,
+          validateStatus: (_) => true,
           followRedirects: false,
         ),
       );
@@ -76,6 +77,7 @@ class UrlService {
       }
 
       final body = await _readResponseBody(response.data);
+      await _validateRedirect(request, response);
       stopwatch.stop();
       completer.complete(
         UrlResponse(
@@ -92,6 +94,28 @@ class UrlService {
         completer,
         stopwatch,
       );
+    }
+  }
+
+  Future<void> _validateRedirect(
+    UrlRequest request,
+    Response<ResponseBody> response,
+  ) async {
+    final statusCode = response.statusCode ?? 0;
+    if (statusCode < 300 || statusCode >= 400) return;
+
+    final location = response.headers.value('location');
+    if (location == null) return;
+
+    final destination = Uri.parse(request.url).resolve(location);
+    if (request.headers.isNotEmpty) {
+      final _ = await requirePublicHttpsUri(destination.toString());
+    } else {
+      final uri = requirePublicUriSyntax(
+        destination.toString(),
+        requireHttps: false,
+      );
+      await ensurePublicHost(uri.host);
     }
   }
 

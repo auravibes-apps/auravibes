@@ -6,21 +6,16 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_continuation_adapter.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
-import 'package:auravibes_engine/auravibes_engine.dart'
-    show
-        AgentCancellationRuntime,
-        AgentIterationContext,
-        AgentIterationOrigin,
-        skillContextMetadataKind;
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
@@ -201,7 +196,7 @@ void main() {
                   ),
                 ],
               ),
-              finishReason: FinishReason.toolCalls,
+              finishReason: ChatFinishReason.toolCalls,
               usage: const LanguageModelUsage(
                 responseTokens: 7,
               ),
@@ -304,7 +299,7 @@ void main() {
           return Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: FinishReason.stop,
+              finishReason: ChatFinishReason.stop,
               usage: const LanguageModelUsage(),
             ),
           ]);
@@ -332,7 +327,7 @@ void main() {
           ),
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Done'),
-            finishReason: FinishReason.stop,
+            finishReason: ChatFinishReason.stop,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -378,7 +373,7 @@ void main() {
                 ),
               ],
             ),
-            finishReason: FinishReason.toolCalls,
+            finishReason: ChatFinishReason.toolCalls,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -428,7 +423,7 @@ void main() {
           ),
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Done'),
-            finishReason: FinishReason.stop,
+            finishReason: ChatFinishReason.stop,
             usage: const LanguageModelUsage(),
           ),
         ]),
@@ -458,7 +453,7 @@ void main() {
             modelId: 'openai-codex',
           ),
         );
-        const tools = [
+        final tools = [
           ToolSpec(
             name: 'calculator',
             description: 'Math',
@@ -505,7 +500,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: FinishReason.stop,
+              finishReason: ChatFinishReason.stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -533,7 +528,7 @@ void main() {
             modelId: 'openai-codex',
           ),
         );
-        const tools = [
+        final tools = [
           ToolSpec(
             name: 'load_skill',
             description: 'Load a skill',
@@ -586,7 +581,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
-              finishReason: FinishReason.stop,
+              finishReason: ChatFinishReason.stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -671,7 +666,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Working'),
-              finishReason: FinishReason.stop,
+              finishReason: ChatFinishReason.stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -713,7 +708,7 @@ void main() {
           (_) => Stream.fromIterable([
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Working'),
-              finishReason: FinishReason.stop,
+              finishReason: ChatFinishReason.stop,
               usage: const LanguageModelUsage(),
             ),
           ]),
@@ -808,7 +803,7 @@ void main() {
         controller.add(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Partial answer'),
-            finishReason: FinishReason.stop,
+            finishReason: ChatFinishReason.stop,
             usage: const LanguageModelUsage(),
           ),
         );
@@ -865,7 +860,7 @@ void main() {
                 ),
               ],
             ),
-            finishReason: FinishReason.toolCalls,
+            finishReason: ChatFinishReason.toolCalls,
             usage: const LanguageModelUsage(),
           ),
         );
@@ -918,7 +913,7 @@ void main() {
         controller.add(
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Partial answer'),
-            finishReason: FinishReason.stop,
+            finishReason: ChatFinishReason.stop,
             usage: const LanguageModelUsage(),
           ),
         );
@@ -1385,7 +1380,7 @@ void main() {
         (_) => Stream.fromIterable([
           ChatResult<ChatMessage>(
             output: ChatMessage.model('Done'),
-            finishReason: FinishReason.stop,
+            finishReason: ChatFinishReason.stop,
             usage: const LanguageModelUsage(),
           ),
         ]),

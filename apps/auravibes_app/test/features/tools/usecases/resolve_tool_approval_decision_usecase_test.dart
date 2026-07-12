@@ -248,6 +248,7 @@ void main() {
             tableId: 'server-1',
             toolIdentifier: 'sum',
             mcpServerId: 'server-1',
+            mcpSlug: 'server-1',
           );
 
           when(
@@ -309,6 +310,7 @@ void main() {
           tableId: 'server-1',
           toolIdentifier: 'sum',
           mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
         );
 
         when(
@@ -334,6 +336,7 @@ void main() {
           tableId: 'server-1',
           toolIdentifier: 'sum',
           mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
         );
 
         when(

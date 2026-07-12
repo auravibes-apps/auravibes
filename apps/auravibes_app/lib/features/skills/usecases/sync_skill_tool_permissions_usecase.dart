@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_to
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -163,9 +164,14 @@ final syncSkillToolPermissionsUsecaseProvider =
     });
 
 bool isSkillPermissionToolName(String toolName) {
-  return toolName == loadSkillToolName ||
-      toolName == unloadSkillToolName ||
-      toolName == listSkillCredentialsToolName ||
-      toolName.startsWith('skill__user__') ||
-      toolName.startsWith('skill__app__');
+  final resolved = const AgentToolNameResolver(
+    skillControlToolNames: {
+      loadSkillToolName,
+      unloadSkillToolName,
+      listSkillCredentialsToolName,
+    },
+  ).resolve(toolName);
+
+  return resolved?.isSkill == true ||
+      resolved?.kind == AgentResolvedToolKind.skillControl;
 }

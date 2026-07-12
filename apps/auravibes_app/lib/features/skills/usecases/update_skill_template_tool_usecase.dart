@@ -1,16 +1,14 @@
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:auravibes_app/features/skills/usecases/validate_skill_template_tool_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class UpdateSkillTemplateToolUsecase {
   const UpdateSkillTemplateToolUsecase(
     this._skillTemplateToolsRepository, {
-    required this.validateSkillTemplateToolUsecase,
     this.skillsRepository,
     this.skillCredentialDefinitionsRepository,
   });
@@ -19,7 +17,6 @@ class UpdateSkillTemplateToolUsecase {
   final SkillsRepository? skillsRepository;
   final SkillCredentialDefinitionsRepository?
   skillCredentialDefinitionsRepository;
-  final ValidateSkillTemplateToolUsecase validateSkillTemplateToolUsecase;
 
   Future<SkillTemplateToolEntity> call(
     String toolId,
@@ -36,16 +33,14 @@ class UpdateSkillTemplateToolUsecase {
       final credentialDefinitions = await _credentialDefinitions(
         existing.skillId,
       );
-      validateSkillTemplateToolUsecase.call(
+      validateSkillTemplateTool(
         templateJson: templateJson ?? existing.templateJson,
         inputsJson: inputsJson ?? existing.inputsJson,
         credentialDefinitions: credentialDefinitions,
       );
       if (templateJson != null) {
         toolToUpdate = tool.copyWith(
-          templateJson: validateSkillTemplateToolUsecase.canonicalTemplateJson(
-            templateJson,
-          ),
+          templateJson: canonicalSkillUrlTemplateJson(templateJson),
         );
       }
     }
@@ -79,9 +74,6 @@ final updateSkillTemplateToolUsecaseProvider =
     Provider<UpdateSkillTemplateToolUsecase>((ref) {
       return UpdateSkillTemplateToolUsecase(
         ref.watch(skillTemplateToolsRepositoryProvider),
-        validateSkillTemplateToolUsecase: ref.watch(
-          validateSkillTemplateToolUsecaseProvider,
-        ),
         skillsRepository: ref.watch(skillsRepositoryProvider),
         skillCredentialDefinitionsRepository: ref.watch(
           skillCredentialDefinitionsRepositoryProvider,

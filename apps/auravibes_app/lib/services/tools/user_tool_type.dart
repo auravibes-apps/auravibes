@@ -1,6 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:async/async.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 
 enum UserToolType {
   calculator('calculator');

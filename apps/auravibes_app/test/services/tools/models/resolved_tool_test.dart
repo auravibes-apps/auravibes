@@ -49,6 +49,7 @@ void main() {
         tableId: 'tool_2',
         toolIdentifier: 'read_file',
         mcpServerId: 'server_1',
+        mcpSlug: 'server_1',
       );
       expect(tool.type, ResolvedToolType.mcp);
       expect(tool.tableId, 'tool_2');
@@ -63,6 +64,7 @@ void main() {
         tableId: 'tool_2',
         toolIdentifier: 'read_file',
         mcpServerId: 'server_1',
+        mcpSlug: 'server_1',
       );
       expect(tool.isMcp, isTrue);
       expect(tool.isBuiltIn, isFalse);

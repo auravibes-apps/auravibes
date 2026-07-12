@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
+import 'support/fake_cancellation_effects.dart';
 
 void main() {
   test('exposes agent and conversation modules', () async {
@@ -60,8 +61,17 @@ AuraAgentService<String> _service(
   return AuraAgentService<String>(
     data: provider,
     models: provider,
-    tools: tools ?? _FakeToolProvider(),
-    runtime: _FakeRuntimeProvider(),
+    loopTools: tools ?? _FakeToolProvider(),
+    approvals: tools ?? _FakeToolProvider(),
+    skips: tools ?? _FakeToolProvider(),
+    stopPending: tools ?? _FakeToolProvider(),
+    resume: tools ?? _FakeToolProvider(),
+    sendQueueRuntime: const _EmptySendQueueRuntime(),
+    cancellationEffects: FakeCancellationEffects(),
+    rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+      start: (_, _) {},
+      clear: (_) {},
+    ),
   );
 }
 
@@ -123,15 +133,19 @@ class _FakeAgentProvider implements AgentDataProvider, AgentModelProvider {
   Future<void> stopLatestPendingTools(String conversationId) async {}
 }
 
-class _FakeToolProvider implements AgentToolProvider<String> {
+class _FakeToolProvider
+    implements
+        AgentLoopToolProvider,
+        ApproveToolCallProvider<String>,
+        SkipToolCallProvider,
+        StopPendingToolCallsProvider,
+        AgentToolResumeProvider {
   final calls = <String>[];
 
-  @override
   Future<List<AgentToolMessage>> loadMessages(String conversationId) async {
     return const [AgentToolMessage(id: 'message-1', isUser: false)];
   }
 
-  @override
   Future<LoadLatestMessageToolCallsResult<String>> loadLatestToolCalls({
     required String conversationId,
   }) async {
@@ -147,7 +161,6 @@ class _FakeToolProvider implements AgentToolProvider<String> {
   @override
   String? resolveTool(String toolName) => 'tool';
 
-  @override
   Future<AgentToolApprovalDecision> resolveToolApprovalDecision({
     required String conversationId,
     required String workspaceId,
@@ -170,14 +183,12 @@ class _FakeToolProvider implements AgentToolProvider<String> {
     return 'ok';
   }
 
-  @override
   Future<AgentIterationDecision> getAgentIterationDecision({
     required String messageId,
   }) async {
     return AgentIterationDecision.done;
   }
 
-  @override
   Future<List<AgentToolCallState>?> getToolCallStates(String messageId) async {
     return const [];
   }
@@ -206,7 +217,6 @@ class _FakeToolProvider implements AgentToolProvider<String> {
   @override
   bool isCancellationRequested(String conversationId) => false;
 
-  @override
   Future<void> stopPendingTools({required String messageId}) async {}
 
   @override
@@ -214,13 +224,11 @@ class _FakeToolProvider implements AgentToolProvider<String> {
     calls.add('stop-pending-calls:$messageId');
   }
 
-  @override
   Future<void> updateToolResults({
     required String messageId,
     required List<AgentToolResultUpdate> updates,
   }) async {}
 
-  @override
   String toolIdentifier(String tool) => tool;
 
   @override
@@ -294,22 +302,4 @@ class _EmptySendQueueRuntime implements AgentSendQueueRuntime {
 
   @override
   List<AgentQueuedDraft> dequeueAll(String conversationId) => const [];
-}
-
-class _FakeRuntimeProvider implements AgentRuntimeProvider {
-  _FakeRuntimeProvider();
-
-  @override
-  final AgentCancellationRuntime cancellationRuntime =
-      AgentCancellationRuntime();
-
-  @override
-  final AgentRateLimitRetryRuntime rateLimitRetryRuntime =
-      AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      );
-
-  @override
-  final AgentSendQueueRuntime sendQueueRuntime = const _EmptySendQueueRuntime();
 }

@@ -2,11 +2,14 @@ import 'package:auravibes_app/data/repositories/skill_credential_definitions_rep
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
-import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_url_template_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        SkillCredentialAttributeDefinition,
+        SkillTemplateInputDefinition,
+        SkillUrlTemplate;
 import 'package:auravibes_engine/auravibes_engine.dart' as package_skills;
 import 'package:riverpod/riverpod.dart';
 

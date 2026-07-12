@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
@@ -13,7 +14,7 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentCancellationRuntime, AgentIterationDecision;
+    show AgentIterationDecision;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -99,6 +100,7 @@ void main() {
           tableId: 'server-1',
           toolIdentifier: 'sum',
           mcpServerId: 'server-1',
+          mcpSlug: 'server-1',
         ),
         id: 'tool-1',
         argumentsRaw: '{"a": 1, "b": 2}',

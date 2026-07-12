@@ -1,8 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-export 'package:auravibes_engine/auravibes_engine.dart'
-    show SkillCredentialAttributeDefinition;
-
 part 'skill_credential_definition_entity.freezed.dart';
 
 @freezed

@@ -3,6 +3,13 @@ import 'package:test/test.dart';
 
 void main() {
   group('serviceSkillDefinitions', () {
+    test('cannot be mutated', () {
+      expect(
+        serviceSkillDefinitions.removeLast,
+        throwsUnsupportedError,
+      );
+    });
+
     test('uses unique service slugs', () {
       final slugs = serviceSkillDefinitions.map((skill) => skill.slug).toList();
 

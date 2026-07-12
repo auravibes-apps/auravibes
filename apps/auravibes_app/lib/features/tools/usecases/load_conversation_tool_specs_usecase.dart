@@ -1,6 +1,5 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
@@ -11,6 +10,7 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.d
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:riverpod/riverpod.dart';
 
 class LoadConversationToolSpecsUsecase {
@@ -86,7 +86,7 @@ class LoadConversationToolSpecsUsecase {
       ...appSkillNativeToolSpecs.where(
         (spec) => enabledSkillToolNames.contains(spec.name),
       ),
-      _subAgentToolSpec(agent.runSubAgentToolSpec),
+      agent.runSubAgentToolSpec,
     ];
   }
 
@@ -95,14 +95,6 @@ class LoadConversationToolSpecsUsecase {
         spec.name == unloadSkillToolName ||
         spec.name == listSkillCredentialsToolName;
   }
-}
-
-ToolSpec _subAgentToolSpec(agent.SubAgentToolSpec spec) {
-  return ToolSpec(
-    name: spec.name,
-    description: spec.description,
-    inputJsonSchema: spec.inputJsonSchema,
-  );
 }
 
 final loadConversationToolSpecsUsecaseProvider =

@@ -2,6 +2,8 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/services/chatbot_service/chat_completions_plugin.dart';
+import 'package:auravibes_app/services/chatbot_service/openai_codex_plugin.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart';
@@ -36,9 +38,11 @@ class ProviderFactory {
         if (shouldUseAnthropic)
           anthropic(apiKey: apiKey, baseUrl: baseUrl)
         else if (type == ModelProvidersType.openrouter)
-          openRouter(
-            apiKey: apiKey,
+          AppChatCompletionsPlugin(
+            name: 'openrouter',
             baseUrl: baseUrl ?? 'https://openrouter.ai/api/v1',
+            apiKey: apiKey,
+            codec: _openRouterCodec(),
             models: [
               ChatCompletionsModelDefinition(
                 name: config.workspaceModelSelection.modelId,
@@ -46,17 +50,18 @@ class ProviderFactory {
             ],
           )
         else if (shouldUseCodexOAuth)
-          OpenAICodexProvider(
-            accessTokenProvider: () => apiKey,
+          AppOpenAICodexPlugin(
+            accessToken: apiKey,
             accountId: config.modelConnection.oauthMetadata?.accountId,
             sessionId: sessionId,
             models: [config.workspaceModelSelection.modelId],
           )
         else if (shouldUseReasoningOpenAI && baseUrl != null)
-          openAICompatReasoning(
+          AppChatCompletionsPlugin(
             name: _openAIReasoningNamespace,
-            apiKey: apiKey,
             baseUrl: baseUrl,
+            apiKey: apiKey,
+            codec: _openAICompatReasoningCodec(),
             models: [
               ChatCompletionsModelDefinition(
                 name: config.workspaceModelSelection.modelId,
@@ -109,7 +114,7 @@ class ProviderFactory {
     }
 
     if (type == ModelProvidersType.openrouter) {
-      return openRouter.model(modelId);
+      return modelRef('openrouter/$modelId');
     }
 
     if (_shouldUseCodexOAuth(config)) {
@@ -117,10 +122,7 @@ class ProviderFactory {
     }
 
     if (_shouldUseOpenAICompatReasoning(config)) {
-      return openAICompatReasoning.model(
-        modelId,
-        namespace: _openAIReasoningNamespace,
-      );
+      return modelRef('$_openAIReasoningNamespace/$modelId');
     }
 
     return openAI.model(modelId);
@@ -196,4 +198,40 @@ class ProviderFactory {
 
   static const _openAIReasoningNamespace = 'openai_reasoning';
   static const _thinkingBudgetTokens = 1024;
+}
+
+ChatCompletionsCodec _openRouterCodec() {
+  return ChatCompletionsCodec(
+    errorLabel: 'OpenRouter',
+    customize: (modelName, config) {
+      final options = OpenRouterOptions.fromJson(config);
+
+      return (
+        model: modelName,
+        extraBody: {
+          ...options.toSamplingBody(),
+          if (options.reasoningMaxTokens != null)
+            'reasoning': {'max_tokens': options.reasoningMaxTokens},
+        },
+      );
+    },
+  );
+}
+
+ChatCompletionsCodec _openAICompatReasoningCodec() {
+  return ChatCompletionsCodec(
+    errorLabel: 'OpenAI-compatible',
+    customize: (modelName, config) {
+      final options = OpenAICompatReasoningOptions.fromJson(config);
+
+      return (
+        model: options.version ?? modelName,
+        extraBody: {
+          ...options.toSamplingBody(),
+          if (options.reasoningType != null)
+            'thinking': {'type': options.reasoningType},
+        },
+      );
+    },
+  );
 }

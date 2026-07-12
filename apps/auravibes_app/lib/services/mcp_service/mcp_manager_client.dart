@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_sdk_adapter.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 class McpManagerClient {
@@ -37,17 +38,7 @@ class McpManagerService {
   }) async {
     final result = await client._client.callTool(toolIdentifier, arguments);
 
-    // Convert the result content to a string.
-    // The result.content is a list of content items (TextContent, etc).
-    final contentStrings = result.content.map((content) {
-      if (content is mcp.TextContent) {
-        return content.text;
-      }
-
-      return content.toString();
-    }).toList();
-
-    return contentStrings.join('\n');
+    return mcpToolResultFromSdk(result).toModelText();
   }
 
   Future<McpManagerClient> connectMcp(

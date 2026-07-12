@@ -8,23 +8,32 @@ export 'src/agent_stop_service.dart' hide AgentStopService;
 export 'src/agent_stream_service.dart' hide AgentStreamService;
 export 'src/agent_tool_decision_service.dart' hide AgentToolDecisionService;
 export 'src/agent_tool_execution_service.dart' hide AgentToolExecutionService;
+export 'src/attachment_modality.dart';
 export 'src/aura_agent_service.dart';
 export 'src/chat_result.dart';
+export 'src/context_window.dart';
 export 'src/continue_agent_result.dart';
 export 'src/genkit_providers/chat_completions_provider.dart'
-    show ApiKeyProvider, ChatCompletionsModelDefinition;
-export 'src/genkit_providers/openai_codex.dart';
+    show
+        ChatCompletionsCodec,
+        ChatCompletionsModelDefinition,
+        ProviderTransport,
+        ProviderTransportResponse;
+export 'src/genkit_providers/openai_codex.dart'
+    show OpenAICodexCodec, isRetryableCodexError, openAICodexModel;
 export 'src/genkit_providers/openai_compat_chat_options.dart';
-export 'src/genkit_providers/openai_compat_reasoning.dart';
-export 'src/genkit_providers/openrouter.dart';
+export 'src/genkit_providers/openai_compat_reasoning.dart'
+    show OpenAICompatReasoningOptions;
+export 'src/genkit_providers/openrouter.dart' show OpenRouterOptions;
+export 'src/mcp.dart';
+export 'src/model_capabilities.dart';
 export 'src/namespaces/agent_namespace.dart';
 export 'src/namespaces/conversations_namespace.dart';
 export 'src/namespaces/tools_namespace.dart';
 export 'src/prompt_messages.dart';
 export 'src/providers/agent_data_provider.dart';
 export 'src/providers/agent_model_provider.dart';
-export 'src/providers/agent_runtime_provider.dart';
-export 'src/providers/agent_tool_provider.dart';
+export 'src/public_url_classifier.dart';
 export 'src/resolved_tool_service.dart' hide ResolvedToolService;
 export 'src/skill_context_messages.dart';
 export 'src/skills/execution/app_skill_executor.dart';
@@ -52,3 +61,8 @@ export 'src/tool_execution_dispatcher.dart'
     hide AgentToolExecutionDispatcher, safeJsonDecodeToolArguments;
 export 'src/tool_name_resolver.dart';
 export 'src/tool_resume_service.dart' hide AgentToolResumeService;
+export 'src/tool_spec.dart';
+export 'src/transcript_context.dart';
+export 'src/transcript_selection.dart';
+export 'src/url_content_format.dart';
+export 'src/url_content_transformer.dart';

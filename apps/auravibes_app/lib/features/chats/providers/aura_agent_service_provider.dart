@@ -1,17 +1,16 @@
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
-import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
-import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_app/services/agent_harness/approve_tool_call_service.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/agent_harness/skip_tool_call_service.dart';
-import 'package:auravibes_app/services/agent_harness/sub_agent_turn_runtime.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -22,7 +21,9 @@ import 'package:riverpod_annotation/experimental/scope.dart';
 final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
   (ref) {
     final agentToolResumeService = ref.watch(agentToolResumeServiceProvider);
-    final subAgentTurnRuntime = ref.watch(subAgentTurnRuntimeProvider);
+    final agentToolExecutionService = ref.watch(
+      agentToolExecutionServiceProvider,
+    );
     final toolCallActions = AppToolCallActionsDataProvider(
       messageRepository: ref.watch(messageRepositoryProvider),
       agentToolResumeService: agentToolResumeService,
@@ -30,42 +31,35 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
     );
 
-    final service = agent.AuraAgentService<ResolvedTool>(
+    return agent.AuraAgentService<ResolvedTool>(
       data: ref.watch(appAgentDataProvider),
       models: ref.watch(appAgentModelProvider),
-      tools: agent.AgentToolProviders(
-        execution: ref.watch(agentToolExecutionServiceProvider).provider,
-        calls: ref.watch(agentToolCallLoaderProvider).provider,
-        decisions: ref.watch(agentToolDecisionServiceProvider).provider,
-        approvals: AppApproveToolCallDataProvider(
-          messageRepository: ref.watch(messageRepositoryProvider),
-          conversationRepository: ref.watch(conversationRepositoryProvider),
-          conversationToolsRepository: ref.watch(
-            conversationToolsRepositoryProvider,
-          ),
-          resolveToolApprovalDecisionUsecase: ref.watch(
-            resolveToolApprovalDecisionUsecaseProvider,
-          ),
-          toolResolverService: const ToolResolverService(),
-          agentToolResumeService: agentToolResumeService,
-          runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
-          agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-          onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
+      loopTools: AppAgentLoopToolProvider(agentToolExecutionService),
+      approvals: AppApproveToolCallDataProvider(
+        messageRepository: ref.watch(messageRepositoryProvider),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
+        conversationToolsRepository: ref.watch(
+          conversationToolsRepositoryProvider,
         ),
-        skips: toolCallActions,
-        stopPending: toolCallActions,
-        resume: agentToolResumeService.provider,
+        resolveToolApprovalDecisionUsecase: ref.watch(
+          resolveToolApprovalDecisionUsecaseProvider,
+        ),
+        toolResolverService: const ToolResolverService(),
+        agentToolResumeService: agentToolResumeService,
+        runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
+        agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+        onToolCallChanged: () => ref.invalidate(pendingToolCallsProvider),
       ),
-      runtime: ref.watch(appAgentRuntimeProvider),
+      skips: toolCallActions,
+      stopPending: toolCallActions,
+      resume: agentToolResumeService.provider,
+      sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+      cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
+      rateLimitRetryRuntime: agent.AgentRateLimitRetryRuntime(
+        start: ref.watch(conversationRateLimitRetryRuntimeProvider).start,
+        clear: ref.watch(conversationRateLimitRetryRuntimeProvider).clear,
+      ),
     );
-
-    final continueSubAgentTurn = service.agent.continueTurn;
-    subAgentTurnRuntime.runner = continueSubAgentTurn;
-    final _ = ref.onDispose(
-      () => subAgentTurnRuntime.clear(continueSubAgentTurn),
-    );
-
-    return service;
   },
   dependencies: [pendingToolCallsProvider],
 );

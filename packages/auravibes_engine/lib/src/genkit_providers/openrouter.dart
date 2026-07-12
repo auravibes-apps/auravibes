@@ -1,56 +1,7 @@
 // Required: Private workspace package API mirrors existing provider surface.
 // Required: Genkit plugin API exposes top-level helpers.
 
-import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
 import 'package:auravibes_engine/src/genkit_providers/openai_compat_chat_options.dart';
-import 'package:genkit/plugin.dart';
-import 'package:http/http.dart' as http;
-
-const openRouter = OpenRouterPluginHandle();
-
-class OpenRouterPluginHandle {
-  const OpenRouterPluginHandle();
-
-  GenkitPlugin call({
-    String name = 'openrouter',
-    String baseUrl = 'https://openrouter.ai/api/v1',
-    String? apiKey,
-    ApiKeyProvider? apiKeyProvider,
-    List<ChatCompletionsModelDefinition> models = const [],
-    Map<String, String>? headers,
-    http.Client? httpClient,
-  }) {
-    return ChatCompletionsPlugin(
-      name: name,
-      baseUrl: baseUrl,
-      errorLabel: 'OpenRouter',
-      customize: (modelName, config) {
-        final options = OpenRouterOptions.fromJson(config);
-
-        return (
-          model: modelName,
-          extraBody: {
-            ...options.toSamplingBody(),
-            if (options.reasoningMaxTokens != null)
-              'reasoning': {'max_tokens': options.reasoningMaxTokens},
-          },
-        );
-      },
-      apiKey: apiKey,
-      apiKeyProvider: apiKeyProvider,
-      models: models,
-      headers: headers,
-      httpClient: httpClient,
-    );
-  }
-
-  ModelRef<OpenRouterOptions> model(
-    String name, {
-    String namespace = 'openrouter',
-  }) {
-    return modelRef('$namespace/$name');
-  }
-}
 
 class OpenRouterOptions extends OpenAICompatChatOptions {
   OpenRouterOptions({

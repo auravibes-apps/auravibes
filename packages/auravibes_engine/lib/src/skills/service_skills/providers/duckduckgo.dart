@@ -54,7 +54,7 @@ CancelableOperation<Object?> _search(
   final body = '${Uri(queryParameters: {'q': query, 'kl': region}).query}&b=';
 
   return context(
-    AppSkillUrlRequest(
+    UrlRequest(
       url: _endpoint,
       method: UrlRequestMethod.post,
       headers: const {

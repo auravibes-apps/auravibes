@@ -23,43 +23,22 @@ void main() {
   });
 
   test(
-    'cancellation runtime runs cleanup once and immediate late cleanup',
+    'cancellation scope runs cleanup once and immediate late cleanup',
     () async {
-      final runtime = AgentCancellationRuntime();
+      final scope = AgentCancellationScope();
       final calls = <String>[];
 
-      runtime
-        ..requestStop('missing')
-        ..start('c1')
-        ..registerCleanup('c1', () => calls.add('first'))
-        ..registerCleanup('c1', () async => calls.add('async'))
-        ..registerCleanup('c1', () => throw StateError('ignored'))
-        ..requestStop('c1')
-        ..requestStop('c1')
-        ..registerCleanup('c1', () => calls.add('late'));
+      scope
+        ..registerCleanup(() => calls.add('first'))
+        ..registerCleanup(() async => calls.add('async'))
+        ..registerCleanup(() => throw StateError('ignored'))
+        ..requestStop()
+        ..requestStop()
+        ..registerCleanup(() => calls.add('late'));
       await Future<void>.delayed(Duration.zero);
 
-      expect(runtime.isCancellationRequested('c1'), isTrue);
+      expect(scope.isCancellationRequested, isTrue);
       expect(calls, ['first', 'async', 'late']);
-
-      runtime.forceClear('c1');
-      expect(runtime.isCancellationRequested('c1'), isFalse);
     },
   );
-
-  test('cancellation runtime ignores normal stop requested before start', () {
-    final runtime = AgentCancellationRuntime()..requestStop('c1');
-
-    final _ = runtime.start('c1');
-
-    expect(runtime.isCancellationRequested('c1'), isFalse);
-  });
-
-  test('cancellation runtime preserves explicit stop-on-start request', () {
-    final runtime = AgentCancellationRuntime()..requestStopOnStart('c1');
-
-    final _ = runtime.start('c1');
-
-    expect(runtime.isCancellationRequested('c1'), isTrue);
-  });
 }

@@ -4,10 +4,10 @@
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_compaction_settings_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/message_transcript_snapshot_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class ShouldCompactConversationUsecase {
@@ -52,7 +52,8 @@ class ShouldCompactConversationUsecase {
       conversationId,
     );
 
-    if (_hasUnsafeState(messages)) {
+    final context = toAgentContextSnapshot(messages);
+    if (!isContextSafeForCompaction(context)) {
       return CompactionDecision(
         shouldCompact: false,
         reason: CompactionDecisionReason.unsafeState,
@@ -80,33 +81,33 @@ class ShouldCompactConversationUsecase {
       );
     }
 
-    final estimate = await _buildEstimate(
-      conversationId: conversationId,
-      selectedModelId: selectedModelId,
-      selectedProviderId: selectedProviderId,
-      maxOutputTokens: maxOutputTokens,
-      contextLimit: effectiveContextLimit,
-      messages: messages,
-    );
-
-    final usagePercentage = estimate.usagePercentage ?? 0;
-    final remainingTokens = estimate.remainingTokens ?? 0;
-
     final effectiveRemainingThreshold =
         settings.remainingTokenThreshold ==
             CompactionSettings.defaults.remainingTokenThreshold
-        ? CompactionSettings.defaultRemainingTokenThreshold(
+        ? defaultRemainingTokenThreshold(
             maxOutputTokens: maxOutputTokens,
             contextLimit: effectiveContextLimit,
           )
         : settings.remainingTokenThreshold;
+    final evaluation = evaluateContextCompaction(
+      context: context,
+      usagePercentageThreshold: settings.usagePercentageThreshold,
+      remainingTokenThreshold: effectiveRemainingThreshold,
+      contextLimit: effectiveContextLimit,
+    );
+    final usage = evaluation.usage;
+    final estimate = ConversationPromptEstimate(
+      conversationId: conversationId,
+      selectedModelId: selectedModelId,
+      selectedProviderId: selectedProviderId,
+      estimatedPromptTokens: usage.usedTokens,
+      maxOutputTokens: maxOutputTokens,
+      contextLimit: usage.contextLimit,
+      remainingTokens: usage.remainingTokens,
+      usagePercentage: usage.usagePercentage,
+    );
 
-    final meetsUsageThreshold =
-        usagePercentage >= settings.usagePercentageThreshold;
-    final meetsRemainingThreshold =
-        remainingTokens <= effectiveRemainingThreshold;
-
-    if (meetsUsageThreshold || meetsRemainingThreshold) {
+    if (evaluation.shouldCompact) {
       return CompactionDecision(
         shouldCompact: true,
         reason: CompactionDecisionReason.eligible,
@@ -123,72 +124,6 @@ class ShouldCompactConversationUsecase {
       estimate: estimate,
       settings: settings,
     );
-  }
-
-  Future<ConversationPromptEstimate> _buildEstimate({
-    required String conversationId,
-    required String selectedModelId,
-    required String selectedProviderId,
-    required int maxOutputTokens,
-    required int contextLimit,
-    required List<MessageEntity> messages,
-  }) async {
-    final totalTokens = _estimateTokensFromMessages(messages);
-    final remainingTokens = contextLimit - totalTokens;
-    final usagePercentage = contextLimit > 0
-        ? (totalTokens / contextLimit) * 100
-        : 0.0;
-
-    return ConversationPromptEstimate(
-      conversationId: conversationId,
-      selectedModelId: selectedModelId,
-      selectedProviderId: selectedProviderId,
-      estimatedPromptTokens: totalTokens,
-      maxOutputTokens: maxOutputTokens,
-      contextLimit: contextLimit,
-      remainingTokens: remainingTokens,
-      usagePercentage: usagePercentage,
-    );
-  }
-
-  int _estimateTokensFromMessages(List<MessageEntity> messages) {
-    for (final message in messages.reversed) {
-      final tokens = message.metadata?.usedTokens ?? 0;
-      if (tokens > 0) return tokens;
-    }
-
-    var charCount = 0;
-    for (final message in messages) {
-      charCount += message.content.length;
-      final toolCalls = message.metadata?.toolCalls;
-      if (toolCalls != null) {
-        for (final tc in toolCalls) {
-          charCount += tc.argumentsRaw.length;
-          charCount += tc.responseRaw?.length ?? 0;
-        }
-      }
-    }
-
-    return (charCount / 4).ceil();
-  }
-
-  bool _hasUnsafeState(List<MessageEntity> messages) {
-    for (final message in messages) {
-      if (message.status == MessageStatus.sending ||
-          message.status == MessageStatus.unfinished) {
-        return true;
-      }
-
-      if (!message.isUser) {
-        final toolCalls = message.metadata?.toolCalls;
-        if (toolCalls != null) {
-          final hasPending = toolCalls.any((tc) => tc.isPending);
-          if (hasPending) return true;
-        }
-      }
-    }
-
-    return false;
   }
 }
 

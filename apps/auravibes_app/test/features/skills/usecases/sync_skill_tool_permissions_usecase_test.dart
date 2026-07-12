@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissions_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -83,7 +83,7 @@ void main() {
     }
 
     test('creates skills group and default ask tool rows', () async {
-      const spec = ToolSpec(
+      final spec = ToolSpec(
         name: 'load_skill',
         description: 'Load a skill',
         inputJsonSchema: {'type': 'object'},
@@ -113,7 +113,7 @@ void main() {
     });
 
     test('updates metadata and preserves permission settings', () async {
-      const initialSpec = ToolSpec(
+      final initialSpec = ToolSpec(
         name: 'skill__user__example__search',
         description: 'Search records',
         inputJsonSchema: {'type': 'object'},
@@ -143,7 +143,7 @@ void main() {
             permission: PermissionAccess.granted,
           );
 
-      const updatedSpec = ToolSpec(
+      final updatedSpec = ToolSpec(
         name: 'skill__user__example__search',
         description: 'Search updated records',
         inputJsonSchema: {
@@ -171,7 +171,7 @@ void main() {
     });
 
     test('does not update unchanged metadata', () async {
-      const spec = ToolSpec(
+      final spec = ToolSpec(
         name: 'skill__user__example__search',
         description: 'Search records',
         inputJsonSchema: {'type': 'object'},
@@ -204,7 +204,7 @@ void main() {
     });
 
     test('keeps stale skill tool rows', () async {
-      const staleSpec = ToolSpec(
+      final staleSpec = ToolSpec(
         name: 'skill__app__skills_manager__create_user_skill',
         description: 'Create skill',
         inputJsonSchema: {'type': 'object'},
@@ -233,7 +233,7 @@ void main() {
     });
 
     test('permissionTableIdFor returns matching row id', () async {
-      const spec = ToolSpec(
+      final spec = ToolSpec(
         name: 'list_skill_credentials',
         description: 'List credentials',
         inputJsonSchema: {'type': 'object'},

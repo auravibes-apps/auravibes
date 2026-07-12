@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/tool_calls.dart';
+
 enum AgentToolResultStatus {
   success,
   toolNotFound,
@@ -9,6 +11,29 @@ enum AgentToolResultStatus {
   disabledInWorkspace,
   notConfigured,
   stoppedByUser,
+}
+
+extension AgentToolResultStatusX on AgentToolResultStatus {
+  AgentToolCallLifecycle get lifecycle => switch (this) {
+    AgentToolResultStatus.success => AgentToolCallLifecycle.success,
+    AgentToolResultStatus.stoppedByUser => AgentToolCallLifecycle.stoppedByUser,
+    _ => AgentToolCallLifecycle.failed,
+  };
+
+  String get modelFallback => switch (this) {
+    AgentToolResultStatus.success => '',
+    AgentToolResultStatus.toolNotFound => 'Tool not found.',
+    AgentToolResultStatus.executionError => 'Tool execution failed.',
+    AgentToolResultStatus.disabledInConversation =>
+      'Tool is disabled for this conversation.',
+    AgentToolResultStatus.disabledByAgent =>
+      'Tool is denied by the selected agent.',
+    AgentToolResultStatus.disabledInWorkspace =>
+      'Tool is disabled in workspace.',
+    AgentToolResultStatus.notConfigured => 'Tool is not configured.',
+    AgentToolResultStatus.stoppedByUser =>
+      'Tool execution was stopped by the user.',
+  };
 }
 
 class AgentToolExecutionResult {

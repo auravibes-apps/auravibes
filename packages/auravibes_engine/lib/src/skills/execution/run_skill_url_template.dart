@@ -12,7 +12,7 @@ class RunSkillUrlTemplate {
   final ResolveSkillUrlTemplate _resolver;
   final SkillHttpClient _httpClient;
 
-  CancelableOperation<AppSkillUrlResponse> call({
+  CancelableOperation<UrlResponse> call({
     required SkillUrlTemplate template,
     required Map<String, dynamic> inputs,
     required Map<String, String> credentials,

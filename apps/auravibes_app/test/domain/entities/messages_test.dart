@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -132,6 +134,56 @@ void main() {
   });
 
   group('MessageMetadataEntity', () {
+    test('serializes exact full metadata JSON', () {
+      final metadata = MessageMetadataEntity(
+        toolCalls: const [
+          MessageToolCallEntity(
+            id: 'call-1',
+            name: 'native_url_url',
+            argumentsRaw: '{"url":"https://example.com"}',
+            responseRaw: 'ok',
+            resultStatus: ToolCallResultStatus.success,
+          ),
+        ],
+        promptTokens: 10,
+        completionTokens: 5,
+        totalTokens: 15,
+        thinking: 'reasoning',
+        modelMetadata: const {'provider': 'openai'},
+        metadataVersion: 2,
+        isCompactionSummary: true,
+        compactionKind: CompactionKind.manual,
+        compactedFromMessageId: 'msg-1',
+        compactedThroughMessageId: 'msg-2',
+        compactedMessageIds: const ['msg-1', 'msg-2'],
+        compactionCreatedAt: DateTime.utc(2026, 5, 3, 10),
+      );
+
+      expect(jsonDecode(jsonEncode(metadata.toJson())), {
+        'toolCalls': [
+          {
+            'id': 'call-1',
+            'name': 'native_url_url',
+            'argumentsRaw': '{"url":"https://example.com"}',
+            'responseRaw': 'ok',
+            'resultStatus': 'success',
+          },
+        ],
+        'promptTokens': 10,
+        'completionTokens': 5,
+        'totalTokens': 15,
+        'thinking': 'reasoning',
+        'modelMetadata': {'provider': 'openai'},
+        'metadataVersion': 2,
+        'isCompactionSummary': true,
+        'compactionKind': 'manual',
+        'compactedFromMessageId': 'msg-1',
+        'compactedThroughMessageId': 'msg-2',
+        'compactedMessageIds': ['msg-1', 'msg-2'],
+        'compactionCreatedAt': '2026-05-03T10:00:00.000Z',
+      });
+    });
+
     test('fromJsonString returns null for null input', () {
       expect(MessageMetadataEntity.fromJsonString(null), isNull);
     });

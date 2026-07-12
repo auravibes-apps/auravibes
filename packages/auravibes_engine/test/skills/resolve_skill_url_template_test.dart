@@ -4,6 +4,113 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('skill template validation', () {
+    test('preserves validation classification and canonical JSON', () {
+      void validateBody(String body, {String? bodyFormat}) {
+        validateSkillTemplateTool(
+          templateJson: jsonEncode({
+            'url': 'https://example.com',
+            'body': body,
+            'bodyFormat': ?bodyFormat,
+          }),
+          inputsJson: jsonEncode({
+            'filters': {'description': 'Filters', 'type': 'array'},
+            'location': {
+              'description': 'Optional location',
+              'optional': true,
+            },
+          }),
+          credentialDefinitions: const {},
+        );
+      }
+
+      expect(
+        () => validateBody('{"filters":{{filters}}}'),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('Unsupported Liquid reference'),
+          ),
+        ),
+      );
+      expect(
+        () => validateBody('{"filters":{input:filters}}'),
+        throwsA(isA<FormatException>()),
+      );
+      expect(
+        () => validateBody('{"filters":"{input:missing}"}'),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('Unknown input placeholder: missing'),
+          ),
+        ),
+      );
+      expect(
+        () => validateBody('{"filters":"{{ input.filters }}"}'),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('must use the json filter'),
+          ),
+        ),
+      );
+      expect(
+        () => validateBody(
+          [
+            '{"q":"cats",',
+            '{% if input.location %}',
+            '"location":{{ input.location | json }}',
+            '{% endif %}',
+            '}',
+          ].join(),
+          bodyFormat: 'json',
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('Rendered JSON body is invalid'),
+          ),
+        ),
+      );
+      expect(
+        () => validateSkillTemplateTool(
+          templateJson: jsonEncode({
+            'url': 'https://example.com/{{ input.credentialId }}',
+          }),
+          inputsJson: jsonEncode({
+            'credentialId': {'description': 'Credential id'},
+          }),
+          credentialDefinitions: const {},
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('credentialId is reserved'),
+          ),
+        ),
+      );
+      expect(
+        canonicalSkillUrlTemplateJson(
+          jsonEncode({
+            'url': 'https://example.com/{input:query}',
+            'body': '{"query":"{input:query}"}',
+          }),
+        ),
+        [
+          '{"url":"https://example.com/{{ input.query }}","method":"GET",',
+          r'"body":"{\"query\":{{ input.query | json }}}",',
+          '"bodyFormat":"json"}',
+        ].join(),
+      );
+    });
+  });
+
   group('ResolveSkillUrlTemplate', () {
     const resolver = ResolveSkillUrlTemplate();
 
@@ -73,6 +180,32 @@ void main() {
         ),
         throwsFormatException,
       );
+    });
+
+    test('keeps repeated and concurrent renders isolated', () async {
+      UrlRequest resolve(String query) => resolver(
+        template: const SkillUrlTemplate(
+          url: 'https://example.com/',
+          query: {'q': '{{ input.query }}'},
+        ),
+        inputs: {'query': query},
+        credentials: const {},
+        inputDefinitions: const {
+          'query': SkillTemplateInputDefinition(description: 'Query'),
+        },
+      );
+
+      expect(resolve('first').url, 'https://example.com/?q=first');
+      final requests = await Future.wait([
+        Future(() => resolve('second')),
+        Future(() => resolve('third')),
+      ]);
+
+      expect(requests.map((request) => request.url), [
+        'https://example.com/?q=second',
+        'https://example.com/?q=third',
+      ]);
+      expect(resolve('last').url, 'https://example.com/?q=last');
     });
   });
 

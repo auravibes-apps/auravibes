@@ -3,8 +3,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -36,7 +36,7 @@ void main() {
       expect(response.headers[Headers.contentTypeHeader], ['text/plain']);
     });
 
-    test('does not follow redirects automatically', () async {
+    test('does not follow or expose unsafe redirects', () async {
       bool? followRedirects;
       final adapter = _FakeHttpClientAdapter(
         onFetch: (options, _, _) async {
@@ -54,14 +54,12 @@ void main() {
       final dio = Dio()..httpClientAdapter = adapter;
       final service = UrlService(dio: dio);
 
-      final response = await service
-          .execute(
-            const UrlRequest(url: 'https://example.com'),
-          )
-          .value;
+      final response = service.execute(
+        const UrlRequest(url: 'https://example.com'),
+      );
 
+      await expectLater(response.value, throwsFormatException);
       expect(followRedirects, isFalse);
-      expect(response.statusCode, 302);
     });
 
     test('cancels the underlying dio request', () async {

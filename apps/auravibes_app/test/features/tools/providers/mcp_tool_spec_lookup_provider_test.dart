@@ -1,7 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -10,7 +10,7 @@ ToolSpec? _fakeGetToolSpec({
   required String toolName,
 }) {
   if (mcpServerId == 'srv-1' && toolName == 'my-tool') {
-    return const ToolSpec(
+    return ToolSpec(
       name: 'my-tool',
       description: 'desc',
       inputJsonSchema: {},
@@ -104,7 +104,7 @@ void main() {
       }) {
         final _ = (mcpServerId: mcpServerId, toolName: toolName);
 
-        return const ToolSpec(
+        return ToolSpec(
           name: 'x',
           description: 'd',
           inputJsonSchema: {},

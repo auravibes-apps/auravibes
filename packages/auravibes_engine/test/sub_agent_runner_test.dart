@@ -440,7 +440,7 @@ SubAgentRunner _runner({
     agentCatalog: catalog,
     conversationStore: conversations ?? _ConversationStore(),
     messageStore: messages ?? _Messages(),
-    activeTracker: tracker ?? _Tracker(),
+    startRequest: (tracker ?? _Tracker()).start,
     continueAgentTurn:
         continueTurn ??
         ({required conversationId, required context}) async {
@@ -532,16 +532,18 @@ class _ThrowingMessages extends _Messages {
   }
 }
 
-class _Tracker implements ActiveSubAgentTracker {
+class _Tracker {
   final _completers = <String, Completer<SubAgentCompletionStatus>>{};
   final _stoppedChildIds = <String>{};
 
-  @override
-  void start({required String parentId, required String childId}) {
+  SubAgentRequestHandle start({
+    required String parentId,
+    required String childId,
+  }) {
     _completers[childId] = Completer<SubAgentCompletionStatus>();
+    return _TestSubAgentRequestHandle(this, parentId, childId);
   }
 
-  @override
   void finish({
     required String parentId,
     required String childId,
@@ -556,7 +558,6 @@ class _Tracker implements ActiveSubAgentTracker {
     completer.complete(status);
   }
 
-  @override
   Future<SubAgentCompletionStatus> waitForCompletion(String childId) {
     if (_stoppedChildIds.remove(childId)) {
       return Future<SubAgentCompletionStatus>.value(
@@ -568,6 +569,31 @@ class _Tracker implements ActiveSubAgentTracker {
         Future<SubAgentCompletionStatus>.value(SubAgentCompletionStatus.done);
   }
 
-  @override
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
+}
+
+class _TestSubAgentRequestHandle implements SubAgentRequestHandle {
+  const _TestSubAgentRequestHandle(
+    this._tracker,
+    this._parentId,
+    this._childId,
+  );
+
+  final _Tracker _tracker;
+  final String _parentId;
+  final String _childId;
+
+  @override
+  Future<SubAgentCompletionStatus> get completion =>
+      _tracker.waitForCompletion(_childId);
+
+  @override
+  bool get isStopped => _tracker.isStopped(_childId);
+
+  @override
+  void finish([
+    SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
+  ]) {
+    _tracker.finish(parentId: _parentId, childId: _childId, status: status);
+  }
 }

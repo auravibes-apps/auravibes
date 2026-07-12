@@ -1,14 +1,31 @@
-import 'package:auravibes_app/services/url/models/url_content_format.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
-import 'package:auravibes_app/services/url/models/url_response.dart';
-import 'package:auravibes_app/services/url/url_content_transformer.dart';
-import 'package:flutter_test/flutter_test.dart';
+// Exact HTML fixtures remain split for readability.
+// ignore_for_file: missing_whitespace_between_adjacent_strings
+
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('UrlContentTransformer', () {
     const transformer = UrlContentTransformer();
 
     group('HTML transformation', () {
+      test('preserves exact canonical markdown transform', () {
+        final result = transformer.transform(
+          _htmlResponse(
+            '<html><head><title>Guide</title></head><body>'
+            '<h2>Start</h2><p>Read <strong>this</strong> at '
+            '<a href="/docs">docs</a>.</p>'
+            '<ul><li>First</li><li>Second</li></ul></body></html>',
+          ),
+        );
+
+        expect(
+          result.body,
+          '# Guide\n\n## Start\n\nRead **this** at [docs](/docs).\n\n'
+          '- First\n- Second',
+        );
+      });
+
       test('converts heading tags to markdown headings', () {
         final response = _htmlResponse('<h1>Title</h1><p>Content here.</p>');
         final result = transformer.transform(response);

@@ -1,5 +1,6 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/services/skills/models/app_skill_tool_definition.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show AppSkillToolDefinition;
 
 class SkillDetail {
   // App skills may not have a persisted workspace row.

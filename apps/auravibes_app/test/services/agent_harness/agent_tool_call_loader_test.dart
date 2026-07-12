@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -14,6 +15,17 @@ import 'package:mocktail/mocktail.dart';
 import '../../test_mocks.dart';
 
 void main() {
+  test('projects app awaiting approval and running as engine pending', () {
+    expect(
+      toAgentToolCallLifecycle(null),
+      agent.AgentToolCallLifecycle.pending,
+    );
+    expect(
+      toAgentToolCallLifecycle(ToolCallResultStatus.running),
+      agent.AgentToolCallLifecycle.pending,
+    );
+  });
+
   setUpAll(registerTestFallbackValues);
 
   group('AgentToolCallLoader', () {

@@ -10,8 +10,6 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
-import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -78,7 +76,7 @@ void main() {
       await expectLater(
         adapter
             .execute(
-              const AppSkillUrlRequest(url: 'http://localhost/search'),
+              const UrlRequest(url: 'http://localhost/search'),
             )
             .value,
         throwsA(isA<FormatException>()),

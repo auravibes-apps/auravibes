@@ -60,11 +60,11 @@ abstract interface class AgentStreamProvider<TChunk> {
 
 class AgentStreamService<TChunk> {
   const AgentStreamService({
-    required this.agentCancellationRuntime,
+    required this.cancellationEffects,
     required this.provider,
   });
 
-  final AgentCancellationRuntime agentCancellationRuntime;
+  final AgentCancellationEffects cancellationEffects;
   final AgentStreamProvider<TChunk> provider;
 
   Future<ContinueAgentResult> call({
@@ -77,15 +77,19 @@ class AgentStreamService<TChunk> {
       conversationId: conversationId,
       pendingUserMessageIds: pendingUserMessageIds,
     );
+    final cancellationScope = cancellationEffects.current(conversationId);
+    if (cancellationScope == null) {
+      throw StateError('Agent cancellation scope is not active');
+    }
     provider.startConversationStreaming(conversationId);
     state.persistenceSink = provider.createPersistenceSink(
       () => state.messageId,
     );
     try {
-      _listenToResponse(state, responseStream);
+      _listenToResponse(state, responseStream, cancellationScope);
       await state.responseCompleter.future;
 
-      if (agentCancellationRuntime.isCancellationRequested(conversationId)) {
+      if (cancellationScope.isCancellationRequested) {
         return _completeCancelledRun(state);
       }
 
@@ -127,8 +131,9 @@ class AgentStreamService<TChunk> {
   void _listenToResponse(
     _ContinueAgentStreamState<TChunk> state,
     Stream<TChunk> responseStream,
+    AgentCancellationScope cancellationScope,
   ) {
-    agentCancellationRuntime.registerCleanup(state.conversationId, () async {
+    cancellationScope.registerCleanup(() async {
       await state.responseSubscription?.cancel();
       await state.activeChunkProcessing;
       _completeResponse(state);
@@ -138,7 +143,7 @@ class AgentStreamService<TChunk> {
       null,
       onError: (Object error, StackTrace stackTrace) {
         provider.trackResponseStreamError(error, stackTrace);
-        _handleResponseError(state, error, stackTrace);
+        _handleResponseError(state, error, stackTrace, cancellationScope);
       },
       onDone: () {
         _completeResponse(state);
@@ -148,19 +153,22 @@ class AgentStreamService<TChunk> {
     state.responseSubscription = subscription;
     subscription.onData((chunk) {
       state.responseSubscription?.pause();
-      state.activeChunkProcessing = _processResponseChunk(state, chunk);
+      state.activeChunkProcessing = _processResponseChunk(
+        state,
+        chunk,
+        cancellationScope,
+      );
     });
   }
 
   Future<void> _processResponseChunk(
     _ContinueAgentStreamState<TChunk> state,
     TChunk chunk,
+    AgentCancellationScope cancellationScope,
   ) async {
     try {
-      await _handleChunk(state, chunk);
-      if (agentCancellationRuntime.isCancellationRequested(
-        state.conversationId,
-      )) {
+      await _handleChunk(state, chunk, cancellationScope);
+      if (cancellationScope.isCancellationRequested) {
         await state.responseSubscription?.cancel();
         _completeResponse(state);
 
@@ -177,10 +185,9 @@ class AgentStreamService<TChunk> {
   Future<void> _handleChunk(
     _ContinueAgentStreamState<TChunk> state,
     TChunk chunk,
+    AgentCancellationScope cancellationScope,
   ) async {
-    if (agentCancellationRuntime.isCancellationRequested(
-      state.conversationId,
-    )) {
+    if (cancellationScope.isCancellationRequested) {
       return;
     }
 
@@ -224,10 +231,9 @@ class AgentStreamService<TChunk> {
     _ContinueAgentStreamState<TChunk> state,
     Object error,
     StackTrace stackTrace,
+    AgentCancellationScope cancellationScope,
   ) {
-    if (agentCancellationRuntime.isCancellationRequested(
-      state.conversationId,
-    )) {
+    if (cancellationScope.isCancellationRequested) {
       provider.trackCancellationStreamError(error, stackTrace);
       _completeResponse(state);
 

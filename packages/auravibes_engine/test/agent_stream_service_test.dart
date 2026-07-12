@@ -1,19 +1,19 @@
 import 'dart:async';
 
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_stream_service.dart';
 import 'package:test/test.dart';
+import 'support/fake_cancellation_effects.dart';
 
 void main() {
   test(
     'creates assistant message, streams chunks, and persists completion',
     () async {
-      final cancellationRuntime = AgentCancellationRuntime()..start('c1');
+      final cancellationRuntime = FakeCancellationEffects()..start('c1');
       final persistenceSink = _MemorySink<_Chunk>();
       final uiSink = _MemorySink<_Chunk>();
       final calls = <String>[];
       final usecase = AgentStreamService<_Chunk>(
-        agentCancellationRuntime: cancellationRuntime,
+        cancellationEffects: cancellationRuntime,
         provider: _FakeAgentStreamProvider(
           persistenceSink: persistenceSink,
           uiSink: uiSink,
@@ -51,7 +51,7 @@ void main() {
     () async {
       final calls = <String>[];
       final usecase = AgentStreamService<_Chunk>(
-        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        cancellationEffects: FakeCancellationEffects()..start('c1'),
         provider: _FakeAgentStreamProvider(
           persistenceSink: _MemorySink<_Chunk>(),
           uiSink: _MemorySink<_Chunk>(),
@@ -76,7 +76,7 @@ void main() {
     'throws when stream completes without result for pending users',
     () async {
       final usecase = AgentStreamService<_Chunk>(
-        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        cancellationEffects: FakeCancellationEffects()..start('c1'),
         provider: _FakeAgentStreamProvider(
           persistenceSink: _MemorySink<_Chunk>(),
           uiSink: _MemorySink<_Chunk>(),
@@ -100,7 +100,7 @@ void main() {
     () async {
       final calls = <String>[];
       final usecase = AgentStreamService<_Chunk>(
-        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        cancellationEffects: FakeCancellationEffects()..start('c1'),
         provider: _FakeAgentStreamProvider(
           persistenceSink: _MemorySink<_Chunk>(),
           uiSink: _MemorySink<_Chunk>(),
@@ -126,7 +126,7 @@ void main() {
     () async {
       final calls = <String>[];
       final usecase = AgentStreamService<_Chunk>(
-        agentCancellationRuntime: AgentCancellationRuntime()..start('c1'),
+        cancellationEffects: FakeCancellationEffects()..start('c1'),
         provider: _FakeAgentStreamProvider(
           persistenceSink: _MemorySink<_Chunk>(),
           uiSink: _MemorySink<_Chunk>(),
@@ -163,9 +163,9 @@ void main() {
     'persists stopped message when cancellation is requested mid-stream',
     () async {
       final calls = <String>[];
-      final cancellationRuntime = AgentCancellationRuntime()..start('c1');
+      final cancellationRuntime = FakeCancellationEffects()..start('c1');
       final usecase = AgentStreamService<_Chunk>(
-        agentCancellationRuntime: cancellationRuntime,
+        cancellationEffects: cancellationRuntime,
         provider: _FakeAgentStreamProvider(
           persistenceSink: _MemorySink<_Chunk>(),
           uiSink: _MemorySink<_Chunk>(),

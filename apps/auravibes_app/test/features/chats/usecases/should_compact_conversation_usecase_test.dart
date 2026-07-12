@@ -591,6 +591,7 @@ void main() {
 
         // 10 Args + 10 response + 0 content = 20 chars / 4 = 5 tokens.
         // 5/128000 = 0.004% → Way below 1% → char count fallback works.
+        expect(decision.estimate?.estimatedPromptTokens, 5);
         expect(
           decision.reason,
           CompactionDecisionReason.belowPercentageThreshold,
