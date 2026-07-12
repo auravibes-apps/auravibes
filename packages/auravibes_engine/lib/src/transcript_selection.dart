@@ -89,47 +89,19 @@ AgentCompactionRangeSelection selectAgentCompactionRange(
   final messages = context.messages;
   if (messages.length < 3) return const AgentCompactionNoRange();
 
-  var lastUserIndex = -1;
-  var lastModelTextIndex = -1;
-  for (var i = messages.length - 1; i >= 0; i--) {
-    final message = messages[i];
-    if (message.role == AgentTranscriptRole.user && lastUserIndex == -1) {
-      lastUserIndex = i;
-    }
-    if (message.role == AgentTranscriptRole.model &&
-        message.kind == AgentTranscriptKind.text &&
-        lastModelTextIndex == -1) {
-      lastModelTextIndex = i;
-    }
-    if (lastUserIndex != -1 && lastModelTextIndex != -1) break;
-  }
+  final lastUserIndex = _lastUserIndex(messages);
+  final lastModelTextIndex = _lastModelTextIndex(messages);
   if (lastUserIndex <= 0 || lastModelTextIndex == -1) {
     return const AgentCompactionNoRange();
   }
 
-  for (var i = lastUserIndex; i >= 0; i--) {
-    final message = messages[i];
-    if (message.role != AgentTranscriptRole.user &&
-        message.toolCalls.any(
-          (toolCall) => toolCall.lifecycle == AgentToolCallLifecycle.pending,
-        )) {
-      return const AgentCompactionUnsafeUnresolvedTool();
-    }
-    if (message.role == AgentTranscriptRole.user && i != lastUserIndex) break;
+  if (_hasUnresolvedToolBeforeTail(messages, lastUserIndex)) {
+    return const AgentCompactionUnsafeUnresolvedTool();
   }
 
   final compactable = messages
       .take(lastUserIndex)
-      .where(
-        (message) =>
-            message.status == AgentTranscriptStatus.sent &&
-            !message.isCompactionSummary &&
-            !(message.role != AgentTranscriptRole.user &&
-                message.toolCalls.any(
-                  (toolCall) =>
-                      toolCall.lifecycle == AgentToolCallLifecycle.pending,
-                )),
-      )
+      .where(_isCompactable)
       .toList();
   if (compactable.isEmpty) return const AgentCompactionNoRange();
 
@@ -143,3 +115,38 @@ AgentCompactionRangeSelection selectAgentCompactionRange(
         .toList(),
   );
 }
+
+int _lastUserIndex(List<AgentTranscriptMessageSnapshot> messages) => messages
+    .lastIndexWhere((message) => message.role == AgentTranscriptRole.user);
+
+int _lastModelTextIndex(List<AgentTranscriptMessageSnapshot> messages) =>
+    messages.lastIndexWhere(
+      (message) =>
+          message.role == AgentTranscriptRole.model &&
+          message.kind == AgentTranscriptKind.text,
+    );
+
+bool _hasUnresolvedToolBeforeTail(
+  List<AgentTranscriptMessageSnapshot> messages,
+  int lastUserIndex,
+) {
+  for (var index = lastUserIndex; index >= 0; index--) {
+    final message = messages[index];
+    if (message.role == AgentTranscriptRole.user && index != lastUserIndex) {
+      return false;
+    }
+    if (message.role != AgentTranscriptRole.user && _hasPendingTool(message)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool _isCompactable(AgentTranscriptMessageSnapshot message) =>
+    message.status == AgentTranscriptStatus.sent &&
+    !message.isCompactionSummary &&
+    (message.role == AgentTranscriptRole.user || !_hasPendingTool(message));
+
+bool _hasPendingTool(AgentTranscriptMessageSnapshot message) => message
+    .toolCalls
+    .any((toolCall) => toolCall.lifecycle == AgentToolCallLifecycle.pending);

@@ -109,9 +109,56 @@ void validateSkillTemplateTool({
     );
   }
 
-  void validateText(String value) {
+  final references =
+      _TemplateValidationReferences(
+          inputDefinitions: inputDefinitions,
+          credentialDefinitions: credentialDefinitions,
+        )
+        ..validate(template.url)
+        ..validateAll(template.headers.values)
+        ..validateAll(template.query.values);
+  final body = template.body;
+  if (body == null) return;
+  references.validate(body);
+  if (template.resolvedBodyFormat == SkillUrlTemplateBodyFormat.text) return;
+
+  _validateJsonFilters(body, inputDefinitions);
+
+  for (final rendered in _renderJsonBodySamples(
+    body,
+    inputDefinitions: inputDefinitions,
+    credentialDefinitions: credentialDefinitions,
+  )) {
+    try {
+      jsonDecode(rendered);
+    } on FormatException catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        FormatException('Rendered JSON body is invalid: ${error.message}'),
+        stackTrace,
+      );
+    }
+  }
+}
+
+class _TemplateValidationReferences {
+  const _TemplateValidationReferences({
+    required this.inputDefinitions,
+    required this.credentialDefinitions,
+  });
+
+  final Map<String, SkillTemplateInputDefinition> inputDefinitions;
+  final Map<String, SkillCredentialAttributeDefinition> credentialDefinitions;
+
+  void validate(String value) {
     _parseLiquid(value);
     final locals = _loopLocals(value);
+    _validateKnownReferences(value, locals);
+    _validateBareReferences(value, locals);
+  }
+
+  void validateAll(Iterable<String> values) => values.forEach(validate);
+
+  void _validateKnownReferences(String value, Set<String> locals) {
     for (final reference in _references(value)) {
       if (locals.contains(reference.source)) continue;
       final isKnown = switch (reference.source) {
@@ -125,6 +172,9 @@ void validateSkillTemplateTool({
         );
       }
     }
+  }
+
+  void _validateBareReferences(String value, Set<String> locals) {
     for (final reference in _unsupportedBareReferences(value)) {
       if (_allowedTopLevelReferences.contains(reference) ||
           locals.contains(reference)) {
@@ -136,15 +186,12 @@ void validateSkillTemplateTool({
       );
     }
   }
+}
 
-  validateText(template.url);
-  template.headers.values.forEach(validateText);
-  template.query.values.forEach(validateText);
-  final body = template.body;
-  if (body == null) return;
-  validateText(body);
-  if (template.resolvedBodyFormat == SkillUrlTemplateBodyFormat.text) return;
-
+void _validateJsonFilters(
+  String body,
+  Map<String, SkillTemplateInputDefinition> inputDefinitions,
+) {
   for (final output in _liquidOutputPattern.allMatches(body)) {
     final expression = output.group(1) ?? '';
     final reference = _liquidReferencePattern.firstMatch(expression);
@@ -160,21 +207,6 @@ void validateSkillTemplateTool({
       'JSON body input "$inputName" with type ${definition.type} must use '
       'the json filter.',
     );
-  }
-
-  for (final rendered in _renderJsonBodySamples(
-    body,
-    inputDefinitions: inputDefinitions,
-    credentialDefinitions: credentialDefinitions,
-  )) {
-    try {
-      jsonDecode(rendered);
-    } on FormatException catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        FormatException('Rendered JSON body is invalid: ${error.message}'),
-        stackTrace,
-      );
-    }
   }
 }
 
@@ -287,35 +319,13 @@ Iterable<String> _renderJsonBodySamples(
   String render({
     Set<String> omittedInputKeys = const {},
     Set<String> omittedCredentialKeys = const {},
-  }) {
-    Object? sampleInput(SkillTemplateInputDefinition definition) =>
-        switch (definition.type.trim().toLowerCase()) {
-          'array' => const ['sample'],
-          'boolean' => true,
-          'number' || 'integer' => 1,
-          'object' => const {'sample': 'value'},
-          _ => 'sample',
-        };
-    try {
-      return Liquid().parse(value).render({
-        'input': {
-          for (final entry in inputDefinitions.entries)
-            if (!omittedInputKeys.contains(entry.key))
-              entry.key: sampleInput(entry.value),
-        },
-        'credential': {
-          for (final entry in credentialDefinitions.entries)
-            if (!omittedCredentialKeys.contains(entry.key))
-              entry.key: 'credential-value',
-        },
-      });
-    } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        FormatException('Liquid template render failed: $error'),
-        stackTrace,
-      );
-    }
-  }
+  }) => _renderJsonBodySample(
+    value,
+    inputDefinitions: inputDefinitions,
+    credentialDefinitions: credentialDefinitions,
+    omittedInputKeys: omittedInputKeys,
+    omittedCredentialKeys: omittedCredentialKeys,
+  );
 
   yield render();
   final optionalInputKeys = [
@@ -339,6 +349,44 @@ Iterable<String> _renderJsonBodySamples(
     );
   }
 }
+
+String _renderJsonBodySample(
+  String value, {
+  required Map<String, SkillTemplateInputDefinition> inputDefinitions,
+  required Map<String, SkillCredentialAttributeDefinition>
+  credentialDefinitions,
+  required Set<String> omittedInputKeys,
+  required Set<String> omittedCredentialKeys,
+}) {
+  try {
+    return Liquid().parse(value).render({
+      'input': {
+        for (final entry in inputDefinitions.entries)
+          if (!omittedInputKeys.contains(entry.key))
+            entry.key: _sampleInput(entry.value),
+      },
+      'credential': {
+        for (final entry in credentialDefinitions.entries)
+          if (!omittedCredentialKeys.contains(entry.key))
+            entry.key: 'credential-value',
+      },
+    });
+  } on Object catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      FormatException('Liquid template render failed: $error'),
+      stackTrace,
+    );
+  }
+}
+
+Object? _sampleInput(SkillTemplateInputDefinition definition) =>
+    switch (definition.type.trim().toLowerCase()) {
+      'array' => const ['sample'],
+      'boolean' => true,
+      'number' || 'integer' => 1,
+      'object' => const {'sample': 'value'},
+      _ => 'sample',
+    };
 
 bool _requiresJsonFilter(String type) => switch (type.trim().toLowerCase()) {
   'array' || 'boolean' || 'integer' || 'number' || 'object' => true,

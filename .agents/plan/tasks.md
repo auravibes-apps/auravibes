@@ -794,6 +794,17 @@ the approved plan file.
 - `reviewed` - final `git status --short`; all listed changes belong to the
   approved migration, task ledger/instructions, or approved plan. No unrelated
   tracked change was reverted.
+- Fresh PR 647 analysis reported three additional migration-local `dart:S3776`
+  findings: template validation, JSON sample rendering, and transcript
+  compaction-range selection. Split their private branch logic into cohesive
+  helpers without changing public APIs, validation messages, sample order, or
+  selected transcript IDs.
+- `pass` - `fvm dart test test/skills/resolve_skill_url_template_test.dart
+test/transcript_selection_test.dart` from `packages/auravibes_engine` (12
+  tests).
+- `pass` - focused `fvm dart analyze` on both production files.
+- `pass` - `fvm dart run melos run validate:quick`.
+- `pass` - `git diff --check`.
 
 ## PR Feedback
 
