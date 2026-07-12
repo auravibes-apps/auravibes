@@ -13,6 +13,7 @@ class AgentResolvedToolName {
     required this.tableId,
     required this.toolIdentifier,
     this.mcpServerId,
+    this.mcpSlug,
     this.skillSlug,
     this.skillToolSlug,
   });
@@ -32,12 +33,14 @@ class AgentResolvedToolName {
     required String tableId,
     required String toolIdentifier,
     required String mcpServerId,
+    required String mcpSlug,
   }) {
     return AgentResolvedToolName._(
       kind: AgentResolvedToolKind.mcp,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       mcpServerId: mcpServerId,
+      mcpSlug: mcpSlug,
     );
   }
 
@@ -93,19 +96,27 @@ class AgentResolvedToolName {
   final String tableId;
   final String toolIdentifier;
   final String? mcpServerId;
+  final String? mcpSlug;
   final String? skillSlug;
   final String? skillToolSlug;
 
   String get fullName {
-    if (kind == AgentResolvedToolKind.skillTemplate) {
-      return 'skill__user__${skillSlug}__$toolIdentifier';
-    }
-    if (kind == AgentResolvedToolKind.skillNative) {
-      return 'skill__app__${skillSlug}__$toolIdentifier';
-    }
-
-    return toolIdentifier;
+    return switch (kind) {
+      AgentResolvedToolKind.builtIn => 'built_in_${tableId}_$toolIdentifier',
+      AgentResolvedToolKind.mcp =>
+        'mcp_${mcpServerId}_${mcpSlug}_$toolIdentifier',
+      AgentResolvedToolKind.native => 'native_${tableId}_$toolIdentifier',
+      AgentResolvedToolKind.skillControl => toolIdentifier,
+      AgentResolvedToolKind.skillTemplate =>
+        'skill__user__${skillSlug}__$toolIdentifier',
+      AgentResolvedToolKind.skillNative =>
+        'skill__app__${skillSlug}__$toolIdentifier',
+    };
   }
+
+  bool get isSkill =>
+      kind == AgentResolvedToolKind.skillTemplate ||
+      kind == AgentResolvedToolKind.skillNative;
 }
 
 class AgentToolNameResolver {
@@ -145,6 +156,7 @@ class AgentToolNameResolver {
         tableId: mcpTool.mcpServerId,
         toolIdentifier: mcpTool.toolIdentifier,
         mcpServerId: mcpTool.mcpServerId,
+        mcpSlug: mcpTool.mcpSlug,
       );
     }
 
@@ -167,7 +179,7 @@ class AgentToolNameResolver {
     return null;
   }
 
-  ({String mcpServerId, String toolIdentifier})? _parseMcpTool(
+  ({String mcpServerId, String mcpSlug, String toolIdentifier})? _parseMcpTool(
     String compositeId,
   ) {
     final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(
@@ -176,11 +188,16 @@ class AgentToolNameResolver {
     if (match == null) return null;
 
     final mcpId = match.group(1);
+    final mcpSlug = match.group(2);
     final tool = match.group(3);
-    if (mcpId == null || tool == null) return null;
-    if (mcpId.isEmpty || tool.isEmpty) return null;
+    if (mcpId == null || mcpSlug == null || tool == null) return null;
+    if (mcpId.isEmpty || mcpSlug.isEmpty || tool.isEmpty) return null;
 
-    return (mcpServerId: mcpId, toolIdentifier: tool);
+    return (
+      mcpServerId: mcpId,
+      mcpSlug: mcpSlug,
+      toolIdentifier: tool,
+    );
   }
 
   ({String tableId, String toolIdentifier})? _parseTableTool(
@@ -213,4 +230,12 @@ class AgentToolNameResolver {
       _ => null,
     };
   }
+}
+
+String generateSkillSlug(String title) {
+  return title
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp('[^a-z0-9 ]'), '')
+      .replaceAll(RegExp(r'\s+'), '_');
 }

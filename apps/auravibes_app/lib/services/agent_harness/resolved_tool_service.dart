@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:auravibes_app/features/agents/usecases/run_sub_agent_tool_usecase.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
@@ -25,7 +26,6 @@ import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_u
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
-import 'package:auravibes_app/services/agent_harness/sub_agent_turn_runtime.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
@@ -47,7 +47,7 @@ class ResolvedToolService {
   // Null disables mutation side-effects for tests and non-skills callers.
   // ignore: unnecessary-nullable
   ResolvedToolService({
-    required agent.AgentCancellationRuntime agentCancellationRuntime,
+    required AgentCancellationRuntime agentCancellationRuntime,
     required McpToolCaller mcpToolCaller,
     ConversationRepository? conversationRepository,
     LoadConversationSkillUsecase? loadConversationSkillUsecase,
@@ -116,7 +116,7 @@ class AppResolvedToolProvider
     this.onSkillsManagerToolSuccess,
   });
 
-  final agent.AgentCancellationRuntime agentCancellationRuntime;
+  final AgentCancellationRuntime agentCancellationRuntime;
   final McpToolCaller mcpToolCaller;
   final ConversationRepository? conversationRepository;
   final LoadConversationSkillUsecase? loadConversationSkillUsecase;
@@ -323,6 +323,7 @@ agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
       tableId: tool.tableId,
       toolIdentifier: tool.toolIdentifier,
       mcpServerId: tool.mcpServerId ?? '',
+      mcpSlug: tool.mcpSlug ?? '',
     ),
     ResolvedToolType.native => agent.AgentResolvedToolName.native(
       tableId: tool.tableId,
@@ -380,7 +381,7 @@ Future<Object?> _runCancelableInputTool({
   required Object input,
   required String toolIdentifier,
   required CancelableOperation<Object?> operation,
-  required agent.AgentCancellationRuntime agentCancellationRuntime,
+  required AgentCancellationRuntime agentCancellationRuntime,
 }) {
   final _ = (input: input, toolIdentifier: toolIdentifier);
   agentCancellationRuntime.registerCancelableOperation(
@@ -575,74 +576,87 @@ Future<Object> _listSkillCredentials({
   };
 }
 
-final resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
-  final agentCancellationRuntime = ref.watch(agentCancellationRuntimeProvider);
-  final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
-  final subAgentTurnRuntime = ref.watch(subAgentTurnRuntimeProvider);
+final Provider<ResolvedToolService> resolvedToolServiceProvider =
+    Provider<ResolvedToolService>((ref) {
+      final agentCancellationRuntime = ref.watch(
+        agentCancellationRuntimeProvider,
+      );
+      final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
 
-  return ResolvedToolService(
-    agentCancellationRuntime: agentCancellationRuntime,
-    mcpToolCaller: ref.watch(mcpToolCallerProvider),
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    loadConversationSkillUsecase: ref.watch(
-      loadConversationSkillUsecaseProvider,
-    ),
-    unloadConversationSkillUsecase: ref.watch(
-      unloadConversationSkillUsecaseProvider,
-    ),
-    runSkillTemplateToolUsecase: ref.watch(
-      runSkillTemplateToolUsecaseProvider,
-    ),
-    runAppSkillToolUsecase: ref.watch(
-      runAppSkillToolUsecaseProvider,
-    ),
-    runSkillsManagerToolUsecase: ref.watch(
-      runSkillsManagerToolUsecaseProvider,
-    ),
-    listAvailableSkillsUsecase: ref.watch(listAvailableSkillsUsecaseProvider),
-    listAppSkillCredentialCandidatesUsecase: ref.watch(
-      listAppSkillCredentialCandidatesUsecaseProvider,
-    ),
-    appSkillRegistry: ref.watch(appSkillRegistryProvider),
-    skillCredentialsRepository: ref.watch(skillCredentialsRepositoryProvider),
-    subAgentRunner: agent.SubAgentRunner(
-      agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
-      conversationStore: AppSubAgentConversationStore(
-        ref.watch(conversationRepositoryProvider),
-      ),
-      messageStore: AppSubAgentMessageStore(
-        ref.watch(messageRepositoryProvider),
-      ),
-      activeTracker: activeSubAgents,
-      continueAgentTurn: subAgentTurnRuntime.call,
-      onChildStarted: ({required parentId, required childId}) {
-        agentCancellationRuntime.registerCleanup(parentId, () {
-          if (activeSubAgents.parentOf(childId) != parentId) return;
+      return ResolvedToolService(
+        agentCancellationRuntime: agentCancellationRuntime,
+        mcpToolCaller: ref.watch(mcpToolCallerProvider),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
+        loadConversationSkillUsecase: ref.watch(
+          loadConversationSkillUsecaseProvider,
+        ),
+        unloadConversationSkillUsecase: ref.watch(
+          unloadConversationSkillUsecaseProvider,
+        ),
+        runSkillTemplateToolUsecase: ref.watch(
+          runSkillTemplateToolUsecaseProvider,
+        ),
+        runAppSkillToolUsecase: ref.watch(
+          runAppSkillToolUsecaseProvider,
+        ),
+        runSkillsManagerToolUsecase: ref.watch(
+          runSkillsManagerToolUsecaseProvider,
+        ),
+        listAvailableSkillsUsecase: ref.watch(
+          listAvailableSkillsUsecaseProvider,
+        ),
+        listAppSkillCredentialCandidatesUsecase: ref.watch(
+          listAppSkillCredentialCandidatesUsecaseProvider,
+        ),
+        appSkillRegistry: ref.watch(appSkillRegistryProvider),
+        skillCredentialsRepository: ref.watch(
+          skillCredentialsRepositoryProvider,
+        ),
+        subAgentRunner: agent.SubAgentRunner(
+          agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
+          conversationStore: AppSubAgentConversationStore(
+            ref.watch(conversationRepositoryProvider),
+          ),
+          messageStore: AppSubAgentMessageStore(
+            ref.watch(messageRepositoryProvider),
+          ),
+          startRequest: activeSubAgents.start,
+          continueAgentTurn: ({required conversationId, required context}) {
+            return ref
+                .read(appAgentServiceProvider)
+                .call(
+                  conversationId: conversationId,
+                  context: context,
+                );
+          },
+          onChildStarted: ({required parentId, required childId}) {
+            agentCancellationRuntime.registerCleanup(parentId, () {
+              if (activeSubAgents.parentOf(childId) != parentId) return;
 
-          agentCancellationRuntime.requestStopOnStart(childId);
-          activeSubAgents.finish(
-            parentId: parentId,
-            childId: childId,
-            status: agent.SubAgentCompletionStatus.stopped,
-          );
-        });
-      },
-    ),
-    onSkillsManagerToolSuccess:
-        ({
-          required workspaceId,
-          required toolSlug,
-          required result,
-        }) {
-          _invalidateSkillsManagerToolState(
-            ref,
-            workspaceId: workspaceId,
-            toolSlug: toolSlug,
-            result: result,
-          );
-        },
-  );
-});
+              agentCancellationRuntime.requestStopOnStart(childId);
+              activeSubAgents.finish(
+                parentId: parentId,
+                childId: childId,
+                status: agent.SubAgentCompletionStatus.stopped,
+              );
+            });
+          },
+        ),
+        onSkillsManagerToolSuccess:
+            ({
+              required workspaceId,
+              required toolSlug,
+              required result,
+            }) {
+              _invalidateSkillsManagerToolState(
+                ref,
+                workspaceId: workspaceId,
+                toolSlug: toolSlug,
+                result: result,
+              );
+            },
+      );
+    });
 
 void _invalidateSkillsManagerToolState(
   Ref ref, {

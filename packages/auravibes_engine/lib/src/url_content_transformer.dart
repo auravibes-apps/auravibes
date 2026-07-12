@@ -5,10 +5,10 @@
 // The _processTable method's for-loop bodies separate consecutive
 // buffer calls where cascading across control flow is misleading.
 
-import 'package:auravibes_app/services/url/models/url_content_format.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
-import 'package:auravibes_app/services/url/models/url_response.dart';
-import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_engine/src/skills/models/url_response.dart';
+import 'package:auravibes_engine/src/skills/models/url_response_format.dart';
+import 'package:auravibes_engine/src/url_content_format.dart';
+import 'package:characters/characters.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
 
@@ -18,7 +18,7 @@ class UrlContentTransformer {
   static const int maxOutputLength = 1024 * 1024;
   static const _truncationSuffix = '\n... [truncated]';
 
-  static final Set<String> _blockTags = {
+  static const Set<String> _blockTags = {
     'div',
     'section',
     'article',
@@ -43,7 +43,7 @@ class UrlContentTransformer {
     'form',
   };
 
-  static final Set<String> _stripTags = {
+  static const Set<String> _stripTags = {
     'script',
     'style',
     'noscript',
@@ -57,7 +57,7 @@ class UrlContentTransformer {
     'area',
   };
 
-  static final Set<String> _skipContentTags = {
+  static const Set<String> _skipContentTags = {
     'nav',
   };
 
@@ -672,7 +672,7 @@ class UrlContentTransformer {
 
     return (
       text:
-          '${body.firstCharacters(maxOutputLength - _truncationSuffix.length)}'
+          '${body.characters.take(maxOutputLength - _truncationSuffix.length)}'
           '$_truncationSuffix',
       truncated: true,
     );

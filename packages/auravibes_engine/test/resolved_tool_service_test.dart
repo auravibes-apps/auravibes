@@ -59,6 +59,7 @@ void main() {
           tableId: 'server-1',
           toolIdentifier: 'sum',
           mcpServerId: 'server-1',
+          mcpSlug: 'server',
         ),
         arguments: {'a': 1},
       );
@@ -76,6 +77,7 @@ void main() {
             tableId: 'server-1',
             toolIdentifier: 'sum',
             mcpServerId: '',
+            mcpSlug: 'server',
           ),
           arguments: const {},
         ),

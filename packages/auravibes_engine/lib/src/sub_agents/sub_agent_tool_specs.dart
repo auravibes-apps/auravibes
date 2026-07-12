@@ -1,8 +1,10 @@
+import 'package:auravibes_engine/src/tool_spec.dart';
+
 const agentsSkillSlug = 'agents';
 const listAgentsToolName = 'list_agents';
 const runSubAgentToolName = 'run_sub_agent';
 
-const listAgentsToolSpec = SubAgentToolSpec(
+final listAgentsToolSpec = ToolSpec(
   name: listAgentsToolName,
   description:
       'List enabled agents. Returns id, name, description, and supported '
@@ -21,7 +23,7 @@ const listAgentsToolSpec = SubAgentToolSpec(
   },
 );
 
-const runSubAgentToolSpec = SubAgentToolSpec(
+final runSubAgentToolSpec = ToolSpec(
   name: runSubAgentToolName,
   description:
       'Run a sub-agent in an isolated child conversation. Use an agentId '
@@ -47,19 +49,7 @@ const runSubAgentToolSpec = SubAgentToolSpec(
   },
 );
 
-const List<SubAgentToolSpec> subAgentToolSpecs = [
+final List<ToolSpec> subAgentToolSpecs = List.unmodifiable([
   listAgentsToolSpec,
   runSubAgentToolSpec,
-];
-
-class SubAgentToolSpec {
-  const SubAgentToolSpec({
-    required this.name,
-    required this.description,
-    required this.inputJsonSchema,
-  });
-
-  final String name;
-  final String description;
-  final Map<String, Object?> inputJsonSchema;
-}
+]);

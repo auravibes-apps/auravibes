@@ -1,5 +1,5 @@
-import 'package:auravibes_app/services/url/models/url_response.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('UrlResponse', () {

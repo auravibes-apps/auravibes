@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
@@ -39,7 +40,7 @@ class AppApproveToolCallDataProvider
   final ToolResolverService toolResolverService;
   final AgentToolResumeService agentToolResumeService;
   final ResolvedToolService runResolvedToolUsecase;
-  final agent.AgentCancellationRuntime agentCancellationRuntime;
+  final AgentCancellationRuntime agentCancellationRuntime;
   final void Function() onToolCallChanged;
 
   @override

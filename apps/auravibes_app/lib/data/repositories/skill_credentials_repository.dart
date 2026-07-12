@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/skill_credentials_dao.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
-import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show SkillCredentialAttributeDefinition;
 import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 

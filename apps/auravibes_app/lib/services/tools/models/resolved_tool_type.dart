@@ -1,5 +1,6 @@
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 enum ResolvedToolType {
   builtIn,
@@ -21,6 +22,7 @@ class ResolvedTool {
     required this.toolIdentifier,
     this.builtInTool,
     this.mcpServerId,
+    this.mcpSlug,
     this.nativeTool,
     this.skillSlug,
     this.skillToolSlug,
@@ -45,12 +47,14 @@ class ResolvedTool {
     required String tableId,
     required String toolIdentifier,
     required String mcpServerId,
+    required String mcpSlug,
   }) {
     return ResolvedTool._(
       type: ResolvedToolType.mcp,
       tableId: tableId,
       toolIdentifier: toolIdentifier,
       mcpServerId: mcpServerId,
+      mcpSlug: mcpSlug,
     );
   }
 
@@ -116,6 +120,8 @@ class ResolvedTool {
 
   final String? mcpServerId;
 
+  final String? mcpSlug;
+
   final NativeToolType? nativeTool;
 
   final String? skillSlug;
@@ -134,14 +140,24 @@ class ResolvedTool {
 
   bool get isSkillTemplate => type == ResolvedToolType.skillTemplate;
 
-  String get fullName {
-    if (isSkillTemplate) {
-      return 'skill__user__${skillSlug}__$toolIdentifier';
-    }
-    if (isSkillNative) {
-      return 'skill__app__${skillSlug}__$toolIdentifier';
-    }
-
-    return toolIdentifier;
-  }
+  String get fullName => switch ((type: type, skillSlug: skillSlug)) {
+    (type: ResolvedToolType.skillTemplate, skillSlug: final skillSlug?) =>
+      AgentResolvedToolName.skillTemplate(
+        tableId: tableId,
+        skillSlug: skillSlug,
+        toolIdentifier: toolIdentifier,
+      ).fullName,
+    (type: ResolvedToolType.skillNative, skillSlug: final skillSlug?) =>
+      AgentResolvedToolName.skillNative(
+        tableId: tableId,
+        skillSlug: skillSlug,
+        toolIdentifier: toolIdentifier,
+      ).fullName,
+    (
+      type: ResolvedToolType.skillTemplate || ResolvedToolType.skillNative,
+      skillSlug: null,
+    ) =>
+      throw StateError('Skill tool requires a skill slug'),
+    _ => toolIdentifier,
+  };
 }

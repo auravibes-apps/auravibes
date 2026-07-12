@@ -1,8 +1,28 @@
-enum AgentToolCallResultStatus {
+enum AgentToolCallLifecycle {
+  pending,
   success,
   skippedByUser,
   stoppedByUser,
   failed,
+}
+
+extension AgentToolCallLifecycleX on AgentToolCallLifecycle {
+  bool get isPending => this == AgentToolCallLifecycle.pending;
+  bool get isResolved => !isPending;
+  bool get stopsAgentLoop => this == AgentToolCallLifecycle.stoppedByUser;
+
+  String get modelFallback => switch (this) {
+    AgentToolCallLifecycle.pending || AgentToolCallLifecycle.success => '',
+    AgentToolCallLifecycle.skippedByUser => 'Tool was skipped by the user.',
+    AgentToolCallLifecycle.stoppedByUser =>
+      'Tool execution was stopped by the user.',
+    AgentToolCallLifecycle.failed => 'Tool execution failed.',
+  };
+
+  bool canTransitionTo(AgentToolCallLifecycle next) => switch (this) {
+    AgentToolCallLifecycle.pending => next != AgentToolCallLifecycle.pending,
+    _ => false,
+  };
 }
 
 class AgentMessageToolCall {
@@ -10,15 +30,16 @@ class AgentMessageToolCall {
     required this.id,
     required this.name,
     required this.argumentsRaw,
-    this.resultStatus,
+    this.lifecycle = AgentToolCallLifecycle.pending,
   });
 
   final String id;
   final String name;
   final String argumentsRaw;
-  final AgentToolCallResultStatus? resultStatus;
+  final AgentToolCallLifecycle lifecycle;
 
-  bool get isPending => resultStatus == null;
+  bool get isPending => lifecycle.isPending;
+  bool get isResolved => lifecycle.isResolved;
 }
 
 class AgentToolMessage {
@@ -167,21 +188,21 @@ class AgentToolCallLoader<TTool extends Object> {
     return 0;
   }
 
-  Map<({String argumentsRaw, String name}), AgentToolCallResultStatus>
+  Map<({String argumentsRaw, String name}), AgentToolCallLifecycle>
   _collectLatestToolStatuses(
     List<AgentToolMessage> messages, {
     required int startIndex,
     required int endIndex,
   }) {
     final latestStatusByToolCall =
-        <({String argumentsRaw, String name}), AgentToolCallResultStatus>{};
+        <({String argumentsRaw, String name}), AgentToolCallLifecycle>{};
     for (var i = startIndex; i < endIndex; i++) {
       final message = messages[i];
       if (message.isUser) continue;
       for (final toolCall in message.toolCalls) {
-        final status = toolCall.resultStatus;
-        if (status == null) continue;
-        latestStatusByToolCall[_toolCallIdentity(toolCall)] = status;
+        if (toolCall.isPending) continue;
+        latestStatusByToolCall[_toolCallIdentity(toolCall)] =
+            toolCall.lifecycle;
       }
     }
 
@@ -189,14 +210,14 @@ class AgentToolCallLoader<TTool extends Object> {
   }
 
   Set<({String argumentsRaw, String name})> _failedToolCalls(
-    Map<({String argumentsRaw, String name}), AgentToolCallResultStatus>
+    Map<({String argumentsRaw, String name}), AgentToolCallLifecycle>
     latestStatusByToolCall,
   ) {
     final failedCalls = <({String argumentsRaw, String name})>{};
     latestStatusByToolCall.forEach((toolCall, status) {
-      if (status != AgentToolCallResultStatus.success &&
-          status != AgentToolCallResultStatus.skippedByUser &&
-          status != AgentToolCallResultStatus.stoppedByUser) {
+      if (status != AgentToolCallLifecycle.success &&
+          status != AgentToolCallLifecycle.skippedByUser &&
+          status != AgentToolCallLifecycle.stoppedByUser) {
         final _ = failedCalls.add(toolCall);
       }
     });

@@ -3,6 +3,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/services/agent_harness/approve_tool_call_service.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
@@ -31,7 +32,7 @@ void main() {
       toolResolverService: const ToolResolverService(),
       agentToolResumeService: agentToolResumeService,
       runResolvedToolUsecase: ResolvedToolService(
-        agentCancellationRuntime: agent.AgentCancellationRuntime(),
+        agentCancellationRuntime: AgentCancellationRuntime(),
         mcpToolCaller:
             ({
               required mcpServerId,
@@ -39,7 +40,7 @@ void main() {
               required arguments,
             }) => Future.value(''),
       ),
-      agentCancellationRuntime: agent.AgentCancellationRuntime(),
+      agentCancellationRuntime: AgentCancellationRuntime(),
       onToolCallChanged: _noop,
     );
 
@@ -86,7 +87,7 @@ void main() {
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: ResolvedToolService(
-          agentCancellationRuntime: agent.AgentCancellationRuntime(),
+          agentCancellationRuntime: AgentCancellationRuntime(),
           mcpToolCaller:
               ({
                 required mcpServerId,
@@ -94,7 +95,7 @@ void main() {
                 required arguments,
               }) => Future.value(''),
         ),
-        agentCancellationRuntime: agent.AgentCancellationRuntime(),
+        agentCancellationRuntime: AgentCancellationRuntime(),
         onToolCallChanged: _noop,
       );
     });

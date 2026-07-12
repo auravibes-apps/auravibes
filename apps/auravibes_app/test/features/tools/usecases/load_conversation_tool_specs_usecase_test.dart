@@ -5,7 +5,6 @@ import 'package:auravibes_app/data/repositories/conversation_skills_repository.d
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
@@ -178,7 +177,7 @@ void main() {
 
     test('returns tool specs from build combined usecase', () async {
       final specs = [
-        const ToolSpec(
+        ToolSpec(
           name: 'tool-1',
           description: 'desc',
           inputJsonSchema: {},
@@ -235,9 +234,9 @@ void main() {
 
     test('returns multiple tool specs', () async {
       final specs = [
-        const ToolSpec(name: 't1', description: 'd1', inputJsonSchema: {}),
-        const ToolSpec(name: 't2', description: 'd2', inputJsonSchema: {}),
-        const ToolSpec(name: 't3', description: 'd3', inputJsonSchema: {}),
+        ToolSpec(name: 't1', description: 'd1', inputJsonSchema: {}),
+        ToolSpec(name: 't2', description: 'd2', inputJsonSchema: {}),
+        ToolSpec(name: 't3', description: 'd3', inputJsonSchema: {}),
       ];
 
       final usecase = LoadConversationToolSpecsUsecase(
@@ -320,12 +319,12 @@ void main() {
 
     test('appends dynamic skill tool specs', () async {
       final skillSpecs = [
-        const ToolSpec(
+        ToolSpec(
           name: loadSkillToolName,
           description: 'load skill',
           inputJsonSchema: {},
         ),
-        const ToolSpec(
+        ToolSpec(
           name: unloadSkillToolName,
           description: 'unload skill',
           inputJsonSchema: {},
@@ -375,17 +374,17 @@ void main() {
 
     test('keeps dynamic skill control specs available for the agent', () async {
       final skillSpecs = [
-        const ToolSpec(
+        ToolSpec(
           name: loadSkillToolName,
           description: 'load skill',
           inputJsonSchema: {},
         ),
-        const ToolSpec(
+        ToolSpec(
           name: unloadSkillToolName,
           description: 'unload skill',
           inputJsonSchema: {},
         ),
-        const ToolSpec(
+        ToolSpec(
           name: listSkillCredentialsToolName,
           description: 'list credentials',
           inputJsonSchema: {},

@@ -2,6 +2,29 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('pending is unresolved and every result is resolved', () {
+    const pending = AgentMessageToolCall(
+      id: 'pending',
+      name: 'tool',
+      argumentsRaw: '{}',
+    );
+    const runningProjection = AgentMessageToolCall(
+      id: 'running',
+      name: 'tool',
+      argumentsRaw: '{}',
+    );
+    const resolved = AgentMessageToolCall(
+      id: 'resolved',
+      name: 'tool',
+      argumentsRaw: '{}',
+      lifecycle: AgentToolCallLifecycle.success,
+    );
+
+    expect(pending.isPending, isTrue);
+    expect(runningProjection.isPending, isTrue);
+    expect(resolved.isResolved, isTrue);
+  });
+
   test(
     'returns done shape when latest assistant message has no tool calls',
     () async {
@@ -36,7 +59,7 @@ void main() {
                   id: 'old-failed',
                   name: 'fail_once',
                   argumentsRaw: '{}',
-                  resultStatus: AgentToolCallResultStatus.failed,
+                  lifecycle: AgentToolCallLifecycle.failed,
                 ),
               ],
             ),

@@ -1,17 +1,18 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_stop_service.dart';
 import 'package:test/test.dart';
+import 'support/fake_cancellation_effects.dart';
 
 void main() {
   test(
     'requests cancellation, clears queue, and stops pending tools',
     () async {
-      final cancellationRuntime = AgentCancellationRuntime()
+      final cancellationRuntime = FakeCancellationEffects()
         ..start('conversation-1');
       final sendQueueRuntime = _FakeAgentSendQueueRuntime();
       final dataProvider = _FakeStopConversationDataProvider();
       final usecase = AgentStopService(
-        agentCancellationRuntime: cancellationRuntime,
+        cancellationEffects: cancellationRuntime,
         sendQueueRuntime: sendQueueRuntime,
         provider: dataProvider,
       );

@@ -1,7 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:riverpod/riverpod.dart';
 
 /// Runtime adapter wrapping a notifier method behind a plain callback.

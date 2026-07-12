@@ -56,6 +56,7 @@ class ToolResolverService {
         tableId: resolved.tableId,
         toolIdentifier: resolved.toolIdentifier,
         mcpServerId: resolved.mcpServerId ?? '',
+        mcpSlug: resolved.mcpSlug ?? '',
       ),
       AgentResolvedToolKind.builtIn => _resolveBuiltInTool(resolved),
       AgentResolvedToolKind.native => _resolveNativeTool(resolved),

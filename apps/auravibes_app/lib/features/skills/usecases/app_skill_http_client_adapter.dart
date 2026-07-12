@@ -1,6 +1,4 @@
 import 'package:async/async.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
-import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -16,9 +14,9 @@ class AppSkillHttpClientAdapter {
   final UrlService _urlService;
   final AppSkillUrlGuard _requirePublicUri;
 
-  CancelableOperation<AppSkillUrlResponse> execute(AppSkillUrlRequest request) {
+  CancelableOperation<UrlResponse> execute(UrlRequest request) {
     CancelableOperation<UrlResponse>? operation;
-    final completer = CancelableCompleter<AppSkillUrlResponse>(
+    final completer = CancelableCompleter<UrlResponse>(
       onCancel: () => operation?.cancel(),
     );
 
@@ -41,14 +39,7 @@ class AppSkillHttpClientAdapter {
         final response = await currentOperation.valueOrCancellation();
         if (response == null || completer.isCanceled) return;
 
-        completer.complete(
-          AppSkillUrlResponse(
-            statusCode: response.statusCode,
-            body: response.body,
-            headers: response.headers,
-            elapsed: response.elapsed,
-          ),
-        );
+        completer.complete(response);
       } on Object catch (error, stackTrace) {
         if (!completer.isCanceled) {
           completer.completeError(error, stackTrace);

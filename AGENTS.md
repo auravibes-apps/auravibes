@@ -7,6 +7,13 @@
 - Check `git status --short` before and after edits.
 - Do not revert unrelated changes.
 
+## Task Ledger
+
+- For non-trivial implementation, read `.agents/plan/tasks.md` before editing.
+- Keep task status, dependencies, steps, discoveries, and evidence current.
+- Add newly discovered work to the ledger before implementing it.
+- Mark tasks done only after applicable completion gates pass.
+
 ## Commands
 
 | Task                    | Command                                                                      |

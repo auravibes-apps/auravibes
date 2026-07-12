@@ -1,6 +1,7 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
 import 'package:test/test.dart';
+import 'support/fake_cancellation_effects.dart';
 
 void main() {
   test('returns done when continuation has no tool calls', () async {
@@ -10,7 +11,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},
@@ -35,7 +36,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},
@@ -63,7 +64,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: sendQueue,
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},
@@ -98,7 +99,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},
@@ -128,7 +129,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, retryAt) => retryEvents.add('start:$retryAt'),
         clear: (conversationId) => retryEvents.add('clear:$conversationId'),
@@ -169,7 +170,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},
@@ -197,7 +198,7 @@ void main() {
 
   test('cancels during rate-limit retry wait', () async {
     var currentTime = DateTime(2026);
-    final cancellationRuntime = AgentCancellationRuntime();
+    final cancellationRuntime = FakeCancellationEffects();
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [Exception('429')],
     );
@@ -207,7 +208,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: sendQueue,
-      agentCancellationRuntime: cancellationRuntime,
+      cancellationEffects: cancellationRuntime,
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) => cancellationRuntime.requestStop('conversation-1'),
         clear: (_) {},
@@ -241,7 +242,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      agentCancellationRuntime: AgentCancellationRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},
@@ -260,7 +261,7 @@ void main() {
   });
 
   test('cancels after queued drafts and marks ack messages sent', () async {
-    final cancellationRuntime = AgentCancellationRuntime();
+    final cancellationRuntime = FakeCancellationEffects();
     final dataProvider = _FakeAgentConversationDataProvider(
       onAutoCompact: () => cancellationRuntime.requestStop('conversation-1'),
     );
@@ -272,7 +273,7 @@ void main() {
       models: dataProvider,
       tools: dataProvider,
       sendQueueRuntime: sendQueue,
-      agentCancellationRuntime: cancellationRuntime,
+      cancellationEffects: cancellationRuntime,
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, _) {},
         clear: (_) {},

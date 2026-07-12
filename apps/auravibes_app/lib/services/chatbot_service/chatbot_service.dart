@@ -2,12 +2,11 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
 
@@ -240,20 +239,20 @@ class ChatbotService {
     );
   }
 
-  FinishReason _finishReasonFor({
+  ChatFinishReason _finishReasonFor({
     required bool hasToolRequests,
     required String? genkitReasonValue,
   }) {
     if (hasToolRequests) {
-      return FinishReason.toolCalls;
+      return ChatFinishReason.toolCalls;
     }
 
     return switch (genkitReasonValue) {
-      null => FinishReason.unspecified,
-      'stop' => FinishReason.stop,
-      'length' => FinishReason.length,
-      'interrupted' => FinishReason.interrupted,
-      _ => FinishReason.other,
+      null => ChatFinishReason.unspecified,
+      'stop' => ChatFinishReason.stop,
+      'length' => ChatFinishReason.length,
+      'interrupted' => ChatFinishReason.interrupted,
+      _ => ChatFinishReason.other,
     };
   }
 

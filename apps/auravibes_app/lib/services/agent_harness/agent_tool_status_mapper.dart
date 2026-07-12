@@ -42,16 +42,8 @@ ToolCallResultStatus toAppToolCallResultStatus(
   };
 }
 
-agent.AgentToolCallResultStatus? toAgentToolCallResultStatus(
+agent.AgentToolCallLifecycle toAgentToolCallLifecycle(
   ToolCallResultStatus? status,
 ) {
-  return switch (status) {
-    null => null,
-    ToolCallResultStatus.success => agent.AgentToolCallResultStatus.success,
-    ToolCallResultStatus.skippedByUser =>
-      agent.AgentToolCallResultStatus.skippedByUser,
-    ToolCallResultStatus.stoppedByUser =>
-      agent.AgentToolCallResultStatus.stoppedByUser,
-    _ => agent.AgentToolCallResultStatus.failed,
-  };
+  return status?.agentLifecycle ?? agent.AgentToolCallLifecycle.pending;
 }

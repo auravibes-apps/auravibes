@@ -37,7 +37,6 @@ import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -47,6 +46,8 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show ChatMessage, ChatResult;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mocktail/mocktail.dart';
 

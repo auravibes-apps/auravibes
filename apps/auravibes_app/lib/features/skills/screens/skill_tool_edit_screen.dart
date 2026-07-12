@@ -5,14 +5,18 @@ import 'dart:convert';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
-import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        SkillTemplateInputDefinition,
+        SkillUrlTemplate,
+        SkillUrlTemplateBodyFormat;
+import 'package:auravibes_engine/auravibes_engine.dart' show UrlRequestMethod;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

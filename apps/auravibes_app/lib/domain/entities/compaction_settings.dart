@@ -1,5 +1,6 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
+import 'package:auravibes_engine/auravibes_engine.dart' as engine;
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'compaction_settings.freezed.dart';
@@ -23,15 +24,10 @@ abstract class CompactionSettings with _$CompactionSettings {
   static int defaultRemainingTokenThreshold({
     required int maxOutputTokens,
     required int? contextLimit,
-  }) {
-    if (contextLimit == null) return 2000;
-    final calculated = (contextLimit * 0.2).round();
-    final threshold = calculated > maxOutputTokens
-        ? calculated
-        : maxOutputTokens;
-
-    return threshold > 15000 ? 15000 : threshold;
-  }
+  }) => engine.defaultRemainingTokenThreshold(
+    maxOutputTokens: maxOutputTokens,
+    contextLimit: contextLimit,
+  );
 
   /// Static fallback used when no per-workspace overrides exist.
   /// The [remainingTokenThreshold] 2000 is a minimum guard; the effective

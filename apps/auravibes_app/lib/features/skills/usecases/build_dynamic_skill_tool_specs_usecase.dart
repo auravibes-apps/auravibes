@@ -1,10 +1,10 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:riverpod/riverpod.dart';
 
 const loadSkillToolName = 'load_skill';

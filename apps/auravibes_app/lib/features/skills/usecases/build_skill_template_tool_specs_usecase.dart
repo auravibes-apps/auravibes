@@ -2,11 +2,10 @@ import 'package:auravibes_app/data/repositories/skill_credentials_repository.dar
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
-import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class BuildSkillTemplateToolSpecsUsecase {
@@ -85,10 +84,11 @@ class BuildSkillTemplateToolSpecsUsecase {
     if (credentialSchema == null) return null;
 
     return ToolSpec(
-      name: skillTemplateToolCompositeId(
+      name: AgentResolvedToolName.skillTemplate(
+        tableId: tool.slug,
         skillSlug: skill.slug,
-        toolSlug: tool.slug,
-      ),
+        toolIdentifier: tool.slug,
+      ).fullName,
       description: tool.description.trim().isEmpty
           ? '${tool.title}: ${skill.description}'
           : tool.description,
@@ -162,10 +162,3 @@ final buildSkillTemplateToolSpecsUsecaseProvider =
         ref.watch(skillCredentialsRepositoryProvider),
       );
     });
-
-String skillTemplateToolCompositeId({
-  required String skillSlug,
-  required String toolSlug,
-}) {
-  return 'skill__user__${skillSlug}__$toolSlug';
-}

@@ -14,7 +14,7 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
-import 'package:auravibes_app/utils/generate_skill_slug.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class RunSkillsManagerToolUsecase {

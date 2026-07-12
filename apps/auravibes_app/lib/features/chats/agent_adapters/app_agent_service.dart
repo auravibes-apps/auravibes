@@ -149,7 +149,7 @@ class AppAgentService extends AgentLoopRunner {
     required ConversationRepository conversationRepository,
     required MessageRepository messageRepository,
     required ConversationSendQueueRuntime sendQueueRuntime,
-    required super.agentCancellationRuntime,
+    required super.cancellationEffects,
     required ConversationRateLimitRetryRuntime rateLimitRetryRuntime,
     super.rateLimitRetryDelay,
     super.now,
@@ -172,16 +172,19 @@ class AppAgentService extends AgentLoopRunner {
   AppAgentService._({
     required AppAgentConversationDataProvider data,
     required AppAgentModelProvider models,
-    required AppAgentRuntimeProvider runtime,
+    required ConversationRateLimitRetryRuntime retryRuntime,
     required AppAgentLoopToolProvider tools,
     required ConversationSendQueueRuntime sendQueueRuntime,
-    required super.agentCancellationRuntime,
+    required super.cancellationEffects,
   }) : super(
          data: data,
          models: models,
          tools: tools,
          sendQueueRuntime: sendQueueRuntime,
-         rateLimitRetryRuntime: runtime.rateLimitRetryRuntime,
+         rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+           start: retryRuntime.start,
+           clear: retryRuntime.clear,
+         ),
        );
 }
 
@@ -219,30 +222,6 @@ class AppAgentModelProvider implements AgentModelProvider {
   }
 }
 
-class AppAgentRuntimeProvider implements AgentRuntimeProvider {
-  const AppAgentRuntimeProvider({
-    required this.sendQueueRuntime,
-    required this.cancellationRuntime,
-    required this.retryRuntime,
-  });
-
-  @override
-  final ConversationSendQueueRuntime sendQueueRuntime;
-
-  @override
-  final AgentCancellationRuntime cancellationRuntime;
-
-  final ConversationRateLimitRetryRuntime retryRuntime;
-
-  @override
-  AgentRateLimitRetryRuntime get rateLimitRetryRuntime {
-    return AgentRateLimitRetryRuntime(
-      start: retryRuntime.start,
-      clear: retryRuntime.clear,
-    );
-  }
-}
-
 final appAgentDataProvider = Provider<AppAgentConversationDataProvider>((ref) {
   return AppAgentConversationDataProvider(
     conversationRepository: ref.watch(conversationRepositoryProvider),
@@ -261,23 +240,15 @@ final appAgentLoopToolProvider = Provider<AppAgentLoopToolProvider>((ref) {
   return AppAgentLoopToolProvider(ref.watch(agentToolExecutionServiceProvider));
 });
 
-final appAgentRuntimeProvider = Provider<AppAgentRuntimeProvider>((ref) {
-  return AppAgentRuntimeProvider(
-    sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-    cancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-    retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
-  );
-});
-
 final appAgentServiceProvider = Provider<AppAgentService>((
   ref,
 ) {
   return AppAgentService._(
     data: ref.watch(appAgentDataProvider),
     models: ref.watch(appAgentModelProvider),
-    runtime: ref.watch(appAgentRuntimeProvider),
+    retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
     tools: ref.watch(appAgentLoopToolProvider),
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+    cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
   );
 });

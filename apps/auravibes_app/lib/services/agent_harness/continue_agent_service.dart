@@ -5,7 +5,6 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
@@ -120,7 +119,7 @@ class ContinueAgentService
     );
 
     return AgentStreamRunner<ChatResult<ChatMessage>>(
-      agentCancellationRuntime: agentCancellationRuntime,
+      cancellationEffects: agentCancellationRuntime,
       provider: this,
     ).call(
       conversationId: conversationId,

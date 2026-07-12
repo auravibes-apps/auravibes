@@ -1,29 +1,30 @@
 import 'package:auravibes_engine/src/agent_iteration_context.dart';
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
+import 'package:auravibes_engine/src/agent_runtime.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
 import 'package:auravibes_engine/src/agent_stop_service.dart';
 import 'package:auravibes_engine/src/providers/agent_data_provider.dart';
 import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
-import 'package:auravibes_engine/src/providers/agent_runtime_provider.dart';
-import 'package:auravibes_engine/src/providers/agent_tool_provider.dart';
 
-class AgentNamespace<TTool extends Object> {
+class AgentNamespace {
   AgentNamespace({
     required AgentDataProvider data,
     required AgentModelProvider models,
-    required AgentToolProvider<TTool> tools,
-    required AgentRuntimeProvider runtime,
+    required AgentLoopToolProvider tools,
+    required AgentSendQueueRuntime sendQueueRuntime,
+    required AgentCancellationEffects cancellationEffects,
+    required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
   }) : _loop = AgentService(
          data: data,
          models: models,
          tools: tools,
-         sendQueueRuntime: runtime.sendQueueRuntime,
-         agentCancellationRuntime: runtime.cancellationRuntime,
-         rateLimitRetryRuntime: runtime.rateLimitRetryRuntime,
+         sendQueueRuntime: sendQueueRuntime,
+         cancellationEffects: cancellationEffects,
+         rateLimitRetryRuntime: rateLimitRetryRuntime,
        ),
        _stop = AgentStopService(
-         agentCancellationRuntime: runtime.cancellationRuntime,
-         sendQueueRuntime: runtime.sendQueueRuntime,
+         cancellationEffects: cancellationEffects,
+         sendQueueRuntime: sendQueueRuntime,
          provider: data,
        );
 

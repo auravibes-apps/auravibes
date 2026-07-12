@@ -63,7 +63,7 @@ CancelableOperation<Object?> postJson(
   Map<String, Object?> body,
 ) {
   return request(
-    AppSkillUrlRequest(
+    UrlRequest(
       url: url,
       method: UrlRequestMethod.post,
       headers: {'content-type': 'application/json', ...headers},

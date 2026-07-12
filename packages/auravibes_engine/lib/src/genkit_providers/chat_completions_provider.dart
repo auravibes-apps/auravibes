@@ -3,14 +3,25 @@
 // Required: Parser helpers keep compact return flow.
 // Required: Protocol parsing uses fixed SSE and JSON offsets.
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:genkit/plugin.dart';
-import 'package:http/http.dart' as http;
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
-typedef ApiKeyProvider = FutureOr<String> Function();
+class ProviderTransportResponse {
+  const ProviderTransportResponse({
+    required this.statusCode,
+    required this.body,
+  });
+
+  final int statusCode;
+  final Stream<List<int>> body;
+}
+
+typedef ProviderTransport =
+    Future<ProviderTransportResponse> Function(
+      Map<String, dynamic> body,
+    );
 
 class ChatCompletionsModelDefinition {
   const ChatCompletionsModelDefinition({required this.name, this.info});
@@ -41,37 +52,11 @@ mixin ChatCompletionsSamplingOptions {
   };
 }
 
-class ChatCompletionsPlugin extends GenkitPlugin {
-  ChatCompletionsPlugin({
-    required this.name,
-    required this.baseUrl,
+class ChatCompletionsCodec {
+  const ChatCompletionsCodec({
     required this.errorLabel,
     required this.customize,
-    this.apiKey,
-    this.apiKeyProvider,
-    this.models = const [],
-    this.headers,
-    this.httpClient,
-    this.requestTimeout = const Duration(seconds: 30),
-  }) {
-    if (name.isEmpty || name.contains('/')) {
-      throw GenkitException(
-        'Plugin name must be non-empty and must not contain "/". '
-        'Got: "$name"',
-        status: StatusCodes.INVALID_ARGUMENT,
-      );
-    }
-    if (apiKey != null && apiKeyProvider != null) {
-      throw GenkitException(
-        'Provide either apiKey or apiKeyProvider, not both.',
-        status: StatusCodes.INVALID_ARGUMENT,
-      );
-    }
-  }
-
-  @override
-  final String name;
-  final String baseUrl;
+  });
   final String errorLabel;
 
   /// Parses provider-specific request config once into the resolved model
@@ -82,59 +67,15 @@ class ChatCompletionsPlugin extends GenkitPlugin {
   )
   customize;
 
-  final String? apiKey;
-  final ApiKeyProvider? apiKeyProvider;
-  final List<ChatCompletionsModelDefinition> models;
-  final Map<String, String>? headers;
-  final http.Client? httpClient;
-  final Duration requestTimeout;
+  Future<ModelResponse> complete(
+    ProviderTransport transport,
+    Map<String, dynamic> body,
+  ) async {
+    final response = await transport(body);
+    final responseBody = await response.body.transform(utf8.decoder).join();
+    _throwIfRawError(response.statusCode, responseBody);
 
-  @override
-  Future<List<Action<dynamic, dynamic, dynamic, dynamic>>> init() async {
-    return [
-      for (final model in models) _createModel(model.name, model.info),
-    ];
-  }
-
-  @override
-  Action<dynamic, dynamic, dynamic, dynamic>? resolve(
-    String actionType,
-    String name,
-  ) {
-    if (actionType != 'model') return null;
-
-    return _createModel(name, null);
-  }
-
-  Model<dynamic> _createModel(String modelName, ModelInfo? info) {
-    return Model<dynamic>(
-      name: '$name/$modelName',
-      fn: (req, ctx) async {
-        if (req == null) {
-          throw ArgumentError.notNull('req');
-        }
-        final request = req;
-        final body = _buildRequestBody(
-          modelName: modelName,
-          request: request,
-          stream: ctx.streamingRequested,
-        );
-
-        if (ctx.streamingRequested) {
-          return _stream(body, ctx.sendChunk);
-        }
-
-        return _complete(body);
-      },
-      metadata: {'model': ?info?.toJson()},
-    );
-  }
-
-  Future<ModelResponse> _complete(Map<String, dynamic> body) async {
-    final response = await _send(body);
-    _throwIfRawError(response.statusCode, response.body);
-
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final json = jsonDecode(responseBody) as Map<String, dynamic>;
     final completion = sdk.ChatCompletion.fromJson(json);
     if (completion.choices.isEmpty) {
       throw GenkitException('Model returned no choices.');
@@ -149,62 +90,53 @@ class ChatCompletionsPlugin extends GenkitPlugin {
     );
   }
 
-  Future<ModelResponse> _stream(
+  Future<ModelResponse> stream(
+    ProviderTransport transport,
     Map<String, dynamic> body,
     void Function(ModelResponseChunk) sendChunk,
   ) async {
-    final request = await _request(body);
-    final client = httpClient ?? http.Client();
-    try {
-      final response = await client
-          .send(request)
-          .timeout(
-            requestTimeout,
-          );
-      final accumulator = sdk.ChatStreamAccumulator();
+    final response = await transport(body);
+    final accumulator = sdk.ChatStreamAccumulator();
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        final responseBody = await response.stream.bytesToString();
-        _throwIfRawError(response.statusCode, responseBody);
-      }
-
-      await for (final line
-          in response.stream
-              .transform(utf8.decoder)
-              .transform(const LineSplitter())) {
-        if (!line.startsWith(_dataUrlPrefix)) continue;
-        final data = line.replaceFirst(_dataUrlPrefix, '').trim();
-        if (data.isEmpty || data == '[DONE]') continue;
-
-        final event = sdk.ChatStreamEvent.fromJson(
-          jsonDecode(data) as Map<String, dynamic>,
-        );
-        accumulator.add(event);
-
-        final parts = _partsFromEvent(event);
-        if (parts.isNotEmpty) {
-          sendChunk(ModelResponseChunk(index: 0, content: parts));
-        }
-      }
-
-      final completion = accumulator.toChatCompletion();
-      if (completion.choices.isEmpty) {
-        throw GenkitException('Model returned no choices.');
-      }
-      final choice = completion.choices.first;
-
-      return ModelResponse(
-        message: _messageFromAssistant(choice.message),
-        finishReason: _mapFinishReason(choice.finishReason),
-        usage: _toUsage(completion.usage),
-        raw: completion.toJson(),
-      );
-    } finally {
-      if (httpClient == null) client.close();
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final responseBody = await response.body.transform(utf8.decoder).join();
+      _throwIfRawError(response.statusCode, responseBody);
     }
+
+    await for (final line
+        in response.body
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+      if (!line.startsWith(_dataUrlPrefix)) continue;
+      final data = line.replaceFirst(_dataUrlPrefix, '').trim();
+      if (data.isEmpty || data == '[DONE]') continue;
+
+      final event = sdk.ChatStreamEvent.fromJson(
+        jsonDecode(data) as Map<String, dynamic>,
+      );
+      accumulator.add(event);
+
+      final parts = _partsFromEvent(event);
+      if (parts.isNotEmpty) {
+        sendChunk(ModelResponseChunk(index: 0, content: parts));
+      }
+    }
+
+    final completion = accumulator.toChatCompletion();
+    if (completion.choices.isEmpty) {
+      throw GenkitException('Model returned no choices.');
+    }
+    final choice = completion.choices.first;
+
+    return ModelResponse(
+      message: _messageFromAssistant(choice.message),
+      finishReason: _mapFinishReason(choice.finishReason),
+      usage: _toUsage(completion.usage),
+      raw: completion.toJson(),
+    );
   }
 
-  Map<String, dynamic> _buildRequestBody({
+  Map<String, dynamic> buildRequestBody({
     required String modelName,
     required ModelRequest request,
     required bool stream,
@@ -219,49 +151,6 @@ class ChatCompletionsPlugin extends GenkitPlugin {
       'tools': ?request.tools?.map(_toolToJson).toList(),
       ...custom.extraBody,
     };
-  }
-
-  Future<http.Response> _send(Map<String, dynamic> body) async {
-    final request = await _request(body);
-    final client = httpClient ?? http.Client();
-    try {
-      return http.Response.fromStream(
-        await client.send(request).timeout(requestTimeout),
-      );
-    } finally {
-      if (httpClient == null) client.close();
-    }
-  }
-
-  Future<http.Request> _request(Map<String, dynamic> body) async {
-    final key = await _resolveApiKey();
-    if (key == null || key.trim().isEmpty) {
-      throw GenkitException(
-        '[$name] API key is required.',
-        status: StatusCodes.INVALID_ARGUMENT,
-      );
-    }
-
-    return http.Request('POST', _chatCompletionsUri())
-      ..headers.addAll({
-        'authorization': 'Bearer ${key.trim()}',
-        'content-type': 'application/json',
-        ...?headers,
-      })
-      ..body = jsonEncode(body);
-  }
-
-  Uri _chatCompletionsUri() {
-    final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
-
-    return Uri.parse(normalized).resolve('chat/completions');
-  }
-
-  Future<String?> _resolveApiKey() async {
-    final provider = apiKeyProvider;
-    if (provider != null) return provider();
-
-    return apiKey;
   }
 
   void _throwIfRawError(int statusCode, String body) {

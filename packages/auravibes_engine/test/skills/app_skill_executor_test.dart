@@ -7,11 +7,11 @@ import 'package:test/test.dart';
 void main() {
   group('AppSkillExecutor', () {
     test('runs URL template tools through injected HTTP client', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: 'template body',
           headers: {},
@@ -35,7 +35,7 @@ void main() {
 
     test('returns only URL template response body', () async {
       final executor = _executor((request) {
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 418,
           body: 'safe body',
           headers: {
@@ -58,11 +58,11 @@ void main() {
     });
 
     test('runs callback tools through injected request context', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: 'callback body',
           headers: {},
@@ -83,11 +83,11 @@ void main() {
     });
 
     test('runs DuckDuckGo search through HTML callback scraper', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: _duckDuckGoHtml,
           headers: {},
@@ -123,7 +123,7 @@ void main() {
 
     test('surfaces DuckDuckGo bot challenge clearly', () async {
       final executor = _executor((request) {
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 202,
           body: '<html><div class="anomaly-modal"></div></html>',
           headers: {},
@@ -152,11 +152,11 @@ void main() {
     });
 
     test('maps OpenAI model and web filters into request body', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: '{}',
           headers: {},
@@ -194,11 +194,11 @@ void main() {
     });
 
     test('maps Gemini model into request URL', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: '{}',
           headers: {},
@@ -265,7 +265,7 @@ void main() {
             inputs: {},
           ),
           callback: (input, request) => request(
-            const AppSkillUrlRequest(url: 'https://example.com'),
+            const UrlRequest(url: 'https://example.com'),
           ),
         ),
         throwsA(isA<AssertionError>()),
@@ -273,11 +273,11 @@ void main() {
     });
 
     test('maps Parallel extract URLs into request body', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: '{}',
           headers: {},
@@ -310,11 +310,11 @@ void main() {
     });
 
     test('maps Parallel search options into request body', () async {
-      late AppSkillUrlRequest capturedRequest;
+      late UrlRequest capturedRequest;
       final executor = _executor((request) {
         capturedRequest = request;
 
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: '{}',
           headers: {},
@@ -371,7 +371,7 @@ void main() {
 
     test('throws for unknown tool', () {
       final executor = _executor((request) {
-        return const AppSkillUrlResponse(
+        return const UrlResponse(
           statusCode: 200,
           body: '',
           headers: {},
@@ -396,7 +396,7 @@ AppSkillDefinition _skill(String slug) {
 }
 
 AppSkillExecutor _executor(
-  AppSkillUrlResponse Function(AppSkillUrlRequest) run,
+  UrlResponse Function(UrlRequest) run,
 ) {
   final httpClient = _FakeSkillHttpClient(run);
 
@@ -449,7 +449,7 @@ final _callbackSkill = AppSkillDefinition(
       description: 'Fetch.',
       callback: (input, context) {
         return context(
-          AppSkillUrlRequest(url: input['url'] as String),
+          UrlRequest(url: input['url'] as String),
         ).then<Object?>((response) => response.body);
       },
     ),
@@ -459,9 +459,9 @@ final _callbackSkill = AppSkillDefinition(
 class _FakeSkillHttpClient {
   const _FakeSkillHttpClient(this.run);
 
-  final AppSkillUrlResponse Function(AppSkillUrlRequest request) run;
+  final UrlResponse Function(UrlRequest request) run;
 
-  CancelableOperation<AppSkillUrlResponse> execute(AppSkillUrlRequest request) {
+  CancelableOperation<UrlResponse> execute(UrlRequest request) {
     return CancelableOperation.fromFuture(Future.value(run(request)));
   }
 }

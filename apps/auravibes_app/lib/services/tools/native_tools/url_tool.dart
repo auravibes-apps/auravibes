@@ -6,13 +6,10 @@
 import 'dart:convert';
 
 import 'package:async/async.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
-import 'package:auravibes_app/services/url/models/url_request_method.dart';
-import 'package:auravibes_app/services/url/models/url_response.dart';
 import 'package:auravibes_app/services/url/public_url_guard.dart';
-import 'package:auravibes_app/services/url/url_content_transformer.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 final class UrlTool extends NativeToolEntity<String, String> {
   UrlTool({this._urlService, UrlContentTransformer? transformer})
@@ -23,7 +20,7 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
   @override
   ToolSpec getTool() {
-    return const ToolSpec(
+    return ToolSpec(
       name: 'url',
       description:
           'Fetches content from a URL. '

@@ -1,9 +1,9 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:flutter_test/flutter_test.dart';
 
 WorkspaceToolEntity _tool({
@@ -38,7 +38,7 @@ void main() {
         expect(mcpServerId, 'mcp-1');
         expect(toolName, 'custom_tool');
 
-        return const ToolSpec(
+        return ToolSpec(
           name: 'mcp_tool',
           description: 'desc',
           inputJsonSchema: {},
@@ -188,7 +188,7 @@ void main() {
         mcpServerId: 'mcp-1',
       ),
       getMcpToolSpec: ({required mcpServerId, required toolName}) {
-        return const ToolSpec(
+        return ToolSpec(
           name: 'mcp_tool',
           description: 'desc',
           inputJsonSchema: {},

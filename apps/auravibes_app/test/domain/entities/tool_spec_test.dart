@@ -1,10 +1,10 @@
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ToolSpec', () {
     test('creates with required fields', () {
-      const spec = ToolSpec(
+      final spec = ToolSpec(
         name: 'calculator',
         description: 'Performs calculations',
         inputJsonSchema: {'type': 'object'},
@@ -16,15 +16,15 @@ void main() {
     });
 
     test('equals another with same props', () {
-      const a = ToolSpec(name: 'a', description: 'a', inputJsonSchema: {});
-      const b = ToolSpec(name: 'a', description: 'a', inputJsonSchema: {});
+      final a = ToolSpec(name: 'a', description: 'a', inputJsonSchema: {});
+      final b = ToolSpec(name: 'a', description: 'a', inputJsonSchema: {});
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });
 
     test('not equals when props differ', () {
-      const a = ToolSpec(name: 'a', description: 'a', inputJsonSchema: {});
-      const b = ToolSpec(name: 'b', description: 'a', inputJsonSchema: {});
+      final a = ToolSpec(name: 'a', description: 'a', inputJsonSchema: {});
+      final b = ToolSpec(name: 'b', description: 'a', inputJsonSchema: {});
       expect(a, isNot(equals(b)));
     });
   });

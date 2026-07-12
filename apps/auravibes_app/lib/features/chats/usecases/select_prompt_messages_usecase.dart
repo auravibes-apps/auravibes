@@ -2,8 +2,9 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/message_transcript_snapshot_mapper.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class SelectPromptMessagesUsecase {
@@ -18,42 +19,12 @@ class SelectPromptMessagesUsecase {
       conversationId,
     );
 
-    final latestSummaryIndex = messages.lastIndexWhere(
-      (m) =>
-          m.messageType == MessageType.system &&
-          m.metadata?.isCompactionSummary == true &&
-          m.status == MessageStatus.sent,
-    );
+    final selectedIds = selectAgentPromptHistory(
+      toAgentContextSnapshot(messages),
+    ).messageIds;
+    final messagesById = {for (final message in messages) message.id: message};
 
-    if (latestSummaryIndex == -1) return messages;
-
-    final summary = messages[latestSummaryIndex];
-    final metadata = summary.metadata;
-    final compactedIds = metadata?.compactedMessageIds ?? <String>[];
-
-    final throughId = metadata?.compactedThroughMessageId;
-    final throughIndex = throughId != null
-        ? messages.indexWhere((m) => m.id == throughId)
-        : -1;
-
-    final tailStart = throughIndex >= 0 && throughIndex < latestSummaryIndex
-        ? throughIndex + 1
-        : latestSummaryIndex + 1;
-
-    final tail = messages.sublist(tailStart).where((m) {
-      if (m.id == summary.id) return false;
-      if (compactedIds.contains(m.id)) return false;
-      if (m.metadata?.isCompactionSummary == true) return false;
-
-      return true;
-    }).toList();
-
-    final firstUserIndex = tail.indexWhere((m) => m.isUser);
-    final activeTail = firstUserIndex == -1
-        ? <MessageEntity>[]
-        : tail.sublist(firstUserIndex);
-
-    return [summary, ...activeTail];
+    return selectedIds.map((id) => messagesById[id]!).toList();
   }
 }
 

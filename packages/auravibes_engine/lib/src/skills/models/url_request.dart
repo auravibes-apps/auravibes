@@ -1,8 +1,8 @@
 import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/models/url_response_format.dart';
 
-class AppSkillUrlRequest {
-  const AppSkillUrlRequest({
+class UrlRequest {
+  const UrlRequest({
     required this.url,
     this.method = UrlRequestMethod.get,
     this.headers = const {},

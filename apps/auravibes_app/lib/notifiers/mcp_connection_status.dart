@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
@@ -17,6 +16,7 @@ import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -118,13 +118,20 @@ class McpToolIdComponents {
 
   static McpToolIdComponents? fromComposite(String compositeId) {
     final parsed = ToolNameFormatter.parse(compositeId);
-    if (parsed is! McpParsedToolId) return null;
+    if (parsed case AgentResolvedToolName(
+      kind: AgentResolvedToolKind.mcp,
+      mcpServerId: final mcpServerId?,
+      mcpSlug: final mcpSlug?,
+      :final toolIdentifier,
+    )) {
+      return McpToolIdComponents(
+        mcpServerId: mcpServerId,
+        slugName: mcpSlug,
+        toolIdentifier: toolIdentifier,
+      );
+    }
 
-    return McpToolIdComponents(
-      mcpServerId: parsed.mcpServerId,
-      slugName: parsed.slugName,
-      toolIdentifier: parsed.toolIdentifier,
-    );
+    return null;
   }
 }
 

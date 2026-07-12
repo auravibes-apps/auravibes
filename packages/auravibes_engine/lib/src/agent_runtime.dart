@@ -54,70 +54,47 @@ abstract interface class AgentConversationDataProvider {
   Future<void> markMessagesSent(List<String> messageIds);
 }
 
-class AgentCancellationRuntime {
-  final _entries = <String, _AgentCancellationEntry>{};
-  final _pendingStops = <String>{};
+abstract interface class AgentCancellationEffects {
+  AgentCancellationScope start(String conversationId);
 
-  Object start(String conversationId) {
-    final token = Object();
-    final entry = _AgentCancellationEntry(token);
-    if (_pendingStops.remove(conversationId)) {
-      entry.requestStop();
-    }
-    _entries.remove(conversationId)?.requestStop();
-    _entries[conversationId] = entry;
+  AgentCancellationScope? current(String conversationId);
 
-    return token;
+  void requestStop(String conversationId);
+
+  void requestStopOnStart(String conversationId);
+
+  void clear(String conversationId, AgentCancellationScope scope);
+
+  void forceClear(String conversationId);
+}
+
+class AgentCancellationScope {
+  final _cleanupCallbacks = <FutureOr<void> Function()>[];
+  bool _isCancellationRequested = false;
+
+  bool get isCancellationRequested => _isCancellationRequested;
+
+  void requestStop() {
+    if (_isCancellationRequested) return;
+
+    _isCancellationRequested = true;
+    List.of(_cleanupCallbacks).forEach(_runCleanup);
   }
 
-  bool isCancellationRequested(String conversationId) {
-    return _entries[conversationId]?.isCancellationRequested ?? false;
+  void registerCleanup(FutureOr<void> Function() cleanup) {
+    _cleanupCallbacks.add(cleanup);
+    if (_isCancellationRequested) _runCleanup(cleanup);
   }
 
-  void requestStop(String conversationId) {
-    final entry = _entries[conversationId];
-    if (entry == null) return;
-
-    entry.requestStop();
-  }
-
-  void requestStopOnStart(String conversationId) {
-    final entry = _entries[conversationId];
-    if (entry == null) {
-      final _ = _pendingStops.add(conversationId);
-
+  void _runCleanup(FutureOr<void> Function() cleanup) {
+    try {
+      final result = cleanup();
+      if (result is Future<void>) {
+        unawaited(result.catchError((Object _) => null));
+      }
+    } on Object {
       return;
     }
-
-    entry.requestStop();
-  }
-
-  void clear(String conversationId, Object token) {
-    if (_entries[conversationId]?.token != token) return;
-
-    _clearEntry(conversationId);
-  }
-
-  void forceClear(String conversationId) {
-    _clearEntry(conversationId);
-  }
-
-  void _clearEntry(String conversationId) {
-    final entry = _entries.remove(conversationId);
-    _pendingStops.remove(conversationId);
-    entry?.requestStop();
-  }
-
-  void registerCleanup(
-    String conversationId,
-    FutureOr<void> Function() cleanup,
-  ) {
-    _entries
-        .putIfAbsent(
-          conversationId,
-          () => _AgentCancellationEntry(Object()),
-        )
-        .registerCleanup(cleanup);
   }
 }
 
@@ -135,44 +112,4 @@ class AgentRateLimitRetryRuntime {
 
   final void Function(String conversationId, DateTime retryAt) start;
   final void Function(String conversationId) clear;
-}
-
-class _AgentCancellationEntry {
-  _AgentCancellationEntry(this.token);
-
-  final Object token;
-  final _cleanupCallbacks = <FutureOr<void> Function()>[];
-  bool _isCancellationRequested = false;
-
-  bool get isCancellationRequested => _isCancellationRequested;
-
-  void requestStop() {
-    if (_isCancellationRequested) return;
-
-    _isCancellationRequested = true;
-    for (final cleanup in List.of(_cleanupCallbacks)) {
-      try {
-        final result = cleanup();
-        if (result is Future<void>) {
-          unawaited(result.catchError((Object _) => null));
-        }
-      } on Object {
-        continue;
-      }
-    }
-  }
-
-  void registerCleanup(FutureOr<void> Function() cleanup) {
-    _cleanupCallbacks.add(cleanup);
-    if (!_isCancellationRequested) return;
-
-    try {
-      final result = cleanup();
-      if (result is Future<void>) {
-        unawaited(result.catchError((Object _) => null));
-      }
-    } on Object {
-      return;
-    }
-  }
 }

@@ -1,11 +1,10 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-import 'package:auravibes_app/domain/usecases/tools/conversation/generate_built_in_composite_id.dart';
 import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 
 class BuildCombinedToolSpecsUseCase {
   const BuildCombinedToolSpecsUseCase({
@@ -51,10 +50,10 @@ class BuildCombinedToolSpecsUseCase {
     if (userTool == null) return null;
 
     final originalSpec = userTool.getTool();
-    final compositeId = generateBuiltInCompositeId(
+    final compositeId = AgentResolvedToolName.builtIn(
       tableId: workspaceTool.id,
       toolIdentifier: workspaceTool.toolId,
-    );
+    ).fullName;
 
     return ToolSpec(
       name: compositeId,
@@ -71,10 +70,10 @@ class BuildCombinedToolSpecsUseCase {
     if (nativeTool == null) return null;
 
     final originalSpec = nativeTool.getTool();
-    final compositeId = generateNativeCompositeId(
+    final compositeId = AgentResolvedToolName.native(
       tableId: workspaceTool.id,
       toolIdentifier: nativeToolType.value,
-    );
+    ).fullName;
 
     return ToolSpec(
       name: compositeId,

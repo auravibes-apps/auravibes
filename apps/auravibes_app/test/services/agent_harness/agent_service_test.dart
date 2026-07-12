@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
@@ -328,7 +329,7 @@ void main() {
         sendQueueRuntime: fixture.container.read(
           conversationSendQueueRuntimeProvider,
         ),
-        agentCancellationRuntime: fixture.agentCancellationRuntime,
+        cancellationEffects: fixture.agentCancellationRuntime,
         rateLimitRetryRuntime: fixture.rateLimitRetryRuntime,
         now: () => currentTime,
         sleep: (delay) {
@@ -1055,7 +1056,7 @@ class _AgentServiceFixture {
         conversationRepository: conversationRepository,
         messageRepository: messageRepository,
         sendQueueRuntime: container.read(conversationSendQueueRuntimeProvider),
-        agentCancellationRuntime: agentCancellationRuntime,
+        cancellationEffects: agentCancellationRuntime,
         rateLimitRetryRuntime: rateLimitRetryRuntime,
         rateLimitRetryDelay: Duration.zero,
       ),

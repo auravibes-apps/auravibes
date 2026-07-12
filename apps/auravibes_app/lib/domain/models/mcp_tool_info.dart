@@ -4,6 +4,7 @@
 // ============================================================.
 
 import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'mcp_tool_info.freezed.dart';
@@ -38,6 +39,11 @@ abstract class McpToolInfo with _$McpToolInfo {
       '_',
     );
 
-    return 'mcp_${server.id}_${server.slugServerName}_$sanitizedToolName';
+    return AgentResolvedToolName.mcp(
+      tableId: server.id,
+      toolIdentifier: sanitizedToolName,
+      mcpServerId: server.id,
+      mcpSlug: server.slugServerName,
+    ).fullName;
   }
 }

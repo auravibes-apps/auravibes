@@ -3,12 +3,12 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' as genkit;
@@ -93,7 +93,7 @@ void main() {
                 ],
               ),
             ],
-            tools: const [
+            tools: [
               ToolSpec(
                 name: 'lookup_weather',
                 description: 'Looks up weather',
@@ -110,7 +110,7 @@ void main() {
 
       expect(results, hasLength(2));
       expect(results.firstOrNull?.output.text, 'Hello');
-      expect(results.last.finishReason, FinishReason.toolCalls);
+      expect(results.last.finishReason, ChatFinishReason.toolCalls);
       expect(results.last.entityTools.single.id, 'tool-1');
       expect(results.last.entityPromptTokens, 12);
       expect(results.last.entityCompletionTokens, 8);
@@ -255,7 +255,7 @@ void main() {
 
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
-      expect(results.single.finishReason, FinishReason.length);
+      expect(results.single.finishReason, ChatFinishReason.length);
     });
 
     test('maps interrupted finish reason distinctly', () async {
@@ -267,7 +267,7 @@ void main() {
 
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
-      expect(results.single.finishReason, FinishReason.interrupted);
+      expect(results.single.finishReason, ChatFinishReason.interrupted);
     });
 
     test('maps unknown finish reason to other', () async {
@@ -279,7 +279,7 @@ void main() {
 
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
-      expect(results.single.finishReason, FinishReason.other);
+      expect(results.single.finishReason, ChatFinishReason.other);
     });
 
     test('maps custom finish reason to other', () async {
@@ -294,7 +294,7 @@ void main() {
 
       final results = await service.sendMessage(_makeConfig(), []).toList();
 
-      expect(results.single.finishReason, FinishReason.other);
+      expect(results.single.finishReason, ChatFinishReason.other);
     });
   });
 

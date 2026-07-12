@@ -5,7 +5,7 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 

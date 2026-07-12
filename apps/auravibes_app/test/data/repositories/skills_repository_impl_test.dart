@@ -17,12 +17,11 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/agents/usecases/resolve_agent_skills_usecase.dart';
-import 'package:auravibes_app/features/skills/models/skill_url_template.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/skills/usecases/app_skill_http_client_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
@@ -41,21 +40,16 @@ import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill
 import 'package:auravibes_app/features/skills/usecases/update_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/validate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
-import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
-import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentCancellationRuntime, skillContextMetadataKind;
-import 'package:auravibes_engine/auravibes_engine.dart'
-    show ResolveSkillUrlTemplate, RunSkillUrlTemplate;
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:dio/dio.dart';
@@ -151,8 +145,6 @@ void main() {
     CreateSkillTemplateToolUsecase createTemplateToolUsecase() {
       return CreateSkillTemplateToolUsecase(
         toolsRepository,
-        validateSkillTemplateToolUsecase:
-            const ValidateSkillTemplateToolUsecase(),
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository:
             skillCredentialDefinitionsRepository,
@@ -162,8 +154,6 @@ void main() {
     UpdateSkillTemplateToolUsecase updateTemplateToolUsecase() {
       return UpdateSkillTemplateToolUsecase(
         toolsRepository,
-        validateSkillTemplateToolUsecase:
-            const ValidateSkillTemplateToolUsecase(),
         skillsRepository: skillsRepository,
         skillCredentialDefinitionsRepository:
             skillCredentialDefinitionsRepository,
@@ -854,7 +844,7 @@ void main() {
       );
       var spec = specs.single;
       final singleCredentialProperties =
-          spec.inputJsonSchema['properties'] as Map<String, dynamic>;
+          spec.inputJsonSchema['properties']! as Map<String, dynamic>;
       final result = await runUsecase.call(
         workspaceId: workspace.id,
         skillSlug: skill.slug,
@@ -1002,12 +992,12 @@ void main() {
 
       expect(_propertyEnumFor(publicSpec, 'credentialId'), [credential.id]);
       expect(
-        publicSpec.inputJsonSchema['required'] as List<Object?>,
+        publicSpec.inputJsonSchema['required']! as List<Object?>,
         isNot(contains('credentialId')),
       );
       expect(_propertyEnumFor(privateSpec, 'credentialId'), [credential.id]);
       expect(
-        privateSpec.inputJsonSchema['required'] as List<Object?>,
+        privateSpec.inputJsonSchema['required']! as List<Object?>,
         contains('credentialId'),
       );
     });
@@ -1188,128 +1178,6 @@ void main() {
         'enabled': true,
         'q': 'name:buddy',
       });
-    });
-
-    test('validates skill template placeholders before saving', () {
-      const usecase = ValidateSkillTemplateToolUsecase();
-
-      expect(
-        () => usecase.call(
-          templateJson: jsonEncode({
-            'url': 'https://example.com',
-            'body': '{"filters":{{filters}}}',
-          }),
-          inputsJson: jsonEncode({
-            'filters': {'description': 'Filters', 'type': 'array'},
-          }),
-          credentialDefinitions: const {},
-        ),
-        throwsA(
-          isA<FormatException>().having(
-            (error) => error.message,
-            'message',
-            contains('Unsupported Liquid reference'),
-          ),
-        ),
-      );
-      expect(
-        () => usecase.call(
-          templateJson: jsonEncode({
-            'url': 'https://example.com',
-            'body': '{"filters":{input:filters}}',
-          }),
-          inputsJson: jsonEncode({
-            'filters': {'description': 'Filters', 'type': 'array'},
-          }),
-          credentialDefinitions: const {},
-        ),
-        throwsA(isA<FormatException>()),
-      );
-      expect(
-        () => usecase.call(
-          templateJson: jsonEncode({
-            'url': 'https://example.com',
-            'body': '{"filters":"{input:missing}"}',
-          }),
-          inputsJson: jsonEncode({
-            'filters': {'description': 'Filters', 'type': 'array'},
-          }),
-          credentialDefinitions: const {},
-        ),
-        throwsA(
-          isA<FormatException>().having(
-            (error) => error.message,
-            'message',
-            contains('Unknown input placeholder: missing'),
-          ),
-        ),
-      );
-      expect(
-        () => usecase.call(
-          templateJson: jsonEncode({
-            'url': 'https://example.com',
-            'body': '{"filters":"{{ input.filters }}"}',
-          }),
-          inputsJson: jsonEncode({
-            'filters': {'description': 'Filters', 'type': 'array'},
-          }),
-          credentialDefinitions: const {},
-        ),
-        throwsA(
-          isA<FormatException>().having(
-            (error) => error.message,
-            'message',
-            contains('must use the json filter'),
-          ),
-        ),
-      );
-      expect(
-        () => usecase.call(
-          templateJson: jsonEncode({
-            'url': 'https://example.com',
-            'bodyFormat': 'json',
-            'body': [
-              '{"q":"cats",',
-              '{% if input.location %}',
-              '"location":{{ input.location | json }}',
-              '{% endif %}',
-              '}',
-            ].join(),
-          }),
-          inputsJson: jsonEncode({
-            'location': {
-              'description': 'Optional location',
-              'optional': true,
-            },
-          }),
-          credentialDefinitions: const {},
-        ),
-        throwsA(
-          isA<FormatException>().having(
-            (error) => error.message,
-            'message',
-            contains('Rendered JSON body is invalid'),
-          ),
-        ),
-      );
-      expect(
-        () => usecase.call(
-          templateJson: jsonEncode({
-            'url': 'https://example.com/{{ input.credentialId }}',
-          }),
-          inputsJson: jsonEncode({
-            'credentialId': {'description': 'Credential id'},
-          }),
-          credentialDefinitions: const {},
-        ),
-        throwsA(
-          isA<FormatException>().having(
-            (error) => error.message,
-            'message',
-            contains('credentialId is reserved'),
-          ),
-        ),
-      );
     });
 
     test('deletes skill credential', () async {
@@ -1680,7 +1548,7 @@ void main() {
         (spec) => spec.name == 'skill__app__skills_manager__create_user_skill',
       );
       final createSkillProperties =
-          createSkillSpec.inputJsonSchema['properties'] as Map;
+          createSkillSpec.inputJsonSchema['properties']! as Map;
       expect(createSkillProperties, contains('credentialDefinitionId'));
       expect(createSkillProperties, contains('isCredentialOptional'));
       expect(
@@ -1693,7 +1561,7 @@ void main() {
             'skill__app__skills_manager__create_skill_template_tool',
       );
       final createToolProperties =
-          createToolSpec.inputJsonSchema['properties'] as Map;
+          createToolSpec.inputJsonSchema['properties']! as Map;
       expect(createToolProperties, contains('requiresCredential'));
       expect(definitionResult, containsPair('slug', 'example_service'));
       expect(
@@ -2130,14 +1998,15 @@ List<Object?> _slugEnumFor(List<ToolSpec> specs, String toolName) {
   final schema = specs
       .firstWhere((spec) => spec.name == toolName)
       .inputJsonSchema;
-  final properties = schema['properties'] as Map<String, dynamic>;
+  final properties = schema['properties']! as Map<String, dynamic>;
   final slugSchema = properties['slug'] as Map<String, dynamic>;
 
   return slugSchema['enum'] as List<Object?>;
 }
 
 List<Object?> _propertyEnumFor(ToolSpec spec, String propertyName) {
-  final properties = spec.inputJsonSchema['properties'] as Map<String, dynamic>;
+  final properties =
+      spec.inputJsonSchema['properties']! as Map<String, dynamic>;
   final propertySchema = properties[propertyName] as Map<String, dynamic>;
 
   return propertySchema['enum'] as List<Object?>;

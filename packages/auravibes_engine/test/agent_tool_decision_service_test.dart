@@ -1,8 +1,27 @@
-import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_engine/src/agent_iteration_decision.dart';
 import 'package:auravibes_engine/src/agent_tool_decision_service.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('pure decision handles missing and mixed lifecycle states', () {
+    expect(decideAgentToolIteration(null), AgentIterationDecision.done);
+    expect(decideAgentToolIteration(const []), AgentIterationDecision.done);
+    expect(
+      decideAgentToolIteration(const [
+        AgentToolCallState.resolved,
+        AgentToolCallState.pending,
+      ]),
+      AgentIterationDecision.waitForToolApproval,
+    );
+    expect(
+      decideAgentToolIteration(const [
+        AgentToolCallState.pending,
+        AgentToolCallState.stopped,
+      ]),
+      AgentIterationDecision.done,
+    );
+  });
+
   test('waits for approval when any tool is pending', () async {
     const usecase = AgentToolDecisionService(
       provider: _FakeAgentToolCallDataProvider(

@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/utils/encode.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'message_tool_call_entity.freezed.dart';
@@ -41,13 +42,13 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
   }
 
   /// Whether this tool call has been resolved (success or failure).
-  bool get isResolved => resultStatus != null && !isRunning;
+  bool get isResolved => resultStatus?.agentLifecycle.isResolved ?? false;
 
   /// Whether this tool call is waiting for permission.
   bool get isAwaitingApproval => resultStatus == null;
 
   /// Whether this tool call is currently running.
-  bool get isRunning => resultStatus == ToolCallResultStatus.running;
+  bool get isRunning => resultStatus?.agentLifecycle.isPending ?? false;
 
   /// Whether this tool call is still pending
   /// (waiting for permission or execution).

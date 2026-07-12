@@ -24,7 +24,7 @@ class AgentService {
     required this.models,
     required this.tools,
     required this.sendQueueRuntime,
-    required this.agentCancellationRuntime,
+    required this.cancellationEffects,
     required this.rateLimitRetryRuntime,
     this.rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
     this.now = DateTime.now,
@@ -35,7 +35,7 @@ class AgentService {
   final AgentModelProvider models;
   final AgentLoopToolProvider tools;
   final AgentSendQueueRuntime sendQueueRuntime;
-  final AgentCancellationRuntime agentCancellationRuntime;
+  final AgentCancellationEffects cancellationEffects;
   final AgentRateLimitRetryRuntime rateLimitRetryRuntime;
   final Duration rateLimitRetryDelay;
   final DateTime Function() now;
@@ -50,16 +50,17 @@ class AgentService {
       throw Exception('Conversation not found');
     }
 
-    final cancellationToken = agentCancellationRuntime.start(conversationId);
+    final cancellationScope = cancellationEffects.start(conversationId);
 
     try {
       return await _runLoop(
         conversationId: conversationId,
         workspaceId: workspaceId,
         context: context,
+        cancellationScope: cancellationScope,
       );
     } finally {
-      agentCancellationRuntime.clear(conversationId, cancellationToken);
+      cancellationEffects.clear(conversationId, cancellationScope);
     }
   }
 
@@ -67,12 +68,14 @@ class AgentService {
     required String conversationId,
     required String workspaceId,
     required AgentIterationContext context,
+    required AgentCancellationScope cancellationScope,
   }) async {
     AgentIterationContext? currentContext = context;
 
     while (true) {
       final cancelDecision = await _cancelIfRequested(
         conversationId,
+        cancellationScope,
         currentContext,
       );
       if (cancelDecision != null) return cancelDecision;
@@ -83,6 +86,7 @@ class AgentService {
           conversationId: conversationId,
           workspaceId: workspaceId,
           context: currentContext,
+          cancellationScope: cancellationScope,
         );
       } catch (error) {
         final retryDelay = _rateLimitRetryDelayFor(error);
@@ -94,6 +98,7 @@ class AgentService {
           conversationId: conversationId,
           retryAt: retryAt,
           context: currentContext,
+          cancellationScope: cancellationScope,
         );
         rateLimitRetryRuntime.clear(conversationId);
         if (cancelled != null) return cancelled;
@@ -110,6 +115,7 @@ class AgentService {
     required String conversationId,
     required String workspaceId,
     required AgentIterationContext? context,
+    required AgentCancellationScope cancellationScope,
   }) async {
     var currentContext = await _withQueuedDrafts(
       conversationId: conversationId,
@@ -117,6 +123,7 @@ class AgentService {
     );
     final cancelDecision = await _cancelIfRequested(
       conversationId,
+      cancellationScope,
       currentContext,
     );
     if (cancelDecision != null) {
@@ -131,6 +138,7 @@ class AgentService {
     );
     final postContinueCancel = await _cancelIfRequested(
       conversationId,
+      cancellationScope,
       currentContext,
     );
     if (postContinueCancel != null) {
@@ -141,7 +149,11 @@ class AgentService {
       origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
     );
     if (!continueResult.hasToolCalls) {
-      return _continueAfterNoToolCalls(conversationId, currentContext);
+      return _continueAfterNoToolCalls(
+        conversationId,
+        cancellationScope,
+        currentContext,
+      );
     }
 
     final decision = await tools.runAllowedTools(
@@ -150,6 +162,7 @@ class AgentService {
     );
     final postToolCancel = await _cancelIfRequested(
       conversationId,
+      cancellationScope,
       currentContext,
     );
 
@@ -161,6 +174,7 @@ class AgentService {
 
   Future<_AgentIterationStep> _continueAfterNoToolCalls(
     String conversationId,
+    AgentCancellationScope cancellationScope,
     AgentIterationContext currentContext,
   ) async {
     final queuedContext = await _withQueuedDrafts(
@@ -176,9 +190,10 @@ class AgentService {
 
   Future<AgentIterationDecision?> _cancelIfRequested(
     String conversationId,
+    AgentCancellationScope cancellationScope,
     AgentIterationContext? context,
   ) async {
-    if (!agentCancellationRuntime.isCancellationRequested(conversationId)) {
+    if (!cancellationScope.isCancellationRequested) {
       return null;
     }
 
@@ -227,9 +242,14 @@ class AgentService {
     required String conversationId,
     required DateTime retryAt,
     required AgentIterationContext? context,
+    required AgentCancellationScope cancellationScope,
   }) async {
     while (now().isBefore(retryAt)) {
-      final cancelDecision = await _cancelIfRequested(conversationId, context);
+      final cancelDecision = await _cancelIfRequested(
+        conversationId,
+        cancellationScope,
+        context,
+      );
       if (cancelDecision != null) return cancelDecision;
 
       final remaining = retryAt.difference(now());
@@ -241,7 +261,7 @@ class AgentService {
       }
     }
 
-    return _cancelIfRequested(conversationId, context);
+    return _cancelIfRequested(conversationId, cancellationScope, context);
   }
 
   Duration? _rateLimitRetryDelayFor(Object error) {

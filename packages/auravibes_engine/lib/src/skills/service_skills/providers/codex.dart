@@ -91,7 +91,7 @@ CancelableOperation<Object?> _webSearch(
   SkillHttpClient context,
 ) {
   return context(
-    AppSkillUrlRequest(
+    UrlRequest(
       url: 'https://chatgpt.com/backend-api/codex/responses',
       method: UrlRequestMethod.post,
       headers: {

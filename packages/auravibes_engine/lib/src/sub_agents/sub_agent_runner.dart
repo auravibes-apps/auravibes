@@ -23,7 +23,7 @@ class SubAgentRunner {
     required this.agentCatalog,
     required this.conversationStore,
     required this.messageStore,
-    required this.activeTracker,
+    required this.startRequest,
     required this.continueAgentTurn,
     this.onChildStarted,
   });
@@ -31,7 +31,7 @@ class SubAgentRunner {
   final SubAgentCatalog agentCatalog;
   final SubAgentConversationStore conversationStore;
   final SubAgentMessageStore messageStore;
-  final ActiveSubAgentTracker activeTracker;
+  final StartSubAgentRequest startRequest;
   final ContinueSubAgentTurn continueAgentTurn;
   final SubAgentChildStarted? onChildStarted;
 
@@ -84,7 +84,10 @@ class SubAgentRunner {
       agentId: request.agentId,
       title: request.title,
     );
-    activeTracker.start(parentId: parentConversationId, childId: child.id);
+    final requestHandle = startRequest(
+      parentId: parentConversationId,
+      childId: child.id,
+    );
     onChildStarted?.call(parentId: parentConversationId, childId: child.id);
     var completionStatus = SubAgentCompletionStatus.done;
     try {
@@ -99,13 +102,14 @@ class SubAgentRunner {
           ackMessageIds: [message.id],
         ),
       );
-      if (activeTracker.isStopped(child.id)) {
+      if (requestHandle.isStopped) {
         completionStatus = SubAgentCompletionStatus.stopped;
 
         return _result(child.id, 'stopped', agentId: request.agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
         final waitResult = await _waitForToolApproval(
+          requestHandle,
           child.id,
           request.agentId,
         );
@@ -122,11 +126,7 @@ class SubAgentRunner {
 
       return _failedResult(child.id, request.agentId);
     } finally {
-      activeTracker.finish(
-        parentId: parentConversationId,
-        childId: child.id,
-        status: completionStatus,
-      );
+      requestHandle.finish(completionStatus);
     }
   }
 
@@ -153,10 +153,11 @@ class SubAgentRunner {
   }
 
   Future<_SubAgentWaitResult?> _waitForToolApproval(
+    SubAgentRequestHandle requestHandle,
     String conversationId,
     String? agentId,
   ) async {
-    final status = await activeTracker.waitForCompletion(conversationId);
+    final status = await requestHandle.completion;
     if (status == SubAgentCompletionStatus.stopped) {
       return _SubAgentWaitResult(
         SubAgentCompletionStatus.stopped,
@@ -283,18 +284,20 @@ abstract interface class SubAgentMessageStore {
   Future<String> latestAssistantContent(String conversationId);
 }
 
-abstract interface class ActiveSubAgentTracker {
-  void start({required String parentId, required String childId});
+typedef StartSubAgentRequest =
+    SubAgentRequestHandle Function({
+      required String parentId,
+      required String childId,
+    });
 
-  void finish({
-    required String parentId,
-    required String childId,
+abstract interface class SubAgentRequestHandle {
+  Future<SubAgentCompletionStatus> get completion;
+
+  bool get isStopped;
+
+  void finish([
     SubAgentCompletionStatus status = SubAgentCompletionStatus.done,
-  });
-
-  Future<SubAgentCompletionStatus> waitForCompletion(String childId);
-
-  bool isStopped(String childId);
+  ]);
 }
 
 enum SubAgentCompletionStatus { done, stopped, error }

@@ -26,7 +26,7 @@ class AgentToolExecutionService
     required ResolveToolApprovalDecisionUsecase resolveToolApprovalDecision,
     required ResolvedToolService runResolvedToolUsecase,
     required AgentToolDecisionService getAgentIterationDecisionUsecase,
-    required agent.AgentCancellationRuntime agentCancellationRuntime,
+    required AgentCancellationRuntime agentCancellationRuntime,
   }) : super(
          provider: AppAllowedToolsDataProvider(
            messageRepository: messageRepository,
@@ -55,7 +55,7 @@ class AppAllowedToolsDataProvider
   final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecisionUsecase;
   final ResolvedToolService resolvedToolService;
   final AgentToolDecisionService toolDecisionService;
-  final agent.AgentCancellationRuntime agentCancellationRuntime;
+  final AgentCancellationRuntime agentCancellationRuntime;
 
   @override
   Future<agent.LoadLatestMessageToolCallsResult<ResolvedTool>>
@@ -207,21 +207,22 @@ void _logToolExecutionError({
   );
 }
 
-final agentToolExecutionServiceProvider = Provider<AgentToolExecutionService>((
-  ref,
-) {
-  return AgentToolExecutionService(
-    loadLatestMessageToolCallsUsecase: ref.watch(
-      agentToolCallLoaderProvider,
-    ),
-    messageRepository: ref.watch(messageRepositoryProvider),
-    resolveToolApprovalDecision: ref.watch(
-      resolveToolApprovalDecisionUsecaseProvider,
-    ),
-    runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
-    getAgentIterationDecisionUsecase: ref.watch(
-      agentToolDecisionServiceProvider,
-    ),
-    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-  );
-});
+final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
+    Provider<AgentToolExecutionService>((
+      ref,
+    ) {
+      return AgentToolExecutionService(
+        loadLatestMessageToolCallsUsecase: ref.watch(
+          agentToolCallLoaderProvider,
+        ),
+        messageRepository: ref.watch(messageRepositoryProvider),
+        resolveToolApprovalDecision: ref.watch(
+          resolveToolApprovalDecisionUsecaseProvider,
+        ),
+        runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
+        getAgentIterationDecisionUsecase: ref.watch(
+          agentToolDecisionServiceProvider,
+        ),
+        agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+      );
+    });

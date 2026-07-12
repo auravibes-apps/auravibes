@@ -4,6 +4,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
@@ -152,6 +153,7 @@ void main() {
         tableId: 'tool-1',
         toolIdentifier: 'remote-tool',
         mcpServerId: 'server-1',
+        mcpSlug: 'server-1',
       ),
       arguments: {'value': 1},
     );
@@ -171,6 +173,7 @@ void main() {
           tableId: 'tool-1',
           toolIdentifier: 'remote-tool',
           mcpServerId: '',
+          mcpSlug: 'server-1',
         ),
         arguments: {'value': 1},
       ),
@@ -522,6 +525,7 @@ void main() {
   );
 
   test('registers app native skill calls for cancellation', () async {
+    final _ = cancellationRuntime.start('conversation-1');
     final appSkillTool = _MockRunAppSkillToolUsecase();
     final operation = CancelableCompleter<Object?>();
     when(

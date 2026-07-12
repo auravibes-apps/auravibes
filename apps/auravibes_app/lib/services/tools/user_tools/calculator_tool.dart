@@ -1,7 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:async/async.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:math_expressions/math_expressions.dart';
 
 /// Represents an available tool in the app.
@@ -10,7 +10,7 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
 
   @override
   ToolSpec getTool() {
-    return const ToolSpec(
+    return ToolSpec(
       name: 'calculator',
       description:
           'Useful for getting the result of a math expression '

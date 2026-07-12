@@ -1,0 +1,119 @@
+import 'dart:collection';
+import 'dart:convert';
+
+sealed class McpContent {
+  const McpContent();
+  Map<String, Object?> toJson();
+}
+
+final class McpTextContent extends McpContent {
+  McpTextContent(this.text, {Map<String, Object?>? annotations})
+    : annotations = annotations == null ? null : _freezeMap(annotations);
+  final String text;
+  final Map<String, Object?>? annotations;
+  @override
+  Map<String, Object?> toJson() => {
+    'type': 'text',
+    'text': text,
+    if (annotations != null) 'annotations': annotations,
+  };
+}
+
+final class McpBinaryContent extends McpContent {
+  McpBinaryContent({
+    required this.type,
+    required this.mimeType,
+    this.data,
+    this.url,
+    Map<String, Object?>? annotations,
+  }) : annotations = annotations == null ? null : _freezeMap(annotations);
+  final String type;
+  final String mimeType;
+  final String? data;
+  final String? url;
+  final Map<String, Object?>? annotations;
+  @override
+  Map<String, Object?> toJson() => {
+    'type': type,
+    'mimeType': mimeType,
+    if (data != null) 'data': data,
+    if (url != null) 'url': url,
+    if (annotations != null) 'annotations': annotations,
+  };
+}
+
+final class McpResourceContent extends McpContent {
+  McpResourceContent({
+    required this.uri,
+    this.text,
+    this.blob,
+    this.mimeType,
+    this.name,
+    this.description,
+    this.isLink = false,
+    Map<String, Object?>? annotations,
+    Map<String, Object?>? meta,
+  }) : annotations = annotations == null ? null : _freezeMap(annotations),
+       meta = meta == null ? null : _freezeMap(meta);
+  final String uri;
+  final String? text;
+  final String? blob;
+  final String? mimeType;
+  final String? name;
+  final String? description;
+  final bool isLink;
+  final Map<String, Object?>? annotations;
+  final Map<String, Object?>? meta;
+  @override
+  Map<String, Object?> toJson() => {
+    'type': isLink ? 'resource_link' : 'resource',
+    'uri': uri,
+    if (text != null) 'text': text,
+    if (blob != null) 'blob': blob,
+    if (mimeType != null) 'mimeType': mimeType,
+    if (name != null) 'name': name,
+    if (description != null) 'description': description,
+    if (annotations != null) 'annotations': annotations,
+    if (meta != null) '_meta': meta,
+  };
+}
+
+class McpToolResult {
+  McpToolResult({
+    List<McpContent> content = const [],
+    Map<String, Object?>? structuredContent,
+    this.isStreaming = false,
+    this.isError,
+  }) : content = List.unmodifiable(content),
+       structuredContent = structuredContent == null
+           ? null
+           : _freezeMap(structuredContent);
+  final List<McpContent> content;
+  final Map<String, Object?>? structuredContent;
+  final bool isStreaming;
+  final bool? isError;
+
+  String toModelText() {
+    if (content case [
+      McpTextContent(:final text),
+    ] when structuredContent == null && !isStreaming && isError != true) {
+      return text;
+    }
+    return jsonEncode({
+      'content': content.map((item) => item.toJson()).toList(),
+      if (structuredContent != null) 'structuredContent': structuredContent,
+      'isStreaming': isStreaming,
+      if (isError != null) 'isError': isError,
+    });
+  }
+}
+
+Map<String, Object?> _freezeMap(Map<String, Object?> value) =>
+    UnmodifiableMapView({
+      for (final entry in value.entries) entry.key: _freezeJson(entry.value),
+    });
+Object? _freezeJson(Object? value) => switch (value) {
+  final Map<String, Object?> map => _freezeMap(map),
+  final List<Object?> list => List<Object?>.unmodifiable(list.map(_freezeJson)),
+  _ => value,
+};

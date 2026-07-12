@@ -16,13 +16,14 @@ Future<String> toolDisplayName(Ref ref, String compositeToolId) async {
 
   // For MCP tools, try to get the original server name.
   String? mcpServerName;
-  final mcpServerId = parsed.mcpServerId;
+  final mcpServerId = parsed?.mcpServerId;
   if (mcpServerId != null) {
     mcpServerName = await ref.watch(mcpServerNameProvider(mcpServerId).future);
   }
 
   return ToolNameFormatter.formatDisplayName(
     parsed,
+    rawName: compositeToolId,
     mcpServerName: mcpServerName,
   );
 }

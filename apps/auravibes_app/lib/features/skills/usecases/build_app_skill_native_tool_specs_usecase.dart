@@ -1,6 +1,5 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
-import 'package:auravibes_app/domain/entities/tool_spec.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
@@ -122,7 +121,11 @@ ToolSpec? _appSkillToolSpec(
   if (tool.requiresCredential && candidates.isEmpty) return null;
 
   return ToolSpec(
-    name: 'skill__app__${skill.slug}__${tool.slug}',
+    name: AgentResolvedToolName.skillNative(
+      tableId: tool.slug,
+      skillSlug: skill.slug,
+      toolIdentifier: tool.slug,
+    ).fullName,
     description: tool.description,
     inputJsonSchema: _schemaFor(tool, candidates),
   );
@@ -164,24 +167,24 @@ Map<String, Object?> _schemaFor(
   return schema;
 }
 
-const _skillsManagerToolSpecs = [
+final _skillsManagerToolSpecs = [
   ToolSpec(
-    name: 'skill__app__skills_manager__list_user_skills',
+    name: _skillsManagerToolName(listUserSkillsToolSlug),
     description:
         'List all user-created skills in the current workspace. Use this '
         'before creating or editing skills to avoid duplicates.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': <String, Object?>{},
       'additionalProperties': false,
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__get_user_skill',
+    name: _skillsManagerToolName(getUserSkillToolSlug),
     description:
         'Get one user-created skill by slug, including its credential '
         'definition id if configured.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -191,13 +194,13 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__create_user_skill',
+    name: _skillsManagerToolName(createUserSkillToolSlug),
     description:
         'Create a user skill in the current workspace. Slug is generated '
         'from title and is not editable. To associate credentials, pass '
         'the definitionId returned by create_skill_credential_definition '
         'as credentialDefinitionId.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'title': {
@@ -229,10 +232,10 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__update_user_skill',
+    name: _skillsManagerToolName(updateUserSkillToolSlug),
     description:
         'Update an existing user skill by slug. Slug remains immutable.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -258,9 +261,9 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__delete_user_skill',
+    name: _skillsManagerToolName(deleteUserSkillToolSlug),
     description: 'Delete a user-created skill by slug.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -270,9 +273,9 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__list_skill_template_tools',
+    name: _skillsManagerToolName(listSkillTemplateToolsToolSlug),
     description: 'List URL template tools for a user skill by skill slug.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -282,11 +285,11 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__get_skill_template_tool',
+    name: _skillsManagerToolName(getSkillTemplateToolToolSlug),
     description:
         'Get one URL template tool for a user skill by skill slug and '
         'tool slug.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -297,11 +300,11 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__create_skill_template_tool',
+    name: _skillsManagerToolName(createSkillTemplateToolSlug),
     description:
         'Create a URL template tool for a user skill. Template and inputs '
         'must be JSON objects.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -339,9 +342,9 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__update_skill_template_tool',
+    name: _skillsManagerToolName(updateSkillTemplateToolSlug),
     description: 'Update a URL template tool for a user skill by slug.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -367,9 +370,9 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__delete_skill_template_tool',
+    name: _skillsManagerToolName(deleteSkillTemplateToolSlug),
     description: 'Delete a URL template tool from a user skill by slug.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'skillSlug': {'type': 'string'},
@@ -380,22 +383,22 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__list_skill_credential_definitions',
+    name: _skillsManagerToolName(listSkillCredentialDefinitionsToolSlug),
     description:
         'List reusable user credential definitions in the current '
         'workspace.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': <String, Object?>{},
       'additionalProperties': false,
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__get_skill_credential_definition',
+    name: _skillsManagerToolName(getSkillCredentialDefinitionToolSlug),
     description:
         'Get one reusable user credential definition by slug in the '
         '$_currentWorkspaceSentence',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'definitionSlug': {'type': 'string'},
@@ -405,11 +408,11 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__create_skill_credential_definition',
+    name: _skillsManagerToolName(createSkillCredentialDefinitionToolSlug),
     description:
         'Create a reusable user credential definition in the current '
         'workspace.',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'title': {'type': 'string'},
@@ -426,11 +429,11 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__update_skill_credential_definition',
+    name: _skillsManagerToolName(updateSkillCredentialDefinitionToolSlug),
     description:
         'Update a reusable user credential definition by slug in the '
         '$_currentWorkspaceSentence',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'definitionSlug': {'type': 'string'},
@@ -448,11 +451,11 @@ const _skillsManagerToolSpecs = [
     },
   ),
   ToolSpec(
-    name: 'skill__app__skills_manager__delete_skill_credential_definition',
+    name: _skillsManagerToolName(deleteSkillCredentialDefinitionToolSlug),
     description:
         'Delete a reusable user credential definition by slug in the '
         '$_currentWorkspaceSentence',
-    inputJsonSchema: {
+    inputJsonSchema: const {
       'type': 'object',
       'properties': {
         'definitionSlug': {'type': 'string'},
@@ -473,3 +476,10 @@ final buildAppSkillNativeToolSpecsUsecaseProvider =
     });
 
 const _appSkillRegistry = AppSkillRegistry();
+
+String _skillsManagerToolName(String toolIdentifier) =>
+    AgentResolvedToolName.skillNative(
+      tableId: toolIdentifier,
+      skillSlug: skillsManagerSlug,
+      toolIdentifier: toolIdentifier,
+    ).fullName;
