@@ -17,6 +17,16 @@ void main() {
       ),
       throwsFormatException,
     );
+    expect(
+      () => requirePublicUriSyntax('ftp://example.com', requireHttps: false),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          publicHttpUrlError,
+        ),
+      ),
+    );
   });
 
   test('rejects credentials and localhost labels', () {

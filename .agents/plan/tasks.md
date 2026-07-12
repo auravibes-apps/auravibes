@@ -774,3 +774,23 @@ the approved plan file.
 - `reviewed` - final `git status --short`; all listed changes belong to the
   approved migration, task ledger/instructions, or approved plan. No unrelated
   tracked change was reverted.
+
+## PR Feedback
+
+- `PR-647-001` - Post-PR review identified valid regressions in URL error
+  wording and app-owned chat-completions URI coverage, plus overbroad engine
+  unused-file exclusions. Restored explicit false-positive exclusions, added
+  URI regression tests, and made HTTP-capable validation errors accurate.
+- Rejected feedback: the MCP schema type claim is disproven by successful full
+  validation; the dynamic JSON deep-freeze claim is disproven by the added
+  runtime regression test.
+- Evidence:
+  - `pass` - `fvm dart test test/tool_spec_test.dart
+test/public_url_classifier_test.dart` from `packages/auravibes_engine`.
+  - `pass` - `fvm flutter test
+test/services/chatbot_service/chat_completions_plugin_test.dart --no-pub`
+    from `apps/auravibes_app`.
+  - `pass` - `fvm dart run melos run validate:quick`.
+  - `pass` - `fvm dart run melos run validate`, including explicit
+    public-barrel false-positive exclusions for DCL unused-file checks.
+  - `pass` - `git diff --check`.

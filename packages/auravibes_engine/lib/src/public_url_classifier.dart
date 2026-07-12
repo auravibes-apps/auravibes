@@ -1,18 +1,22 @@
 const publicUrlError = 'URL must use a public HTTPS host.';
+const publicHttpUrlError = 'URL must use a public HTTP or HTTPS host.';
 
 Uri requirePublicUriSyntax(String url, {required bool requireHttps}) {
   final uri = Uri.tryParse(url.trim());
   if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
-    throw const FormatException(publicUrlError);
+    throw FormatException(_urlError(requireHttps));
   }
   if ((requireHttps ? uri.scheme != 'https' : !_isHttpScheme(uri.scheme)) ||
       uri.userInfo.isNotEmpty ||
       isBlockedHostLabel(uri.host)) {
-    throw const FormatException(publicUrlError);
+    throw FormatException(_urlError(requireHttps));
   }
 
   return uri;
 }
+
+String _urlError(bool requireHttps) =>
+    requireHttps ? publicUrlError : publicHttpUrlError;
 
 bool isBlockedHostLabel(String host) {
   final normalizedHost = host.toLowerCase();

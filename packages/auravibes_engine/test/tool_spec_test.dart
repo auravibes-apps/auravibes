@@ -51,4 +51,26 @@ void main() {
     expect(first, second);
     expect(first.hashCode, second.hashCode);
   });
+
+  test('freezes dynamic JSON maps and lists', () {
+    final nested = <String, dynamic>{
+      'enum': <dynamic>['a'],
+    };
+    final schema = <String, dynamic>{'properties': nested};
+
+    final spec = ToolSpec(
+      name: 'tool',
+      description: 'description',
+      inputJsonSchema: schema,
+    );
+    (nested['enum'] as List<dynamic>).add('b');
+
+    final properties =
+        spec.inputJsonSchema['properties']! as Map<String, Object?>;
+    expect(properties['enum'], ['a']);
+    expect(
+      () => (properties['enum']! as List<Object?>).add('b'),
+      throwsUnsupportedError,
+    );
+  });
 }
