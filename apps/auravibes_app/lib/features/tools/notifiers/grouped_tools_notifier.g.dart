@@ -75,7 +75,11 @@ String _$toolsGroupsRepositoryHash() =>
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
 @ProviderFor(GroupedToolsNotifier)
-@Dependencies([mcpServersRepository])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 final groupedToolsProvider = GroupedToolsNotifierFamily._();
 
 /// Provider that groups tools by their workspaceToolsGroupId.
@@ -86,7 +90,11 @@ final groupedToolsProvider = GroupedToolsNotifierFamily._();
 /// - Creates a "Built-in Tools" virtual group for tools without a group
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
-@Dependencies([mcpServersRepository])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 final class GroupedToolsNotifierProvider
     extends
         $AsyncNotifierProvider<
@@ -138,7 +146,7 @@ final class GroupedToolsNotifierProvider
 }
 
 String _$groupedToolsNotifierHash() =>
-    r'd1c921ee7844fe49d4e158f005535556013cdd11';
+    r'4a9c160785fb54b857ae92cc601277b945cbdad0';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -149,7 +157,11 @@ String _$groupedToolsNotifierHash() =>
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
-@Dependencies([mcpServersRepository])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 final class GroupedToolsNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -177,7 +189,11 @@ final class GroupedToolsNotifierFamily extends $Family
   /// - Enriches MCP groups with their connection state
   /// - Sorts groups: Default first, then MCP errors, then by creation date
 
-  @Dependencies([mcpServersRepository])
+  @Dependencies([
+    mcpServersRepository,
+    workspaceSession,
+    cloudWorkspaceStateGateway,
+  ])
   GroupedToolsNotifierProvider call(String workspaceId) =>
       GroupedToolsNotifierProvider._(argument: workspaceId, from: this);
 
@@ -194,7 +210,11 @@ final class GroupedToolsNotifierFamily extends $Family
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
-@Dependencies([mcpServersRepository])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 abstract class _$GroupedToolsNotifier
     extends $AsyncNotifier<List<ToolsGroupWithTools>> {
   late final _$args = ref.$arg as String;

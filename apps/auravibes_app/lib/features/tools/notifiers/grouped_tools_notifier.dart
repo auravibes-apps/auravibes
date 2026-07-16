@@ -39,7 +39,11 @@ ToolsGroupsRepositoryContract toolsGroupsRepository(Ref ref) {
 /// - Creates a "Built-in Tools" virtual group for tools without a group
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
-@Dependencies([mcpServersRepository])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 @riverpod
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   String _workspaceId = '';
