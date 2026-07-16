@@ -160,7 +160,7 @@ final class ModelSyncServiceProvider
 String _$modelSyncServiceHash() => r'7e48545bede38cf94285e03aed7c08ae354d0db9';
 
 @ProviderFor(apiModelProviders)
-final apiModelProvidersProvider = ApiModelProvidersProvider._();
+final apiModelProvidersProvider = ApiModelProvidersFamily._();
 
 final class ApiModelProvidersProvider
     extends
@@ -172,19 +172,26 @@ final class ApiModelProvidersProvider
     with
         $FutureModifier<List<ApiModelProviderEntity>>,
         $FutureProvider<List<ApiModelProviderEntity>> {
-  ApiModelProvidersProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'apiModelProvidersProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  ApiModelProvidersProvider._({
+    required ApiModelProvidersFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'apiModelProvidersProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$apiModelProvidersHash();
+
+  @override
+  String toString() {
+    return r'apiModelProvidersProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -194,14 +201,47 @@ final class ApiModelProvidersProvider
 
   @override
   FutureOr<List<ApiModelProviderEntity>> create(Ref ref) {
-    return apiModelProviders(ref);
+    final argument = this.argument as String;
+    return apiModelProviders(ref, workspaceId: argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ApiModelProvidersProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$apiModelProvidersHash() => r'c62de10d3312202537298693457e9a9e0a02f292';
+String _$apiModelProvidersHash() => r'd1eb5e84882f2f383fff7dd2236cdbd822cd6d68';
+
+final class ApiModelProvidersFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<List<ApiModelProviderEntity>>,
+          String
+        > {
+  ApiModelProvidersFamily._()
+    : super(
+        retry: null,
+        name: r'apiModelProvidersProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  ApiModelProvidersProvider call({required String workspaceId}) =>
+      ApiModelProvidersProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'apiModelProvidersProvider';
+}
 
 @ProviderFor(getAllModels)
-final getAllModelsProvider = GetAllModelsProvider._();
+final getAllModelsProvider = GetAllModelsFamily._();
 
 final class GetAllModelsProvider
     extends
@@ -213,19 +253,26 @@ final class GetAllModelsProvider
     with
         $FutureModifier<List<ApiModelEntity>>,
         $FutureProvider<List<ApiModelEntity>> {
-  GetAllModelsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'getAllModelsProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  GetAllModelsProvider._({
+    required GetAllModelsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'getAllModelsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$getAllModelsHash();
+
+  @override
+  String toString() {
+    return r'getAllModelsProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -235,11 +282,40 @@ final class GetAllModelsProvider
 
   @override
   FutureOr<List<ApiModelEntity>> create(Ref ref) {
-    return getAllModels(ref);
+    final argument = this.argument as String;
+    return getAllModels(ref, workspaceId: argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GetAllModelsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
-String _$getAllModelsHash() => r'667a38ad9fcffdb4b9eb86395910a77c92be00f1';
+String _$getAllModelsHash() => r'fb25941bc09b2c6109ca21b036d63685d0292890';
+
+final class GetAllModelsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<ApiModelEntity>>, String> {
+  GetAllModelsFamily._()
+    : super(
+        retry: null,
+        name: r'getAllModelsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  GetAllModelsProvider call({required String workspaceId}) =>
+      GetAllModelsProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'getAllModelsProvider';
+}
 
 @ProviderFor(getModelByProviderAndModelId)
 final getModelByProviderAndModelIdProvider =
@@ -255,7 +331,8 @@ final class GetModelByProviderAndModelIdProvider
     with $FutureModifier<ApiModelEntity?>, $FutureProvider<ApiModelEntity?> {
   GetModelByProviderAndModelIdProvider._({
     required GetModelByProviderAndModelIdFamily super.from,
-    required ({String providerId, String modelId}) super.argument,
+    required ({String workspaceId, String providerId, String modelId})
+    super.argument,
   }) : super(
          retry: null,
          name: r'getModelByProviderAndModelIdProvider',
@@ -282,9 +359,12 @@ final class GetModelByProviderAndModelIdProvider
 
   @override
   FutureOr<ApiModelEntity?> create(Ref ref) {
-    final argument = this.argument as ({String providerId, String modelId});
+    final argument =
+        this.argument
+            as ({String workspaceId, String providerId, String modelId});
     return getModelByProviderAndModelId(
       ref,
+      workspaceId: argument.workspaceId,
       providerId: argument.providerId,
       modelId: argument.modelId,
     );
@@ -303,13 +383,13 @@ final class GetModelByProviderAndModelIdProvider
 }
 
 String _$getModelByProviderAndModelIdHash() =>
-    r'12dbcbfd0ed09838b2f1fb2b8e5dd19234509a3e';
+    r'cd6018853e1c7bc32fda71379bbdbe40ccfca3d8';
 
 final class GetModelByProviderAndModelIdFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<ApiModelEntity?>,
-          ({String providerId, String modelId})
+          ({String workspaceId, String providerId, String modelId})
         > {
   GetModelByProviderAndModelIdFamily._()
     : super(
@@ -321,10 +401,15 @@ final class GetModelByProviderAndModelIdFamily extends $Family
       );
 
   GetModelByProviderAndModelIdProvider call({
+    required String workspaceId,
     required String providerId,
     required String modelId,
   }) => GetModelByProviderAndModelIdProvider._(
-    argument: (providerId: providerId, modelId: modelId),
+    argument: (
+      workspaceId: workspaceId,
+      providerId: providerId,
+      modelId: modelId,
+    ),
     from: this,
   );
 
@@ -347,11 +432,11 @@ final class GetModelsByProviderProvider
         $FutureProvider<List<ApiModelEntity>> {
   GetModelsByProviderProvider._({
     required GetModelsByProviderFamily super.from,
-    required String super.argument,
+    required ({String workspaceId, String providerId}) super.argument,
   }) : super(
          retry: null,
          name: r'getModelsByProviderProvider',
-         isAutoDispose: false,
+         isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
@@ -363,7 +448,7 @@ final class GetModelsByProviderProvider
   String toString() {
     return r'getModelsByProviderProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -374,8 +459,12 @@ final class GetModelsByProviderProvider
 
   @override
   FutureOr<List<ApiModelEntity>> create(Ref ref) {
-    final argument = this.argument as String;
-    return getModelsByProvider(ref, providerId: argument);
+    final argument = this.argument as ({String workspaceId, String providerId});
+    return getModelsByProvider(
+      ref,
+      workspaceId: argument.workspaceId,
+      providerId: argument.providerId,
+    );
   }
 
   @override
@@ -390,21 +479,30 @@ final class GetModelsByProviderProvider
 }
 
 String _$getModelsByProviderHash() =>
-    r'a3461761af99e4001476851db2bdb908e18073e2';
+    r'256879560167fb04203af313a61dd30a91153dd2';
 
 final class GetModelsByProviderFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<List<ApiModelEntity>>, String> {
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<List<ApiModelEntity>>,
+          ({String workspaceId, String providerId})
+        > {
   GetModelsByProviderFamily._()
     : super(
         retry: null,
         name: r'getModelsByProviderProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
-        isAutoDispose: false,
+        isAutoDispose: true,
       );
 
-  GetModelsByProviderProvider call({required String providerId}) =>
-      GetModelsByProviderProvider._(argument: providerId, from: this);
+  GetModelsByProviderProvider call({
+    required String workspaceId,
+    required String providerId,
+  }) => GetModelsByProviderProvider._(
+    argument: (workspaceId: workspaceId, providerId: providerId),
+    from: this,
+  );
 
   @override
   String toString() => r'getModelsByProviderProvider';

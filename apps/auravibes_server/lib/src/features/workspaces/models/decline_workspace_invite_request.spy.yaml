@@ -1,3 +1,5 @@
 class: DeclineWorkspaceInviteRequest
 fields:
   inviteId: int
+  requestId: String
+  expectedInviteRevision: int

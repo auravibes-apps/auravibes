@@ -10,23 +10,25 @@ part of 'workspace_tools_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(workspaceToolsRepository)
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final workspaceToolsRepositoryProvider = WorkspaceToolsRepositoryProvider._();
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final class WorkspaceToolsRepositoryProvider
     extends
         $FunctionalProvider<
-          WorkspaceToolsRepository,
-          WorkspaceToolsRepository,
-          WorkspaceToolsRepository
+          WorkspaceToolsRepositoryContract,
+          WorkspaceToolsRepositoryContract,
+          WorkspaceToolsRepositoryContract
         >
-    with $Provider<WorkspaceToolsRepository> {
+    with $Provider<WorkspaceToolsRepositoryContract> {
   WorkspaceToolsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'workspaceToolsRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -36,26 +38,28 @@ final class WorkspaceToolsRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<WorkspaceToolsRepository> $createElement(
+  $ProviderElement<WorkspaceToolsRepositoryContract> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  WorkspaceToolsRepository create(Ref ref) {
+  WorkspaceToolsRepositoryContract create(Ref ref) {
     return workspaceToolsRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(WorkspaceToolsRepository value) {
+  Override overrideWithValue(WorkspaceToolsRepositoryContract value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<WorkspaceToolsRepository>(value),
+      providerOverride: $SyncValueProvider<WorkspaceToolsRepositoryContract>(
+        value,
+      ),
     );
   }
 }
 
 String _$workspaceToolsRepositoryHash() =>
-    r'074b4080cbc7eefbbca42329f9ac71cfc4962005';
+    r'620a6bd7c8c5684ca0b297296e082b0e54c388c1';
 
 @ProviderFor(workspaceToolIndexNotifier)
 final workspaceToolIndexProvider = WorkspaceToolIndexNotifierProvider._();
@@ -100,8 +104,10 @@ String _$workspaceToolIndexNotifierHash() =>
     r'3b576a17fc24c68fad98ebf210ecdc27c96598f9';
 
 @ProviderFor(WorkspaceToolsNotifier)
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final workspaceToolsProvider = WorkspaceToolsNotifierFamily._();
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final class WorkspaceToolsNotifierProvider
     extends
         $AsyncNotifierProvider<
@@ -146,8 +152,9 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'e43ab96c073efa219c2312bed7ceb3d753f34b59';
+    r'c2d4011c0b24e7634be9db5a6e7ecfb14bbe7aaf';
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final class WorkspaceToolsNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -166,6 +173,7 @@ final class WorkspaceToolsNotifierFamily extends $Family
         isAutoDispose: true,
       );
 
+  @Dependencies([workspaceSession, cloudWorkspaceStateGateway])
   WorkspaceToolsNotifierProvider call(String workspaceId) =>
       WorkspaceToolsNotifierProvider._(argument: workspaceId, from: this);
 
@@ -173,6 +181,7 @@ final class WorkspaceToolsNotifierFamily extends $Family
   String toString() => r'workspaceToolsProvider';
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 abstract class _$WorkspaceToolsNotifier
     extends $AsyncNotifier<List<WorkspaceToolEntity>> {
   late final _$args = ref.$arg as String;
@@ -207,11 +216,13 @@ abstract class _$WorkspaceToolsNotifier
 /// that can be added to the workspace
 
 @ProviderFor(availableToolsToAdd)
+@Dependencies([workspaceSession])
 final availableToolsToAddProvider = AvailableToolsToAddFamily._();
 
 /// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 
+@Dependencies([workspaceSession])
 final class AvailableToolsToAddProvider
     extends
         $FunctionalProvider<
@@ -269,11 +280,12 @@ final class AvailableToolsToAddProvider
 }
 
 String _$availableToolsToAddHash() =>
-    r'b4421c2ea167f1368160bbd3e3fc633b1058cab5';
+    r'70c2576fa87b824568d03598c6a1eff763a38a5b';
 
 /// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
 
+@Dependencies([workspaceSession])
 final class AvailableToolsToAddFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<UserToolType>>, String> {
   AvailableToolsToAddFamily._()
@@ -288,6 +300,7 @@ final class AvailableToolsToAddFamily extends $Family
   /// Provider that returns the list of available built-in tools.
   /// that can be added to the workspace
 
+  @Dependencies([workspaceSession])
   AvailableToolsToAddProvider call(String workspaceId) =>
       AvailableToolsToAddProvider._(argument: workspaceId, from: this);
 

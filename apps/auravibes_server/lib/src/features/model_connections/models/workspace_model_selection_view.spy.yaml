@@ -1,0 +1,14 @@
+class: WorkspaceModelSelectionView
+fields:
+  id: String
+  connectionId: String
+  connectionName: String
+  connectionUrl: String?
+  connectionHasSecret: bool
+  connectionKeySuffix: String?
+  providerId: String
+  modelId: String
+  modelName: String
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime

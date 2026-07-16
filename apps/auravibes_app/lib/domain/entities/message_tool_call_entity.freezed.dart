@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageToolCallEntity {
 
- String get id; String get name; String get argumentsRaw;/// The raw response from tool execution, if successful.
+ String get id; String get name; String get argumentsRaw; String? get argumentsDigest; String? get turnId; int? get turnRevision;/// The raw response from tool execution, if successful.
  String? get responseRaw;/// The result status of this tool call.
 ///
 /// - null: Tool is awaiting approval
@@ -33,16 +33,16 @@ $MessageToolCallEntityCopyWith<MessageToolCallEntity> get copyWith => _$MessageT
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,responseRaw,resultStatus);
+int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
 
 @override
 String toString() {
-  return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, responseRaw: $responseRaw, resultStatus: $resultStatus)';
+  return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, argumentsDigest: $argumentsDigest, turnId: $turnId, turnRevision: $turnRevision, responseRaw: $responseRaw, resultStatus: $resultStatus)';
 }
 
 
@@ -53,7 +53,7 @@ abstract mixin class $MessageToolCallEntityCopyWith<$Res>  {
   factory $MessageToolCallEntityCopyWith(MessageToolCallEntity value, $Res Function(MessageToolCallEntity) _then) = _$MessageToolCallEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String argumentsRaw, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw, String? argumentsDigest, String? turnId, int? turnRevision, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -70,12 +70,15 @@ class _$MessageToolCallEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? responseRaw = freezed,Object? resultStatus = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? resultStatus = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,argumentsRaw: null == argumentsRaw ? _self.argumentsRaw : argumentsRaw // ignore: cast_nullable_to_non_nullable
-as String,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
+as String,argumentsDigest: freezed == argumentsDigest ? _self.argumentsDigest : argumentsDigest // ignore: cast_nullable_to_non_nullable
+as String?,turnId: freezed == turnId ? _self.turnId : turnId // ignore: cast_nullable_to_non_nullable
+as String?,turnRevision: freezed == turnRevision ? _self.turnRevision : turnRevision // ignore: cast_nullable_to_non_nullable
+as int?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
 as String?,resultStatus: freezed == resultStatus ? _self.resultStatus : resultStatus // ignore: cast_nullable_to_non_nullable
 as ToolCallResultStatus?,
   ));
@@ -162,10 +165,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  String? argumentsDigest,  String? turnId,  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.responseRaw,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.resultStatus);case _:
   return orElse();
 
 }
@@ -183,10 +186,10 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.responseRaw,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  String? argumentsDigest,  String? turnId,  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity():
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.responseRaw,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.resultStatus);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +206,10 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.responseRaw,_that.r
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw,  String? argumentsDigest,  String? turnId,  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
-return $default(_that.id,_that.name,_that.argumentsRaw,_that.responseRaw,_that.resultStatus);case _:
+return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.resultStatus);case _:
   return null;
 
 }
@@ -218,12 +221,15 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.responseRaw,_that.r
 @JsonSerializable()
 
 class _MessageToolCallEntity extends MessageToolCallEntity {
-  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, this.responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
+  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, this.argumentsDigest, this.turnId, this.turnRevision, this.responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
   factory _MessageToolCallEntity.fromJson(Map<String, dynamic> json) => _$MessageToolCallEntityFromJson(json);
 
 @override final  String id;
 @override final  String name;
 @override final  String argumentsRaw;
+@override final  String? argumentsDigest;
+@override final  String? turnId;
+@override final  int? turnRevision;
 /// The raw response from tool execution, if successful.
 @override final  String? responseRaw;
 /// The result status of this tool call.
@@ -245,16 +251,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,responseRaw,resultStatus);
+int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
 
 @override
 String toString() {
-  return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, responseRaw: $responseRaw, resultStatus: $resultStatus)';
+  return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, argumentsDigest: $argumentsDigest, turnId: $turnId, turnRevision: $turnRevision, responseRaw: $responseRaw, resultStatus: $resultStatus)';
 }
 
 
@@ -265,7 +271,7 @@ abstract mixin class _$MessageToolCallEntityCopyWith<$Res> implements $MessageTo
   factory _$MessageToolCallEntityCopyWith(_MessageToolCallEntity value, $Res Function(_MessageToolCallEntity) _then) = __$MessageToolCallEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String argumentsRaw, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw, String? argumentsDigest, String? turnId, int? turnRevision, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -282,12 +288,15 @@ class __$MessageToolCallEntityCopyWithImpl<$Res>
 
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? responseRaw = freezed,Object? resultStatus = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? resultStatus = freezed,}) {
   return _then(_MessageToolCallEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,argumentsRaw: null == argumentsRaw ? _self.argumentsRaw : argumentsRaw // ignore: cast_nullable_to_non_nullable
-as String,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
+as String,argumentsDigest: freezed == argumentsDigest ? _self.argumentsDigest : argumentsDigest // ignore: cast_nullable_to_non_nullable
+as String?,turnId: freezed == turnId ? _self.turnId : turnId // ignore: cast_nullable_to_non_nullable
+as String?,turnRevision: freezed == turnRevision ? _self.turnRevision : turnRevision // ignore: cast_nullable_to_non_nullable
+as int?,responseRaw: freezed == responseRaw ? _self.responseRaw : responseRaw // ignore: cast_nullable_to_non_nullable
 as String?,resultStatus: freezed == resultStatus ? _self.resultStatus : resultStatus // ignore: cast_nullable_to_non_nullable
 as ToolCallResultStatus?,
   ));

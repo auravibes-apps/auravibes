@@ -16,11 +16,15 @@ abstract class RemoveWorkspaceMemberRequest implements _i1.SerializableModel {
   RemoveWorkspaceMemberRequest._({
     required this.workspaceId,
     required this.userId,
+    required this.requestId,
+    required this.expectedMemberRevision,
   });
 
   factory RemoveWorkspaceMemberRequest({
     required int workspaceId,
     required String userId,
+    required String requestId,
+    required int expectedMemberRevision,
   }) = _RemoveWorkspaceMemberRequestImpl;
 
   factory RemoveWorkspaceMemberRequest.fromJson(
@@ -29,6 +33,9 @@ abstract class RemoveWorkspaceMemberRequest implements _i1.SerializableModel {
     return RemoveWorkspaceMemberRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       userId: jsonSerialization['userId'] as String,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedMemberRevision:
+          jsonSerialization['expectedMemberRevision'] as int,
     );
   }
 
@@ -36,12 +43,18 @@ abstract class RemoveWorkspaceMemberRequest implements _i1.SerializableModel {
 
   String userId;
 
+  String requestId;
+
+  int expectedMemberRevision;
+
   /// Returns a shallow copy of this [RemoveWorkspaceMemberRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   RemoveWorkspaceMemberRequest copyWith({
     int? workspaceId,
     String? userId,
+    String? requestId,
+    int? expectedMemberRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -49,6 +62,8 @@ abstract class RemoveWorkspaceMemberRequest implements _i1.SerializableModel {
       '__className__': 'RemoveWorkspaceMemberRequest',
       'workspaceId': workspaceId,
       'userId': userId,
+      'requestId': requestId,
+      'expectedMemberRevision': expectedMemberRevision,
     };
   }
 
@@ -62,9 +77,13 @@ class _RemoveWorkspaceMemberRequestImpl extends RemoveWorkspaceMemberRequest {
   _RemoveWorkspaceMemberRequestImpl({
     required int workspaceId,
     required String userId,
+    required String requestId,
+    required int expectedMemberRevision,
   }) : super._(
          workspaceId: workspaceId,
          userId: userId,
+         requestId: requestId,
+         expectedMemberRevision: expectedMemberRevision,
        );
 
   /// Returns a shallow copy of this [RemoveWorkspaceMemberRequest]
@@ -74,10 +93,15 @@ class _RemoveWorkspaceMemberRequestImpl extends RemoveWorkspaceMemberRequest {
   RemoveWorkspaceMemberRequest copyWith({
     int? workspaceId,
     String? userId,
+    String? requestId,
+    int? expectedMemberRevision,
   }) {
     return RemoveWorkspaceMemberRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       userId: userId ?? this.userId,
+      requestId: requestId ?? this.requestId,
+      expectedMemberRevision:
+          expectedMemberRevision ?? this.expectedMemberRevision,
     );
   }
 }

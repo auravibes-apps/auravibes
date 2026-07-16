@@ -16,11 +16,15 @@ abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
   RenameCloudWorkspaceRequest._({
     required this.workspaceId,
     required this.name,
+    required this.requestId,
+    required this.expectedWorkspaceRevision,
   });
 
   factory RenameCloudWorkspaceRequest({
     required int workspaceId,
     required String name,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) = _RenameCloudWorkspaceRequestImpl;
 
   factory RenameCloudWorkspaceRequest.fromJson(
@@ -29,6 +33,9 @@ abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
     return RenameCloudWorkspaceRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       name: jsonSerialization['name'] as String,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedWorkspaceRevision:
+          jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
 
@@ -36,12 +43,18 @@ abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
 
   String name;
 
+  String requestId;
+
+  int expectedWorkspaceRevision;
+
   /// Returns a shallow copy of this [RenameCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   RenameCloudWorkspaceRequest copyWith({
     int? workspaceId,
     String? name,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -49,6 +62,8 @@ abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
       '__className__': 'RenameCloudWorkspaceRequest',
       'workspaceId': workspaceId,
       'name': name,
+      'requestId': requestId,
+      'expectedWorkspaceRevision': expectedWorkspaceRevision,
     };
   }
 
@@ -62,9 +77,13 @@ class _RenameCloudWorkspaceRequestImpl extends RenameCloudWorkspaceRequest {
   _RenameCloudWorkspaceRequestImpl({
     required int workspaceId,
     required String name,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) : super._(
          workspaceId: workspaceId,
          name: name,
+         requestId: requestId,
+         expectedWorkspaceRevision: expectedWorkspaceRevision,
        );
 
   /// Returns a shallow copy of this [RenameCloudWorkspaceRequest]
@@ -74,10 +93,15 @@ class _RenameCloudWorkspaceRequestImpl extends RenameCloudWorkspaceRequest {
   RenameCloudWorkspaceRequest copyWith({
     int? workspaceId,
     String? name,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   }) {
     return RenameCloudWorkspaceRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
+      requestId: requestId ?? this.requestId,
+      expectedWorkspaceRevision:
+          expectedWorkspaceRevision ?? this.expectedWorkspaceRevision,
     );
   }
 }

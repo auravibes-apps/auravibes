@@ -6,6 +6,8 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -74,7 +76,7 @@ void main() {
         modelConnectionRepositoryProvider.overrideWithValue(
           _FakeModelConnectionRepository(),
         ),
-        apiModelProvidersProvider.overrideWith((_) async => []),
+        apiModelProvidersProvider.overrideWith((_, _) async => []),
       ],
     );
 
@@ -84,7 +86,7 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _FakeModelConnectionRepository(),
           ),
-          apiModelProvidersProvider.overrideWith((_) async => []),
+          apiModelProvidersProvider.overrideWith((_, _) async => []),
         ],
       );
     });
@@ -141,7 +143,7 @@ void main() {
       final container2 = ProviderContainer(
         overrides: [
           modelConnectionRepositoryProvider.overrideWithValue(repo),
-          apiModelProvidersProvider.overrideWith((_) async => []),
+          apiModelProvidersProvider.overrideWith((_, _) async => []),
         ],
       );
       addTearDown(container2.dispose);
@@ -171,7 +173,7 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _FakeModelConnectionRepository(),
           ),
-          apiModelProvidersProvider.overrideWith((_) async => providers),
+          apiModelProvidersProvider.overrideWith((_, _) async => providers),
         ],
       );
       addTearDown(container2.dispose);
@@ -180,7 +182,9 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      final _ = await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
       notifier.setModel('openai');
 
       final state = container2.read(addModelProviderStateProvider('ws1'));
@@ -194,7 +198,7 @@ void main() {
           modelConnectionRepositoryProvider.overrideWithValue(
             _FakeModelConnectionRepository(),
           ),
-          apiModelProvidersProvider.overrideWith((_) async => []),
+          apiModelProvidersProvider.overrideWith((_, _) async => []),
         ],
       );
       addTearDown(container2.dispose);
@@ -203,7 +207,9 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      final _ = await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
       notifier.setModel('nonexistent');
 
       final state = container2.read(addModelProviderStateProvider('ws1'));
@@ -229,11 +235,16 @@ void main() {
       final repo = _FakeModelConnectionRepository();
       final container2 = ProviderContainer(
         overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           modelConnectionRepositoryProvider.overrideWithValue(repo),
           apiModelProvidersProvider.overrideWith(
-            (ref) async => [
+            (_, _) async => [
               const ApiModelProviderEntity(
-                id: 'gpt-4',
+                id: 'openai',
                 name: 'GPT-4',
                 type: null,
               ),
@@ -247,16 +258,18 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      final _ = await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
       notifier
         ..setKey('sk-valid-key-12345')
-        ..setModel('gpt-4');
+        ..setModel('openai');
 
       final result = await notifier.addModelProvider();
       expect(result, isNotNull);
       expect(
         (result ?? fail('Expected result to be non-null')).modelId,
-        'gpt-4',
+        'openai',
       );
       expect(result.workspaceId, 'ws1');
     });
@@ -264,13 +277,18 @@ void main() {
     test('addModelProvider rethrows repository exception', () async {
       final container2 = ProviderContainer(
         overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           modelConnectionRepositoryProvider.overrideWithValue(
             _ThrowingModelConnectionRepository(),
           ),
           apiModelProvidersProvider.overrideWith(
-            (ref) async => [
+            (_, _) async => [
               const ApiModelProviderEntity(
-                id: 'gpt-4',
+                id: 'openai',
                 name: 'GPT-4',
                 type: null,
               ),
@@ -284,10 +302,12 @@ void main() {
         addModelProviderStateProvider('ws1').notifier,
       );
 
-      final _ = await container2.read(apiModelProvidersProvider.future);
+      final _ = await container2.read(
+        apiModelProvidersProvider(workspaceId: 'ws1').future,
+      );
       notifier
         ..setKey('sk-valid-key-12345')
-        ..setModel('gpt-4');
+        ..setModel('openai');
 
       expect(
         notifier.addModelProvider,

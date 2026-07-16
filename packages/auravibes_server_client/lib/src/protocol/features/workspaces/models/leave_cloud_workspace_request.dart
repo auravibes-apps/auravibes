@@ -13,30 +13,50 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 abstract class LeaveCloudWorkspaceRequest implements _i1.SerializableModel {
-  LeaveCloudWorkspaceRequest._({required this.workspaceId});
+  LeaveCloudWorkspaceRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.expectedWorkspaceRevision,
+  });
 
-  factory LeaveCloudWorkspaceRequest({required int workspaceId}) =
-      _LeaveCloudWorkspaceRequestImpl;
+  factory LeaveCloudWorkspaceRequest({
+    required int workspaceId,
+    required String requestId,
+    required int expectedWorkspaceRevision,
+  }) = _LeaveCloudWorkspaceRequestImpl;
 
   factory LeaveCloudWorkspaceRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return LeaveCloudWorkspaceRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedWorkspaceRevision:
+          jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
 
   int workspaceId;
 
+  String requestId;
+
+  int expectedWorkspaceRevision;
+
   /// Returns a shallow copy of this [LeaveCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  LeaveCloudWorkspaceRequest copyWith({int? workspaceId});
+  LeaveCloudWorkspaceRequest copyWith({
+    int? workspaceId,
+    String? requestId,
+    int? expectedWorkspaceRevision,
+  });
   @override
   Map<String, dynamic> toJson() {
     return {
       '__className__': 'LeaveCloudWorkspaceRequest',
       'workspaceId': workspaceId,
+      'requestId': requestId,
+      'expectedWorkspaceRevision': expectedWorkspaceRevision,
     };
   }
 
@@ -47,16 +67,30 @@ abstract class LeaveCloudWorkspaceRequest implements _i1.SerializableModel {
 }
 
 class _LeaveCloudWorkspaceRequestImpl extends LeaveCloudWorkspaceRequest {
-  _LeaveCloudWorkspaceRequestImpl({required int workspaceId})
-    : super._(workspaceId: workspaceId);
+  _LeaveCloudWorkspaceRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required int expectedWorkspaceRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         expectedWorkspaceRevision: expectedWorkspaceRevision,
+       );
 
   /// Returns a shallow copy of this [LeaveCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  LeaveCloudWorkspaceRequest copyWith({int? workspaceId}) {
+  LeaveCloudWorkspaceRequest copyWith({
+    int? workspaceId,
+    String? requestId,
+    int? expectedWorkspaceRevision,
+  }) {
     return LeaveCloudWorkspaceRequest(
       workspaceId: workspaceId ?? this.workspaceId,
+      requestId: requestId ?? this.requestId,
+      expectedWorkspaceRevision:
+          expectedWorkspaceRevision ?? this.expectedWorkspaceRevision,
     );
   }
 }

@@ -25,6 +25,7 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
@@ -32,6 +33,7 @@ import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
@@ -81,15 +83,21 @@ class ResolvedToolService {
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
          ),
        );
+  ResolvedToolService.cloud() : _delegate = null;
 
-  final agent.ResolvedToolRunner<ResolvedTool> _delegate;
+  final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
 
   Future<Object?> call({
     required String conversationId,
     required ResolvedTool tool,
     required Map<String, dynamic> arguments,
   }) {
-    return _delegate.call(
+    final delegate = _delegate;
+    if (delegate == null) {
+      throw StateError('Cloud tools execute on the server.');
+    }
+
+    return delegate.call(
       conversationId: conversationId,
       tool: tool,
       arguments: arguments,
@@ -576,88 +584,96 @@ Future<Object> _listSkillCredentials({
   };
 }
 
-final Provider<ResolvedToolService> resolvedToolServiceProvider =
-    Provider<ResolvedToolService>((ref) {
-      final agentCancellationRuntime = ref.watch(
-        agentCancellationRuntimeProvider,
-      );
-      final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
+@Dependencies([workspaceSession, serviceConnections])
+final Provider<ResolvedToolService>
+resolvedToolServiceProvider = Provider<ResolvedToolService>(
+  (ref) {
+    if (ref.watch(workspaceSessionProvider).cloud != null) {
+      return ResolvedToolService.cloud();
+    }
+    final agentCancellationRuntime = ref.watch(
+      agentCancellationRuntimeProvider,
+    );
+    final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
 
-      return ResolvedToolService(
-        agentCancellationRuntime: agentCancellationRuntime,
-        mcpToolCaller: ref.watch(mcpToolCallerProvider),
-        conversationRepository: ref.watch(conversationRepositoryProvider),
-        loadConversationSkillUsecase: ref.watch(
-          loadConversationSkillUsecaseProvider,
+    return ResolvedToolService(
+      agentCancellationRuntime: agentCancellationRuntime,
+      mcpToolCaller: ref.watch(mcpToolCallerProvider),
+      conversationRepository: ref.watch(conversationRepositoryProvider),
+      loadConversationSkillUsecase: ref.watch(
+        loadConversationSkillUsecaseProvider,
+      ),
+      unloadConversationSkillUsecase: ref.watch(
+        unloadConversationSkillUsecaseProvider,
+      ),
+      runSkillTemplateToolUsecase: ref.watch(
+        runSkillTemplateToolUsecaseProvider,
+      ),
+      runAppSkillToolUsecase: ref.watch(
+        runAppSkillToolUsecaseProvider,
+      ),
+      runSkillsManagerToolUsecase: ref.watch(
+        runSkillsManagerToolUsecaseProvider,
+      ),
+      listAvailableSkillsUsecase: ref.watch(
+        listAvailableSkillsUsecaseProvider,
+      ),
+      listAppSkillCredentialCandidatesUsecase: ref.watch(
+        listAppSkillCredentialCandidatesUsecaseProvider,
+      ),
+      appSkillRegistry: ref.watch(appSkillRegistryProvider),
+      skillCredentialsRepository: ref.watch(
+        skillCredentialsRepositoryProvider,
+      ),
+      subAgentRunner: agent.SubAgentRunner(
+        agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
+        conversationStore: AppSubAgentConversationStore(
+          ref.watch(conversationRepositoryProvider),
         ),
-        unloadConversationSkillUsecase: ref.watch(
-          unloadConversationSkillUsecaseProvider,
+        messageStore: AppSubAgentMessageStore(
+          ref.watch(messageRepositoryProvider),
         ),
-        runSkillTemplateToolUsecase: ref.watch(
-          runSkillTemplateToolUsecaseProvider,
-        ),
-        runAppSkillToolUsecase: ref.watch(
-          runAppSkillToolUsecaseProvider,
-        ),
-        runSkillsManagerToolUsecase: ref.watch(
-          runSkillsManagerToolUsecaseProvider,
-        ),
-        listAvailableSkillsUsecase: ref.watch(
-          listAvailableSkillsUsecaseProvider,
-        ),
-        listAppSkillCredentialCandidatesUsecase: ref.watch(
-          listAppSkillCredentialCandidatesUsecaseProvider,
-        ),
-        appSkillRegistry: ref.watch(appSkillRegistryProvider),
-        skillCredentialsRepository: ref.watch(
-          skillCredentialsRepositoryProvider,
-        ),
-        subAgentRunner: agent.SubAgentRunner(
-          agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
-          conversationStore: AppSubAgentConversationStore(
-            ref.watch(conversationRepositoryProvider),
-          ),
-          messageStore: AppSubAgentMessageStore(
-            ref.watch(messageRepositoryProvider),
-          ),
-          startRequest: activeSubAgents.start,
-          continueAgentTurn: ({required conversationId, required context}) {
-            return ref
-                .read(appAgentServiceProvider)
-                .call(
-                  conversationId: conversationId,
-                  context: context,
-                );
-          },
-          onChildStarted: ({required parentId, required childId}) {
-            agentCancellationRuntime.registerCleanup(parentId, () {
-              if (activeSubAgents.parentOf(childId) != parentId) return;
-
-              agentCancellationRuntime.requestStopOnStart(childId);
-              activeSubAgents.finish(
-                parentId: parentId,
-                childId: childId,
-                status: agent.SubAgentCompletionStatus.stopped,
+        startRequest: activeSubAgents.start,
+        continueAgentTurn: ({required conversationId, required context}) {
+          return ref
+              .read(appAgentServiceProvider)
+              .call(
+                conversationId: conversationId,
+                context: context,
               );
-            });
-          },
-        ),
-        onSkillsManagerToolSuccess:
-            ({
-              required workspaceId,
-              required toolSlug,
-              required result,
-            }) {
-              _invalidateSkillsManagerToolState(
-                ref,
-                workspaceId: workspaceId,
-                toolSlug: toolSlug,
-                result: result,
-              );
-            },
-      );
-    });
+        },
+        onChildStarted: ({required parentId, required childId}) {
+          agentCancellationRuntime.registerCleanup(parentId, () {
+            if (activeSubAgents.parentOf(childId) != parentId) return;
 
+            agentCancellationRuntime.requestStopOnStart(childId);
+            activeSubAgents.finish(
+              parentId: parentId,
+              childId: childId,
+              status: agent.SubAgentCompletionStatus.stopped,
+            );
+          });
+        },
+      ),
+      onSkillsManagerToolSuccess:
+          ({
+            required workspaceId,
+            required toolSlug,
+            required result,
+          }) {
+            _invalidateSkillsManagerToolState(
+              ref,
+              workspaceId: workspaceId,
+              toolSlug: toolSlug,
+              result: result,
+            );
+          },
+    );
+  },
+  dependencies: [workspaceSessionProvider, serviceConnectionsProvider],
+);
+
+@Dependencies([serviceConnections])
 void _invalidateSkillsManagerToolState(
   Ref ref, {
   required String workspaceId,

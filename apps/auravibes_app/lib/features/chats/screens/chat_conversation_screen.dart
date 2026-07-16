@@ -12,11 +12,15 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_live_turn_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
@@ -33,6 +37,7 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
 import 'package:auravibes_app/features/skills/widgets/conversation_skill_selector_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
@@ -48,6 +53,18 @@ import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('chat_conversation_screen');
 
+@Dependencies([
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class ChatConversationScreen extends ConsumerWidget {
   const ChatConversationScreen({
     required this.workspaceId,
@@ -74,14 +91,18 @@ class ChatConversationScreen extends ConsumerWidget {
 
 @Dependencies([
   ConversationChatNotifier,
-  chatMessages,
-  contextUsage,
+  conversationQueuedDrafts,
   conversationCompactionExecutionState,
   conversationBusyState,
-  conversationQueuedDrafts,
-  conversationSelected,
-  messageConversationById,
   pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  conversationSelected,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
   const _ChatConversationScreen({
@@ -142,14 +163,18 @@ class _ChatConversationScreen extends HookConsumerWidget {
 
 @Dependencies([
   ConversationChatNotifier,
-  chatMessages,
-  contextUsage,
-  conversationCompactionExecutionState,
   conversationBusyState,
   conversationQueuedDrafts,
-  conversationSelected,
-  messageConversationById,
   pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  conversationSelected,
+  contextUsage,
+  chatMessages,
+  conversationCompactionExecutionState,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
 ])
 class _LoadedChatConversation extends HookConsumerWidget {
   const _LoadedChatConversation({
@@ -200,6 +225,8 @@ class _LoadedChatConversation extends HookConsumerWidget {
     final busyState = _conversationBusyStateValue(
       ref.watch(conversationBusyStateProvider),
     );
+    final cloudTurn = ref.watch(cloudActiveTurnStateProvider(conversation.id));
+    final isCloud = ref.watch(workspaceSessionProvider).cloud != null;
     final rateLimitRetryAt = ref.watch(
       conversationRateLimitRetryProvider.select(
         (retries) => retries[conversation.id],
@@ -213,7 +240,9 @@ class _LoadedChatConversation extends HookConsumerWidget {
     final modalitiesInput =
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
-    final pendingCalls = ref.watch(pendingToolCallsProvider).value ?? const [];
+    final pendingCalls = isCloud
+        ? const <PendingToolCall>[]
+        : ref.watch(pendingToolCallsProvider).value ?? const [];
     final hasPendingApprovals = pendingCalls.isNotEmpty;
     final compactionState = ref.watch(
       compactionExecutionStateProvider(conversation.id),
@@ -247,7 +276,9 @@ class _LoadedChatConversation extends HookConsumerWidget {
         children: [
           const _ChatControlsBar(),
           Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
-          if (busyState?.isStreaming == true && !hidesStoppedRun)
+          if (isCloud && cloudTurn != null && !hidesStoppedRun)
+            _CloudTurnLifecycleIndicator(state: cloudTurn.state)
+          else if (busyState?.isStreaming == true && !hidesStoppedRun)
             const ChatThinkingIndicator(),
           if (rateLimitRetryAt != null && !hidesStoppedRun)
             _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
@@ -488,6 +519,7 @@ void _showSkillsModal({
   );
 }
 
+@Dependencies([workspaceSession])
 void _showToolsModal({
   required BuildContext context,
   required String workspaceId,
@@ -506,7 +538,11 @@ void _showToolsModal({
   );
 }
 
-@Dependencies([chatMessages, ConversationChatNotifier])
+@Dependencies([
+  chatMessages,
+  ConversationChatNotifier,
+  workspaceModelSelectionById,
+])
 Future<void> _setModelWithAttachmentWarning({
   required BuildContext context,
   required WidgetRef ref,
@@ -634,6 +670,14 @@ Future<void> _continueAgent(
 @Dependencies([conversationSelected])
 Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
   final conversationId = ref.read(conversationSelectedProvider);
+  final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+  if (cloud != null) {
+    final turn = ref.read(cloudActiveTurnStateProvider(conversationId));
+    if (turn == null || !turn.isBusy) return;
+    final _ = await cloud.cancel(turnId: turn.turnId, revision: turn.revision);
+
+    return;
+  }
   final childIds = ref
       .read(activeSubAgentRuntimeProvider.notifier)
       .childrenOf(conversationId);
@@ -701,6 +745,39 @@ Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
   }
 }
 
+class _CloudTurnLifecycleIndicator extends StatelessWidget {
+  const _CloudTurnLifecycleIndicator({required this.state});
+
+  final CloudLiveTurnLifecycle state;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state == CloudLiveTurnLifecycle.completed) {
+      return const SizedBox.shrink();
+    }
+    final key = switch (state) {
+      .queued => LocaleKeys.chats_screens_chat_conversation_turn_queued,
+      .thinking => LocaleKeys.chats_screens_chat_conversation_turn_thinking,
+      .streaming => LocaleKeys.chats_screens_chat_conversation_turn_streaming,
+      .awaitingApproval =>
+        LocaleKeys.chats_screens_chat_conversation_turn_awaiting_approval,
+      .failed => LocaleKeys.chats_screens_chat_conversation_turn_failed,
+      .cancelled => LocaleKeys.chats_screens_chat_conversation_turn_cancelled,
+      .completed => throw StateError('Completed turns have no indicator'),
+    };
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: context.auraTheme.fromSpacing(.md),
+      ),
+      child: AuraText(
+        child: Text(key.tr()),
+        style: AuraTextStyle.bodySmall,
+      ),
+    );
+  }
+}
+
 @Dependencies([conversationSelected])
 Future<void> _sendMessage(
   BuildContext context,
@@ -736,10 +813,13 @@ Future<void> _manualCompact(
   String conversationId,
 ) async {
   try {
-    final _ = await ref.read(compactConversationUsecaseProvider)(
+    switch (await ref.read(compactConversationUsecaseProvider)(
       conversationId: conversationId,
       trigger: CompactionTrigger.manual,
-    );
+    )) {
+      case _:
+        break;
+    }
     if (!context.mounted) return;
 
     final _ = showAuraSnackBar(
@@ -759,9 +839,17 @@ Future<void> _manualCompact(
 }
 
 @Dependencies([
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  contextUsage,
   chatMessages,
-  conversationSelected,
   conversationCompactionExecutionState,
+  childConversationsStream,
+  conversationByIdStream,
+  conversationSelected,
   messageConversationById,
 ])
 class _ChatList extends ConsumerWidget {

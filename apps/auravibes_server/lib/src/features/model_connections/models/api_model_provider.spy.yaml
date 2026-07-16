@@ -1,0 +1,14 @@
+class: ApiModelProvider
+table: api_model_provider
+fields:
+  providerId: String
+  name: String
+  type: String?
+  url: String?
+  documentationUrl: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  api_model_provider_id_idx:
+    fields: providerId
+    unique: true

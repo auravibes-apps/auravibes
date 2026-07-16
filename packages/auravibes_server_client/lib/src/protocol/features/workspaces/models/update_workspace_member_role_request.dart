@@ -18,12 +18,16 @@ abstract class UpdateWorkspaceMemberRoleRequest
     required this.workspaceId,
     required this.userId,
     required this.role,
+    required this.requestId,
+    required this.expectedMemberRevision,
   });
 
   factory UpdateWorkspaceMemberRoleRequest({
     required int workspaceId,
     required String userId,
     required String role,
+    required String requestId,
+    required int expectedMemberRevision,
   }) = _UpdateWorkspaceMemberRoleRequestImpl;
 
   factory UpdateWorkspaceMemberRoleRequest.fromJson(
@@ -33,6 +37,9 @@ abstract class UpdateWorkspaceMemberRoleRequest
       workspaceId: jsonSerialization['workspaceId'] as int,
       userId: jsonSerialization['userId'] as String,
       role: jsonSerialization['role'] as String,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedMemberRevision:
+          jsonSerialization['expectedMemberRevision'] as int,
     );
   }
 
@@ -42,6 +49,10 @@ abstract class UpdateWorkspaceMemberRoleRequest
 
   String role;
 
+  String requestId;
+
+  int expectedMemberRevision;
+
   /// Returns a shallow copy of this [UpdateWorkspaceMemberRoleRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -49,6 +60,8 @@ abstract class UpdateWorkspaceMemberRoleRequest
     int? workspaceId,
     String? userId,
     String? role,
+    String? requestId,
+    int? expectedMemberRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -57,6 +70,8 @@ abstract class UpdateWorkspaceMemberRoleRequest
       'workspaceId': workspaceId,
       'userId': userId,
       'role': role,
+      'requestId': requestId,
+      'expectedMemberRevision': expectedMemberRevision,
     };
   }
 
@@ -72,10 +87,14 @@ class _UpdateWorkspaceMemberRoleRequestImpl
     required int workspaceId,
     required String userId,
     required String role,
+    required String requestId,
+    required int expectedMemberRevision,
   }) : super._(
          workspaceId: workspaceId,
          userId: userId,
          role: role,
+         requestId: requestId,
+         expectedMemberRevision: expectedMemberRevision,
        );
 
   /// Returns a shallow copy of this [UpdateWorkspaceMemberRoleRequest]
@@ -86,11 +105,16 @@ class _UpdateWorkspaceMemberRoleRequestImpl
     int? workspaceId,
     String? userId,
     String? role,
+    String? requestId,
+    int? expectedMemberRevision,
   }) {
     return UpdateWorkspaceMemberRoleRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       userId: userId ?? this.userId,
       role: role ?? this.role,
+      requestId: requestId ?? this.requestId,
+      expectedMemberRevision:
+          expectedMemberRevision ?? this.expectedMemberRevision,
     );
   }
 }

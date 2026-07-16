@@ -3,7 +3,9 @@ import 'package:auravibes_app/features/service_connections/models/service_connec
 import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'service_connections_action_usecase.g.dart';
 
 class ServiceConnectionsActionUsecase {
   const ServiceConnectionsActionUsecase(
@@ -36,14 +38,12 @@ class ServiceConnectionsActionUsecase {
   }
 }
 
-// coverage:ignore-start
-// Required: Riverpod provider wiring is exercised through widget tests.
-final serviceConnectionsActionUsecaseProvider =
-    Provider<ServiceConnectionsActionUsecase>((ref) {
-      return ServiceConnectionsActionUsecase(
-        ref.watch(mcpConnectionProvider.notifier).reconnectMcpServer,
-        ref.watch(oauthCredentialServiceProvider).forceRefresh,
-        ref.watch(deleteServiceConnectionUsecaseProvider),
-      );
-    });
-// coverage:ignore-end
+@Riverpod(dependencies: [deleteServiceConnectionUsecase])
+Future<ServiceConnectionsActionUsecase> serviceConnectionsActionUsecase(
+  Ref ref,
+  String workspaceId,
+) async => ServiceConnectionsActionUsecase(
+  ref.watch(mcpConnectionProvider.notifier).reconnectMcpServer,
+  ref.watch(oauthCredentialServiceProvider).forceRefresh,
+  await ref.watch(deleteServiceConnectionUsecaseProvider(workspaceId).future),
+);

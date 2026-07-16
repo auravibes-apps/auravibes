@@ -1,10 +1,18 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/usecases/usecases.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -18,7 +26,23 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([
+  workspaceSession,
+  workspaceModelSelectionById,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class WorkspaceManagementScreen extends ConsumerWidget {
   const WorkspaceManagementScreen({required this.workspaceId, super.key});
 
@@ -56,6 +80,21 @@ class WorkspaceManagementScreen extends ConsumerWidget {
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  workspaceModelSelectionById,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class _WorkspaceList extends ConsumerWidget {
   const _WorkspaceList({
     required this.activeWorkspaceId,
@@ -138,6 +177,7 @@ class _WorkspaceList extends ConsumerWidget {
                   account: account,
                   accounts: value,
                   localWorkspaces: workspaces,
+                  workspaceId: activeWorkspaceId,
                 ),
             ],
           ),
@@ -217,6 +257,11 @@ class _WorkspaceList extends ConsumerWidget {
     if (!context.mounted) return;
     if (ref.read(deleteWorkspaceMutation) case MutationError(:final error)) {
       _showError(context, error);
+
+      return;
+    }
+    if (workspace.id == activeWorkspaceId) {
+      await _switchAfterActiveWorkspaceRemoval(context, ref);
     }
   }
 
@@ -243,12 +288,6 @@ class _WorkspaceList extends ConsumerWidget {
     if (confirmed != true || accountId == null) return;
     if (!context.mounted) return;
 
-    if (workspace.id == activeWorkspaceId) {
-      _showError(context, const WorkspaceDeleteActiveException());
-
-      return;
-    }
-
     try {
       final useCases = await ref.read(
         cloudWorkspaceUseCasesProvider(accountId).future,
@@ -257,9 +296,31 @@ class _WorkspaceList extends ConsumerWidget {
       ref
         ..invalidate(allWorkspacesProvider)
         ..invalidate(cloudWorkspaceStateProvider(accountId));
+      if (workspace.id == activeWorkspaceId && context.mounted) {
+        await _switchAfterActiveWorkspaceRemoval(context, ref);
+      }
     } on Object catch (error) {
       if (context.mounted) _showError(context, error);
     }
+  }
+
+  Future<void> _switchAfterActiveWorkspaceRemoval(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    ref.invalidate(allWorkspacesProvider);
+    final remaining = await ref.read(allWorkspacesProvider.future);
+    if (!context.mounted) return;
+    if (remaining.isEmpty) {
+      const IntroRoute().go(context);
+
+      return;
+    }
+
+    final first = remaining.firstOrNull;
+    if (first == null) return;
+
+    NewChatRoute(workspaceId: first.id).go(context);
   }
 }
 
@@ -268,11 +329,13 @@ class _AvailableCloudAccountGroup extends ConsumerWidget {
     required this.account,
     required this.accounts,
     required this.localWorkspaces,
+    required this.workspaceId,
   });
 
   final CloudAccountSession account;
   final List<CloudAccountSession> accounts;
   final List<WorkspaceEntity> localWorkspaces;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -286,6 +349,8 @@ class _AvailableCloudAccountGroup extends ConsumerWidget {
           AuraText(child: Text(account.email), style: AuraTextStyle.heading6),
           const SizedBox(height: 8),
           switch (state) {
+            AsyncData(value: final value?) when value.authenticationRequired =>
+              _CloudAccountDisconnected(workspaceId: workspaceId),
             AsyncData(value: null) => const TextLocale(
               LocaleKeys.cloud_accounts_no_workspaces,
             ),
@@ -301,6 +366,37 @@ class _AvailableCloudAccountGroup extends ConsumerWidget {
             ),
           },
         ],
+      ),
+    );
+  }
+}
+
+class _CloudAccountDisconnected extends StatelessWidget {
+  const _CloudAccountDisconnected({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraTile(
+      child: const AuraColumn(
+        children: [
+          AuraText(
+            child: TextLocale(LocaleKeys.cloud_accounts_status_needs_sign_in),
+            style: AuraTextStyle.bodySmall,
+          ),
+          TextLocale(LocaleKeys.cloud_accounts_session_expired),
+        ],
+        spacing: .xs,
+        crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      variant: AuraTileVariant.ghost,
+      trailing: AuraButton(
+        onPressed: () => context.go(
+          CloudAccountLoginRoute(workspaceId: workspaceId).location,
+        ),
+        child: const TextLocale(LocaleKeys.cloud_accounts_sign_in_again),
+        variant: AuraButtonVariant.outlined,
       ),
     );
   }
@@ -355,6 +451,7 @@ class _AvailableCloudWorkspaceList extends ConsumerWidget {
           local.cloudWorkspaceId == workspace.id.toString() &&
           local.cloudAccountId != account.userId,
     );
+
     if (mirror == null) return null;
 
     return accounts

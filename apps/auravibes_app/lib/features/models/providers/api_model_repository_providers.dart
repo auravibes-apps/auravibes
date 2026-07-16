@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/usecases/sync_api_models_usecase.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
@@ -56,10 +57,14 @@ ModelSyncService modelSyncService(Ref ref) {
 }
 
 @riverpod
-Future<List<ApiModelProviderEntity>> apiModelProviders(Ref ref) async {
-  final providers = await ref
-      .watch(apiModelRepositoryProvider)
-      .getAllProviders();
+Future<List<ApiModelProviderEntity>> apiModelProviders(
+  Ref ref, {
+  required String workspaceId,
+}) async {
+  final catalog = await ref.watch(
+    modelCatalogStoreProvider(workspaceId).future,
+  );
+  final providers = await catalog.getAllProviders();
   final realProviders = providers
       .where((p) => !isOpenAICodexProvider(p.id) && p.type != null)
       .toList();
@@ -82,26 +87,41 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(Ref ref) async {
   ];
 }
 
-@Riverpod(keepAlive: true)
-Future<List<ApiModelEntity>> getAllModels(Ref ref) {
-  return ref.watch(apiModelRepositoryProvider).getAllModels();
+@riverpod
+Future<List<ApiModelEntity>> getAllModels(
+  Ref ref, {
+  required String workspaceId,
+}) async {
+  final catalog = await ref.watch(
+    modelCatalogStoreProvider(workspaceId).future,
+  );
+
+  return catalog.getAllModels();
 }
 
 @riverpod
 Future<ApiModelEntity?> getModelByProviderAndModelId(
   Ref ref, {
+  required String workspaceId,
   required String providerId,
   required String modelId,
-}) {
-  return ref
-      .watch(apiModelRepositoryProvider)
-      .getModelByProviderAndModelId(providerId, modelId);
+}) async {
+  final catalog = await ref.watch(
+    modelCatalogStoreProvider(workspaceId).future,
+  );
+
+  return catalog.getModelByProviderAndModelId(providerId, modelId);
 }
 
-@Riverpod(keepAlive: true)
+@riverpod
 Future<List<ApiModelEntity>> getModelsByProvider(
   Ref ref, {
+  required String workspaceId,
   required String providerId,
-}) {
-  return ref.watch(apiModelRepositoryProvider).getModelsByProvider(providerId);
+}) async {
+  final catalog = await ref.watch(
+    modelCatalogStoreProvider(workspaceId).future,
+  );
+
+  return catalog.getModelsByProvider(providerId);
 }

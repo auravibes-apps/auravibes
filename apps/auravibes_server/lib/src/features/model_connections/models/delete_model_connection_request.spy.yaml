@@ -1,0 +1,6 @@
+class: DeleteModelConnectionRequest
+fields:
+  workspaceId: int
+  requestId: String
+  connectionId: String
+  expectedRevision: int

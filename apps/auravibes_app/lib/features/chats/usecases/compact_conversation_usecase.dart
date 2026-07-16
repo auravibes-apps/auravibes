@@ -4,39 +4,51 @@ import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
-import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_compaction_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show ChatMessage;
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class CompactConversationUsecase {
   const CompactConversationUsecase({
-    required this.messageRepository,
-    required this.conversationRepository,
-    required this.workspaceModelSelectionsRepository,
-    required this.chatbotService,
-    required this.selectCompactionRangeUsecase,
     required this.compactionExecution,
+    this.messageRepository,
+    this.conversationRepository,
+    this.modelSelectionStore,
+    this.chatbotService,
+    this.selectCompactionRangeUsecase,
+    this.cloudCompaction,
+    this.cloudConversation,
   });
 
-  final MessageRepository messageRepository;
-  final ConversationRepository conversationRepository;
-  final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
-  final ChatbotService chatbotService;
-  final SelectCompactionRangeUsecase selectCompactionRangeUsecase;
+  final MessageRepository? messageRepository;
+  final ConversationRepository? conversationRepository;
+  final Future<ModelSelectionStore> Function(String workspaceId)?
+  modelSelectionStore;
+  final ChatbotService? chatbotService;
+  final SelectCompactionRangeUsecase? selectCompactionRangeUsecase;
   final CompactionExecutionRuntime compactionExecution;
+  final CloudCompactionUsecase? cloudCompaction;
+  final Future<ConversationEntity?> Function(String id)? cloudConversation;
 
   static const String _failureMessageKey =
       LocaleKeys.compaction_errors_auto_blocked;
@@ -66,6 +78,27 @@ class CompactConversationUsecase {
     required String conversationId,
     required CompactionTrigger trigger,
   }) async {
+    final cloud = cloudCompaction;
+    if (cloud != null) {
+      final getCloudConversation = cloudConversation;
+      if (getCloudConversation == null) {
+        throw StateError('Cloud conversation dependency unavailable');
+      }
+      final conversation = await getCloudConversation(conversationId);
+      if (conversation == null) throw const CompactionUnavailableException();
+
+      return cloud(conversation: conversation, trigger: trigger);
+    }
+    final conversations = conversationRepository;
+    final getModelStore = modelSelectionStore;
+    final messagesRepository = messageRepository;
+    final selectRange = selectCompactionRangeUsecase;
+    if (conversations == null ||
+        getModelStore == null ||
+        messagesRepository == null ||
+        selectRange == null) {
+      throw StateError('Local compaction dependencies unavailable');
+    }
     final startedAt = DateTime.now();
     compactionExecution.markRunning(
       CompactionExecutionState(
@@ -77,7 +110,7 @@ class CompactConversationUsecase {
     );
 
     try {
-      final conversation = await conversationRepository.getConversationById(
+      final conversation = await conversations.getConversationById(
         conversationId,
       );
       if (conversation == null) {
@@ -89,17 +122,18 @@ class CompactConversationUsecase {
         throw const CompactionUnavailableException();
       }
 
-      final foundModel = await workspaceModelSelectionsRepository
-          .getWorkspaceModelSelectionById(modelId);
+      final foundModel = await (await getModelStore(
+        conversation.workspaceId,
+      )).getById(modelId);
       if (foundModel == null) {
         throw const CompactionUnavailableException();
       }
 
-      final messages = await messageRepository.getMessagesByConversation(
+      final messages = await messagesRepository.getMessagesByConversation(
         conversationId,
       );
 
-      final range = selectCompactionRangeUsecase(messages);
+      final range = selectRange(messages);
       if (range == null) {
         throw const CompactionUnsafeException();
       }
@@ -162,7 +196,11 @@ class CompactConversationUsecase {
     WorkspaceModelSelectionWithConnectionEntity model,
     List<ChatMessage> chatHistory,
   ) async {
-    final stream = chatbotService.sendMessage(model, chatHistory);
+    final service = chatbotService;
+    if (service == null) {
+      throw StateError('Local chatbot service unavailable');
+    }
+    final stream = service.sendMessage(model, chatHistory);
 
     final chunks = <String>[];
     await for (final chunk in stream) {
@@ -190,7 +228,11 @@ class CompactConversationUsecase {
       compactionCreatedAt: DateTime.now(),
     );
 
-    final created = await messageRepository.createMessage(
+    final repository = messageRepository;
+    if (repository == null) {
+      throw StateError('Local message repository unavailable');
+    }
+    final created = await repository.createMessage(
       MessageToCreate(
         conversationId: conversationId,
         content: summaryText,
@@ -201,16 +243,23 @@ class CompactConversationUsecase {
       ),
     );
 
-    final _ = await messageRepository.patchMessage(
+    switch (await repository.patchMessage(
       created.id,
       const MessagePatch(status: MessageStatus.sent),
-    );
+    )) {
+      case _:
+        return;
+    }
   }
 
   Future<void> _persistRequiredFailureMessage({
     required String conversationId,
   }) async {
-    final created = await messageRepository.createMessage(
+    final repository = messageRepository;
+    if (repository == null) {
+      throw StateError('Local message repository unavailable');
+    }
+    final created = await repository.createMessage(
       MessageToCreate(
         conversationId: conversationId,
         content: _failureMessageKey,
@@ -220,26 +269,58 @@ class CompactConversationUsecase {
       ),
     );
 
-    final _ = await messageRepository.patchMessage(
+    switch (await repository.patchMessage(
       created.id,
       const MessagePatch(status: MessageStatus.error),
-    );
+    )) {
+      case _:
+        return;
+    }
   }
 }
 
+@Dependencies([workspaceSession, conversationByIdStream])
 final compactConversationUsecaseProvider = Provider<CompactConversationUsecase>(
   (ref) {
+    var isCloud = false;
+    try {
+      isCloud = ref.watch(workspaceSessionProvider).cloud != null;
+    } on Exception {
+      isCloud = false;
+    }
+    if (isCloud) {
+      final execution = ref.watch(compactionExecutionRuntimeProvider);
+      final conversations = ref.watch(cloudConversationUsecaseProvider).value;
+      final turns = ref.watch(cloudTurnUsecaseProvider).value;
+      if (conversations == null || turns == null) {
+        throw StateError('Cloud compaction dependencies unavailable');
+      }
+
+      return CompactConversationUsecase(
+        compactionExecution: execution,
+        cloudCompaction: CloudCompactionUsecase(
+          conversations: conversations,
+          turns: turns,
+          execution: execution,
+        ),
+        cloudConversation: (id) => ref.read(
+          conversationByIdStreamProvider(conversationId: id).future,
+        ),
+      );
+    }
+
     return CompactConversationUsecase(
+      compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
       messageRepository: ref.watch(messageRepositoryProvider),
       conversationRepository: ref.watch(conversationRepositoryProvider),
-      workspaceModelSelectionsRepository: ref.watch(
-        workspaceModelSelectionRepositoryProvider,
+      modelSelectionStore: (workspaceId) => ref.read(
+        modelSelectionStoreProvider(workspaceId).future,
       ),
       chatbotService: ref.watch(chatbotServiceProvider),
       selectCompactionRangeUsecase: ref.watch(
         selectCompactionRangeUsecaseProvider,
       ),
-      compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
     );
   },
+  dependencies: [workspaceSessionProvider],
 );

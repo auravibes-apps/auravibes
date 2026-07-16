@@ -67,7 +67,7 @@ final class SkillTemplateToolsProvider
 }
 
 String _$skillTemplateToolsHash() =>
-    r'c4d77eaa16fe5b1e5c853aec50824e80e69f0914';
+    r'ef8429991160a4213d739815b94fc7d0e8cd4a34';
 
 final class SkillTemplateToolsFamily extends $Family
     with
@@ -148,7 +148,7 @@ final class SkillTemplateToolProvider
   }
 }
 
-String _$skillTemplateToolHash() => r'02acc1ba17be393e767e51baae650c0ad876d98c';
+String _$skillTemplateToolHash() => r'6983215da5813ba5e6ac3c9d5f2dffbea87e50be';
 
 final class SkillTemplateToolFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SkillTemplateToolEntity?>, String> {

@@ -10,8 +10,10 @@ part of 'compaction_settings_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(compactionSettings)
+@Dependencies([cloudWorkspaceStateGateway])
 final compactionSettingsProvider = CompactionSettingsFamily._();
 
+@Dependencies([cloudWorkspaceStateGateway])
 final class CompactionSettingsProvider
     extends
         $FunctionalProvider<
@@ -67,8 +69,9 @@ final class CompactionSettingsProvider
 }
 
 String _$compactionSettingsHash() =>
-    r'9829a7236a5383f20a992d43556876319cc204a0';
+    r'6e0b48c493787efd2025069c60c50c5b3484af54';
 
+@Dependencies([cloudWorkspaceStateGateway])
 final class CompactionSettingsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<CompactionSettings>, String> {
   CompactionSettingsFamily._()
@@ -80,6 +83,7 @@ final class CompactionSettingsFamily extends $Family
         isAutoDispose: true,
       );
 
+  @Dependencies([cloudWorkspaceStateGateway])
   CompactionSettingsProvider call(String workspaceId) =>
       CompactionSettingsProvider._(argument: workspaceId, from: this);
 

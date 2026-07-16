@@ -4,8 +4,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:collection/collection.dart';
@@ -18,18 +17,18 @@ Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
 listWorkspaceModelSelections(
   Ref ref, {
   required String workspaceId,
-}) {
-  final workspaceModelSelectionRepository = ref.watch(
-    workspaceModelSelectionRepositoryProvider,
+}) async* {
+  final workspaceModelSelectionRepository = await ref.watch(
+    modelSelectionStoreProvider(workspaceId).future,
   );
-  final apiModelRepository = ref.watch(apiModelRepositoryProvider);
+  final modelCatalogStore = await ref.watch(
+    modelCatalogStoreProvider(workspaceId).future,
+  );
 
-  return _projectWorkspaceModelSelections(
-    selections: workspaceModelSelectionRepository.watchWorkspaceModelSelections(
-      WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-    ),
-    providers: apiModelRepository.watchAllProviders(),
-    openAIModels: apiModelRepository.watchModelsByProvider('openai'),
+  yield* _projectWorkspaceModelSelections(
+    selections: workspaceModelSelectionRepository.watch(workspaceId),
+    providers: modelCatalogStore.watchAllProviders(),
+    openAIModels: modelCatalogStore.watchModelsByProvider('openai'),
   );
 }
 
@@ -200,7 +199,9 @@ _groupModelsByProvider(
   final sortedKeys = grouped.keys.toList()
     ..sort((left, right) => _compareProviderGroups(grouped, left, right));
 
-  return {for (final key in sortedKeys) key: grouped[key]!};
+  return {
+    for (final key in sortedKeys) key: ?grouped[key],
+  };
 }
 
 int _compareProviderGroups(
@@ -208,8 +209,9 @@ int _compareProviderGroups(
   String left,
   String right,
 ) {
-  final leftModel = grouped[left]!.first;
-  final rightModel = grouped[right]!.first;
+  final leftModel = grouped[left]?.firstOrNull;
+  final rightModel = grouped[right]?.firstOrNull;
+  if (leftModel == null || rightModel == null) return 0;
   final providerCompare = leftModel.modelsProvider.name.compareTo(
     rightModel.modelsProvider.name,
   );

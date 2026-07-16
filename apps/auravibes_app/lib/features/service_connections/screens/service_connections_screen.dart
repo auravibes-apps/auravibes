@@ -13,11 +13,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('service_connections_screen');
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 
+@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 class ServiceConnectionsScreen extends ConsumerWidget {
   const ServiceConnectionsScreen({required this.workspaceId, super.key});
 
@@ -26,6 +28,15 @@ class ServiceConnectionsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
+    ref.listen(serviceConnectionsProvider(workspaceId), (_, next) {
+      if (next case AsyncError(:final error, :final stackTrace)) {
+        _logger.severe(
+          'Service connections load failed for workspace $workspaceId',
+          error,
+          stackTrace,
+        );
+      }
+    });
 
     void openCreateConnection() {
       unawaited(
@@ -71,6 +82,7 @@ class ServiceConnectionsScreen extends ConsumerWidget {
   }
 }
 
+@Dependencies([serviceConnectionsActionUsecase])
 class _ConnectionsList extends StatelessWidget {
   const _ConnectionsList({
     required this.connections,
@@ -119,6 +131,7 @@ class _ConnectionsList extends StatelessWidget {
   }
 }
 
+@Dependencies([serviceConnectionsActionUsecase])
 class _ConnectionTile extends ConsumerWidget {
   const _ConnectionTile({required this.connection});
 
@@ -171,7 +184,10 @@ class _ConnectionTile extends ConsumerWidget {
                 onTap: () => _refreshToken(context, ref),
                 leading: const AuraIcon(Icons.sync_outlined),
               ),
-            if (connection.kind != ServiceConnectionListItemKind.mcpServer)
+            if (connection.kind ==
+                    ServiceConnectionListItemKind.modelProvider ||
+                connection.kind ==
+                    ServiceConnectionListItemKind.skillCredential)
               AuraPopupMenuItem(
                 title: const TextLocale(LocaleKeys.common_edit),
                 onTap: () => context.push<bool>(
@@ -295,9 +311,13 @@ class _ConnectionTile extends ConsumerWidget {
         'workspace=${connection.workspaceId} connectionId=${connection.id} '
         'kind=${connection.kind.name}',
       );
-      await ref
-          .read(serviceConnectionsActionUsecaseProvider)
-          .deleteConnection(connectionId: connection.id, kind: connection.kind);
+      final usecase = await ref.read(
+        serviceConnectionsActionUsecaseProvider(connection.workspaceId).future,
+      );
+      await usecase.deleteConnection(
+        connectionId: connection.id,
+        kind: connection.kind,
+      );
       _logger.info(
         'debug:service connection delete completed '
         'workspace=${connection.workspaceId} connectionId=${connection.id} '
@@ -336,11 +356,10 @@ class _ConnectionTile extends ConsumerWidget {
     if (serverId == null) return;
 
     try {
-      await ref
-          .read(serviceConnectionsActionUsecaseProvider)
-          .reconnectMcpServer(
-            serverId,
-          );
+      final usecase = await ref.read(
+        serviceConnectionsActionUsecaseProvider(connection.workspaceId).future,
+      );
+      await usecase.reconnectMcpServer(serverId);
       if (!context.mounted) return;
       final _ = showAuraSnackBar(
         context: context,
@@ -372,12 +391,13 @@ class _ConnectionTile extends ConsumerWidget {
     if (serverId == null) return;
 
     try {
-      await ref
-          .read(serviceConnectionsActionUsecaseProvider)
-          .refreshMcpCredential(
-            connectionId: connection.id,
-            mcpServerId: serverId,
-          );
+      final usecase = await ref.read(
+        serviceConnectionsActionUsecaseProvider(connection.workspaceId).future,
+      );
+      await usecase.refreshMcpCredential(
+        connectionId: connection.id,
+        mcpServerId: serverId,
+      );
       if (!context.mounted) return;
       final _ = showAuraSnackBar(
         context: context,

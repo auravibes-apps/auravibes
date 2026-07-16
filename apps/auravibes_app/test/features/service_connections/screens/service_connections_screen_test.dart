@@ -9,7 +9,11 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
+import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -20,8 +24,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -43,6 +49,11 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'test-workspace'),
+          ),
+        ),
         appDatabaseProvider.overrideWithValue(database),
         encryptionServiceProvider.overrideWithValue(encryptionService),
       ],
@@ -217,6 +228,7 @@ void main() {
   });
 }
 
+@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 Future<void> _pumpScreen(
   WidgetTester tester,
   ProviderContainer container,

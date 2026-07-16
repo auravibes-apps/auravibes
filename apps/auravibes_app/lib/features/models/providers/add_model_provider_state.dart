@@ -5,20 +5,31 @@ import 'package:auravibes_app/data/repositories/model_connection_repository.dart
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/features/models/models/add_model_provider_model.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/models/services/cloud_model_gateway.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/codex_oauth_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
+import 'package:auravibes_app/utils/open_system_browser.dart';
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/experimental/mutation.dart';
+import 'package:riverpod/riverpod.dart' show Provider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'add_model_provider_state.g.dart';
 
 final _log = Logger('add_model_providers');
+final codexOAuthServiceProvider = Provider<CodexOAuthService>(
+  (_) => CodexOAuthService(),
+);
+final openCodexAuthorizationProvider = Provider<Future<void> Function(Uri)>(
+  (_) => openSystemBrowser,
+);
 
 @riverpod
 class AddModelProviderState extends _$AddModelProviderState {
@@ -44,7 +55,11 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   void setModel(String? newValue) {
-    final models = ref.watch(apiModelProvidersProvider).value;
+    final models = ref
+        .watch(
+          apiModelProvidersProvider(workspaceId: _workspaceId),
+        )
+        .value;
     final model = models?.firstWhereOrNull(
       (element) {
         return element.id == newValue;
@@ -87,9 +102,49 @@ class AddModelProviderState extends _$AddModelProviderState {
     }
 
     try {
-      final repo = ref.read(modelConnectionRepositoryProvider);
       final authMode = state.authMode;
+      final session = await ref.read(
+        workspaceSessionForRouteProvider(_workspaceId).future,
+      );
+      final capabilities = session.capabilities;
+      capabilities.require(
+        supported: capabilities.modelProviderIds.contains(modelId),
+      );
       if (authMode == ModelProviderAuthMode.oauth2) {
+        capabilities.require(
+          supported: codexOAuthMethod == CodexOAuthMethod.deviceCode
+              ? capabilities.modelDeviceOAuth
+              : capabilities.modelBrowserOAuth,
+        );
+      }
+      final repo = await ref.read(
+        modelConnectionStoreProvider(_workspaceId).future,
+      );
+      if (authMode == ModelProviderAuthMode.oauth2) {
+        if (session.cloud != null) {
+          final gateway = await ref.read(
+            cloudWorkspaceStateGatewayForWorkspaceProvider(_workspaceId).future,
+          );
+          if (gateway == null) throw StateError('Cloud workspace unavailable');
+          final connection = await repo.createModelConnection(
+            ModelConnectionToCreate(
+              name: name,
+              workspaceId: _workspaceId,
+              modelId: modelId,
+              authMode: authMode,
+              url: state.url,
+            ),
+          );
+          final oauth = await CloudModelGateway(gateway).startCodexOAuth(
+            connectionId: connection.id,
+          );
+          await ref.read(openCodexAuthorizationProvider)(
+            Uri.parse(oauth.authorizationUrl),
+          );
+
+          return connection;
+        }
+
         return await _addOAuthModelProvider(
           repo,
           name,
@@ -121,7 +176,7 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   Future<ModelConnectionEntity> _addOAuthModelProvider(
-    ModelConnectionRepository repo,
+    ModelConnectionStore repo,
     String name,
     String modelId,
     ModelProviderAuthMode authMode,
@@ -142,13 +197,14 @@ class AddModelProviderState extends _$AddModelProviderState {
       );
     }
     final modelIds = await _codexRuntimeModelIds();
+    final oauthService = ref.read(codexOAuthServiceProvider);
     final token = switch (codexOAuthMethod) {
       CodexOAuthMethod.deviceCode =>
-        await CodexOAuthService().authenticateWithDeviceCode(
+        await oauthService.authenticateWithDeviceCode(
           onDeviceCode: onCodexDeviceCode,
           isCancelled: isCodexDeviceCodeCancelled,
         ),
-      _ => await CodexOAuthService().authenticateWithBrowser(),
+      _ => await oauthService.authenticateWithBrowser(),
     };
 
     return repo.createModelConnection(
@@ -174,9 +230,10 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   Future<List<String>> _codexRuntimeModelIds() async {
-    final openAIModels = await ref
-        .read(apiModelRepositoryProvider)
-        .getModelsByProvider('openai');
+    final catalog = await ref.read(
+      modelCatalogStoreProvider(_workspaceId).future,
+    );
+    final openAIModels = await catalog.getModelsByProvider('openai');
     final modelIds = openAIModels
         .where((model) => model.isCodexRuntimeModel)
         .map((model) => model.id)

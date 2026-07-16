@@ -18,12 +18,16 @@ abstract class InviteWorkspaceMemberRequest
     required this.workspaceId,
     required this.email,
     required this.role,
+    required this.requestId,
+    required this.expectedWorkspaceRevision,
   });
 
   factory InviteWorkspaceMemberRequest({
     required int workspaceId,
     required String email,
     required String role,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) = _InviteWorkspaceMemberRequestImpl;
 
   factory InviteWorkspaceMemberRequest.fromJson(
@@ -33,6 +37,9 @@ abstract class InviteWorkspaceMemberRequest
       workspaceId: jsonSerialization['workspaceId'] as int,
       email: jsonSerialization['email'] as String,
       role: jsonSerialization['role'] as String,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedWorkspaceRevision:
+          jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
 
@@ -42,6 +49,10 @@ abstract class InviteWorkspaceMemberRequest
 
   String role;
 
+  String requestId;
+
+  int expectedWorkspaceRevision;
+
   /// Returns a shallow copy of this [InviteWorkspaceMemberRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
@@ -49,6 +60,8 @@ abstract class InviteWorkspaceMemberRequest
     int? workspaceId,
     String? email,
     String? role,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -57,6 +70,8 @@ abstract class InviteWorkspaceMemberRequest
       'workspaceId': workspaceId,
       'email': email,
       'role': role,
+      'requestId': requestId,
+      'expectedWorkspaceRevision': expectedWorkspaceRevision,
     };
   }
 
@@ -67,6 +82,8 @@ abstract class InviteWorkspaceMemberRequest
       'workspaceId': workspaceId,
       'email': email,
       'role': role,
+      'requestId': requestId,
+      'expectedWorkspaceRevision': expectedWorkspaceRevision,
     };
   }
 
@@ -81,10 +98,14 @@ class _InviteWorkspaceMemberRequestImpl extends InviteWorkspaceMemberRequest {
     required int workspaceId,
     required String email,
     required String role,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) : super._(
          workspaceId: workspaceId,
          email: email,
          role: role,
+         requestId: requestId,
+         expectedWorkspaceRevision: expectedWorkspaceRevision,
        );
 
   /// Returns a shallow copy of this [InviteWorkspaceMemberRequest]
@@ -95,11 +116,16 @@ class _InviteWorkspaceMemberRequestImpl extends InviteWorkspaceMemberRequest {
     int? workspaceId,
     String? email,
     String? role,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   }) {
     return InviteWorkspaceMemberRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       email: email ?? this.email,
       role: role ?? this.role,
+      requestId: requestId ?? this.requestId,
+      expectedWorkspaceRevision:
+          expectedWorkspaceRevision ?? this.expectedWorkspaceRevision,
     );
   }
 }

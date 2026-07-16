@@ -2,9 +2,11 @@ import 'package:auravibes_app/features/tools/models/conversation_tools_group_wit
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -25,6 +27,7 @@ class _MockGroupedConversationToolsNotifier
   }) async => [];
 }
 
+@Dependencies([workspaceSession])
 void main() {
   test('constructor sets workspaceId and conversationId', () {
     const modal = ToolsManagementModal(

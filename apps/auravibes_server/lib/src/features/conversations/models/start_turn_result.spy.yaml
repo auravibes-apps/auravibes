@@ -1,0 +1,8 @@
+class: StartTurnResult
+fields:
+  turnId: String
+  userMessageId: String
+  assistantMessageId: String
+  acceptedSequence: int
+  turnRevision: int
+  status: String

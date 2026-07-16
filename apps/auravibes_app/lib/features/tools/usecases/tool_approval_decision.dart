@@ -35,8 +35,8 @@ class ResolveToolApprovalDecisionUsecase {
   });
 
   final ConversationToolsRepository conversationToolsRepository;
-  final ToolsGroupsRepository toolsGroupsRepository;
-  final WorkspaceToolsRepository workspaceToolsRepository;
+  final ToolsGroupsRepositoryContract toolsGroupsRepository;
+  final WorkspaceToolsRepositoryContract workspaceToolsRepository;
   final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase;
 
   Future<ToolApprovalDecision> call({

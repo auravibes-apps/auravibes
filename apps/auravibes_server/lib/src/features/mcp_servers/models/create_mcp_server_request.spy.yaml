@@ -1,0 +1,10 @@
+class: CreateMcpServerRequest
+fields:
+  workspaceId: int
+  requestId: String
+  name: String
+  url: String
+  transport: String
+  useHttp2: bool
+  description: String?
+  bearerToken: String?

@@ -278,6 +278,12 @@
       "waiting_for_tools": "Waiting for tools to connect...",
       "waiting_for_tools_named": "Waiting for {tools} to connect...",
       "thinking_status": "Thinking...",
+      "turn_queued": "Queued...",
+      "turn_thinking": "Thinking...",
+      "turn_streaming": "Responding...",
+      "turn_awaiting_approval": "Awaiting approval...",
+      "turn_failed": "Generation failed.",
+      "turn_cancelled": "Generation cancelled.",
       "reasoning_summary": "Reasoning summary",
       "tool_resolution_status": "Waiting for tool resolution...",
       "queued_messages_count": {
@@ -566,6 +572,9 @@
     "error_title": "Something went wrong",
     "error_message": "Try again or reopen this screen."
   },
+  "workspace_capabilities": {
+    "unsupported_error": "This feature is not available in this workspace."
+  },
   "tools_names": {
     "calculator": {
       "name": "Calculator",
@@ -819,6 +828,7 @@
     "cloud_finish_register": "Finish registration",
     "cloud_remove_account": "Remove account",
     "cloud_load_error": "Failed to load cloud workspaces.",
+    "cloud_unavailable": "This workspace is unavailable. Sign in again to reconnect.",
     "cloud_name": "Cloud workspace name",
     "cloud_accept": "Accept",
     "cloud_decline": "Decline",
@@ -839,6 +849,15 @@
     "target_label": "Workspace location",
     "cloud_available_section": "Available cloud workspaces",
     "cloud_add_hint": "Add a cloud account to create cloud workspaces."
+  },
+  "cloud_errors": {
+    "authentication_required": "Sign in again to continue.",
+    "permission_denied": "You do not have permission for this cloud action.",
+    "not_found": "The requested cloud resource was not found.",
+    "validation": "The cloud request is invalid.",
+    "conflict": "The cloud resource changed. Refresh and try again.",
+    "malformed_resource": "Cloud data could not be loaded safely.",
+    "unavailable": "The cloud service is unavailable. Try again."
   },
   "cloud_workspaces": {
     "title": "Cloud Workspaces",

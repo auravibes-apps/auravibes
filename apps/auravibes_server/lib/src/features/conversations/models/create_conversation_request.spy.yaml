@@ -1,0 +1,10 @@
+class: CreateConversationRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  title: String
+  isPinned: bool
+  modelId: String?
+  agentId: String?
+  parentConversationId: String?

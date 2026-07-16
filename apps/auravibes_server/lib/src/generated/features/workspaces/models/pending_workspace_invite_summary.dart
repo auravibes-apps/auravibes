@@ -20,6 +20,7 @@ abstract class PendingWorkspaceInviteSummary
     required this.workspaceName,
     required this.email,
     required this.role,
+    required this.revision,
     required this.createdAt,
   });
 
@@ -29,6 +30,7 @@ abstract class PendingWorkspaceInviteSummary
     required String workspaceName,
     required String email,
     required String role,
+    required int revision,
     required DateTime createdAt,
   }) = _PendingWorkspaceInviteSummaryImpl;
 
@@ -41,6 +43,7 @@ abstract class PendingWorkspaceInviteSummary
       workspaceName: jsonSerialization['workspaceName'] as String,
       email: jsonSerialization['email'] as String,
       role: jsonSerialization['role'] as String,
+      revision: jsonSerialization['revision'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -57,6 +60,8 @@ abstract class PendingWorkspaceInviteSummary
 
   String role;
 
+  int revision;
+
   DateTime createdAt;
 
   /// Returns a shallow copy of this [PendingWorkspaceInviteSummary]
@@ -68,6 +73,7 @@ abstract class PendingWorkspaceInviteSummary
     String? workspaceName,
     String? email,
     String? role,
+    int? revision,
     DateTime? createdAt,
   });
   @override
@@ -79,6 +85,7 @@ abstract class PendingWorkspaceInviteSummary
       'workspaceName': workspaceName,
       'email': email,
       'role': role,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -92,6 +99,7 @@ abstract class PendingWorkspaceInviteSummary
       'workspaceName': workspaceName,
       'email': email,
       'role': role,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -109,6 +117,7 @@ class _PendingWorkspaceInviteSummaryImpl extends PendingWorkspaceInviteSummary {
     required String workspaceName,
     required String email,
     required String role,
+    required int revision,
     required DateTime createdAt,
   }) : super._(
          id: id,
@@ -116,6 +125,7 @@ class _PendingWorkspaceInviteSummaryImpl extends PendingWorkspaceInviteSummary {
          workspaceName: workspaceName,
          email: email,
          role: role,
+         revision: revision,
          createdAt: createdAt,
        );
 
@@ -129,6 +139,7 @@ class _PendingWorkspaceInviteSummaryImpl extends PendingWorkspaceInviteSummary {
     String? workspaceName,
     String? email,
     String? role,
+    int? revision,
     DateTime? createdAt,
   }) {
     return PendingWorkspaceInviteSummary(
@@ -137,6 +148,7 @@ class _PendingWorkspaceInviteSummaryImpl extends PendingWorkspaceInviteSummary {
       workspaceName: workspaceName ?? this.workspaceName,
       email: email ?? this.email,
       role: role ?? this.role,
+      revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
     );
   }

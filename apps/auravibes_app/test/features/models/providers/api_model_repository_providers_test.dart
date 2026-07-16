@@ -3,6 +3,7 @@ import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/model_api_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
@@ -146,11 +147,16 @@ void main() {
           apiModelRepositoryProvider.overrideWithValue(
             _FakeApiModelRepository(providers: providers),
           ),
+          modelCatalogStoreProvider.overrideWith(
+            (_, _) async => _FakeApiModelRepository(providers: providers),
+          ),
         ],
       );
       addTearDown(container.dispose);
 
-      final result = await container.read(apiModelProvidersProvider.future);
+      final result = await container.read(
+        apiModelProvidersProvider(workspaceId: 'workspace').future,
+      );
       expect(result.map((provider) => provider.id), [
         if (openAICodexClientId.isNotEmpty) 'openai-codex',
         'openai',
@@ -176,11 +182,16 @@ void main() {
           apiModelRepositoryProvider.overrideWithValue(
             _FakeApiModelRepository(models: models),
           ),
+          modelCatalogStoreProvider.overrideWith(
+            (_, _) async => _FakeApiModelRepository(models: models),
+          ),
         ],
       );
       addTearDown(container.dispose);
 
-      final result = await container.read(getAllModelsProvider.future);
+      final result = await container.read(
+        getAllModelsProvider(workspaceId: 'workspace').future,
+      );
       expect(result, hasLength(1));
       expect(result.firstOrNull?.id, 'gpt-4');
     });
@@ -204,12 +215,16 @@ void main() {
           apiModelRepositoryProvider.overrideWithValue(
             _FakeApiModelRepository(models: models),
           ),
+          modelCatalogStoreProvider.overrideWith(
+            (_, _) async => _FakeApiModelRepository(models: models),
+          ),
         ],
       );
       addTearDown(container.dispose);
 
       final result = await container.read(
         getModelByProviderAndModelIdProvider(
+          workspaceId: 'workspace',
           providerId: 'openai',
           modelId: 'gpt-4',
         ).future,
@@ -224,12 +239,16 @@ void main() {
           apiModelRepositoryProvider.overrideWithValue(
             _FakeApiModelRepository(),
           ),
+          modelCatalogStoreProvider.overrideWith(
+            (_, _) async => _FakeApiModelRepository(),
+          ),
         ],
       );
       addTearDown(container.dispose);
 
       final result = await container.read(
         getModelByProviderAndModelIdProvider(
+          workspaceId: 'workspace',
           providerId: 'openai',
           modelId: 'nonexistent',
         ).future,
@@ -302,12 +321,18 @@ void main() {
           apiModelRepositoryProvider.overrideWithValue(
             _FakeApiModelRepository(models: models),
           ),
+          modelCatalogStoreProvider.overrideWith(
+            (_, _) async => _FakeApiModelRepository(models: models),
+          ),
         ],
       );
       addTearDown(container.dispose);
 
       final result = await container.read(
-        getModelsByProviderProvider(providerId: 'openai').future,
+        getModelsByProviderProvider(
+          workspaceId: 'workspace',
+          providerId: 'openai',
+        ).future,
       );
       expect(result, hasLength(1));
       expect(result.firstOrNull?.id, 'gpt-4');

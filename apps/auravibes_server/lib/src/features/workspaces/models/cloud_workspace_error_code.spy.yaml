@@ -19,3 +19,7 @@ values:
   - duplicateMembership
   - confirmationNameMismatch
   - validationFailed
+  - invalidCursor
+  - staleRevision
+  - idempotencyConflict
+  - conflict

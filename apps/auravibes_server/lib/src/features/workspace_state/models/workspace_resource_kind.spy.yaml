@@ -1,0 +1,24 @@
+enum: WorkspaceResourceKind
+serialized: byName
+values:
+  - conversation
+  - message
+  - attachment
+  - agent
+  - agentAssociation
+  - serviceConnection
+  - modelConnection
+  - model
+  - modelSelection
+  - tool
+  - toolGroup
+  - toolPermission
+  - mcpServer
+  - skill
+  - skillDefinition
+  - skillSetting
+  - skillTemplateTool
+  - conversationToolSelection
+  - conversationSkillSelection
+  - compactionSetting
+  - workspaceSetting

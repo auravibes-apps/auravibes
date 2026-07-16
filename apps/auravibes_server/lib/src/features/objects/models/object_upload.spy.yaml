@@ -1,0 +1,20 @@
+class: ObjectUpload
+table: object_upload
+fields:
+  workspaceId: int, relation(parent=cloud_workspace)
+  objectId: int, relation(parent=workspace_object)
+  actorUserId: String
+  requestId: String
+  requestHash: String
+  expiresAt: DateTime
+  completedAt: DateTime?
+  createdAt: DateTime
+indexes:
+  object_upload_request_idx:
+    fields: actorUserId, workspaceId, requestId
+    unique: true
+  object_upload_object_idx:
+    fields: objectId
+    unique: true
+  object_upload_expiry_idx:
+    fields: completedAt, expiresAt

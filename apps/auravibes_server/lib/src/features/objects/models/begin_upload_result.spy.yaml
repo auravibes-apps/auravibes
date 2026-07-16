@@ -1,0 +1,7 @@
+class: BeginUploadResult
+fields:
+  objectId: int
+  revision: int
+  uploadUrl: String
+  headers: Map<String, String>
+  expiresAt: DateTime

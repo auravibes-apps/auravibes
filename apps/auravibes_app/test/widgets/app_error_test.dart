@@ -2,6 +2,7 @@ import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:logging/logging.dart';
 
 void main() {
   testWidgets('renders error message', (tester) async {
@@ -63,5 +64,33 @@ void main() {
     );
 
     expect(find.text('Retry'), findsOneWidget);
+  });
+
+  testWidgets('logs displayed error with its stack trace', (tester) async {
+    final records = <LogRecord>[];
+    final subscription = Logger.root.onRecord.listen(records.add);
+    final error = StateError('failed');
+    final stackTrace = StackTrace.current;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AppErrorWidget(error: error, stackTrace: stackTrace),
+        ),
+        theme: ThemeData(extensions: [AuraTheme.light]),
+      ),
+    );
+
+    subscription.cancel();
+
+    expect(
+      records.where((record) => record.loggerName == 'app_error_widget'),
+      contains(
+        isA<LogRecord>()
+            .having((record) => record.level, 'level', Level.SEVERE)
+            .having((record) => record.error, 'error', error)
+            .having((record) => record.stackTrace, 'stackTrace', stackTrace),
+      ),
+    );
   });
 }

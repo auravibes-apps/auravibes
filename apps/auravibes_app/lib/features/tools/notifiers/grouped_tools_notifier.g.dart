@@ -11,18 +11,20 @@ part of 'grouped_tools_notifier.dart';
 /// Provider for the tools groups repository.
 
 @ProviderFor(toolsGroupsRepository)
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final toolsGroupsRepositoryProvider = ToolsGroupsRepositoryProvider._();
 
 /// Provider for the tools groups repository.
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final class ToolsGroupsRepositoryProvider
     extends
         $FunctionalProvider<
-          ToolsGroupsRepository,
-          ToolsGroupsRepository,
-          ToolsGroupsRepository
+          ToolsGroupsRepositoryContract,
+          ToolsGroupsRepositoryContract,
+          ToolsGroupsRepositoryContract
         >
-    with $Provider<ToolsGroupsRepository> {
+    with $Provider<ToolsGroupsRepositoryContract> {
   /// Provider for the tools groups repository.
   ToolsGroupsRepositoryProvider._()
     : super(
@@ -30,7 +32,7 @@ final class ToolsGroupsRepositoryProvider
         argument: null,
         retry: null,
         name: r'toolsGroupsRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,26 +42,28 @@ final class ToolsGroupsRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<ToolsGroupsRepository> $createElement(
+  $ProviderElement<ToolsGroupsRepositoryContract> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  ToolsGroupsRepository create(Ref ref) {
+  ToolsGroupsRepositoryContract create(Ref ref) {
     return toolsGroupsRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ToolsGroupsRepository value) {
+  Override overrideWithValue(ToolsGroupsRepositoryContract value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<ToolsGroupsRepository>(value),
+      providerOverride: $SyncValueProvider<ToolsGroupsRepositoryContract>(
+        value,
+      ),
     );
   }
 }
 
 String _$toolsGroupsRepositoryHash() =>
-    r'c23429fd7af7607272ea8a05e0b9fded18f1fad7';
+    r'db95be8501c0fa2e65c0d4a563c485684c93b419';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -132,7 +136,7 @@ final class GroupedToolsNotifierProvider
 }
 
 String _$groupedToolsNotifierHash() =>
-    r'7d5e97c3537198b10c9b1f1f06fcaf6d9affaebc';
+    r'84e09be9bf8a761e0ec6a6c65c80dcb0544c04eb';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///

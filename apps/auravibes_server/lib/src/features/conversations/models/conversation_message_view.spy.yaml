@@ -1,0 +1,15 @@
+class: ConversationMessageView
+fields:
+  id: String
+  conversationId: String
+  turnId: String?
+  turnRevision: int?
+  role: String
+  kind: String
+  status: String
+  content: String
+  metadataJson: String?
+  toolCalls: List<ConversationToolCallView>
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime

@@ -9,6 +9,8 @@ import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.d
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -116,6 +118,17 @@ class _FakeWorkspaceModelSelectionRepository
   getWorkspaceModelSelectionById(String id) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
+      getWorkspaceModelSelectionById(id);
+
+  @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
+    String workspaceId,
+  ) => watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
+  );
 }
 
 WorkspaceModelSelectionWithConnectionEntity _makeSelection({
@@ -155,6 +168,11 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
 }
 
 void main() {
+  final localSessionOverride = workspaceSessionProvider.overrideWithValue(
+    const WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+    ),
+  );
   group('listWorkspaceModelSelectionsProvider', () {
     test('returns selections for given workspace', () async {
       final now = DateTime(2024);
@@ -185,6 +203,7 @@ void main() {
       ];
       final container = ProviderContainer(
         overrides: [
+          localSessionOverride,
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
@@ -264,6 +283,7 @@ void main() {
       addTearDown(controller.close);
       final container = ProviderContainer(
         overrides: [
+          localSessionOverride,
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository([], controller.stream),
           ),
@@ -349,6 +369,7 @@ void main() {
       ];
       final container = ProviderContainer(
         overrides: [
+          localSessionOverride,
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
@@ -413,6 +434,7 @@ void main() {
         ];
         final container = ProviderContainer(
           overrides: [
+            localSessionOverride,
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
@@ -471,6 +493,7 @@ void main() {
       ];
       final container = ProviderContainer(
         overrides: [
+          localSessionOverride,
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
@@ -516,6 +539,7 @@ void main() {
       ];
       final container = ProviderContainer(
         overrides: [
+          localSessionOverride,
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
@@ -566,6 +590,7 @@ void main() {
         ];
         final container = ProviderContainer(
           overrides: [
+            localSessionOverride,
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
@@ -626,6 +651,7 @@ void main() {
         ];
         final container = ProviderContainer(
           overrides: [
+            localSessionOverride,
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
@@ -656,6 +682,7 @@ void main() {
     test('returns empty map when no selections', () async {
       final container = ProviderContainer(
         overrides: [
+          localSessionOverride,
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(),
           ),

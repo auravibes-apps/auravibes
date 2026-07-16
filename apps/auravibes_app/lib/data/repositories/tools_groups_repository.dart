@@ -3,12 +3,21 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 
 /// Implementation of [ToolsGroupsRepository] using Drift database.
-class ToolsGroupsRepository {
+abstract interface class ToolsGroupsRepositoryContract {
+  Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(String workspaceId);
+  Future<ToolsGroupEntity?> getToolsGroupById(String id);
+  Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(String mcpServerId);
+  Future<bool> setToolsGroupEnabled(String groupId, {required bool isEnabled});
+  Future<bool> deleteToolsGroup(String id);
+}
+
+class ToolsGroupsRepository implements ToolsGroupsRepositoryContract {
   /// Creates a new [ToolsGroupsRepository] instance.
   ToolsGroupsRepository(this._database);
 
   final AppDatabase _database;
 
+  @override
   Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(
     String workspaceId,
   ) async {
@@ -19,12 +28,14 @@ class ToolsGroupsRepository {
     return rows.map(_tableToEntity).toList();
   }
 
+  @override
   Future<ToolsGroupEntity?> getToolsGroupById(String id) async {
     final row = await _database.toolsGroupsDao.getToolsGroupById(id);
 
     return row != null ? _tableToEntity(row) : null;
   }
 
+  @override
   Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(
     String mcpServerId,
   ) async {
@@ -35,6 +46,7 @@ class ToolsGroupsRepository {
     return row != null ? _tableToEntity(row) : null;
   }
 
+  @override
   Future<bool> setToolsGroupEnabled(
     String groupId, {
     required bool isEnabled,
@@ -45,6 +57,7 @@ class ToolsGroupsRepository {
     );
   }
 
+  @override
   Future<bool> deleteToolsGroup(String id) {
     return _database.toolsGroupsDao.deleteToolsGroupById(id);
   }

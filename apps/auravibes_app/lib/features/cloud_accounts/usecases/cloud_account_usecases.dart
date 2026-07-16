@@ -11,10 +11,12 @@ class CloudAccountUseCases {
   const CloudAccountUseCases({
     required this._store,
     required this._workspaceRepository,
+    this.invalidateAccount,
   });
 
   final ServerpodAuthStore _store;
   final WorkspaceRepository _workspaceRepository;
+  final void Function(String serverUrl, String userId)? invalidateAccount;
 
   Future<CloudAccountSession> login({
     required String email,
@@ -77,11 +79,17 @@ class CloudAccountUseCases {
     );
   }
 
-  Future<void> remove(String userId) async {
+  Future<void> remove({
+    required String serverUrl,
+    required String userId,
+  }) async {
+    final origin = canonicalServerOrigin(serverUrl);
     final _ = await _workspaceRepository.deleteCloudWorkspaceMirrorsForAccount(
       userId,
+      serverUrl: origin,
     );
-    await _store.removeAccount(userId);
+    await _store.removeAccount(serverUrl: origin, userId: userId);
+    invalidateAccount?.call(origin, userId);
   }
 
   Client _newClient() {
@@ -99,13 +107,17 @@ class CloudAccountUseCases {
   ) async {
     final userId = auth.authUserId.uuid;
     final sessionManager = ClientAuthSessionManager(
-      storage: _store.authSuccessStorage(userId),
+      storage: _store.authSuccessStorage(
+        serverUrl: AppEnvConfig.auravibesServerUrl,
+        userId: userId,
+      ),
     );
     client.authSessionManager = sessionManager;
     final _ = await sessionManager.initialize();
     await client.auth.updateSignedInUser(auth);
     final account = await client.account.currentUser();
     final session = CloudAccountSession(
+      serverUrl: canonicalServerOrigin(AppEnvConfig.auravibesServerUrl),
       userId: account.userId,
       email: account.email,
     );
@@ -128,5 +140,11 @@ final cloudAccountUseCasesProvider = Provider<CloudAccountUseCases>((ref) {
   return CloudAccountUseCases(
     store: ref.watch(serverpodAuthStoreProvider),
     workspaceRepository: ref.watch(workspaceRepositoryProvider),
+    invalidateAccount: (serverUrl, userId) {
+      final key = (serverUrl: serverUrl, accountId: userId);
+      ref
+        ..invalidate(serverpodClientForAccountProvider(key))
+        ..invalidate(serverpodClientForWorkspaceProvider(key));
+    },
   );
 });

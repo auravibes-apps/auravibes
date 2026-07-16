@@ -11,9 +11,11 @@ part of 'mcp_form_state.dart';
 /// Notifier for managing MCP form state.
 
 @ProviderFor(McpFormNotifier)
+@Dependencies([workspaceSession])
 final mcpFormProvider = McpFormNotifierFamily._();
 
 /// Notifier for managing MCP form state.
+@Dependencies([workspaceSession])
 final class McpFormNotifierProvider
     extends $NotifierProvider<McpFormNotifier, McpFormState> {
   /// Notifier for managing MCP form state.
@@ -61,10 +63,11 @@ final class McpFormNotifierProvider
   }
 }
 
-String _$mcpFormNotifierHash() => r'32cc50df2cbe2528496cf19c45eca2f99acbf442';
+String _$mcpFormNotifierHash() => r'717fb00b0888f250ea0f563b6bca0c78b19a3180';
 
 /// Notifier for managing MCP form state.
 
+@Dependencies([workspaceSession])
 final class McpFormNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -85,6 +88,7 @@ final class McpFormNotifierFamily extends $Family
 
   /// Notifier for managing MCP form state.
 
+  @Dependencies([workspaceSession])
   McpFormNotifierProvider call(String workspaceId) =>
       McpFormNotifierProvider._(argument: workspaceId, from: this);
 
@@ -94,6 +98,7 @@ final class McpFormNotifierFamily extends $Family
 
 /// Notifier for managing MCP form state.
 
+@Dependencies([workspaceSession])
 abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
   late final _$args = ref.$arg as String;
   String get workspaceId => _$args;

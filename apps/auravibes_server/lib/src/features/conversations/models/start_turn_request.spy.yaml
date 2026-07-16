@@ -1,0 +1,11 @@
+class: StartTurnRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedConversationRevision: int
+  clientMessageId: String
+  content: String
+  attachmentIds: List<String>
+  modelSelectionId: String?
+  agentId: String?

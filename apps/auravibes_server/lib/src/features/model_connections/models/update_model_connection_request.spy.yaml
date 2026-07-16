@@ -1,0 +1,8 @@
+class: UpdateModelConnectionRequest
+fields:
+  workspaceId: int
+  requestId: String
+  connectionId: String
+  expectedRevision: int
+  name: String
+  url: String?

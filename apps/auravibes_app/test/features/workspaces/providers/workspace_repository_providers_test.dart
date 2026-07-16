@@ -90,14 +90,17 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<WorkspaceEntity?> getCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) {
     throw UnimplementedError();
   }
 
   @override
   Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
-    String cloudWorkspaceId,
-  ) {
+    String cloudWorkspaceId, {
+    required String cloudAccountId,
+    required String serverUrl,
+  }) {
     throw UnimplementedError();
   }
 
@@ -115,12 +118,16 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> deleteCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<int> deleteCloudWorkspaceMirrorsForAccount(String cloudAccountId) {
+  Future<int> deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId, {
+    String? serverUrl,
+  }) {
     throw UnimplementedError();
   }
 }

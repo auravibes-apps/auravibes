@@ -3,12 +3,15 @@ import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart'
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_app.dart';
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _MockWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
@@ -19,6 +22,7 @@ class _MockGroupedToolsNotifier extends GroupedToolsNotifier {
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => [];
 }
 
+@Dependencies([workspaceSession])
 void main() {
   test('constructor sets workspaceId', () {
     const screen = ToolsScreen(workspaceId: 'test-ws');

@@ -1,0 +1,9 @@
+class: ObjectResult
+fields:
+  objectId: int
+  workspaceId: int
+  displayName: String
+  mimeType: String
+  sizeBytes: int
+  checksumSha256: String
+  revision: int

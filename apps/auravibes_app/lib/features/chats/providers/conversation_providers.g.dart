@@ -33,6 +33,8 @@ final class ConversationByIdStreamProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+
   @override
   String debugGetCreateSourceHash() => _$conversationByIdStreamHash();
 
@@ -68,7 +70,7 @@ final class ConversationByIdStreamProvider
 }
 
 String _$conversationByIdStreamHash() =>
-    r'82375b6f8df126d4eed95d6cd1787d0a27f18615';
+    r'72bc8aa806531fb1093d9984b526359076d762d9';
 
 final class ConversationByIdStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<ConversationEntity?>, String> {
@@ -76,8 +78,10 @@ final class ConversationByIdStreamFamily extends $Family
     : super(
         retry: null,
         name: r'conversationByIdStreamProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          ConversationByIdStreamProvider.$allTransitiveDependencies0,
+        ],
         isAutoDispose: true,
       );
 
@@ -150,7 +154,7 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'4939febced1f8eaff5c13364502380c1991e679d';
+    r'd3e8b0ac6b410f2e2a0804704b3b71b3972054d2';
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -201,6 +205,8 @@ final class ChildConversationsStreamProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+
   @override
   String debugGetCreateSourceHash() => _$childConversationsStreamHash();
 
@@ -236,7 +242,7 @@ final class ChildConversationsStreamProvider
 }
 
 String _$childConversationsStreamHash() =>
-    r'd746e86ac8317db688e95440d48278f24c9feb84';
+    r'145728e59d30613ec6184bfa85b36d58f586d87d';
 
 final class ChildConversationsStreamFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<ConversationEntity>>, String> {
@@ -244,8 +250,10 @@ final class ChildConversationsStreamFamily extends $Family
     : super(
         retry: null,
         name: r'childConversationsStreamProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          ChildConversationsStreamProvider.$allTransitiveDependencies0,
+        ],
         isAutoDispose: true,
       );
 

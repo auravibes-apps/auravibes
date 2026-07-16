@@ -1,0 +1,26 @@
+class: ConversationTurn
+table: conversation_turn
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  requestId: String
+  requestHash: String
+  initiatorUserId: String
+  userMessageId: int?, relation(parent=conversation_message, onDelete=NoAction)
+  assistantMessageId: int?, relation(parent=conversation_message, onDelete=NoAction)
+  status: String
+  revision: int
+  acceptedSequence: int
+  cancellationRequestedAt: DateTime?
+  terminalAt: DateTime?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  conversation_turn_request_idx:
+    fields: workspaceId, requestId
+    unique: true
+  conversation_turn_conversation_idx:
+    fields: workspaceId, conversationId, id
+  conversation_turn_workspace_id_idx:
+    fields: workspaceId, id
+    unique: true

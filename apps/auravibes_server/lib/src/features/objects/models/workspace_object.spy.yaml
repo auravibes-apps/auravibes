@@ -1,0 +1,21 @@
+class: WorkspaceObject
+table: workspace_object
+fields:
+  workspaceId: int, relation(parent=cloud_workspace)
+  objectKey: String
+  purpose: String
+  displayName: String
+  mimeType: String
+  sizeBytes: int
+  checksumSha256: String
+  status: String
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime
+  deletedAt: DateTime?
+indexes:
+  workspace_object_key_idx:
+    fields: objectKey
+    unique: true
+  workspace_object_scope_idx:
+    fields: workspaceId, status, deletedAt

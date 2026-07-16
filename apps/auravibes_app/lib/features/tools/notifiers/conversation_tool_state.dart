@@ -3,10 +3,13 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_tool_state.freezed.dart';
@@ -25,12 +28,20 @@ abstract class ConversationToolState with _$ConversationToolState {
   }) = _ConversationToolState;
 }
 
-@Riverpod(keepAlive: true)
+@Dependencies([workspaceSession])
+@riverpod
 ConversationToolsRepository conversationToolsRepository(Ref ref) {
+  final session = ref.watch(workspaceSessionProvider);
+  session.capabilities.require(
+    supported: session.capabilities.conversationToolOverrides,
+  );
   final appDatabase = ref.watch(appDatabaseProvider);
   final workspaceToolsRepository = ref.watch(workspaceToolsRepositoryProvider);
 
-  return ConversationToolsRepository(appDatabase, workspaceToolsRepository);
+  return ConversationToolsRepository(
+    appDatabase,
+    workspaceToolsRepository as WorkspaceToolsRepository,
+  );
 }
 
 /// Provider for managing conversation tool settings

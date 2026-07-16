@@ -1,0 +1,6 @@
+class: DeleteObjectRequest
+fields:
+  workspaceId: int
+  objectId: int
+  requestId: String
+  expectedRevision: int

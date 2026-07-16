@@ -10,14 +10,19 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart';
+import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
@@ -35,9 +40,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
 @Dependencies([
-  conversationSelected,
   conversationCompactionExecutionState,
+  childConversationsStream,
+  conversationByIdStream,
+  conversationSelected,
   messageConversationById,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  contextUsage,
+  chatMessages,
 ])
 class ChatMessagesWidget extends HookConsumerWidget {
   // Null lets callers fall back to per-message provider reads.
@@ -114,6 +128,15 @@ class ChatMessagesWidget extends HookConsumerWidget {
 
 @Dependencies([
   messageConversationById,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
 ])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
@@ -324,6 +347,10 @@ class _MessageTextContent extends StatelessWidget {
       children: [
         if (thinking case final thinking? when hasThinking)
           _ReasoningSummary(content: thinking),
+        if (!hasContent &&
+            !hasThinking &&
+            message.status == MessageStatus.unfinished)
+          const ChatThinkingIndicator(),
         if (hasContent)
           _AiMessageContent(
             content: message.content,
@@ -436,6 +463,18 @@ class _AiMessageContent extends StatelessWidget {
 }
 
 /// Widget that displays a single tool call with optional confirmation UI.
+@Dependencies([
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({
     required this.toolCall,

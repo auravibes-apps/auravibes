@@ -62,7 +62,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     final agentId = widget.agentId;
     if (agentId != null && !_loaded) {
       return FutureBuilder<AgentEntity?>(
-        future: ref.read(agentsRepositoryProvider).getAgentById(agentId),
+        future: ref.read(agentRepositoryProvider).getAgentById(agentId),
         builder: (context, snapshot) {
           final agent = snapshot.data;
           if (agent == null) return const Center(child: AuraSpinner());

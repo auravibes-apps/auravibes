@@ -119,12 +119,14 @@ class WorkspaceRepository {
   Future<WorkspaceEntity?> getCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async {
     final row =
         await (_database.select(_database.workspaces)..where(
               (workspace) =>
                   workspace.cloudWorkspaceId.equals(cloudWorkspaceId) &
-                  workspace.cloudAccountId.equals(cloudAccountId),
+                  workspace.cloudAccountId.equals(cloudAccountId) &
+                  workspace.url.equals(serverUrl),
             ))
             .getSingleOrNull();
 
@@ -132,12 +134,16 @@ class WorkspaceRepository {
   }
 
   Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
-    String cloudWorkspaceId,
-  ) async {
+    String cloudWorkspaceId, {
+    required String cloudAccountId,
+    required String serverUrl,
+  }) async {
     final row =
         await (_database.select(_database.workspaces)..where(
               (workspace) =>
-                  workspace.cloudWorkspaceId.equals(cloudWorkspaceId),
+                  workspace.cloudWorkspaceId.equals(cloudWorkspaceId) &
+                  workspace.cloudAccountId.equals(cloudAccountId) &
+                  workspace.url.equals(serverUrl),
             ))
             .getSingleOrNull();
 
@@ -150,10 +156,11 @@ class WorkspaceRepository {
     required String name,
     required String serverUrl,
   }) async {
-    final existing = await getCloudWorkspaceMirrorByCloudId(cloudWorkspaceId);
-    if (existing != null && existing.cloudAccountId != cloudAccountId) {
-      throw const WorkspaceCloudAlreadyConnectedException();
-    }
+    final existing = await getCloudWorkspaceMirrorByCloudId(
+      cloudWorkspaceId,
+      cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
+    );
 
     if (existing == null) {
       return createWorkspace(
@@ -182,10 +189,12 @@ class WorkspaceRepository {
   Future<bool> deleteCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async {
     final existing = await getCloudWorkspaceMirror(
       cloudWorkspaceId: cloudWorkspaceId,
       cloudAccountId: cloudAccountId,
+      serverUrl: serverUrl,
     );
     if (existing == null) return false;
 
@@ -193,11 +202,26 @@ class WorkspaceRepository {
   }
 
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
-    String cloudAccountId,
-  ) async {
+    String cloudAccountId, {
+    String? serverUrl,
+  }) {
+    return _deleteCloudWorkspaceMirrorsForAccount(
+      cloudAccountId,
+      serverUrl: serverUrl,
+    );
+  }
+
+  Future<int> _deleteCloudWorkspaceMirrorsForAccount(
+    String cloudAccountId, {
+    String? serverUrl,
+  }) async {
     final mirrors =
         await (_database.select(_database.workspaces)..where(
-              (workspace) => workspace.cloudAccountId.equals(cloudAccountId),
+              (workspace) =>
+                  workspace.cloudAccountId.equals(cloudAccountId) &
+                  (serverUrl == null
+                      ? const Constant(true)
+                      : workspace.url.equals(serverUrl)),
             ))
             .get();
     var deleted = 0;
@@ -408,14 +432,5 @@ class WorkspaceDeleteActiveException extends WorkspaceException {
         'Cannot delete the currently active workspace. '
         'Switch to another workspace first.',
         localizationKey: LocaleKeys.workspace_management_delete_active_error,
-      );
-}
-
-class WorkspaceCloudAlreadyConnectedException extends WorkspaceException {
-  const WorkspaceCloudAlreadyConnectedException()
-    : super(
-        'Cloud workspace is already connected through another account.',
-        localizationKey:
-            LocaleKeys.workspace_management_cloud_already_connected_error,
       );
 }

@@ -37,6 +37,17 @@ class _StubRepository implements WorkspaceModelSelectionRepository {
   ) async {
     return byIdResult;
   }
+
+  @override
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
+      getWorkspaceModelSelectionById(id);
+
+  @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
+    String workspaceId,
+  ) => watchWorkspaceModelSelections(
+    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
+  );
 }
 
 void main() {

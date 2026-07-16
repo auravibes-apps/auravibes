@@ -1,6 +1,8 @@
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
@@ -9,13 +11,18 @@ class DuplicateSkillTemplateToolUsecase {
   const DuplicateSkillTemplateToolUsecase(
     this._skillTemplateToolsRepository, {
     required this.createSkillTemplateToolUsecase,
+    this.cloudStore,
   });
 
-  final SkillTemplateToolsRepository _skillTemplateToolsRepository;
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
   final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase;
+  final CloudSkillStore? cloudStore;
 
   Future<SkillTemplateToolEntity> call(String toolId) async {
-    final tool = await _skillTemplateToolsRepository.getToolById(toolId);
+    final cloud = cloudStore;
+    final tool = cloud != null
+        ? await cloud.tool(toolId)
+        : await _skillTemplateToolsRepository?.getToolById(toolId);
     if (tool == null) {
       throw StateError('Skill template tool not found: $toolId');
     }
@@ -41,10 +48,20 @@ class DuplicateSkillTemplateToolUsecase {
       final title = suffix == 1
           ? '${tool.title} Copy'
           : '${tool.title} Copy $suffix';
-      final existing = await _skillTemplateToolsRepository.getToolBySlug(
-        tool.skillId,
-        generateSkillSlug(title),
-      );
+      final slug = generateSkillSlug(title);
+      final cloud = cloudStore;
+      final repository = _skillTemplateToolsRepository;
+      final existing = switch ((cloud: cloud, repository: repository)) {
+        (cloud: final cloud?, repository: _) => (await cloud.tools(
+          tool.skillId,
+        )).where((item) => item.slug == slug).firstOrNull,
+        (cloud: _, repository: final repository?) =>
+          await repository.getToolBySlug(
+            tool.skillId,
+            slug,
+          ),
+        _ => throw StateError('Skill template tool store is unavailable'),
+      };
       if (existing == null) return title;
       suffix += 1;
     }
@@ -53,10 +70,13 @@ class DuplicateSkillTemplateToolUsecase {
 
 final duplicateSkillTemplateToolUsecaseProvider =
     Provider<DuplicateSkillTemplateToolUsecase>((ref) {
+      final cloud = ref.watch(cloudSkillStoreProvider);
+
       return DuplicateSkillTemplateToolUsecase(
-        ref.watch(skillTemplateToolsRepositoryProvider),
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
         createSkillTemplateToolUsecase: ref.watch(
           createSkillTemplateToolUsecaseProvider,
         ),
+        cloudStore: cloud,
       );
     });

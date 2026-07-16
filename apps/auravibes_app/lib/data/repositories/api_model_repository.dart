@@ -3,13 +3,14 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
 
 /// Implementation of the [ApiModelRepository] interface.
 ///
 /// This class provides a concrete implementation of API model and provider
 /// data operations using the Drift database. It handles the mapping between
 /// domain entities and database records, and provides proper error handling.
-class ApiModelRepository {
+class ApiModelRepository implements ModelCatalogStore {
   ApiModelRepository(this._database);
 
   /// The database instance for API model operations.
@@ -17,6 +18,7 @@ class ApiModelRepository {
 
   // Provider operations.
 
+  @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async {
     final providerTables = await _database.apiModelProvidersDao
         .getAllProviders();
@@ -24,6 +26,7 @@ class ApiModelRepository {
     return providerTables.map(_mapToProviderEntity).toList();
   }
 
+  @override
   Stream<List<ApiModelProviderEntity>> watchAllProviders() {
     return _database.apiModelProvidersDao.watchAllProviders().map(
       (providers) => providers.map(_mapToProviderEntity).toList(),
@@ -39,12 +42,14 @@ class ApiModelRepository {
 
   // Model operations.
 
+  @override
   Future<List<ApiModelEntity>> getAllModels() async {
     final modelTables = await _database.apiModelsDao.getAllModels();
 
     return modelTables.map(_mapToModelEntity).toList();
   }
 
+  @override
   Future<ApiModelEntity?> getModelByProviderAndModelId(
     String providerId,
     String modelId,
@@ -56,6 +61,7 @@ class ApiModelRepository {
     return _mapToModelEntity(modelTable);
   }
 
+  @override
   Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async {
     final modelTables = await _database.apiModelsDao.getModelsByProvider(
       providerId,
@@ -64,6 +70,7 @@ class ApiModelRepository {
     return modelTables.map(_mapToModelEntity).toList();
   }
 
+  @override
   Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
     return _database.apiModelsDao
         .watchModelsByProvider(providerId)

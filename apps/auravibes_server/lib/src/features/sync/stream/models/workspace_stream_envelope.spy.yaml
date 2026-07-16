@@ -1,0 +1,11 @@
+class: WorkspaceStreamEnvelope
+fields:
+  kind: WorkspaceStreamEnvelopeKind
+  workspaceId: int
+  sequence: int
+  eventId: String
+  eventKind: String
+  resourceKind: String
+  resourceId: String?
+  payloadJson: String?
+  createdAt: DateTime

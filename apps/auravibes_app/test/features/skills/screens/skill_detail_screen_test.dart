@@ -8,7 +8,10 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
@@ -19,8 +22,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -29,6 +39,12 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  @Dependencies([
+    workspaceSession,
+    cloudWorkspaceStateGateway,
+    serviceConnectionOperations,
+    serviceConnections,
+  ])
   Widget buildScreen(ValueNotifier<_SkillDetailScreenFixture> fixture) {
     return EasyLocalization(
       key: UniqueKey(),

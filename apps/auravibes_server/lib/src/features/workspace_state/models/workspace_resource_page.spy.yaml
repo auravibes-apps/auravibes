@@ -1,0 +1,5 @@
+class: WorkspaceResourcePage
+fields:
+  resourceKind: WorkspaceResourceKind
+  resources: List<WorkspaceResource>
+  nextResourceId: String?

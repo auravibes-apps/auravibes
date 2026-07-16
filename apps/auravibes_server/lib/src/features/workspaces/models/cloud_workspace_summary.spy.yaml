@@ -3,5 +3,7 @@ fields:
   id: int
   name: String
   role: String
+  revision: int
+  sequence: int
   createdAt: DateTime
   updatedAt: DateTime

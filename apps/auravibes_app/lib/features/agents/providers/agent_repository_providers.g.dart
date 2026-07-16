@@ -61,44 +61,53 @@ final agentToolsRepositoryProvider = AgentToolsRepositoryProvider._();
 final class AgentToolsRepositoryProvider
     extends
         $FunctionalProvider<
-          AgentToolsRepository,
-          AgentToolsRepository,
-          AgentToolsRepository
+          AgentToolsRepositoryContract,
+          AgentToolsRepositoryContract,
+          AgentToolsRepositoryContract
         >
-    with $Provider<AgentToolsRepository> {
+    with $Provider<AgentToolsRepositoryContract> {
   AgentToolsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'agentToolsRepositoryProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+        dependencies: <ProviderOrFamily>[
+          workspaceSessionProvider,
+          cloudWorkspaceStateGatewayProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          AgentToolsRepositoryProvider.$allTransitiveDependencies0,
+          AgentToolsRepositoryProvider.$allTransitiveDependencies1,
+        ],
       );
+
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
 
   @override
   String debugGetCreateSourceHash() => _$agentToolsRepositoryHash();
 
   @$internal
   @override
-  $ProviderElement<AgentToolsRepository> $createElement(
+  $ProviderElement<AgentToolsRepositoryContract> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  AgentToolsRepository create(Ref ref) {
+  AgentToolsRepositoryContract create(Ref ref) {
     return agentToolsRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AgentToolsRepository value) {
+  Override overrideWithValue(AgentToolsRepositoryContract value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AgentToolsRepository>(value),
+      providerOverride: $SyncValueProvider<AgentToolsRepositoryContract>(value),
     );
   }
 }
 
 String _$agentToolsRepositoryHash() =>
-    r'3c3b99279532e7ab5ea2c573fbb68ef512a26c54';
+    r'a3489fbf222882e50b0890e0e91f266f2ababaf1';

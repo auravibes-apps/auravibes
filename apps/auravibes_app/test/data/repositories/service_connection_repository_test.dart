@@ -102,6 +102,64 @@ void main() {
         'openai',
       ]);
     });
+
+    test('generic edit preserves, replaces, and clears local secret', () async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final encryption = EncryptionService(_FakeSecretKeyManager());
+      final repository = ServiceConnectionRepository(database, encryption);
+      final id = await _insertConnection(
+        database,
+        encryption,
+        workspaceId: 'workspace-1',
+        name: 'Old',
+        serviceId: 'github',
+        kind: ServiceConnectionKindTable.appSkillCredential,
+        secretValue: 'old-secret',
+      );
+
+      await repository.updateAppSkillCredential(
+        id: id,
+        workspaceId: 'workspace-1',
+        name: 'Preserved',
+        clearSecret: false,
+      );
+      expect(
+        (await repository.readSecret(id) as ServiceConnectionSecretApiKey)
+            .apiKey,
+        'old-secret',
+      );
+
+      await repository.updateAppSkillCredential(
+        id: id,
+        workspaceId: 'workspace-1',
+        name: 'Replaced',
+        clearSecret: false,
+        secret: 'new-secret',
+      );
+      expect(
+        (await repository.readSecret(id) as ServiceConnectionSecretApiKey)
+            .apiKey,
+        'new-secret',
+      );
+
+      await repository.updateAppSkillCredential(
+        id: id,
+        workspaceId: 'workspace-1',
+        name: 'Cleared',
+        clearSecret: true,
+      );
+      await expectLater(repository.readSecret(id), throwsFormatException);
+      expect(
+        (await repository.getAppSkillCredentialForEdit(
+          id,
+          workspaceId: 'workspace-1',
+        ))?.name,
+        'Cleared',
+      );
+    });
   });
 }
 

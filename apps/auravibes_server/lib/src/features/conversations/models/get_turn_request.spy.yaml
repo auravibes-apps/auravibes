@@ -1,0 +1,4 @@
+class: GetTurnRequest
+fields:
+  workspaceId: int
+  turnId: String

@@ -6,10 +6,11 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/models/providers/add_model_provider_state.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -20,9 +21,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('service_connection_create_screen');
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class ServiceConnectionCreateScreen extends ConsumerStatefulWidget {
   const ServiceConnectionCreateScreen({
     required this.workspaceId,
@@ -166,14 +174,15 @@ class _ServiceConnectionCreateScreenState
 
     setState(() => _isSaving = true);
     try {
-      final _ = await ref
-          .read(serviceConnectionRepositoryProvider)
-          .createAppSkillCredential(
-            workspaceId: widget.workspaceId,
-            appSkillServiceId: appSkillId,
-            name: name,
-            apiKey: apiKey,
-          );
+      final operations = await ref.read(
+        serviceConnectionOperationsProvider(widget.workspaceId).future,
+      );
+      final _ = await operations.createAppSkillCredential(
+        workspaceId: widget.workspaceId,
+        appSkillServiceId: appSkillId,
+        name: name,
+        apiKey: apiKey,
+      );
       await _closeAfterSave(resetModelMutation: false);
     } on Object catch (error, stackTrace) {
       _logger.severe(
@@ -226,8 +235,8 @@ class _ServiceConnectionCreateScreenState
         'attributes=${_describeAttributes(attributes)}',
       );
       final credential = await ref
-          .read(skillCredentialsRepositoryProvider)
-          .createCredential(
+          .read(skillCredentialOperationsProvider)
+          .create(
             widget.workspaceId,
             SkillCredentialToCreate(
               credentialDefinitionId: definitionId,

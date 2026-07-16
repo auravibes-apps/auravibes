@@ -3,4 +3,5 @@ fields:
   userId: String
   email: String?
   role: String
+  revision: int
   createdAt: DateTime

@@ -3,8 +3,11 @@
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
@@ -13,7 +16,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([serviceConnectionOperations])
 class ServiceConnectionEditScreen extends ConsumerStatefulWidget {
   const ServiceConnectionEditScreen({
     required this.workspaceId,
@@ -102,6 +107,22 @@ class _ServiceConnectionEditScreenState
               }),
               onSave: () => _saveModelProvider(context),
             ),
+            _GenericServiceConnectionEditState() =>
+              _GenericServiceConnectionEditForm(
+                state: state,
+                nameController: _nameController,
+                secretController: _modelKeyController,
+                clearSecret: _clearedSecrets.contains('secret'),
+                isSaving: _isSaving,
+                onChanged: () => setState(() {
+                  final _ = Object();
+                }),
+                onClearSecret: () => setState(() {
+                  _modelKeyController.clear();
+                  final _ = _clearedSecrets.add('secret');
+                }),
+                onSave: () => _saveGenericConnection(context, state),
+              ),
           };
         },
       ),
@@ -116,14 +137,24 @@ class _ServiceConnectionEditScreenState
   }
 
   Future<_ConnectionEditState> _load() async {
-    final credentialsRepository = ref.read(skillCredentialsRepositoryProvider);
-    final credential = await credentialsRepository.getCredentialForEdit(
-      widget.connectionId,
+    final operations = await ref.read(
+      serviceConnectionOperationsProvider(widget.workspaceId).future,
     );
+    final generic = await operations.getGenericForEdit(widget.connectionId);
+    if (generic != null) {
+      return _GenericServiceConnectionEditState(connection: generic);
+    }
+    final credential = await ref
+        .read(skillCredentialOperationsProvider)
+        .getForEdit(
+          widget.connectionId,
+        );
     if (credential != null) {
-      final definition = await ref
-          .read(skillCredentialDefinitionsRepositoryProvider)
-          .getDefinitionById(credential.credentialDefinitionId);
+      final definition = await ref.read(
+        skillCredentialDefinitionProvider(
+          credential.credentialDefinitionId,
+        ).future,
+      );
       if (definition == null) {
         throw StateError('Skill credential definition not found.');
       }
@@ -134,9 +165,9 @@ class _ServiceConnectionEditScreenState
       );
     }
 
-    final modelConnection = await ref
-        .read(modelConnectionRepositoryProvider)
-        .getModelConnectionForEdit(widget.connectionId);
+    final modelConnection = await (await ref.read(
+      modelConnectionStoreProvider(widget.workspaceId).future,
+    )).getModelConnectionForEdit(widget.connectionId);
     if (modelConnection != null) {
       return _ModelProviderEditState(connection: modelConnection);
     }
@@ -172,6 +203,8 @@ class _ServiceConnectionEditScreenState
       case _ModelProviderEditState(:final connection):
         _nameController.text = connection.name;
         _modelUrlController.text = connection.url ?? '';
+      case _GenericServiceConnectionEditState(:final connection):
+        _nameController.text = connection.name;
     }
     _initialized = true;
   }
@@ -180,8 +213,8 @@ class _ServiceConnectionEditScreenState
     setState(() => _isSaving = true);
     try {
       final _ = await ref
-          .read(skillCredentialsRepositoryProvider)
-          .updateCredential(
+          .read(skillCredentialOperationsProvider)
+          .update(
             widget.connectionId,
             SkillCredentialToUpdate(
               name: _nameController.text.trim(),
@@ -213,9 +246,10 @@ class _ServiceConnectionEditScreenState
   Future<void> _saveModelProvider(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
-      final _ = await ref
-          .read(modelConnectionRepositoryProvider)
-          .updateModelConnection(
+      final _ =
+          await (await ref.read(
+            modelConnectionStoreProvider(widget.workspaceId).future,
+          )).updateModelConnection(
             widget.connectionId,
             ModelConnectionToUpdate(
               name: _nameController.text.trim(),
@@ -240,6 +274,50 @@ class _ServiceConnectionEditScreenState
       if (mounted) setState(() => _isSaving = false);
     }
   }
+
+  Future<void> _saveGenericConnection(
+    BuildContext context,
+    _GenericServiceConnectionEditState state,
+  ) async {
+    setState(() => _isSaving = true);
+    try {
+      final secret = _modelKeyController.text.trim();
+      final secretEdit = switch ((
+        isCleared: _clearedSecrets.contains('secret'),
+        isEmpty: secret.isEmpty,
+      )) {
+        (isCleared: true, isEmpty: _) => ServiceConnectionSecretEdit.clear,
+        (isCleared: false, isEmpty: true) =>
+          ServiceConnectionSecretEdit.preserve,
+        (isCleared: false, isEmpty: false) =>
+          ServiceConnectionSecretEdit.replace,
+      };
+      final operations = await ref.read(
+        serviceConnectionOperationsProvider(widget.workspaceId).future,
+      );
+      await operations.updateGeneric(
+        state.connection,
+        GenericServiceConnectionUpdate(
+          name: _nameController.text.trim(),
+          secretEdit: secretEdit,
+          secret: secretEdit == ServiceConnectionSecretEdit.replace
+              ? secret
+              : null,
+        ),
+      );
+      if (!context.mounted) return;
+      Navigator.of(context).pop(true);
+    } on Object {
+      if (!context.mounted) return;
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(LocaleKeys.service_connections_save_error),
+        variant: AuraSnackBarVariant.error,
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 }
 
 sealed class _ConnectionEditState {}
@@ -258,6 +336,12 @@ class _ModelProviderEditState extends _ConnectionEditState {
   _ModelProviderEditState({required this.connection});
 
   final ModelConnectionForEdit connection;
+}
+
+class _GenericServiceConnectionEditState extends _ConnectionEditState {
+  _GenericServiceConnectionEditState({required this.connection});
+
+  final GenericServiceConnectionForEdit connection;
 }
 
 class _SkillCredentialEditForm extends StatelessWidget {
@@ -520,4 +604,102 @@ class _ModelProviderEditForm extends StatelessWidget {
       ],
     );
   }
+}
+
+class _GenericServiceConnectionEditForm extends StatelessWidget {
+  const _GenericServiceConnectionEditForm({
+    required this.state,
+    required this.nameController,
+    required this.secretController,
+    required this.clearSecret,
+    required this.isSaving,
+    required this.onChanged,
+    required this.onClearSecret,
+    required this.onSave,
+  });
+
+  final _GenericServiceConnectionEditState state;
+  final TextEditingController nameController;
+  final TextEditingController secretController;
+  final bool clearSecret;
+  final bool isSaving;
+  final VoidCallback onChanged;
+  final VoidCallback onClearSecret;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    final suffix = state.connection.keySuffix;
+    final savedSecret = state.connection.hasSecret && !clearSecret;
+    final savedSecretSuffix = suffix == null ? '' : ' ****$suffix';
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        AuraCard(
+          child: AuraColumn(
+            children: [
+              AuraText(
+                child: Text(state.connection.serviceId),
+                style: AuraTextStyle.heading6,
+              ),
+              AuraInput(
+                controller: nameController,
+                label: Text(
+                  LocaleKeys.skill_credentials_name_label.tr(context: context),
+                ),
+                onChanged: (_) => onChanged(),
+              ),
+              AuraInput(
+                controller: secretController,
+                placeholder: savedSecret
+                    ? Text(
+                        '${LocaleKeys.skill_credentials_secret_saved.tr(
+                          context: context,
+                        )}$savedSecretSuffix',
+                      )
+                    : null,
+                label: Text(
+                  _genericCredentialValueLabel(
+                    context,
+                    state.connection.serviceId,
+                  ),
+                ),
+                suffixIcon: AuraIconButton(
+                  icon: Icons.clear,
+                  onPressed: onClearSecret,
+                  tooltip: LocaleKeys.skill_credentials_clear_secret.tr(
+                    context: context,
+                  ),
+                ),
+                keyboardType: TextInputType.visiblePassword,
+                obscureText: true,
+                onChanged: (_) => onChanged(),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: AuraButton(
+                  onPressed: onSave,
+                  child: const TextLocale(LocaleKeys.common_save),
+                  isLoading: isSaving,
+                  disabled: isSaving || nameController.text.trim().isEmpty,
+                ),
+              ),
+            ],
+            spacing: AuraSpacing.md,
+            crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _genericCredentialValueLabel(BuildContext context, String serviceId) {
+  final key = switch (serviceId) {
+    'searxng' => LocaleKeys.service_connections_create_base_url_label,
+    _ => LocaleKeys.service_connections_create_api_key_label,
+  };
+
+  return key.tr(context: context);
 }

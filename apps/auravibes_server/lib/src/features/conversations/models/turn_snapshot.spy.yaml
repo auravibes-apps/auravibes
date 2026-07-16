@@ -1,0 +1,6 @@
+class: TurnSnapshot
+fields:
+  turn: ConversationTurnView
+  messages: List<ConversationMessageView>
+  toolCalls: List<ConversationToolCallView>
+  terminal: bool

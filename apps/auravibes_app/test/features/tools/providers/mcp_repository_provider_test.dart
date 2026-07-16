@@ -1,6 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -29,7 +31,14 @@ void main() {
     final database = AppDatabase(connection: _testConnection());
     testDatabase = database;
     container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+          ),
+        ),
+      ],
     );
   });
 

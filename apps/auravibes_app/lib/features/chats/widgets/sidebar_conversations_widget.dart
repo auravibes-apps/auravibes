@@ -4,12 +4,23 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
+import 'dart:async';
+
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -18,7 +29,25 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+typedef SidebarConversationError = Object;
+
+@Dependencies([
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  workspaceModelSelectionById,
+  workspaceSession,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class SidebarConversationsWidget extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
   // ignore: unnecessary-nullable
@@ -46,9 +75,8 @@ class SidebarConversationsWidget extends ConsumerWidget {
     final chatListAsync = ref.watch(
       conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
     );
-
-    return switch (chatListAsync) {
-      AsyncData(value: final chats) => () {
+    switch (chatListAsync) {
+      case AsyncData(value: final chats):
         if (chats.isEmpty) {
           return const Column(
             children: [
@@ -72,33 +100,18 @@ class SidebarConversationsWidget extends ConsumerWidget {
             _SidebarConversationsViewAllButton(workspaceId: workspaceId),
           ],
         );
-      }(),
-      AsyncLoading() => Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: context.auraTheme.fromSpacing(.md),
-          ),
-          child: const AuraSpinner(),
-        ),
-      ),
-      AsyncError(:final error, stackTrace: _) => Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: context.auraTheme.fromSpacing(.md),
-            horizontal: context.auraTheme.fromSpacing(.sm),
-          ),
-          child: AuraText(
-            child: TextLocale(
-              LocaleKeys
-                  .home_screen_conversation_states_error_loading_conversations,
-              args: [error.toString()],
+      case AsyncLoading():
+        return Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              vertical: context.auraTheme.fromSpacing(.md),
             ),
-            style: AuraTextStyle.bodySmall,
-            tint: AuraTint.error,
+            child: const AuraSpinner(),
           ),
-        ),
-      ),
-    };
+        );
+      case AsyncError(:final error):
+        return _SidebarConversationsError(error: error);
+    }
   }
 
   String? _currentChatId(List<String>? pathSegments) {
@@ -116,6 +129,29 @@ class SidebarConversationsWidget extends ConsumerWidget {
     final entry = execution[conversationId];
 
     return entry != null && entry.status == CompactionExecutionStatus.running;
+  }
+}
+
+class _SidebarConversationsError<T extends Object> extends StatelessWidget {
+  const _SidebarConversationsError({required this.error});
+
+  final T error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: context.auraTheme.fromSpacing(.md),
+          horizontal: context.auraTheme.fromSpacing(.sm),
+        ),
+        child: AuraText(
+          child: TextLocale(cloudErrorLocalizationKey(error)),
+          style: AuraTextStyle.bodySmall,
+          tint: AuraTint.error,
+        ),
+      ),
+    );
   }
 }
 
@@ -160,6 +196,21 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
   }
 }
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class _SidebarConversationsViewAllButton extends StatelessWidget {
   const _SidebarConversationsViewAllButton({required this.workspaceId});
 
@@ -187,6 +238,21 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
   }
 }
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class _SidebarConversationTile extends ConsumerStatefulWidget {
   const _SidebarConversationTile({
     required this.chat,
@@ -216,6 +282,13 @@ class _SidebarConversationTileState
   Future<void> _handleDelete(BuildContext context) async {
     final confirmed = await showDeleteConversationConfirmDialog(context);
     if (!confirmed) return;
+
+    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    if (cloud != null) {
+      await cloud.delete(widget.chat);
+
+      return;
+    }
 
     final _ = await ref
         .read(conversationRepositoryProvider)
@@ -264,7 +337,7 @@ class _SidebarConversationTileState
           items: [
             AuraPopupMenuItem(
               title: const TextLocale(LocaleKeys.common_delete),
-              onTap: () => _handleDelete(context),
+              onTap: () => unawaited(_handleDelete(context)),
               leading: const AuraIcon(Icons.delete_outline),
               variant: AuraTileVariant.error,
             ),
@@ -276,11 +349,11 @@ class _SidebarConversationTileState
   }
 }
 
-class _CompactingRow extends ConsumerWidget {
+class _CompactingRow extends StatelessWidget {
   const _CompactingRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(
         vertical: context.auraTheme.fromSpacing(.xs),

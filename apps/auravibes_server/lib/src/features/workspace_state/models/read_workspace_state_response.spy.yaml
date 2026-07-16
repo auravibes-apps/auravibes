@@ -1,0 +1,7 @@
+class: ReadWorkspaceStateResponse
+fields:
+  pages: List<WorkspaceResourcePage>
+  currentSequence: int
+  events: List<WorkspaceEvent>
+  earliestRetainedSequence: int?
+  requiresSnapshot: bool

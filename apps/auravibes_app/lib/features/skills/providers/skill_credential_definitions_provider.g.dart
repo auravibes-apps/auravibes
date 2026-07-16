@@ -68,7 +68,7 @@ final class SkillCredentialDefinitionsProvider
 }
 
 String _$skillCredentialDefinitionsHash() =>
-    r'a5a176138bc188b6169cb9e6f477854dc01abe4f';
+    r'5f5599d1fd606687c78f1bf838b6e303b3c3eee0';
 
 final class SkillCredentialDefinitionsFamily extends $Family
     with
@@ -151,7 +151,7 @@ final class SkillCredentialDefinitionProvider
 }
 
 String _$skillCredentialDefinitionHash() =>
-    r'3d2e8128b7082067fcdaf29ac723f09f1f1ee9b7';
+    r'954edd1265dcec37f3018054ed724891c836b9db';
 
 final class SkillCredentialDefinitionFamily extends $Family
     with

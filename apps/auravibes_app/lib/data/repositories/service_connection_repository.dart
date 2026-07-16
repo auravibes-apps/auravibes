@@ -24,6 +24,67 @@ class ServiceConnectionRepository {
     return row == null ? null : _toEntity(row);
   }
 
+  Future<GenericServiceConnectionRecord?> getAppSkillCredentialForEdit(
+    String id, {
+    required String workspaceId,
+  }) async {
+    final row = await _getRowById(id);
+    if (row == null ||
+        row.workspaceId != workspaceId ||
+        row.kind != ServiceConnectionKindTable.appSkillCredential) {
+      return null;
+    }
+
+    return GenericServiceConnectionRecord(
+      id: row.id,
+      name: row.name,
+      serviceId: row.serviceId,
+      hasSecret: row.encryptedAuthValue != null,
+      keySuffix: row.keySuffix,
+    );
+  }
+
+  Future<void> updateAppSkillCredential({
+    required String id,
+    required String workspaceId,
+    required String name,
+    required bool clearSecret,
+    String? secret,
+  }) async {
+    final ServiceConnectionsCompanion companion;
+    if (clearSecret) {
+      companion = ServiceConnectionsCompanion(
+        name: Value(name),
+        encryptedAuthValue: const Value(null),
+        keySuffix: const Value(null),
+      );
+    } else if (secret == null) {
+      companion = ServiceConnectionsCompanion(name: Value(name));
+    } else {
+      companion = ServiceConnectionsCompanion(
+        name: Value(name),
+        encryptedAuthValue: Value(
+          await _encryptionService.encrypt(
+            ServiceConnectionAuthCodec.encodeSecret(
+              ServiceConnectionSecretApiKey(apiKey: secret),
+            ),
+          ),
+        ),
+        keySuffix: Value(_suffix(secret)),
+      );
+    }
+    final _ =
+        await (_database.update(_database.serviceConnections)..where(
+              (table) =>
+                  table.id.equals(id) &
+                  table.workspaceId.equals(workspaceId) &
+                  table.kind.equals(
+                    ServiceConnectionKindTable.appSkillCredential.name,
+                  ),
+            ))
+            .write(companion);
+  }
+
   Stream<List<ServiceConnectionEntity>> watchWorkspaceConnections(
     String workspaceId,
   ) {
@@ -361,6 +422,22 @@ class ServiceConnectionCandidate {
   final String name;
   final String serviceId;
   final ServiceConnectionKindTable kind;
+}
+
+class GenericServiceConnectionRecord {
+  const GenericServiceConnectionRecord({
+    required this.id,
+    required this.name,
+    required this.serviceId,
+    required this.hasSecret,
+    required this.keySuffix,
+  });
+
+  final String id;
+  final String name;
+  final String serviceId;
+  final bool hasSecret;
+  final String? keySuffix;
 }
 
 class McpServiceConnectionProfile {

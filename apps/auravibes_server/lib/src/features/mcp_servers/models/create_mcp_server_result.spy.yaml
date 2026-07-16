@@ -1,0 +1,5 @@
+class: CreateMcpServerResult
+fields:
+  mcpServerId: String
+  createdAt: DateTime
+  discovery: DiscoverMcpServerResult

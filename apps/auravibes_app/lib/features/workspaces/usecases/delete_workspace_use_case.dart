@@ -4,10 +4,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_workspace_use_case.g.dart';
 
-/// Deletes a workspace after enforcing business-rule guards.
-///
-/// Guards:
-/// - Cannot delete the currently active workspace while others remain.
 class DeleteWorkspaceUseCase {
   const DeleteWorkspaceUseCase({
     required this._repository,
@@ -21,18 +17,16 @@ class DeleteWorkspaceUseCase {
   ///
   /// [activeWorkspaceId] is the ID of the currently active workspace.
   ///
-  /// Throws [WorkspaceDeleteActiveException] if the workspace is active.
   Future<void> call({
     required String id,
     required String? activeWorkspaceId,
   }) async {
-    final workspaceCount = await _repository.getWorkspaceCount();
-
-    if (workspaceCount > 1 && id == activeWorkspaceId) {
-      throw const WorkspaceDeleteActiveException();
-    }
-
-    final _ = await _repository.deleteWorkspace(id);
+    assert(
+      activeWorkspaceId == null || activeWorkspaceId.isNotEmpty,
+      'Active workspace ID must be null or non-empty.',
+    );
+    final deletedWorkspace = await _repository.deleteWorkspace(id);
+    assert(deletedWorkspace, 'Workspace must be deleted.');
   }
 }
 

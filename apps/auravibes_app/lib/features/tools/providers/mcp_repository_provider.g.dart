@@ -11,18 +11,20 @@ part of 'mcp_repository_provider.dart';
 /// Provides the MCP servers repository instance.
 
 @ProviderFor(mcpServersRepository)
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final mcpServersRepositoryProvider = McpServersRepositoryProvider._();
 
 /// Provides the MCP servers repository instance.
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final class McpServersRepositoryProvider
     extends
         $FunctionalProvider<
-          McpServersRepository,
-          McpServersRepository,
-          McpServersRepository
+          McpServersRepositoryContract,
+          McpServersRepositoryContract,
+          McpServersRepositoryContract
         >
-    with $Provider<McpServersRepository> {
+    with $Provider<McpServersRepositoryContract> {
   /// Provides the MCP servers repository instance.
   McpServersRepositoryProvider._()
     : super(
@@ -30,7 +32,7 @@ final class McpServersRepositoryProvider
         argument: null,
         retry: null,
         name: r'mcpServersRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -40,23 +42,23 @@ final class McpServersRepositoryProvider
 
   @$internal
   @override
-  $ProviderElement<McpServersRepository> $createElement(
+  $ProviderElement<McpServersRepositoryContract> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  McpServersRepository create(Ref ref) {
+  McpServersRepositoryContract create(Ref ref) {
     return mcpServersRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(McpServersRepository value) {
+  Override overrideWithValue(McpServersRepositoryContract value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<McpServersRepository>(value),
+      providerOverride: $SyncValueProvider<McpServersRepositoryContract>(value),
     );
   }
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'2b2804672c2de4ba861893605544c1a9513a93d1';
+    r'5bfb549832f52f481703f0244d413cb3383b05cd';

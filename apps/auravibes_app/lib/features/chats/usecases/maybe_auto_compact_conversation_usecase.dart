@@ -2,34 +2,63 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
+import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 const _kDefaultMaxOutputTokens = 4096;
 
 class MaybeAutoCompactConversationUsecase {
   const MaybeAutoCompactConversationUsecase({
-    required this.conversationRepository,
-    required this.workspaceModelSelectionsRepository,
-    required this.apiModelRepository,
-    required this.shouldCompactConversationUsecase,
     required this.compactConversationUsecase,
+    this.conversationRepository,
+    this.modelSelectionStore,
+    this.apiModelRepository,
+    this.shouldCompactConversationUsecase,
+    this.cloudShouldCompact,
   });
 
-  final ConversationRepository conversationRepository;
-  final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
-  final ApiModelRepository apiModelRepository;
-  final ShouldCompactConversationUsecase shouldCompactConversationUsecase;
+  final ConversationRepository? conversationRepository;
+  final Future<ModelSelectionStore> Function(String workspaceId)?
+  modelSelectionStore;
+  final ApiModelRepository? apiModelRepository;
+  final ShouldCompactConversationUsecase? shouldCompactConversationUsecase;
   final CompactConversationUsecase compactConversationUsecase;
+  final Future<bool> Function(String conversationId)? cloudShouldCompact;
 
   Future<void> call({required String conversationId}) async {
-    final conversation = await conversationRepository.getConversationById(
+    final cloudDecision = cloudShouldCompact;
+    if (cloudDecision != null) {
+      if (!await cloudDecision(conversationId)) return;
+      switch (await compactConversationUsecase(
+        conversationId: conversationId,
+        trigger: CompactionTrigger.auto,
+      )) {
+        case _:
+          return;
+      }
+    }
+    final repository = conversationRepository;
+    final getModelStore = modelSelectionStore;
+    final models = apiModelRepository;
+    final shouldCompact = shouldCompactConversationUsecase;
+    if (repository == null ||
+        getModelStore == null ||
+        models == null ||
+        shouldCompact == null) {
+      throw StateError('Local compaction dependencies unavailable');
+    }
+    final conversation = await repository.getConversationById(
       conversationId,
     );
     if (conversation == null) return;
@@ -37,16 +66,17 @@ class MaybeAutoCompactConversationUsecase {
     final modelId = conversation.modelId;
     if (modelId == null) return;
 
-    final foundModel = await workspaceModelSelectionsRepository
-        .getWorkspaceModelSelectionById(modelId);
+    final foundModel = await (await getModelStore(
+      conversation.workspaceId,
+    )).getById(modelId);
     if (foundModel == null) return;
 
-    final apiModel = await apiModelRepository.getModelByProviderAndModelId(
+    final apiModel = await models.getModelByProviderAndModelId(
       foundModel.modelsProvider.id,
       foundModel.workspaceModelSelection.modelId,
     );
 
-    final decision = await shouldCompactConversationUsecase(
+    final decision = await shouldCompact(
       conversationId: conversationId,
       workspaceId: conversation.workspaceId,
       selectedModelId: foundModel.workspaceModelSelection.modelId,
@@ -57,26 +87,74 @@ class MaybeAutoCompactConversationUsecase {
 
     if (!decision.shouldCompact) return;
 
-    final _ = await compactConversationUsecase(
+    switch (await compactConversationUsecase(
       conversationId: conversationId,
       trigger: CompactionTrigger.auto,
-    );
+    )) {
+      case _:
+        return;
+    }
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  conversationByIdStream,
+  chatMessagesByConversation,
+])
 final maybeAutoCompactConversationUsecaseProvider =
-    Provider<MaybeAutoCompactConversationUsecase>((ref) {
-      return MaybeAutoCompactConversationUsecase(
-        conversationRepository: ref.watch(conversationRepositoryProvider),
-        workspaceModelSelectionsRepository: ref.watch(
-          workspaceModelSelectionRepositoryProvider,
-        ),
-        apiModelRepository: ref.watch(apiModelRepositoryProvider),
-        shouldCompactConversationUsecase: ref.watch(
-          shouldCompactConversationUsecaseProvider,
-        ),
-        compactConversationUsecase: ref.watch(
-          compactConversationUsecaseProvider,
-        ),
-      );
-    });
+    Provider<MaybeAutoCompactConversationUsecase>(
+      (ref) {
+        var isCloud = false;
+        try {
+          isCloud = ref.watch(workspaceSessionProvider).cloud != null;
+        } on Exception {
+          isCloud = false;
+        }
+        if (isCloud) {
+          return MaybeAutoCompactConversationUsecase(
+            compactConversationUsecase: ref.watch(
+              compactConversationUsecaseProvider,
+            ),
+            cloudShouldCompact: (conversationId) async {
+              final conversation = await ref.read(
+                conversationByIdStreamProvider(
+                  conversationId: conversationId,
+                ).future,
+              );
+              if (conversation == null) return false;
+              final settings = await ref.read(
+                compactionSettingsProvider(conversation.workspaceId).future,
+              );
+              if (!settings.autoCompactionEnabled) return false;
+              final messages = await ref.read(
+                chatMessagesByConversationProvider(conversationId).future,
+              );
+              final metadata = messages.lastOrNull?.metadata;
+              final used = metadata?.usedTokens ?? 0;
+              final contextLimit = metadata?.modelMetadata['contextLimit'];
+              if (contextLimit is! int || contextLimit <= 0) return false;
+
+              return used * 100 >=
+                      contextLimit * settings.usagePercentageThreshold ||
+                  contextLimit - used <= settings.remainingTokenThreshold;
+            },
+          );
+        }
+
+        return MaybeAutoCompactConversationUsecase(
+          compactConversationUsecase: ref.watch(
+            compactConversationUsecaseProvider,
+          ),
+          conversationRepository: ref.watch(conversationRepositoryProvider),
+          modelSelectionStore: (workspaceId) => ref.read(
+            modelSelectionStoreProvider(workspaceId).future,
+          ),
+          apiModelRepository: ref.watch(apiModelRepositoryProvider),
+          shouldCompactConversationUsecase: ref.watch(
+            shouldCompactConversationUsecaseProvider,
+          ),
+        );
+      },
+      dependencies: [workspaceSessionProvider],
+    );

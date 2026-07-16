@@ -6,6 +6,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -18,6 +19,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('chat_input_widget');
 
@@ -42,6 +44,7 @@ const String _voiceRecordLabelKey =
 const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
 
+@Dependencies([workspaceSession])
 class ChatInputWidget extends HookConsumerWidget {
   const ChatInputWidget({
     required this.onSendMessage,
@@ -91,6 +94,9 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingElapsed = useState(Duration.zero);
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
+    final workspaceCapabilities = ref.watch(
+      workspaceSessionProvider.select((session) => session.capabilities),
+    );
 
     final isTextEmpty = useListenableSelector(
       controller,
@@ -122,17 +128,20 @@ class ChatInputWidget extends HookConsumerWidget {
     );
 
     final shouldShowStopButton = showStopButton ?? isBusy;
-    const supportsLocalAttachments = !kIsWeb;
+    final supportsLocalAttachments =
+        workspaceCapabilities.attachments && !kIsWeb;
     final supportsAudio =
         supportsLocalAttachments &&
         supportsAttachmentModality(
           MessageAttachmentModality.audio,
           modalitiesInput,
         );
-    final supportsImage = supportsAttachmentModality(
-      MessageAttachmentModality.image,
-      modalitiesInput,
-    );
+    final supportsImage =
+        workspaceCapabilities.attachments &&
+        supportsAttachmentModality(
+          MessageAttachmentModality.image,
+          modalitiesInput,
+        );
     final supportsFile =
         supportsLocalAttachments && supportsFileAttachments(modalitiesInput);
     final isMacOS = defaultTargetPlatform == TargetPlatform.macOS;

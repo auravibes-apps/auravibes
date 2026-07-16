@@ -1,7 +1,7 @@
 import 'package:serverpod/serverpod.dart';
-import 'package:serverpod_auth_idp_server/core.dart';
 
 import '../../generated/protocol.dart';
+import '../accounts/authenticated_account_resolver.dart';
 import 'repositories/cloud_workspace_repository.dart' as workspace_repo;
 import 'usecases/cloud_workspace_usecases.dart';
 
@@ -127,6 +127,7 @@ class CloudWorkspaceEndpoint extends Endpoint {
     final account = await _requireAccount(session);
     await _useCases.declineInvite(
       session,
+      userId: account.userId,
       email: account.email,
       request: request,
     );
@@ -205,24 +206,6 @@ class CloudWorkspaceEndpoint extends Endpoint {
   }
 
   Future<AccountSummary> _requireAccount(Session session) async {
-    final auth = session.authenticated;
-    if (auth == null) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.authenticationRequired,
-      );
-    }
-    final emailAccount = await EmailAccount.db.findFirstRow(
-      session,
-      where: (t) => t.authUserId.equals(auth.authUserId),
-    );
-    if (emailAccount == null) {
-      throw CloudWorkspaceException(
-        code: CloudWorkspaceErrorCode.emailAccountRequired,
-      );
-    }
-    return AccountSummary(
-      userId: auth.authUserId.uuid,
-      email: emailAccount.email,
-    );
+    return const AuthenticatedAccountResolver()(session);
   }
 }

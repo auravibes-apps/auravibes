@@ -2,3 +2,5 @@ class: RevokeWorkspaceInviteRequest
 fields:
   workspaceId: int
   inviteId: int
+  requestId: String
+  expectedInviteRevision: int

@@ -27,6 +27,9 @@ final class ConversationChatNotifierProvider
        );
 
   static final $allTransitiveDependencies0 = conversationSelectedProvider;
+  static final $allTransitiveDependencies1 = conversationByIdStreamProvider;
+  static final $allTransitiveDependencies2 =
+      ConversationByIdStreamProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$conversationChatNotifierHash();
@@ -55,7 +58,7 @@ final class ConversationChatNotifierProvider
 }
 
 String _$conversationChatNotifierHash() =>
-    r'5de525797345bb6224ce5a318751c543774c72be';
+    r'46fb29dbf89f2a125d8ba2b23c5ed37eeab61aef';
 
 final class ConversationChatNotifierFamily extends $Family
     with
@@ -70,9 +73,14 @@ final class ConversationChatNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'conversationChatProvider',
-        dependencies: <ProviderOrFamily>[conversationSelectedProvider],
+        dependencies: <ProviderOrFamily>[
+          conversationSelectedProvider,
+          conversationByIdStreamProvider,
+        ],
         $allTransitiveDependencies: <ProviderOrFamily>[
           ConversationChatNotifierProvider.$allTransitiveDependencies0,
+          ConversationChatNotifierProvider.$allTransitiveDependencies1,
+          ConversationChatNotifierProvider.$allTransitiveDependencies2,
         ],
         isAutoDispose: true,
       );

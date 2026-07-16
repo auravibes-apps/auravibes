@@ -10,9 +10,11 @@ part of 'conversation_tool_state.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(conversationToolsRepository)
+@Dependencies([workspaceSession])
 final conversationToolsRepositoryProvider =
     ConversationToolsRepositoryProvider._();
 
+@Dependencies([workspaceSession])
 final class ConversationToolsRepositoryProvider
     extends
         $FunctionalProvider<
@@ -27,7 +29,7 @@ final class ConversationToolsRepositoryProvider
         argument: null,
         retry: null,
         name: r'conversationToolsRepositoryProvider',
-        isAutoDispose: false,
+        isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -56,7 +58,7 @@ final class ConversationToolsRepositoryProvider
 }
 
 String _$conversationToolsRepositoryHash() =>
-    r'd022d59dc4cb88659714e8031581c937e1f4a8e4';
+    r'a995c549404bfd395605146c3b54a879639a1ee6';
 
 /// Provider for managing conversation tool settings
 ///

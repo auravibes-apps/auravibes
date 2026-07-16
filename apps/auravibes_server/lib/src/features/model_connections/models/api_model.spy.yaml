@@ -1,0 +1,25 @@
+class: ApiModel
+table: api_model
+fields:
+  providerId: String
+  modelId: String
+  name: String
+  limitContext: int
+  limitOutput: int
+  modalitiesInput: List<String>
+  modalitiesOutput: List<String>
+  family: String?
+  costInput: double
+  costCacheRead: double
+  costOutput: double
+  openWeights: bool
+  supportsReasoning: bool
+  isCanonical: bool
+  supportsPriorityMode: bool
+  supportsToolCalls: bool
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  api_model_provider_model_idx:
+    fields: providerId, modelId
+    unique: true

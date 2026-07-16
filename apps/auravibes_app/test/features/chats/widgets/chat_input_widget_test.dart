@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -10,7 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([workspaceSession])
 void main() {
   test('uniqueAttachmentDisplayName keeps first label unchanged', () {
     expect(
@@ -37,6 +40,7 @@ void main() {
     );
   });
 
+  @Dependencies([workspaceSession])
   Widget buildSubject({
     required FutureOr<void> Function(ChatDraft) onSendMessage,
     VoidCallback onToolsPress = _noop,

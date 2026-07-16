@@ -69,7 +69,7 @@ final class SkillCredentialsForDefinitionProvider
 }
 
 String _$skillCredentialsForDefinitionHash() =>
-    r'8d3091f142fb26a1363cfd5fe70dae08a734f4ac';
+    r'e7652915f3ddd76f67a6245c42395cadedf02e57';
 
 final class SkillCredentialsForDefinitionFamily extends $Family
     with

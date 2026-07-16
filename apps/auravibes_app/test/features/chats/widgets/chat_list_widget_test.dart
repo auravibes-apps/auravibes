@@ -3,25 +3,54 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_list_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  messageConversationById,
+])
 void main() {
+  @Dependencies([
+    ConversationChatNotifier,
+    conversationBusyState,
+    pendingToolCalls,
+    contextUsage,
+    chatMessages,
+    messageConversationById,
+  ])
   Widget buildSubject({
     required String workspaceId,
     required List<Object> overrides,
   }) {
     return EasyLocalization(
       child: ProviderScope(
-        overrides: overrides.cast(),
+        overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
+          ...overrides.cast(),
+        ],
         child: Builder(
           builder: (context) {
             return MaterialApp(

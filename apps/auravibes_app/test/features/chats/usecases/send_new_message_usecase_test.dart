@@ -57,7 +57,7 @@ class _SendNewMessageUsecaseFixture {
     _usecase = SendNewMessageUsecase(
       conversationRepo: conversationRepo,
       sendMessageUsecase: sendMessageUsecase,
-      workspaceModelSelectionRepository: workspaceModelSelectionRepo,
+      modelSelectionStore: (_) async => workspaceModelSelectionRepo,
       generateTitleUsecase: generateTitleUsecase,
       monitoringService: monitoringService,
     );
@@ -165,9 +165,12 @@ void main() {
       );
 
       expect(result.id, 'conv-1');
-      verify(
-        () => fixture.conversationRepo.createConversation(any()),
-      ).called(1);
+      expect(
+        () => verify(
+          () => fixture.conversationRepo.createConversation(any()),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('throws when model selection not found', () {
@@ -187,12 +190,13 @@ void main() {
     });
 
     test('calls generateTitle with correct args', () async {
-      final _ = await fixture.usecase.call(
+      final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
+      expect(result, equals(newConversation));
       expect(
         () => verify(
           () => fixture.generateTitleUsecase.call(
@@ -205,13 +209,43 @@ void main() {
       );
     });
 
-    test('creates first message with correct args', () async {
-      final _ = await fixture.usecase.call(
+    test('does not stream a local title for cloud conversations', () async {
+      final cloudUsecase = SendNewMessageUsecase(
+        conversationRepo: fixture.conversationRepo,
+        sendMessageUsecase: fixture.sendMessageUsecase,
+        modelSelectionStore: (_) async => fixture.workspaceModelSelectionRepo,
+        generateTitleUsecase: fixture.generateTitleUsecase,
+        monitoringService: fixture.monitoringService,
+        cloudCreate: (_) async => newConversation,
+      );
+
+      final result = await cloudUsecase.call(
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
+      expect(result, equals(newConversation));
+      expect(
+        () => verifyNever(
+          () => fixture.generateTitleUsecase.call(
+            conversationId: any(named: 'conversationId'),
+            firstMessage: any(named: 'firstMessage'),
+            workspaceModelSelection: any(named: 'workspaceModelSelection'),
+          ),
+        ),
+        returnsNormally,
+      );
+    });
+
+    test('creates first message with correct args', () async {
+      final result = await fixture.usecase.call(
+        workspaceId: 'ws-1',
+        draft: const ChatDraft(text: 'Hello'),
+        workspaceModelSelectionId: 'model-sel-1',
+      );
+
+      expect(result, equals(newConversation));
       expect(
         () => verify(
           () => fixture.sendMessageUsecase.createUserMessage(
@@ -241,22 +275,26 @@ void main() {
         throwsA(same(exception)),
       );
 
-      verify(
-        () => fixture.monitoringService.trackError(
-          any(),
-          error: any(named: 'error'),
-          stackTrace: any(named: 'stackTrace'),
-        ),
-      ).called(1);
+      expect(
+        () => verify(
+          () => fixture.monitoringService.trackError(
+            any(),
+            error: any(named: 'error'),
+            stackTrace: any(named: 'stackTrace'),
+          ),
+        ).called(1),
+        returnsNormally,
+      );
     });
 
     test('creates conversation with correct workspaceId and modelId', () async {
-      final _ = await fixture.usecase.call(
+      final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
+      expect(result, equals(newConversation));
       final captured = verify(
         () => fixture.conversationRepo.createConversation(captureAny()),
       ).captured;
@@ -264,12 +302,13 @@ void main() {
     });
 
     test('retrieves model selection with correct ID', () async {
-      final _ = await fixture.usecase.call(
+      final result = await fixture.usecase.call(
         workspaceId: 'ws-1',
         draft: const ChatDraft(text: 'Hello'),
         workspaceModelSelectionId: 'model-sel-1',
       );
 
+      expect(result, equals(newConversation));
       expect(
         () => verify(
           () => fixture.workspaceModelSelectionRepo
@@ -288,12 +327,12 @@ void main() {
       ).thenAnswer((_) async => null);
 
       try {
-        final _ = await fixture.usecase.call(
+        final result = await fixture.usecase.call(
           workspaceId: 'ws-1',
           draft: const ChatDraft(text: 'Hello'),
           workspaceModelSelectionId: 'missing',
         );
-        fail('Expected exception');
+        fail('Expected exception, got $result');
       } on Exception catch (e) {
         expect(e.toString(), contains('Selected model not found'));
       }

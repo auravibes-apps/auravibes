@@ -18,6 +18,9 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
     required String id,
     required String name,
     required String argumentsRaw,
+    String? argumentsDigest,
+    String? turnId,
+    int? turnRevision,
 
     /// The raw response from tool execution, if successful.
     String? responseRaw,

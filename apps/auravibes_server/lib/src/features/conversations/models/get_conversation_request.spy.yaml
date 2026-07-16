@@ -1,0 +1,4 @@
+class: GetConversationRequest
+fields:
+  workspaceId: int
+  conversationId: String

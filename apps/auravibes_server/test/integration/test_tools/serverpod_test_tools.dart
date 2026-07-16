@@ -19,46 +19,160 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i5;
 import 'package:auravibes_server/src/generated/features/accounts/models/account_summary.dart'
     as _i6;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
+import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_result.dart'
     as _i7;
-import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
+import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
     as _i8;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
+import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_result.dart'
     as _i9;
-import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
+import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_request.dart'
     as _i10;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
     as _i11;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_request.dart'
     as _i12;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
     as _i13;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_page.dart'
     as _i14;
-import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/get_conversation_request.dart'
     as _i15;
-import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
     as _i16;
-import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
     as _i17;
-import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_request.dart'
     as _i18;
-import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
     as _i19;
-import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_result.dart'
     as _i20;
-import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _i21;
-import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/turn_snapshot.dart'
     as _i22;
-import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
     as _i23;
-import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/live_turn_event.dart'
     as _i24;
-import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/live_turn_subscribe_request.dart'
     as _i25;
+import 'dart:convert' as _i26;
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_mutation_result.dart'
+    as _i27;
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
+    as _i28;
+import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
+    as _i29;
+import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
+    as _i30;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_result.dart'
+    as _i31;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
+    as _i32;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/delete_mcp_server_request.dart'
+    as _i33;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_result.dart'
+    as _i34;
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
+    as _i35;
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
+    as _i36;
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
+    as _i37;
+import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
+    as _i38;
+import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
+    as _i39;
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
+    as _i40;
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
+    as _i41;
+import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
+    as _i42;
+import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
+    as _i43;
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
+    as _i44;
+import 'package:auravibes_server/src/generated/features/model_connections/models/model_sync_result.dart'
+    as _i45;
+import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
+    as _i46;
+import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_result.dart'
+    as _i47;
+import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
+    as _i48;
+import 'package:auravibes_server/src/generated/features/objects/models/object_result.dart'
+    as _i49;
+import 'package:auravibes_server/src/generated/features/objects/models/complete_upload_request.dart'
+    as _i50;
+import 'package:auravibes_server/src/generated/features/objects/models/get_download_result.dart'
+    as _i51;
+import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
+    as _i52;
+import 'package:auravibes_server/src/generated/features/objects/models/delete_object_request.dart'
+    as _i53;
+import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_stream_envelope.dart'
+    as _i54;
+import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
+    as _i55;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_response.dart'
+    as _i56;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
+    as _i57;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_response.dart'
+    as _i58;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
+    as _i59;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_response.dart'
+    as _i60;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
+    as _i61;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_response.dart'
+    as _i62;
+import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
+    as _i63;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
+    as _i64;
+import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
+    as _i65;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
+    as _i66;
+import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
+    as _i67;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
+    as _i68;
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
+    as _i69;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
+    as _i70;
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
+    as _i71;
+import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
+    as _i72;
+import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
+    as _i73;
+import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
+    as _i74;
+import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
+    as _i75;
+import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
+    as _i76;
+import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
+    as _i77;
+import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
+    as _i78;
+import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+    as _i79;
+import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+    as _i80;
+import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+    as _i81;
+import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+    as _i82;
 import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
-    as _i26;
+    as _i83;
+import 'package:auravibes_server/src/generated/future_calls.dart' as _i84;
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:auravibes_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -182,11 +296,29 @@ void withServerpod(
 }
 
 class TestEndpoints {
+  late final futureCalls = _FutureCalls();
+
   late final _EmailIdpEndpoint emailIdp;
 
   late final _JwtRefreshEndpoint jwtRefresh;
 
   late final _AccountEndpoint account;
+
+  late final _CodexOAuthEndpoint codexOAuth;
+
+  late final _ConversationEndpoint conversation;
+
+  late final _McpServerEndpoint mcpServer;
+
+  late final _ModelConnectionEndpoint modelConnection;
+
+  late final _ObjectEndpoint object;
+
+  late final _WorkspaceStreamEndpoint workspaceStream;
+
+  late final _WorkspaceSecretEndpoint workspaceSecret;
+
+  late final _WorkspaceStateEndpoint workspaceState;
 
   late final _CloudWorkspaceEndpoint cloudWorkspace;
 }
@@ -210,11 +342,51 @@ class _InternalTestEndpoints extends TestEndpoints
       endpoints,
       serializationManager,
     );
+    codexOAuth = _CodexOAuthEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    conversation = _ConversationEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    mcpServer = _McpServerEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    modelConnection = _ModelConnectionEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    object = _ObjectEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceStream = _WorkspaceStreamEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceSecret = _WorkspaceSecretEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    workspaceState = _WorkspaceStateEndpoint(
+      endpoints,
+      serializationManager,
+    );
     cloudWorkspace = _CloudWorkspaceEndpoint(
       endpoints,
       serializationManager,
     );
   }
+}
+
+class _FutureCalls {
+  late final conversationWorker = _ConversationWorkerFutureCall();
+
+  late final modelCatalogSyncWorker = _ModelCatalogSyncWorkerFutureCall();
+
+  late final objectCleanup = _ObjectCleanupFutureCall();
 }
 
 class _EmailIdpEndpoint {
@@ -576,6 +748,1189 @@ class _AccountEndpoint {
   }
 }
 
+class _CodexOAuthEndpoint {
+  _CodexOAuthEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<_i7.StartCodexOAuthResult> start(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i8.StartCodexOAuthRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'codexOAuth',
+            method: 'start',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'codexOAuth',
+          methodName: 'start',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i7.StartCodexOAuthResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i9.CompleteCodexOAuthResult> complete(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i10.CompleteCodexOAuthRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'codexOAuth',
+            method: 'complete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'codexOAuth',
+          methodName: 'complete',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i9.CompleteCodexOAuthResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _ConversationEndpoint {
+  _ConversationEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<_i11.ConversationSummary> create(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i12.CreateConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'create',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'create',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i11.ConversationSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<List<_i11.ConversationSummary>> list(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i13.ListConversationsRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'list',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<List<_i11.ConversationSummary>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i14.ConversationPage> listPage(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i13.ListConversationsRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'listPage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'listPage',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i14.ConversationPage>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i11.ConversationSummary> get(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i15.GetConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'get',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'get',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i11.ConversationSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<List<_i16.ConversationMessageView>> listMessages(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i17.ListConversationMessagesRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'listMessages',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'listMessages',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<List<_i16.ConversationMessageView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i11.ConversationSummary> update(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i18.UpdateConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'update',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'update',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i11.ConversationSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<void> delete(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i19.DeleteConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'delete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'delete',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i20.StartTurnResult> startTurn(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i21.StartTurnRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'startTurn',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'startTurn',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i20.StartTurnResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i22.TurnSnapshot> getTurn(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i23.GetTurnRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'getTurn',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'getTurn',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i22.TurnSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Stream<_i24.LiveTurnEvent> subscribeTurn(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i25.LiveTurnSubscribeRequest request,
+  ) {
+    var _localTestStreamManager = _i1.TestStreamManager<_i24.LiveTurnEvent>();
+    _i1.callStreamFunctionAndHandleExceptions(
+      () async {
+        var _localUniqueSession =
+            (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+              endpoint: 'conversation',
+              method: 'subscribeTurn',
+            );
+        var _localCallContext = await _endpointDispatch
+            .getMethodStreamCallContext(
+              createSessionCallback: (_) => _localUniqueSession,
+              endpointPath: 'conversation',
+              methodName: 'subscribeTurn',
+              arguments: {
+                'request': _i26.jsonDecode(
+                  _i2.SerializationManager.encode(request),
+                ),
+              },
+              requestedInputStreams: [],
+              serializationManager: _serializationManager,
+            );
+        await _localTestStreamManager.callStreamMethod(
+          _localCallContext,
+          _localUniqueSession,
+          {},
+        );
+      },
+      _localTestStreamManager.outputStreamController,
+    );
+    return _localTestStreamManager.outputStreamController.stream;
+  }
+
+  _i4.Future<_i27.ConversationMutationResult> submitToolDecision(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i28.SubmitToolDecisionRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'submitToolDecision',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'submitToolDecision',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i27.ConversationMutationResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i27.ConversationMutationResult> cancelTurn(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i29.CancelTurnRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'cancelTurn',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'cancelTurn',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i27.ConversationMutationResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i27.ConversationMutationResult> compact(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i30.CompactConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'compact',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'compact',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i27.ConversationMutationResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _McpServerEndpoint {
+  _McpServerEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<_i31.CreateMcpServerResult> create(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i32.CreateMcpServerRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'mcpServer',
+            method: 'create',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'mcpServer',
+          methodName: 'create',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i31.CreateMcpServerResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<void> delete(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i33.DeleteMcpServerRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'mcpServer',
+            method: 'delete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'mcpServer',
+          methodName: 'delete',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i34.DiscoverMcpServerResult> discoverAndCheck(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i35.DiscoverMcpServerRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'mcpServer',
+            method: 'discoverAndCheck',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'mcpServer',
+          methodName: 'discoverAndCheck',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i34.DiscoverMcpServerResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _ModelConnectionEndpoint {
+  _ModelConnectionEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<List<_i36.ApiModelProvider>> listCatalogProviders(
+    _i1.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'listCatalogProviders',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'listCatalogProviders',
+          parameters: _i1.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<List<_i36.ApiModelProvider>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<List<_i37.ApiModel>> listCatalogModels(
+    _i1.TestSessionBuilder sessionBuilder, {
+    String? providerId,
+  }) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'listCatalogModels',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'listCatalogModels',
+          parameters: _i1.testObjectToJson({'providerId': providerId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<List<_i37.ApiModel>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i38.ModelConnectionView> create(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i39.CreateModelConnectionRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'create',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'create',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i38.ModelConnectionView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<List<_i38.ModelConnectionView>> list(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i40.ListModelConnectionsRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'list',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<List<_i38.ModelConnectionView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i38.ModelConnectionView> update(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i41.UpdateModelConnectionRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'update',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'update',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i38.ModelConnectionView>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<void> delete(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i42.DeleteModelConnectionRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'delete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'delete',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<List<_i43.WorkspaceModelSelectionView>> listSelections(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i44.ListWorkspaceModelSelectionsRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'listSelections',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'listSelections',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<List<_i43.WorkspaceModelSelectionView>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i45.ModelSyncResult> testAndSync(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i46.TestAndSyncModelConnectionRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'modelConnection',
+            method: 'testAndSync',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'modelConnection',
+          methodName: 'testAndSync',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i45.ModelSyncResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _ObjectEndpoint {
+  _ObjectEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<_i47.BeginUploadResult> beginUpload(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i48.BeginUploadRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'object',
+            method: 'beginUpload',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'object',
+          methodName: 'beginUpload',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i47.BeginUploadResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i49.ObjectResult> completeUpload(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i50.CompleteUploadRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'object',
+            method: 'completeUpload',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'object',
+          methodName: 'completeUpload',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i49.ObjectResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i51.GetDownloadResult> getDownload(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i52.GetDownloadRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'object',
+            method: 'getDownload',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'object',
+          methodName: 'getDownload',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i51.GetDownloadResult>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<void> delete(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i53.DeleteObjectRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'object',
+            method: 'delete',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'object',
+          methodName: 'delete',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WorkspaceStreamEndpoint {
+  _WorkspaceStreamEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Stream<_i54.WorkspaceStreamEnvelope> subscribe(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i55.WorkspaceSubscribeRequest request,
+  ) {
+    var _localTestStreamManager =
+        _i1.TestStreamManager<_i54.WorkspaceStreamEnvelope>();
+    _i1.callStreamFunctionAndHandleExceptions(
+      () async {
+        var _localUniqueSession =
+            (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+              endpoint: 'workspaceStream',
+              method: 'subscribe',
+            );
+        var _localCallContext = await _endpointDispatch
+            .getMethodStreamCallContext(
+              createSessionCallback: (_) => _localUniqueSession,
+              endpointPath: 'workspaceStream',
+              methodName: 'subscribe',
+              arguments: {
+                'request': _i26.jsonDecode(
+                  _i2.SerializationManager.encode(request),
+                ),
+              },
+              requestedInputStreams: [],
+              serializationManager: _serializationManager,
+            );
+        await _localTestStreamManager.callStreamMethod(
+          _localCallContext,
+          _localUniqueSession,
+          {},
+        );
+      },
+      _localTestStreamManager.outputStreamController,
+    );
+    return _localTestStreamManager.outputStreamController.stream;
+  }
+}
+
+class _WorkspaceSecretEndpoint {
+  _WorkspaceSecretEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<_i56.PutWorkspaceSecretResponse> put(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i57.PutWorkspaceSecretRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceSecret',
+            method: 'put',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceSecret',
+          methodName: 'put',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i56.PutWorkspaceSecretResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _WorkspaceStateEndpoint {
+  _WorkspaceStateEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
+  _i4.Future<_i58.ReadWorkspaceStateResponse> read(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i59.ReadWorkspaceStateRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'read',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'read',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i58.ReadWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i60.PatchWorkspaceStateResponse> patch(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i61.PatchWorkspaceStateRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'patch',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'patch',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i60.PatchWorkspaceStateResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i62.MutateWorkspaceCredentialResponse> mutateCredential(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i63.MutateWorkspaceCredentialRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'workspaceState',
+            method: 'mutateCredential',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'workspaceState',
+          methodName: 'mutateCredential',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i62.MutateWorkspaceCredentialResponse>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _CloudWorkspaceEndpoint {
   _CloudWorkspaceEndpoint(
     this._endpointDispatch,
@@ -586,7 +1941,7 @@ class _CloudWorkspaceEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<List<_i7.CloudWorkspaceSummary>> listAuthorizedWorkspaces(
+  _i4.Future<List<_i64.CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -608,7 +1963,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i7.CloudWorkspaceSummary>>);
+                as _i4.Future<List<_i64.CloudWorkspaceSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -616,7 +1971,7 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<List<_i8.PendingWorkspaceInviteSummary>> listPendingInvites(
+  _i4.Future<List<_i65.PendingWorkspaceInviteSummary>> listPendingInvites(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -638,7 +1993,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i8.PendingWorkspaceInviteSummary>>);
+                as _i4.Future<List<_i65.PendingWorkspaceInviteSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -646,9 +2001,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i9.CloudWorkspaceDetail> getWorkspaceDetail(
+  _i4.Future<_i66.CloudWorkspaceDetail> getWorkspaceDetail(
     _i1.TestSessionBuilder sessionBuilder,
-    _i10.GetCloudWorkspaceDetailRequest request,
+    _i67.GetCloudWorkspaceDetailRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -669,7 +2024,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i9.CloudWorkspaceDetail>);
+                as _i4.Future<_i66.CloudWorkspaceDetail>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -677,9 +2032,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<List<_i11.CloudWorkspaceMemberSummary>> listMembers(
+  _i4.Future<List<_i68.CloudWorkspaceMemberSummary>> listMembers(
     _i1.TestSessionBuilder sessionBuilder,
-    _i12.ListWorkspaceMembersRequest request,
+    _i69.ListWorkspaceMembersRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -700,7 +2055,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i11.CloudWorkspaceMemberSummary>>);
+                as _i4.Future<List<_i68.CloudWorkspaceMemberSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -708,9 +2063,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<List<_i13.CloudWorkspaceInviteSummary>> listWorkspaceInvites(
+  _i4.Future<List<_i70.CloudWorkspaceInviteSummary>> listWorkspaceInvites(
     _i1.TestSessionBuilder sessionBuilder,
-    _i14.ListCloudWorkspaceInvitesRequest request,
+    _i71.ListCloudWorkspaceInvitesRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -731,7 +2086,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i13.CloudWorkspaceInviteSummary>>);
+                as _i4.Future<List<_i70.CloudWorkspaceInviteSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -739,9 +2094,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i7.CloudWorkspaceSummary> createWorkspace(
+  _i4.Future<_i64.CloudWorkspaceSummary> createWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i15.CreateCloudWorkspaceRequest request,
+    _i72.CreateCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -762,7 +2117,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i7.CloudWorkspaceSummary>);
+                as _i4.Future<_i64.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -770,9 +2125,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i8.PendingWorkspaceInviteSummary> inviteMember(
+  _i4.Future<_i65.PendingWorkspaceInviteSummary> inviteMember(
     _i1.TestSessionBuilder sessionBuilder,
-    _i16.InviteWorkspaceMemberRequest request,
+    _i73.InviteWorkspaceMemberRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -793,7 +2148,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i8.PendingWorkspaceInviteSummary>);
+                as _i4.Future<_i65.PendingWorkspaceInviteSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -801,9 +2156,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i13.CloudWorkspaceInviteSummary> renewInvite(
+  _i4.Future<_i70.CloudWorkspaceInviteSummary> renewInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i17.RenewWorkspaceInviteRequest request,
+    _i74.RenewWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -824,7 +2179,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i13.CloudWorkspaceInviteSummary>);
+                as _i4.Future<_i70.CloudWorkspaceInviteSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -834,7 +2189,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> revokeInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i18.RevokeWorkspaceInviteRequest request,
+    _i75.RevokeWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -863,9 +2218,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i7.CloudWorkspaceSummary> acceptInvite(
+  _i4.Future<_i64.CloudWorkspaceSummary> acceptInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i19.AcceptWorkspaceInviteRequest request,
+    _i76.AcceptWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -886,7 +2241,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i7.CloudWorkspaceSummary>);
+                as _i4.Future<_i64.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -896,7 +2251,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> declineInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i20.DeclineWorkspaceInviteRequest request,
+    _i77.DeclineWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -925,9 +2280,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i7.CloudWorkspaceSummary> renameWorkspace(
+  _i4.Future<_i64.CloudWorkspaceSummary> renameWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i21.RenameCloudWorkspaceRequest request,
+    _i78.RenameCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -948,7 +2303,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i7.CloudWorkspaceSummary>);
+                as _i4.Future<_i64.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -958,7 +2313,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> leaveWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i22.LeaveCloudWorkspaceRequest request,
+    _i79.LeaveCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -989,7 +2344,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> transferOwnership(
     _i1.TestSessionBuilder sessionBuilder,
-    _i23.TransferCloudWorkspaceOwnershipRequest request,
+    _i80.TransferCloudWorkspaceOwnershipRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1020,7 +2375,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> updateMemberRole(
     _i1.TestSessionBuilder sessionBuilder,
-    _i24.UpdateWorkspaceMemberRoleRequest request,
+    _i81.UpdateWorkspaceMemberRoleRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1051,7 +2406,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> removeMember(
     _i1.TestSessionBuilder sessionBuilder,
-    _i25.RemoveWorkspaceMemberRequest request,
+    _i82.RemoveWorkspaceMemberRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1082,7 +2437,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> deleteWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i26.DeleteCloudWorkspaceRequest request,
+    _i83.DeleteCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1109,5 +2464,98 @@ class _CloudWorkspaceEndpoint {
         await _localUniqueSession.close();
       }
     });
+  }
+}
+
+class _ConversationWorkerFutureCall {
+  Future<void> invoke(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i2.SerializableModel? object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i84.ConversationWorkerInvokeFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+
+  Future<void> poll(_i1.TestSessionBuilder sessionBuilder) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i84.ConversationWorkerPollFutureCall().invoke(
+        _localUniqueSession,
+        null,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+}
+
+class _ModelCatalogSyncWorkerFutureCall {
+  Future<void> invoke(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i2.SerializableModel? object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i84.ModelCatalogSyncWorkerInvokeFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+
+  Future<void> poll(_i1.TestSessionBuilder sessionBuilder) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i84.ModelCatalogSyncWorkerPollFutureCall().invoke(
+        _localUniqueSession,
+        null,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+}
+
+class _ObjectCleanupFutureCall {
+  Future<void> invoke(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i2.SerializableModel? object,
+  ) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i84.ObjectCleanupInvokeFutureCall().invoke(
+        _localUniqueSession,
+        object,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
+  }
+
+  Future<void> poll(_i1.TestSessionBuilder sessionBuilder) async {
+    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
+        .internalBuild();
+    try {
+      await _i84.ObjectCleanupPollFutureCall().invoke(
+        _localUniqueSession,
+        null,
+      );
+    } finally {
+      await _localUniqueSession.close();
+    }
   }
 }

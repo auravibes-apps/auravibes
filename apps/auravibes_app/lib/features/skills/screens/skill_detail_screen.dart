@@ -8,18 +8,23 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/markdown/show_markdown_editor.dart';
 import 'package:auravibes_app/features/markdown/widgets/markdown_preview_field.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart'
+    show appSkillRegistryProvider;
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/duplicate_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -30,10 +35,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:textf/textf.dart';
 
 const _skillDescriptionMaxCharacters = 1024;
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class SkillDetailScreen extends ConsumerStatefulWidget {
   const SkillDetailScreen({
     required this.workspaceId,
@@ -323,13 +335,19 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       ),
     );
     if (shouldDelete != true) return;
-    final _ = await ref.read(skillsRepositoryProvider).deleteSkill(detail.id);
+    await ref.read(deleteSkillProvider)(detail.id);
     ref.invalidate(workspaceSkillsProvider(widget.workspaceId));
     if (!context.mounted) return;
     Navigator.of(context).pop();
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class _SkillDetailForm extends StatelessWidget {
   const _SkillDetailForm({
     required this.detail,
@@ -689,9 +707,7 @@ class _SkillToolsCard extends ConsumerWidget {
       ),
     );
     if (shouldDelete != true) return;
-    final _ = await ref
-        .read(skillTemplateToolsRepositoryProvider)
-        .deleteTool(tool.id);
+    await ref.read(deleteSkillTemplateToolProvider)(tool.id);
     ref.invalidate(skillTemplateToolsProvider(skillId));
   }
 }
@@ -841,6 +857,12 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class _SkillCredentialsHint extends ConsumerWidget {
   const _SkillCredentialsHint({
     required this.workspaceId,
@@ -942,6 +964,12 @@ class _SkillCredentialsHint extends ConsumerWidget {
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class _AppSkillCredentialsHint extends ConsumerStatefulWidget {
   const _AppSkillCredentialsHint({
     required this.workspaceId,

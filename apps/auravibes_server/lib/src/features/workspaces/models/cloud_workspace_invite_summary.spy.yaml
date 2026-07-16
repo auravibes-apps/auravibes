@@ -4,5 +4,6 @@ fields:
   email: String
   role: String
   invitedByUserId: String
+  revision: int
   createdAt: DateTime
   expiresAt: DateTime

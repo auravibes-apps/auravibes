@@ -17,10 +17,13 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
     this.id,
     required this.workspaceId,
     required this.email,
+    required this.normalizedEmail,
     required this.role,
     required this.invitedByUserId,
     this.acceptedByUserId,
+    required this.revision,
     required this.createdAt,
+    required this.updatedAt,
     this.expiresAt,
     this.acceptedAt,
     this.declinedAt,
@@ -32,10 +35,13 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
     int? id,
     required int workspaceId,
     required String email,
+    required String normalizedEmail,
     required String role,
     required String invitedByUserId,
     String? acceptedByUserId,
+    required int revision,
     required DateTime createdAt,
+    required DateTime updatedAt,
     DateTime? expiresAt,
     DateTime? acceptedAt,
     DateTime? declinedAt,
@@ -48,11 +54,16 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
       email: jsonSerialization['email'] as String,
+      normalizedEmail: jsonSerialization['normalizedEmail'] as String,
       role: jsonSerialization['role'] as String,
       invitedByUserId: jsonSerialization['invitedByUserId'] as String,
       acceptedByUserId: jsonSerialization['acceptedByUserId'] as String?,
+      revision: jsonSerialization['revision'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
+      ),
+      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+        jsonSerialization['updatedAt'],
       ),
       expiresAt: jsonSerialization['expiresAt'] == null
           ? null
@@ -79,13 +90,19 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
 
   String email;
 
+  String normalizedEmail;
+
   String role;
 
   String invitedByUserId;
 
   String? acceptedByUserId;
 
+  int revision;
+
   DateTime createdAt;
+
+  DateTime updatedAt;
 
   DateTime? expiresAt;
 
@@ -104,10 +121,13 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
     int? id,
     int? workspaceId,
     String? email,
+    String? normalizedEmail,
     String? role,
     String? invitedByUserId,
     String? acceptedByUserId,
+    int? revision,
     DateTime? createdAt,
+    DateTime? updatedAt,
     DateTime? expiresAt,
     DateTime? acceptedAt,
     DateTime? declinedAt,
@@ -121,10 +141,13 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
       if (id != null) 'id': id,
       'workspaceId': workspaceId,
       'email': email,
+      'normalizedEmail': normalizedEmail,
       'role': role,
       'invitedByUserId': invitedByUserId,
       if (acceptedByUserId != null) 'acceptedByUserId': acceptedByUserId,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
       if (expiresAt != null) 'expiresAt': expiresAt?.toJson(),
       if (acceptedAt != null) 'acceptedAt': acceptedAt?.toJson(),
       if (declinedAt != null) 'declinedAt': declinedAt?.toJson(),
@@ -146,10 +169,13 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
     int? id,
     required int workspaceId,
     required String email,
+    required String normalizedEmail,
     required String role,
     required String invitedByUserId,
     String? acceptedByUserId,
+    required int revision,
     required DateTime createdAt,
+    required DateTime updatedAt,
     DateTime? expiresAt,
     DateTime? acceptedAt,
     DateTime? declinedAt,
@@ -159,10 +185,13 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
          id: id,
          workspaceId: workspaceId,
          email: email,
+         normalizedEmail: normalizedEmail,
          role: role,
          invitedByUserId: invitedByUserId,
          acceptedByUserId: acceptedByUserId,
+         revision: revision,
          createdAt: createdAt,
+         updatedAt: updatedAt,
          expiresAt: expiresAt,
          acceptedAt: acceptedAt,
          declinedAt: declinedAt,
@@ -178,10 +207,13 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
     Object? id = _Undefined,
     int? workspaceId,
     String? email,
+    String? normalizedEmail,
     String? role,
     String? invitedByUserId,
     Object? acceptedByUserId = _Undefined,
+    int? revision,
     DateTime? createdAt,
+    DateTime? updatedAt,
     Object? expiresAt = _Undefined,
     Object? acceptedAt = _Undefined,
     Object? declinedAt = _Undefined,
@@ -192,12 +224,15 @@ class _WorkspaceInviteImpl extends WorkspaceInvite {
       id: id is int? ? id : this.id,
       workspaceId: workspaceId ?? this.workspaceId,
       email: email ?? this.email,
+      normalizedEmail: normalizedEmail ?? this.normalizedEmail,
       role: role ?? this.role,
       invitedByUserId: invitedByUserId ?? this.invitedByUserId,
       acceptedByUserId: acceptedByUserId is String?
           ? acceptedByUserId
           : this.acceptedByUserId,
+      revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       expiresAt: expiresAt is DateTime? ? expiresAt : this.expiresAt,
       acceptedAt: acceptedAt is DateTime? ? acceptedAt : this.acceptedAt,
       declinedAt: declinedAt is DateTime? ? declinedAt : this.declinedAt,

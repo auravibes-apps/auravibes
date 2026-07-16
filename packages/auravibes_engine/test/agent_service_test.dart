@@ -196,6 +196,42 @@ void main() {
     expect(sleeps.toSet(), {const Duration(seconds: 1)});
   });
 
+  test('stops after one consecutive rate-limit retry', () async {
+    var currentTime = DateTime(2026);
+    final dataProvider = _FakeAgentConversationDataProvider(
+      continueErrors: [Exception('429'), Exception('429')],
+    );
+    final usecase = AgentService(
+      data: dataProvider,
+      models: dataProvider,
+      tools: dataProvider,
+      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
+      cancellationEffects: FakeCancellationEffects(),
+      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
+        start: (_, _) {},
+        clear: (_) {},
+      ),
+      rateLimitRetryDelay: const Duration(seconds: 1),
+      now: () => currentTime,
+      sleep: (duration) {
+        currentTime = currentTime.add(duration);
+
+        return Future<void>.value();
+      },
+    );
+
+    await expectLater(
+      usecase(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+        ),
+      ),
+      throwsA(isA<Exception>()),
+    );
+    expect(dataProvider.continuationContexts, hasLength(2));
+  });
+
   test('cancels during rate-limit retry wait', () async {
     var currentTime = DateTime(2026);
     final cancellationRuntime = FakeCancellationEffects();

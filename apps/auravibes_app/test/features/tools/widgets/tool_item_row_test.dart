@@ -6,10 +6,12 @@ import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart'
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_item_row.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -28,6 +30,7 @@ WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
   );
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _MockWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   _MockWorkspaceToolsNotifier(this.tools);
 

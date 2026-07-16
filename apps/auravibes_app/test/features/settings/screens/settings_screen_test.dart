@@ -1,11 +1,13 @@
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/test_app.dart';
@@ -15,6 +17,7 @@ class _MockThemeNotifier extends ThemeNotifier {
   Future<AppTheme> build() async => AppTheme.system;
 }
 
+@Dependencies([workspaceSession])
 void main() {
   test('constructor sets workspaceId', () {
     const screen = SettingsScreen(workspaceId: 'test-ws');
@@ -139,6 +142,7 @@ void main() {
   });
 }
 
+@Dependencies([workspaceSession])
 class _ThemeModeTestApp extends ConsumerWidget {
   const _ThemeModeTestApp();
 

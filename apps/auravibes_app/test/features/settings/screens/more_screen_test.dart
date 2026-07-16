@@ -1,19 +1,58 @@
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class _FakeGoRouter implements GoRouter {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
+  @Dependencies([
+    workspaceModelSelectionById,
+    workspaceSession,
+    cloudWorkspaceStateGateway,
+    serviceConnectionOperations,
+    serviceConnections,
+    ConversationChatNotifier,
+    conversationBusyState,
+    pendingToolCalls,
+    contextUsage,
+    chatMessages,
+    childConversationsStream,
+    conversationByIdStream,
+    messageConversationById,
+  ])
   Widget _buildScreen({required String workspaceId}) {
     return EasyLocalization(
       child: Builder(

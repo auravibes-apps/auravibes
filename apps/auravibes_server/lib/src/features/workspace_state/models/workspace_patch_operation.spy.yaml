@@ -1,0 +1,8 @@
+class: WorkspacePatchOperation
+fields:
+  operation: WorkspacePatchOperationKind
+  resourceKind: WorkspaceResourceKind
+  resourceId: String
+  data: String?
+  fieldMask: List<String>
+  expectedRevision: int?

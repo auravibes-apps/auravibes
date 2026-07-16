@@ -1,0 +1,20 @@
+class: WorkspaceModelConnection
+table: workspace_model_connection
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  connectionId: String
+  providerId: String
+  name: String
+  url: String?
+  keySuffix: String?
+  hasSecret: bool
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime
+  deletedAt: DateTime?
+indexes:
+  workspace_model_connection_identity_idx:
+    fields: workspaceId, connectionId
+    unique: true
+  workspace_model_connection_active_idx:
+    fields: workspaceId, deletedAt

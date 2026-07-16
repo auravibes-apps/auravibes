@@ -8,10 +8,13 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 void main() {
   group('GroupedToolsNotifier', () {
     final fixture = _GroupedToolsControllerFixture();
@@ -186,6 +189,7 @@ void main() {
   });
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _GroupedToolsControllerFixture {
   _FakeToolsGroupsRepository? _toolsGroupsRepository;
   _FakeMcpConnectionNotifier? _mcpNotifier;
@@ -248,6 +252,7 @@ final _mcpGroup = ToolsGroupEntity(
   mcpServerId: 'server-1',
 );
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   _FakeWorkspaceToolsNotifier(this.tools);
 
