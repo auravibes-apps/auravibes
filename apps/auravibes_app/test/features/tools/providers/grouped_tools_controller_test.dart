@@ -15,7 +15,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 void main() {
   group('GroupedToolsNotifier', () {
     final fixture = _GroupedToolsControllerFixture();
@@ -190,7 +194,11 @@ void main() {
   });
 }
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _GroupedToolsControllerFixture {
   _FakeToolsGroupsRepository? _toolsGroupsRepository;
   _FakeMcpConnectionNotifier? _mcpNotifier;

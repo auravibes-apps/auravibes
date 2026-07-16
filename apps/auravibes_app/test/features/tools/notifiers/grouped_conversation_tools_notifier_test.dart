@@ -23,6 +23,11 @@ import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../test_mocks.dart';
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 void main() {
   group('GroupedConversationToolsNotifier', () {
     final fixture = _GroupedConversationToolsFixture();
@@ -218,6 +223,11 @@ void main() {
   });
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _GroupedConversationToolsFixture {
   _FakeToolsGroupsRepository? _toolsGroupsRepository;
   _FakeWorkspaceToolsRepository? _workspaceToolsRepository;

@@ -166,7 +166,7 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
   /// Reconnect to an MCP server.
   Future<void> reconnectMcp(String mcpServerId) async {
-    final repository = ref.read(mcpServersRepositoryProvider);
+    final repository = ref.read(toolsGroupsRepositoryProvider);
     if (repository case final CloudToolsRepository cloudRepository) {
       final _ = await cloudRepository.discoverMcpServer(mcpServerId);
       ref.invalidateSelf();
