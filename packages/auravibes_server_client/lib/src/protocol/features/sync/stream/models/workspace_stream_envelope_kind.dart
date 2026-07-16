@@ -13,8 +13,7 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 enum WorkspaceStreamEnvelopeKind implements _i1.SerializableModel {
-  workspaceInvalidated
-  ;
+  workspaceInvalidated;
 
   static WorkspaceStreamEnvelopeKind fromJson(String name) {
     switch (name) {

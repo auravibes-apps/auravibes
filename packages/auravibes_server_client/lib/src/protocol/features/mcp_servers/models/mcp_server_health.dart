@@ -14,8 +14,7 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 enum McpServerHealth implements _i1.SerializableModel {
   healthy,
-  unhealthy
-  ;
+  unhealthy;
 
   static McpServerHealth fromJson(String name) {
     switch (name) {

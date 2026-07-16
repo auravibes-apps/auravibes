@@ -19,8 +19,7 @@ enum LiveTurnEventKind implements _i1.SerializableModel {
   awaitingApproval,
   completed,
   failed,
-  cancelled
-  ;
+  cancelled;
 
   static LiveTurnEventKind fromJson(String name) {
     switch (name) {

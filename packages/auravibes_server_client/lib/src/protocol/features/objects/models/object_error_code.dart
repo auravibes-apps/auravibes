@@ -24,8 +24,7 @@ enum ObjectErrorCode implements _i1.SerializableModel {
   scanFailed,
   staleRevision,
   idempotencyConflict,
-  objectReferenced
-  ;
+  objectReferenced;
 
   static ObjectErrorCode fromJson(String name) {
     switch (name) {
