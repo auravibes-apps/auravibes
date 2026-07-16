@@ -13,10 +13,13 @@ import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissio
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../test_mocks.dart';
 
@@ -556,6 +559,11 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   }
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   final List<String> reconnectedServerIds = [];
 

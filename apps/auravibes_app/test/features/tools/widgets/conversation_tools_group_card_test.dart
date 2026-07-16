@@ -9,14 +9,17 @@ import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_group_header.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tool_tile.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -85,6 +88,11 @@ class _MockGroupedConversationToolsNotifier
   }) async => groups;
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _MockMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   List<McpConnectionState> build() => const [];

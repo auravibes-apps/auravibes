@@ -3,6 +3,7 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -14,6 +15,11 @@ import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   List<McpConnectionState> build() => [];

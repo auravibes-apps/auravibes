@@ -7,6 +7,7 @@ import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
@@ -262,6 +263,11 @@ class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   final List<String> disconnectedServerIds = [];
   final List<String> reconnectedServerIds = [];

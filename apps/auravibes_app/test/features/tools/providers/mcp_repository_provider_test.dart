@@ -20,7 +20,11 @@ QueryExecutor _testConnection() {
   );
 }
 
-@Dependencies([mcpServersRepository])
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
