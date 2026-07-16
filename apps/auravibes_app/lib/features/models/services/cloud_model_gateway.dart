@@ -67,7 +67,7 @@ class CloudModelGateway {
     required WorkspaceSecretKind secretKind,
     required WorkspaceSecretScope scope,
     required String resourceId,
-    String? secret,
+    required String secret,
     int? expectedRevision,
   }) => _stateGateway.putSecret(
     requestId: requestId,

@@ -1,4 +1,3 @@
-import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
@@ -13,20 +12,11 @@ part 'delete_service_connection_usecase.g.dart';
 class DeleteServiceConnectionUsecase {
   DeleteServiceConnectionUsecase({
     required ModelConnectionStore modelConnectionRepository,
-    SkillCredentialsRepository? skillCredentialsRepository,
-    Future<void> Function(String id)? deleteSkillCredential,
-  }) : modelConnectionStore = modelConnectionRepository,
-       deleteSkillCredential =
-           deleteSkillCredential ??
-           (skillCredentialsRepository == null
-               ? _missingSkillCredentialStore
-               : skillCredentialsRepository.deleteCredential);
+    required this.deleteSkillCredential,
+  }) : modelConnectionStore = modelConnectionRepository;
 
   final ModelConnectionStore modelConnectionStore;
   final Future<void> Function(String id) deleteSkillCredential;
-
-  static Future<void> _missingSkillCredentialStore(String _) =>
-      Future<void>.error(StateError('Skill credential store is unavailable'));
 
   Future<void> call({
     required String connectionId,

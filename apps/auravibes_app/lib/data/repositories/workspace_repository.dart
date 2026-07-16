@@ -203,25 +203,13 @@ class WorkspaceRepository {
 
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
     String cloudAccountId, {
-    String? serverUrl,
-  }) {
-    return _deleteCloudWorkspaceMirrorsForAccount(
-      cloudAccountId,
-      serverUrl: serverUrl,
-    );
-  }
-
-  Future<int> _deleteCloudWorkspaceMirrorsForAccount(
-    String cloudAccountId, {
-    String? serverUrl,
+    required String serverUrl,
   }) async {
     final mirrors =
         await (_database.select(_database.workspaces)..where(
               (workspace) =>
                   workspace.cloudAccountId.equals(cloudAccountId) &
-                  (serverUrl == null
-                      ? const Constant(true)
-                      : workspace.url.equals(serverUrl)),
+                  workspace.url.equals(serverUrl),
             ))
             .get();
     var deleted = 0;

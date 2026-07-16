@@ -345,6 +345,7 @@ void main() {
 
       final deleted = await repository.deleteCloudWorkspaceMirrorsForAccount(
         'account-1',
+        serverUrl: 'http://localhost:8080/',
       );
 
       expect(deleted, 1);

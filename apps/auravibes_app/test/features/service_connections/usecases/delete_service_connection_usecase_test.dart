@@ -17,7 +17,7 @@ void main() {
         ).thenAnswer((_) => Future<void>.value());
         final usecase = DeleteServiceConnectionUsecase(
           modelConnectionRepository: modelRepository,
-          skillCredentialsRepository: credentialsRepository,
+          deleteSkillCredential: credentialsRepository.deleteCredential,
         );
 
         await expectLater(
@@ -45,7 +45,7 @@ void main() {
       ).thenAnswer((_) => Future<void>.value());
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        skillCredentialsRepository: credentialsRepository,
+        deleteSkillCredential: credentialsRepository.deleteCredential,
       );
 
       await expectLater(
@@ -86,7 +86,7 @@ void main() {
       final credentialsRepository = _MockSkillCredentialsRepository();
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        skillCredentialsRepository: credentialsRepository,
+        deleteSkillCredential: credentialsRepository.deleteCredential,
       );
 
       expect(

@@ -11,12 +11,12 @@ class CloudAccountUseCases {
   const CloudAccountUseCases({
     required this._store,
     required this._workspaceRepository,
-    this.invalidateAccount,
+    required this.invalidateAccount,
   });
 
   final ServerpodAuthStore _store;
   final WorkspaceRepository _workspaceRepository;
-  final void Function(String serverUrl, String userId)? invalidateAccount;
+  final void Function(String serverUrl, String userId) invalidateAccount;
 
   Future<CloudAccountSession> login({
     required String email,
@@ -89,7 +89,7 @@ class CloudAccountUseCases {
       serverUrl: origin,
     );
     await _store.removeAccount(serverUrl: origin, userId: userId);
-    invalidateAccount?.call(origin, userId);
+    invalidateAccount(origin, userId);
   }
 
   Client _newClient() {

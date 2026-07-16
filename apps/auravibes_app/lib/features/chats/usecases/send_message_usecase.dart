@@ -32,14 +32,16 @@ typedef ContinueAgentTurn =
 
 class SendMessageUsecase {
   const SendMessageUsecase({
-    required this.continueAgentTurn,
+    required ContinueAgentTurn this.continueAgentTurn,
     required this.messageRepository,
     required this.getConversationBusyStateUsecase,
     required this.sendQueueRuntime,
   }) : cloudSend = null;
 
-  const SendMessageUsecase.cloud(this.cloudSend)
-    : continueAgentTurn = null,
+  const SendMessageUsecase.cloud(
+    Future<CloudLiveTurnState> Function(String conversationId, ChatDraft draft)
+    this.cloudSend,
+  ) : continueAgentTurn = null,
       messageRepository = null,
       getConversationBusyStateUsecase = null,
       sendQueueRuntime = null;
