@@ -1,0 +1,12 @@
+{
+  "packages": [
+    "npm:pi-lens",
+    {
+      "source": "npm:@narumitw/pi-lsp",
+      "extensions": [],
+      "skills": [],
+      "prompts": [],
+      "themes": []
+    }
+  ]
+}
