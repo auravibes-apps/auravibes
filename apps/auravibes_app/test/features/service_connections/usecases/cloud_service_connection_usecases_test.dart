@@ -48,6 +48,7 @@ void main() {
                   jsonDecode(resourceOperation.data ?? '{}')
                       as Map<String, dynamic>;
               submittedSecret = secret;
+
               return MutateWorkspaceCredentialResponse(
                 resource: WorkspaceResource(
                   workspaceId: 1,
@@ -128,6 +129,7 @@ void main() {
               metadata =
                   jsonDecode(resourceOperation.data ?? '{}')
                       as Map<String, dynamic>;
+
               return MutateWorkspaceCredentialResponse(
                 resource: WorkspaceResource(
                   workspaceId: 1,
@@ -280,6 +282,7 @@ void main() {
               expect(expectedSecretRevision, 3);
               expect(secret, isNull);
               expect(clearSecret, isTrue);
+
               return MutateWorkspaceCredentialResponse(
                 resource: WorkspaceResource(
                   workspaceId: 1,
@@ -300,7 +303,7 @@ void main() {
 
     await usecases.deleteById('connection');
 
-    expect(mutation!.operation, WorkspacePatchOperationKind.delete);
-    expect(mutation!.expectedRevision, 2);
+    expect(mutation?.operation, WorkspacePatchOperationKind.delete);
+    expect(mutation?.expectedRevision, 2);
   });
 }

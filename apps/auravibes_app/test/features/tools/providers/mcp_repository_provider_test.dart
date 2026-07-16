@@ -8,6 +8,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
@@ -19,6 +20,7 @@ QueryExecutor _testConnection() {
   );
 }
 
+@Dependencies([mcpServersRepository])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 

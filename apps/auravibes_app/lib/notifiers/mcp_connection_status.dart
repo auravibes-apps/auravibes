@@ -24,6 +24,7 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mcp_connection_status.freezed.dart';
@@ -160,6 +161,7 @@ class McpToolIdComponents {
 /// - toolIdentifier: Original tool identifier from the MCP server
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
+@Dependencies([mcpServersRepository])
 @riverpod
 class McpConnectionNotifier extends _$McpConnectionNotifier {
   McpManagerService? _mcpManagerService;

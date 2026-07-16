@@ -27,6 +27,7 @@ part of 'mcp_connection_status.dart';
 /// See [McpToolIdComponents] for parsing composite IDs.
 
 @ProviderFor(McpConnectionNotifier)
+@Dependencies([mcpServersRepository])
 final mcpConnectionProvider = McpConnectionNotifierProvider._();
 
 /// Manages MCP server connections and their tools.
@@ -46,6 +47,7 @@ final mcpConnectionProvider = McpConnectionNotifierProvider._();
 /// - toolIdentifier: Original tool identifier from the MCP server
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
+@Dependencies([mcpServersRepository])
 final class McpConnectionNotifierProvider
     extends $NotifierProvider<McpConnectionNotifier, List<McpConnectionState>> {
   /// Manages MCP server connections and their tools.
@@ -93,7 +95,7 @@ final class McpConnectionNotifierProvider
 }
 
 String _$mcpConnectionNotifierHash() =>
-    r'f5f3f7ad704ebcdd5b5dc604047666deb9570b49';
+    r'f0a71d7804e2218cb736c27c4e9daf2247c455fa';
 
 /// Manages MCP server connections and their tools.
 ///
@@ -113,6 +115,7 @@ String _$mcpConnectionNotifierHash() =>
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
 
+@Dependencies([mcpServersRepository])
 abstract class _$McpConnectionNotifier
     extends $Notifier<List<McpConnectionState>> {
   List<McpConnectionState> build();

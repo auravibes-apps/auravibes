@@ -60,7 +60,7 @@ class CloudCompactionUsecase {
           throw const CompactionFailedException();
         }
       } finally {
-        await events.cancel();
+        final _ = await events.cancel();
       }
       execution.markSuccess(conversation.id);
 

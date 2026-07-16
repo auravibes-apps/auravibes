@@ -68,6 +68,7 @@ Stream<List<MessageEntity>> _cloudMessages(
   final turn = _latestCloudTurn(initial);
   if (turn == null) {
     yield initial.map(_readCloudMessage).toList();
+
     return;
   }
   final events = StreamIterator(
@@ -115,7 +116,7 @@ Stream<List<MessageEntity>> _cloudMessages(
       if (state.isTerminal) return;
     }
   } finally {
-    await events.cancel();
+    final _ = await events.cancel();
   }
 }
 

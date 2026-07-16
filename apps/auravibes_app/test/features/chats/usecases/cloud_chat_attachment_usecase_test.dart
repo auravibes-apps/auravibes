@@ -58,7 +58,6 @@ void main() {
       );
 
       final objects = await usecase.uploadDraftResults(
-        requestId: 'turn-1',
         attachments: const [
           MessageAttachmentToCreate(
             localPath: '/cache/draft.txt',
@@ -114,7 +113,6 @@ void main() {
 
       await expectLater(
         usecase.uploadDraftResults(
-          requestId: 'turn-1',
           attachments: const [
             MessageAttachmentToCreate(
               localPath: '/cache/draft.txt',
@@ -191,7 +189,6 @@ void main() {
 
     await expectLater(
       usecase.uploadDraftResults(
-        requestId: 'turn-1',
         attachments: const [
           MessageAttachmentToCreate(
             localPath: '/cache/one.txt',

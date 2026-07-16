@@ -112,6 +112,7 @@ final class ToolDisplayNameFamily extends $Family
 /// Cached per server ID via Riverpod's family mechanism.
 
 @ProviderFor(mcpServerName)
+@Dependencies([mcpServersRepository])
 final mcpServerNameProvider = McpServerNameFamily._();
 
 /// Provides the name of an MCP server by its ID.
@@ -119,6 +120,7 @@ final mcpServerNameProvider = McpServerNameFamily._();
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 
+@Dependencies([mcpServersRepository])
 final class McpServerNameProvider
     extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
     with $FutureModifier<String?>, $FutureProvider<String?> {
@@ -169,13 +171,14 @@ final class McpServerNameProvider
   }
 }
 
-String _$mcpServerNameHash() => r'a4f0fbf1e58c5c298f62f11c76f1a829d545853a';
+String _$mcpServerNameHash() => r'c890ab8699c1c2606350dcd70942c9ac0f652494';
 
 /// Provides the name of an MCP server by its ID.
 ///
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 
+@Dependencies([mcpServersRepository])
 final class McpServerNameFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String?>, String> {
   McpServerNameFamily._()
@@ -192,6 +195,7 @@ final class McpServerNameFamily extends $Family
   /// Returns null if the server is not found.
   /// Cached per server ID via Riverpod's family mechanism.
 
+  @Dependencies([mcpServersRepository])
   McpServerNameProvider call(String mcpServerId) =>
       McpServerNameProvider._(argument: mcpServerId, from: this);
 

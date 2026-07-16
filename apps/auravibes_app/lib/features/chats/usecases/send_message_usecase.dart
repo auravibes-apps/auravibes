@@ -205,7 +205,6 @@ final sendMessageUsecaseProvider = Provider<SendMessageUsecase>(
         final requestId = const UuidV7().generate();
         final uploadedObjects =
             await attachments?.uploadDraftResults(
-              requestId: requestId,
               attachments: draft.attachments,
             ) ??
             const [];
@@ -226,7 +225,6 @@ final sendMessageUsecaseProvider = Provider<SendMessageUsecase>(
         } on Object catch (error, stackTrace) {
           await attachments?.deleteUploaded(
             uploadedObjects,
-            requestId: const UuidV7().generate(),
           );
           Error.throwWithStackTrace(error, stackTrace);
         }

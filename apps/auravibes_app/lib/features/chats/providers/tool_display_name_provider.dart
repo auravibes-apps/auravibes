@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_display_name_provider.g.dart';
@@ -32,6 +33,7 @@ Future<String> toolDisplayName(Ref ref, String compositeToolId) async {
 ///
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
+@Dependencies([mcpServersRepository])
 @riverpod
 Future<String?> mcpServerName(Ref ref, String mcpServerId) async {
   try {

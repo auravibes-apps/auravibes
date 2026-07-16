@@ -33,9 +33,13 @@ final class McpServersRepositoryProvider
         retry: null,
         name: r'mcpServersRepositoryProvider',
         isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          McpServersRepositoryProvider.$allTransitiveDependencies0,
+        ],
       );
+
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
 
   @override
   String debugGetCreateSourceHash() => _$mcpServersRepositoryHash();
@@ -61,4 +65,4 @@ final class McpServersRepositoryProvider
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'5bfb549832f52f481703f0244d413cb3383b05cd';
+    r'a5751195ba212d0cbae991ccf88d883457ed55e8';

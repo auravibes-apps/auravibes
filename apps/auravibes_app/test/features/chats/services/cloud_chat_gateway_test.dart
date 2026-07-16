@@ -20,6 +20,7 @@ void main() {
       stateGateway: stateGateway,
       subscribeTurn: (_) {
         calls++;
+
         return const Stream.empty();
       },
     );

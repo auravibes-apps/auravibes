@@ -75,6 +75,7 @@ String _$toolsGroupsRepositoryHash() =>
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
 @ProviderFor(GroupedToolsNotifier)
+@Dependencies([mcpServersRepository])
 final groupedToolsProvider = GroupedToolsNotifierFamily._();
 
 /// Provider that groups tools by their workspaceToolsGroupId.
@@ -85,6 +86,7 @@ final groupedToolsProvider = GroupedToolsNotifierFamily._();
 /// - Creates a "Built-in Tools" virtual group for tools without a group
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
+@Dependencies([mcpServersRepository])
 final class GroupedToolsNotifierProvider
     extends
         $AsyncNotifierProvider<
@@ -136,7 +138,7 @@ final class GroupedToolsNotifierProvider
 }
 
 String _$groupedToolsNotifierHash() =>
-    r'84e09be9bf8a761e0ec6a6c65c80dcb0544c04eb';
+    r'd1c921ee7844fe49d4e158f005535556013cdd11';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -147,6 +149,7 @@ String _$groupedToolsNotifierHash() =>
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
+@Dependencies([mcpServersRepository])
 final class GroupedToolsNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -174,6 +177,7 @@ final class GroupedToolsNotifierFamily extends $Family
   /// - Enriches MCP groups with their connection state
   /// - Sorts groups: Default first, then MCP errors, then by creation date
 
+  @Dependencies([mcpServersRepository])
   GroupedToolsNotifierProvider call(String workspaceId) =>
       GroupedToolsNotifierProvider._(argument: workspaceId, from: this);
 
@@ -190,6 +194,7 @@ final class GroupedToolsNotifierFamily extends $Family
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
 
+@Dependencies([mcpServersRepository])
 abstract class _$GroupedToolsNotifier
     extends $AsyncNotifier<List<ToolsGroupWithTools>> {
   late final _$args = ref.$arg as String;

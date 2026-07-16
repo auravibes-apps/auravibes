@@ -47,7 +47,6 @@ class CloudChatAttachmentUsecase {
   final ReadCloudAttachmentBytes _readBytes;
 
   Future<List<ObjectResult>> uploadDraftResults({
-    required String requestId,
     required List<MessageAttachmentToCreate> attachments,
   }) => guardCloudCall(.object, () async {
     final objects = <ObjectResult>[];
@@ -78,10 +77,7 @@ class CloudChatAttachmentUsecase {
         objects.add(active);
       }
     } on Object catch (error, stackTrace) {
-      await deleteUploaded(
-        objects,
-        requestId: const UuidV7().generate(),
-      );
+      await deleteUploaded(objects);
       await deleteBegunUploads(
         uploads
             .where((upload) {
@@ -90,7 +86,6 @@ class CloudChatAttachmentUsecase {
               );
             })
             .toList(growable: false),
-        requestId: const UuidV7().generate(),
       );
       Error.throwWithStackTrace(error, stackTrace);
     }
@@ -122,10 +117,7 @@ class CloudChatAttachmentUsecase {
     ),
   );
 
-  Future<void> deleteUploaded(
-    List<ObjectResult> objects, {
-    required String requestId,
-  }) async {
+  Future<void> deleteUploaded(List<ObjectResult> objects) async {
     for (var index = 0; index < objects.length; index++) {
       final object = objects[index];
       try {
@@ -140,10 +132,7 @@ class CloudChatAttachmentUsecase {
     }
   }
 
-  Future<void> deleteBegunUploads(
-    List<BeginUploadResult> uploads, {
-    required String requestId,
-  }) async {
+  Future<void> deleteBegunUploads(List<BeginUploadResult> uploads) async {
     for (var index = 0; index < uploads.length; index++) {
       final upload = uploads[index];
       try {
