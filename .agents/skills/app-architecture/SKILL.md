@@ -1,6 +1,6 @@
 ---
 name: app-architecture
-description: Use when adding, moving, reviewing, or reading code in apps/auravibes_app. Defines the target app architecture for AI agents and humans: feature-first placement, Riverpod boundaries, usecases, repositories, services, adapters, localization, and verification.
+description: "Use when adding, moving, reviewing, or reading code in apps/auravibes_app. Defines the target app architecture for AI agents and humans: feature-first placement, Riverpod boundaries, usecases, repositories, services, adapters, localization, and verification."
 ---
 
 # App Architecture
