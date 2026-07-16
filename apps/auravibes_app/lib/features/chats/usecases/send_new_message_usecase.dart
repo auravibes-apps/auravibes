@@ -99,7 +99,7 @@ class SendNewMessageUsecase {
   }
 }
 
-@Dependencies([workspaceSession])
+@Dependencies([workspaceSession, cloudConversationUsecase])
 final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
   (ref) {
     final isCloud = ref.watch(workspaceSessionProvider).cloud != null;

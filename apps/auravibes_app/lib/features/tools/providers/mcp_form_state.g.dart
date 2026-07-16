@@ -11,11 +11,9 @@ part of 'mcp_form_state.dart';
 /// Notifier for managing MCP form state.
 
 @ProviderFor(McpFormNotifier)
-@Dependencies([workspaceSession])
 final mcpFormProvider = McpFormNotifierFamily._();
 
 /// Notifier for managing MCP form state.
-@Dependencies([workspaceSession])
 final class McpFormNotifierProvider
     extends $NotifierProvider<McpFormNotifier, McpFormState> {
   /// Notifier for managing MCP form state.
@@ -29,6 +27,17 @@ final class McpFormNotifierProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
+
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+  static final $allTransitiveDependencies1 = mcpConnectionProvider;
+  static final $allTransitiveDependencies2 =
+      McpConnectionNotifierProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies3 =
+      McpConnectionNotifierProvider.$allTransitiveDependencies2;
+  static final $allTransitiveDependencies4 =
+      McpConnectionNotifierProvider.$allTransitiveDependencies3;
+  static final $allTransitiveDependencies5 =
+      McpConnectionNotifierProvider.$allTransitiveDependencies4;
 
   @override
   String debugGetCreateSourceHash() => _$mcpFormNotifierHash();
@@ -63,11 +72,10 @@ final class McpFormNotifierProvider
   }
 }
 
-String _$mcpFormNotifierHash() => r'717fb00b0888f250ea0f563b6bca0c78b19a3180';
+String _$mcpFormNotifierHash() => r'48a90c508820f04594d06efab5b0c83edf6050f1';
 
 /// Notifier for managing MCP form state.
 
-@Dependencies([workspaceSession])
 final class McpFormNotifierFamily extends $Family
     with
         $ClassFamilyOverride<
@@ -81,14 +89,23 @@ final class McpFormNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'mcpFormProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[
+          workspaceSessionProvider,
+          mcpConnectionProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          McpFormNotifierProvider.$allTransitiveDependencies0,
+          McpFormNotifierProvider.$allTransitiveDependencies1,
+          McpFormNotifierProvider.$allTransitiveDependencies2,
+          McpFormNotifierProvider.$allTransitiveDependencies3,
+          McpFormNotifierProvider.$allTransitiveDependencies4,
+          McpFormNotifierProvider.$allTransitiveDependencies5,
+        },
         isAutoDispose: true,
       );
 
   /// Notifier for managing MCP form state.
 
-  @Dependencies([workspaceSession])
   McpFormNotifierProvider call(String workspaceId) =>
       McpFormNotifierProvider._(argument: workspaceId, from: this);
 
@@ -98,7 +115,6 @@ final class McpFormNotifierFamily extends $Family
 
 /// Notifier for managing MCP form state.
 
-@Dependencies([workspaceSession])
 abstract class _$McpFormNotifier extends $Notifier<McpFormState> {
   late final _$args = ref.$arg as String;
   String get workspaceId => _$args;

@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -12,7 +11,12 @@ part 'tool_display_name_provider.g.dart';
 /// For MCP tools, fetches the original server name from the database.
 /// For built-in tools, formats the tool identifier.
 /// Uses Riverpod's family caching to avoid repeated lookups.
-@riverpod
+@Riverpod(
+  dependencies: [
+    mcpServerName,
+    mcpServersRepository,
+  ],
+)
 Future<String> toolDisplayName(Ref ref, String compositeToolId) async {
   final parsed = ToolNameFormatter.parse(compositeToolId);
 
@@ -34,12 +38,8 @@ Future<String> toolDisplayName(Ref ref, String compositeToolId) async {
 ///
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
-@riverpod
+@Dependencies([mcpServersRepository])
+@Riverpod(dependencies: [mcpServersRepository])
 Future<String?> mcpServerName(Ref ref, String mcpServerId) async {
   try {
     final repository = ref.read(mcpServersRepositoryProvider);

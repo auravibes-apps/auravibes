@@ -53,11 +53,14 @@ class UpdateSkillUsecase {
   }
 }
 
-final updateSkillUsecaseProvider = Provider<UpdateSkillUsecase>((ref) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+final updateSkillUsecaseProvider = Provider<UpdateSkillUsecase>(
+  (ref) {
+    final cloud = ref.watch(cloudSkillStoreProvider);
 
-  return UpdateSkillUsecase(
-    cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-    cloudStore: cloud,
-  );
-});
+    return UpdateSkillUsecase(
+      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+      cloudStore: cloud,
+    );
+  },
+  dependencies: [cloudSkillStoreProvider],
+);

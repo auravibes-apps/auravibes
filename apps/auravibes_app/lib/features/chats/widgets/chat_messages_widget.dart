@@ -52,6 +52,7 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   workspaceSession,
   contextUsage,
   chatMessages,
+  toolDisplayName,
 ])
 class ChatMessagesWidget extends HookConsumerWidget {
   // Null lets callers fall back to per-message provider reads.
@@ -137,6 +138,7 @@ class ChatMessagesWidget extends HookConsumerWidget {
   chatMessages,
   childConversationsStream,
   conversationByIdStream,
+  toolDisplayName,
 ])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
@@ -474,6 +476,7 @@ class _AiMessageContent extends StatelessWidget {
   childConversationsStream,
   conversationByIdStream,
   messageConversationById,
+  toolDisplayName,
 ])
 class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({

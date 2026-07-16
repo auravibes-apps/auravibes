@@ -10,10 +10,8 @@ part of 'compaction_settings_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(compactionSettings)
-@Dependencies([cloudWorkspaceStateGateway])
 final compactionSettingsProvider = CompactionSettingsFamily._();
 
-@Dependencies([cloudWorkspaceStateGateway])
 final class CompactionSettingsProvider
     extends
         $FunctionalProvider<
@@ -34,6 +32,10 @@ final class CompactionSettingsProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
+
+  static final $allTransitiveDependencies0 = cloudWorkspaceStateGatewayProvider;
+  static final $allTransitiveDependencies1 =
+      CloudWorkspaceStateGatewayProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$compactionSettingsHash();
@@ -69,21 +71,22 @@ final class CompactionSettingsProvider
 }
 
 String _$compactionSettingsHash() =>
-    r'6e0b48c493787efd2025069c60c50c5b3484af54';
+    r'd2bf0fb868b47481884cac22b4272eaee4c90054';
 
-@Dependencies([cloudWorkspaceStateGateway])
 final class CompactionSettingsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<CompactionSettings>, String> {
   CompactionSettingsFamily._()
     : super(
         retry: null,
         name: r'compactionSettingsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[cloudWorkspaceStateGatewayProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          CompactionSettingsProvider.$allTransitiveDependencies0,
+          CompactionSettingsProvider.$allTransitiveDependencies1,
+        ],
         isAutoDispose: true,
       );
 
-  @Dependencies([cloudWorkspaceStateGateway])
   CompactionSettingsProvider call(String workspaceId) =>
       CompactionSettingsProvider._(argument: workspaceId, from: this);
 

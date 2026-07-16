@@ -27,11 +27,6 @@ part of 'mcp_connection_status.dart';
 /// See [McpToolIdComponents] for parsing composite IDs.
 
 @ProviderFor(McpConnectionNotifier)
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 final mcpConnectionProvider = McpConnectionNotifierProvider._();
 
 /// Manages MCP server connections and their tools.
@@ -51,11 +46,6 @@ final mcpConnectionProvider = McpConnectionNotifierProvider._();
 /// - toolIdentifier: Original tool identifier from the MCP server
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 final class McpConnectionNotifierProvider
     extends $NotifierProvider<McpConnectionNotifier, List<McpConnectionState>> {
   /// Manages MCP server connections and their tools.
@@ -82,9 +72,29 @@ final class McpConnectionNotifierProvider
         retry: null,
         name: r'mcpConnectionProvider',
         isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[
+          mcpServersRepositoryProvider,
+          workspaceSessionProvider,
+          cloudWorkspaceStateGatewayProvider,
+          workspaceToolsProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          McpConnectionNotifierProvider.$allTransitiveDependencies0,
+          McpConnectionNotifierProvider.$allTransitiveDependencies1,
+          McpConnectionNotifierProvider.$allTransitiveDependencies2,
+          McpConnectionNotifierProvider.$allTransitiveDependencies3,
+          McpConnectionNotifierProvider.$allTransitiveDependencies4,
+        },
       );
+
+  static final $allTransitiveDependencies0 = mcpServersRepositoryProvider;
+  static final $allTransitiveDependencies1 =
+      McpServersRepositoryProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      McpServersRepositoryProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies3 = workspaceToolsProvider;
+  static final $allTransitiveDependencies4 =
+      WorkspaceToolsNotifierProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$mcpConnectionNotifierHash();
@@ -103,7 +113,7 @@ final class McpConnectionNotifierProvider
 }
 
 String _$mcpConnectionNotifierHash() =>
-    r'6531a8de09b4a3aebfd3fe1bbc3d425b7d755938';
+    r'762cec40a6740a79ef42bc9e4793fa5895359291';
 
 /// Manages MCP server connections and their tools.
 ///
@@ -123,11 +133,6 @@ String _$mcpConnectionNotifierHash() =>
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 abstract class _$McpConnectionNotifier
     extends $Notifier<List<McpConnectionState>> {
   List<McpConnectionState> build();

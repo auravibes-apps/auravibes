@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/skills/providers/skill_credential_operati
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/skill_template_tools_provider.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
@@ -37,6 +38,14 @@ void main() {
   setUpAll(() {
     registerFallbackValue(WorkspaceSecretKind.skillCredential);
     registerFallbackValue(WorkspaceSecretScope.workspace);
+    registerFallbackValue(
+      WorkspacePatchOperation(
+        operation: WorkspacePatchOperationKind.create,
+        resourceKind: WorkspaceResourceKind.skill,
+        resourceId: 'fallback',
+        fieldMask: const [],
+      ),
+    );
   });
 
   const workspaceId = 'local-cloud';
@@ -115,12 +124,54 @@ void main() {
           sequence: 1,
         ),
       );
+      when(
+        () => gateway.mutateCredential(
+          requestId: any(named: 'requestId'),
+          resourceOperation: any(named: 'resourceOperation'),
+          secretKind: any(named: 'secretKind'),
+          scope: any(named: 'scope'),
+          secret: any(named: 'secret'),
+          clearSecret: any(named: 'clearSecret'),
+          expectedSecretRevision: any(named: 'expectedSecretRevision'),
+        ),
+      ).thenAnswer((invocation) async {
+        final operation =
+            invocation.namedArguments[#resourceOperation]
+                as WorkspacePatchOperation;
+        final resource = _resource(
+          kind: operation.resourceKind,
+          id: operation.resourceId,
+          data: operation.data ?? '{}',
+          revision: (operation.expectedRevision ?? 0) + 1,
+        );
+        resources
+          ..removeWhere(
+            (item) =>
+                item.resourceKind == operation.resourceKind &&
+                item.resourceId == operation.resourceId,
+          )
+          ..add(resource);
+
+        return MutateWorkspaceCredentialResponse(
+          resource: resource,
+          configured: true,
+          displaySuffix: 'secret',
+          secretRevision: 1,
+          sequence: 1,
+        );
+      });
 
       Never local() => throw StateError('local storage touched');
       final container = ProviderContainer(
         overrides: [
           workspaceSessionProvider.overrideWithValue(workspace),
           cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+          cloudWorkspaceStateGatewayForWorkspaceProvider(
+            workspaceId,
+          ).overrideWith((_) async => gateway),
+          workspaceSkillsProvider(workspaceId).overrideWith(
+            (_) => CloudSkillSettingsAdapter(gateway).watchSkills().first,
+          ),
           skillsRepositoryProvider.overrideWith((_) => local()),
           skillTemplateToolsRepositoryProvider.overrideWith((_) => local()),
           skillCredentialDefinitionsRepositoryProvider.overrideWith(
@@ -292,13 +343,14 @@ void main() {
 
       expect(credential.attributes, isEmpty);
       verify(
-        () => gateway.putSecret(
+        () => gateway.mutateCredential(
           requestId: any(named: 'requestId'),
+          resourceOperation: any(named: 'resourceOperation'),
           secretKind: WorkspaceSecretKind.skillCredential,
           scope: WorkspaceSecretScope.workspace,
-          resourceId: credential.id,
           secret: any(named: 'secret'),
-          expectedRevision: any(named: 'expectedRevision'),
+          clearSecret: false,
+          expectedSecretRevision: any(named: 'expectedSecretRevision'),
         ),
       ).called(2);
 

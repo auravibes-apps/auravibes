@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mcp_form_state.freezed.dart';
@@ -83,8 +82,7 @@ abstract class McpFormState with _$McpFormState {
 }
 
 /// Notifier for managing MCP form state.
-@Dependencies([workspaceSession])
-@riverpod
+@Riverpod(dependencies: [workspaceSession, McpConnectionNotifier])
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
 

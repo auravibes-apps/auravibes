@@ -70,13 +70,16 @@ class UpdateSkillCredentialDefinitionUsecase {
 }
 
 final updateSkillCredentialDefinitionUsecaseProvider =
-    Provider<UpdateSkillCredentialDefinitionUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<UpdateSkillCredentialDefinitionUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return UpdateSkillCredentialDefinitionUsecase(
-        cloud == null
-            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-            : null,
-        cloudStore: cloud,
-      );
-    });
+        return UpdateSkillCredentialDefinitionUsecase(
+          cloud == null
+              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+              : null,
+          cloudStore: cloud,
+        );
+      },
+      dependencies: [cloudSkillStoreProvider],
+    );

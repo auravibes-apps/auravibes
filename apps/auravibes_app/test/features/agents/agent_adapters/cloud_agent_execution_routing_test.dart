@@ -18,7 +18,11 @@ class _Client extends Mock implements Client {}
 
 class _Conversation extends Mock implements EndpointConversation {}
 
+class _GetConversationRequest extends Fake implements GetConversationRequest {}
+
 void main() {
+  setUpAll(() => registerFallbackValue(_GetConversationRequest()));
+
   test(
     'cloud agent execution lookup never constructs local repositories',
     () async {

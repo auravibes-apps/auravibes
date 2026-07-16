@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MessageToolCallEntity {
 
- String get id; String get name; String get argumentsRaw; String? get argumentsDigest; String? get turnId; int? get turnRevision;/// The raw response from tool execution, if successful.
+ String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision;/// The raw response from tool execution, if successful.
  String? get responseRaw;/// The result status of this tool call.
 ///
 /// - null: Tool is awaiting approval
@@ -53,7 +53,7 @@ abstract mixin class $MessageToolCallEntityCopyWith<$Res>  {
   factory $MessageToolCallEntityCopyWith(MessageToolCallEntity value, $Res Function(MessageToolCallEntity) _then) = _$MessageToolCallEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String argumentsRaw, String? argumentsDigest, String? turnId, int? turnRevision, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 
@@ -165,7 +165,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  String? argumentsDigest,  String? turnId,  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
 return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.resultStatus);case _:
@@ -186,7 +186,7 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw,  String? argumentsDigest,  String? turnId,  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity():
 return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.resultStatus);case _:
@@ -206,7 +206,7 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw,  String? argumentsDigest,  String? turnId,  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String argumentsRaw, @JsonKey(includeIfNull: false)  String? argumentsDigest, @JsonKey(includeIfNull: false)  String? turnId, @JsonKey(includeIfNull: false)  int? turnRevision,  String? responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson)  ToolCallResultStatus? resultStatus)?  $default,) {final _that = this;
 switch (_that) {
 case _MessageToolCallEntity() when $default != null:
 return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_that.turnId,_that.turnRevision,_that.responseRaw,_that.resultStatus);case _:
@@ -221,15 +221,15 @@ return $default(_that.id,_that.name,_that.argumentsRaw,_that.argumentsDigest,_th
 @JsonSerializable()
 
 class _MessageToolCallEntity extends MessageToolCallEntity {
-  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, this.argumentsDigest, this.turnId, this.turnRevision, this.responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
+  const _MessageToolCallEntity({required this.id, required this.name, required this.argumentsRaw, @JsonKey(includeIfNull: false) this.argumentsDigest, @JsonKey(includeIfNull: false) this.turnId, @JsonKey(includeIfNull: false) this.turnRevision, this.responseRaw, @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) this.resultStatus}): super._();
   factory _MessageToolCallEntity.fromJson(Map<String, dynamic> json) => _$MessageToolCallEntityFromJson(json);
 
 @override final  String id;
 @override final  String name;
 @override final  String argumentsRaw;
-@override final  String? argumentsDigest;
-@override final  String? turnId;
-@override final  int? turnRevision;
+@override@JsonKey(includeIfNull: false) final  String? argumentsDigest;
+@override@JsonKey(includeIfNull: false) final  String? turnId;
+@override@JsonKey(includeIfNull: false) final  int? turnRevision;
 /// The raw response from tool execution, if successful.
 @override final  String? responseRaw;
 /// The result status of this tool call.
@@ -271,7 +271,7 @@ abstract mixin class _$MessageToolCallEntityCopyWith<$Res> implements $MessageTo
   factory _$MessageToolCallEntityCopyWith(_MessageToolCallEntity value, $Res Function(_MessageToolCallEntity) _then) = __$MessageToolCallEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String argumentsRaw, String? argumentsDigest, String? turnId, int? turnRevision, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
+ String id, String name, String argumentsRaw,@JsonKey(includeIfNull: false) String? argumentsDigest,@JsonKey(includeIfNull: false) String? turnId,@JsonKey(includeIfNull: false) int? turnRevision, String? responseRaw,@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? resultStatus
 });
 
 

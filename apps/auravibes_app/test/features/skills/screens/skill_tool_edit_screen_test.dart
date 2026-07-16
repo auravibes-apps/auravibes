@@ -8,7 +8,14 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/skills/models/skill_detail.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_tool_edit_screen.dart';
+import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
@@ -29,16 +36,23 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(database.close);
-    final container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
-    );
-    addTearDown(container.dispose);
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
     final definition = await database.skillCredentialDefinitionsDao
         .createDefinition(
           SkillCredentialDefinitionsCompanion.insert(
@@ -84,11 +98,56 @@ void main() {
           builder: (context) {
             return UncontrolledProviderScope(
               container: container,
-              child: MaterialApp.router(
-                routerConfig: router,
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
+              child: ProviderScope(
+                overrides: [
+                  workspaceSessionProvider.overrideWithValue(
+                    WorkspaceSession(
+                      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+                    ),
+                  ),
+                  cloudWorkspaceStateGatewayProvider.overrideWith(
+                    (_) async => null,
+                  ),
+                  cloudSkillStoreProvider.overrideWithValue(null),
+                  skillsRepositoryProvider.overrideWithValue(
+                    container.read(skillsRepositoryProvider),
+                  ),
+                  skillTemplateToolsRepositoryProvider.overrideWithValue(
+                    container.read(skillTemplateToolsRepositoryProvider),
+                  ),
+                  skillCredentialDefinitionsRepositoryProvider
+                      .overrideWithValue(
+                        container.read(
+                          skillCredentialDefinitionsRepositoryProvider,
+                        ),
+                      ),
+                  skillDetailProvider(
+                    workspace.id,
+                    skill.id,
+                  ).overrideWith(
+                    (_) async => SkillDetail.fromUserSkill(skill),
+                  ),
+                  createSkillTemplateToolUsecaseProvider.overrideWithValue(
+                    CreateSkillTemplateToolUsecase(
+                      container.read(skillTemplateToolsRepositoryProvider),
+                      skillsRepository: container.read(
+                        skillsRepositoryProvider,
+                      ),
+                      skillCredentialDefinitionsRepository: container.read(
+                        skillCredentialDefinitionsRepositoryProvider,
+                      ),
+                    ),
+                  ),
+                ],
+                child: MaterialApp.router(
+                  routerConfig: router,
+                  builder: (context, child) => AuraSnackBarHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
               ),
             );
           },

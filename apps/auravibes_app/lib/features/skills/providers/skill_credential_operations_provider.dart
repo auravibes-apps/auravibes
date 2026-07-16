@@ -25,24 +25,27 @@ class SkillCredentialOperations {
   final Future<void> Function(String id) delete;
 }
 
-final skillCredentialOperationsProvider = Provider<SkillCredentialOperations>((
-  ref,
-) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
-  if (cloud != null) {
-    return SkillCredentialOperations(
-      create: (_, value) => cloud.createCredential(value),
-      getForEdit: cloud.credentialForEdit,
-      update: cloud.updateCredential,
-      delete: cloud.deleteCredential,
-    );
-  }
-  final local = ref.watch(skillCredentialsRepositoryProvider);
+final skillCredentialOperationsProvider = Provider<SkillCredentialOperations>(
+  (
+    ref,
+  ) {
+    final cloud = ref.watch(cloudSkillStoreProvider);
+    if (cloud != null) {
+      return SkillCredentialOperations(
+        create: (_, value) => cloud.createCredential(value),
+        getForEdit: cloud.credentialForEdit,
+        update: cloud.updateCredential,
+        delete: cloud.deleteCredential,
+      );
+    }
+    final local = ref.watch(skillCredentialsRepositoryProvider);
 
-  return SkillCredentialOperations(
-    create: local.createCredential,
-    getForEdit: local.getCredentialForEdit,
-    update: local.updateCredential,
-    delete: local.deleteCredential,
-  );
-});
+    return SkillCredentialOperations(
+      create: local.createCredential,
+      getForEdit: local.getCredentialForEdit,
+      update: local.updateCredential,
+      delete: local.deleteCredential,
+    );
+  },
+  dependencies: [cloudSkillStoreProvider],
+);

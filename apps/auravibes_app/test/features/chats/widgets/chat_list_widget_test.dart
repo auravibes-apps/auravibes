@@ -49,6 +49,11 @@ void main() {
               LocalWorkspaceRef(localWorkspaceId: workspaceId),
             ),
           ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           ...overrides.cast(),
         ],
         child: Builder(

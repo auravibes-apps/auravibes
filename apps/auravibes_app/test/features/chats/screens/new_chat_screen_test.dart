@@ -12,7 +12,6 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -102,6 +101,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
+            workspaceId: 'test-ws',
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const Portal(
@@ -109,11 +109,6 @@ void main() {
               ),
             ),
             overrides: [
-              workspaceSessionProvider.overrideWithValue(
-                const WorkspaceSession(
-                  LocalWorkspaceRef(localWorkspaceId: 'test-ws'),
-                ),
-              ),
               newChatProvider('test-ws').overrideWithValue(
                 const NewChatState(),
               ),
@@ -156,6 +151,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           TestableApp(
+            workspaceId: 'test-ws',
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
               child: const Portal(
@@ -163,11 +159,6 @@ void main() {
               ),
             ),
             overrides: [
-              workspaceSessionProvider.overrideWithValue(
-                const WorkspaceSession(
-                  LocalWorkspaceRef(localWorkspaceId: 'test-ws'),
-                ),
-              ),
               newChatProvider('test-ws').overrideWithValue(
                 const NewChatState(isLoading: true),
               ),

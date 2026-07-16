@@ -138,20 +138,28 @@ class LoadConversationSkillUsecase {
 }
 
 final loadConversationSkillUsecaseProvider =
-    Provider<LoadConversationSkillUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<LoadConversationSkillUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return LoadConversationSkillUsecase(
-        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-        cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
-        cloud == null
-            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-            : null,
-        ref.watch(appSkillRegistryProvider),
-        ref.watch(checkSkillCredentialReadinessUsecaseProvider),
-        cloud == null
-            ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
-            : null,
-        cloud,
-      );
-    });
+        return LoadConversationSkillUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloud == null
+              ? ref.watch(conversationSkillsRepositoryProvider)
+              : null,
+          cloud == null
+              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+              : null,
+          ref.watch(appSkillRegistryProvider),
+          ref.watch(checkSkillCredentialReadinessUsecaseProvider),
+          cloud == null
+              ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
+              : null,
+          cloud,
+        );
+      },
+      dependencies: [
+        cloudSkillStoreProvider,
+        checkSkillCredentialReadinessUsecaseProvider,
+      ],
+    );

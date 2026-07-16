@@ -673,25 +673,34 @@ class RunSkillsManagerToolUsecase {
 }
 
 final runSkillsManagerToolUsecaseProvider =
-    Provider<RunSkillsManagerToolUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<RunSkillsManagerToolUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return RunSkillsManagerToolUsecase(
-        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
-        cloud == null
-            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-            : null,
-        ref.watch(createSkillUsecaseProvider),
-        ref.watch(updateSkillUsecaseProvider),
-        ref.watch(createSkillTemplateToolUsecaseProvider),
-        ref.watch(updateSkillTemplateToolUsecaseProvider),
-        ref.watch(
-          createSkillCredentialDefinitionUsecaseProvider,
-        ),
-        ref.watch(
-          updateSkillCredentialDefinitionUsecaseProvider,
-        ),
-        cloudStore: cloud,
-      );
-    });
+        return RunSkillsManagerToolUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloud == null
+              ? ref.watch(skillTemplateToolsRepositoryProvider)
+              : null,
+          cloud == null
+              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+              : null,
+          ref.watch(createSkillUsecaseProvider),
+          ref.watch(updateSkillUsecaseProvider),
+          ref.watch(createSkillTemplateToolUsecaseProvider),
+          ref.watch(updateSkillTemplateToolUsecaseProvider),
+          ref.watch(createSkillCredentialDefinitionUsecaseProvider),
+          ref.watch(updateSkillCredentialDefinitionUsecaseProvider),
+          cloudStore: cloud,
+        );
+      },
+      dependencies: [
+        cloudSkillStoreProvider,
+        createSkillUsecaseProvider,
+        updateSkillUsecaseProvider,
+        createSkillTemplateToolUsecaseProvider,
+        updateSkillTemplateToolUsecaseProvider,
+        createSkillCredentialDefinitionUsecaseProvider,
+        updateSkillCredentialDefinitionUsecaseProvider,
+      ],
+    );

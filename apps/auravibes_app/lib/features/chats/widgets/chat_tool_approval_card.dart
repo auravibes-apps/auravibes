@@ -26,7 +26,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([pendingToolCalls])
+@Dependencies([pendingToolCalls, toolDisplayName])
 class ChatToolApprovalCard extends HookConsumerWidget {
   const ChatToolApprovalCard({super.key});
 
@@ -73,6 +73,7 @@ class ChatToolApprovalCard extends HookConsumerWidget {
   }
 }
 
+@Dependencies([toolDisplayName])
 class _ApprovalCardContent extends ConsumerWidget {
   const _ApprovalCardContent({
     required this.current,

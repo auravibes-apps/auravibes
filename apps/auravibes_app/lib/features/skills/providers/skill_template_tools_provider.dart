@@ -5,7 +5,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_template_tools_provider.g.dart';
 
-@riverpod
+@Riverpod(
+  dependencies: [cloudSkillStore],
+)
 Future<List<SkillTemplateToolEntity>> skillTemplateTools(
   Ref ref,
   String skillId,
@@ -16,7 +18,9 @@ Future<List<SkillTemplateToolEntity>> skillTemplateTools(
   return ref.watch(skillTemplateToolsRepositoryProvider).getSkillTools(skillId);
 }
 
-@riverpod
+@Riverpod(
+  dependencies: [cloudSkillStore],
+)
 Future<SkillTemplateToolEntity?> skillTemplateTool(
   Ref ref,
   String toolId,

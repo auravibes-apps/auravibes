@@ -8,6 +8,7 @@ import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -207,8 +208,15 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
+          modelSelectionStoreProvider.overrideWith(
+            (ref, workspaceId) async =>
+                _FakeWorkspaceModelSelectionRepository(selections),
+          ),
           apiModelRepositoryProvider.overrideWithValue(
             const _FakeApiModelRepository(),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (ref, workspaceId) async => const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -287,8 +295,15 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository([], controller.stream),
           ),
+          modelSelectionStoreProvider.overrideWith(
+            (ref, workspaceId) async =>
+                _FakeWorkspaceModelSelectionRepository([], controller.stream),
+          ),
           apiModelRepositoryProvider.overrideWithValue(
             const _FakeApiModelRepository(),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (ref, workspaceId) async => const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -373,8 +388,18 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
+          modelSelectionStoreProvider.overrideWith(
+            (ref, workspaceId) async =>
+                _FakeWorkspaceModelSelectionRepository(selections),
+          ),
           apiModelRepositoryProvider.overrideWithValue(
             const _FakeApiModelRepository(
+              providers: [openAIProvider],
+              models: openAIModels,
+            ),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (ref, workspaceId) async => const _FakeApiModelRepository(
               providers: [openAIProvider],
               models: openAIModels,
             ),
@@ -438,8 +463,18 @@ void main() {
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
+            modelSelectionStoreProvider.overrideWith(
+              (ref, workspaceId) async =>
+                  _FakeWorkspaceModelSelectionRepository(selections),
+            ),
             apiModelRepositoryProvider.overrideWithValue(
               const _FakeApiModelRepository(
+                providers: [openAIProvider],
+                models: openAIModels,
+              ),
+            ),
+            modelCatalogStoreProvider.overrideWith(
+              (ref, workspaceId) async => const _FakeApiModelRepository(
                 providers: [openAIProvider],
                 models: openAIModels,
               ),
@@ -497,8 +532,15 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
+          modelSelectionStoreProvider.overrideWith(
+            (ref, workspaceId) async =>
+                _FakeWorkspaceModelSelectionRepository(selections),
+          ),
           apiModelRepositoryProvider.overrideWithValue(
             const _FakeApiModelRepository(),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (ref, workspaceId) async => const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -543,8 +585,15 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(selections),
           ),
+          modelSelectionStoreProvider.overrideWith(
+            (ref, workspaceId) async =>
+                _FakeWorkspaceModelSelectionRepository(selections),
+          ),
           apiModelRepositoryProvider.overrideWithValue(
             const _FakeApiModelRepository(),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (ref, workspaceId) async => const _FakeApiModelRepository(),
           ),
         ],
       );
@@ -594,8 +643,15 @@ void main() {
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
+            modelSelectionStoreProvider.overrideWith(
+              (ref, workspaceId) async =>
+                  _FakeWorkspaceModelSelectionRepository(selections),
+            ),
             apiModelRepositoryProvider.overrideWithValue(
               const _FakeApiModelRepository(),
+            ),
+            modelCatalogStoreProvider.overrideWith(
+              (ref, workspaceId) async => const _FakeApiModelRepository(),
             ),
           ],
         );
@@ -655,8 +711,15 @@ void main() {
             workspaceModelSelectionRepositoryProvider.overrideWithValue(
               _FakeWorkspaceModelSelectionRepository(selections),
             ),
+            modelSelectionStoreProvider.overrideWith(
+              (ref, workspaceId) async =>
+                  _FakeWorkspaceModelSelectionRepository(selections),
+            ),
             apiModelRepositoryProvider.overrideWithValue(
               const _FakeApiModelRepository(),
+            ),
+            modelCatalogStoreProvider.overrideWith(
+              (ref, workspaceId) async => const _FakeApiModelRepository(),
             ),
           ],
         );
@@ -686,8 +749,15 @@ void main() {
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             _FakeWorkspaceModelSelectionRepository(),
           ),
+          modelSelectionStoreProvider.overrideWith(
+            (ref, workspaceId) async =>
+                _FakeWorkspaceModelSelectionRepository(),
+          ),
           apiModelRepositoryProvider.overrideWithValue(
             const _FakeApiModelRepository(),
+          ),
+          modelCatalogStoreProvider.overrideWith(
+            (ref, workspaceId) async => const _FakeApiModelRepository(),
           ),
         ],
       );

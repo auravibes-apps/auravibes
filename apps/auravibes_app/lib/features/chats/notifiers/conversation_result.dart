@@ -24,7 +24,13 @@ class ConversationWorkspaceMismatch extends ConversationResult {
   const ConversationWorkspaceMismatch();
 }
 
-@Riverpod(dependencies: [conversationSelected, conversationByIdStream])
+@Riverpod(
+  dependencies: [
+    conversationSelected,
+    conversationByIdStream,
+    cloudConversationUsecase,
+  ],
+)
 class ConversationChatNotifier extends _$ConversationChatNotifier {
   @override
   Future<ConversationResult> build(String workspaceId) async {

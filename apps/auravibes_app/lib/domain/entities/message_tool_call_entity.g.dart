@@ -25,9 +25,9 @@ Map<String, dynamic> _$MessageToolCallEntityToJson(
   'id': instance.id,
   'name': instance.name,
   'argumentsRaw': instance.argumentsRaw,
-  'argumentsDigest': instance.argumentsDigest,
-  'turnId': instance.turnId,
-  'turnRevision': instance.turnRevision,
+  'argumentsDigest': ?instance.argumentsDigest,
+  'turnId': ?instance.turnId,
+  'turnRevision': ?instance.turnRevision,
   'responseRaw': instance.responseRaw,
   'resultStatus': _toolCallResultStatusToJson(instance.resultStatus),
 };

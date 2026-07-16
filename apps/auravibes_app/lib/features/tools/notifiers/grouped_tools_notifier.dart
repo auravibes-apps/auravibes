@@ -12,14 +12,12 @@ import 'package:auravibes_app/features/tools/usecases/build_grouped_tools_view_u
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'grouped_tools_notifier.g.dart';
 
 /// Provider for the tools groups repository.
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
-@riverpod
+@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
 ToolsGroupsRepositoryContract toolsGroupsRepository(Ref ref) {
   if (ref.watch(workspaceSessionProvider).cloud != null) {
     return CloudToolsRepository(
@@ -39,12 +37,16 @@ ToolsGroupsRepositoryContract toolsGroupsRepository(Ref ref) {
 /// - Creates a "Built-in Tools" virtual group for tools without a group
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
-@riverpod
+@Riverpod(
+  dependencies: [
+    toolsGroupsRepository,
+    WorkspaceToolsNotifier,
+    McpConnectionNotifier,
+    mcpServersRepository,
+    workspaceSession,
+    cloudWorkspaceStateGateway,
+  ],
+)
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   String _workspaceId = '';
 
@@ -201,7 +203,7 @@ McpConnectionViewStatus _toMcpConnectionViewStatus(McpConnectionStatus status) {
 }
 
 /// Provider that returns the count of enabled tools across all groups.
-@riverpod
+@Riverpod(dependencies: [GroupedToolsNotifier])
 Future<int> enabledToolsCount(Ref ref, String workspaceId) async {
   final groupedTools = await ref.watch(
     groupedToolsProvider(workspaceId).future,
@@ -214,7 +216,7 @@ Future<int> enabledToolsCount(Ref ref, String workspaceId) async {
 }
 
 /// Provider that returns the total count of tools across all groups.
-@riverpod
+@Riverpod(dependencies: [GroupedToolsNotifier])
 Future<int> totalToolsCount(Ref ref, String workspaceId) async {
   final groupedTools = await ref.watch(
     groupedToolsProvider(workspaceId).future,

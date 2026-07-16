@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
@@ -217,6 +218,9 @@ void main() {
                 return updatedConversation;
               },
             ),
+          ),
+          cloudConversationUsecaseProvider.overrideWithValue(
+            const AsyncValue.data(null),
           ),
         ],
       );

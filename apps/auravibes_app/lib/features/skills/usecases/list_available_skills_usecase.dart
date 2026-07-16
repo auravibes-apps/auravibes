@@ -156,6 +156,10 @@ final listAvailableSkillsUsecaseProvider = Provider<ListAvailableSkillsUsecase>(
       cloud,
     );
   },
+  dependencies: [
+    cloudSkillStoreProvider,
+    checkSkillCredentialReadinessUsecaseProvider,
+  ],
 );
 
 enum SkillLoadFilter {

@@ -109,13 +109,19 @@ class DuplicateSkillUsecase {
   }
 }
 
-final duplicateSkillUsecaseProvider = Provider<DuplicateSkillUsecase>((ref) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+final duplicateSkillUsecaseProvider = Provider<DuplicateSkillUsecase>(
+  (ref) {
+    final cloud = ref.watch(cloudSkillStoreProvider);
 
-  return DuplicateSkillUsecase(
-    cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-    cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
-    ref.watch(createSkillUsecaseProvider),
-    cloudStore: cloud,
-  );
-});
+    return DuplicateSkillUsecase(
+      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+      cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+      ref.watch(createSkillUsecaseProvider),
+      cloudStore: cloud,
+    );
+  },
+  dependencies: [
+    cloudSkillStoreProvider,
+    createSkillUsecaseProvider,
+  ],
+);

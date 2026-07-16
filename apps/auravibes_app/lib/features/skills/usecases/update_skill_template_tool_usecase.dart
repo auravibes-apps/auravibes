@@ -96,17 +96,22 @@ class UpdateSkillTemplateToolUsecase {
 }
 
 final updateSkillTemplateToolUsecaseProvider =
-    Provider<UpdateSkillTemplateToolUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<UpdateSkillTemplateToolUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return UpdateSkillTemplateToolUsecase(
-        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
-        cloudStore: cloud,
-        skillsRepository: cloud == null
-            ? ref.watch(skillsRepositoryProvider)
-            : null,
-        skillCredentialDefinitionsRepository: cloud == null
-            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-            : null,
-      );
-    });
+        return UpdateSkillTemplateToolUsecase(
+          cloud == null
+              ? ref.watch(skillTemplateToolsRepositoryProvider)
+              : null,
+          cloudStore: cloud,
+          skillsRepository: cloud == null
+              ? ref.watch(skillsRepositoryProvider)
+              : null,
+          skillCredentialDefinitionsRepository: cloud == null
+              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+              : null,
+        );
+      },
+      dependencies: [cloudSkillStoreProvider],
+    );

@@ -279,7 +279,11 @@ class CompactConversationUsecase {
   }
 }
 
-@Dependencies([workspaceSession, conversationByIdStream])
+@Dependencies([
+  workspaceSession,
+  conversationByIdStream,
+  cloudConversationUsecase,
+])
 final compactConversationUsecaseProvider = Provider<CompactConversationUsecase>(
   (ref) {
     var isCloud = false;

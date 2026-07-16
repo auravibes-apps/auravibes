@@ -10,8 +10,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
+
+import '../../../helpers/test_provider_scope.dart';
 
 @Dependencies([workspaceSession])
 void main() {
@@ -55,7 +56,8 @@ void main() {
     Widget agentCompactControl = const SizedBox.shrink(),
   }) {
     return EasyLocalization(
-      child: ProviderScope(
+      child: TestProviderScope(
+        overrides: const [],
         child: Builder(
           builder: (context) {
             return MaterialApp(

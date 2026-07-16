@@ -56,13 +56,16 @@ class CreateSkillCredentialDefinitionUsecase {
 }
 
 final createSkillCredentialDefinitionUsecaseProvider =
-    Provider<CreateSkillCredentialDefinitionUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<CreateSkillCredentialDefinitionUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return CreateSkillCredentialDefinitionUsecase(
-        cloud == null
-            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-            : null,
-        cloudStore: cloud,
-      );
-    });
+        return CreateSkillCredentialDefinitionUsecase(
+          cloud == null
+              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+              : null,
+          cloudStore: cloud,
+        );
+      },
+      dependencies: [cloudSkillStoreProvider],
+    );

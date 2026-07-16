@@ -66,7 +66,10 @@ class ListConversationAgentSkillsUsecase {
   }
 }
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 final listConversationAgentSkillsUsecaseProvider =
     Provider<ListConversationAgentSkillsUsecase>(
       (ref) {
@@ -107,5 +110,7 @@ final listConversationAgentSkillsUsecaseProvider =
       dependencies: [
         workspaceSessionProvider,
         cloudWorkspaceStateGatewayProvider,
+        agentRepositoryProvider,
+        resolveAgentSkillsUsecaseProvider,
       ],
     );

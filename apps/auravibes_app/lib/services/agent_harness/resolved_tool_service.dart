@@ -670,7 +670,14 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>(
           },
     );
   },
-  dependencies: [workspaceSessionProvider, serviceConnectionsProvider],
+  dependencies: [
+    workspaceSessionProvider,
+    serviceConnectionsProvider,
+    loadConversationSkillUsecaseProvider,
+    unloadConversationSkillUsecaseProvider,
+    runSkillsManagerToolUsecaseProvider,
+    listAvailableSkillsUsecaseProvider,
+  ],
 );
 
 @Dependencies([serviceConnections])

@@ -90,20 +90,21 @@ class ResolvedAgentSkills {
   final List<AgentSkillRef> unavailable;
 }
 
-final resolveAgentSkillsUsecaseProvider = Provider<ResolveAgentSkillsUsecase>((
-  ref,
-) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+final resolveAgentSkillsUsecaseProvider = Provider<ResolveAgentSkillsUsecase>(
+  (ref) {
+    final cloud = ref.watch(cloudSkillStoreProvider);
 
-  return ResolveAgentSkillsUsecase(
-    cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-    cloud == null
-        ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-        : null,
-    ref.watch(appSkillRegistryProvider),
-    cloud,
-  );
-});
+    return ResolveAgentSkillsUsecase(
+      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+      cloud == null
+          ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+          : null,
+      ref.watch(appSkillRegistryProvider),
+      cloud,
+    );
+  },
+  dependencies: [cloudSkillStoreProvider],
+);
 
 extension AgentSkillEntityAvailableSkill on SkillEntity {
   AvailableSkill toAvailableSkill() {

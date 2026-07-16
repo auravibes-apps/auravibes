@@ -5,7 +5,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_credentials_provider.g.dart';
 
-@riverpod
+@Riverpod(
+  dependencies: [cloudSkillStore],
+)
 Future<List<SkillCredentialEntity>> skillCredentialsForDefinition(
   Ref ref,
   String workspaceId,

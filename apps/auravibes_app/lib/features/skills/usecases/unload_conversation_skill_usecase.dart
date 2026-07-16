@@ -81,13 +81,18 @@ class UnloadConversationSkillUsecase {
 }
 
 final unloadConversationSkillUsecaseProvider =
-    Provider<UnloadConversationSkillUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<UnloadConversationSkillUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return UnloadConversationSkillUsecase(
-        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-        cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
-        ref.watch(appSkillRegistryProvider),
-        cloud,
-      );
-    });
+        return UnloadConversationSkillUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloud == null
+              ? ref.watch(conversationSkillsRepositoryProvider)
+              : null,
+          ref.watch(appSkillRegistryProvider),
+          cloud,
+        );
+      },
+      dependencies: [cloudSkillStoreProvider],
+    );

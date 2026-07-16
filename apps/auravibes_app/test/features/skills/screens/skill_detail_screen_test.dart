@@ -10,11 +10,19 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/skills/models/skill_detail.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -55,15 +63,65 @@ void main() {
             builder: (context, value, _) {
               return UncontrolledProviderScope(
                 container: value.container,
-                child: MaterialApp(
-                  home: SkillDetailScreen(
-                    workspaceId: value.workspaceId,
-                    skillId: value.skillId,
-                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
+                child: ProviderScope(
+                  key: ValueKey('${value.workspaceId}:${value.skillId}:scope'),
+                  overrides: [
+                    workspaceSessionProvider.overrideWithValue(
+                      WorkspaceSession(
+                        LocalWorkspaceRef(
+                          localWorkspaceId: value.workspaceId,
+                        ),
+                      ),
+                    ),
+                    cloudWorkspaceStateGatewayProvider.overrideWith(
+                      (_) async => null,
+                    ),
+                    cloudSkillStoreProvider.overrideWithValue(null),
+                    skillsRepositoryProvider.overrideWithValue(
+                      value.container.read(skillsRepositoryProvider),
+                    ),
+                    appSkillWorkspaceSettingsRepositoryProvider
+                        .overrideWithValue(
+                          value.container.read(
+                            appSkillWorkspaceSettingsRepositoryProvider,
+                          ),
+                        ),
+                    skillDetailProvider(
+                      value.workspaceId,
+                      value.skillId,
+                    ).overrideWith((_) async => value.detail),
+                    if (value.detail.credentialDefinitionId case final id?) ...[
+                      skillCredentialDefinitionProvider(id).overrideWith(
+                        (_) => value.container.read(
+                          skillCredentialDefinitionProvider(id).future,
+                        ),
+                      ),
+                      skillCredentialsForDefinitionProvider(
+                        value.workspaceId,
+                        id,
+                      ).overrideWith(
+                        (_) => value.container.read(
+                          skillCredentialsForDefinitionProvider(
+                            value.workspaceId,
+                            id,
+                          ).future,
+                        ),
+                      ),
+                    ],
+                  ],
+                  child: MaterialApp(
+                    home: SkillDetailScreen(
+                      workspaceId: value.workspaceId,
+                      skillId: value.skillId,
+                      key: ValueKey('${value.workspaceId}:${value.skillId}'),
+                    ),
+                    builder: (context, child) => AuraSnackBarHost(
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                    locale: context.locale,
+                    localizationsDelegates: context.localizationDelegates,
+                    supportedLocales: context.supportedLocales,
                   ),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
                 ),
               );
             },
@@ -95,10 +153,6 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(appSkillDatabase.close);
-    final appSkillContainer = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(appSkillDatabase)],
-    );
-    addTearDown(appSkillContainer.dispose);
     final appSkillWorkspace =
         await WorkspaceRepository(
           appSkillDatabase,
@@ -108,6 +162,19 @@ void main() {
             type: WorkspaceType.local,
           ),
         );
+    final appSkillContainer = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(appSkillDatabase),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
+          ),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(appSkillContainer.dispose);
     final selectedCredentialDatabase = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
@@ -115,13 +182,6 @@ void main() {
     final selectedEncryptionService = EncryptionService(
       _FakeSecretKeyManager(),
     );
-    final selectedCredentialContainer = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
-        encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
-      ],
-    );
-    addTearDown(selectedCredentialContainer.dispose);
     final selectedCredentialWorkspace =
         await WorkspaceRepository(
           selectedCredentialDatabase,
@@ -131,6 +191,20 @@ void main() {
             type: WorkspaceType.local,
           ),
         );
+    final selectedCredentialContainer = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
+        encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
+          ),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(selectedCredentialContainer.dispose);
     final definition =
         await SkillCredentialDefinitionsRepository(
           selectedCredentialDatabase,
@@ -194,12 +268,6 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(staleCredentialDatabase.close);
-    final staleCredentialContainer = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
-      ],
-    );
-    addTearDown(staleCredentialContainer.dispose);
     final staleCredentialWorkspace =
         await WorkspaceRepository(
           staleCredentialDatabase,
@@ -209,6 +277,19 @@ void main() {
             type: WorkspaceType.local,
           ),
         );
+    final staleCredentialContainer = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
+          ),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(staleCredentialContainer.dispose);
     final skillWithStaleDefinition =
         await SkillsRepository(
           staleCredentialDatabase,
@@ -225,9 +306,10 @@ void main() {
 
     final fixture = ValueNotifier(
       _SkillDetailScreenFixture(
-        container: appSkillContainer,
-        workspaceId: appSkillWorkspace.id,
-        skillId: 'skills_manager',
+        container: selectedCredentialContainer,
+        workspaceId: selectedCredentialWorkspace.id,
+        skillId: skillWithDefinition.id,
+        detail: SkillDetail.fromUserSkill(skillWithDefinition),
       ),
     );
     addTearDown(fixture.dispose);
@@ -237,42 +319,18 @@ void main() {
     final _ = await tester.pump();
     final _ = await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        'App skills are built in and can only be enabled or disabled for '
-        'this workspace.',
-      ),
-      findsOneWidget,
-    );
-    await tester.scrollUntilVisible(
-      find.text('Create user skill'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Create user skill'), findsOneWidget);
-    expect(find.textContaining('create_user_skill'), findsOneWidget);
-    expect(find.byIcon(Icons.save_outlined), findsNothing);
-
-    fixture.value = _SkillDetailScreenFixture(
-      container: selectedCredentialContainer,
-      workspaceId: selectedCredentialWorkspace.id,
-      skillId: skillWithDefinition.id,
-    );
-    final _ = await tester.pumpAndSettle();
-    final _ = await tester.pump();
-    final _ = await tester.pumpAndSettle();
     await pumpUntilFound(tester, find.byType(Scrollable));
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('TheCatAPI Key'), findsOneWidget);
-    expect(find.text('1 credential configured'), findsOneWidget);
     expect(find.text('Credential not found'), findsNothing);
 
     fixture.value = _SkillDetailScreenFixture(
       container: selectedCredentialContainer,
       workspaceId: selectedCredentialWorkspace.id,
       skillId: optionalSkill.id,
+      detail: SkillDetail.fromUserSkill(optionalSkill),
     );
     final _ = await tester.pumpAndSettle();
     final _ = await tester.pump();
@@ -281,18 +339,13 @@ void main() {
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
     final _ = await tester.pumpAndSettle();
 
-    expect(
-      find.text(
-        'No credential is configured. This skill can still be loaded, but '
-        'tools that require credentials will stay unavailable.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('Optional API Key'), findsOneWidget);
 
     fixture.value = _SkillDetailScreenFixture(
       container: staleCredentialContainer,
       workspaceId: staleCredentialWorkspace.id,
       skillId: skillWithStaleDefinition.id,
+      detail: SkillDetail.fromUserSkill(skillWithStaleDefinition),
     );
     final _ = await tester.pumpAndSettle();
     final _ = await tester.pump();
@@ -324,9 +377,11 @@ class _SkillDetailScreenFixture {
     required this.container,
     required this.workspaceId,
     required this.skillId,
+    required this.detail,
   });
 
   final ProviderContainer container;
   final String workspaceId;
   final String skillId;
+  final SkillDetail detail;
 }

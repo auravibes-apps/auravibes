@@ -8,13 +8,11 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:collection/collection.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_notifier.g.dart';
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
-@riverpod
+@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
 WorkspaceToolsRepositoryContract workspaceToolsRepository(Ref ref) {
   if (ref.watch(workspaceSessionProvider).cloud != null) {
     return CloudToolsRepository(
@@ -30,8 +28,7 @@ WorkspaceToolsRepositoryContract workspaceToolsRepository(Ref ref) {
 int workspaceToolIndexNotifier(Ref _) =>
     throw Exception('implement workspaceToolIndexNotifier');
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
-@riverpod
+@Riverpod(dependencies: [workspaceToolsRepository])
 class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   WorkspaceToolsRepositoryContract? _repository;
   String _workspaceId = '';
@@ -133,8 +130,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
 /// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
-@Dependencies([workspaceSession])
-@riverpod
+@Riverpod(dependencies: [workspaceSession, WorkspaceToolsNotifier])
 Future<List<UserToolType>> availableToolsToAdd(
   Ref ref,
   String workspaceId,
@@ -157,7 +153,7 @@ Future<List<UserToolType>> availableToolsToAdd(
       .toList();
 }
 
-@Riverpod(dependencies: [workspaceToolIndexNotifier])
+@Riverpod(dependencies: [workspaceToolIndexNotifier, WorkspaceToolsNotifier])
 WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
   final workspaceToolIndex = ref.watch(workspaceToolIndexProvider);
   final workspaceTools = ref.watch(workspaceToolsProvider(workspaceId)).value;

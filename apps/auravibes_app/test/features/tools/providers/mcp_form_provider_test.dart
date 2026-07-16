@@ -1,6 +1,7 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -196,6 +197,9 @@ void main() {
     setUp(() {
       final testContainer = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
         ],
       );
@@ -371,6 +375,9 @@ void main() {
       readContainer().dispose();
       final failingContainer = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
           mcpConnectionProvider.overrideWith(
             _FailingMcpConnectionNotifier.new,
           ),

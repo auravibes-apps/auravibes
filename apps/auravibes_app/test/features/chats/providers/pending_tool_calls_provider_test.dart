@@ -191,6 +191,9 @@ void main() {
             childConversationsStreamProvider(
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
+            conversationByIdStreamProvider(
+              conversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data(null)),
             messageRepositoryProvider.overrideWithValue(repository),
           ],
           child: hooks.Consumer(
@@ -318,6 +321,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             parentConversationId: 'conv-1',
@@ -382,6 +390,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             parentConversationId: 'conv-1',
@@ -454,6 +467,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             parentConversationId: 'conv-1',
@@ -467,6 +485,9 @@ void main() {
           conversationByIdStreamProvider(
             conversationId: 'child-1',
           ).overrideWithValue(AsyncValue.data(childConversation)),
+          conversationByIdStreamProvider(
+            conversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data(null)),
           messageRepositoryProvider.overrideWithValue(
             _StaticMessageRepository({'child-1': childMessages}),
           ),

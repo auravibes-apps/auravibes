@@ -40,11 +40,14 @@ class CheckSkillCredentialReadinessUsecase {
 }
 
 final checkSkillCredentialReadinessUsecaseProvider =
-    Provider<CheckSkillCredentialReadinessUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<CheckSkillCredentialReadinessUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return CheckSkillCredentialReadinessUsecase(
-        cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
-        cloudStore: cloud,
-      );
-    });
+        return CheckSkillCredentialReadinessUsecase(
+          cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
+          cloudStore: cloud,
+        );
+      },
+      dependencies: [cloudSkillStoreProvider],
+    );

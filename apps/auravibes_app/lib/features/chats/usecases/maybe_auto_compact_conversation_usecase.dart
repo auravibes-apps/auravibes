@@ -101,6 +101,7 @@ class MaybeAutoCompactConversationUsecase {
   workspaceSession,
   conversationByIdStream,
   chatMessagesByConversation,
+  compactionSettings,
 ])
 final maybeAutoCompactConversationUsecaseProvider =
     Provider<MaybeAutoCompactConversationUsecase>(
@@ -156,5 +157,8 @@ final maybeAutoCompactConversationUsecaseProvider =
           ),
         );
       },
-      dependencies: [workspaceSessionProvider],
+      dependencies: [
+        workspaceSessionProvider,
+        compactConversationUsecaseProvider,
+      ],
     );

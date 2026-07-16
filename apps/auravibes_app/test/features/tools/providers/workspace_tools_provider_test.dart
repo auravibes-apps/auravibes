@@ -5,6 +5,8 @@
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -175,6 +177,9 @@ void main() {
       final repository = fixture.repository;
       final container2 = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
           workspaceToolIndexProvider.overrideWithValue(-1),
         ],
@@ -355,6 +360,9 @@ void main() {
         ..tools = [_tool(id: 't1')];
       final container2 = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
           workspaceToolIndexProvider.overrideWithValue(1),
         ],
@@ -389,6 +397,9 @@ void main() {
         ..tools = [_tool(id: 't1')];
       final container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
         ],
       );
@@ -405,6 +416,9 @@ void main() {
         ..tools = [_tool(id: 't1', toolId: 'search')];
       final container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
         ],
       );

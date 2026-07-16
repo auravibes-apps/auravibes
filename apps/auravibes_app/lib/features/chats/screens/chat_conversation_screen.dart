@@ -23,6 +23,7 @@ import 'package:auravibes_app/features/chats/providers/context_usage_level.dart'
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -64,6 +65,7 @@ final _logger = Logger('chat_conversation_screen');
   childConversationsStream,
   conversationByIdStream,
   messageConversationById,
+  toolDisplayName,
 ])
 class ChatConversationScreen extends ConsumerWidget {
   const ChatConversationScreen({
@@ -103,6 +105,7 @@ class ChatConversationScreen extends ConsumerWidget {
   childConversationsStream,
   conversationByIdStream,
   messageConversationById,
+  toolDisplayName,
 ])
 class _ChatConversationScreen extends HookConsumerWidget {
   const _ChatConversationScreen({
@@ -169,6 +172,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
   workspaceModelSelectionById,
   workspaceSession,
   conversationSelected,
+  toolDisplayName,
   contextUsage,
   chatMessages,
   conversationCompactionExecutionState,
@@ -851,6 +855,7 @@ Future<void> _manualCompact(
   conversationByIdStream,
   conversationSelected,
   messageConversationById,
+  toolDisplayName,
 ])
 class _ChatList extends ConsumerWidget {
   const _ChatList({required this.pendingToolCalls});

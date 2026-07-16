@@ -38,6 +38,7 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   childConversationsStream,
   conversationByIdStream,
   messageConversationById,
+  cloudConversationUsecase,
 ])
 class ChatListWidget extends ConsumerWidget {
   const ChatListWidget({required this.workspaceId, super.key});
@@ -154,6 +155,7 @@ class _ChatListEmptyState extends StatelessWidget {
   childConversationsStream,
   conversationByIdStream,
   messageConversationById,
+  cloudConversationUsecase,
 ])
 class _ChatTile extends ConsumerStatefulWidget {
   const _ChatTile({required this.chat, required this.workspaceId});

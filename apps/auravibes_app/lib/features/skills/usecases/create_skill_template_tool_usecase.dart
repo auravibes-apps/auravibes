@@ -81,17 +81,22 @@ class CreateSkillTemplateToolUsecase {
 }
 
 final createSkillTemplateToolUsecaseProvider =
-    Provider<CreateSkillTemplateToolUsecase>((ref) {
-      final cloud = ref.watch(cloudSkillStoreProvider);
+    Provider<CreateSkillTemplateToolUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
 
-      return CreateSkillTemplateToolUsecase(
-        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
-        cloudStore: cloud,
-        skillsRepository: cloud == null
-            ? ref.watch(skillsRepositoryProvider)
-            : null,
-        skillCredentialDefinitionsRepository: cloud == null
-            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-            : null,
-      );
-    });
+        return CreateSkillTemplateToolUsecase(
+          cloud == null
+              ? ref.watch(skillTemplateToolsRepositoryProvider)
+              : null,
+          cloudStore: cloud,
+          skillsRepository: cloud == null
+              ? ref.watch(skillsRepositoryProvider)
+              : null,
+          skillCredentialDefinitionsRepository: cloud == null
+              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+              : null,
+        );
+      },
+      dependencies: [cloudSkillStoreProvider],
+    );

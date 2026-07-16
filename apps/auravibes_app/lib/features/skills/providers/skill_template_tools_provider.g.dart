@@ -33,6 +33,12 @@ final class SkillTemplateToolsProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
+  static final $allTransitiveDependencies1 =
+      CloudSkillStoreProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      CloudSkillStoreProvider.$allTransitiveDependencies1;
+
   @override
   String debugGetCreateSourceHash() => _$skillTemplateToolsHash();
 
@@ -67,7 +73,7 @@ final class SkillTemplateToolsProvider
 }
 
 String _$skillTemplateToolsHash() =>
-    r'ef8429991160a4213d739815b94fc7d0e8cd4a34';
+    r'1350e42726539d666293e6d8520a721f7a3e7d7f';
 
 final class SkillTemplateToolsFamily extends $Family
     with
@@ -79,8 +85,12 @@ final class SkillTemplateToolsFamily extends $Family
     : super(
         retry: null,
         name: r'skillTemplateToolsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          SkillTemplateToolsProvider.$allTransitiveDependencies0,
+          SkillTemplateToolsProvider.$allTransitiveDependencies1,
+          SkillTemplateToolsProvider.$allTransitiveDependencies2,
+        ],
         isAutoDispose: true,
       );
 
@@ -115,6 +125,12 @@ final class SkillTemplateToolProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
+  static final $allTransitiveDependencies1 =
+      CloudSkillStoreProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      CloudSkillStoreProvider.$allTransitiveDependencies1;
+
   @override
   String debugGetCreateSourceHash() => _$skillTemplateToolHash();
 
@@ -148,7 +164,7 @@ final class SkillTemplateToolProvider
   }
 }
 
-String _$skillTemplateToolHash() => r'6983215da5813ba5e6ac3c9d5f2dffbea87e50be';
+String _$skillTemplateToolHash() => r'3814d2bc8990144b3e29988f304ad99b944b8a0d';
 
 final class SkillTemplateToolFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SkillTemplateToolEntity?>, String> {
@@ -156,8 +172,12 @@ final class SkillTemplateToolFamily extends $Family
     : super(
         retry: null,
         name: r'skillTemplateToolProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          SkillTemplateToolProvider.$allTransitiveDependencies0,
+          SkillTemplateToolProvider.$allTransitiveDependencies1,
+          SkillTemplateToolProvider.$allTransitiveDependencies2,
+        ],
         isAutoDispose: true,
       );
 

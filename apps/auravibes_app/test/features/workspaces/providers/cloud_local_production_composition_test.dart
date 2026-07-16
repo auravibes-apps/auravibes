@@ -76,6 +76,19 @@ void main() {
     LocalWorkspaceRef(localWorkspaceId: 'local-a'),
   );
 
+  setUpAll(() {
+    registerFallbackValue(
+      ListConversationsRequest(workspaceId: 0, limit: 0),
+    );
+    registerFallbackValue(
+      ListConversationMessagesRequest(
+        workspaceId: 0,
+        conversationId: '',
+        limit: 0,
+      ),
+    );
+  });
+
   test('cloud production composition avoids every local dependency', () async {
     final now = DateTime.utc(2026);
     final gateway = _Gateway();
@@ -118,6 +131,10 @@ void main() {
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => gateway,
         ),
+        toolsGroupsRepositoryProvider.overrideWithValue(
+          CloudToolsRepository(Future.value(gateway)),
+        ),
+        workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
         appDatabaseProvider.overrideWith((_) => _local('Drift database')),
         conversationRepositoryProvider.overrideWith(
           (_) => _local('conversation repository'),
@@ -263,6 +280,9 @@ void main() {
         workspaceSessionProvider.overrideWithValue(local),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => local),
         appDatabaseProvider.overrideWithValue(database),
+        toolsGroupsRepositoryProvider.overrideWithValue(
+          ToolsGroupsRepository(database),
+        ),
         serverpodClientForWorkspaceProvider.overrideWith(
           (_, _) => _local('workspace server client'),
         ),

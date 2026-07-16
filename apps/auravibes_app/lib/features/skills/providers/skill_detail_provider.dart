@@ -7,7 +7,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_detail_provider.g.dart';
 
-@riverpod
+@Riverpod(
+  dependencies: [cloudSkillStore],
+)
 Future<SkillDetail?> skillDetail(
   Ref ref,
   String workspaceId,

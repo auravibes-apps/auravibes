@@ -45,6 +45,7 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   cloudWorkspaceStateGateway,
   serviceConnectionOperations,
   serviceConnections,
+  cloudConversationUsecase,
 ])
 class SidebarConversationsWidget extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
@@ -250,6 +251,7 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
   cloudWorkspaceStateGateway,
   serviceConnectionOperations,
   serviceConnections,
+  cloudConversationUsecase,
 ])
 class _SidebarConversationTile extends ConsumerStatefulWidget {
   const _SidebarConversationTile({

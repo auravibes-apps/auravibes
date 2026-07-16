@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
+import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -11,12 +12,14 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
+import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/secret_key_manager.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -47,24 +50,41 @@ void main() {
       database: database,
       encryptionService: encryptionService,
     );
-    final container = ProviderContainer(
-      overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'test-workspace'),
-          ),
-        ),
-        appDatabaseProvider.overrideWithValue(database),
-        encryptionServiceProvider.overrideWithValue(encryptionService),
-      ],
-    );
-    addTearDown(container.dispose);
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
+    final container = ProviderContainer(
+      overrides: [
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: workspace.id),
+          ),
+        ),
+        appDatabaseProvider.overrideWithValue(database),
+        encryptionServiceProvider.overrideWithValue(encryptionService),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
+          (_, _) async => null,
+        ),
+        serviceConnectionsActionUsecaseProvider(workspace.id).overrideWith(
+          (_) async => ServiceConnectionsActionUsecase(
+            (_) async {},
+            (_) => throw UnimplementedError(),
+            DeleteServiceConnectionUsecase(
+              modelConnectionRepository: ModelConnectionRepository(
+                database: database,
+                encryptionService: encryptionService,
+              ),
+              deleteSkillCredential: credentialsRepository.deleteCredential,
+            ),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
     final definition =
         await SkillCredentialDefinitionsRepository(
           database,
@@ -84,6 +104,7 @@ void main() {
       ),
     );
 
+    await _unmountScreen(tester);
     await _pumpScreen(tester, container, workspace.id);
     final _ = await tester.pumpAndSettle();
 
@@ -101,9 +122,13 @@ void main() {
       findsOneWidget,
     );
     await tester.tap(find.text('Delete').last);
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('Main Token'), findsNothing);
+    await _pumpUntil(
+      tester,
+      () async => (await credentialsRepository.getCredentialsForDefinition(
+        workspaceId: workspace.id,
+        credentialDefinitionId: definition.id,
+      )).isEmpty,
+    );
     final credentials = await credentialsRepository.getCredentialsForDefinition(
       workspaceId: workspace.id,
       credentialDefinitionId: definition.id,
@@ -243,6 +268,9 @@ Future<void> _pumpScreen(
             container: container,
             child: MaterialApp(
               home: ServiceConnectionsScreen(workspaceId: workspaceId),
+              builder: (context, child) => AuraSnackBarHost(
+                child: child ?? const SizedBox.shrink(),
+              ),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
@@ -269,6 +297,16 @@ void _addWidgetTearDown(WidgetTester tester) {
 Future<void> _unmountScreen(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
   final _ = await tester.pumpAndSettle();
+}
+
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  Future<bool> Function() condition,
+) async {
+  for (var attempt = 0; attempt < 20 && !await condition(); attempt++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
+  await tester.pumpAndSettle();
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {

@@ -21,6 +21,14 @@ void main() {
   setUpAll(() {
     registerFallbackValue(WorkspaceSecretKind.skillCredential);
     registerFallbackValue(WorkspaceSecretScope.workspace);
+    registerFallbackValue(
+      CompactConversationRequest(
+        workspaceId: 0,
+        requestId: '',
+        conversationId: '',
+        expectedConversationRevision: 0,
+      ),
+    );
   });
 
   setUp(() {

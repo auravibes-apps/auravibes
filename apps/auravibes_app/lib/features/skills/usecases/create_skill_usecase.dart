@@ -49,11 +49,14 @@ class CreateSkillUsecase {
   }
 }
 
-final createSkillUsecaseProvider = Provider<CreateSkillUsecase>((ref) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+final createSkillUsecaseProvider = Provider<CreateSkillUsecase>(
+  (ref) {
+    final cloud = ref.watch(cloudSkillStoreProvider);
 
-  return CreateSkillUsecase(
-    cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-    cloudStore: cloud,
-  );
-});
+    return CreateSkillUsecase(
+      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+      cloudStore: cloud,
+    );
+  },
+  dependencies: [cloudSkillStoreProvider],
+);

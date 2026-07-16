@@ -1,5 +1,6 @@
 // Required: UI callbacks stay local to their widgets.
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -32,6 +33,7 @@ import 'package:riverpod_annotation/experimental/scope.dart';
   childConversationsStream,
   conversationByIdStream,
   messageConversationById,
+  cloudConversationUsecase,
 ])
 class ChatsListScreen extends ConsumerWidget {
   const ChatsListScreen({required this.workspaceId, super.key});

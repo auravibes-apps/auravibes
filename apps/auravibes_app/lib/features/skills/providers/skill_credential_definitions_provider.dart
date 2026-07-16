@@ -33,7 +33,9 @@ Future<CloudSkillStore?> _cloudSkillStore(Ref ref, String workspaceId) async {
   );
 }
 
-@riverpod
+@Riverpod(
+  dependencies: [cloudSkillStore],
+)
 Future<SkillCredentialDefinitionEntity?> skillCredentialDefinition(
   Ref ref,
   String definitionId,

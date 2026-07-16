@@ -4,7 +4,12 @@ import 'package:auravibes_app/data/repositories/skill_credential_definitions_rep
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
+import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
@@ -27,14 +32,41 @@ void main() {
         builder: (context) {
           return UncontrolledProviderScope(
             container: container,
-            child: MaterialApp(
-              home: SkillCredentialDefinitionEditScreen(
-                workspaceId: workspaceId,
-                definitionId: definitionId,
+            child: ProviderScope(
+              overrides: [
+                workspaceSessionProvider.overrideWithValue(
+                  WorkspaceSession(
+                    LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                  ),
+                ),
+                cloudWorkspaceStateGatewayProvider.overrideWith(
+                  (_) async => null,
+                ),
+                cloudSkillStoreProvider.overrideWithValue(null),
+                skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
+                  container.read(skillCredentialDefinitionsRepositoryProvider),
+                ),
+                createSkillCredentialDefinitionUsecaseProvider
+                    .overrideWithValue(
+                      CreateSkillCredentialDefinitionUsecase(
+                        container.read(
+                          skillCredentialDefinitionsRepositoryProvider,
+                        ),
+                      ),
+                    ),
+              ],
+              child: MaterialApp(
+                home: SkillCredentialDefinitionEditScreen(
+                  workspaceId: workspaceId,
+                  definitionId: definitionId,
+                ),
+                builder: (context, child) => AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
             ),
           );
         },
@@ -57,16 +89,23 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(database.close);
-    final container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
-    );
-    addTearDown(container.dispose);
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
     final repository = SkillCredentialDefinitionsRepository(database);
 
     await tester.pumpWidget(
