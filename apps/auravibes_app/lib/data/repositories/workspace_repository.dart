@@ -423,14 +423,3 @@ class WorkspaceNotFoundException extends WorkspaceException {
   /// ID of the workspace that was not found.
   final String workspaceId;
 }
-
-/// Exception thrown when attempting to delete the currently active workspace.
-class WorkspaceDeleteActiveException extends WorkspaceException {
-  /// Creates a new WorkspaceDeleteActiveException.
-  const WorkspaceDeleteActiveException()
-    : super(
-        'Cannot delete the currently active workspace. '
-        'Switch to another workspace first.',
-        localizationKey: LocaleKeys.workspace_management_delete_active_error,
-      );
-}
