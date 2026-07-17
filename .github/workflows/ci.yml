@@ -113,7 +113,37 @@ jobs:
             git diff --exit-code
           fi
 
+      - name: 🧭 Determine test scope
+        id: test-scope
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | \
+            grep -qE '^(\.github/|\.fvmrc$|analysis_options\.yaml$|dart_dependency_validator\.yaml$|pubspec\.yaml$|pubspec\.lock$)'; then
+            echo 'run_all=true' >> "$GITHUB_OUTPUT"
+            echo 'run_tests=true' >> "$GITHUB_OUTPUT"
+          elif melos list --diff="${{ github.event.pull_request.base.sha }}...HEAD" \
+            --include-dependents --dir-exists=test --parsable | grep -q .; then
+            echo 'run_all=false' >> "$GITHUB_OUTPUT"
+            echo 'run_tests=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run_all=false' >> "$GITHUB_OUTPUT"
+            echo 'run_tests=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🧪 Run affected tests with coverage
+        if: github.event_name == 'pull_request' && steps.test-scope.outputs.run_all != 'true' && steps.test-scope.outputs.run_tests == 'true'
+        run: >-
+          melos run test:ci
+          --diff="${{ github.event.pull_request.base.sha }}...HEAD"
+          --include-dependents
+          --no-select
+
+      - name: 🧪 No affected tests
+        if: github.event_name == 'pull_request' && steps.test-scope.outputs.run_tests == 'false'
+        run: echo 'No workspace package tests are affected by this pull request.'
+
       - name: 🧪 Run all tests with coverage
+        if: github.event_name != 'pull_request' || steps.test-scope.outputs.run_all == 'true'
         run: melos run test:ci --no-select
 
       - name: 🧭 Merge LCOV reports for Sonar
@@ -123,10 +153,9 @@ jobs:
             .select { |path| File.directory?(File.join(path, 'test')) }
           abort 'No tested workspace packages found' if package_dirs.empty?
 
-          reports = package_dirs.map do |package_dir|
+          reports = package_dirs.filter_map do |package_dir|
             report = File.join(package_dir, 'coverage/lcov.info')
-            abort "Missing coverage report: #{report}" unless File.file?(report)
-            [package_dir, report]
+            [package_dir, report] if File.file?(report)
           end
 
           merged = reports.flat_map do |package_dir, report|
@@ -149,7 +178,6 @@ jobs:
             end
           end
 
-          abort 'Merged coverage report has no source records' if merged.empty?
           Dir.mkdir('coverage') unless Dir.exist?('coverage')
           File.write('coverage/lcov.info', merged.join)
           RUBY
