@@ -36,6 +36,57 @@ void main() {
       expect(notifier.dequeue('conversation-1'), isNull);
     });
 
+    test('keeps conversation queues independent across peek and dequeue', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+
+      final first = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Conv1 First'),
+      );
+      final second = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Conv1 Second'),
+      );
+      final other = notifier.enqueue(
+        conversationId: 'conv-2',
+        draft: const ChatDraft(text: 'Conv2 First'),
+      );
+
+      expect(notifier.peek('conv-1')?.id, first.id);
+      expect(notifier.peek('conv-2')?.id, other.id);
+      expect(notifier.dequeue('conv-1')?.id, first.id);
+      expect(notifier.peek('conv-1')?.id, second.id);
+      expect(notifier.dequeue('conv-2')?.id, other.id);
+    });
+
+    test('dequeueAll preserves order and clears all conversation queues', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+
+      final first = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
+      final second = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Second'),
+      );
+      final third = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Third'),
+      );
+      final _ = notifier.enqueue(
+        conversationId: 'conv-2',
+        draft: const ChatDraft(text: 'Other'),
+      );
+
+      final all = notifier.dequeueAll('conv-1');
+
+      expect(all.map((draft) => draft.id), [first.id, second.id, third.id]);
+      expect(notifier.peek('conv-1'), isNull);
+      final _ = notifier.dequeueAll('conv-2');
+      expect(container.read(conversationSendQueueProvider), isEmpty);
+    });
+
     test('remove removes a specific draft by id', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 

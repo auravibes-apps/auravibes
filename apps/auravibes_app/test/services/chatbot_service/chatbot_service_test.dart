@@ -307,10 +307,10 @@ void main() {
       expect(title, 'Hello world this is');
     });
 
-    test('returns all words when message has 4 or fewer words', () {
+    test('returns all words and preserves casing for 4 or fewer words', () {
       expect(
-        ChatbotService.generateFallbackTitle('Hello world'),
-        'Hello world',
+        ChatbotService.generateFallbackTitle('Hello World Foo Bar'),
+        'Hello World Foo Bar',
       );
       expect(
         ChatbotService.generateFallbackTitle('one two three four'),
@@ -322,8 +322,9 @@ void main() {
       expect(ChatbotService.generateFallbackTitle('Hello'), 'Hello');
     });
 
-    test('returns empty string for empty message', () {
+    test('returns empty string for empty or whitespace-only messages', () {
       expect(ChatbotService.generateFallbackTitle(''), '');
+      expect(ChatbotService.generateFallbackTitle('     '), '');
     });
 
     test('truncates long title to 30 characters with ellipsis', () {

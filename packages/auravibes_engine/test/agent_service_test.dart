@@ -3,20 +3,37 @@ import 'package:auravibes_engine/src/agent_service.dart';
 import 'package:test/test.dart';
 import 'support/fake_cancellation_effects.dart';
 
+AgentService _buildAgentService(
+  _FakeAgentConversationDataProvider dataProvider, {
+  AgentSendQueueRuntime? sendQueueRuntime,
+  AgentCancellationEffects? cancellationEffects,
+  AgentRateLimitRetryRuntime? rateLimitRetryRuntime,
+  Duration? rateLimitRetryDelay,
+  DateTime Function()? now,
+  Future<void> Function(Duration)? sleep,
+}) {
+  return AgentService(
+    data: dataProvider,
+    models: dataProvider,
+    tools: dataProvider,
+    sendQueueRuntime: sendQueueRuntime ?? _FakeAgentSendQueueRuntime(),
+    cancellationEffects: cancellationEffects ?? FakeCancellationEffects(),
+    rateLimitRetryRuntime:
+        rateLimitRetryRuntime ??
+        AgentRateLimitRetryRuntime(
+          start: (_, _) {},
+          clear: (_) {},
+        ),
+    rateLimitRetryDelay: rateLimitRetryDelay ?? defaultAgentRateLimitRetryDelay,
+    now: now ?? DateTime.now,
+    sleep: sleep ?? Future<void>.delayed,
+  );
+}
+
 void main() {
   test('returns done when continuation has no tool calls', () async {
     final dataProvider = _FakeAgentConversationDataProvider();
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
-    );
+    final usecase = _buildAgentService(dataProvider);
 
     final result = await usecase(
       conversationId: 'conversation-1',
@@ -31,17 +48,7 @@ void main() {
 
   test('throws when conversation has no workspace', () async {
     final dataProvider = _FakeAgentConversationDataProvider(workspaceId: null);
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
-    );
+    final usecase = _buildAgentService(dataProvider);
 
     expect(
       () => usecase(
@@ -59,16 +66,9 @@ void main() {
     final sendQueue = _FakeAgentSendQueueRuntime(
       drafts: const [AgentQueuedDraft(content: 'queued')],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
+    final usecase = _buildAgentService(
+      dataProvider,
       sendQueueRuntime: sendQueue,
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
     );
 
     final result = await usecase(
@@ -94,17 +94,7 @@ void main() {
       ],
       toolDecisions: const [AgentIterationDecision.done],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
-    );
+    final usecase = _buildAgentService(dataProvider);
 
     final result = await usecase(
       conversationId: 'conversation-1',
@@ -124,12 +114,8 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [Exception('RateLimitException: retry after 2 seconds')],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
+    final usecase = _buildAgentService(
+      dataProvider,
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
         start: (_, retryAt) => retryEvents.add('start:$retryAt'),
         clear: (conversationId) => retryEvents.add('clear:$conversationId'),
@@ -165,16 +151,8 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [Exception('RESOURCE_EXHAUSTED: try again in 1 minute')],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
+    final usecase = _buildAgentService(
+      dataProvider,
       now: () => currentTime,
       sleep: (duration) {
         sleeps.add(duration);
@@ -201,16 +179,8 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [Exception('429'), Exception('429')],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
+    final usecase = _buildAgentService(
+      dataProvider,
       rateLimitRetryDelay: const Duration(seconds: 1),
       now: () => currentTime,
       sleep: (duration) {
@@ -239,10 +209,8 @@ void main() {
       continueErrors: [Exception('429')],
     );
     final sendQueue = _FakeAgentSendQueueRuntime();
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
+    final usecase = _buildAgentService(
+      dataProvider,
       sendQueueRuntime: sendQueue,
       cancellationEffects: cancellationRuntime,
       rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
@@ -273,17 +241,7 @@ void main() {
     final dataProvider = _FakeAgentConversationDataProvider(
       continueErrors: [StateError('broken')],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
-      sendQueueRuntime: _FakeAgentSendQueueRuntime(),
-      cancellationEffects: FakeCancellationEffects(),
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
-    );
+    final usecase = _buildAgentService(dataProvider);
 
     expect(
       () => usecase(
@@ -304,16 +262,10 @@ void main() {
     final sendQueue = _FakeAgentSendQueueRuntime(
       drafts: const [AgentQueuedDraft(content: 'queued')],
     );
-    final usecase = AgentService(
-      data: dataProvider,
-      models: dataProvider,
-      tools: dataProvider,
+    final usecase = _buildAgentService(
+      dataProvider,
       sendQueueRuntime: sendQueue,
       cancellationEffects: cancellationRuntime,
-      rateLimitRetryRuntime: AgentRateLimitRetryRuntime(
-        start: (_, _) {},
-        clear: (_) {},
-      ),
     );
 
     final result = await usecase(

@@ -7,22 +7,38 @@
   "mcpServers": {
     "dart": {
       "command": "fvm",
-      "args": ["dart", "mcp-server", "--force-roots-fallback"],
-      "lifecycle": "lazy"
+      "args": [
+        "dart",
+        "mcp-server",
+        "--force-roots-fallback"
+      ],
+      "lifecycle": "lazy",
+      "directTools": true
     },
     "pubdev": {
       "command": "npx",
-      "args": ["-y", "@devqxi/pubdev-mcp-server"],
-      "lifecycle": "lazy"
+      "args": [
+        "-y",
+        "@devqxi/pubdev-mcp-server"
+      ],
+      "lifecycle": "lazy",
+      "directTools": true
     },
     "serverpod": {
       "command": "serverpod",
-      "args": ["mcp-server", "--server-dir", "apps/auravibes_server"],
+      "args": [
+        "mcp-server",
+        "--server-dir",
+        "apps/auravibes_server"
+      ],
       "lifecycle": "lazy"
     },
     "sonarqube": {
       "command": "sonar",
-      "args": ["run", "mcp"],
+      "args": [
+        "run",
+        "mcp"
+      ],
       "lifecycle": "lazy"
     }
   }

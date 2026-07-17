@@ -1,6 +1,15 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
+UrlResponse _responseForStatus(int statusCode) {
+  return UrlResponse(
+    statusCode: statusCode,
+    body: '',
+    headers: const {},
+    elapsed: Duration.zero,
+  );
+}
+
 void main() {
   group('UrlResponse', () {
     const okResponse = UrlResponse(
@@ -12,131 +21,56 @@ void main() {
       elapsed: Duration(milliseconds: 100),
     );
 
-    const redirectResponse = UrlResponse(
-      statusCode: 301,
-      body: '',
-      headers: {},
-      elapsed: Duration(milliseconds: 50),
-    );
+    test('classifies response status boundaries', () {
+      const okCases = [(200, true), (299, true), (300, false), (404, false)];
+      const redirectCases = [
+        (301, true),
+        (399, true),
+        (200, false),
+        (400, false),
+      ];
+      const clientErrorCases = [
+        (404, true),
+        (400, true),
+        (499, true),
+        (200, false),
+        (500, false),
+      ];
+      const serverErrorCases = [
+        (500, true),
+        (502, true),
+        (200, false),
+        (404, false),
+      ];
 
-    const clientErrorResponse = UrlResponse(
-      statusCode: 404,
-      body: 'Not Found',
-      headers: {},
-      elapsed: Duration(milliseconds: 75),
-    );
-
-    const serverErrorResponse = UrlResponse(
-      statusCode: 500,
-      body: 'Internal Server Error',
-      headers: {},
-      elapsed: Duration(seconds: 2),
-    );
-
-    group('isOk', () {
-      test('true for 200', () {
-        expect(okResponse.isOk, isTrue);
-      });
-
-      test('true for 299', () {
-        const response = UrlResponse(
-          statusCode: 299,
-          body: '',
-          headers: {},
-          elapsed: Duration.zero,
+      for (final (statusCode, expected) in okCases) {
+        expect(
+          _responseForStatus(statusCode).isOk,
+          expected,
+          reason: 'isOk at $statusCode',
         );
-        expect(response.isOk, isTrue);
-      });
-
-      test('false for 300', () {
-        expect(redirectResponse.isOk, isFalse);
-      });
-
-      test('false for 404', () {
-        expect(clientErrorResponse.isOk, isFalse);
-      });
-    });
-
-    group('isRedirect', () {
-      test('true for 301', () {
-        expect(redirectResponse.isRedirect, isTrue);
-      });
-
-      test('true for 399', () {
-        const response = UrlResponse(
-          statusCode: 399,
-          body: '',
-          headers: {},
-          elapsed: Duration.zero,
+      }
+      for (final (statusCode, expected) in redirectCases) {
+        expect(
+          _responseForStatus(statusCode).isRedirect,
+          expected,
+          reason: 'isRedirect at $statusCode',
         );
-        expect(response.isRedirect, isTrue);
-      });
-
-      test('false for 200', () {
-        expect(okResponse.isRedirect, isFalse);
-      });
-
-      test('false for 400', () {
-        expect(clientErrorResponse.isRedirect, isFalse);
-      });
-    });
-
-    group('isClientError', () {
-      test('true for 404', () {
-        expect(clientErrorResponse.isClientError, isTrue);
-      });
-
-      test('true for 400', () {
-        const response = UrlResponse(
-          statusCode: 400,
-          body: '',
-          headers: {},
-          elapsed: Duration.zero,
+      }
+      for (final (statusCode, expected) in clientErrorCases) {
+        expect(
+          _responseForStatus(statusCode).isClientError,
+          expected,
+          reason: 'isClientError at $statusCode',
         );
-        expect(response.isClientError, isTrue);
-      });
-
-      test('true for 499', () {
-        const response = UrlResponse(
-          statusCode: 499,
-          body: '',
-          headers: {},
-          elapsed: Duration.zero,
+      }
+      for (final (statusCode, expected) in serverErrorCases) {
+        expect(
+          _responseForStatus(statusCode).isServerError,
+          expected,
+          reason: 'isServerError at $statusCode',
         );
-        expect(response.isClientError, isTrue);
-      });
-
-      test('false for 200', () {
-        expect(okResponse.isClientError, isFalse);
-      });
-
-      test('false for 500', () {
-        expect(serverErrorResponse.isClientError, isFalse);
-      });
-    });
-
-    group('isServerError', () {
-      test('true for 500', () {
-        expect(serverErrorResponse.isServerError, isTrue);
-      });
-
-      test('true for 502', () {
-        const response = UrlResponse(
-          statusCode: 502,
-          body: '',
-          headers: {},
-          elapsed: Duration.zero,
-        );
-        expect(response.isServerError, isTrue);
-      });
-
-      test('false for 200', () {
-        expect(okResponse.isServerError, isFalse);
-      });
-
-      test('false for 404', () {
-        expect(clientErrorResponse.isServerError, isFalse);
-      });
+      }
     });
 
     test('properties are correct', () {

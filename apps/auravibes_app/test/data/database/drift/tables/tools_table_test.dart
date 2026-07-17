@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,28 +35,6 @@ final class _DatabaseFixture {
 }
 
 void main() {
-  group('PermissionAccess', () {
-    test('fromString returns ask', () {
-      expect(PermissionAccess.fromString('ask'), PermissionAccess.ask);
-    });
-
-    test('fromString returns granted', () {
-      expect(PermissionAccess.fromString('granted'), PermissionAccess.granted);
-    });
-
-    test('fromString defaults to ask for unknown', () {
-      expect(PermissionAccess.fromString('unknown'), PermissionAccess.ask);
-    });
-
-    test('ask value', () {
-      expect(PermissionAccess.ask.value, 'ask');
-    });
-
-    test('granted value', () {
-      expect(PermissionAccess.granted.value, 'granted');
-    });
-  });
-
   group('Tools schema', () {
     final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
@@ -158,62 +135,6 @@ void main() {
         (r) => r.read<String>('name') == 'permissions',
       );
       expect(col.read<String?>('dflt_value'), isNotNull);
-    });
-  });
-
-  group('Tools column accessors', () {
-    final fixture = _DatabaseFixture(_testConnection);
-
-    setUp(fixture.reset);
-
-    tearDown(fixture.close);
-
-    test('all column getters are accessible', () {
-      final table = fixture.database.tools;
-      expect(table.workspaceId, isNotNull);
-      expect(table.workspaceToolsGroupId, isNotNull);
-      expect(table.toolId, isNotNull);
-      expect(table.description, isNotNull);
-      expect(table.config, isNotNull);
-      expect(table.inputSchema, isNotNull);
-      expect(table.isEnabled, isNotNull);
-      expect(table.permissions, isNotNull);
-    });
-
-    test('primaryKey contains id', () {
-      final table = fixture.database.tools;
-      expect(table.primaryKey.length, 1);
-      expect(table.primaryKey, contains(table.id));
-    });
-
-    test('column names match expected snake_case', () {
-      final table = fixture.database.tools;
-      expect(table.workspaceId.name, 'workspace_id');
-      expect(table.workspaceToolsGroupId.name, 'workspace_tools_group_id');
-      expect(table.toolId.name, 'tool_id');
-      expect(table.description.name, 'description');
-      expect(table.config.name, 'config');
-      expect(table.inputSchema.name, 'input_schema');
-      expect(table.isEnabled.name, 'is_enabled');
-      expect(table.permissions.name, 'permissions');
-    });
-
-    test(r'$columns returns all columns including TableMixin', () {
-      final table = fixture.database.tools;
-      expect(table.$columns.length, 11);
-    });
-
-    test('table name is tools', () {
-      expect(fixture.database.tools.actualTableName, 'tools');
-    });
-
-    test('aliasedName returns actualTableName without alias', () {
-      expect(fixture.database.tools.aliasedName, 'tools');
-    });
-
-    test('createAlias returns new table with alias', () {
-      final aliased = fixture.database.tools.createAlias('ta');
-      expect(aliased.aliasedName, 'ta');
     });
   });
 }

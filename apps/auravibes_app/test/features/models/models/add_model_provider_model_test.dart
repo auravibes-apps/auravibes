@@ -2,6 +2,21 @@ import 'package:auravibes_app/features/models/models/add_model_provider_model.da
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('AddModelProviderModel construction', () {
+    test('defaults fields and supports copyWith', () {
+      const model = AddModelProviderModel();
+      final updated = model.copyWith(name: 'Test', key: 'secret');
+
+      expect(model.name, isNull);
+      expect(model.modelId, isNull);
+      expect(model.key, isNull);
+      expect(model.url, isNull);
+      expect(updated.name, 'Test');
+      expect(updated.key, 'secret');
+      expect(updated.url, isNull);
+    });
+  });
+
   group('AddModelProviderModel.validateName', () {
     test('returns null for valid name', () {
       const model = AddModelProviderModel(name: 'My Provider');

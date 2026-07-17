@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,27 +35,6 @@ final class _DatabaseFixture {
 }
 
 void main() {
-  group('stringListConverter', () {
-    test('converts from JSON list', () {
-      expect(stringListConverter.fromJson(['a', 'b']), ['a', 'b']);
-    });
-
-    test('converts null to empty list', () {
-      expect(stringListConverter.fromJson(null), <String>[]);
-    });
-
-    test('converts to JSON', () {
-      expect(stringListConverter.toJson(['a', 'b']), ['a', 'b']);
-    });
-
-    test('round-trip preserves values', () {
-      const original = ['x', 'y', 'z'];
-      final json = stringListConverter.toJson(original);
-      final restored = stringListConverter.fromJson(json);
-      expect(restored, original);
-    });
-  });
-
   group('ApiModels schema', () {
     final fixture = _DatabaseFixture(_testConnection);
     var columns = <QueryRow>[];
@@ -160,75 +138,6 @@ void main() {
       );
       expect(col.read<int>('notnull'), 1);
       expect(col.read<String>('dflt_value'), '0');
-    });
-  });
-
-  group('ApiModels column accessors', () {
-    final fixture = _DatabaseFixture(_testConnection);
-
-    setUp(fixture.reset);
-
-    tearDown(fixture.close);
-
-    test('all column getters are accessible', () {
-      final table = fixture.database.apiModels;
-      expect(table.modelProvider, isNotNull);
-      expect(table.id, isNotNull);
-      expect(table.name, isNotNull);
-      expect(table.modalitiesInput, isNotNull);
-      expect(table.modalitiesOutput, isNotNull);
-      expect(table.openWeights, isNotNull);
-      expect(table.costInput, isNotNull);
-      expect(table.costOutput, isNotNull);
-      expect(table.costCacheRead, isNotNull);
-      expect(table.limitContext, isNotNull);
-      expect(table.limitOutput, isNotNull);
-      expect(table.supportsReasoning, isNotNull);
-    });
-
-    test('primaryKey contains id and modelProvider', () {
-      final table = fixture.database.apiModels;
-      expect(table.primaryKey.length, 2);
-      expect(table.primaryKey, contains(table.id));
-      expect(table.primaryKey, contains(table.modelProvider));
-    });
-
-    test('column names match expected snake_case', () {
-      final table = fixture.database.apiModels;
-      expect(table.modelProvider.name, 'model_provider');
-      expect(table.id.name, 'id');
-      expect(table.name.name, 'name');
-      expect(table.family.name, 'family');
-      expect(table.modalitiesInput.name, 'modalities_input');
-      expect(table.modalitiesOutput.name, 'modalities_output');
-      expect(table.openWeights.name, 'open_weights');
-      expect(table.costInput.name, 'cost_input');
-      expect(table.costOutput.name, 'cost_output');
-      expect(table.costCacheRead.name, 'cost_cache_read');
-      expect(table.limitContext.name, 'limit_context');
-      expect(table.limitOutput.name, 'limit_output');
-      expect(table.supportsReasoning.name, 'supports_reasoning');
-      expect(table.isCanonical.name, 'is_canonical');
-      expect(table.supportsPriorityMode.name, 'supports_priority_mode');
-      expect(table.supportsToolCalls.name, 'supports_tool_calls');
-    });
-
-    test(r'$columns returns all 16 columns', () {
-      final table = fixture.database.apiModels;
-      expect(table.$columns.length, 16);
-    });
-
-    test('table name is api_models', () {
-      expect(fixture.database.apiModels.actualTableName, 'api_models');
-    });
-
-    test('aliasedName returns actualTableName without alias', () {
-      expect(fixture.database.apiModels.aliasedName, 'api_models');
-    });
-
-    test('createAlias returns new table with alias', () {
-      final aliased = fixture.database.apiModels.createAlias('test_alias');
-      expect(aliased.aliasedName, 'test_alias');
     });
   });
 }

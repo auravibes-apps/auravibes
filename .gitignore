@@ -1,92 +1,79 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# OS and editor metadata
 .DS_Store
 .atom/
-.build/
-.buildlog/
-.history
+.antigravitycli/
+.history/
+.idea/
 .svn/
 .swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
+*.class
 *.iml
 *.ipr
 *.iws
-.idea/
+*.njsproj
+*.ntvs*
+*.pyc
+*.sln
+*.suo
+*.sw?
 
+# Local environment
 .env
-.antigravitycli/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+# VS Code launch and task configuration is intentionally trackable.
 #.vscode/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Flutter, Dart, and Pub
+.build/
+.buildlog/
 .dart_tool/
 .flutter-plugins-dependencies
-.pub-cache/
 .pub/
+.pub-cache/
 /build/
 /coverage/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+migrate_working_dir/
 
-# Symbolication related
+# Flutter release artifacts
+app.*.map.json
 app.*.symbols
 
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
+# Android build artifacts
 /android/app/debug
 /android/app/profile
 /android/app/release
 
-# Logs
-logs
+# Logs and JavaScript dependencies
+*.log
+/logs/
+dev-debug.log
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-dev-debug.log
-# Dependency directories
-node_modules/
-# Environment variables
-# Editor directories and files
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-# OS specific
 
-# Task files
-# tasks.json
-# tasks/ 
-
-# FVM Version Cache
+# FVM version cache
 .fvm/
 
 # Opencode lock
 .opencode/package-lock.json
 
 # Pi local runtime state (keep .pi/settings.json, agents, prompts, and .pi-lens config tracked)
-.pi/npm/
+.pi/agent-memory/
+.pi/cache/
 .pi/git/
+.pi/logs/
+.pi/npm/
+.pi/plans/
 .pi/sessions/
 .pi/tmp/
-.pi/cache/
-.pi/logs/
-.pi/agent-memory/
 .pi-lens/cache/
 .pi-lens/logs/
-.pi-lens/sessions/
-.pi-lens/*.log
-.pi-lens/change-log.jsonl
 .pi-lens/recent-touches.json
+.pi-lens/sessions/
 .pi-lens/turn-state.json
+.pi-lens/*.jsonl
+.pi-lens/*.log
+.pi-subagents/artifacts/

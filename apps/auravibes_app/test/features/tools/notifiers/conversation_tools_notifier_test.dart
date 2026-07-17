@@ -100,6 +100,17 @@ void main() {
       },
     );
 
+    test('returns empty list when no workspace tools exist', () async {
+      final result = await fixture.container.read(
+        conversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conv-1',
+        ).future,
+      );
+
+      expect(result, isEmpty);
+    });
+
     test('getEnabledToolIds returns only enabled tools', () async {
       fixture.workspaceToolsRepository.workspaceTools = [tool1, tool2];
 
