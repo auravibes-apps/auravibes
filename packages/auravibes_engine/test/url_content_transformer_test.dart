@@ -442,51 +442,58 @@ void main() {
     });
 
     group('Markdown escaping', () {
-      test('escapes asterisks in text content', () {
-        final response = _htmlResponse(
-          '<p>Use the * wildcard</p>',
-        );
-        final result = transformer.transform(response);
+      test('escapes markdown punctuation in text content', () {
+        const cases =
+            <
+              ({
+                String name,
+                String html,
+                List<String> escaped,
+                String? unescaped,
+              })
+            >[
+              (
+                name: 'asterisks',
+                html: '<p>Use the * wildcard</p>',
+                escaped: [r'\*'],
+                unescaped: '*wildcard*',
+              ),
+              (
+                name: 'underscores',
+                html: '<p>Variable _name is private</p>',
+                escaped: [r'\_'],
+                unescaped: null,
+              ),
+              (
+                name: 'square brackets',
+                html: '<p>Array [0] is first</p>',
+                escaped: [r'\[', r'\]'],
+                unescaped: null,
+              ),
+              (
+                name: 'backticks',
+                html: '<p>The ` char is special</p>',
+                escaped: [r'\`'],
+                unescaped: null,
+              ),
+              (
+                name: 'pipes',
+                html: '<p>Use | as OR operator</p>',
+                escaped: [r'\|'],
+                unescaped: null,
+              ),
+            ];
 
-        expect(result.body, contains(r'\*'));
-        expect(result.body, isNot(contains('*wildcard*')));
-      });
+        for (final (:name, :html, :escaped, :unescaped) in cases) {
+          final result = transformer.transform(_htmlResponse(html));
 
-      test('escapes underscores in text content', () {
-        final response = _htmlResponse(
-          '<p>Variable _name is private</p>',
-        );
-        final result = transformer.transform(response);
-
-        expect(result.body, contains(r'\_'));
-      });
-
-      test('escapes square brackets in text content', () {
-        final response = _htmlResponse(
-          '<p>Array [0] is first</p>',
-        );
-        final result = transformer.transform(response);
-
-        expect(result.body, contains(r'\['));
-        expect(result.body, contains(r'\]'));
-      });
-
-      test('escapes backticks in text content', () {
-        final response = _htmlResponse(
-          '<p>The ` char is special</p>',
-        );
-        final result = transformer.transform(response);
-
-        expect(result.body, contains(r'\`'));
-      });
-
-      test('escapes pipe characters in text', () {
-        final response = _htmlResponse(
-          '<p>Use | as OR operator</p>',
-        );
-        final result = transformer.transform(response);
-
-        expect(result.body, contains(r'\|'));
+          for (final punctuation in escaped) {
+            expect(result.body, contains(punctuation), reason: name);
+          }
+          if (unescaped != null) {
+            expect(result.body, isNot(contains(unescaped)), reason: name);
+          }
+        }
       });
 
       test('does not escape inside inline code', () {

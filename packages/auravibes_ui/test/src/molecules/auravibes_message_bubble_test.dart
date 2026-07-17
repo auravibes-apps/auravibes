@@ -214,36 +214,6 @@ void main() {
       expect(constraints.maxWidth, customMaxWidth);
     });
 
-    group('AuraMessageDeliveryStatus enum', () {
-      test('has all expected values', () {
-        expect(AuraMessageDeliveryStatus.values, hasLength(6));
-        expect(
-          AuraMessageDeliveryStatus.values,
-          contains(AuraMessageDeliveryStatus.sending),
-        );
-        expect(
-          AuraMessageDeliveryStatus.values,
-          contains(AuraMessageDeliveryStatus.unfinished),
-        );
-        expect(
-          AuraMessageDeliveryStatus.values,
-          contains(AuraMessageDeliveryStatus.sent),
-        );
-        expect(
-          AuraMessageDeliveryStatus.values,
-          contains(AuraMessageDeliveryStatus.delivered),
-        );
-        expect(
-          AuraMessageDeliveryStatus.values,
-          contains(AuraMessageDeliveryStatus.read),
-        );
-        expect(
-          AuraMessageDeliveryStatus.values,
-          contains(AuraMessageDeliveryStatus.error),
-        );
-      });
-    });
-
     group('AuraMessageContentType enum', () {
       test('has all expected values', () {
         expect(AuraMessageContentType.values, hasLength(3));

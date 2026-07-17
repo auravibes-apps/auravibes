@@ -3,25 +3,30 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('stringListConverter', () {
-    test('toSql returns JSON string', () {
-      final result = stringListConverter.toSql(['a', 'b', 'c']);
-      expect(result, '["a","b","c"]');
+    test('toSql serializes populated and empty lists', () {
+      expect(stringListConverter.toSql(['a', 'b', 'c']), '["a","b","c"]');
+      expect(stringListConverter.toSql(<String>[]), '[]');
     });
 
-    test('toSql returns JSON for empty list', () {
-      final result = stringListConverter.toSql(<String>[]);
-      expect(result, '[]');
-    });
-
-    test('fromSql parses JSON string to list', () {
+    test('fromSql deserializes JSON and treats JSON null as empty', () {
       final result = stringListConverter.fromSql('["a","b","c"]');
+
       expect(result, ['a', 'b', 'c']);
       expect(result, isA<List<String>>());
+      expect(stringListConverter.fromSql('null'), <String>[]);
     });
 
-    test('fromSql returns empty list for null', () {
-      final result = stringListConverter.fromSql('null');
-      expect(result, <String>[]);
+    test('fromJson deserializes lists and treats null as empty', () {
+      expect(stringListConverter.fromJson(['a', 'b']), ['a', 'b']);
+      expect(stringListConverter.fromJson(null), <String>[]);
+    });
+
+    test('toJson returns values that round-trip through fromJson', () {
+      const original = ['x', 'y', 'z'];
+      final json = stringListConverter.toJson(original);
+
+      expect(json, original);
+      expect(stringListConverter.fromJson(json), original);
     });
   });
 }

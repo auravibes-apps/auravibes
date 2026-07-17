@@ -55,9 +55,9 @@ void main() {
         expect(code, 'auth_code_123');
       });
 
-      test('returns code regardless of parameter order', () {
+      test('returns code with reordered, extra, and fragment parameters', () {
         final code = OAuthAuthenticate.validateGetCode(
-          urlResult: 'test:/?code=auth_code&state=mystate',
+          urlResult: 'test:/?code=auth_code&state=mystate&extra=value#fragment',
           stateParam: 'mystate',
         );
 

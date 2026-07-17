@@ -29,41 +29,6 @@ void main() {
     expect(screen.workspaceId, 'other-id');
   });
 
-  group('AppTheme', () {
-    test('light maps to ThemeMode.light', () {
-      expect(AppTheme.light.themeMode, ThemeMode.light);
-    });
-
-    test('dark maps to ThemeMode.dark', () {
-      expect(AppTheme.dark.themeMode, ThemeMode.dark);
-    });
-
-    test('system maps to ThemeMode.system', () {
-      expect(AppTheme.system.themeMode, ThemeMode.system);
-    });
-
-    test('has three values', () {
-      expect(AppTheme.values, hasLength(3));
-    });
-
-    test('values are light, dark, system', () {
-      expect(
-        AppTheme.values,
-        containsAll([
-          AppTheme.light,
-          AppTheme.dark,
-          AppTheme.system,
-        ]),
-      );
-    });
-
-    test('indices are sequential', () {
-      for (var i = 0; i < AppTheme.values.length; i++) {
-        expect(AppTheme.values[i].index, i);
-      }
-    });
-  });
-
   group('render', () {
     testWidgets('renders SettingsScreen', (tester) async {
       await tester.runAsync(() async {

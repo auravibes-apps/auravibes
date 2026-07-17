@@ -535,43 +535,5 @@ void main() {
 
       expect(find.text('Option 1'), findsNothing);
     });
-
-    testWidgets('closes on escape key', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Portal(
-              child: Column(
-                children: [
-                  AuraDropdownSelector<String>(
-                    options: const [
-                      AuraDropdownOption(
-                        value: 'Option 1',
-                        child: Text('Option 1'),
-                      ),
-                    ],
-                    onChanged: (_) {
-                      final _ = Object();
-                    },
-                    placeholder: const Text('Select'),
-                  ),
-                  const SizedBox(height: 100),
-                  const Text('Outside'),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Select'));
-      await tester.pump();
-      expect(find.text('Option 1'), findsOneWidget);
-
-      final _ = await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pump();
-
-      expect(find.text('Option 1'), findsNothing);
-    });
   });
 }

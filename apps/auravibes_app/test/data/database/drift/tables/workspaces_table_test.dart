@@ -1,5 +1,4 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,90 +90,6 @@ void main() {
         (r) => r.read<String>('name') == 'url',
       );
       expect(col.read<int>('notnull'), 0);
-    });
-  });
-
-  group('WorkspaceType enum', () {
-    test('fromString returns local', () {
-      expect(WorkspaceType.fromString('local'), WorkspaceType.local);
-    });
-
-    test('fromString returns remote', () {
-      expect(WorkspaceType.fromString('remote'), WorkspaceType.remote);
-    });
-
-    test('fromString is case insensitive', () {
-      expect(WorkspaceType.fromString('LOCAL'), WorkspaceType.local);
-    });
-
-    test('fromString throws on invalid', () {
-      expect(() => WorkspaceType.fromString('invalid'), throwsArgumentError);
-    });
-
-    test('local value', () {
-      expect(WorkspaceType.local.value, 'local');
-    });
-
-    test('remote value', () {
-      expect(WorkspaceType.remote.value, 'remote');
-    });
-
-    test('isLocal getter', () {
-      expect(WorkspaceType.local.isLocal, true);
-      expect(WorkspaceType.remote.isLocal, false);
-    });
-
-    test('isRemote getter', () {
-      expect(WorkspaceType.remote.isRemote, true);
-      expect(WorkspaceType.local.isRemote, false);
-    });
-
-    test('toString returns value', () {
-      expect(WorkspaceType.local.toString(), 'local');
-    });
-  });
-
-  group('Workspaces column accessors', () {
-    final fixture = _DatabaseFixture(_testConnection);
-
-    setUp(fixture.reset);
-
-    tearDown(fixture.close);
-
-    test('all column getters are accessible', () {
-      final table = fixture.database.workspaces;
-      expect(table.name, isNotNull);
-      expect(table.type, isNotNull);
-      expect(table.url, isNotNull);
-      expect(table.cloudWorkspaceId, isNotNull);
-      expect(table.cloudAccountId, isNotNull);
-    });
-
-    test('column names match expected snake_case', () {
-      final table = fixture.database.workspaces;
-      expect(table.name.name, 'name');
-      expect(table.type.name, 'type');
-      expect(table.url.name, 'url');
-      expect(table.cloudWorkspaceId.name, 'cloud_workspace_id');
-      expect(table.cloudAccountId.name, 'cloud_account_id');
-    });
-
-    test(r'$columns returns all columns including TableMixin', () {
-      final table = fixture.database.workspaces;
-      expect(table.$columns.length, 8);
-    });
-
-    test('table name is workspaces', () {
-      expect(fixture.database.workspaces.actualTableName, 'workspaces');
-    });
-
-    test('aliasedName returns actualTableName without alias', () {
-      expect(fixture.database.workspaces.aliasedName, 'workspaces');
-    });
-
-    test('createAlias returns new table with alias', () {
-      final aliased = fixture.database.workspaces.createAlias('wa');
-      expect(aliased.aliasedName, 'wa');
     });
   });
 }

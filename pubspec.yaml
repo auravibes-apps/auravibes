@@ -75,22 +75,43 @@ melos:
 
     # Testing Scripts
     test:
-      exec: flutter test --reporter=compact
+      exec: |
+        if grep -q '^  flutter:' pubspec.yaml; then
+          flutter test --reporter=compact
+        else
+          fvm dart test --reporter=compact
+        fi
       packageFilters:
         dirExists: test
-      description: Run tests for all packages (fast, no coverage)
+      description: Run tests with the package's Flutter or Dart runner
 
     test:coverage:
-      exec: flutter test --coverage --reporter=compact
+      exec: |
+        if grep -q '^  flutter:' pubspec.yaml; then
+          flutter test --coverage --reporter=compact
+        else
+          fvm dart test --coverage=coverage --reporter=compact &&
+            fvm dart run coverage:format_coverage --lcov --in=coverage \
+              --out=coverage/lcov.info --report-on=lib
+        fi
       packageFilters:
         dirExists: test
-      description: Run tests for all packages with coverage
+      description: Run tests with coverage and emit package LCOV reports
 
     test:ci:
-      exec: flutter test --coverage --concurrency=2 --timeout=30s --reporter=compact
+      exec: |
+        if grep -q '^  flutter:' pubspec.yaml; then
+          flutter test --coverage --concurrency=2 --timeout=30s \
+            --reporter=compact
+        else
+          fvm dart test --coverage=coverage --concurrency=2 --timeout=30s \
+            --reporter=compact &&
+            fvm dart run coverage:format_coverage --lcov --in=coverage \
+              --out=coverage/lcov.info --report-on=lib
+        fi
       packageFilters:
         dirExists: test
-      description: Run tests in CI mode (coverage + optimized settings)
+      description: Run CI tests with coverage using the package's test runner
 
     # Code Generation Scripts
     generate:

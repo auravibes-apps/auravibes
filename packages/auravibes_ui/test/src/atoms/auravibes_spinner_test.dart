@@ -18,50 +18,30 @@ void main() {
       expect(find.byType(SizedBox), findsOneWidget);
     });
 
-    testWidgets('applies medium size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(),
+    testWidgets('applies expected dimensions for supported sizes', (
+      tester,
+    ) async {
+      const cases = <({String label, AuraSpinnerSize? size, double dimension})>[
+        (label: 'default medium', size: null, dimension: 24.0),
+        (label: 'large', size: AuraSpinnerSize.large, dimension: 32.0),
+        (label: 'small', size: AuraSpinnerSize.small, dimension: 16.0),
+      ];
+
+      for (final (:label, :size, :dimension) in cases) {
+        final spinner = size == null
+            ? const AuraSpinner()
+            : AuraSpinner(size: size);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(body: spinner),
           ),
-        ),
-      );
+        );
 
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
-      expect(sizedBox.width, 24.0);
-      expect(sizedBox.height, 24.0);
-    });
-
-    testWidgets('applies large size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(
-              size: AuraSpinnerSize.large,
-            ),
-          ),
-        ),
-      );
-
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
-      expect(sizedBox.width, 32.0);
-      expect(sizedBox.height, 32.0);
-    });
-
-    testWidgets('applies small size correctly', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraSpinner(
-              size: AuraSpinnerSize.small,
-            ),
-          ),
-        ),
-      );
-
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
-      expect(sizedBox.width, 16.0);
-      expect(sizedBox.height, 16.0);
+        final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
+        expect(sizedBox.width, dimension, reason: label);
+        expect(sizedBox.height, dimension, reason: label);
+      }
     });
 
     testWidgets('applies custom color correctly', (tester) async {

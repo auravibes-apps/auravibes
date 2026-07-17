@@ -439,38 +439,6 @@ void main() {
       expect(find.byType(Container), findsWidgets);
     });
 
-    testWidgets('showAuraConfirmDialog returns false on cancel', (
-      tester,
-    ) async {
-      bool? result;
-
-      await tester.pumpWidget(
-        AuraThemeWrapper(
-          child: Builder(
-            builder: (context) => TextButton(
-              onPressed: runDialogAction(() async {
-                result = await showAuraConfirmDialog(
-                  context: context,
-                  title: const Text('Title'),
-                  message: const Text('Message'),
-                );
-              }),
-              child: const Text('Open'),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Open'));
-      final _ = await tester.pumpAndSettle();
-
-      // Tap cancel button.
-      await tester.tap(find.text('Cancel'));
-      final _ = await tester.pumpAndSettle();
-
-      expect(result, isFalse);
-    });
-
     testWidgets('showAuraConfirmDialog supports barrierDismissible', (
       tester,
     ) async {

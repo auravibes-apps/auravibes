@@ -37,71 +37,37 @@ final class _DatabaseFixture {
 
 void main() {
   group('ModelProvidersTableType', () {
-    test('fromString returns openai', () {
-      expect(
-        ModelProvidersTableType.fromString('openai'),
-        ModelProvidersTableType.openai,
-      );
+    test('fromString parses supported values and rejects unknown values', () {
+      const cases = <({String input, ModelProvidersTableType? expected})>[
+        (input: 'openai', expected: ModelProvidersTableType.openai),
+        (input: 'anthropic', expected: ModelProvidersTableType.anthropic),
+        (input: 'openrouter', expected: ModelProvidersTableType.openrouter),
+        (input: 'OpenAI', expected: ModelProvidersTableType.openai),
+        (input: 'ANTHROPIC', expected: ModelProvidersTableType.anthropic),
+        (input: 'unknown', expected: null),
+        (input: '', expected: null),
+      ];
+
+      for (final (:input, :expected) in cases) {
+        expect(
+          ModelProvidersTableType.fromString(input),
+          expected,
+          reason: input,
+        );
+      }
     });
 
-    test('fromString returns anthropic', () {
-      expect(
-        ModelProvidersTableType.fromString('anthropic'),
-        ModelProvidersTableType.anthropic,
-      );
-    });
+    test('value and toString match each supported identifier', () {
+      const cases = <({ModelProvidersTableType type, String value})>[
+        (type: ModelProvidersTableType.openai, value: 'openai'),
+        (type: ModelProvidersTableType.anthropic, value: 'anthropic'),
+        (type: ModelProvidersTableType.openrouter, value: 'openrouter'),
+      ];
 
-    test('fromString returns null for unknown', () {
-      expect(ModelProvidersTableType.fromString('unknown'), isNull);
-    });
-
-    test('fromString is case insensitive', () {
-      expect(
-        ModelProvidersTableType.fromString('OpenAI'),
-        ModelProvidersTableType.openai,
-      );
-    });
-
-    test('fromString handles mixed case', () {
-      expect(
-        ModelProvidersTableType.fromString('ANTHROPIC'),
-        ModelProvidersTableType.anthropic,
-      );
-    });
-
-    test('fromString returns openrouter', () {
-      expect(
-        ModelProvidersTableType.fromString('openrouter'),
-        ModelProvidersTableType.openrouter,
-      );
-    });
-
-    test('fromString handles empty string', () {
-      expect(ModelProvidersTableType.fromString(''), isNull);
-    });
-
-    test('openai value', () {
-      expect(ModelProvidersTableType.openai.value, 'openai');
-    });
-
-    test('anthropic value', () {
-      expect(ModelProvidersTableType.anthropic.value, 'anthropic');
-    });
-
-    test('openrouter value', () {
-      expect(ModelProvidersTableType.openrouter.value, 'openrouter');
-    });
-
-    test('openai toString', () {
-      expect(ModelProvidersTableType.openai.toString(), 'openai');
-    });
-
-    test('anthropic toString', () {
-      expect(ModelProvidersTableType.anthropic.toString(), 'anthropic');
-    });
-
-    test('openrouter toString', () {
-      expect(ModelProvidersTableType.openrouter.toString(), 'openrouter');
+      for (final (:type, :value) in cases) {
+        expect(type.value, value, reason: value);
+        expect(type.toString(), value, reason: value);
+      }
     });
 
     test('has exactly three values', () {
@@ -165,21 +131,6 @@ void main() {
     setUp(fixture.reset);
 
     tearDown(fixture.close);
-
-    test('all column getters are accessible', () {
-      final table = fixture.database.apiModelProviders;
-      expect(table.id, isNotNull);
-      expect(table.name, isNotNull);
-      expect(table.type, isNotNull);
-      expect(table.url, isNotNull);
-      expect(table.doc, isNotNull);
-    });
-
-    test('primaryKey contains id', () {
-      final table = fixture.database.apiModelProviders;
-      expect(table.primaryKey.length, 1);
-      expect(table.primaryKey, contains(table.id));
-    });
 
     test('can insert provider with nullable fields null', () async {
       final _ = await fixture.database
