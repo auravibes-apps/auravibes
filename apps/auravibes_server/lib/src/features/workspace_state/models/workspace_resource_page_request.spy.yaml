@@ -1,0 +1,5 @@
+class: WorkspaceResourcePageRequest
+fields:
+  resourceKind: WorkspaceResourceKind
+  afterResourceId: String?
+  limit: int

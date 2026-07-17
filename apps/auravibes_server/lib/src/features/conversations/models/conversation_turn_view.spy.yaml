@@ -1,0 +1,13 @@
+class: ConversationTurnView
+fields:
+  id: String
+  conversationId: String
+  userMessageId: String?
+  assistantMessageId: String?
+  status: String
+  revision: int
+  acceptedSequence: int
+  cancellationRequestedAt: DateTime?
+  terminalAt: DateTime?
+  createdAt: DateTime
+  updatedAt: DateTime

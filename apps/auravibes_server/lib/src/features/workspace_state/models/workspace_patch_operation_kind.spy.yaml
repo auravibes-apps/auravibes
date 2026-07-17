@@ -1,0 +1,6 @@
+enum: WorkspacePatchOperationKind
+serialized: byName
+values:
+  - create
+  - update
+  - delete

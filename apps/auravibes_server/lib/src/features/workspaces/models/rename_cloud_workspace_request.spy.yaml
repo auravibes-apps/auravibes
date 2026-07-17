@@ -2,3 +2,5 @@ class: RenameCloudWorkspaceRequest
 fields:
   workspaceId: int
   name: String
+  requestId: String
+  expectedWorkspaceRevision: int

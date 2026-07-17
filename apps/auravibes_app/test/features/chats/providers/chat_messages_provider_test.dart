@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
 import 'dart:async';
@@ -19,7 +18,10 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -31,12 +33,22 @@ List<String> _messageIds(ProviderContainer container) =>
     container.read(chatMessagesProvider).value?.map((m) => m.id).toList() ??
     const [];
 
-@Dependencies([chatMessages, conversationUsedTokens, messageConversationById])
+@Dependencies([
+  chatMessages,
+  conversationUsedTokens,
+  messageConversationById,
+  modelContextLimit,
+])
 void main() {
   group('chatMessagesProvider', () {
     var repository = _FakeMessageRepository();
     var container = ProviderContainer(
       overrides: [
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ),
         conversationSelectedProvider.overrideWithValue('conversation-1'),
         messageRepositoryProvider.overrideWithValue(repository),
       ],
@@ -46,6 +58,11 @@ void main() {
       repository = _FakeMessageRepository();
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conversation-1'),
           messageRepositoryProvider.overrideWithValue(repository),
         ],
@@ -214,10 +231,19 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             fakeCredentialsRepo,
           ),
           apiModelRepositoryProvider.overrideWithValue(fakeApiRepo),
+          modelSelectionStoreProvider.overrideWith(
+            (_, _) async => fakeCredentialsRepo,
+          ),
+          modelCatalogStoreProvider.overrideWith((_, _) async => fakeApiRepo),
         ],
       );
       addTearDown(container.dispose);
@@ -249,10 +275,19 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
           workspaceModelSelectionRepositoryProvider.overrideWithValue(
             fakeCredentialsRepo,
           ),
           apiModelRepositoryProvider.overrideWithValue(fakeApiRepo),
+          modelSelectionStoreProvider.overrideWith(
+            (_, _) async => fakeCredentialsRepo,
+          ),
+          modelCatalogStoreProvider.overrideWith((_, _) async => fakeApiRepo),
         ],
       );
       addTearDown(container.dispose);
@@ -489,6 +524,10 @@ class _FakeWorkspaceModelSelectionRepository
   }
 
   @override
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
+      getWorkspaceModelSelectionById(id);
+
+  @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
   getWorkspaceModelSelections(
     WorkspaceModelSelectionFilter filter,
@@ -500,6 +539,13 @@ class _FakeWorkspaceModelSelectionRepository
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
   watchWorkspaceModelSelections(
     WorkspaceModelSelectionFilter filter,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
+    String workspaceId,
   ) {
     throw UnimplementedError();
   }

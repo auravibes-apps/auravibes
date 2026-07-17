@@ -3,17 +3,31 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
-class AgentToolsRepository {
+abstract interface class AgentToolsRepositoryContract {
+  Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId);
+
+  Future<AgentToolOverrideEntity> setAgentToolPermission(
+    String agentId,
+    String toolId, {
+    required ToolPermissionMode permissionMode,
+  });
+
+  Future<bool> clearAgentToolPermission(String agentId, String toolId);
+}
+
+class AgentToolsRepository implements AgentToolsRepositoryContract {
   const AgentToolsRepository(this._database);
 
   final AppDatabase _database;
 
+  @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async {
     final rows = await _database.agentToolsDao.getAgentTools(agentId);
 
     return rows.map(_mapToEntity).toList();
   }
 
+  @override
   Future<AgentToolOverrideEntity> setAgentToolPermission(
     String agentId,
     String toolId, {
@@ -28,6 +42,7 @@ class AgentToolsRepository {
     return _mapToEntity(row);
   }
 
+  @override
   Future<bool> clearAgentToolPermission(String agentId, String toolId) {
     return _database.agentToolsDao.clearAgentToolPermission(agentId, toolId);
   }

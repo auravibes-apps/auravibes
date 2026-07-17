@@ -11,6 +11,49 @@ jwtRefresh:
   - refreshAccessToken:
 account:
   - currentUser:
+codexOAuth:
+  - start:
+  - complete:
+conversation:
+  - create:
+  - list:
+  - listPage:
+  - get:
+  - listMessages:
+  - update:
+  - delete:
+  - startTurn:
+  - getTurn:
+  - subscribeTurn:
+  - submitToolDecision:
+  - cancelTurn:
+  - compact:
+mcpServer:
+  - create:
+  - delete:
+  - discoverAndCheck:
+modelConnection:
+  - listCatalogProviders:
+  - listCatalogModels:
+  - create:
+  - list:
+  - update:
+  - delete:
+  - listSelections:
+  - testAndSync:
+object:
+  - beginUpload:
+  - completeUpload:
+  - getDownload:
+  - delete:
+workspaceStream:
+  - subscribe:
+workspaceSecret:
+  - put:
+workspaceState:
+  - read:
+  - patch:
+  - mutateCredential:
 cloudWorkspace:
   - listAuthorizedWorkspaces:
   - listPendingInvites:

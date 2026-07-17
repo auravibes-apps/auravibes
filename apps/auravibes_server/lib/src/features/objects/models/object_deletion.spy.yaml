@@ -1,0 +1,22 @@
+class: ObjectDeletion
+table: object_deletion
+fields:
+  workspaceId: int, relation(parent=cloud_workspace)
+  objectId: int, relation(parent=workspace_object)
+  objectKey: String
+  requestId: String
+  expectedRevision: int
+  requestedAt: DateTime
+  completedAt: DateTime?
+  attempts: int
+  availableAt: DateTime
+  lastError: String?
+indexes:
+  object_deletion_object_idx:
+    fields: objectId
+    unique: true
+  object_deletion_request_idx:
+    fields: workspaceId, requestId
+    unique: true
+  object_deletion_pending_idx:
+    fields: completedAt, requestedAt

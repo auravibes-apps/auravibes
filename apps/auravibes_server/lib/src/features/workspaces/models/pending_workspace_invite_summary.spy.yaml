@@ -5,4 +5,5 @@ fields:
   workspaceName: String
   email: String
   role: String
+  revision: int
   createdAt: DateTime

@@ -15,6 +15,9 @@ part of 'workspace_switcher.dart';
 /// action is a transient mutation, not initialized state. Per the Mutation
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
+// The router owns route construction, which transitively references this
+// provider. Declaring that dependency would create a provider cycle.
+// ignore: provider_dependencies
 
 @ProviderFor(WorkspaceSwitcher)
 final workspaceSwitcherProvider = WorkspaceSwitcherProvider._();
@@ -26,6 +29,9 @@ final workspaceSwitcherProvider = WorkspaceSwitcherProvider._();
 /// action is a transient mutation, not initialized state. Per the Mutation
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
+// The router owns route construction, which transitively references this
+// provider. Declaring that dependency would create a provider cycle.
+// ignore: provider_dependencies
 final class WorkspaceSwitcherProvider
     extends $NotifierProvider<WorkspaceSwitcher, WorkspaceSwitchState> {
   /// Provider that manages workspace switching with debounce, loading guard,
@@ -35,6 +41,9 @@ final class WorkspaceSwitcherProvider
   /// action is a transient mutation, not initialized state. Per the Mutation
   /// State Contract, manual AsyncValue toggling is avoided; the state object
   /// itself tracks idle/loading/error status.
+  // The router owns route construction, which transitively references this
+  // provider. Declaring that dependency would create a provider cycle.
+  // ignore: provider_dependencies
   WorkspaceSwitcherProvider._()
     : super(
         from: null,
@@ -62,7 +71,7 @@ final class WorkspaceSwitcherProvider
   }
 }
 
-String _$workspaceSwitcherHash() => r'ce5bbd3fcb1ec7c6fc175ede22d11ee9c5de34a8';
+String _$workspaceSwitcherHash() => r'd06dc75ad6ffd93662e0572eb9861a71f39073fd';
 
 /// Provider that manages workspace switching with debounce, loading guard,
 /// error handling, and structured logging of switch timing.
@@ -71,6 +80,9 @@ String _$workspaceSwitcherHash() => r'ce5bbd3fcb1ec7c6fc175ede22d11ee9c5de34a8';
 /// action is a transient mutation, not initialized state. Per the Mutation
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
+// The router owns route construction, which transitively references this
+// provider. Declaring that dependency would create a provider cycle.
+// ignore: provider_dependencies
 
 abstract class _$WorkspaceSwitcher extends $Notifier<WorkspaceSwitchState> {
   WorkspaceSwitchState build();

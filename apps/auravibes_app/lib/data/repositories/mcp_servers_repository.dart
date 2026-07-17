@@ -15,7 +15,25 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:drift/drift.dart';
 
 /// Implementation of the McpServersRepository.
-class McpServersRepository {
+abstract interface class McpServersRepositoryContract {
+  Future<McpServerEntity> addMcpServerWithTools({
+    required String workspaceId,
+    required McpServerToCreate serverToCreate,
+    required List<McpToolInfo> tools,
+  });
+  Future<bool> deleteMcpServer(String serverId);
+  Future<void> syncMcpTools({
+    required String mcpServerId,
+    required List<McpToolInfo> currentTools,
+  });
+  Future<List<McpServerEntity>> getMcpServersForWorkspace(String workspaceId);
+  Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
+    String workspaceId,
+  );
+  Future<McpServerEntity?> getMcpServerById(String serverId);
+}
+
+class McpServersRepository implements McpServersRepositoryContract {
   /// Creates a new [McpServersRepository] instance.
   McpServersRepository(this._database)
     : _mcpServersDao = _database.mcpServersDao,
@@ -27,6 +45,7 @@ class McpServersRepository {
   final ToolsGroupsDao _toolsGroupsDao;
   final WorkspaceToolsDao _workspaceToolsDao;
 
+  @override
   Future<McpServerEntity> addMcpServerWithTools({
     required String workspaceId,
     required McpServerToCreate serverToCreate,
@@ -87,6 +106,7 @@ class McpServersRepository {
     }
   }
 
+  @override
   Future<bool> deleteMcpServer(String serverId) async {
     try {
       return await _database.transaction(() async {
@@ -121,6 +141,7 @@ class McpServersRepository {
     }
   }
 
+  @override
   Future<void> syncMcpTools({
     required String mcpServerId,
     required List<McpToolInfo> currentTools,
@@ -189,6 +210,7 @@ class McpServersRepository {
     }
   }
 
+  @override
   Future<List<McpServerEntity>> getMcpServersForWorkspace(
     String workspaceId,
   ) async {
@@ -209,6 +231,7 @@ class McpServersRepository {
     }
   }
 
+  @override
   Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
     String workspaceId,
   ) async {
@@ -229,6 +252,7 @@ class McpServersRepository {
     }
   }
 
+  @override
   Future<McpServerEntity?> getMcpServerById(String serverId) async {
     try {
       final result = await _mcpServersDao.getMcpServerById(serverId);

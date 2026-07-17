@@ -1,0 +1,10 @@
+enum: LiveTurnEventKind
+serialized: byName
+values:
+  - queued
+  - running
+  - text
+  - awaitingApproval
+  - completed
+  - failed
+  - cancelled

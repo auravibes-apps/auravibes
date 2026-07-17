@@ -13,30 +13,42 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 abstract class CreateCloudWorkspaceRequest implements _i1.SerializableModel {
-  CreateCloudWorkspaceRequest._({required this.name});
+  CreateCloudWorkspaceRequest._({
+    required this.name,
+    required this.requestId,
+  });
 
-  factory CreateCloudWorkspaceRequest({required String name}) =
-      _CreateCloudWorkspaceRequestImpl;
+  factory CreateCloudWorkspaceRequest({
+    required String name,
+    required String requestId,
+  }) = _CreateCloudWorkspaceRequestImpl;
 
   factory CreateCloudWorkspaceRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CreateCloudWorkspaceRequest(
       name: jsonSerialization['name'] as String,
+      requestId: jsonSerialization['requestId'] as String,
     );
   }
 
   String name;
 
+  String requestId;
+
   /// Returns a shallow copy of this [CreateCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  CreateCloudWorkspaceRequest copyWith({String? name});
+  CreateCloudWorkspaceRequest copyWith({
+    String? name,
+    String? requestId,
+  });
   @override
   Map<String, dynamic> toJson() {
     return {
       '__className__': 'CreateCloudWorkspaceRequest',
       'name': name,
+      'requestId': requestId,
     };
   }
 
@@ -47,14 +59,25 @@ abstract class CreateCloudWorkspaceRequest implements _i1.SerializableModel {
 }
 
 class _CreateCloudWorkspaceRequestImpl extends CreateCloudWorkspaceRequest {
-  _CreateCloudWorkspaceRequestImpl({required String name})
-    : super._(name: name);
+  _CreateCloudWorkspaceRequestImpl({
+    required String name,
+    required String requestId,
+  }) : super._(
+         name: name,
+         requestId: requestId,
+       );
 
   /// Returns a shallow copy of this [CreateCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  CreateCloudWorkspaceRequest copyWith({String? name}) {
-    return CreateCloudWorkspaceRequest(name: name ?? this.name);
+  CreateCloudWorkspaceRequest copyWith({
+    String? name,
+    String? requestId,
+  }) {
+    return CreateCloudWorkspaceRequest(
+      name: name ?? this.name,
+      requestId: requestId ?? this.requestId,
+    );
   }
 }

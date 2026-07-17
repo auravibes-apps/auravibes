@@ -1,10 +1,9 @@
-// ignore_for_file: avoid-ignoring-return-values, newline-before-return
-
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/features/cloud_workspaces/data/cloud_workspace_repository.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:collection/collection.dart';
 
 class CloudWorkspaceUseCases {
   const CloudWorkspaceUseCases({
@@ -22,10 +21,18 @@ class CloudWorkspaceUseCases {
   Future<CloudWorkspaceViewState> load() async {
     final workspacesFuture = _cloudRepository.listWorkspaces();
     final pendingInvitesFuture = _cloudRepository.listPendingInvites();
+    final results = await Future.wait([workspacesFuture, pendingInvitesFuture]);
+    final workspaces = results.firstOrNull;
+    if (workspaces == null) {
+      return const CloudWorkspaceViewState(
+        workspaces: [],
+        pendingInvites: [],
+      );
+    }
 
     return CloudWorkspaceViewState(
-      workspaces: await workspacesFuture,
-      pendingInvites: await pendingInvitesFuture,
+      workspaces: workspaces as List<CloudWorkspaceSummary>,
+      pendingInvites: results[1] as List<PendingWorkspaceInviteSummary>,
     );
   }
 
@@ -38,11 +45,13 @@ class CloudWorkspaceUseCases {
     );
   }
 
-  Future<void> detach(CloudWorkspaceSummary workspace) {
-    return _workspaceRepository.deleteCloudWorkspaceMirror(
+  Future<void> detach(CloudWorkspaceSummary workspace) async {
+    final deleted = await _workspaceRepository.deleteCloudWorkspaceMirror(
       cloudWorkspaceId: workspace.id.toString(),
       cloudAccountId: _cloudAccountId,
+      serverUrl: _serverUrl,
     );
+    assert(deleted, 'Cloud workspace mirror must be deleted.');
   }
 
   Future<void> detachMirror(WorkspaceEntity workspace) {
@@ -57,6 +66,7 @@ class CloudWorkspaceUseCases {
     return _workspaceRepository.deleteCloudWorkspaceMirror(
       cloudWorkspaceId: cloudWorkspaceId,
       cloudAccountId: cloudAccountId,
+      serverUrl: workspace.url ?? _serverUrl,
     );
   }
 
@@ -69,15 +79,18 @@ class CloudWorkspaceUseCases {
     }
 
     final workspace = await _cloudRepository.createWorkspace(trimmed);
-    final _ = await attach(workspace);
+    final attachedMirror = await attach(workspace);
     final mirror = await _workspaceRepository.getCloudWorkspaceMirrorByCloudId(
       workspace.id.toString(),
+      cloudAccountId: _cloudAccountId,
+      serverUrl: _serverUrl,
     );
     if (mirror == null) {
       throw const AppCloudWorkspaceException(
         LocaleKeys.workspace_management_unexpected_error,
       );
     }
+    assert(attachedMirror.id.isNotEmpty, 'Attached mirror must have an ID.');
 
     return mirror;
   }
@@ -107,21 +120,25 @@ class CloudWorkspaceUseCases {
     required int workspaceId,
     required String userId,
     required String role,
+    required int expectedMemberRevision,
   }) {
     return _cloudRepository.updateMemberRole(
       workspaceId: workspaceId,
       userId: userId,
       role: role,
+      expectedMemberRevision: expectedMemberRevision,
     );
   }
 
   Future<void> removeMember({
     required int workspaceId,
     required String userId,
+    required int expectedMemberRevision,
   }) {
     return _cloudRepository.removeMember(
       workspaceId: workspaceId,
       userId: userId,
+      expectedMemberRevision: expectedMemberRevision,
     );
   }
 
@@ -129,39 +146,63 @@ class CloudWorkspaceUseCases {
     required int workspaceId,
     required String email,
     required String role,
+    required int expectedWorkspaceRevision,
   }) {
     return _cloudRepository.inviteMember(
       workspaceId: workspaceId,
       email: email.trim(),
       role: role,
+      expectedWorkspaceRevision: expectedWorkspaceRevision,
     );
   }
 
-  Future<WorkspaceEntity> acceptInvite(int inviteId) async {
-    final workspace = await _cloudRepository.acceptInvite(inviteId);
+  Future<WorkspaceEntity> acceptInvite(
+    PendingWorkspaceInviteSummary invite,
+  ) async {
+    final workspace = await _cloudRepository.acceptInvite(
+      inviteId: invite.id,
+      expectedInviteRevision: invite.revision,
+    );
 
     return attach(workspace);
   }
 
-  Future<void> declineInvite(int inviteId) {
-    return _cloudRepository.declineInvite(inviteId);
+  Future<void> declineInvite(PendingWorkspaceInviteSummary invite) {
+    return _cloudRepository.declineInvite(
+      inviteId: invite.id,
+      expectedInviteRevision: invite.revision,
+    );
   }
 
-  Future<void> renewInvite({required int workspaceId, required int inviteId}) {
+  Future<void> renewInvite({
+    required int workspaceId,
+    required int inviteId,
+    required int expectedInviteRevision,
+  }) {
     return _cloudRepository.renewInvite(
       workspaceId: workspaceId,
       inviteId: inviteId,
+      expectedInviteRevision: expectedInviteRevision,
     );
   }
 
-  Future<void> revokeInvite({required int workspaceId, required int inviteId}) {
+  Future<void> revokeInvite({
+    required int workspaceId,
+    required int inviteId,
+    required int expectedInviteRevision,
+  }) {
     return _cloudRepository.revokeInvite(
       workspaceId: workspaceId,
       inviteId: inviteId,
+      expectedInviteRevision: expectedInviteRevision,
     );
   }
 
-  Future<void> rename({required int workspaceId, required String name}) async {
+  Future<void> rename({
+    required int workspaceId,
+    required String name,
+    required int expectedWorkspaceRevision,
+  }) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) {
       throw const AppCloudWorkspaceException(
@@ -171,35 +212,50 @@ class CloudWorkspaceUseCases {
     final workspace = await _cloudRepository.renameWorkspace(
       workspaceId: workspaceId,
       name: trimmed,
+      expectedWorkspaceRevision: expectedWorkspaceRevision,
     );
     final mirror = await _workspaceRepository.getCloudWorkspaceMirrorByCloudId(
       workspaceId.toString(),
+      cloudAccountId: _cloudAccountId,
+      serverUrl: _serverUrl,
     );
     if (mirror != null) {
-      final _ = await _workspaceRepository.upsertCloudWorkspaceMirror(
-        cloudWorkspaceId: workspaceId.toString(),
-        cloudAccountId: _cloudAccountId,
-        name: workspace.name,
-        serverUrl: _serverUrl,
-      );
+      final updatedMirror = await _workspaceRepository
+          .upsertCloudWorkspaceMirror(
+            cloudWorkspaceId: workspaceId.toString(),
+            cloudAccountId: _cloudAccountId,
+            name: workspace.name,
+            serverUrl: _serverUrl,
+          );
+      assert(updatedMirror.id.isNotEmpty, 'Updated mirror must have an ID.');
     }
   }
 
-  Future<void> leave(int workspaceId) async {
-    await _cloudRepository.leaveWorkspace(workspaceId);
-    final _ = await _workspaceRepository.deleteCloudWorkspaceMirror(
+  Future<void> leave({
+    required int workspaceId,
+    required int expectedWorkspaceRevision,
+  }) async {
+    await _cloudRepository.leaveWorkspace(
+      workspaceId: workspaceId,
+      expectedWorkspaceRevision: expectedWorkspaceRevision,
+    );
+    final deletedMirror = await _workspaceRepository.deleteCloudWorkspaceMirror(
       cloudWorkspaceId: workspaceId.toString(),
       cloudAccountId: _cloudAccountId,
+      serverUrl: _serverUrl,
     );
+    assert(deletedMirror, 'Cloud workspace mirror must be deleted.');
   }
 
   Future<void> transferOwnership({
     required int workspaceId,
     required String newOwnerUserId,
+    required int expectedWorkspaceRevision,
   }) {
     return _cloudRepository.transferOwnership(
       workspaceId: workspaceId,
       newOwnerUserId: newOwnerUserId,
+      expectedWorkspaceRevision: expectedWorkspaceRevision,
     );
   }
 
@@ -207,8 +263,9 @@ class CloudWorkspaceUseCases {
     await _cloudRepository.deleteWorkspace(
       workspaceId: workspace.id,
       confirmationName: workspace.name,
+      expectedWorkspaceRevision: workspace.revision,
     );
-    final _ = await detach(workspace);
+    await detach(workspace);
   }
 }
 
@@ -228,10 +285,17 @@ class CloudWorkspaceViewState {
   const CloudWorkspaceViewState({
     required this.workspaces,
     required this.pendingInvites,
+    this.authenticationRequired = false,
   });
+
+  const CloudWorkspaceViewState.authenticationRequired()
+    : workspaces = const [],
+      pendingInvites = const [],
+      authenticationRequired = true;
 
   final List<CloudWorkspaceSummary> workspaces;
   final List<PendingWorkspaceInviteSummary> pendingInvites;
+  final bool authenticationRequired;
 }
 
 class AppCloudWorkspaceException implements Exception {

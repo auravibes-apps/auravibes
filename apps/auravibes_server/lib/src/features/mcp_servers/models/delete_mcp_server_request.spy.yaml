@@ -1,0 +1,4 @@
+class: DeleteMcpServerRequest
+fields:
+  workspaceId: int
+  mcpServerId: String

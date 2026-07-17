@@ -5,7 +5,14 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
@@ -19,17 +26,67 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  Widget buildRouterScreen(ProviderContainer container, GoRouter router) {
+  Widget buildRouterScreen(
+    ProviderContainer container,
+    GoRouter router,
+    WorkspaceEntity workspace,
+    SkillEntity skill,
+  ) {
     return EasyLocalization(
       child: Builder(
         builder: (context) {
           return UncontrolledProviderScope(
             container: container,
-            child: MaterialApp.router(
-              routerConfig: router,
-              locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
-              supportedLocales: context.supportedLocales,
+            child: ProviderScope(
+              overrides: [
+                workspaceSessionProvider.overrideWithValue(
+                  WorkspaceSession(
+                    LocalWorkspaceRef(
+                      localWorkspaceId: container
+                          .read(
+                            workspaceSessionProvider,
+                          )
+                          .workspace
+                          .localWorkspaceId,
+                    ),
+                  ),
+                ),
+                cloudWorkspaceStateGatewayProvider.overrideWith(
+                  (_) async => null,
+                ),
+                cloudSkillStoreProvider.overrideWithValue(null),
+                skillsRepositoryProvider.overrideWithValue(
+                  container.read(skillsRepositoryProvider),
+                ),
+                appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
+                  container.read(appSkillWorkspaceSettingsRepositoryProvider),
+                ),
+                workspaceSkillsProvider(workspace.id).overrideWith(
+                  (_) async => [
+                    WorkspaceSkill(
+                      id: skill.id,
+                      slug: skill.slug,
+                      title: skill.title,
+                      description: skill.description,
+                      source: SkillSource.user,
+                      kind: skill.kind,
+                      isEnabled: skill.isEnabled,
+                    ),
+                  ],
+                ),
+                deleteSkillProvider.overrideWithValue(
+                  container.read(skillsRepositoryProvider).deleteSkill,
+                ),
+              ],
+              child: MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) => AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
             ),
           );
         },
@@ -56,11 +113,6 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(database.close);
-    final container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
-    );
-    addTearDown(container.dispose);
-
     final workspaceRepository = WorkspaceRepository(database);
     final workspace = await workspaceRepository.createWorkspace(
       const WorkspaceToCreate(
@@ -68,6 +120,17 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
     final skillsRepository = SkillsRepository(database);
     final skill = await skillsRepository.createSkill(
       workspace.id,
@@ -124,7 +187,14 @@ void main() {
     final router = createRouter();
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(buildRouterScreen(fixture.container, router));
+    await tester.pumpWidget(
+      buildRouterScreen(
+        fixture.container,
+        router,
+        fixture.workspace,
+        fixture.skill,
+      ),
+    );
     final _ = await tester.pumpAndSettle();
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
     final _ = await tester.pumpAndSettle();
@@ -176,6 +246,9 @@ void main() {
     await tester.tap(find.widgetWithText(AuraButton, 'Delete'));
     final _ = await tester.pumpAndSettle();
 
-    expect(find.text('Write Summary'), findsNothing);
+    expect(
+      await SkillsRepository(fixture.database).getSkillById(fixture.skill.id),
+      null,
+    );
   });
 }

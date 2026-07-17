@@ -251,7 +251,7 @@ void main() {
           ),
         );
     final conversationSkills = await ListConversationAgentSkillsUsecase(
-      fixture.conversationRepository,
+      fixture.conversationRepository.getConversationById,
       fixture.agentsRepository,
       fixture.resolveAgentSkillsUsecase,
     ).call(conversationId: conversation.id, workspaceId: fixture.workspaceId);
@@ -266,7 +266,7 @@ void main() {
         );
     final noAgentSkills =
         await ListConversationAgentSkillsUsecase(
-          fixture.conversationRepository,
+          fixture.conversationRepository.getConversationById,
           fixture.agentsRepository,
           fixture.resolveAgentSkillsUsecase,
         ).call(
@@ -279,7 +279,7 @@ void main() {
       WorkspacesCompanion.insert(name: 'Other', type: WorkspaceType.local),
     );
     final wrongWorkspaceSkills = await ListConversationAgentSkillsUsecase(
-      fixture.conversationRepository,
+      fixture.conversationRepository.getConversationById,
       fixture.agentsRepository,
       fixture.resolveAgentSkillsUsecase,
     ).call(conversationId: conversation.id, workspaceId: otherWorkspace.id);
@@ -304,7 +304,7 @@ void main() {
         );
     final crossWorkspaceAgentSkills =
         await ListConversationAgentSkillsUsecase(
-          fixture.conversationRepository,
+          fixture.conversationRepository.getConversationById,
           fixture.agentsRepository,
           fixture.resolveAgentSkillsUsecase,
         ).call(

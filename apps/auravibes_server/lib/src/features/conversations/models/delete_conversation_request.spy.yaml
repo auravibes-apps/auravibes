@@ -1,0 +1,6 @@
+class: DeleteConversationRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedRevision: int

@@ -7,13 +7,16 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -39,6 +42,11 @@ ToolsGroupWithTools _defaultGroup(List<WorkspaceToolEntity> tools) {
   );
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _LoadingNotifier extends GroupedToolsNotifier {
   final _completer = Completer<List<ToolsGroupWithTools>>();
 
@@ -47,6 +55,11 @@ class _LoadingNotifier extends GroupedToolsNotifier {
       _completer.future;
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _DataNotifier extends GroupedToolsNotifier {
   _DataNotifier(this.groups);
 
@@ -56,6 +69,11 @@ class _DataNotifier extends GroupedToolsNotifier {
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 }
 
+@Dependencies([
+  mcpServersRepository,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+])
 class _ErrorNotifier extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async {

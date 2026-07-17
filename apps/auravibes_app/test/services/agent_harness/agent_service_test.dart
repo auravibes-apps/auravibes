@@ -11,7 +11,11 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
+import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' show DatabaseConnection;
 import 'package:drift/native.dart';
@@ -1005,8 +1009,19 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
           maybeAutoCompactConversationUsecaseProvider.overrideWith(
             (ref) => MockMaybeAutoCompactConversationUsecase(),
+          ),
+          continueAgentServiceProvider.overrideWith(
+            (ref) => MockContinueAgentService(),
+          ),
+          agentToolExecutionServiceProvider.overrideWith(
+            (ref) => MockAgentToolExecutionService(),
           ),
         ],
       );

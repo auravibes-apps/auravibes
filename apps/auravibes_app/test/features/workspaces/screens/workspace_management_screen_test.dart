@@ -5,8 +5,19 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
+import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -16,6 +27,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class _FakeGoRouter implements GoRouter {
   @override
@@ -119,13 +131,19 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<WorkspaceEntity?> getCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async => null;
 
   @override
   Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
-    String cloudWorkspaceId,
-  ) async => _workspaces.firstWhereOrNull(
-    (w) => w.cloudWorkspaceId == cloudWorkspaceId,
+    String cloudWorkspaceId, {
+    required String cloudAccountId,
+    required String serverUrl,
+  }) async => _workspaces.firstWhereOrNull(
+    (w) =>
+        w.cloudWorkspaceId == cloudWorkspaceId &&
+        w.cloudAccountId == cloudAccountId &&
+        w.url == serverUrl,
   );
 
   @override
@@ -155,20 +173,41 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   Future<bool> deleteCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async => true;
 
   @override
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
-    String cloudAccountId,
-  ) async {
+    String cloudAccountId, {
+    String? serverUrl,
+  }) async {
     final before = _workspaces.length;
-    _workspaces.removeWhere((w) => w.cloudAccountId == cloudAccountId);
+    _workspaces.removeWhere(
+      (w) =>
+          w.cloudAccountId == cloudAccountId &&
+          (serverUrl == null || w.url == serverUrl),
+    );
     _emit();
 
     return before - _workspaces.length;
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  workspaceModelSelectionById,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -181,11 +220,28 @@ void main() {
       router = _FakeGoRouter();
     });
 
+    @Dependencies([
+      workspaceSession,
+      workspaceModelSelectionById,
+      cloudWorkspaceStateGateway,
+      serviceConnectionOperations,
+      serviceConnections,
+      ConversationChatNotifier,
+      conversationBusyState,
+      pendingToolCalls,
+      contextUsage,
+      chatMessages,
+      childConversationsStream,
+      conversationByIdStream,
+      messageConversationById,
+    ])
     Widget _buildScreen({
       required String workspaceId,
       bool loading = false,
       String? error,
       WorkspaceRepository? repo,
+      List<CloudAccountSession> accounts = const [],
+      bool cloudAuthenticationRequired = false,
     }) {
       final useRepo = repo ?? repository;
 
@@ -193,7 +249,7 @@ void main() {
         child: Builder(
           builder: (context) {
             final overrides = [
-              cloudAccountsProvider.overrideWith((ref) async => const []),
+              cloudAccountsProvider.overrideWith((ref) async => accounts),
               routerProvider.overrideWithValue(router),
               workspaceRepositoryProvider.overrideWithValue(useRepo),
               currentRouteWorkspaceIdProvider.overrideWithValue(workspaceId),
@@ -209,6 +265,17 @@ void main() {
               overrides.add(
                 allWorkspacesProvider.overrideWith(
                   (ref) => Stream.error(Exception(error)),
+                ),
+              );
+            }
+            final account = accounts.firstOrNull;
+            if (cloudAuthenticationRequired && account != null) {
+              overrides.add(
+                cloudWorkspaceStateProvider(
+                  account.userId,
+                ).overrideWith(
+                  (ref) async =>
+                      const CloudWorkspaceViewState.authenticationRequired(),
                 ),
               );
             }
@@ -282,6 +349,30 @@ void main() {
 
       expect(find.text('Workspace A'), findsOneWidget);
       expect(find.text('Workspace B'), findsOneWidget);
+    });
+
+    testWidgets('shows sign-in recovery for an expired cloud session', (
+      tester,
+    ) async {
+      await _pumpAndInit(
+        tester,
+        _buildScreen(
+          workspaceId: 'ws-1',
+          accounts: const [
+            CloudAccountSession(
+              serverUrl: 'http://localhost:8080',
+              userId: 'account-1',
+              email: 'dev@example.com',
+            ),
+          ],
+          cloudAuthenticationRequired: true,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Needs sign in'), findsOneWidget);
+      expect(find.text('Session expired. Sign in again.'), findsOneWidget);
+      expect(find.text('Sign in again'), findsOneWidget);
     });
 
     testWidgets('shows routed create action without inline form', (

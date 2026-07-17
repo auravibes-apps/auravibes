@@ -17,11 +17,15 @@ abstract class TransferCloudWorkspaceOwnershipRequest
   TransferCloudWorkspaceOwnershipRequest._({
     required this.workspaceId,
     required this.newOwnerUserId,
+    required this.requestId,
+    required this.expectedWorkspaceRevision,
   });
 
   factory TransferCloudWorkspaceOwnershipRequest({
     required int workspaceId,
     required String newOwnerUserId,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) = _TransferCloudWorkspaceOwnershipRequestImpl;
 
   factory TransferCloudWorkspaceOwnershipRequest.fromJson(
@@ -30,6 +34,9 @@ abstract class TransferCloudWorkspaceOwnershipRequest
     return TransferCloudWorkspaceOwnershipRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       newOwnerUserId: jsonSerialization['newOwnerUserId'] as String,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedWorkspaceRevision:
+          jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
 
@@ -37,12 +44,18 @@ abstract class TransferCloudWorkspaceOwnershipRequest
 
   String newOwnerUserId;
 
+  String requestId;
+
+  int expectedWorkspaceRevision;
+
   /// Returns a shallow copy of this [TransferCloudWorkspaceOwnershipRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   TransferCloudWorkspaceOwnershipRequest copyWith({
     int? workspaceId,
     String? newOwnerUserId,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -50,6 +63,8 @@ abstract class TransferCloudWorkspaceOwnershipRequest
       '__className__': 'TransferCloudWorkspaceOwnershipRequest',
       'workspaceId': workspaceId,
       'newOwnerUserId': newOwnerUserId,
+      'requestId': requestId,
+      'expectedWorkspaceRevision': expectedWorkspaceRevision,
     };
   }
 
@@ -64,9 +79,13 @@ class _TransferCloudWorkspaceOwnershipRequestImpl
   _TransferCloudWorkspaceOwnershipRequestImpl({
     required int workspaceId,
     required String newOwnerUserId,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) : super._(
          workspaceId: workspaceId,
          newOwnerUserId: newOwnerUserId,
+         requestId: requestId,
+         expectedWorkspaceRevision: expectedWorkspaceRevision,
        );
 
   /// Returns a shallow copy of this [TransferCloudWorkspaceOwnershipRequest]
@@ -76,10 +95,15 @@ class _TransferCloudWorkspaceOwnershipRequestImpl
   TransferCloudWorkspaceOwnershipRequest copyWith({
     int? workspaceId,
     String? newOwnerUserId,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   }) {
     return TransferCloudWorkspaceOwnershipRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       newOwnerUserId: newOwnerUserId ?? this.newOwnerUserId,
+      requestId: requestId ?? this.requestId,
+      expectedWorkspaceRevision:
+          expectedWorkspaceRevision ?? this.expectedWorkspaceRevision,
     );
   }
 }

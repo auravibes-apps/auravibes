@@ -1,0 +1,4 @@
+class: DiscoverMcpServerRequest
+fields:
+  workspaceId: int
+  mcpServerId: String

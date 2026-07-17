@@ -17,7 +17,7 @@ void main() {
         ).thenAnswer((_) => Future<void>.value());
         final usecase = DeleteServiceConnectionUsecase(
           modelConnectionRepository: modelRepository,
-          skillCredentialsRepository: credentialsRepository,
+          deleteSkillCredential: credentialsRepository.deleteCredential,
         );
 
         await expectLater(
@@ -45,7 +45,7 @@ void main() {
       ).thenAnswer((_) => Future<void>.value());
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        skillCredentialsRepository: credentialsRepository,
+        deleteSkillCredential: credentialsRepository.deleteCredential,
       );
 
       await expectLater(
@@ -57,9 +57,28 @@ void main() {
       );
 
       final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
-      verify(
+      final _ = verify(
         () => credentialsRepository.deleteCredential('credential-1'),
       ).called(1);
+    });
+
+    test('deletes cloud credentials through injected operation only', () async {
+      final modelRepository = _MockModelConnectionRepository();
+      var deletedId = '';
+      final usecase = DeleteServiceConnectionUsecase(
+        modelConnectionRepository: modelRepository,
+        deleteSkillCredential: (id) async => deletedId = id,
+      );
+
+      await usecase(
+        connectionId: 'cloud-credential',
+        kind: ServiceConnectionListItemKind.skillCredential,
+      );
+
+      expect(deletedId, 'cloud-credential');
+      final _ = verifyNever(
+        () => modelRepository.deleteModelConnection(any()),
+      );
     });
 
     test('rejects MCP server delete requests', () {
@@ -67,7 +86,7 @@ void main() {
       final credentialsRepository = _MockSkillCredentialsRepository();
       final usecase = DeleteServiceConnectionUsecase(
         modelConnectionRepository: modelRepository,
-        skillCredentialsRepository: credentialsRepository,
+        deleteSkillCredential: credentialsRepository.deleteCredential,
       );
 
       expect(

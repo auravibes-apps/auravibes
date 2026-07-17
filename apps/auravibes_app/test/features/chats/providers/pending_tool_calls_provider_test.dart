@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
 import 'dart:async';
@@ -19,6 +18,8 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/widgets.dart';
@@ -181,10 +182,18 @@ void main() {
       await tester.pumpWidget(
         hooks.ProviderScope(
           overrides: [
+            workspaceSessionProvider.overrideWithValue(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
+            conversationByIdStreamProvider(
+              conversationId: 'conv-1',
+            ).overrideWithValue(const AsyncValue.data(null)),
             messageRepositoryProvider.overrideWithValue(repository),
           ],
           child: hooks.Consumer(
@@ -227,6 +236,11 @@ void main() {
       await tester.pumpWidget(
         hooks.ProviderScope(
           overrides: [
+            workspaceSessionProvider.overrideWithValue(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
             conversationSelectedProvider.overrideWithValue('conv-1'),
             messageRepositoryProvider.overrideWithValue(repository),
           ],
@@ -251,6 +265,7 @@ void main() {
           ),
         ),
       );
+      await tester.pump();
 
       repository.emit([
         _assistantMessage(id: 'msg-1', conversationId: 'conv-1'),
@@ -306,6 +321,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             parentConversationId: 'conv-1',
@@ -370,6 +390,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             parentConversationId: 'conv-1',
@@ -442,6 +467,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
             parentConversationId: 'conv-1',
@@ -455,6 +485,9 @@ void main() {
           conversationByIdStreamProvider(
             conversationId: 'child-1',
           ).overrideWithValue(AsyncValue.data(childConversation)),
+          conversationByIdStreamProvider(
+            conversationId: 'conv-1',
+          ).overrideWithValue(const AsyncValue.data(null)),
           messageRepositoryProvider.overrideWithValue(
             _StaticMessageRepository({'child-1': childMessages}),
           ),

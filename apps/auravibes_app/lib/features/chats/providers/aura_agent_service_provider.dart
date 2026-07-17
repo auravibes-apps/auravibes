@@ -17,7 +17,7 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([pendingToolCalls])
+@Dependencies([pendingToolCalls, conversationToolsRepository])
 final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
   (ref) {
     final agentToolResumeService = ref.watch(agentToolResumeServiceProvider);
@@ -61,5 +61,5 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       ),
     );
   },
-  dependencies: [pendingToolCallsProvider],
+  dependencies: [pendingToolCallsProvider, conversationToolsRepositoryProvider],
 );

@@ -1,0 +1,4 @@
+class: StartCodexOAuthRequest
+fields:
+  workspaceId: int
+  connectionId: String

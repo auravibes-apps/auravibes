@@ -1,0 +1,22 @@
+class: WorkspaceEvent
+table: workspace_event
+fields:
+  eventId: String
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  sequence: int
+  actorUserId: String
+  kind: String
+  resourceKind: String
+  resourceId: String?
+  payloadJson: String?
+  createdAt: DateTime
+  publishedAt: DateTime?
+indexes:
+  workspace_event_id_idx:
+    fields: eventId
+    unique: true
+  workspace_event_sequence_idx:
+    fields: workspaceId, sequence
+    unique: true
+  workspace_event_outbox_idx:
+    fields: publishedAt, createdAt

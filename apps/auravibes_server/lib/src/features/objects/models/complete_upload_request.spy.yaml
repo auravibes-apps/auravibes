@@ -1,0 +1,4 @@
+class: CompleteUploadRequest
+fields:
+  workspaceId: int
+  objectId: int

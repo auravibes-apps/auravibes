@@ -3,6 +3,8 @@ table: cloud_workspace
 fields:
   name: String
   ownerUserId: String
+  revision: int
+  sequence: int
   createdAt: DateTime
   updatedAt: DateTime
   deletedAt: DateTime?

@@ -1,0 +1,13 @@
+{
+  "serverOverrides": {
+    "dart": {
+      "initializationOptions": {
+        "onlyAnalyzeProjectsWithOpenFiles": false,
+        "suggestFromUnimportedLibraries": true,
+        "closingLabels": true,
+        "outline": true,
+        "flutterOutline": true
+      }
+    }
+  }
+}

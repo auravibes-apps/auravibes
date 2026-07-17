@@ -1,0 +1,4 @@
+class: GetDownloadRequest
+fields:
+  workspaceId: int
+  objectId: int

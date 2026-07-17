@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: auravibes_server
-      POSTGRES_PASSWORD: "ZPQjQYFkaBlnajv_IUw6qoko6PYg9y-0"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     volumes:
       - auravibes_server_data:/var/lib/postgresql/data
 
@@ -27,7 +27,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: auravibes_server_test
-      POSTGRES_PASSWORD: "8m2nvc-FUxkL25rM3Ef2DFv4hcL0lN11"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     volumes:
       - auravibes_server_test_data:/var/lib/postgresql/data
 

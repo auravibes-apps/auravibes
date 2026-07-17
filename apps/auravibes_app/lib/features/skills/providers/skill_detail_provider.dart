@@ -1,17 +1,26 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_detail_provider.g.dart';
 
-@riverpod
+@Riverpod(
+  dependencies: [cloudSkillStore],
+)
 Future<SkillDetail?> skillDetail(
   Ref ref,
   String workspaceId,
   String skillId,
 ) async {
+  final cloud = ref.watch(cloudSkillStoreProvider);
+  if (cloud != null) {
+    final skill = await cloud.skill(skillId);
+
+    return skill == null ? null : SkillDetail.fromUserSkill(skill);
+  }
   final skillsRepository = ref.watch(skillsRepositoryProvider);
   final userSkill = await skillsRepository.getSkillById(skillId);
   if (userSkill != null && userSkill.workspaceId == workspaceId) {

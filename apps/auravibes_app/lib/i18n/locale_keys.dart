@@ -368,6 +368,18 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.waiting_for_tools_named';
   static const chats_screens_chat_conversation_thinking_status =
       'chats_screens.chat_conversation.thinking_status';
+  static const chats_screens_chat_conversation_turn_queued =
+      'chats_screens.chat_conversation.turn_queued';
+  static const chats_screens_chat_conversation_turn_thinking =
+      'chats_screens.chat_conversation.turn_thinking';
+  static const chats_screens_chat_conversation_turn_streaming =
+      'chats_screens.chat_conversation.turn_streaming';
+  static const chats_screens_chat_conversation_turn_awaiting_approval =
+      'chats_screens.chat_conversation.turn_awaiting_approval';
+  static const chats_screens_chat_conversation_turn_failed =
+      'chats_screens.chat_conversation.turn_failed';
+  static const chats_screens_chat_conversation_turn_cancelled =
+      'chats_screens.chat_conversation.turn_cancelled';
   static const chats_screens_chat_conversation_reasoning_summary =
       'chats_screens.chat_conversation.reasoning_summary';
   static const chats_screens_chat_conversation_tool_resolution_status =
@@ -700,6 +712,8 @@ abstract class LocaleKeys {
   static const common_show_more = 'common.show_more';
   static const common_error_title = 'common.error_title';
   static const common_error_message = 'common.error_message';
+  static const workspace_capabilities_unsupported_error =
+      'workspace_capabilities.unsupported_error';
   static const tools_names_calculator_name = 'tools_names.calculator.name';
   static const tools_names_calculator_description =
       'tools_names.calculator.description';
@@ -977,6 +991,8 @@ abstract class LocaleKeys {
       'workspace_management.cloud_remove_account';
   static const workspace_management_cloud_load_error =
       'workspace_management.cloud_load_error';
+  static const workspace_management_cloud_unavailable =
+      'workspace_management.cloud_unavailable';
   static const workspace_management_cloud_name =
       'workspace_management.cloud_name';
   static const workspace_management_cloud_accept =
@@ -1017,6 +1033,16 @@ abstract class LocaleKeys {
       'workspace_management.cloud_available_section';
   static const workspace_management_cloud_add_hint =
       'workspace_management.cloud_add_hint';
+  static const cloud_errors_authentication_required =
+      'cloud_errors.authentication_required';
+  static const cloud_errors_permission_denied =
+      'cloud_errors.permission_denied';
+  static const cloud_errors_not_found = 'cloud_errors.not_found';
+  static const cloud_errors_validation = 'cloud_errors.validation';
+  static const cloud_errors_conflict = 'cloud_errors.conflict';
+  static const cloud_errors_malformed_resource =
+      'cloud_errors.malformed_resource';
+  static const cloud_errors_unavailable = 'cloud_errors.unavailable';
   static const cloud_workspaces_title = 'cloud_workspaces.title';
   static const cloud_workspaces_subtitle = 'cloud_workspaces.subtitle';
   static const cloud_workspaces_detail_title = 'cloud_workspaces.detail_title';

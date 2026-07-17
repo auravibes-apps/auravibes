@@ -1,4 +1,3 @@
-// ignore_for_file: scoped_providers_should_specify_dependencies
 // Required: widget tests override scoped providers directly.
 // Required: Existing test and UI helpers keep compact return flow.
 
@@ -12,13 +11,17 @@ import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart'
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -26,6 +29,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -36,6 +40,18 @@ final _busyRefreshProvider = NotifierProvider<_BusyRefreshNotifier, int>(
   _BusyRefreshNotifier.new,
 );
 
+@Dependencies([
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  workspaceModelSelectionById,
+  workspaceSession,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 void main() {
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -419,7 +435,7 @@ void main() {
                       ),
                     ),
                     chatMessagesProvider.overrideWith(
-                      (ref) async => const <MessageEntity>[],
+                      (ref) => Stream.value(const <MessageEntity>[]),
                     ),
                     chatMessageIdsProvider.overrideWith(
                       (ref) => const <String>[],
@@ -505,7 +521,7 @@ void main() {
                     ),
                   ),
                   chatMessagesProvider.overrideWith(
-                    (ref) async => const <MessageEntity>[],
+                    (ref) => Stream.value(const <MessageEntity>[]),
                   ),
                   chatMessageIdsProvider.overrideWith(
                     (ref) => const <String>[],
@@ -578,6 +594,11 @@ void main() {
     final refreshCompleter = Completer<ConversationBusyState>();
     final container = ProviderContainer(
       overrides: [
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+          ),
+        ),
         conversationSelectedProvider.overrideWithValue(_chatId),
         conversationRepositoryProvider.overrideWithValue(
           _StubConversationRepository(),
@@ -601,7 +622,7 @@ void main() {
           return refreshCompleter.future;
         }),
         chatMessagesProvider.overrideWith(
-          (ref) async => const <MessageEntity>[],
+          (ref) => Stream.value(const <MessageEntity>[]),
         ),
         chatMessageIdsProvider.overrideWith(
           (ref) => const <String>[],
@@ -713,7 +734,7 @@ void main() {
                     () => _StaticRateLimitRetryNotifier(retryAt),
                   ),
                   chatMessagesProvider.overrideWith(
-                    (ref) async => const <MessageEntity>[],
+                    (ref) => Stream.value(const <MessageEntity>[]),
                   ),
                   chatMessageIdsProvider.overrideWith(
                     (ref) => const <String>[],

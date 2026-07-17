@@ -199,6 +199,7 @@ class _DetailBody extends ConsumerWidget {
       await (await _useCases(ref))?.rename(
         workspaceId: workspace.id,
         name: name,
+        expectedWorkspaceRevision: workspace.revision,
       );
       onChanged();
     });
@@ -221,6 +222,7 @@ class _DetailBody extends ConsumerWidget {
         workspaceId: workspace.id,
         email: request.email,
         role: request.role,
+        expectedWorkspaceRevision: workspace.revision,
       );
       onChanged();
     });
@@ -235,7 +237,10 @@ class _DetailBody extends ConsumerWidget {
       return;
     }
     await _runCloudAction(context, () async {
-      await (await _useCases(ref))?.leave(workspace.id);
+      await (await _useCases(ref))?.leave(
+        workspaceId: workspace.id,
+        expectedWorkspaceRevision: workspace.revision,
+      );
       if (context.mounted) Navigator.of(context).pop();
     });
   }
@@ -340,6 +345,7 @@ class _MemberTile extends ConsumerWidget {
         workspaceId: workspace.id,
         userId: member.userId,
         role: member.role == 'admin' ? 'member' : 'admin',
+        expectedMemberRevision: member.revision,
       );
       onChanged();
     });
@@ -353,6 +359,7 @@ class _MemberTile extends ConsumerWidget {
       await (await _useCases(ref))?.removeMember(
         workspaceId: workspace.id,
         userId: member.userId,
+        expectedMemberRevision: member.revision,
       );
       onChanged();
     });
@@ -369,6 +376,7 @@ class _MemberTile extends ConsumerWidget {
       await (await _useCases(ref))?.transferOwnership(
         workspaceId: workspace.id,
         newOwnerUserId: member.userId,
+        expectedWorkspaceRevision: workspace.revision,
       );
       onChanged();
     });
@@ -415,6 +423,7 @@ class _OutgoingInviteTile extends ConsumerWidget {
       await (await _useCases(ref))?.renewInvite(
         workspaceId: workspaceId,
         inviteId: invite.id,
+        expectedInviteRevision: invite.revision,
       );
       onChanged();
     });
@@ -425,6 +434,7 @@ class _OutgoingInviteTile extends ConsumerWidget {
       await (await _useCases(ref))?.revokeInvite(
         workspaceId: workspaceId,
         inviteId: invite.id,
+        expectedInviteRevision: invite.revision,
       );
       onChanged();
     });

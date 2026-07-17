@@ -7,13 +7,16 @@ import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_count_enabled_widget.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_workspace_list_widget.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([workspaceSession])
 class ToolsScreen extends ConsumerWidget {
   const ToolsScreen({required this.workspaceId, super.key});
 
@@ -21,6 +24,8 @@ class ToolsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final capabilities = ref.watch(workspaceSessionProvider).capabilities;
+
     return AuraScreen(
       child: Stack(
         children: [
@@ -83,19 +88,20 @@ class ToolsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          Positioned(
-            right: context.auraTheme.fromSpacing(.md),
-            bottom: context.auraTheme.fromSpacing(.md),
-            child: AuraFloatingActionButton(
-              onPressed: () =>
-                  AddToolModal.show(context, workspaceId: workspaceId),
-              icon: Icons.add,
-              heroTag: const ValueKey<String>('tools_add_tool_fab'),
-              tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
-                context: context,
+          if (capabilities.nativeTools)
+            Positioned(
+              right: context.auraTheme.fromSpacing(.md),
+              bottom: context.auraTheme.fromSpacing(.md),
+              child: AuraFloatingActionButton(
+                onPressed: () =>
+                    AddToolModal.show(context, workspaceId: workspaceId),
+                icon: Icons.add,
+                heroTag: const ValueKey<String>('tools_add_tool_fab'),
+                tooltip: LocaleKeys.tools_screen_add_tool_tooltip.tr(
+                  context: context,
+                ),
               ),
             ),
-          ),
         ],
       ),
       appBar: AuraAppBar(

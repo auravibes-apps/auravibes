@@ -1,0 +1,11 @@
+enum: ConversationErrorCode
+serialized: byName
+values:
+  - authenticationRequired
+  - permissionDenied
+  - notFound
+  - validationFailed
+  - staleRevision
+  - idempotencyConflict
+  - turnConflict
+  - toolDecisionConflict

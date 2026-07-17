@@ -4,14 +4,21 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -22,9 +29,25 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('new_chat_screen');
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class NewChatScreen extends ConsumerWidget {
   const NewChatScreen({required this.workspaceId, super.key});
 
@@ -32,12 +55,17 @@ class NewChatScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final availability = ref.watch(workspaceAvailabilityProvider(workspaceId));
+    if (availability case AsyncData(value: WorkspaceAuthenticationRequired())) {
+      return _NewChatUnavailable(workspaceId: workspaceId);
+    }
     final state = ref.watch(newChatProvider(workspaceId));
     final groupedModelsAsync = ref.watch(
       listModelsGroupedByProviderProvider(workspaceId: workspaceId),
     );
     final hasNoProviders = groupedModelsAsync.asData?.value.isEmpty ?? false;
 
+    @Dependencies([workspaceSession])
     void onToolsPress() {
       if (workspaceId.isNotEmpty && context.mounted) {
         unawaited(
@@ -58,6 +86,18 @@ class NewChatScreen extends ConsumerWidget {
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
 
+    @Dependencies([
+      workspaceModelSelectionById,
+      workspaceSession,
+      ConversationChatNotifier,
+      conversationBusyState,
+      pendingToolCalls,
+      contextUsage,
+      chatMessages,
+      childConversationsStream,
+      conversationByIdStream,
+      messageConversationById,
+    ])
     Future<void> handleSendMessage(ChatDraft draft) async {
       try {
         final conversation = await ref
@@ -148,6 +188,53 @@ class NewChatScreen extends ConsumerWidget {
   }
 }
 
+@Dependencies([workspaceSession])
+class _NewChatUnavailable extends StatelessWidget {
+  const _NewChatUnavailable({required this.workspaceId});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraScreen(
+      child: AuraColumn(
+        children: [
+          const Expanded(
+            child: Center(
+              child: AuraColumn(
+                children: [
+                  AuraIcon(Icons.cloud_off_outlined),
+                  TextLocale(
+                    LocaleKeys.workspace_management_cloud_unavailable,
+                  ),
+                ],
+                spacing: .sm,
+                mainAxisSize: MainAxisSize.min,
+              ),
+            ),
+          ),
+          ChatInputWidget(
+            onSendMessage: (_) {
+              return;
+            },
+            onToolsPress: () {
+              return;
+            },
+            modelSheetControl: const SizedBox.shrink(),
+            agentSheetControl: const SizedBox.shrink(),
+            modelCompactControl: const SizedBox.shrink(),
+            agentCompactControl: const SizedBox.shrink(),
+            disabled: true,
+          ),
+        ],
+      ),
+      appBar: AuraAppBarWithDrawer(
+        title: _WorkspaceSelector(workspaceId: workspaceId),
+      ),
+    );
+  }
+}
+
 class _WorkspaceSelector extends ConsumerWidget {
   const _WorkspaceSelector({required this.workspaceId});
 
@@ -196,6 +283,12 @@ class _WorkspaceSelector extends ConsumerWidget {
   }
 }
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 class _NoModelProviderPrompt extends StatelessWidget {
   const _NoModelProviderPrompt({required this.workspaceId});
 

@@ -8,6 +8,7 @@ import 'dart:math' as math;
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -25,7 +26,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([pendingToolCalls])
+@Dependencies([pendingToolCalls, toolDisplayName])
 class ChatToolApprovalCard extends HookConsumerWidget {
   const ChatToolApprovalCard({super.key});
 
@@ -72,6 +73,7 @@ class ChatToolApprovalCard extends HookConsumerWidget {
   }
 }
 
+@Dependencies([toolDisplayName])
 class _ApprovalCardContent extends ConsumerWidget {
   const _ApprovalCardContent({
     required this.current,
@@ -482,7 +484,26 @@ class _ConfirmationButtons extends ConsumerWidget {
     await _runAction(
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_once,
-      action: () {
+      action: () async {
+        final turnId = toolCall.turnId;
+        final revision = toolCall.turnRevision;
+        final argumentsDigest = toolCall.argumentsDigest;
+        if (turnId != null && revision != null && argumentsDigest != null) {
+          final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+          if (cloud == null) throw StateError('Cloud turn unavailable');
+
+          return switch (await cloud.decide(
+            turnId: turnId,
+            toolCallId: toolCall.id,
+            argumentsDigest: argumentsDigest,
+            revision: revision,
+            approved: true,
+            editedArgumentsJson: toolCall.argumentsRaw,
+          )) {
+            _ => null,
+          };
+        }
+
         return ref
             .read(auraAgentServiceProvider)
             .tools
@@ -502,7 +523,26 @@ class _ConfirmationButtons extends ConsumerWidget {
     await _runAction(
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_approve_conversation,
-      action: () {
+      action: () async {
+        final turnId = toolCall.turnId;
+        final revision = toolCall.turnRevision;
+        final argumentsDigest = toolCall.argumentsDigest;
+        if (turnId != null && revision != null && argumentsDigest != null) {
+          final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+          if (cloud == null) throw StateError('Cloud turn unavailable');
+
+          return switch (await cloud.decide(
+            turnId: turnId,
+            toolCallId: toolCall.id,
+            argumentsDigest: argumentsDigest,
+            revision: revision,
+            approved: true,
+            editedArgumentsJson: toolCall.argumentsRaw,
+          )) {
+            _ => null,
+          };
+        }
+
         return ref
             .read(auraAgentServiceProvider)
             .tools
@@ -519,7 +559,25 @@ class _ConfirmationButtons extends ConsumerWidget {
     await _runAction(
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_skip,
-      action: () {
+      action: () async {
+        final turnId = toolCall.turnId;
+        final revision = toolCall.turnRevision;
+        final argumentsDigest = toolCall.argumentsDigest;
+        if (turnId != null && revision != null && argumentsDigest != null) {
+          final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+          if (cloud == null) throw StateError('Cloud turn unavailable');
+
+          return switch (await cloud.decide(
+            turnId: turnId,
+            toolCallId: toolCall.id,
+            argumentsDigest: argumentsDigest,
+            revision: revision,
+            approved: false,
+          )) {
+            _ => null,
+          };
+        }
+
         return ref
             .read(auraAgentServiceProvider)
             .tools

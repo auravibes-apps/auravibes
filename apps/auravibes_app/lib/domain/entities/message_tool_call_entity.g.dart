@@ -12,6 +12,9 @@ _MessageToolCallEntity _$MessageToolCallEntityFromJson(
   id: json['id'] as String,
   name: json['name'] as String,
   argumentsRaw: json['argumentsRaw'] as String,
+  argumentsDigest: json['argumentsDigest'] as String?,
+  turnId: json['turnId'] as String?,
+  turnRevision: (json['turnRevision'] as num?)?.toInt(),
   responseRaw: json['responseRaw'] as String?,
   resultStatus: _toolCallResultStatusFromJson(json['resultStatus'] as String?),
 );
@@ -22,6 +25,9 @@ Map<String, dynamic> _$MessageToolCallEntityToJson(
   'id': instance.id,
   'name': instance.name,
   'argumentsRaw': instance.argumentsRaw,
+  'argumentsDigest': ?instance.argumentsDigest,
+  'turnId': ?instance.turnId,
+  'turnRevision': ?instance.turnRevision,
   'responseRaw': instance.responseRaw,
   'resultStatus': _toolCallResultStatusToJson(instance.resultStatus),
 };

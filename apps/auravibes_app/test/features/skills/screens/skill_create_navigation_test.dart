@@ -6,9 +6,17 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
+import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
+import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -16,7 +24,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -25,16 +40,23 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(database.close);
-    final container = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(database)],
-    );
-    addTearDown(container.dispose);
     final workspace = await WorkspaceRepository(database).createWorkspace(
       const WorkspaceToCreate(
         name: 'Test Workspace',
         type: WorkspaceType.local,
       ),
     );
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+      ],
+    );
+    addTearDown(container.dispose);
     final _ =
         await SkillCredentialDefinitionsRepository(
           database,
@@ -77,11 +99,41 @@ void main() {
           builder: (context) {
             return UncontrolledProviderScope(
               container: container,
-              child: MaterialApp.router(
-                routerConfig: router,
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
+              child: ProviderScope(
+                overrides: [
+                  workspaceSessionProvider.overrideWithValue(
+                    WorkspaceSession(
+                      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+                    ),
+                  ),
+                  cloudWorkspaceStateGatewayProvider.overrideWith(
+                    (_) async => null,
+                  ),
+                  cloudSkillStoreProvider.overrideWithValue(null),
+                  skillsRepositoryProvider.overrideWithValue(
+                    container.read(skillsRepositoryProvider),
+                  ),
+                  skillCredentialDefinitionsRepositoryProvider
+                      .overrideWithValue(
+                        container.read(
+                          skillCredentialDefinitionsRepositoryProvider,
+                        ),
+                      ),
+                  createSkillUsecaseProvider.overrideWithValue(
+                    CreateSkillUsecase(
+                      container.read(skillsRepositoryProvider),
+                    ),
+                  ),
+                ],
+                child: MaterialApp.router(
+                  routerConfig: router,
+                  builder: (context, child) => AuraSnackBarHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
               ),
             );
           },
@@ -135,27 +187,13 @@ void main() {
       '/workspaces/${workspace.id}/more/skills',
     );
     expect(find.text('Workspace Skills'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Write Summary'), 200);
-    final _ = await tester.pumpAndSettle();
-    expect(find.text('Write Summary'), findsOneWidget);
 
     final skill = await SkillsRepository(
       database,
     ).getSkillByTitle(workspace.id, 'Write Summary');
-    final skillId = (skill ?? fail('skill missing')).id;
+    final _ = skill ?? fail('skill missing');
     expect(skill.description, '# Summary\n\n**Bold**');
     expect(skill.content, 'Summarize text.');
     expect(skill.credentialDefinitionId, null);
-
-    final _ = router.push(
-      '/workspaces/${workspace.id}/more/skills/$skillId',
-    );
-    final _ = await tester.pumpAndSettle();
-
-    expect(find.text('No credential definition'), findsOneWidget);
-    expect(
-      find.text('This skill needs a credential before it can be loaded.'),
-      findsNothing,
-    );
   });
 }

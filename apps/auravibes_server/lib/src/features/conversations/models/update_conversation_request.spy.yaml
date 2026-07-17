@@ -1,0 +1,14 @@
+class: UpdateConversationRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedRevision: int
+  title: String?
+  isPinned: bool?
+  modelId: String?
+  clearModel: bool
+  agentId: String?
+  clearAgent: bool
+  parentConversationId: String?
+  clearParent: bool

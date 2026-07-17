@@ -1,13 +1,14 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_usecase.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
-import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
@@ -15,6 +16,7 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class AppAgentContinuationAdapter
     implements
@@ -24,9 +26,9 @@ class AppAgentContinuationAdapter
           ChatMessage,
           ToolSpec
         > {
-  const AppAgentContinuationAdapter({
+  AppAgentContinuationAdapter({
     required this.conversationRepository,
-    required this.workspaceModelSelectionsRepository,
+    required this.modelSelectionStore,
     required this.apiModelRepository,
     required this.selectPromptMessagesUsecase,
     required this.buildSkillContextMessagesUsecase,
@@ -34,7 +36,9 @@ class AppAgentContinuationAdapter
   });
 
   final ConversationRepository conversationRepository;
-  final WorkspaceModelSelectionRepository workspaceModelSelectionsRepository;
+  final Future<ModelSelectionStore> Function(String workspaceId)
+  modelSelectionStore;
+  final Map<String, String> _workspaceIdsByModelId = {};
   final ApiModelRepository apiModelRepository;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
   final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
@@ -49,6 +53,10 @@ class AppAgentContinuationAdapter
     );
     if (conversation == null) return null;
 
+    if (conversation.modelId case final modelId?) {
+      _workspaceIdsByModelId[modelId] = conversation.workspaceId;
+    }
+
     return AgentConversationReference(
       workspaceId: conversation.workspaceId,
       modelId: conversation.modelId,
@@ -58,10 +66,11 @@ class AppAgentContinuationAdapter
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?> loadSelectedModel(
     String modelId,
-  ) {
-    return workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
-      modelId,
-    );
+  ) async {
+    final workspaceId = _workspaceIdsByModelId[modelId];
+    if (workspaceId == null) return null;
+
+    return (await modelSelectionStore(workspaceId)).getById(modelId);
   }
 
   @override
@@ -154,24 +163,34 @@ class AppAgentContinuationAdapter
   }
 }
 
-final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
-  ref,
-) {
-  return AppAgentContinuationAdapter(
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    workspaceModelSelectionsRepository: ref.watch(
-      workspaceModelSelectionRepositoryProvider,
-    ),
-    apiModelRepository: ref.watch(apiModelRepositoryProvider),
-    selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
-    buildSkillContextMessagesUsecase: ref.watch(
-      buildSkillContextMessagesServiceProvider,
-    ),
-    loadConversationToolSpecsUsecase: ref.watch(
-      loadConversationToolSpecsUsecaseProvider,
-    ),
-  );
-});
+@Dependencies([workspaceSession])
+final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>(
+  (
+    ref,
+  ) {
+    if (ref.watch(workspaceSessionProvider).cloud != null) {
+      throw StateError('Cloud conversations continue on the server.');
+    }
+
+    return AppAgentContinuationAdapter(
+      conversationRepository: ref.watch(conversationRepositoryProvider),
+      modelSelectionStore: (workspaceId) => ref.read(
+        modelSelectionStoreProvider(workspaceId).future,
+      ),
+      apiModelRepository: ref.watch(apiModelRepositoryProvider),
+      selectPromptMessagesUsecase: ref.watch(
+        selectPromptMessagesUsecaseProvider,
+      ),
+      buildSkillContextMessagesUsecase: ref.watch(
+        buildSkillContextMessagesServiceProvider,
+      ),
+      loadConversationToolSpecsUsecase: ref.watch(
+        loadConversationToolSpecsUsecaseProvider,
+      ),
+    );
+  },
+  dependencies: [workspaceSessionProvider, modelSelectionStoreProvider],
+);
 
 extension on ChatMessage {
   bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;

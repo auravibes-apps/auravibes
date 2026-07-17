@@ -17,6 +17,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
     required this.userId,
     this.email,
     required this.role,
+    required this.revision,
     required this.createdAt,
   });
 
@@ -24,6 +25,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
     required String userId,
     String? email,
     required String role,
+    required int revision,
     required DateTime createdAt,
   }) = _CloudWorkspaceMemberSummaryImpl;
 
@@ -34,6 +36,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
       userId: jsonSerialization['userId'] as String,
       email: jsonSerialization['email'] as String?,
       role: jsonSerialization['role'] as String,
+      revision: jsonSerialization['revision'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -46,6 +49,8 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
 
   String role;
 
+  int revision;
+
   DateTime createdAt;
 
   /// Returns a shallow copy of this [CloudWorkspaceMemberSummary]
@@ -55,6 +60,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
     String? userId,
     String? email,
     String? role,
+    int? revision,
     DateTime? createdAt,
   });
   @override
@@ -64,6 +70,7 @@ abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
       'userId': userId,
       if (email != null) 'email': email,
       'role': role,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
     };
   }
@@ -81,11 +88,13 @@ class _CloudWorkspaceMemberSummaryImpl extends CloudWorkspaceMemberSummary {
     required String userId,
     String? email,
     required String role,
+    required int revision,
     required DateTime createdAt,
   }) : super._(
          userId: userId,
          email: email,
          role: role,
+         revision: revision,
          createdAt: createdAt,
        );
 
@@ -97,12 +106,14 @@ class _CloudWorkspaceMemberSummaryImpl extends CloudWorkspaceMemberSummary {
     String? userId,
     Object? email = _Undefined,
     String? role,
+    int? revision,
     DateTime? createdAt,
   }) {
     return CloudWorkspaceMemberSummary(
       userId: userId ?? this.userId,
       email: email is String? ? email : this.email,
       role: role ?? this.role,
+      revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
     );
   }

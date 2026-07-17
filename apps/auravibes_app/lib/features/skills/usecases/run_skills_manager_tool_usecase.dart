@@ -6,7 +6,9 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
@@ -27,13 +29,15 @@ class RunSkillsManagerToolUsecase {
     this._createSkillTemplateToolUsecase,
     this._updateSkillTemplateToolUsecase,
     this._createSkillCredentialDefinitionUsecase,
-    this._updateSkillCredentialDefinitionUsecase,
-  );
+    this._updateSkillCredentialDefinitionUsecase, {
+    this.cloudStore,
+  });
 
-  final SkillsRepository _skillsRepository;
-  final SkillTemplateToolsRepository _skillTemplateToolsRepository;
-  final SkillCredentialDefinitionsRepository
+  final SkillsRepository? _skillsRepository;
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
+  final SkillCredentialDefinitionsRepository?
   _skillCredentialDefinitionsRepository;
+  final CloudSkillStore? cloudStore;
   final CreateSkillUsecase _createSkillUsecase;
   final UpdateSkillUsecase _updateSkillUsecase;
   final CreateSkillTemplateToolUsecase _createSkillTemplateToolUsecase;
@@ -89,7 +93,10 @@ class RunSkillsManagerToolUsecase {
   }
 
   Future<Object> _listUserSkills(String workspaceId) async {
-    final skills = await _skillsRepository.getWorkspaceSkills(workspaceId);
+    final cloud = cloudStore;
+    final skills = cloud != null
+        ? await cloud.skills()
+        : await _skillsRepositoryOrThrow().getWorkspaceSkills(workspaceId);
 
     return {
       'skills': [
@@ -180,7 +187,10 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'skillSlug'),
     );
-    final deleted = await _skillsRepository.deleteSkill(skill.id);
+    final cloud = cloudStore;
+    final deleted = cloud == null
+        ? await _skillsRepositoryOrThrow().deleteSkill(skill.id)
+        : await _deleteSkill(cloud, skill.id);
 
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
@@ -197,7 +207,10 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'skillSlug'),
     );
-    final tools = await _skillTemplateToolsRepository.getSkillTools(skill.id);
+    final cloud = cloudStore;
+    final tools = cloud != null
+        ? await cloud.tools(skill.id)
+        : await _skillTemplateToolsRepositoryOrThrow().getSkillTools(skill.id);
 
     return {
       'skillSlug': skill.slug,
@@ -224,10 +237,15 @@ class RunSkillsManagerToolUsecase {
     );
     final title = _requiredString(arguments, 'title');
     final slug = generateSkillSlug(title);
-    final duplicate = await _skillTemplateToolsRepository.getToolBySlug(
-      skill.id,
-      slug,
-    );
+    final cloud = cloudStore;
+    final duplicate = cloud == null
+        ? await _skillTemplateToolsRepositoryOrThrow().getToolBySlug(
+            skill.id,
+            slug,
+          )
+        : (await cloud.tools(
+            skill.id,
+          )).where((item) => item.slug == slug).firstOrNull;
     if (duplicate != null) {
       throw StateError('A skill template tool with this title already exists.');
     }
@@ -256,7 +274,7 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'skillSlug'),
     );
-    final tool = await _skillTemplateToolsRepository.getToolBySlug(
+    final tool = await _toolBySlug(
       skill.id,
       _requiredString(arguments, 'toolSlug'),
     );
@@ -283,7 +301,10 @@ class RunSkillsManagerToolUsecase {
     Map<String, dynamic> arguments,
   ) async {
     final tool = await _getSkillTemplateTool(workspaceId, arguments);
-    final deleted = await _skillTemplateToolsRepository.deleteTool(tool.id);
+    final cloud = cloudStore;
+    final deleted = cloud == null
+        ? await _skillTemplateToolsRepositoryOrThrow().deleteTool(tool.id)
+        : await _deleteTool(cloud, tool.id);
 
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
@@ -294,8 +315,12 @@ class RunSkillsManagerToolUsecase {
   }
 
   Future<Object> _listSkillCredentialDefinitions(String workspaceId) async {
-    final definitions = await _skillCredentialDefinitionsRepository
-        .getDefinitions(workspaceId);
+    final cloud = cloudStore;
+    final definitions = cloud != null
+        ? await cloud.definitions()
+        : await _skillCredentialDefinitionsRepositoryOrThrow().getDefinitions(
+            workspaceId,
+          );
 
     return {
       'definitions': [
@@ -323,8 +348,7 @@ class RunSkillsManagerToolUsecase {
   ) async {
     final title = _requiredString(arguments, 'title');
     final slug = generateSkillSlug(title);
-    final duplicate = await _skillCredentialDefinitionsRepository
-        .getDefinitionBySlug(workspaceId, slug);
+    final duplicate = await _definitionBySlug(workspaceId, slug);
     if (duplicate != null) {
       throw StateError(
         'A skill credential definition with this title already exists.',
@@ -368,8 +392,19 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'definitionSlug'),
     );
-    final deleted = await _skillCredentialDefinitionsRepository
-        .deleteDefinition(definition.id);
+    final cloud = cloudStore;
+    final repository = _skillCredentialDefinitionsRepository;
+    final deleted = await switch ((cloud: cloud, repository: repository)) {
+      (cloud: final cloud?, repository: _) => () async {
+        await cloud.deleteDefinition(definition.id);
+
+        return true;
+      }(),
+      (cloud: _, repository: final repository?) => repository.deleteDefinition(
+        definition.id,
+      ),
+      _ => throw StateError('Credential definition store is unavailable'),
+    };
 
     return {
       'status': deleted ? 'deleted' : 'not_deleted',
@@ -379,7 +414,18 @@ class RunSkillsManagerToolUsecase {
   }
 
   Future<SkillEntity> _getUserSkill(String workspaceId, String slug) async {
-    final skill = await _skillsRepository.getSkillBySlug(workspaceId, slug);
+    final cloud = cloudStore;
+    final repository = _skillsRepository;
+    final skill = switch ((cloud: cloud, repository: repository)) {
+      (cloud: final cloud?, repository: _) =>
+        (await cloud.skills()).where((item) => item.slug == slug).firstOrNull,
+      (cloud: _, repository: final repository?) =>
+        await repository.getSkillBySlug(
+          workspaceId,
+          slug,
+        ),
+      _ => throw StateError('Skill store is unavailable'),
+    };
     if (skill == null || skill.source != SkillSource.user) {
       throw StateError('User skill not found: $slug');
     }
@@ -395,7 +441,7 @@ class RunSkillsManagerToolUsecase {
       workspaceId,
       _requiredString(arguments, 'skillSlug'),
     );
-    final tool = await _skillTemplateToolsRepository.getToolBySlug(
+    final tool = await _toolBySlug(
       skill.id,
       _requiredString(arguments, 'toolSlug'),
     );
@@ -410,8 +456,7 @@ class RunSkillsManagerToolUsecase {
     String workspaceId,
     String slug,
   ) async {
-    final definition = await _skillCredentialDefinitionsRepository
-        .getDefinitionBySlug(workspaceId, slug);
+    final definition = await _definitionBySlug(workspaceId, slug);
     if (definition == null) {
       throw StateError('Skill credential definition not found: $slug');
     }
@@ -422,13 +467,88 @@ class RunSkillsManagerToolUsecase {
   Future<String?> _resolveCredentialDefinitionId(Object? definitionId) async {
     if (definitionId == null || '$definitionId'.trim().isEmpty) return null;
     final id = '$definitionId'.trim();
-    final definition = await _skillCredentialDefinitionsRepository
-        .getDefinitionById(id);
+    final definition =
+        await cloudStore?.definition(id) ??
+        await _skillCredentialDefinitionsRepository?.getDefinitionById(id);
     if (definition == null) {
       throw StateError('Skill credential definition not found: $id');
     }
 
     return definition.id;
+  }
+
+  Future<SkillTemplateToolEntity?> _toolBySlug(
+    String skillId,
+    String slug,
+  ) async {
+    final cloud = cloudStore;
+    if (cloud != null) {
+      return (await cloud.tools(
+        skillId,
+      )).where((item) => item.slug == slug).firstOrNull;
+    }
+    final repository = _skillTemplateToolsRepository;
+    if (repository == null) {
+      throw StateError('Skill template tool store is unavailable');
+    }
+
+    return repository.getToolBySlug(skillId, slug);
+  }
+
+  Future<SkillCredentialDefinitionEntity?> _definitionBySlug(
+    String workspaceId,
+    String slug,
+  ) async {
+    final cloud = cloudStore;
+    if (cloud != null) {
+      return (await cloud.definitions())
+          .where((item) => item.slug == slug)
+          .firstOrNull;
+    }
+    final repository = _skillCredentialDefinitionsRepository;
+    if (repository == null) {
+      throw StateError('Credential definition store is unavailable');
+    }
+
+    return repository.getDefinitionBySlug(workspaceId, slug);
+  }
+
+  SkillsRepository _skillsRepositoryOrThrow() {
+    final repository = _skillsRepository;
+    if (repository == null) throw StateError('Skill store is unavailable');
+
+    return repository;
+  }
+
+  SkillTemplateToolsRepository _skillTemplateToolsRepositoryOrThrow() {
+    final repository = _skillTemplateToolsRepository;
+    if (repository == null) {
+      throw StateError('Skill template tool store is unavailable');
+    }
+
+    return repository;
+  }
+
+  SkillCredentialDefinitionsRepository
+  _skillCredentialDefinitionsRepositoryOrThrow() {
+    final repository = _skillCredentialDefinitionsRepository;
+    if (repository == null) {
+      throw StateError('Credential definition store is unavailable');
+    }
+
+    return repository;
+  }
+
+  Future<bool> _deleteSkill(CloudSkillStore cloud, String skillId) async {
+    await cloud.deleteSkill(skillId);
+
+    return true;
+  }
+
+  Future<bool> _deleteTool(CloudSkillStore cloud, String toolId) async {
+    await cloud.deleteTool(toolId);
+
+    return true;
   }
 
   Map<String, Object?> _skillResult(
@@ -553,20 +673,34 @@ class RunSkillsManagerToolUsecase {
 }
 
 final runSkillsManagerToolUsecaseProvider =
-    Provider<RunSkillsManagerToolUsecase>((ref) {
-      return RunSkillsManagerToolUsecase(
-        ref.watch(skillsRepositoryProvider),
-        ref.watch(skillTemplateToolsRepositoryProvider),
-        ref.watch(skillCredentialDefinitionsRepositoryProvider),
-        ref.watch(createSkillUsecaseProvider),
-        ref.watch(updateSkillUsecaseProvider),
-        ref.watch(createSkillTemplateToolUsecaseProvider),
-        ref.watch(updateSkillTemplateToolUsecaseProvider),
-        ref.watch(
-          createSkillCredentialDefinitionUsecaseProvider,
-        ),
-        ref.watch(
-          updateSkillCredentialDefinitionUsecaseProvider,
-        ),
-      );
-    });
+    Provider<RunSkillsManagerToolUsecase>(
+      (ref) {
+        final cloud = ref.watch(cloudSkillStoreProvider);
+
+        return RunSkillsManagerToolUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloud == null
+              ? ref.watch(skillTemplateToolsRepositoryProvider)
+              : null,
+          cloud == null
+              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+              : null,
+          ref.watch(createSkillUsecaseProvider),
+          ref.watch(updateSkillUsecaseProvider),
+          ref.watch(createSkillTemplateToolUsecaseProvider),
+          ref.watch(updateSkillTemplateToolUsecaseProvider),
+          ref.watch(createSkillCredentialDefinitionUsecaseProvider),
+          ref.watch(updateSkillCredentialDefinitionUsecaseProvider),
+          cloudStore: cloud,
+        );
+      },
+      dependencies: [
+        cloudSkillStoreProvider,
+        createSkillUsecaseProvider,
+        updateSkillUsecaseProvider,
+        createSkillTemplateToolUsecaseProvider,
+        updateSkillTemplateToolUsecaseProvider,
+        createSkillCredentialDefinitionUsecaseProvider,
+        updateSkillCredentialDefinitionUsecaseProvider,
+      ],
+    );

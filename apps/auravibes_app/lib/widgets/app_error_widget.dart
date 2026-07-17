@@ -1,9 +1,14 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
-class AppErrorWidget<T extends Object> extends StatelessWidget {
+final _logger = Logger('app_error_widget');
+
+class AppErrorWidget<T extends Object> extends StatefulWidget {
   const AppErrorWidget({
     required this.error,
     required this.stackTrace,
@@ -13,6 +18,17 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
   final T error;
   final StackTrace stackTrace;
   final Widget? action;
+
+  @override
+  State<AppErrorWidget<T>> createState() => _AppErrorWidgetState<T>();
+}
+
+class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
+  @override
+  void initState() {
+    super.initState();
+    _logger.severe('Displaying error UI', widget.error, widget.stackTrace);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,13 +47,20 @@ class AppErrorWidget<T extends Object> extends StatelessWidget {
             style: AuraTextStyle.heading6,
             textAlign: TextAlign.center,
           ),
-          const AuraText(
+          AuraText(
             child: _AppErrorText(
-              LocaleKeys.common_error_message,
+              switch (widget.error) {
+                UnsupportedWorkspaceCapabilityException(
+                  :final localizationKey,
+                ) =>
+                  localizationKey,
+                CloudAppException(:final localizationKey) => localizationKey,
+                _ => LocaleKeys.common_error_message,
+              },
             ),
             textAlign: TextAlign.center,
           ),
-          ?action,
+          ?widget.action,
         ],
         spacing: AuraSpacing.sm,
         mainAxisSize: MainAxisSize.min,

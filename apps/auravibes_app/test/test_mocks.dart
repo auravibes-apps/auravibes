@@ -228,7 +228,11 @@ class MockToolsGroupsRepository extends Mock implements ToolsGroupsRepository {}
 class MockWorkspaceDao extends Mock implements WorkspaceDao {}
 
 class MockWorkspaceModelSelectionRepository extends Mock
-    implements WorkspaceModelSelectionRepository {}
+    implements WorkspaceModelSelectionRepository {
+  @override
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
+      getWorkspaceModelSelectionById(id);
+}
 
 class MockWorkspaceModelSelectionsDao extends Mock
     implements WorkspaceModelSelectionsDao {}

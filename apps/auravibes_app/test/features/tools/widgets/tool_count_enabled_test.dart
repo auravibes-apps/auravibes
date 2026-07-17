@@ -6,11 +6,13 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/tool_count_enabled_widget.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -30,6 +32,7 @@ WorkspaceToolEntity _tool({
   );
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _LoadingToolsNotifier extends WorkspaceToolsNotifier {
   final _completer = Completer<List<WorkspaceToolEntity>>();
 
@@ -38,6 +41,7 @@ class _LoadingToolsNotifier extends WorkspaceToolsNotifier {
       _completer.future;
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _DataToolsNotifier extends WorkspaceToolsNotifier {
   _DataToolsNotifier(this.tools);
 
@@ -47,6 +51,7 @@ class _DataToolsNotifier extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _ErrorToolsNotifier extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {

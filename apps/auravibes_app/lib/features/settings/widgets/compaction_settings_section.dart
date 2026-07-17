@@ -8,13 +8,16 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([workspaceSession])
 class CompactionSettingsSection extends ConsumerStatefulWidget {
   const CompactionSettingsSection({required this.workspaceId, super.key});
 
@@ -231,9 +234,21 @@ class _CompactionSettingsSectionState
 
   Future<void> _resetDefaults() async {
     try {
-      final _ = await ref
-          .read(workspaceCompactionSettingsRepositoryProvider)
-          .resetOverrides(widget.workspaceId);
+      var isCloud = false;
+      try {
+        isCloud = ref.read(workspaceSessionProvider).cloud != null;
+      } on Exception {
+        isCloud = false;
+      }
+      if (isCloud) {
+        await ref
+            .read(saveWorkspaceCompactionSettingsUsecaseProvider)
+            .reset(workspaceId: widget.workspaceId);
+      } else {
+        final _ = await ref
+            .read(workspaceCompactionSettingsRepositoryProvider)
+            .resetOverrides(widget.workspaceId);
+      }
     } on Exception {
       if (mounted) {
         final _ = showAuraSnackBar(

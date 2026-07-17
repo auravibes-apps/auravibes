@@ -74,3 +74,19 @@ node_modules/
 
 # Opencode lock
 .opencode/package-lock.json
+
+# Pi local runtime state (keep .pi/settings.json, agents, prompts, and .pi-lens config tracked)
+.pi/npm/
+.pi/git/
+.pi/sessions/
+.pi/tmp/
+.pi/cache/
+.pi/logs/
+.pi/agent-memory/
+.pi-lens/cache/
+.pi-lens/logs/
+.pi-lens/sessions/
+.pi-lens/*.log
+.pi-lens/change-log.jsonl
+.pi-lens/recent-touches.json
+.pi-lens/turn-state.json

@@ -3,3 +3,5 @@ fields:
   workspaceId: int
   userId: String
   role: String
+  requestId: String
+  expectedMemberRevision: int

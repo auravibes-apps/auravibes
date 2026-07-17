@@ -31,7 +31,11 @@ class MockConversationRepository extends Mock
     implements ConversationRepository {}
 
 class MockWorkspaceModelSelectionRepository extends Mock
-    implements WorkspaceModelSelectionRepository {}
+    implements WorkspaceModelSelectionRepository {
+  @override
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
+      getWorkspaceModelSelectionById(id);
+}
 
 class MockChatbotService extends Mock implements ChatbotService {}
 
@@ -78,12 +82,12 @@ class _CompactConversationFixture {
       compactionExecutionRuntimeProvider,
     );
     _usecase = CompactConversationUsecase(
+      compactionExecution: compactionExecution,
       messageRepository: mockMessageRepo,
       conversationRepository: mockConversationRepo,
-      workspaceModelSelectionsRepository: mockModelSelectionRepo,
+      modelSelectionStore: (_) async => mockModelSelectionRepo,
       chatbotService: mockChatbotService,
       selectCompactionRangeUsecase: const SelectCompactionRangeUsecase(),
-      compactionExecution: compactionExecution,
     );
 
     when(() => mockMessageRepo.createMessage(any())).thenAnswer(

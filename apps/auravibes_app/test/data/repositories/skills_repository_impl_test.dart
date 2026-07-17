@@ -532,10 +532,8 @@ void main() {
       );
       final usecase = BuildSkillContextMessagesService(
         listAvailableSkillsUsecase,
-        conversationRepository,
-        AgentsRepository(database),
         ListConversationAgentSkillsUsecase(
-          conversationRepository,
+          conversationRepository.getConversationById,
           AgentsRepository(database),
           ResolveAgentSkillsUsecase(
             skillsRepository,

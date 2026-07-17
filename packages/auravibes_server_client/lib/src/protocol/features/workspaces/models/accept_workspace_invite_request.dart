@@ -13,30 +13,50 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
-  AcceptWorkspaceInviteRequest._({required this.inviteId});
+  AcceptWorkspaceInviteRequest._({
+    required this.inviteId,
+    required this.requestId,
+    required this.expectedInviteRevision,
+  });
 
-  factory AcceptWorkspaceInviteRequest({required int inviteId}) =
-      _AcceptWorkspaceInviteRequestImpl;
+  factory AcceptWorkspaceInviteRequest({
+    required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
+  }) = _AcceptWorkspaceInviteRequestImpl;
 
   factory AcceptWorkspaceInviteRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return AcceptWorkspaceInviteRequest(
       inviteId: jsonSerialization['inviteId'] as int,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedInviteRevision:
+          jsonSerialization['expectedInviteRevision'] as int,
     );
   }
 
   int inviteId;
 
+  String requestId;
+
+  int expectedInviteRevision;
+
   /// Returns a shallow copy of this [AcceptWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
-  AcceptWorkspaceInviteRequest copyWith({int? inviteId});
+  AcceptWorkspaceInviteRequest copyWith({
+    int? inviteId,
+    String? requestId,
+    int? expectedInviteRevision,
+  });
   @override
   Map<String, dynamic> toJson() {
     return {
       '__className__': 'AcceptWorkspaceInviteRequest',
       'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
     };
   }
 
@@ -47,14 +67,30 @@ abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
 }
 
 class _AcceptWorkspaceInviteRequestImpl extends AcceptWorkspaceInviteRequest {
-  _AcceptWorkspaceInviteRequestImpl({required int inviteId})
-    : super._(inviteId: inviteId);
+  _AcceptWorkspaceInviteRequestImpl({
+    required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
+  }) : super._(
+         inviteId: inviteId,
+         requestId: requestId,
+         expectedInviteRevision: expectedInviteRevision,
+       );
 
   /// Returns a shallow copy of this [AcceptWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   @override
-  AcceptWorkspaceInviteRequest copyWith({int? inviteId}) {
-    return AcceptWorkspaceInviteRequest(inviteId: inviteId ?? this.inviteId);
+  AcceptWorkspaceInviteRequest copyWith({
+    int? inviteId,
+    String? requestId,
+    int? expectedInviteRevision,
+  }) {
+    return AcceptWorkspaceInviteRequest(
+      inviteId: inviteId ?? this.inviteId,
+      requestId: requestId ?? this.requestId,
+      expectedInviteRevision:
+          expectedInviteRevision ?? this.expectedInviteRevision,
+    );
   }
 }

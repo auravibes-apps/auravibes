@@ -15,6 +15,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod/experimental/mutation.dart';
 
 class CloudAccountsScreen extends ConsumerWidget {
   const CloudAccountsScreen({required this.workspaceId, super.key});
@@ -133,11 +134,30 @@ class _AccountList extends ConsumerWidget {
     );
     if (confirmed != true) return;
 
+    final activeWorkspace = await ref
+        .read(workspaceRepositoryProvider)
+        .getWorkspaceById(workspaceId);
+
     await cloudAccountMutation.run(ref, (_) async {
-      await ref.read(cloudAccountUseCasesProvider).remove(account.userId);
+      await ref
+          .read(cloudAccountUseCasesProvider)
+          .remove(
+            serverUrl: account.serverUrl,
+            userId: account.userId,
+          );
       ref
         ..invalidate(cloudAccountsProvider)
         ..invalidate(allWorkspacesProvider);
     });
+    if (!context.mounted ||
+        activeWorkspace?.cloudAccountId != account.userId ||
+        ref.read(cloudAccountMutation) is MutationError) {
+      return;
+    }
+
+    final workspaces = await ref.read(allWorkspacesProvider.future);
+    if (workspaces.isEmpty || !context.mounted) return;
+
+    NewChatRoute(workspaceId: workspaces.first.id).go(context);
   }
 }

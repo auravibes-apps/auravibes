@@ -1,12 +1,16 @@
 class: WorkspaceMember
 table: workspace_member
 fields:
-  workspaceId: int
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
   userId: String
   role: String
+  revision: int
   createdAt: DateTime
+  updatedAt: DateTime
   removedAt: DateTime?
 indexes:
   workspace_member_workspace_user_idx:
     fields: workspaceId, userId
     unique: true
+  workspace_member_user_removed_idx:
+    fields: userId, removedAt

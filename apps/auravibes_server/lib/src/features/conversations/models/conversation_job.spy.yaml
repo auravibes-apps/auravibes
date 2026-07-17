@@ -1,0 +1,28 @@
+class: ConversationJob
+table: conversation_job
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  turnId: int?, relation(parent=conversation_turn, onDelete=NoAction)
+  requestId: String
+  kind: String
+  status: String
+  payloadJson: String?
+  attempt: int
+  maxAttempts: int
+  availableAt: DateTime
+  leaseOwner: String?
+  leaseToken: String?
+  leaseExpiresAt: DateTime?
+  checkpointJson: String?
+  lastErrorCode: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  conversation_job_request_idx:
+    fields: workspaceId, requestId, kind
+    unique: true
+  conversation_job_claim_idx:
+    fields: status, availableAt, leaseExpiresAt
+  conversation_job_turn_idx:
+    fields: workspaceId, turnId

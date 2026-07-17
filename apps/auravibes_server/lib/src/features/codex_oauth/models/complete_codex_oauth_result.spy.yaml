@@ -1,0 +1,5 @@
+class: CompleteCodexOAuthResult
+fields:
+  workspaceId: int
+  connectionId: String
+  configured: bool

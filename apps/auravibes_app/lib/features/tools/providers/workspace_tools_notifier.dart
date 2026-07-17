@@ -2,6 +2,8 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
+import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
@@ -10,8 +12,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_notifier.g.dart';
 
-@Riverpod(keepAlive: true)
-WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
+@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
+WorkspaceToolsRepositoryContract workspaceToolsRepository(Ref ref) {
+  if (ref.watch(workspaceSessionProvider).cloud != null) {
+    return CloudToolsRepository(
+      ref.read(cloudWorkspaceStateGatewayProvider.future),
+    );
+  }
   final appDatabase = ref.watch(appDatabaseProvider);
 
   return WorkspaceToolsRepository(appDatabase);
@@ -21,12 +28,12 @@ WorkspaceToolsRepository workspaceToolsRepository(Ref ref) {
 int workspaceToolIndexNotifier(Ref _) =>
     throw Exception('implement workspaceToolIndexNotifier');
 
-@riverpod
+@Riverpod(dependencies: [workspaceToolsRepository])
 class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
-  WorkspaceToolsRepository? _repository;
+  WorkspaceToolsRepositoryContract? _repository;
   String _workspaceId = '';
 
-  WorkspaceToolsRepository get _requiredRepository {
+  WorkspaceToolsRepositoryContract get _requiredRepository {
     final repository = _repository;
     if (repository == null) {
       throw StateError('_repository is not initialized');
@@ -123,11 +130,14 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
 /// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
-@riverpod
+@Riverpod(dependencies: [workspaceSession, WorkspaceToolsNotifier])
 Future<List<UserToolType>> availableToolsToAdd(
   Ref ref,
   String workspaceId,
 ) async {
+  if (!ref.watch(workspaceSessionProvider).capabilities.nativeTools) {
+    return const [];
+  }
   final workspaceTools = await ref.watch(
     workspaceToolsProvider(workspaceId).future,
   );
@@ -143,7 +153,7 @@ Future<List<UserToolType>> availableToolsToAdd(
       .toList();
 }
 
-@Riverpod(dependencies: [workspaceToolIndexNotifier])
+@Riverpod(dependencies: [workspaceToolIndexNotifier, WorkspaceToolsNotifier])
 WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
   final workspaceToolIndex = ref.watch(workspaceToolIndexProvider);
   final workspaceTools = ref.watch(workspaceToolsProvider(workspaceId)).value;

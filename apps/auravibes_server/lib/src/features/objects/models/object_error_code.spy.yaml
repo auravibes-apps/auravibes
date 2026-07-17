@@ -1,0 +1,15 @@
+enum: ObjectErrorCode
+serialized: byName
+values:
+  - configurationMissing
+  - invalidRequest
+  - unsupportedMediaType
+  - sizeLimitExceeded
+  - objectNotFound
+  - uploadExpired
+  - uploadMismatch
+  - scanInfected
+  - scanFailed
+  - staleRevision
+  - idempotencyConflict
+  - objectReferenced

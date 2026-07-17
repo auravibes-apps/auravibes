@@ -1,3 +1,5 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ class TestableApp extends StatelessWidget {
   const TestableApp({
     required this.child,
     this.overrides = const [],
+    this.workspaceId = 'test-workspace',
     super.key,
   });
 
@@ -18,13 +21,28 @@ class TestableApp extends StatelessWidget {
   /// Riverpod provider overrides for the test.
   final List<Object> overrides;
 
+  /// Local workspace used by scoped providers.
+  final String workspaceId;
+
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
       child: Builder(
         builder: (context) {
           return ProviderScope(
-            overrides: overrides.cast(),
+            overrides: [
+              workspaceSessionProvider.overrideWithValue(
+                WorkspaceSession(
+                  LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                ),
+              ),
+              workspaceSessionForRouteProvider.overrideWith(
+                (_, _) async => WorkspaceSession(
+                  LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                ),
+              ),
+              ...overrides.cast(),
+            ],
             child: MaterialApp(
               home: child,
               builder: (context, child) => AuraSnackBarHost(

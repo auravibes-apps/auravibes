@@ -80,13 +80,21 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
   Future<WorkspaceEntity?> getCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async => null;
 
   @override
   Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
-    String cloudWorkspaceId,
-  ) async => allWorkspaces
-      .where((w) => w.cloudWorkspaceId == cloudWorkspaceId)
+    String cloudWorkspaceId, {
+    required String cloudAccountId,
+    required String serverUrl,
+  }) async => allWorkspaces
+      .where(
+        (w) =>
+            w.cloudWorkspaceId == cloudWorkspaceId &&
+            w.cloudAccountId == cloudAccountId &&
+            w.url == serverUrl,
+      )
       .firstOrNull;
 
   @override
@@ -111,12 +119,14 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
   Future<bool> deleteCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async => deleteResult;
 
   @override
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
-    String cloudAccountId,
-  ) async => 0;
+    String cloudAccountId, {
+    String? serverUrl,
+  }) async => 0;
 
   @override
   Future<bool> workspaceExists(String id) async => existsResult;

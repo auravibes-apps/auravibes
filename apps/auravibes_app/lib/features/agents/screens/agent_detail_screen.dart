@@ -26,7 +26,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([WorkspaceToolsNotifier])
 class AgentDetailScreen extends ConsumerStatefulWidget {
   const AgentDetailScreen({required this.workspaceId, this.agentId, super.key});
 
@@ -62,7 +64,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     final agentId = widget.agentId;
     if (agentId != null && !_loaded) {
       return FutureBuilder<AgentEntity?>(
-        future: ref.read(agentsRepositoryProvider).getAgentById(agentId),
+        future: ref.read(agentRepositoryProvider).getAgentById(agentId),
         builder: (context, snapshot) {
           final agent = snapshot.data;
           if (agent == null) return const Center(child: AuraSpinner());

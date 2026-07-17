@@ -1,0 +1,14 @@
+class: ConversationUsage
+table: conversation_usage
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  turnId: int, relation(parent=conversation_turn, onDelete=NoAction)
+  inputTokens: int
+  outputTokens: int
+  totalTokens: int
+  createdAt: DateTime
+indexes:
+  conversation_usage_turn_idx:
+    fields: workspaceId, turnId
+    unique: true

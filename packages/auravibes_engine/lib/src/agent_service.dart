@@ -5,6 +5,7 @@ import 'package:auravibes_engine/src/providers/agent_data_provider.dart';
 import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 
 const defaultAgentRateLimitRetryDelay = Duration(seconds: 60);
+const defaultAgentRateLimitRetryCount = 1;
 
 // ignore: one_member_abstracts, provider interface keeps tool loop injectable.
 abstract interface class AgentLoopToolProvider {
@@ -27,6 +28,7 @@ class AgentService {
     required this.cancellationEffects,
     required this.rateLimitRetryRuntime,
     this.rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
+    this.rateLimitRetryCount = defaultAgentRateLimitRetryCount,
     this.now = DateTime.now,
     this.sleep = _defaultAgentSleep,
   });
@@ -38,6 +40,7 @@ class AgentService {
   final AgentCancellationEffects cancellationEffects;
   final AgentRateLimitRetryRuntime rateLimitRetryRuntime;
   final Duration rateLimitRetryDelay;
+  final int rateLimitRetryCount;
   final DateTime Function() now;
   final Future<void> Function(Duration duration) sleep;
 
@@ -71,6 +74,7 @@ class AgentService {
     required AgentCancellationScope cancellationScope,
   }) async {
     AgentIterationContext? currentContext = context;
+    var rateLimitRetries = 0;
 
     while (true) {
       final cancelDecision = await _cancelIfRequested(
@@ -91,6 +95,8 @@ class AgentService {
       } catch (error) {
         final retryDelay = _rateLimitRetryDelayFor(error);
         if (retryDelay == null) rethrow;
+        if (rateLimitRetries >= rateLimitRetryCount) rethrow;
+        rateLimitRetries++;
 
         final retryAt = now().add(retryDelay);
         rateLimitRetryRuntime.start(conversationId, retryAt);
@@ -104,6 +110,7 @@ class AgentService {
         if (cancelled != null) return cancelled;
         continue;
       }
+      rateLimitRetries = 0;
       currentContext = result.context;
       if (result.decision != AgentIterationDecision.continueIteration) {
         return result.decision;

@@ -1,12 +1,15 @@
 class: WorkspaceInvite
 table: workspace_invite
 fields:
-  workspaceId: int
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
   email: String
+  normalizedEmail: String
   role: String
   invitedByUserId: String
   acceptedByUserId: String?
+  revision: int
   createdAt: DateTime
+  updatedAt: DateTime
   expiresAt: DateTime?
   acceptedAt: DateTime?
   declinedAt: DateTime?
@@ -16,3 +19,5 @@ indexes:
   workspace_invite_pending_key_idx:
     fields: pendingKey
     unique: true
+  workspace_invite_email_state_idx:
+    fields: normalizedEmail, acceptedAt, declinedAt, revokedAt

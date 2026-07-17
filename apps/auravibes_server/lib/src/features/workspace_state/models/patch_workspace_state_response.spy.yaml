@@ -1,0 +1,4 @@
+class: PatchWorkspaceStateResponse
+fields:
+  resources: List<WorkspaceResource>
+  sequence: int

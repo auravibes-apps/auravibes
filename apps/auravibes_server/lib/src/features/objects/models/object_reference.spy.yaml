@@ -1,0 +1,14 @@
+class: ObjectReference
+table: object_reference
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  objectId: int, relation(parent=workspace_object, onDelete=NoAction)
+  messageId: int, relation(parent=conversation_message, onDelete=NoAction)
+  createdAt: DateTime
+  deletedAt: DateTime?
+indexes:
+  object_reference_message_idx:
+    fields: workspaceId, messageId, objectId
+    unique: true
+  object_reference_live_idx:
+    fields: workspaceId, objectId, deletedAt

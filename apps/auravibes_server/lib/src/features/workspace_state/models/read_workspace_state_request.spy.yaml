@@ -1,0 +1,6 @@
+class: ReadWorkspaceStateRequest
+fields:
+  workspaceId: int
+  pages: List<WorkspaceResourcePageRequest>
+  afterSequence: int?
+  eventLimit: int

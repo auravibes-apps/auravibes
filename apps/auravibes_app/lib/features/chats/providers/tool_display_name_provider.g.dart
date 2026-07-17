@@ -42,6 +42,14 @@ final class ToolDisplayNameProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = mcpServerNameProvider;
+  static final $allTransitiveDependencies1 =
+      McpServerNameProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      McpServerNameProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies3 =
+      McpServerNameProvider.$allTransitiveDependencies2;
+
   @override
   String debugGetCreateSourceHash() => _$toolDisplayNameHash();
 
@@ -74,7 +82,7 @@ final class ToolDisplayNameProvider
   }
 }
 
-String _$toolDisplayNameHash() => r'dc8e053be50f6ccd4f246c986b555ae56e64d1bb';
+String _$toolDisplayNameHash() => r'dbd6aebd57b28f291a176efbc129b57da8d9ab81';
 
 /// Provides a human-friendly display name for a tool composite ID.
 ///
@@ -88,8 +96,16 @@ final class ToolDisplayNameFamily extends $Family
     : super(
         retry: null,
         name: r'toolDisplayNameProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[
+          mcpServerNameProvider,
+          mcpServersRepositoryProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          ToolDisplayNameProvider.$allTransitiveDependencies0,
+          ToolDisplayNameProvider.$allTransitiveDependencies1,
+          ToolDisplayNameProvider.$allTransitiveDependencies2,
+          ToolDisplayNameProvider.$allTransitiveDependencies3,
+        },
         isAutoDispose: true,
       );
 
@@ -112,6 +128,7 @@ final class ToolDisplayNameFamily extends $Family
 /// Cached per server ID via Riverpod's family mechanism.
 
 @ProviderFor(mcpServerName)
+@Dependencies([mcpServersRepository])
 final mcpServerNameProvider = McpServerNameFamily._();
 
 /// Provides the name of an MCP server by its ID.
@@ -119,6 +136,7 @@ final mcpServerNameProvider = McpServerNameFamily._();
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 
+@Dependencies([mcpServersRepository])
 final class McpServerNameProvider
     extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
     with $FutureModifier<String?>, $FutureProvider<String?> {
@@ -136,6 +154,12 @@ final class McpServerNameProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
+
+  static final $allTransitiveDependencies0 = mcpServersRepositoryProvider;
+  static final $allTransitiveDependencies1 =
+      McpServersRepositoryProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      McpServersRepositoryProvider.$allTransitiveDependencies1;
 
   @override
   String debugGetCreateSourceHash() => _$mcpServerNameHash();
@@ -169,21 +193,26 @@ final class McpServerNameProvider
   }
 }
 
-String _$mcpServerNameHash() => r'a4f0fbf1e58c5c298f62f11c76f1a829d545853a';
+String _$mcpServerNameHash() => r'a39c7f8de9252417ea1fb2303879e420a69eed5c';
 
 /// Provides the name of an MCP server by its ID.
 ///
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 
+@Dependencies([mcpServersRepository])
 final class McpServerNameFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String?>, String> {
   McpServerNameFamily._()
     : super(
         retry: null,
         name: r'mcpServerNameProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[mcpServersRepositoryProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          McpServerNameProvider.$allTransitiveDependencies0,
+          McpServerNameProvider.$allTransitiveDependencies1,
+          McpServerNameProvider.$allTransitiveDependencies2,
+        ],
         isAutoDispose: true,
       );
 
@@ -192,6 +221,7 @@ final class McpServerNameFamily extends $Family
   /// Returns null if the server is not found.
   /// Cached per server ID via Riverpod's family mechanism.
 
+  @Dependencies([mcpServersRepository])
   McpServerNameProvider call(String mcpServerId) =>
       McpServerNameProvider._(argument: mcpServerId, from: this);
 

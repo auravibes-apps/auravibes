@@ -1,7 +1,4 @@
-import 'package:auravibes_app/data/repositories/agents_repository.dart';
-import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
-import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
@@ -14,13 +11,9 @@ void main() {
   group('BuildSkillContextMessagesService', () {
     test('escapes XML special characters in skill title and content', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
-      final conversations = _MockConversationRepository();
-      final agents = _MockAgentsRepository();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final usecase = BuildSkillContextMessagesService(
         listUseCase,
-        conversations,
-        agents,
         listAgentSkills,
       );
       when(
@@ -42,7 +35,12 @@ void main() {
           ),
         ],
       );
-      when(() => conversations.getConversationById('c')).thenAnswer(
+      when(
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'c',
+          workspaceId: 'w',
+        ),
+      ).thenAnswer(
         (_) async => null,
       );
       when(
@@ -63,13 +61,9 @@ void main() {
 
     test('prepends selected agent prompt and dedupes runtime skills', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
-      final conversations = _MockConversationRepository();
-      final agents = _MockAgentsRepository();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final usecase = BuildSkillContextMessagesService(
         listUseCase,
-        conversations,
-        agents,
         listAgentSkills,
       );
       final now = DateTime(2026);
@@ -109,20 +103,10 @@ void main() {
         ),
       ).thenAnswer((_) async => [loadedSkill]);
       when(
-        () => conversations.getConversationById('conversation-1'),
-      ).thenAnswer(
-        (_) async => ConversationEntity(
-          id: 'conversation-1',
-          title: 'Conversation',
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          isPinned: false,
-          createdAt: now,
-          updatedAt: now,
-          agentId: 'agent-1',
         ),
-      );
-      when(
-        () => agents.getAgentById('agent-1'),
       ).thenAnswer(
         (_) async => AgentEntity(
           id: 'agent-1',
@@ -155,17 +139,11 @@ void main() {
 
     test('skips selected agent from another workspace', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
-      final conversations = _MockConversationRepository();
-      final agents = _MockAgentsRepository();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final usecase = BuildSkillContextMessagesService(
         listUseCase,
-        conversations,
-        agents,
         listAgentSkills,
       );
-      final now = DateTime(2026);
-
       when(
         () => listUseCase.call(
           conversationId: any(named: 'conversationId'),
@@ -174,28 +152,12 @@ void main() {
         ),
       ).thenAnswer((_) async => const []);
       when(
-        () => conversations.getConversationById('conversation-1'),
-      ).thenAnswer(
-        (_) async => ConversationEntity(
-          id: 'conversation-1',
-          title: 'Conversation',
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          isPinned: false,
-          createdAt: now,
-          updatedAt: now,
-          agentId: 'agent-1',
         ),
-      );
-      when(() => agents.getAgentById('agent-1')).thenAnswer(
-        (_) async => AgentEntity(
-          id: 'agent-1',
-          workspaceId: 'workspace-2',
-          name: 'Agent',
-          content: 'Cross workspace prompt',
-          skills: const [],
-          createdAt: now,
-          updatedAt: now,
-        ),
+      ).thenAnswer(
+        (_) async => null,
       );
       when(
         () => listAgentSkills.call(
@@ -216,11 +178,6 @@ void main() {
 
 class _MockListAvailableSkillsUsecase extends Mock
     implements ListAvailableSkillsUsecase {}
-
-class _MockConversationRepository extends Mock
-    implements ConversationRepository {}
-
-class _MockAgentsRepository extends Mock implements AgentsRepository {}
 
 class _MockListConversationAgentSkillsUsecase extends Mock
     implements ListConversationAgentSkillsUsecase {}

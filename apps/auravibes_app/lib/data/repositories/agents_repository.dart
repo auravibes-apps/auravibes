@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
+import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 import 'package:drift/drift.dart';
 
 const _agentContentEmpty = 'Agent content cannot be empty';
@@ -9,11 +10,12 @@ const _agentDescriptionTooLong =
 const _agentNameEmpty = 'Agent name cannot be empty';
 const _unknownAgentValidationError = 'Unknown validation error';
 
-class AgentsRepository {
+class AgentsRepository implements AgentRepository {
   AgentsRepository(this._database);
 
   final AppDatabase _database;
 
+  @override
   Stream<List<AgentEntity>> watchAgentsByWorkspace(String workspaceId) {
     return _database.agentsDao
         .watchAgentsByWorkspace(workspaceId)
@@ -22,12 +24,14 @@ class AgentsRepository {
         );
   }
 
+  @override
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) async {
     final rows = await _database.agentsDao.getAgentsByWorkspace(workspaceId);
 
     return _mapAgentRows(rows);
   }
 
+  @override
   Future<AgentEntity?> getAgentById(String agentId) async {
     final row = await _database.agentsDao.getAgentById(agentId);
     if (row == null) return null;
@@ -35,6 +39,7 @@ class AgentsRepository {
     return _mapToAgent(row);
   }
 
+  @override
   Future<AgentEntity> createAgent(
     String workspaceId,
     AgentToCreate agent,
@@ -56,6 +61,7 @@ class AgentsRepository {
     return _mapToAgent(created);
   }
 
+  @override
   Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
     _validateAgentToUpdate(agent);
 
@@ -75,6 +81,7 @@ class AgentsRepository {
     return _mapToAgent(updated);
   }
 
+  @override
   Future<bool> deleteAgent(String agentId) => _database.agentsDao.deleteAgent(
     agentId,
   );

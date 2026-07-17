@@ -1,0 +1,14 @@
+class: WorkspaceAuditRecord
+table: workspace_audit_record
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  sequence: int
+  actorUserId: String
+  operation: String
+  targetKind: String?
+  targetId: String?
+  createdAt: DateTime
+indexes:
+  workspace_audit_record_workspace_idx:
+    fields: workspaceId, sequence
+    unique: true

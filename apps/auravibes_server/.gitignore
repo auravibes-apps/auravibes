@@ -1,6 +1,13 @@
-# Files and directories created by pub
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .packages
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
 
 # Conventional directory for build outputs
 build/
@@ -16,3 +23,6 @@ config/passwords.yaml
 
 # Firebase service account key for Firebase auth
 config/firebase_service_account_key.json
+
+# env
+.env

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/add_tool_modal.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -11,6 +12,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 const _wsId = 'ws1';
 
@@ -80,6 +82,7 @@ List<Object> _dataOverride([
   ];
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _RecordingWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   UserToolType? _addedTool;
 
@@ -94,6 +97,7 @@ class _RecordingWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   bool hasAdded(UserToolType toolType) => _addedTool == toolType;
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 void main() {
   test('constructor stores workspaceId', () {
     const modal = AddToolModal(workspaceId: _wsId);

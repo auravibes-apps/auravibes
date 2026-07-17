@@ -190,6 +190,7 @@ void main() {
     var mcpManagerService = McpManagerService();
     AppDatabase? database;
     var container = ProviderContainer();
+    ProviderSubscription<List<McpConnectionState>>? subscription;
 
     AppDatabase getDatabase() =>
         database ?? fail('Expected test database to be initialized');
@@ -212,9 +213,15 @@ void main() {
           ),
         ],
       );
+      subscription = container.listen(mcpConnectionProvider, (_, _) {
+        final _ = Object();
+      });
     });
 
-    tearDown(() => container.dispose());
+    tearDown(() {
+      subscription?.close();
+      container.dispose();
+    });
 
     test('initial state is empty list', () {
       final state = container.read(mcpConnectionProvider);

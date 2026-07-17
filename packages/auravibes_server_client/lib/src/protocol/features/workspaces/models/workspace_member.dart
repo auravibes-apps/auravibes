@@ -18,7 +18,9 @@ abstract class WorkspaceMember implements _i1.SerializableModel {
     required this.workspaceId,
     required this.userId,
     required this.role,
+    required this.revision,
     required this.createdAt,
+    required this.updatedAt,
     this.removedAt,
   });
 
@@ -27,7 +29,9 @@ abstract class WorkspaceMember implements _i1.SerializableModel {
     required int workspaceId,
     required String userId,
     required String role,
+    required int revision,
     required DateTime createdAt,
+    required DateTime updatedAt,
     DateTime? removedAt,
   }) = _WorkspaceMemberImpl;
 
@@ -37,8 +41,12 @@ abstract class WorkspaceMember implements _i1.SerializableModel {
       workspaceId: jsonSerialization['workspaceId'] as int,
       userId: jsonSerialization['userId'] as String,
       role: jsonSerialization['role'] as String,
+      revision: jsonSerialization['revision'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
+      ),
+      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+        jsonSerialization['updatedAt'],
       ),
       removedAt: jsonSerialization['removedAt'] == null
           ? null
@@ -57,7 +65,11 @@ abstract class WorkspaceMember implements _i1.SerializableModel {
 
   String role;
 
+  int revision;
+
   DateTime createdAt;
+
+  DateTime updatedAt;
 
   DateTime? removedAt;
 
@@ -69,7 +81,9 @@ abstract class WorkspaceMember implements _i1.SerializableModel {
     int? workspaceId,
     String? userId,
     String? role,
+    int? revision,
     DateTime? createdAt,
+    DateTime? updatedAt,
     DateTime? removedAt,
   });
   @override
@@ -80,7 +94,9 @@ abstract class WorkspaceMember implements _i1.SerializableModel {
       'workspaceId': workspaceId,
       'userId': userId,
       'role': role,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
       if (removedAt != null) 'removedAt': removedAt?.toJson(),
     };
   }
@@ -99,14 +115,18 @@ class _WorkspaceMemberImpl extends WorkspaceMember {
     required int workspaceId,
     required String userId,
     required String role,
+    required int revision,
     required DateTime createdAt,
+    required DateTime updatedAt,
     DateTime? removedAt,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
          userId: userId,
          role: role,
+         revision: revision,
          createdAt: createdAt,
+         updatedAt: updatedAt,
          removedAt: removedAt,
        );
 
@@ -119,7 +139,9 @@ class _WorkspaceMemberImpl extends WorkspaceMember {
     int? workspaceId,
     String? userId,
     String? role,
+    int? revision,
     DateTime? createdAt,
+    DateTime? updatedAt,
     Object? removedAt = _Undefined,
   }) {
     return WorkspaceMember(
@@ -127,7 +149,9 @@ class _WorkspaceMemberImpl extends WorkspaceMember {
       workspaceId: workspaceId ?? this.workspaceId,
       userId: userId ?? this.userId,
       role: role ?? this.role,
+      revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       removedAt: removedAt is DateTime? ? removedAt : this.removedAt,
     );
   }

@@ -1,0 +1,11 @@
+class: ConversationSummary
+fields:
+  id: String
+  title: String
+  isPinned: bool
+  modelId: String?
+  agentId: String?
+  parentConversationId: String?
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime

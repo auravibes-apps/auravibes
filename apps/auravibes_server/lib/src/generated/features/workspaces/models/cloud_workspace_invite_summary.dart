@@ -19,6 +19,7 @@ abstract class CloudWorkspaceInviteSummary
     required this.email,
     required this.role,
     required this.invitedByUserId,
+    required this.revision,
     required this.createdAt,
     required this.expiresAt,
   });
@@ -28,6 +29,7 @@ abstract class CloudWorkspaceInviteSummary
     required String email,
     required String role,
     required String invitedByUserId,
+    required int revision,
     required DateTime createdAt,
     required DateTime expiresAt,
   }) = _CloudWorkspaceInviteSummaryImpl;
@@ -40,6 +42,7 @@ abstract class CloudWorkspaceInviteSummary
       email: jsonSerialization['email'] as String,
       role: jsonSerialization['role'] as String,
       invitedByUserId: jsonSerialization['invitedByUserId'] as String,
+      revision: jsonSerialization['revision'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -57,6 +60,8 @@ abstract class CloudWorkspaceInviteSummary
 
   String invitedByUserId;
 
+  int revision;
+
   DateTime createdAt;
 
   DateTime expiresAt;
@@ -69,6 +74,7 @@ abstract class CloudWorkspaceInviteSummary
     String? email,
     String? role,
     String? invitedByUserId,
+    int? revision,
     DateTime? createdAt,
     DateTime? expiresAt,
   });
@@ -80,6 +86,7 @@ abstract class CloudWorkspaceInviteSummary
       'email': email,
       'role': role,
       'invitedByUserId': invitedByUserId,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
       'expiresAt': expiresAt.toJson(),
     };
@@ -93,6 +100,7 @@ abstract class CloudWorkspaceInviteSummary
       'email': email,
       'role': role,
       'invitedByUserId': invitedByUserId,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
       'expiresAt': expiresAt.toJson(),
     };
@@ -110,6 +118,7 @@ class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
     required String email,
     required String role,
     required String invitedByUserId,
+    required int revision,
     required DateTime createdAt,
     required DateTime expiresAt,
   }) : super._(
@@ -117,6 +126,7 @@ class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
          email: email,
          role: role,
          invitedByUserId: invitedByUserId,
+         revision: revision,
          createdAt: createdAt,
          expiresAt: expiresAt,
        );
@@ -130,6 +140,7 @@ class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
     String? email,
     String? role,
     String? invitedByUserId,
+    int? revision,
     DateTime? createdAt,
     DateTime? expiresAt,
   }) {
@@ -138,6 +149,7 @@ class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
       email: email ?? this.email,
       role: role ?? this.role,
       invitedByUserId: invitedByUserId ?? this.invitedByUserId,
+      revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
       expiresAt: expiresAt ?? this.expiresAt,
     );
