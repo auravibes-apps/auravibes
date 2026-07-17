@@ -2,10 +2,18 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/relative_time_formatter.dart';
@@ -14,7 +22,24 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+  cloudConversationUsecase,
+])
 class ChatListWidget extends ConsumerWidget {
   const ChatListWidget({required this.workspaceId, super.key});
 
@@ -53,6 +78,21 @@ class ChatListWidget extends ConsumerWidget {
   }
 }
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 class _ChatListEmptyState extends StatelessWidget {
   const _ChatListEmptyState({required this.workspaceId});
 
@@ -101,6 +141,22 @@ class _ChatListEmptyState extends StatelessWidget {
   }
 }
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+  cloudConversationUsecase,
+])
 class _ChatTile extends ConsumerStatefulWidget {
   const _ChatTile({required this.chat, required this.workspaceId});
 
@@ -124,9 +180,18 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     final confirmed = await showDeleteConversationConfirmDialog(context);
     if (!confirmed) return;
 
+    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    if (cloud != null) {
+      await cloud.delete(widget.chat);
+
+      return;
+    }
+
     final _ = await ref
         .read(conversationRepositoryProvider)
         .deleteConversation(widget.chat.id);
+
+    return;
   }
 
   @override

@@ -60,6 +60,22 @@ final class GroupedConversationToolsNotifierProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = conversationToolsProvider;
+  static final $allTransitiveDependencies1 =
+      ConversationToolsNotifierProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      ConversationToolsNotifierProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies3 =
+      ConversationToolsNotifierProvider.$allTransitiveDependencies2;
+  static final $allTransitiveDependencies4 =
+      ConversationToolsNotifierProvider.$allTransitiveDependencies3;
+  static final $allTransitiveDependencies5 = toolsGroupsRepositoryProvider;
+  static final $allTransitiveDependencies6 = mcpConnectionProvider;
+  static final $allTransitiveDependencies7 =
+      McpConnectionNotifierProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies8 =
+      McpConnectionNotifierProvider.$allTransitiveDependencies3;
+
   @override
   String debugGetCreateSourceHash() => _$groupedConversationToolsNotifierHash();
 
@@ -88,7 +104,7 @@ final class GroupedConversationToolsNotifierProvider
 }
 
 String _$groupedConversationToolsNotifierHash() =>
-    r'f337e6c747d07b98d0388e4e1a769c63a563796d';
+    r'419c013de1e9ca5cf72c6a733300bf773e5616c7';
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
@@ -114,8 +130,22 @@ final class GroupedConversationToolsNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'groupedConversationToolsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[
+          conversationToolsProvider,
+          toolsGroupsRepositoryProvider,
+          mcpConnectionProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies0,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies1,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies2,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies3,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies4,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies5,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies6,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies7,
+          GroupedConversationToolsNotifierProvider.$allTransitiveDependencies8,
+        },
         isAutoDispose: true,
       );
 

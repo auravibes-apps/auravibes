@@ -1,6 +1,5 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-// ignore_for_file: provider_dependencies
 // Required: provider unit tests read scoped providers directly.
 
 import 'dart:async';
@@ -11,6 +10,8 @@ import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod_annotation/experimental/scope.dart';
@@ -168,6 +169,11 @@ class _MessagesProvidersFixture {
     _repository = repository;
     _container = ProviderContainer(
       overrides: [
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+          ),
+        ),
         conversationSelectedProvider.overrideWithValue('conv-1'),
         messageRepositoryProvider.overrideWithValue(repository),
       ],
@@ -222,7 +228,7 @@ void main() {
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(id: 'm2', content: 'hello', isUser: false),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await fixture.container.read(chatMessagesProvider.future);
 
       expect(fixture.container.read(chatMessageIdsProvider), ['m1', 'm2']);
     });
@@ -246,7 +252,7 @@ void main() {
       fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
       ]);
-      await Future<void>.delayed(Duration.zero);
+      await fixture.container.read(chatMessagesProvider.future);
 
       expect(
         fixture.container.read(isMessageStreamingProvider('m1')),

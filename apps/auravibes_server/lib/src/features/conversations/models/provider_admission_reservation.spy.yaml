@@ -1,0 +1,16 @@
+class: ProviderAdmissionReservation
+table: provider_admission_reservation
+fields:
+  jobId: int, relation(parent=conversation_job, onDelete=Cascade)
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  providerId: String
+  leaseToken: String
+  expiresAt: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  provider_admission_reservation_job_idx:
+    fields: jobId
+    unique: true
+  provider_admission_reservation_active_idx:
+    fields: expiresAt, workspaceId

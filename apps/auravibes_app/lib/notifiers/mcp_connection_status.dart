@@ -3,20 +3,25 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_mcp_server_to_create_use_case.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
+import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -156,9 +161,17 @@ class McpToolIdComponents {
 /// - toolIdentifier: Original tool identifier from the MCP server
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
-@Riverpod(keepAlive: true)
+@Riverpod(
+  dependencies: [
+    mcpServersRepository,
+    workspaceSession,
+    cloudWorkspaceStateGateway,
+    WorkspaceToolsNotifier,
+  ],
+)
 class McpConnectionNotifier extends _$McpConnectionNotifier {
-  McpManagerService _mcpManagerService = McpManagerService();
+  McpManagerService? _mcpManagerService;
+  var _isCloud = false;
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
   final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
@@ -174,7 +187,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         sync: true,
       );
     }
-    _mcpManagerService = ref.watch(mcpManagerServiceProvider);
+    _isCloud = ref.watch(mcpServersRepositoryProvider) is CloudToolsRepository;
+    _mcpManagerService = _isCloud ? null : ref.watch(mcpManagerServiceProvider);
     ref
       ..onDispose(_onDispose)
       ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
@@ -207,6 +221,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
   }) async {
+    if (_isCloud) {
+      await _addCloudMcpServer(serverToCreate, workspaceId);
+
+      return;
+    }
+    final manager = _requiredMcpManager;
     final serverInfo =
         await BuildMcpServerToCreateUseCase(
           authenticator: OAuthAuthenticate(
@@ -236,9 +256,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     var mcpTools = const <McpToolInfo>[];
     McpServerEntity savedServer;
     try {
-      client = await _mcpManagerService.connectMcp(serverInfo);
+      client = await manager.connectMcp(serverInfo);
 
-      mcpTools = await _mcpManagerService.getTools(client);
+      mcpTools = await manager.getTools(client);
 
       final repository = ref.read(mcpServersRepositoryProvider);
       savedServer = await repository.addMcpServerWithTools(
@@ -248,7 +268,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     } on Object {
       if (client != null) {
-        _mcpManagerService.disconnect(client);
+        manager.disconnect(client);
       }
       if (serviceConnectionId != null) {
         await serviceConnectionRepository.deleteOwnedMcpCredential(
@@ -259,7 +279,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     }
 
     if (_isDisposed) {
-      _mcpManagerService.disconnect(client);
+      manager.disconnect(client);
 
       return;
     }
@@ -296,7 +316,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     if (connection != null) {
       unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-      _mcpManagerService.disconnect(connection.client);
+      _mcpManagerService?.disconnect(connection.client);
     }
 
     // Remove from state.
@@ -313,10 +333,15 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// If absent (e.g. after cold start), loads the server from the
   /// repository and creates a fresh connection.
   Future<void> reconnectMcpServer(String serverId) async {
+    if (_isCloud) {
+      await _discoverCloudMcp(serverId);
+
+      return;
+    }
     final connection = state.where((c) => c.server.id == serverId).firstOrNull;
     if (connection != null) {
       unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-      _mcpManagerService.disconnect(connection.client);
+      _requiredMcpManager.disconnect(connection.client);
       await _connectToMcp(connection.server);
 
       return;
@@ -331,6 +356,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Disconnect from a specific MCP server without deleting.
   void disconnectMcpServer(String serverId) {
+    if (_isCloud) return;
     final index = state.indexWhere(
       (c) => c.server.id == serverId,
     );
@@ -338,7 +364,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
     final connection = state[index];
     unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-    _mcpManagerService.disconnect(connection.client);
+    _requiredMcpManager.disconnect(connection.client);
 
     _setState([
       ...state.sublist(0, index),
@@ -363,7 +389,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     required String toolName,
   }) {
     final connection = getConnection(mcpServerId);
-    if (connection == null || !connection.isReady) {
+    if (connection == null ||
+        connection.status != McpConnectionStatus.connected ||
+        (!_isCloud && connection.client == null)) {
       return null;
     }
 
@@ -432,6 +460,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
   }) async {
+    if (_isCloud) {
+      throw const UnsupportedWorkspaceCapabilityException();
+    }
     final connection = getConnection(mcpServerId);
     if (connection == null) {
       throw Exception('MCP server not found: $mcpServerId');
@@ -455,7 +486,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       throw Exception('MCP server not connected: $mcpServerId');
     }
 
-    return _mcpManagerService.callToolString(
+    return _requiredMcpManager.callToolString(
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
@@ -492,7 +523,11 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           continue;
         }
 
-        await _connectToMcp(server);
+        if (_isCloud) {
+          await _discoverCloudMcp(server.id, server: server);
+        } else {
+          await _connectToMcp(server);
+        }
       }
     } on Exception catch (e, stackTrace) {
       _logger.warning(
@@ -545,11 +580,11 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       final serverToConnect = server.copyWith(
         authenticationType: authenticationType,
       );
-      connectedClient = await _mcpManagerService.connectMcp(
+      connectedClient = await _requiredMcpManager.connectMcp(
         serverToConnect,
       );
 
-      final mcpTools = await _mcpManagerService.getTools(
+      final mcpTools = await _requiredMcpManager.getTools(
         connectedClient,
       );
       if (_isDisposed) {
@@ -588,7 +623,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       );
     } finally {
       if (connectedClient != null) {
-        _mcpManagerService.disconnect(connectedClient);
+        _requiredMcpManager.disconnect(connectedClient);
       }
     }
   }
@@ -622,8 +657,10 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Dispose all active connections.
   void _disposeAllConnections() {
+    final manager = _mcpManagerService;
+    if (manager == null) return;
     for (final connection in _lastKnownState) {
-      _mcpManagerService.disconnect(connection.client);
+      manager.disconnect(connection.client);
     }
     for (final subscription in _tokenSubscriptions.values) {
       unawaited(subscription.cancel());
@@ -670,6 +707,103 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         stackTrace,
       );
     }
+  }
+
+  McpManagerService get _requiredMcpManager =>
+      _mcpManagerService ??
+      (throw const UnsupportedWorkspaceCapabilityException());
+
+  CloudToolsRepository get _cloudRepository {
+    final repository = ref.read(mcpServersRepositoryProvider);
+    if (repository case final CloudToolsRepository cloudRepository) {
+      return cloudRepository;
+    }
+
+    throw const UnsupportedWorkspaceCapabilityException();
+  }
+
+  Future<void> _addCloudMcpServer(
+    McpServerFormToCreate server,
+    String workspaceId,
+  ) async {
+    final result = await _cloudRepository.createMcpServer(
+      workspaceId: workspaceId,
+      server: server,
+    );
+    if (_isDisposed) return;
+    _setCloudDiscovery(result.server, result.discovery);
+    ref.invalidate(workspaceToolsProvider(workspaceId));
+  }
+
+  Future<void> _discoverCloudMcp(
+    String serverId, {
+    McpServerEntity? server,
+  }) async {
+    final repository = _cloudRepository;
+    final resolvedServer =
+        server ?? await repository.getMcpServerById(serverId);
+    if (resolvedServer == null || _isDisposed) return;
+    _upsertConnection(
+      McpConnectionState(
+        server: resolvedServer,
+        status: McpConnectionStatus.connecting,
+      ),
+    );
+    try {
+      final discovery = await repository.discoverMcpServer(serverId);
+      if (_isDisposed) return;
+      _setCloudDiscovery(resolvedServer, discovery);
+    } on Exception catch (error) {
+      if (_isDisposed) return;
+      _upsertConnection(
+        McpConnectionState(
+          server: resolvedServer,
+          status: McpConnectionStatus.error,
+          errorMessage: error.toString(),
+        ),
+      );
+    }
+  }
+
+  void _setCloudDiscovery(
+    McpServerEntity server,
+    DiscoverMcpServerResult discovery,
+  ) {
+    final connected = discovery.health == McpServerHealth.healthy;
+    _upsertConnection(
+      McpConnectionState(
+        server: server,
+        status: connected
+            ? McpConnectionStatus.connected
+            : McpConnectionStatus.error,
+        tools: [
+          for (final tool in discovery.tools)
+            McpToolInfo(
+              toolName: tool.name,
+              description: tool.description ?? '',
+              inputSchema:
+                  jsonDecode(tool.inputSchemaJson) as Map<String, dynamic>,
+            ),
+        ],
+        errorMessage: connected ? null : discovery.errorCode,
+      ),
+    );
+  }
+
+  void _upsertConnection(McpConnectionState connection) {
+    final index = state.indexWhere(
+      (item) => item.server.id == connection.server.id,
+    );
+    if (index < 0) {
+      _setState([...state, connection]);
+
+      return;
+    }
+    _setState([
+      ...state.sublist(0, index),
+      connection,
+      ...state.sublist(index + 1),
+    ]);
   }
 
   void _listenTokenUpdates({

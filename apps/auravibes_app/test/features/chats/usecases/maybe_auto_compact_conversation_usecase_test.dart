@@ -21,7 +21,11 @@ class MockConversationRepository extends Mock
     implements ConversationRepository {}
 
 class MockWorkspaceModelSelectionsRepository extends Mock
-    implements WorkspaceModelSelectionRepository {}
+    implements WorkspaceModelSelectionRepository {
+  @override
+  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
+      getWorkspaceModelSelectionById(id);
+}
 
 class MockApiModelRepository extends Mock implements ApiModelRepository {}
 
@@ -73,11 +77,11 @@ class MaybeAutoCompactFixture {
     _mockShouldCompact = mockShouldCompact;
     _mockCompact = mockCompact;
     _usecase = MaybeAutoCompactConversationUsecase(
+      compactConversationUsecase: mockCompact,
       conversationRepository: mockConvRepo,
-      workspaceModelSelectionsRepository: mockModelRepo,
+      modelSelectionStore: (_) async => mockModelRepo,
       apiModelRepository: mockApiModelRepo,
       shouldCompactConversationUsecase: mockShouldCompact,
-      compactConversationUsecase: mockCompact,
     );
   }
 }

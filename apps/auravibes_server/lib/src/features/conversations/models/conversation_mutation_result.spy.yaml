@@ -1,0 +1,6 @@
+class: ConversationMutationResult
+fields:
+  turnId: String?
+  conversationId: String
+  revision: int
+  status: String

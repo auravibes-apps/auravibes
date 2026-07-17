@@ -4,12 +4,15 @@ import 'package:auravibes_app/features/tools/models/conversation_tools_group_wit
 import 'package:auravibes_app/features/tools/notifiers/grouped_conversation_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/widgets/conversation_tools_group_card.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_empty_state.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 /// Modal for managing conversation tools.
 ///
@@ -18,6 +21,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// - MCP status indicators for MCP groups
 /// - Group-level toggle to enable/disable all tools at once
 /// - Reconnect button for MCP groups with connection issues
+@Dependencies([workspaceSession])
 class ToolsManagementModal extends ConsumerWidget {
   const ToolsManagementModal({
     required this.workspaceId,
@@ -30,6 +34,19 @@ class ToolsManagementModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref
+        .watch(workspaceSessionProvider)
+        .capabilities
+        .conversationToolOverrides) {
+      return const Dialog(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: TextLocale(
+            LocaleKeys.workspace_capabilities_unsupported_error,
+          ),
+        ),
+      );
+    }
     final groupedToolsAsync = ref.watch(
       groupedConversationToolsProvider(
         workspaceId: workspaceId,
@@ -94,8 +111,7 @@ class ToolsManagementModal extends ConsumerWidget {
                 AsyncError(:final error) => Center(
                   child: AuraText(
                     child: TextLocale(
-                      LocaleKeys.tools_screen_load_error,
-                      args: [error.toString()],
+                      cloudErrorLocalizationKey(error),
                     ),
                     tint: AuraTint.error,
                   ),

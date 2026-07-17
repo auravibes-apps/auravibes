@@ -18,6 +18,8 @@ abstract class CloudWorkspaceSummary
     required this.id,
     required this.name,
     required this.role,
+    required this.revision,
+    required this.sequence,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -26,6 +28,8 @@ abstract class CloudWorkspaceSummary
     required int id,
     required String name,
     required String role,
+    required int revision,
+    required int sequence,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _CloudWorkspaceSummaryImpl;
@@ -37,6 +41,8 @@ abstract class CloudWorkspaceSummary
       id: jsonSerialization['id'] as int,
       name: jsonSerialization['name'] as String,
       role: jsonSerialization['role'] as String,
+      revision: jsonSerialization['revision'] as int,
+      sequence: jsonSerialization['sequence'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -52,6 +58,10 @@ abstract class CloudWorkspaceSummary
 
   String role;
 
+  int revision;
+
+  int sequence;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -63,6 +73,8 @@ abstract class CloudWorkspaceSummary
     int? id,
     String? name,
     String? role,
+    int? revision,
+    int? sequence,
     DateTime? createdAt,
     DateTime? updatedAt,
   });
@@ -73,6 +85,8 @@ abstract class CloudWorkspaceSummary
       'id': id,
       'name': name,
       'role': role,
+      'revision': revision,
+      'sequence': sequence,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -85,6 +99,8 @@ abstract class CloudWorkspaceSummary
       'id': id,
       'name': name,
       'role': role,
+      'revision': revision,
+      'sequence': sequence,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -101,12 +117,16 @@ class _CloudWorkspaceSummaryImpl extends CloudWorkspaceSummary {
     required int id,
     required String name,
     required String role,
+    required int revision,
+    required int sequence,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super._(
          id: id,
          name: name,
          role: role,
+         revision: revision,
+         sequence: sequence,
          createdAt: createdAt,
          updatedAt: updatedAt,
        );
@@ -119,6 +139,8 @@ class _CloudWorkspaceSummaryImpl extends CloudWorkspaceSummary {
     int? id,
     String? name,
     String? role,
+    int? revision,
+    int? sequence,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -126,6 +148,8 @@ class _CloudWorkspaceSummaryImpl extends CloudWorkspaceSummary {
       id: id ?? this.id,
       name: name ?? this.name,
       role: role ?? this.role,
+      revision: revision ?? this.revision,
+      sequence: sequence ?? this.sequence,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

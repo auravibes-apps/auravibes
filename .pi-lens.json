@@ -1,0 +1,10 @@
+{
+  "ignore": [
+    "**/*.g.dart",
+    "**/*.freezed.dart",
+    "**/locale_keys.dart",
+    "**/generated_plugin_registrant.dart",
+    "**/.dart_tool/**",
+    "**/build/**"
+  ]
+}

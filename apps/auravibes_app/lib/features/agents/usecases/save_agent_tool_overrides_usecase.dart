@@ -2,11 +2,12 @@ import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class SaveAgentToolOverridesUsecase {
   const SaveAgentToolOverridesUsecase(this._repository);
 
-  final AgentToolsRepository _repository;
+  final AgentToolsRepositoryContract _repository;
 
   Future<void> call({
     required String agentId,
@@ -41,9 +42,13 @@ class SaveAgentToolOverridesUsecase {
   }
 }
 
+@Dependencies([agentToolsRepository])
 final saveAgentToolOverridesUsecaseProvider =
-    Provider<SaveAgentToolOverridesUsecase>((ref) {
-      return SaveAgentToolOverridesUsecase(
-        ref.watch(agentToolsRepositoryProvider),
-      );
-    });
+    Provider<SaveAgentToolOverridesUsecase>(
+      (ref) {
+        return SaveAgentToolOverridesUsecase(
+          ref.watch(agentToolsRepositoryProvider),
+        );
+      },
+      dependencies: [agentToolsRepositoryProvider],
+    );

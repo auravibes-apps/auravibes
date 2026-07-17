@@ -107,13 +107,19 @@ class _FakeRepository implements WorkspaceRepository {
   Future<WorkspaceEntity?> getCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async => null;
 
   @override
   Future<WorkspaceEntity?> getCloudWorkspaceMirrorByCloudId(
-    String cloudWorkspaceId,
-  ) async => _workspaces.firstWhereOrNull(
-    (w) => w.cloudWorkspaceId == cloudWorkspaceId,
+    String cloudWorkspaceId, {
+    required String cloudAccountId,
+    required String serverUrl,
+  }) async => _workspaces.firstWhereOrNull(
+    (w) =>
+        w.cloudWorkspaceId == cloudWorkspaceId &&
+        w.cloudAccountId == cloudAccountId &&
+        w.url == serverUrl,
   );
 
   @override
@@ -138,14 +144,20 @@ class _FakeRepository implements WorkspaceRepository {
   Future<bool> deleteCloudWorkspaceMirror({
     required String cloudWorkspaceId,
     required String cloudAccountId,
+    required String serverUrl,
   }) async => true;
 
   @override
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
-    String cloudAccountId,
-  ) async {
+    String cloudAccountId, {
+    String? serverUrl,
+  }) async {
     final before = _workspaces.length;
-    _workspaces.removeWhere((w) => w.cloudAccountId == cloudAccountId);
+    _workspaces.removeWhere(
+      (w) =>
+          w.cloudAccountId == cloudAccountId &&
+          (serverUrl == null || w.url == serverUrl),
+    );
 
     return before - _workspaces.length;
   }
@@ -329,7 +341,7 @@ void main() {
       expect(remaining, isEmpty);
     });
 
-    test('throws when deleting active workspace', () async {
+    test('deletes active workspace', () async {
       final _ = await fixture.repository.createWorkspace(
         const WorkspaceToCreate(name: 'WS1', type: WorkspaceType.local),
       );
@@ -337,13 +349,9 @@ void main() {
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
-      expect(
-        () => fixture.usecase.call(
-          id: 'ws-1',
-          activeWorkspaceId: 'ws-1',
-        ),
-        throwsA(isA<WorkspaceDeleteActiveException>()),
-      );
+      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
+
+      expect(await fixture.repository.getWorkspaceCount(), 1);
     });
 
     test('allows deleting active workspace when it is the last one', () async {

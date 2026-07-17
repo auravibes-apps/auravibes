@@ -1,0 +1,4 @@
+class: ModelSyncResult
+fields:
+  providerId: String
+  modelIds: List<String>

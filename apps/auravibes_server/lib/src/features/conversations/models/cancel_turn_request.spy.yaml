@@ -1,0 +1,6 @@
+class: CancelTurnRequest
+fields:
+  workspaceId: int
+  requestId: String
+  turnId: String
+  expectedTurnRevision: int

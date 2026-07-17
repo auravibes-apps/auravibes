@@ -20,7 +20,13 @@ part 'grouped_conversation_tools_notifier.g.dart';
 /// - Enriches MCP groups with their connection state
 /// - Filters out empty groups
 /// - Sorts groups: Default first, then MCP errors, then by creation date
-@riverpod
+@Riverpod(
+  dependencies: [
+    ConversationToolsNotifier,
+    toolsGroupsRepository,
+    McpConnectionNotifier,
+  ],
+)
 class GroupedConversationToolsNotifier
     extends _$GroupedConversationToolsNotifier {
   @override

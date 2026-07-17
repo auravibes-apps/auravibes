@@ -7,14 +7,20 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
+import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_app.dart';
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -68,11 +74,31 @@ void main() {
 
     await tester.pumpWidget(
       TestableApp(
+        workspaceId: fixture.workspace.id,
         child: AgentDetailScreen(workspaceId: fixture.workspace.id),
-        overrides: [appDatabaseProvider.overrideWithValue(fixture.database)],
+        overrides: [
+          appDatabaseProvider.overrideWithValue(fixture.database),
+          cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+          workspaceSkillsProvider(fixture.workspace.id).overrideWith(
+            (_) async => const [
+              WorkspaceSkill(
+                id: 'summarizer',
+                slug: 'summarizer',
+                title: 'Summarizer',
+                description: 'Summarize things.',
+                source: SkillSource.user,
+                kind: SkillKind.template,
+                isEnabled: true,
+              ),
+            ],
+          ),
+          workspaceToolsRepositoryProvider.overrideWithValue(
+            WorkspaceToolsRepository(fixture.database),
+          ),
+        ],
       ),
     );
-    final _ = await tester.pumpAndSettle();
+    await _pumpUntilFound(tester, find.text('Prompt'));
 
     expect(find.text('Prompt'), findsOneWidget);
     expect(find.text('Edit prompt'), findsOneWidget);
@@ -108,4 +134,10 @@ void main() {
     expect(find.text('Summarizer: Search'), findsNothing);
     expect(find.text('Other workspace tools'), findsOneWidget);
   });
+}
+
+Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
+  for (var attempt = 0; attempt < 20 && finder.evaluate().isEmpty; attempt++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
 }

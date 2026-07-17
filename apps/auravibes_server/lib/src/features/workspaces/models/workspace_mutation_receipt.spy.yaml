@@ -1,0 +1,17 @@
+class: WorkspaceMutationReceipt
+table: workspace_mutation_receipt
+fields:
+  workspaceId: int?, relation(parent=cloud_workspace, onDelete=NoAction)
+  scopeKey: String
+  actorUserId: String
+  endpoint: String
+  requestId: String
+  requestHash: String
+  responseJson: String
+  createdAt: DateTime
+indexes:
+  workspace_mutation_receipt_request_idx:
+    fields: actorUserId, scopeKey, endpoint, requestId
+    unique: true
+  workspace_mutation_receipt_workspace_idx:
+    fields: workspaceId, createdAt

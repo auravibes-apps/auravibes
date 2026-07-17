@@ -2,18 +2,31 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_providers.g.dart';
 
-@riverpod
+@Riverpod(dependencies: [workspaceSession])
 Stream<ConversationEntity?> conversationByIdStream(
   Ref ref, {
   required String conversationId,
 }) {
-  final repo = ref.watch(conversationRepositoryProvider);
+  final session = ref.watch(workspaceSessionProvider);
+  if (session.cloud case final cloud?) {
+    return _cloudConversations(ref, cloud).map(
+      (conversations) => conversations
+          .where((conversation) => conversation.id == conversationId)
+          .firstOrNull,
+    );
+  }
 
-  return repo.watchConversationById(conversationId);
+  return ref
+      .watch(conversationRepositoryProvider)
+      .watchConversationById(conversationId);
 }
 
 @riverpod
@@ -21,20 +34,44 @@ Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,
   int? limit,
-}) {
-  final repo = ref.watch(conversationRepositoryProvider);
+}) async* {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  if (session.cloud case final cloud?) {
+    yield* _cloudConversations(ref, cloud).map(
+      (conversations) =>
+          conversations.take(limit ?? conversations.length).toList(),
+    );
 
-  return repo.watchConversationsByWorkspace(workspaceId, limit: limit);
+    return;
+  }
+
+  yield* ref
+      .watch(conversationRepositoryProvider)
+      .watchConversationsByWorkspace(workspaceId, limit: limit);
 }
 
-@riverpod
+@Riverpod(dependencies: [workspaceSession])
 Stream<List<ConversationEntity>> childConversationsStream(
   Ref ref, {
   required String parentConversationId,
 }) {
-  final repo = ref.watch(conversationRepositoryProvider);
+  final session = ref.watch(workspaceSessionProvider);
+  if (session.cloud case final cloud?) {
+    return _cloudConversations(ref, cloud).map(
+      (conversations) => conversations
+          .where(
+            (conversation) =>
+                conversation.parentConversationId == parentConversationId,
+          )
+          .toList(),
+    );
+  }
 
-  return repo.watchChildConversations(parentConversationId);
+  return ref
+      .watch(conversationRepositoryProvider)
+      .watchChildConversations(parentConversationId);
 }
 
 @riverpod
@@ -42,4 +79,41 @@ String? streamingTitle(Ref ref, String conversationId) {
   final titles = ref.watch(titlesStreamsProvider);
 
   return titles[conversationId];
+}
+
+Stream<List<ConversationEntity>> _cloudConversations(
+  Ref ref,
+  CloudWorkspaceRef cloud,
+) async* {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayForWorkspaceProvider(
+      cloud.localWorkspaceId,
+    ).future,
+  );
+  if (gateway == null) return;
+
+  yield (await CloudChatGateway(gateway).listConversations())
+      .map(
+        (conversation) =>
+            _cloudConversation(conversation, cloud.localWorkspaceId),
+      )
+      .toList();
+}
+
+ConversationEntity _cloudConversation(
+  ConversationSummary conversation,
+  String localWorkspaceId,
+) {
+  return ConversationEntity(
+    id: conversation.id,
+    title: conversation.title,
+    workspaceId: localWorkspaceId,
+    isPinned: conversation.isPinned,
+    createdAt: conversation.createdAt,
+    updatedAt: conversation.updatedAt,
+    revision: conversation.revision,
+    modelId: conversation.modelId,
+    agentId: conversation.agentId,
+    parentConversationId: conversation.parentConversationId,
+  );
 }

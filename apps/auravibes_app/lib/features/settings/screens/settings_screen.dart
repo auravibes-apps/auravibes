@@ -4,19 +4,23 @@
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
 import 'package:auravibes_app/features/settings/widgets/accent_color_section.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([workspaceSession])
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({required this.workspaceId, super.key});
 
   final String workspaceId;
 
   @override
+  @Dependencies([workspaceSession])
   Widget build(BuildContext context, WidgetRef ref) {
     final themeAsync = ref.watch(themeProvider);
     final currentTheme = themeAsync.asData?.value ?? AppTheme.system;

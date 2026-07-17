@@ -34,6 +34,8 @@ final class WorkspaceModelSelectionByIdProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+
   @override
   String debugGetCreateSourceHash() => _$workspaceModelSelectionByIdHash();
 
@@ -68,7 +70,7 @@ final class WorkspaceModelSelectionByIdProvider
 }
 
 String _$workspaceModelSelectionByIdHash() =>
-    r'b12148d228e92654c44d5de8b01c7f3fe823a2eb';
+    r'16f1026bd0c475a3a1ea981ea7641561c512fbf9';
 
 final class WorkspaceModelSelectionByIdFamily extends $Family
     with
@@ -80,8 +82,10 @@ final class WorkspaceModelSelectionByIdFamily extends $Family
     : super(
         retry: null,
         name: r'workspaceModelSelectionByIdProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          WorkspaceModelSelectionByIdProvider.$allTransitiveDependencies0,
+        ],
         isAutoDispose: true,
       );
 
@@ -111,6 +115,11 @@ final class ModelContextLimitProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
+
+  static final $allTransitiveDependencies0 =
+      workspaceModelSelectionByIdProvider;
+  static final $allTransitiveDependencies1 =
+      WorkspaceModelSelectionByIdProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$modelContextLimitHash();
@@ -144,7 +153,7 @@ final class ModelContextLimitProvider
   }
 }
 
-String _$modelContextLimitHash() => r'3aff8654283c89e3f3d0e772cab82693f4d80435';
+String _$modelContextLimitHash() => r'494c179a5623529c3c1b93c2f3ad6b066d07fe03';
 
 final class ModelContextLimitFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<int?>, String> {
@@ -152,8 +161,14 @@ final class ModelContextLimitFamily extends $Family
     : super(
         retry: null,
         name: r'modelContextLimitProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[
+          workspaceModelSelectionByIdProvider,
+          workspaceSessionProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          ModelContextLimitProvider.$allTransitiveDependencies0,
+          ModelContextLimitProvider.$allTransitiveDependencies1,
+        ],
         isAutoDispose: true,
       );
 

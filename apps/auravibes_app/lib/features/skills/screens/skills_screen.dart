@@ -5,8 +5,8 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
+import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -114,6 +114,9 @@ class SkillsScreen extends ConsumerWidget {
       source: skill.source,
       skillId: skill.id,
       isEnabled: isEnabled,
+      slug: skill.slug,
+      title: skill.title,
+      description: skill.description,
     );
     ref.invalidate(workspaceSkillsProvider(workspaceId));
   }
@@ -136,7 +139,7 @@ class SkillsScreen extends ConsumerWidget {
     );
     if (shouldDelete != true) return;
 
-    final _ = await ref.read(skillsRepositoryProvider).deleteSkill(skill.id);
+    await ref.read(deleteSkillProvider)(skill.id);
     ref.invalidate(workspaceSkillsProvider(workspaceId));
   }
 }

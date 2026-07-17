@@ -1,0 +1,8 @@
+class: ProviderAdmissionLock
+table: provider_admission_lock
+fields:
+  key: String
+indexes:
+  provider_admission_lock_key_idx:
+    fields: key
+    unique: true

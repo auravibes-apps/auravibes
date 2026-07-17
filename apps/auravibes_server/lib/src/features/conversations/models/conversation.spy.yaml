@@ -1,0 +1,23 @@
+class: Conversation
+table: conversation
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  stableId: String
+  title: String?
+  isPinned: bool
+  modelId: String?
+  agentId: String?
+  parentConversationStableId: String?
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime
+  deletedAt: DateTime?
+indexes:
+  conversation_workspace_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
+  conversation_workspace_idx:
+    fields: workspaceId, updatedAt
+  conversation_workspace_id_idx:
+    fields: workspaceId, id
+    unique: true

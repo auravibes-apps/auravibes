@@ -17,11 +17,15 @@ abstract class RenewWorkspaceInviteRequest
   RenewWorkspaceInviteRequest._({
     required this.workspaceId,
     required this.inviteId,
+    required this.requestId,
+    required this.expectedInviteRevision,
   });
 
   factory RenewWorkspaceInviteRequest({
     required int workspaceId,
     required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
   }) = _RenewWorkspaceInviteRequestImpl;
 
   factory RenewWorkspaceInviteRequest.fromJson(
@@ -30,6 +34,9 @@ abstract class RenewWorkspaceInviteRequest
     return RenewWorkspaceInviteRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       inviteId: jsonSerialization['inviteId'] as int,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedInviteRevision:
+          jsonSerialization['expectedInviteRevision'] as int,
     );
   }
 
@@ -37,12 +44,18 @@ abstract class RenewWorkspaceInviteRequest
 
   int inviteId;
 
+  String requestId;
+
+  int expectedInviteRevision;
+
   /// Returns a shallow copy of this [RenewWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   RenewWorkspaceInviteRequest copyWith({
     int? workspaceId,
     int? inviteId,
+    String? requestId,
+    int? expectedInviteRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -50,6 +63,8 @@ abstract class RenewWorkspaceInviteRequest
       '__className__': 'RenewWorkspaceInviteRequest',
       'workspaceId': workspaceId,
       'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
     };
   }
 
@@ -59,6 +74,8 @@ abstract class RenewWorkspaceInviteRequest
       '__className__': 'RenewWorkspaceInviteRequest',
       'workspaceId': workspaceId,
       'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
     };
   }
 
@@ -72,9 +89,13 @@ class _RenewWorkspaceInviteRequestImpl extends RenewWorkspaceInviteRequest {
   _RenewWorkspaceInviteRequestImpl({
     required int workspaceId,
     required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
   }) : super._(
          workspaceId: workspaceId,
          inviteId: inviteId,
+         requestId: requestId,
+         expectedInviteRevision: expectedInviteRevision,
        );
 
   /// Returns a shallow copy of this [RenewWorkspaceInviteRequest]
@@ -84,10 +105,15 @@ class _RenewWorkspaceInviteRequestImpl extends RenewWorkspaceInviteRequest {
   RenewWorkspaceInviteRequest copyWith({
     int? workspaceId,
     int? inviteId,
+    String? requestId,
+    int? expectedInviteRevision,
   }) {
     return RenewWorkspaceInviteRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       inviteId: inviteId ?? this.inviteId,
+      requestId: requestId ?? this.requestId,
+      expectedInviteRevision:
+          expectedInviteRevision ?? this.expectedInviteRevision,
     );
   }
 }

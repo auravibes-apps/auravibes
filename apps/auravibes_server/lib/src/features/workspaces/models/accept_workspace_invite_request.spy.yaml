@@ -1,3 +1,5 @@
 class: AcceptWorkspaceInviteRequest
 fields:
   inviteId: int
+  requestId: String
+  expectedInviteRevision: int

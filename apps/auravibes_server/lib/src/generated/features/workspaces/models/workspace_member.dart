@@ -19,7 +19,9 @@ abstract class WorkspaceMember
     required this.workspaceId,
     required this.userId,
     required this.role,
+    required this.revision,
     required this.createdAt,
+    required this.updatedAt,
     this.removedAt,
   });
 
@@ -28,7 +30,9 @@ abstract class WorkspaceMember
     required int workspaceId,
     required String userId,
     required String role,
+    required int revision,
     required DateTime createdAt,
+    required DateTime updatedAt,
     DateTime? removedAt,
   }) = _WorkspaceMemberImpl;
 
@@ -38,8 +42,12 @@ abstract class WorkspaceMember
       workspaceId: jsonSerialization['workspaceId'] as int,
       userId: jsonSerialization['userId'] as String,
       role: jsonSerialization['role'] as String,
+      revision: jsonSerialization['revision'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
+      ),
+      updatedAt: _i1.DateTimeJsonExtension.fromJson(
+        jsonSerialization['updatedAt'],
       ),
       removedAt: jsonSerialization['removedAt'] == null
           ? null
@@ -60,7 +68,11 @@ abstract class WorkspaceMember
 
   String role;
 
+  int revision;
+
   DateTime createdAt;
+
+  DateTime updatedAt;
 
   DateTime? removedAt;
 
@@ -75,7 +87,9 @@ abstract class WorkspaceMember
     int? workspaceId,
     String? userId,
     String? role,
+    int? revision,
     DateTime? createdAt,
+    DateTime? updatedAt,
     DateTime? removedAt,
   });
   @override
@@ -86,7 +100,9 @@ abstract class WorkspaceMember
       'workspaceId': workspaceId,
       'userId': userId,
       'role': role,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
       if (removedAt != null) 'removedAt': removedAt?.toJson(),
     };
   }
@@ -99,7 +115,9 @@ abstract class WorkspaceMember
       'workspaceId': workspaceId,
       'userId': userId,
       'role': role,
+      'revision': revision,
       'createdAt': createdAt.toJson(),
+      'updatedAt': updatedAt.toJson(),
       if (removedAt != null) 'removedAt': removedAt?.toJson(),
     };
   }
@@ -144,14 +162,18 @@ class _WorkspaceMemberImpl extends WorkspaceMember {
     required int workspaceId,
     required String userId,
     required String role,
+    required int revision,
     required DateTime createdAt,
+    required DateTime updatedAt,
     DateTime? removedAt,
   }) : super._(
          id: id,
          workspaceId: workspaceId,
          userId: userId,
          role: role,
+         revision: revision,
          createdAt: createdAt,
+         updatedAt: updatedAt,
          removedAt: removedAt,
        );
 
@@ -164,7 +186,9 @@ class _WorkspaceMemberImpl extends WorkspaceMember {
     int? workspaceId,
     String? userId,
     String? role,
+    int? revision,
     DateTime? createdAt,
+    DateTime? updatedAt,
     Object? removedAt = _Undefined,
   }) {
     return WorkspaceMember(
@@ -172,7 +196,9 @@ class _WorkspaceMemberImpl extends WorkspaceMember {
       workspaceId: workspaceId ?? this.workspaceId,
       userId: userId ?? this.userId,
       role: role ?? this.role,
+      revision: revision ?? this.revision,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       removedAt: removedAt is DateTime? ? removedAt : this.removedAt,
     );
   }
@@ -196,9 +222,20 @@ class WorkspaceMemberUpdateTable extends _i1.UpdateTable<WorkspaceMemberTable> {
     value,
   );
 
+  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+    table.revision,
+    value,
+  );
+
   _i1.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
       _i1.ColumnValue(
         table.createdAt,
+        value,
+      );
+
+  _i1.ColumnValue<DateTime, DateTime> updatedAt(DateTime value) =>
+      _i1.ColumnValue(
+        table.updatedAt,
         value,
       );
 
@@ -225,8 +262,16 @@ class WorkspaceMemberTable extends _i1.Table<int?> {
       'role',
       this,
     );
+    revision = _i1.ColumnInt(
+      'revision',
+      this,
+    );
     createdAt = _i1.ColumnDateTime(
       'createdAt',
+      this,
+    );
+    updatedAt = _i1.ColumnDateTime(
+      'updatedAt',
       this,
     );
     removedAt = _i1.ColumnDateTime(
@@ -243,7 +288,11 @@ class WorkspaceMemberTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString role;
 
+  late final _i1.ColumnInt revision;
+
   late final _i1.ColumnDateTime createdAt;
+
+  late final _i1.ColumnDateTime updatedAt;
 
   late final _i1.ColumnDateTime removedAt;
 
@@ -253,7 +302,9 @@ class WorkspaceMemberTable extends _i1.Table<int?> {
     workspaceId,
     userId,
     role,
+    revision,
     createdAt,
+    updatedAt,
     removedAt,
   ];
 }

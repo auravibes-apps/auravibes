@@ -222,33 +222,43 @@ class AppAgentModelProvider implements AgentModelProvider {
   }
 }
 
-final appAgentDataProvider = Provider<AppAgentConversationDataProvider>((ref) {
-  return AppAgentConversationDataProvider(
-    conversationRepository: ref.watch(conversationRepositoryProvider),
-    messageRepository: ref.watch(messageRepositoryProvider),
-    autoCompactConversationUsecase: ref.watch(
-      maybeAutoCompactConversationUsecaseProvider,
-    ),
-  );
-});
+final appAgentDataProvider = Provider<AppAgentConversationDataProvider>(
+  (ref) {
+    return AppAgentConversationDataProvider(
+      conversationRepository: ref.watch(conversationRepositoryProvider),
+      messageRepository: ref.watch(messageRepositoryProvider),
+      autoCompactConversationUsecase: ref.watch(
+        maybeAutoCompactConversationUsecaseProvider,
+      ),
+    );
+  },
+  dependencies: [maybeAutoCompactConversationUsecaseProvider],
+);
 
-final appAgentModelProvider = Provider<AppAgentModelProvider>((ref) {
-  return AppAgentModelProvider(ref.watch(continueAgentServiceProvider));
-});
+final appAgentModelProvider = Provider<AppAgentModelProvider>(
+  (ref) => AppAgentModelProvider(ref.watch(continueAgentServiceProvider)),
+  dependencies: [continueAgentServiceProvider],
+);
 
 final appAgentLoopToolProvider = Provider<AppAgentLoopToolProvider>((ref) {
   return AppAgentLoopToolProvider(ref.watch(agentToolExecutionServiceProvider));
 });
 
-final appAgentServiceProvider = Provider<AppAgentService>((
-  ref,
-) {
-  return AppAgentService._(
-    data: ref.watch(appAgentDataProvider),
-    models: ref.watch(appAgentModelProvider),
-    retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
-    tools: ref.watch(appAgentLoopToolProvider),
-    sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-    cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
-  );
-});
+final appAgentServiceProvider = Provider<AppAgentService>(
+  (
+    ref,
+  ) {
+    return AppAgentService._(
+      data: ref.watch(appAgentDataProvider),
+      models: ref.watch(appAgentModelProvider),
+      retryRuntime: ref.watch(conversationRateLimitRetryRuntimeProvider),
+      tools: ref.watch(appAgentLoopToolProvider),
+      sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+      cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
+    );
+  },
+  dependencies: [
+    appAgentDataProvider,
+    appAgentModelProvider,
+  ],
+);

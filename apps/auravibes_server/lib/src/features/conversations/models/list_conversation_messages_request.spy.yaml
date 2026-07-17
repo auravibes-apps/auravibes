@@ -1,0 +1,5 @@
+class: ListConversationMessagesRequest
+fields:
+  workspaceId: int
+  conversationId: String
+  limit: int

@@ -3,8 +3,10 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
+import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -25,18 +27,30 @@ abstract class ConversationToolState with _$ConversationToolState {
   }) = _ConversationToolState;
 }
 
-@Riverpod(keepAlive: true)
+@Riverpod(dependencies: [workspaceSession, workspaceToolsRepository])
 ConversationToolsRepository conversationToolsRepository(Ref ref) {
+  final session = ref.watch(workspaceSessionProvider);
+  session.capabilities.require(
+    supported: session.capabilities.conversationToolOverrides,
+  );
   final appDatabase = ref.watch(appDatabaseProvider);
   final workspaceToolsRepository = ref.watch(workspaceToolsRepositoryProvider);
 
-  return ConversationToolsRepository(appDatabase, workspaceToolsRepository);
+  return ConversationToolsRepository(
+    appDatabase,
+    workspaceToolsRepository as WorkspaceToolsRepository,
+  );
 }
 
 /// Provider for managing conversation tool settings
 ///
 /// Returns a list of all workspace tools with their conversation-level states.
-@riverpod
+@Riverpod(
+  dependencies: [
+    conversationToolsRepository,
+    workspaceToolsRepository,
+  ],
+)
 class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   ConversationToolsRepository get _repository => ref.read(
     conversationToolsRepositoryProvider,
@@ -179,7 +193,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
 
 /// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
-@riverpod
+@Riverpod(dependencies: [conversationToolsRepository])
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   ConversationToolsRepository get _repository => ref.read(
     conversationToolsRepositoryProvider,
@@ -216,7 +230,7 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
 /// Returns [WorkspaceToolEntity] list with table IDs needed for
 /// generating composite tool IDs.
 /// (conversation -> workspace -> app defaults)
-@riverpod
+@Riverpod(dependencies: [conversationToolsRepository])
 class ContextAwareToolEntitiesNotifier
     extends _$ContextAwareToolEntitiesNotifier {
   ConversationToolsRepository get _repository => ref.read(

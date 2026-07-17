@@ -1,0 +1,4 @@
+enum: WorkspaceStreamEnvelopeKind
+serialized: byName
+values:
+  - workspaceInvalidated

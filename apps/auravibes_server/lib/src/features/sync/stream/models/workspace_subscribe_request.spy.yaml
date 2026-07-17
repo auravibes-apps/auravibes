@@ -1,0 +1,5 @@
+class: WorkspaceSubscribeRequest
+fields:
+  workspaceId: int
+  afterSequence: int
+  activeTurnIds: List<String>

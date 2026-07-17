@@ -1,0 +1,3 @@
+exception: ConversationException
+fields:
+  code: ConversationErrorCode

@@ -1,11 +1,11 @@
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
-import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/usecases/generate_title_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -199,8 +199,12 @@ class _FakeSendNewMessageUsecase implements SendNewMessageUsecase {
   SendMessageUsecase get sendMessageUsecase => throw UnimplementedError();
 
   @override
-  WorkspaceModelSelectionRepository get workspaceModelSelectionRepository =>
-      throw UnimplementedError();
+  Future<ModelSelectionStore> Function(String workspaceId)
+  get modelSelectionStore => throw UnimplementedError();
+
+  @override
+  Future<ConversationEntity> Function(ConversationToCreate value)?
+  get cloudCreate => null;
 
   @override
   GenerateTitleUsecase get generateTitleUsecase => throw UnimplementedError();
@@ -234,8 +238,12 @@ class _ErrorSendNewMessageUsecase implements SendNewMessageUsecase {
   SendMessageUsecase get sendMessageUsecase => throw UnimplementedError();
 
   @override
-  WorkspaceModelSelectionRepository get workspaceModelSelectionRepository =>
-      throw UnimplementedError();
+  Future<ModelSelectionStore> Function(String workspaceId)
+  get modelSelectionStore => throw UnimplementedError();
+
+  @override
+  Future<ConversationEntity> Function(ConversationToCreate value)?
+  get cloudCreate => null;
 
   @override
   GenerateTitleUsecase get generateTitleUsecase => throw UnimplementedError();

@@ -1,0 +1,11 @@
+class: ProviderAdmission
+table: provider_admission
+fields:
+  jobId: int, relation(parent=conversation_job, onDelete=Cascade)
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  providerId: String
+  leaseToken: String
+  createdAt: DateTime
+indexes:
+  provider_admission_workspace_created_idx:
+    fields: workspaceId, createdAt

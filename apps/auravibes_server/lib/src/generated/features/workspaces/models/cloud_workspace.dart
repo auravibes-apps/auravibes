@@ -18,6 +18,8 @@ abstract class CloudWorkspace
     this.id,
     required this.name,
     required this.ownerUserId,
+    required this.revision,
+    required this.sequence,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -27,6 +29,8 @@ abstract class CloudWorkspace
     int? id,
     required String name,
     required String ownerUserId,
+    required int revision,
+    required int sequence,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -37,6 +41,8 @@ abstract class CloudWorkspace
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
       ownerUserId: jsonSerialization['ownerUserId'] as String,
+      revision: jsonSerialization['revision'] as int,
+      sequence: jsonSerialization['sequence'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -60,6 +66,10 @@ abstract class CloudWorkspace
 
   String ownerUserId;
 
+  int revision;
+
+  int sequence;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -76,6 +86,8 @@ abstract class CloudWorkspace
     int? id,
     String? name,
     String? ownerUserId,
+    int? revision,
+    int? sequence,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -87,6 +99,8 @@ abstract class CloudWorkspace
       if (id != null) 'id': id,
       'name': name,
       'ownerUserId': ownerUserId,
+      'revision': revision,
+      'sequence': sequence,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -100,6 +114,8 @@ abstract class CloudWorkspace
       if (id != null) 'id': id,
       'name': name,
       'ownerUserId': ownerUserId,
+      'revision': revision,
+      'sequence': sequence,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -145,6 +161,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     int? id,
     required String name,
     required String ownerUserId,
+    required int revision,
+    required int sequence,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -152,6 +170,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
          id: id,
          name: name,
          ownerUserId: ownerUserId,
+         revision: revision,
+         sequence: sequence,
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
@@ -165,6 +185,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     Object? id = _Undefined,
     String? name,
     String? ownerUserId,
+    int? revision,
+    int? sequence,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
@@ -173,6 +195,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
       id: id is int? ? id : this.id,
       name: name ?? this.name,
       ownerUserId: ownerUserId ?? this.ownerUserId,
+      revision: revision ?? this.revision,
+      sequence: sequence ?? this.sequence,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
@@ -190,6 +214,16 @@ class CloudWorkspaceUpdateTable extends _i1.UpdateTable<CloudWorkspaceTable> {
 
   _i1.ColumnValue<String, String> ownerUserId(String value) => _i1.ColumnValue(
     table.ownerUserId,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
+    table.revision,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> sequence(int value) => _i1.ColumnValue(
+    table.sequence,
     value,
   );
 
@@ -224,6 +258,14 @@ class CloudWorkspaceTable extends _i1.Table<int?> {
       'ownerUserId',
       this,
     );
+    revision = _i1.ColumnInt(
+      'revision',
+      this,
+    );
+    sequence = _i1.ColumnInt(
+      'sequence',
+      this,
+    );
     createdAt = _i1.ColumnDateTime(
       'createdAt',
       this,
@@ -244,6 +286,10 @@ class CloudWorkspaceTable extends _i1.Table<int?> {
 
   late final _i1.ColumnString ownerUserId;
 
+  late final _i1.ColumnInt revision;
+
+  late final _i1.ColumnInt sequence;
+
   late final _i1.ColumnDateTime createdAt;
 
   late final _i1.ColumnDateTime updatedAt;
@@ -255,6 +301,8 @@ class CloudWorkspaceTable extends _i1.Table<int?> {
     id,
     name,
     ownerUserId,
+    revision,
+    sequence,
     createdAt,
     updatedAt,
     deletedAt,

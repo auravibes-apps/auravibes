@@ -1,4 +1,5 @@
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
@@ -23,7 +24,13 @@ class ConversationWorkspaceMismatch extends ConversationResult {
   const ConversationWorkspaceMismatch();
 }
 
-@Riverpod(dependencies: [conversationSelected])
+@Riverpod(
+  dependencies: [
+    conversationSelected,
+    conversationByIdStream,
+    cloudConversationUsecase,
+  ],
+)
 class ConversationChatNotifier extends _$ConversationChatNotifier {
   @override
   Future<ConversationResult> build(String workspaceId) async {
@@ -49,12 +56,32 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
+    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    if (cloud != null) {
+      final updated = await cloud.update(
+        result.conversation,
+        ConversationPatch(modelId: modelId),
+      );
+
+      state = AsyncData(
+        ConversationFound(
+          result.conversation.copyWith(
+            modelId: updated.modelId,
+            revision: updated.revision,
+            updatedAt: updated.updatedAt,
+          ),
+        ),
+      );
+
+      return;
+    }
     final updatedConversation = await ref
         .read(conversationRepositoryProvider)
         .patchConversation(
           result.conversation.id,
           ConversationPatch(modelId: modelId),
         );
+
     state = AsyncData(ConversationFound(updatedConversation));
   }
 
@@ -62,14 +89,32 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
+    final patch = agentId == null
+        ? const ConversationPatch(clearAgent: true)
+        : ConversationPatch(agentId: agentId);
+    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    if (cloud != null) {
+      final updated = await cloud.update(result.conversation, patch);
+
+      state = AsyncData(
+        ConversationFound(
+          result.conversation.copyWith(
+            agentId: updated.agentId,
+            revision: updated.revision,
+            updatedAt: updated.updatedAt,
+          ),
+        ),
+      );
+
+      return;
+    }
     final updatedConversation = await ref
         .read(conversationRepositoryProvider)
         .patchConversation(
           result.conversation.id,
-          agentId == null
-              ? const ConversationPatch(clearAgent: true)
-              : ConversationPatch(agentId: agentId),
+          patch,
         );
+
     state = AsyncData(ConversationFound(updatedConversation));
   }
 }

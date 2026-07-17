@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:auravibes_app/features/workspaces/models/switch_status.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
-import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -20,7 +19,12 @@ final _logger = Logger('WorkspaceSwitcher');
 /// action is a transient mutation, not initialized state. Per the Mutation
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
-@Riverpod(keepAlive: true)
+// The router owns route construction, which transitively references this
+// provider. Declaring that dependency would create a provider cycle.
+// ignore: provider_dependencies
+@Riverpod(
+  keepAlive: true,
+)
 class WorkspaceSwitcher extends _$WorkspaceSwitcher {
   Timer? _debounceTimer;
 
@@ -55,7 +59,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
 
     try {
       final router = ref.read(routerProvider);
-      final location = NewChatRoute(workspaceId: workspaceId).location;
+      final location = '/workspaces/$workspaceId/chat/new';
       router.go(location);
 
       final duration = DateTime.now().difference(startTime);

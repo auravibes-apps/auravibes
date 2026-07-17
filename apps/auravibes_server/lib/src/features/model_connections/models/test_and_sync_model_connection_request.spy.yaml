@@ -1,0 +1,4 @@
+class: TestAndSyncModelConnectionRequest
+fields:
+  workspaceId: int
+  connectionId: String

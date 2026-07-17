@@ -1,6 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -51,9 +53,6 @@ abstract class McpFormState with _$McpFormState {
   /// Whether to show bearer token field.
   bool get showBearerTokenField => authenticationType == .bearerToken;
 
-  /// Whether to show HTTP/2 toggle.
-  bool get showHttp2Toggle => transport == .streamableHttp;
-
   /// Convert to McpServerToCreate for validation and saving.
   McpServerFormToCreate toCreateEntity() {
     return McpServerFormToCreate(
@@ -69,7 +68,7 @@ abstract class McpFormState with _$McpFormState {
   McpTransportType _tranport() {
     switch (transport) {
       case McpTransportTypeOptions.streamableHttp:
-        return McpTransportTypeStreamableHttp(useHttp2: useHttp2);
+        return const McpTransportTypeStreamableHttp();
       case McpTransportTypeOptions.sse:
         return const McpTransportTypeSSE();
     }
@@ -83,7 +82,7 @@ abstract class McpFormState with _$McpFormState {
 }
 
 /// Notifier for managing MCP form state.
-@riverpod
+@Riverpod(dependencies: [workspaceSession, McpConnectionNotifier])
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
 
@@ -93,6 +92,9 @@ class McpFormNotifier extends _$McpFormNotifier {
 
     return const McpFormState();
   }
+
+  WorkspaceCapabilities get _capabilities =>
+      ref.read(workspaceSessionProvider).capabilities;
 
   /// Update the name field.
   void setName(String value) {
@@ -112,6 +114,9 @@ class McpFormNotifier extends _$McpFormNotifier {
   /// Update the transport type.
   void setTransport(McpTransportTypeOptions? value) {
     if (value == null) return;
+    _capabilities.require(
+      supported: _capabilities.mcpTransports.contains(value.capability),
+    );
     var newState = state.copyWith(transport: value);
 
     // Reset HTTP/2 when switching away from streamableHttp.
@@ -132,6 +137,9 @@ class McpFormNotifier extends _$McpFormNotifier {
 
   /// Update the authentication type.
   void setAuthenticationType(McpAuthenticationTypeOptions value) {
+    _capabilities.require(
+      supported: _capabilities.mcpAuthentication.contains(value.capability),
+    );
     state = state.copyWith(authenticationType: value);
   }
 
@@ -173,6 +181,18 @@ class McpFormNotifier extends _$McpFormNotifier {
   /// 2. Connect to the MCP server
   /// 3. Load and register the MCP's tools
   Future<bool> submit() async {
+    final capabilities = _capabilities;
+    capabilities
+      ..require(
+        supported: capabilities.mcpTransports.contains(
+          state.transport.capability,
+        ),
+      )
+      ..require(
+        supported: capabilities.mcpAuthentication.contains(
+          state.authenticationType.capability,
+        ),
+      );
     if (!state.isValid) {
       setError(state.validationErrors.join('\n'));
 
@@ -207,4 +227,19 @@ class McpFormNotifier extends _$McpFormNotifier {
       return false;
     }
   }
+}
+
+extension on McpTransportTypeOptions {
+  WorkspaceMcpTransport get capability => switch (this) {
+    .streamableHttp => .streamableHttp,
+    .sse => .sse,
+  };
+}
+
+extension on McpAuthenticationTypeOptions {
+  WorkspaceMcpAuthentication get capability => switch (this) {
+    .none => .none,
+    .bearerToken => .bearerToken,
+    .oauth => .oauth,
+  };
 }

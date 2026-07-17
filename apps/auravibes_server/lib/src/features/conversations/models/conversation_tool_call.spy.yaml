@@ -1,0 +1,25 @@
+class: ConversationToolCall
+table: conversation_tool_call
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  turnId: int, relation(parent=conversation_turn, onDelete=NoAction)
+  messageId: int, relation(parent=conversation_message, onDelete=NoAction)
+  stableId: String
+  name: String
+  argumentsJson: String
+  argumentsDigest: String
+  status: String
+  decision: String?
+  decisionByUserId: String?
+  decisionAt: DateTime?
+  resultJson: String?
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  conversation_tool_call_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
+  conversation_tool_call_turn_idx:
+    fields: workspaceId, turnId, id

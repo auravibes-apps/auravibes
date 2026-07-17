@@ -1,0 +1,8 @@
+class: DiscoverMcpServerResult
+fields:
+  health: McpServerHealth
+  serverName: String?
+  serverVersion: String?
+  protocolVersion: String?
+  tools: List<DiscoveredMcpTool>
+  errorCode: String?

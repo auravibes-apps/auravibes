@@ -1,0 +1,5 @@
+class: DiscoveredMcpTool
+fields:
+  name: String
+  description: String?
+  inputSchemaJson: String

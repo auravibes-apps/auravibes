@@ -1,0 +1,5 @@
+class: StartCodexOAuthResult
+fields:
+  transactionId: String
+  authorizationUrl: String
+  expiresAt: DateTime

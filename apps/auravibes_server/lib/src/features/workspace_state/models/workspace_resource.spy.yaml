@@ -1,0 +1,17 @@
+class: WorkspaceResource
+table: workspace_resource
+fields:
+  workspaceId: int
+  resourceKind: WorkspaceResourceKind
+  resourceId: String
+  data: String
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime
+  deletedAt: DateTime?
+indexes:
+  workspace_resource_identity_idx:
+    fields: workspaceId, resourceKind, resourceId
+    unique: true
+  workspace_resource_page_idx:
+    fields: workspaceId, resourceKind, updatedAt, resourceId

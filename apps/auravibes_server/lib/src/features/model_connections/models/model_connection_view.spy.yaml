@@ -1,0 +1,11 @@
+class: ModelConnectionView
+fields:
+  id: String
+  name: String
+  providerId: String
+  url: String?
+  hasSecret: bool
+  keySuffix: String?
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime

@@ -1,0 +1,5 @@
+class: PatchWorkspaceStateRequest
+fields:
+  workspaceId: int
+  requestId: String
+  operations: List<WorkspacePatchOperation>

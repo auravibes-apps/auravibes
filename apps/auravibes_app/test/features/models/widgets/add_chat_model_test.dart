@@ -1,10 +1,13 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 void main() {
   group('AddModelProviderWidget', () {
     test('constructor stores workspaceId', () {

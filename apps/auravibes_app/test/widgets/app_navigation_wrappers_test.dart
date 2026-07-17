@@ -1,6 +1,3 @@
-// ignore_for_file: scoped_providers_should_specify_dependencies
-// Required: widget tests override scoped providers directly.
-
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
@@ -9,8 +6,16 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -18,9 +23,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../helpers/test_provider_scope.dart';
 
+@Dependencies([
+  workspaceModelSelectionById,
+  workspaceSession,
+  ConversationChatNotifier,
+  conversationBusyState,
+  pendingToolCalls,
+  cloudWorkspaceStateGateway,
+  serviceConnectionOperations,
+  serviceConnections,
+  contextUsage,
+  chatMessages,
+  childConversationsStream,
+  conversationByIdStream,
+  messageConversationById,
+])
 void main() {
   group('navigation shell index calculation', () {
     testWidgets('returns shellIndex for root workspace path', (tester) async {
@@ -537,6 +558,21 @@ void main() {
   });
 
   group('AuraSidebarWrapper rendering', () {
+    @Dependencies([
+      workspaceModelSelectionById,
+      workspaceSession,
+      ConversationChatNotifier,
+      conversationBusyState,
+      pendingToolCalls,
+      cloudWorkspaceStateGateway,
+      serviceConnectionOperations,
+      serviceConnections,
+      contextUsage,
+      chatMessages,
+      childConversationsStream,
+      conversationByIdStream,
+      messageConversationById,
+    ])
     ({Widget app, GoRouter router}) _buildTestApp({
       required String initialLocation,
       required List<StatefulShellBranch> branches,

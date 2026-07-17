@@ -4,6 +4,8 @@ import '../../../generated/protocol.dart';
 import '../domain/workspace_roles.dart';
 
 class CloudWorkspaceRepository {
+  static const maxReadRows = 200;
+
   Future<CloudWorkspace> createWorkspace(
     Session session, {
     required String name,
@@ -16,6 +18,8 @@ class CloudWorkspaceRepository {
       CloudWorkspace(
         name: name,
         ownerUserId: ownerUserId,
+        revision: 1,
+        sequence: 0,
         createdAt: now,
         updatedAt: now,
       ),
@@ -27,7 +31,9 @@ class CloudWorkspaceRepository {
         workspaceId: workspace.id!,
         userId: ownerUserId,
         role: WorkspaceRoles.owner,
+        revision: 1,
         createdAt: now,
+        updatedAt: now,
       ),
       transaction: transaction,
     );
@@ -41,6 +47,8 @@ class CloudWorkspaceRepository {
     final members = await WorkspaceMember.db.find(
       session,
       where: (t) => t.userId.equals(userId) & t.removedAt.equals(null),
+      orderBy: (t) => t.id,
+      limit: maxReadRows,
     );
     final summaries = <CloudWorkspaceSummary>[];
     for (final member in members) {
@@ -65,6 +73,8 @@ class CloudWorkspaceRepository {
           t.acceptedAt.equals(null) &
           t.declinedAt.equals(null) &
           t.revokedAt.equals(null),
+      orderBy: (t) => t.id,
+      limit: maxReadRows,
     );
     final summaries = <PendingWorkspaceInviteSummary>[];
     for (final invite in invites) {
@@ -77,6 +87,7 @@ class CloudWorkspaceRepository {
             workspaceName: workspace.name,
             email: invite.email,
             role: invite.role,
+            revision: invite.revision,
             createdAt: invite.createdAt,
           ),
         );
@@ -89,12 +100,20 @@ class CloudWorkspaceRepository {
     Session session,
     int id, {
     Transaction? transaction,
+    bool lock = false,
   }) async {
-    final workspace = await CloudWorkspace.db.findById(
-      session,
-      id,
-      transaction: transaction,
-    );
+    final workspace = lock
+        ? await CloudWorkspace.db.findFirstRow(
+            session,
+            where: (t) => t.id.equals(id),
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          )
+        : await CloudWorkspace.db.findById(
+            session,
+            id,
+            transaction: transaction,
+          );
     return workspace?.deletedAt == null ? workspace : null;
   }
 
@@ -103,6 +122,7 @@ class CloudWorkspaceRepository {
     required int workspaceId,
     required String userId,
     Transaction? transaction,
+    bool lock = false,
   }) => WorkspaceMember.db.findFirstRow(
     session,
     where: (t) =>
@@ -110,6 +130,7 @@ class CloudWorkspaceRepository {
         t.userId.equals(userId) &
         t.removedAt.equals(null),
     transaction: transaction,
+    lockMode: lock ? LockMode.forUpdate : null,
   );
 
   Future<WorkspaceMember?> findMember(
@@ -129,20 +150,31 @@ class CloudWorkspaceRepository {
   }) => WorkspaceMember.db.find(
     session,
     where: (t) => t.workspaceId.equals(workspaceId) & t.removedAt.equals(null),
-    orderBy: (t) => t.createdAt,
+    orderBy: (t) => t.id,
+    limit: maxReadRows,
   );
 
   Future<WorkspaceInvite?> findInviteById(
     Session session,
     int id, {
     Transaction? transaction,
-  }) => WorkspaceInvite.db.findById(session, id, transaction: transaction);
+    bool lock = false,
+  }) => lock
+      ? WorkspaceInvite.db.findFirstRow(
+          session,
+          where: (t) => t.id.equals(id),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        )
+      : WorkspaceInvite.db.findById(session, id, transaction: transaction);
 
   Future<WorkspaceInvite?> findActiveInviteByEmail(
     Session session, {
     required int workspaceId,
     required String email,
     required DateTime now,
+    Transaction? transaction,
+    bool lock = false,
   }) => WorkspaceInvite.db.findFirstRow(
     session,
     where: (t) =>
@@ -152,6 +184,8 @@ class CloudWorkspaceRepository {
         t.acceptedAt.equals(null) &
         t.declinedAt.equals(null) &
         t.revokedAt.equals(null),
+    transaction: transaction,
+    lockMode: lock ? LockMode.forUpdate : null,
   );
 
   Future<WorkspaceInvite?> findInviteByPendingKey(
@@ -176,7 +210,8 @@ class CloudWorkspaceRepository {
         t.acceptedAt.equals(null) &
         t.declinedAt.equals(null) &
         t.revokedAt.equals(null),
-    orderBy: (t) => t.createdAt,
+    orderBy: (t) => t.id,
+    limit: maxReadRows,
   );
 
   Future<WorkspaceInvite> createInvite(
@@ -203,22 +238,34 @@ class CloudWorkspaceRepository {
     Session session, {
     required WorkspaceInvite invite,
     required DateTime expiresAt,
+    required DateTime now,
+    required Transaction transaction,
   }) => WorkspaceInvite.db.updateRow(
     session,
     invite.copyWith(
       expiresAt: expiresAt,
+      revision: invite.revision + 1,
+      updatedAt: now,
       revokedAt: null,
       pendingKey: '${invite.workspaceId}:${invite.email}',
     ),
+    transaction: transaction,
   );
 
   Future<void> revokeInvite(
     Session session, {
     required WorkspaceInvite invite,
     required DateTime now,
+    required Transaction transaction,
   }) => WorkspaceInvite.db.updateRow(
     session,
-    invite.copyWith(revokedAt: now, pendingKey: null),
+    invite.copyWith(
+      revision: invite.revision + 1,
+      updatedAt: now,
+      revokedAt: now,
+      pendingKey: null,
+    ),
+    transaction: transaction,
   );
 
   Future<void> acceptInvite(
@@ -232,6 +279,8 @@ class CloudWorkspaceRepository {
     invite.copyWith(
       acceptedByUserId: userId,
       acceptedAt: now,
+      revision: invite.revision + 1,
+      updatedAt: now,
       pendingKey: null,
     ),
     transaction: transaction,
@@ -241,9 +290,16 @@ class CloudWorkspaceRepository {
     Session session, {
     required WorkspaceInvite invite,
     required DateTime now,
+    required Transaction transaction,
   }) => WorkspaceInvite.db.updateRow(
     session,
-    invite.copyWith(declinedAt: now, pendingKey: null),
+    invite.copyWith(
+      revision: invite.revision + 1,
+      updatedAt: now,
+      declinedAt: now,
+      pendingKey: null,
+    ),
+    transaction: transaction,
   );
 
   Future<void> upsertMember(
@@ -267,7 +323,9 @@ class CloudWorkspaceRepository {
           workspaceId: workspaceId,
           userId: userId,
           role: role,
+          revision: 1,
           createdAt: now,
+          updatedAt: now,
         ),
         transaction: transaction,
       );
@@ -275,7 +333,12 @@ class CloudWorkspaceRepository {
     }
     await WorkspaceMember.db.updateRow(
       session,
-      member.copyWith(role: role, removedAt: null),
+      member.copyWith(
+        role: role,
+        revision: member.revision + 1,
+        updatedAt: now,
+        removedAt: null,
+      ),
       transaction: transaction,
     );
   }
@@ -284,10 +347,15 @@ class CloudWorkspaceRepository {
     Session session, {
     required WorkspaceMember member,
     required String role,
+    required DateTime now,
     Transaction? transaction,
   }) => WorkspaceMember.db.updateRow(
     session,
-    member.copyWith(role: role),
+    member.copyWith(
+      role: role,
+      revision: member.revision + 1,
+      updatedAt: now,
+    ),
     transaction: transaction,
   );
 
@@ -295,9 +363,15 @@ class CloudWorkspaceRepository {
     Session session, {
     required WorkspaceMember member,
     required DateTime now,
+    required Transaction transaction,
   }) => WorkspaceMember.db.updateRow(
     session,
-    member.copyWith(removedAt: now),
+    member.copyWith(
+      revision: member.revision + 1,
+      updatedAt: now,
+      removedAt: now,
+    ),
+    transaction: transaction,
   );
 
   Future<CloudWorkspace> renameWorkspace(
@@ -305,9 +379,15 @@ class CloudWorkspaceRepository {
     required CloudWorkspace workspace,
     required String name,
     required DateTime now,
+    required Transaction transaction,
   }) => CloudWorkspace.db.updateRow(
     session,
-    workspace.copyWith(name: name, updatedAt: now),
+    workspace.copyWith(
+      name: name,
+      revision: workspace.revision + 1,
+      updatedAt: now,
+    ),
+    transaction: transaction,
   );
 
   Future<void> transferOwnership(
@@ -322,17 +402,23 @@ class CloudWorkspaceRepository {
       session,
       member: owner,
       role: WorkspaceRoles.admin,
+      now: now,
       transaction: transaction,
     );
     await updateMemberRole(
       session,
       member: newOwner,
       role: WorkspaceRoles.owner,
+      now: now,
       transaction: transaction,
     );
     await CloudWorkspace.db.updateRow(
       session,
-      workspace.copyWith(ownerUserId: newOwner.userId, updatedAt: now),
+      workspace.copyWith(
+        ownerUserId: newOwner.userId,
+        revision: workspace.revision + 1,
+        updatedAt: now,
+      ),
       transaction: transaction,
     );
   }
@@ -341,16 +427,140 @@ class CloudWorkspaceRepository {
     Session session, {
     required CloudWorkspace workspace,
     required DateTime now,
-  }) => CloudWorkspace.db.updateRow(
+    required Transaction transaction,
+  }) async {
+    await CloudWorkspace.db.updateRow(
+      session,
+      workspace.copyWith(
+        revision: workspace.revision + 1,
+        updatedAt: now,
+        deletedAt: now,
+      ),
+      transaction: transaction,
+    );
+    final members = await WorkspaceMember.db.find(
+      session,
+      where: (t) =>
+          t.workspaceId.equals(workspace.id!) & t.removedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final member in members) {
+      await removeMember(
+        session,
+        member: member,
+        now: now,
+        transaction: transaction,
+      );
+    }
+    final invites = await WorkspaceInvite.db.find(
+      session,
+      where: (t) =>
+          t.workspaceId.equals(workspace.id!) &
+          t.acceptedAt.equals(null) &
+          t.declinedAt.equals(null) &
+          t.revokedAt.equals(null),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    for (final invite in invites) {
+      await revokeInvite(
+        session,
+        invite: invite,
+        now: now,
+        transaction: transaction,
+      );
+    }
+  }
+
+  Future<WorkspaceMutationReceipt?> findReceipt(
+    Session session, {
+    required String actorUserId,
+    required String scopeKey,
+    required String endpoint,
+    required String requestId,
+    required Transaction transaction,
+  }) => WorkspaceMutationReceipt.db.findFirstRow(
     session,
-    workspace.copyWith(updatedAt: now, deletedAt: now),
+    where: (t) =>
+        t.actorUserId.equals(actorUserId) &
+        t.scopeKey.equals(scopeKey) &
+        t.endpoint.equals(endpoint) &
+        t.requestId.equals(requestId),
+    transaction: transaction,
   );
+
+  Future<CloudWorkspace> recordMutation(
+    Session session, {
+    required CloudWorkspace workspace,
+    required String actorUserId,
+    required String scopeKey,
+    required String endpoint,
+    required String requestId,
+    required String requestHash,
+    required String operation,
+    required String resourceKind,
+    String? resourceId,
+    required String responseJson,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final committed = await CloudWorkspace.db.updateRow(
+      session,
+      workspace.copyWith(sequence: workspace.sequence + 1, updatedAt: now),
+      transaction: transaction,
+    );
+    await WorkspaceEvent.db.insertRow(
+      session,
+      WorkspaceEvent(
+        eventId: requestId,
+        workspaceId: workspace.id!,
+        sequence: committed.sequence,
+        actorUserId: actorUserId,
+        kind: operation,
+        resourceKind: resourceKind,
+        resourceId: resourceId,
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    await WorkspaceAuditRecord.db.insertRow(
+      session,
+      WorkspaceAuditRecord(
+        workspaceId: workspace.id!,
+        sequence: committed.sequence,
+        actorUserId: actorUserId,
+        operation: operation,
+        targetKind: resourceKind,
+        targetId: resourceId,
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    await WorkspaceMutationReceipt.db.insertRow(
+      session,
+      WorkspaceMutationReceipt(
+        workspaceId: workspace.id,
+        actorUserId: actorUserId,
+        scopeKey: scopeKey,
+        endpoint: endpoint,
+        requestId: requestId,
+        requestHash: requestHash,
+        responseJson: responseJson,
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+    return committed;
+  }
 
   CloudWorkspaceSummary toSummary(CloudWorkspace workspace, String role) =>
       CloudWorkspaceSummary(
         id: workspace.id!,
         name: workspace.name,
         role: role,
+        revision: workspace.revision,
+        sequence: workspace.sequence,
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
       );

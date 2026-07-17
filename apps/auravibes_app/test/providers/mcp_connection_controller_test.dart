@@ -14,6 +14,7 @@ void main() {
     var mcpServersRepository = _FakeMcpServersRepository();
     var mcpManagerService = _FakeMcpManagerService();
     var container = ProviderContainer();
+    ProviderSubscription<List<McpConnectionState>>? subscription;
 
     setUp(() {
       mcpServersRepository = _FakeMcpServersRepository();
@@ -24,9 +25,11 @@ void main() {
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
         ],
       );
+      subscription = container.listen(mcpConnectionProvider, (_, _) {});
     });
 
     tearDown(() {
+      subscription?.close();
       container.dispose();
     });
 

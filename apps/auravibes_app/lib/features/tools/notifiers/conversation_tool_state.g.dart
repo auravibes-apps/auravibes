@@ -27,10 +27,22 @@ final class ConversationToolsRepositoryProvider
         argument: null,
         retry: null,
         name: r'conversationToolsRepositoryProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+        dependencies: <ProviderOrFamily>[
+          workspaceSessionProvider,
+          workspaceToolsRepositoryProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          ConversationToolsRepositoryProvider.$allTransitiveDependencies0,
+          ConversationToolsRepositoryProvider.$allTransitiveDependencies1,
+          ConversationToolsRepositoryProvider.$allTransitiveDependencies2,
+        ],
       );
+
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+  static final $allTransitiveDependencies1 = workspaceToolsRepositoryProvider;
+  static final $allTransitiveDependencies2 =
+      WorkspaceToolsRepositoryProvider.$allTransitiveDependencies1;
 
   @override
   String debugGetCreateSourceHash() => _$conversationToolsRepositoryHash();
@@ -56,7 +68,7 @@ final class ConversationToolsRepositoryProvider
 }
 
 String _$conversationToolsRepositoryHash() =>
-    r'd022d59dc4cb88659714e8031581c937e1f4a8e4';
+    r'0df8a9b52e950da5d1a2ac823aaa8153b9a57b0c';
 
 /// Provider for managing conversation tool settings
 ///
@@ -88,6 +100,15 @@ final class ConversationToolsNotifierProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 =
+      conversationToolsRepositoryProvider;
+  static final $allTransitiveDependencies1 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies3 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies2;
+
   @override
   String debugGetCreateSourceHash() => _$conversationToolsNotifierHash();
 
@@ -115,7 +136,7 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'fbc6124a6775ab6867d3264b370d2751fcf378be';
+    r'83b6a201c65641c9630d31918c1b6407d03755d8';
 
 /// Provider for managing conversation tool settings
 ///
@@ -134,8 +155,16 @@ final class ConversationToolsNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'conversationToolsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[
+          conversationToolsRepositoryProvider,
+          workspaceToolsRepositoryProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          ConversationToolsNotifierProvider.$allTransitiveDependencies0,
+          ConversationToolsNotifierProvider.$allTransitiveDependencies1,
+          ConversationToolsNotifierProvider.$allTransitiveDependencies2,
+          ConversationToolsNotifierProvider.$allTransitiveDependencies3,
+        },
         isAutoDispose: true,
       );
 
@@ -223,6 +252,15 @@ final class ContextAwareToolsNotifierProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 =
+      conversationToolsRepositoryProvider;
+  static final $allTransitiveDependencies1 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies3 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies2;
+
   @override
   String debugGetCreateSourceHash() => _$contextAwareToolsNotifierHash();
 
@@ -250,7 +288,7 @@ final class ContextAwareToolsNotifierProvider
 }
 
 String _$contextAwareToolsNotifierHash() =>
-    r'337c7c2e7681b7ee676f15e4f8189f5fbb1635b1';
+    r'6576c875173a03eac4625ba198945b0a7cd5180c';
 
 /// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
@@ -268,8 +306,13 @@ final class ContextAwareToolsNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'contextAwareToolsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[conversationToolsRepositoryProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          ContextAwareToolsNotifierProvider.$allTransitiveDependencies0,
+          ContextAwareToolsNotifierProvider.$allTransitiveDependencies1,
+          ContextAwareToolsNotifierProvider.$allTransitiveDependencies2,
+          ContextAwareToolsNotifierProvider.$allTransitiveDependencies3,
+        },
         isAutoDispose: true,
       );
 
@@ -360,6 +403,15 @@ final class ContextAwareToolEntitiesNotifierProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 =
+      conversationToolsRepositoryProvider;
+  static final $allTransitiveDependencies1 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies3 =
+      ConversationToolsRepositoryProvider.$allTransitiveDependencies2;
+
   @override
   String debugGetCreateSourceHash() => _$contextAwareToolEntitiesNotifierHash();
 
@@ -388,7 +440,7 @@ final class ContextAwareToolEntitiesNotifierProvider
 }
 
 String _$contextAwareToolEntitiesNotifierHash() =>
-    r'e68898d6e926e34c9dc3c9afe44de27a18b1e8c8';
+    r'ca18c0cca72abc385e168be50f041589c8f6a769';
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
@@ -409,8 +461,13 @@ final class ContextAwareToolEntitiesNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'contextAwareToolEntitiesProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[conversationToolsRepositoryProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>{
+          ContextAwareToolEntitiesNotifierProvider.$allTransitiveDependencies0,
+          ContextAwareToolEntitiesNotifierProvider.$allTransitiveDependencies1,
+          ContextAwareToolEntitiesNotifierProvider.$allTransitiveDependencies2,
+          ContextAwareToolEntitiesNotifierProvider.$allTransitiveDependencies3,
+        },
         isAutoDispose: true,
       );
 

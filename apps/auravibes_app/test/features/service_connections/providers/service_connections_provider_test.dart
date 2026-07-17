@@ -11,15 +11,19 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
 AppDatabase _inMemoryDatabase() =>
     AppDatabase(connection: NativeDatabase.memory());
 
+@Dependencies([serviceConnections])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -175,6 +179,11 @@ ProviderContainer _container({
 }) {
   return ProviderContainer(
     overrides: [
+      workspaceSessionProvider.overrideWithValue(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      ),
       appDatabaseProvider.overrideWithValue(database),
       modelConnectionRepositoryProvider.overrideWithValue(modelRepository),
       skillCredentialDefinitionsRepositoryProvider.overrideWithValue(

@@ -18,11 +18,11 @@ final mcpServersRepositoryProvider = McpServersRepositoryProvider._();
 final class McpServersRepositoryProvider
     extends
         $FunctionalProvider<
-          McpServersRepository,
-          McpServersRepository,
-          McpServersRepository
+          McpServersRepositoryContract,
+          McpServersRepositoryContract,
+          McpServersRepositoryContract
         >
-    with $Provider<McpServersRepository> {
+    with $Provider<McpServersRepositoryContract> {
   /// Provides the MCP servers repository instance.
   McpServersRepositoryProvider._()
     : super(
@@ -30,33 +30,42 @@ final class McpServersRepositoryProvider
         argument: null,
         retry: null,
         name: r'mcpServersRepositoryProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+        dependencies: <ProviderOrFamily>[
+          workspaceSessionProvider,
+          cloudWorkspaceStateGatewayProvider,
+        ],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          McpServersRepositoryProvider.$allTransitiveDependencies0,
+          McpServersRepositoryProvider.$allTransitiveDependencies1,
+        ],
       );
+
+  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
 
   @override
   String debugGetCreateSourceHash() => _$mcpServersRepositoryHash();
 
   @$internal
   @override
-  $ProviderElement<McpServersRepository> $createElement(
+  $ProviderElement<McpServersRepositoryContract> $createElement(
     $ProviderPointer pointer,
   ) => $ProviderElement(pointer);
 
   @override
-  McpServersRepository create(Ref ref) {
+  McpServersRepositoryContract create(Ref ref) {
     return mcpServersRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(McpServersRepository value) {
+  Override overrideWithValue(McpServersRepositoryContract value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<McpServersRepository>(value),
+      providerOverride: $SyncValueProvider<McpServersRepositoryContract>(value),
     );
   }
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'2b2804672c2de4ba861893605544c1a9513a93d1';
+    r'95b8789a0e79450cdd04b5d4c6b8993de374e519';

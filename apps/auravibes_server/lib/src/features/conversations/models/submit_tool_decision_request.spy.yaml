@@ -1,0 +1,10 @@
+class: SubmitToolDecisionRequest
+fields:
+  workspaceId: int
+  requestId: String
+  turnId: String
+  toolCallId: String
+  argumentsDigest: String
+  expectedTurnRevision: int
+  decision: String
+  editedArgumentsJson: String?

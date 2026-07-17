@@ -1,15 +1,29 @@
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_skills_provider.g.dart';
 
+@Dependencies([cloudWorkspaceStateGateway])
 @riverpod
 Future<List<WorkspaceSkill>> workspaceSkills(
   Ref ref,
   String workspaceId,
 ) async {
+  CloudWorkspaceStateGateway? gateway;
+  try {
+    gateway = await ref.watch(cloudWorkspaceStateGatewayProvider.future);
+  } on Exception {
+    gateway = null;
+  }
+  if (gateway != null) {
+    return CloudSkillSettingsAdapter(gateway).watchSkills().first;
+  }
   final skillsRepository = ref.watch(skillsRepositoryProvider);
   final appSkillSettings = ref.watch(
     appSkillWorkspaceSettingsRepositoryProvider,

@@ -1,0 +1,14 @@
+class: ConversationToolCallView
+fields:
+  id: String
+  turnId: String
+  messageId: String
+  name: String
+  argumentsJson: String
+  argumentsDigest: String
+  status: String
+  decision: String?
+  resultJson: String?
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime

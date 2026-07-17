@@ -33,6 +33,10 @@ final class CompactionSettingsProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = cloudWorkspaceStateGatewayProvider;
+  static final $allTransitiveDependencies1 =
+      CloudWorkspaceStateGatewayProvider.$allTransitiveDependencies0;
+
   @override
   String debugGetCreateSourceHash() => _$compactionSettingsHash();
 
@@ -67,7 +71,7 @@ final class CompactionSettingsProvider
 }
 
 String _$compactionSettingsHash() =>
-    r'9829a7236a5383f20a992d43556876319cc204a0';
+    r'd2bf0fb868b47481884cac22b4272eaee4c90054';
 
 final class CompactionSettingsFamily extends $Family
     with $FunctionalFamilyOverride<Stream<CompactionSettings>, String> {
@@ -75,8 +79,11 @@ final class CompactionSettingsFamily extends $Family
     : super(
         retry: null,
         name: r'compactionSettingsProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[cloudWorkspaceStateGatewayProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          CompactionSettingsProvider.$allTransitiveDependencies0,
+          CompactionSettingsProvider.$allTransitiveDependencies1,
+        ],
         isAutoDispose: true,
       );
 

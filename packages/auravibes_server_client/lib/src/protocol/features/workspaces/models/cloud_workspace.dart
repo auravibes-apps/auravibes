@@ -17,6 +17,8 @@ abstract class CloudWorkspace implements _i1.SerializableModel {
     this.id,
     required this.name,
     required this.ownerUserId,
+    required this.revision,
+    required this.sequence,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -26,6 +28,8 @@ abstract class CloudWorkspace implements _i1.SerializableModel {
     int? id,
     required String name,
     required String ownerUserId,
+    required int revision,
+    required int sequence,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -36,6 +40,8 @@ abstract class CloudWorkspace implements _i1.SerializableModel {
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
       ownerUserId: jsonSerialization['ownerUserId'] as String,
+      revision: jsonSerialization['revision'] as int,
+      sequence: jsonSerialization['sequence'] as int,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -57,6 +63,10 @@ abstract class CloudWorkspace implements _i1.SerializableModel {
 
   String ownerUserId;
 
+  int revision;
+
+  int sequence;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -70,6 +80,8 @@ abstract class CloudWorkspace implements _i1.SerializableModel {
     int? id,
     String? name,
     String? ownerUserId,
+    int? revision,
+    int? sequence,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -81,6 +93,8 @@ abstract class CloudWorkspace implements _i1.SerializableModel {
       if (id != null) 'id': id,
       'name': name,
       'ownerUserId': ownerUserId,
+      'revision': revision,
+      'sequence': sequence,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -100,6 +114,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     int? id,
     required String name,
     required String ownerUserId,
+    required int revision,
+    required int sequence,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -107,6 +123,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
          id: id,
          name: name,
          ownerUserId: ownerUserId,
+         revision: revision,
+         sequence: sequence,
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
@@ -120,6 +138,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
     Object? id = _Undefined,
     String? name,
     String? ownerUserId,
+    int? revision,
+    int? sequence,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
@@ -128,6 +148,8 @@ class _CloudWorkspaceImpl extends CloudWorkspace {
       id: id is int? ? id : this.id,
       name: name ?? this.name,
       ownerUserId: ownerUserId ?? this.ownerUserId,
+      revision: revision ?? this.revision,
+      sequence: sequence ?? this.sequence,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,

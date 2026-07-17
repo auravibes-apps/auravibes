@@ -278,6 +278,12 @@
       "waiting_for_tools": "Esperando a que las herramientas se conecten...",
       "waiting_for_tools_named": "Esperando a que {tools} se conecte...",
       "thinking_status": "Pensando... Los mensajes nuevos se encolarán.",
+      "turn_queued": "En cola...",
+      "turn_thinking": "Pensando...",
+      "turn_streaming": "Respondiendo...",
+      "turn_awaiting_approval": "Esperando aprobación...",
+      "turn_failed": "La generación falló.",
+      "turn_cancelled": "La generación se canceló.",
       "reasoning_summary": "Resumen de razonamiento",
       "tool_resolution_status": "Esperando resolución de herramientas... Los mensajes nuevos se encolarán.",
       "queued_messages_count": {
@@ -566,6 +572,9 @@
     "error_title": "Algo salió mal",
     "error_message": "Intenta de nuevo o vuelve a abrir esta pantalla."
   },
+  "workspace_capabilities": {
+    "unsupported_error": "Esta función no está disponible en este espacio de trabajo."
+  },
   "tools_names": {
     "calculator": {
       "name": "Calculadora",
@@ -819,6 +828,7 @@
     "cloud_finish_register": "Finalizar registro",
     "cloud_remove_account": "Eliminar cuenta",
     "cloud_load_error": "Error al cargar espacios de trabajo en la nube.",
+    "cloud_unavailable": "Este espacio de trabajo no está disponible. Inicia sesión otra vez para reconectarte.",
     "cloud_name": "Nombre del espacio en la nube",
     "cloud_accept": "Aceptar",
     "cloud_decline": "Rechazar",
@@ -839,6 +849,15 @@
     "target_label": "Ubicación del espacio de trabajo",
     "cloud_available_section": "Espacios en la nube disponibles",
     "cloud_add_hint": "Agrega una cuenta en la nube para crear espacios en la nube."
+  },
+  "cloud_errors": {
+    "authentication_required": "Inicia sesión de nuevo para continuar.",
+    "permission_denied": "No tienes permiso para esta acción en la nube.",
+    "not_found": "No se encontró el recurso solicitado en la nube.",
+    "validation": "La solicitud a la nube no es válida.",
+    "conflict": "El recurso en la nube cambió. Actualiza e inténtalo de nuevo.",
+    "malformed_resource": "Los datos de la nube no se pudieron cargar de forma segura.",
+    "unavailable": "El servicio en la nube no está disponible. Inténtalo de nuevo."
   },
   "cloud_workspaces": {
     "title": "Espacios en la nube",

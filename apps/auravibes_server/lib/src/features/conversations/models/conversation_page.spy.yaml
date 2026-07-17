@@ -1,0 +1,4 @@
+class: ConversationPage
+fields:
+  conversations: List<ConversationSummary>
+  nextCursor: String?

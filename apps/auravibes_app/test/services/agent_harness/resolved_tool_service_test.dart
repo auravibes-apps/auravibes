@@ -14,6 +14,8 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
@@ -629,7 +631,15 @@ void main() {
   );
 
   test('provider creates the shared tool runner', () {
-    final container = ProviderContainer();
+    final container = ProviderContainer(
+      overrides: [
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ),
+      ],
+    );
     addTearDown(container.dispose);
 
     expect(

@@ -1,4 +1,3 @@
-// ignore_for_file: provider_dependencies
 // Required: widget tests override scoped providers directly.
 // Required: Tests repeat finders and fixture lookups for clarity.
 

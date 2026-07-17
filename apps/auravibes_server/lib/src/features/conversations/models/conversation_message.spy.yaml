@@ -1,0 +1,27 @@
+class: ConversationMessage
+table: conversation_message
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  stableId: String
+  turnId: int?, relation(parent=conversation_turn, onDelete=NoAction)
+  role: String
+  kind: String
+  status: String
+  content: String
+  metadataJson: String?
+  compactedThroughMessageId: int?
+  revision: int
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  conversation_message_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
+  conversation_message_order_idx:
+    fields: workspaceId, conversationId, id
+  conversation_message_turn_idx:
+    fields: workspaceId, turnId
+  conversation_message_workspace_id_idx:
+    fields: workspaceId, id
+    unique: true

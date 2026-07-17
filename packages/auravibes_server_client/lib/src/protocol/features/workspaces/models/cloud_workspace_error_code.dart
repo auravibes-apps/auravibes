@@ -30,7 +30,11 @@ enum CloudWorkspaceErrorCode implements _i1.SerializableModel {
   duplicateInvite,
   duplicateMembership,
   confirmationNameMismatch,
-  validationFailed;
+  validationFailed,
+  invalidCursor,
+  staleRevision,
+  idempotencyConflict,
+  conflict;
 
   static CloudWorkspaceErrorCode fromJson(String name) {
     switch (name) {
@@ -70,6 +74,14 @@ enum CloudWorkspaceErrorCode implements _i1.SerializableModel {
         return CloudWorkspaceErrorCode.confirmationNameMismatch;
       case 'validationFailed':
         return CloudWorkspaceErrorCode.validationFailed;
+      case 'invalidCursor':
+        return CloudWorkspaceErrorCode.invalidCursor;
+      case 'staleRevision':
+        return CloudWorkspaceErrorCode.staleRevision;
+      case 'idempotencyConflict':
+        return CloudWorkspaceErrorCode.idempotencyConflict;
+      case 'conflict':
+        return CloudWorkspaceErrorCode.conflict;
       default:
         throw ArgumentError(
           'Value "$name" cannot be converted to "CloudWorkspaceErrorCode"',

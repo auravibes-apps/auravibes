@@ -1,3 +1,5 @@
 class: LeaveCloudWorkspaceRequest
 fields:
   workspaceId: int
+  requestId: String
+  expectedWorkspaceRevision: int

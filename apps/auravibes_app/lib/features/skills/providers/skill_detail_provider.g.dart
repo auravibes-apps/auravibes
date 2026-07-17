@@ -31,6 +31,12 @@ final class SkillDetailProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
+  static final $allTransitiveDependencies1 =
+      CloudSkillStoreProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      CloudSkillStoreProvider.$allTransitiveDependencies1;
+
   @override
   String debugGetCreateSourceHash() => _$skillDetailHash();
 
@@ -64,7 +70,7 @@ final class SkillDetailProvider
   }
 }
 
-String _$skillDetailHash() => r'401c2cc2e54afb2836a71441c1f3f0d93916ad9c';
+String _$skillDetailHash() => r'af294758ecb610c302b4163652db618114a2d469';
 
 final class SkillDetailFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SkillDetail?>, (String, String)> {
@@ -72,8 +78,12 @@ final class SkillDetailFamily extends $Family
     : super(
         retry: null,
         name: r'skillDetailProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          SkillDetailProvider.$allTransitiveDependencies0,
+          SkillDetailProvider.$allTransitiveDependencies1,
+          SkillDetailProvider.$allTransitiveDependencies2,
+        ],
         isAutoDispose: true,
       );
 

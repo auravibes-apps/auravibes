@@ -4,9 +4,12 @@
 
 import 'package:auravibes_app/data/repositories/tools_groups_repository.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
+import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/usecases/build_grouped_tools_view_use_case.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -14,8 +17,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'grouped_tools_notifier.g.dart';
 
 /// Provider for the tools groups repository.
-@Riverpod(keepAlive: true)
-ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
+@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
+ToolsGroupsRepositoryContract toolsGroupsRepository(Ref ref) {
+  if (ref.watch(workspaceSessionProvider).cloud != null) {
+    return CloudToolsRepository(
+      ref.read(cloudWorkspaceStateGatewayProvider.future),
+    );
+  }
   final appDatabase = ref.watch(appDatabaseProvider);
 
   return ToolsGroupsRepository(appDatabase);
@@ -29,7 +37,16 @@ ToolsGroupsRepository toolsGroupsRepository(Ref ref) {
 /// - Creates a "Built-in Tools" virtual group for tools without a group
 /// - Enriches MCP groups with their connection state
 /// - Sorts groups: Default first, then MCP errors, then by creation date
-@riverpod
+@Riverpod(
+  dependencies: [
+    toolsGroupsRepository,
+    WorkspaceToolsNotifier,
+    McpConnectionNotifier,
+    mcpServersRepository,
+    workspaceSession,
+    cloudWorkspaceStateGateway,
+  ],
+)
 class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   String _workspaceId = '';
 
@@ -86,24 +103,23 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
     String groupId, {
     required bool isEnabled,
   }) async {
-    final group = await ref
-        .read(toolsGroupsRepositoryProvider)
-        .getToolsGroupById(
-          groupId,
-        );
-    if (group == null || group.workspaceId != _workspaceId) {
+    final repository = ref.read(toolsGroupsRepositoryProvider);
+    final isCloud = repository is CloudToolsRepository;
+    final group = await repository.getToolsGroupById(groupId);
+    if (group == null || (!isCloud && group.workspaceId != _workspaceId)) {
       return;
     }
 
-    final didUpdate = await ref
-        .read(toolsGroupsRepositoryProvider)
-        .setToolsGroupEnabled(groupId, isEnabled: isEnabled);
+    final didUpdate = await repository.setToolsGroupEnabled(
+      groupId,
+      isEnabled: isEnabled,
+    );
     if (!didUpdate) {
       return;
     }
 
     final mcpServerId = group.mcpServerId;
-    if (group.isMcpGroup && mcpServerId != null) {
+    if (!isCloud && group.isMcpGroup && mcpServerId != null) {
       if (!isEnabled) {
         ref
             .read(mcpConnectionProvider.notifier)
@@ -124,12 +140,10 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
   /// - Disconnect from the MCP server
   /// - Delete the MCP server (cascades to tools group and tools)
   Future<void> deleteMcpGroup(String groupId) async {
-    final group = await ref
-        .read(toolsGroupsRepositoryProvider)
-        .getToolsGroupById(
-          groupId,
-        );
-    if (group == null || group.workspaceId != _workspaceId) {
+    final repository = ref.read(toolsGroupsRepositoryProvider);
+    final isCloud = repository is CloudToolsRepository;
+    final group = await repository.getToolsGroupById(groupId);
+    if (group == null || (!isCloud && group.workspaceId != _workspaceId)) {
       return;
     }
     final mcpServerId = group.mcpServerId;
@@ -137,7 +151,15 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
       return;
     }
 
-    await ref.read(mcpConnectionProvider.notifier).deleteMcpServer(mcpServerId);
+    if (isCloud) {
+      final _ = await ref
+          .read(mcpServersRepositoryProvider)
+          .deleteMcpServer(mcpServerId);
+    } else {
+      await ref
+          .read(mcpConnectionProvider.notifier)
+          .deleteMcpServer(mcpServerId);
+    }
 
     ref
       ..invalidateSelf()
@@ -146,6 +168,13 @@ class GroupedToolsNotifier extends _$GroupedToolsNotifier {
 
   /// Reconnect to an MCP server.
   Future<void> reconnectMcp(String mcpServerId) async {
+    final repository = ref.read(toolsGroupsRepositoryProvider);
+    if (repository case final CloudToolsRepository cloudRepository) {
+      final _ = await cloudRepository.discoverMcpServer(mcpServerId);
+      ref.invalidateSelf();
+
+      return;
+    }
     await ref
         .read(mcpConnectionProvider.notifier)
         .reconnectMcpServer(mcpServerId);
@@ -174,7 +203,7 @@ McpConnectionViewStatus _toMcpConnectionViewStatus(McpConnectionStatus status) {
 }
 
 /// Provider that returns the count of enabled tools across all groups.
-@riverpod
+@Riverpod(dependencies: [GroupedToolsNotifier])
 Future<int> enabledToolsCount(Ref ref, String workspaceId) async {
   final groupedTools = await ref.watch(
     groupedToolsProvider(workspaceId).future,
@@ -187,7 +216,7 @@ Future<int> enabledToolsCount(Ref ref, String workspaceId) async {
 }
 
 /// Provider that returns the total count of tools across all groups.
-@riverpod
+@Riverpod(dependencies: [GroupedToolsNotifier])
 Future<int> totalToolsCount(Ref ref, String workspaceId) async {
   final groupedTools = await ref.watch(
     groupedToolsProvider(workspaceId).future,

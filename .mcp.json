@@ -1,0 +1,29 @@
+{
+  "settings": {
+    "toolPrefix": "server",
+    "idleTimeout": 10,
+    "outputGuard": true
+  },
+  "mcpServers": {
+    "dart": {
+      "command": "fvm",
+      "args": ["dart", "mcp-server", "--force-roots-fallback"],
+      "lifecycle": "lazy"
+    },
+    "pubdev": {
+      "command": "npx",
+      "args": ["-y", "@devqxi/pubdev-mcp-server"],
+      "lifecycle": "lazy"
+    },
+    "serverpod": {
+      "command": "serverpod",
+      "args": ["mcp-server", "--server-dir", "apps/auravibes_server"],
+      "lifecycle": "lazy"
+    },
+    "sonarqube": {
+      "command": "sonar",
+      "args": ["run", "mcp"],
+      "lifecycle": "lazy"
+    }
+  }
+}

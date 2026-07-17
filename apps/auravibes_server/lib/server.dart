@@ -4,6 +4,10 @@ import 'package:serverpod_auth_idp_server/providers/email.dart';
 
 import 'src/generated/endpoints.dart';
 import 'src/generated/protocol.dart';
+import 'src/features/conversations/workers/conversation_worker.dart';
+import 'src/features/codex_oauth/codex_oauth_callback_route.dart';
+import 'src/features/model_connections/workers/model_catalog_sync_worker.dart';
+import 'src/features/objects/object_cleanup_service.dart';
 
 /// The starting point of the Serverpod server.
 void run(List<String> args) async {
@@ -27,8 +31,46 @@ void run(List<String> args) async {
     ],
   );
 
+  pod.registerFutureCall(
+    ConversationWorkerFutureCall(),
+    conversationWorkerFutureCallName,
+  );
+  pod.registerFutureCall(
+    ModelCatalogSyncWorkerFutureCall(),
+    modelCatalogSyncWorkerFutureCallName,
+  );
+  pod.registerFutureCall(
+    ObjectCleanupFutureCall(),
+    objectCleanupFutureCallName,
+  );
+  pod.webServer.addRoute(
+    CodexOAuthCallbackRoute(),
+    '/auth/codex/callback',
+  );
+
   // Start the server.
   await pod.start();
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay(
+    conversationWorkerFutureCallName,
+    null,
+    Duration.zero,
+    identifier: conversationWorkerFutureCallIdentifier,
+  );
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay(
+    modelCatalogSyncWorkerFutureCallName,
+    null,
+    Duration.zero,
+    identifier: modelCatalogSyncWorkerFutureCallIdentifier,
+  );
+  // ignore: deprecated_member_use
+  await pod.futureCallWithDelay(
+    objectCleanupFutureCallName,
+    null,
+    Duration.zero,
+    identifier: objectCleanupFutureCallIdentifier,
+  );
 }
 
 void _sendRegistrationCode(

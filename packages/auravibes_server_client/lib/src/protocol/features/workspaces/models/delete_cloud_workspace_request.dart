@@ -16,11 +16,15 @@ abstract class DeleteCloudWorkspaceRequest implements _i1.SerializableModel {
   DeleteCloudWorkspaceRequest._({
     required this.workspaceId,
     required this.confirmationName,
+    required this.requestId,
+    required this.expectedWorkspaceRevision,
   });
 
   factory DeleteCloudWorkspaceRequest({
     required int workspaceId,
     required String confirmationName,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) = _DeleteCloudWorkspaceRequestImpl;
 
   factory DeleteCloudWorkspaceRequest.fromJson(
@@ -29,6 +33,9 @@ abstract class DeleteCloudWorkspaceRequest implements _i1.SerializableModel {
     return DeleteCloudWorkspaceRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       confirmationName: jsonSerialization['confirmationName'] as String,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedWorkspaceRevision:
+          jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
 
@@ -36,12 +43,18 @@ abstract class DeleteCloudWorkspaceRequest implements _i1.SerializableModel {
 
   String confirmationName;
 
+  String requestId;
+
+  int expectedWorkspaceRevision;
+
   /// Returns a shallow copy of this [DeleteCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   DeleteCloudWorkspaceRequest copyWith({
     int? workspaceId,
     String? confirmationName,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -49,6 +62,8 @@ abstract class DeleteCloudWorkspaceRequest implements _i1.SerializableModel {
       '__className__': 'DeleteCloudWorkspaceRequest',
       'workspaceId': workspaceId,
       'confirmationName': confirmationName,
+      'requestId': requestId,
+      'expectedWorkspaceRevision': expectedWorkspaceRevision,
     };
   }
 
@@ -62,9 +77,13 @@ class _DeleteCloudWorkspaceRequestImpl extends DeleteCloudWorkspaceRequest {
   _DeleteCloudWorkspaceRequestImpl({
     required int workspaceId,
     required String confirmationName,
+    required String requestId,
+    required int expectedWorkspaceRevision,
   }) : super._(
          workspaceId: workspaceId,
          confirmationName: confirmationName,
+         requestId: requestId,
+         expectedWorkspaceRevision: expectedWorkspaceRevision,
        );
 
   /// Returns a shallow copy of this [DeleteCloudWorkspaceRequest]
@@ -74,10 +93,15 @@ class _DeleteCloudWorkspaceRequestImpl extends DeleteCloudWorkspaceRequest {
   DeleteCloudWorkspaceRequest copyWith({
     int? workspaceId,
     String? confirmationName,
+    String? requestId,
+    int? expectedWorkspaceRevision,
   }) {
     return DeleteCloudWorkspaceRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       confirmationName: confirmationName ?? this.confirmationName,
+      requestId: requestId ?? this.requestId,
+      expectedWorkspaceRevision:
+          expectedWorkspaceRevision ?? this.expectedWorkspaceRevision,
     );
   }
 }

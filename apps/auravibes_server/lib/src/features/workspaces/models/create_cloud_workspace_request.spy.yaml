@@ -1,3 +1,4 @@
 class: CreateCloudWorkspaceRequest
 fields:
   name: String
+  requestId: String

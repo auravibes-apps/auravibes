@@ -5,13 +5,21 @@ import 'package:auravibes_app/data/repositories/workspace_compaction_settings_re
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class SaveWorkspaceCompactionSettingsUsecase {
-  const SaveWorkspaceCompactionSettingsUsecase({required this.repository});
+  const SaveWorkspaceCompactionSettingsUsecase({
+    this.repository,
+    this.cloudAdapter,
+  });
 
-  final WorkspaceCompactionSettingsRepository repository;
+  final WorkspaceCompactionSettingsRepository? repository;
+  final CloudSkillSettingsAdapter? cloudAdapter;
 
   Future<CompactionSettings> call({
     required String workspaceId,
@@ -19,8 +27,24 @@ class SaveWorkspaceCompactionSettingsUsecase {
     int? contextLimit,
   }) {
     _validate(settings, contextLimit: contextLimit);
+    final cloud = cloudAdapter;
+    if (cloud != null) return cloud.saveCurrentCompactionSettings(settings);
+    final localRepository = repository;
+    if (localRepository == null) {
+      throw StateError('Compaction settings store is unavailable');
+    }
 
-    return repository.saveOverrides(workspaceId, settings);
+    return localRepository.saveOverrides(workspaceId, settings);
+  }
+
+  Future<void> reset({required String workspaceId}) async {
+    final cloud = cloudAdapter;
+    if (cloud != null) return cloud.resetCompactionSettings();
+    final localRepository = repository;
+    if (localRepository == null) {
+      throw StateError('Compaction settings store is unavailable');
+    }
+    final _ = await localRepository.resetOverrides(workspaceId);
   }
 
   void _validate(CompactionSettings settings, {int? contextLimit}) {
@@ -44,9 +68,35 @@ class SaveWorkspaceCompactionSettingsUsecase {
   }
 }
 
+@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 final saveWorkspaceCompactionSettingsUsecaseProvider =
-    Provider<SaveWorkspaceCompactionSettingsUsecase>((ref) {
-      return SaveWorkspaceCompactionSettingsUsecase(
-        repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
-      );
-    });
+    Provider<SaveWorkspaceCompactionSettingsUsecase>(
+      (ref) {
+        CloudWorkspaceRef? cloud;
+        try {
+          cloud = ref.watch(workspaceSessionProvider).cloud;
+        } on Exception {
+          cloud = null;
+        }
+        if (cloud != null) {
+          final gateway = ref
+              .watch(cloudWorkspaceStateGatewayProvider)
+              .requireValue;
+          if (gateway == null) {
+            throw StateError('Cloud workspace gateway is unavailable');
+          }
+
+          return SaveWorkspaceCompactionSettingsUsecase(
+            cloudAdapter: CloudSkillSettingsAdapter(gateway),
+          );
+        }
+
+        return SaveWorkspaceCompactionSettingsUsecase(
+          repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
+        );
+      },
+      dependencies: [
+        workspaceSessionProvider,
+        cloudWorkspaceStateGatewayProvider,
+      ],
+    );

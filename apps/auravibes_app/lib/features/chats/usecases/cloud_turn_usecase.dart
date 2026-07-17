@@ -1,0 +1,63 @@
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
+
+class CloudTurnUsecase {
+  const CloudTurnUsecase(this._gateway);
+
+  final CloudChatGateway _gateway;
+
+  Future<TurnSnapshot> get(String turnId) => _gateway.getTurn(turnId: turnId);
+
+  Stream<LiveTurnEvent> subscribe(String turnId) =>
+      _gateway.subscribeTurn(turnId);
+
+  Future<ConversationMutationResult> decide({
+    required String turnId,
+    required String toolCallId,
+    required String argumentsDigest,
+    required int revision,
+    required bool approved,
+    String? editedArgumentsJson,
+  }) => _retryStale(
+    turnId,
+    revision,
+    (expectedRevision) => _gateway.submitToolDecision(
+      requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+      turnId: turnId,
+      toolCallId: toolCallId,
+      argumentsDigest: argumentsDigest,
+      expectedTurnRevision: expectedRevision,
+      decision: approved ? 'approve' : 'deny',
+      editedArgumentsJson: editedArgumentsJson,
+    ),
+  );
+
+  Future<ConversationMutationResult> cancel({
+    required String turnId,
+    required int revision,
+  }) => _retryStale(
+    turnId,
+    revision,
+    (expectedRevision) => _gateway.cancelTurn(
+      requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+      turnId: turnId,
+      expectedTurnRevision: expectedRevision,
+    ),
+  );
+
+  Future<ConversationMutationResult> _retryStale(
+    String turnId,
+    int revision,
+    Future<ConversationMutationResult> Function(int revision) action,
+  ) async {
+    try {
+      return await action(revision);
+    } on CloudAppException catch (error) {
+      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
+      final snapshot = await get(turnId);
+
+      return action(snapshot.turn.revision);
+    }
+  }
+}

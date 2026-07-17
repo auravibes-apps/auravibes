@@ -1,0 +1,5 @@
+class: CompleteCodexOAuthRequest
+fields:
+  transactionId: String
+  state: String
+  code: String

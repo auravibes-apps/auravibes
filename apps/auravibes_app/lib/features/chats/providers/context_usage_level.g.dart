@@ -36,6 +36,12 @@ final class ContextUsageProvider
           ContextUsageProvider.$allTransitiveDependencies1,
           ContextUsageProvider.$allTransitiveDependencies2,
           ContextUsageProvider.$allTransitiveDependencies3,
+          ContextUsageProvider.$allTransitiveDependencies4,
+          ContextUsageProvider.$allTransitiveDependencies5,
+          ContextUsageProvider.$allTransitiveDependencies6,
+          ContextUsageProvider.$allTransitiveDependencies7,
+          ContextUsageProvider.$allTransitiveDependencies8,
+          ContextUsageProvider.$allTransitiveDependencies9,
         },
       );
 
@@ -44,7 +50,19 @@ final class ContextUsageProvider
       ConversationUsedTokensProvider.$allTransitiveDependencies0;
   static final $allTransitiveDependencies2 =
       ConversationUsedTokensProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies3 = conversationContextLimitProvider;
+  static final $allTransitiveDependencies3 =
+      ConversationUsedTokensProvider.$allTransitiveDependencies2;
+  static final $allTransitiveDependencies4 =
+      ConversationUsedTokensProvider.$allTransitiveDependencies3;
+  static final $allTransitiveDependencies5 =
+      ConversationUsedTokensProvider.$allTransitiveDependencies4;
+  static final $allTransitiveDependencies6 = conversationContextLimitProvider;
+  static final $allTransitiveDependencies7 =
+      ConversationContextLimitProvider.$allTransitiveDependencies1;
+  static final $allTransitiveDependencies8 =
+      ConversationContextLimitProvider.$allTransitiveDependencies3;
+  static final $allTransitiveDependencies9 =
+      ConversationContextLimitProvider.$allTransitiveDependencies4;
 
   @override
   String debugGetCreateSourceHash() => _$contextUsageHash();

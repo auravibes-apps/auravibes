@@ -16,11 +16,15 @@ abstract class RevokeWorkspaceInviteRequest implements _i1.SerializableModel {
   RevokeWorkspaceInviteRequest._({
     required this.workspaceId,
     required this.inviteId,
+    required this.requestId,
+    required this.expectedInviteRevision,
   });
 
   factory RevokeWorkspaceInviteRequest({
     required int workspaceId,
     required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
   }) = _RevokeWorkspaceInviteRequestImpl;
 
   factory RevokeWorkspaceInviteRequest.fromJson(
@@ -29,6 +33,9 @@ abstract class RevokeWorkspaceInviteRequest implements _i1.SerializableModel {
     return RevokeWorkspaceInviteRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       inviteId: jsonSerialization['inviteId'] as int,
+      requestId: jsonSerialization['requestId'] as String,
+      expectedInviteRevision:
+          jsonSerialization['expectedInviteRevision'] as int,
     );
   }
 
@@ -36,12 +43,18 @@ abstract class RevokeWorkspaceInviteRequest implements _i1.SerializableModel {
 
   int inviteId;
 
+  String requestId;
+
+  int expectedInviteRevision;
+
   /// Returns a shallow copy of this [RevokeWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
   @_i1.useResult
   RevokeWorkspaceInviteRequest copyWith({
     int? workspaceId,
     int? inviteId,
+    String? requestId,
+    int? expectedInviteRevision,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -49,6 +62,8 @@ abstract class RevokeWorkspaceInviteRequest implements _i1.SerializableModel {
       '__className__': 'RevokeWorkspaceInviteRequest',
       'workspaceId': workspaceId,
       'inviteId': inviteId,
+      'requestId': requestId,
+      'expectedInviteRevision': expectedInviteRevision,
     };
   }
 
@@ -62,9 +77,13 @@ class _RevokeWorkspaceInviteRequestImpl extends RevokeWorkspaceInviteRequest {
   _RevokeWorkspaceInviteRequestImpl({
     required int workspaceId,
     required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
   }) : super._(
          workspaceId: workspaceId,
          inviteId: inviteId,
+         requestId: requestId,
+         expectedInviteRevision: expectedInviteRevision,
        );
 
   /// Returns a shallow copy of this [RevokeWorkspaceInviteRequest]
@@ -74,10 +93,15 @@ class _RevokeWorkspaceInviteRequestImpl extends RevokeWorkspaceInviteRequest {
   RevokeWorkspaceInviteRequest copyWith({
     int? workspaceId,
     int? inviteId,
+    String? requestId,
+    int? expectedInviteRevision,
   }) {
     return RevokeWorkspaceInviteRequest(
       workspaceId: workspaceId ?? this.workspaceId,
       inviteId: inviteId ?? this.inviteId,
+      requestId: requestId ?? this.requestId,
+      expectedInviteRevision:
+          expectedInviteRevision ?? this.expectedInviteRevision,
     );
   }
 }

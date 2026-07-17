@@ -5,35 +5,25 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 class _FakeConversationRepository implements ConversationRepository {
-  final StreamController<ConversationEntity?> _byIdController =
-      StreamController<ConversationEntity?>.broadcast();
-  final StreamController<List<ConversationEntity>> _byWorkspaceController =
-      StreamController<List<ConversationEntity>>.broadcast();
-
-  void emitById(ConversationEntity? conversation) =>
-      _byIdController.add(conversation);
-
-  void emitByWorkspace(List<ConversationEntity> conversations) =>
-      _byWorkspaceController.add(conversations);
-
-  Future<void> dispose() async {
-    final _ = await _byIdController.close();
-    final _ = await _byWorkspaceController.close();
-  }
+  ConversationEntity? conversationById;
+  List<ConversationEntity> conversationsByWorkspace = const [];
 
   @override
   Stream<ConversationEntity?> watchConversationById(String id) =>
-      _byIdController.stream;
+      Stream.value(conversationById);
 
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
-  }) => _byWorkspaceController.stream;
+  }) => Stream.value(conversationsByWorkspace);
 
   @override
   Stream<List<ConversationEntity>> watchChildConversations(
@@ -71,6 +61,7 @@ class _FakeConversationRepository implements ConversationRepository {
   }
 }
 
+@Dependencies([conversationByIdStream])
 void main() {
   group('conversationByIdStreamProvider', () {
     final fixture = _ConversationProviderFixture();
@@ -89,24 +80,20 @@ void main() {
         updatedAt: DateTime(2026),
       );
 
-      final completer = Completer<void>();
-      final _ = fixture.container.listen(
-        conversationByIdStreamProvider(conversationId: 'c1'),
+      fixture.repository.conversationById = conversation;
+      final provider = conversationByIdStreamProvider(conversationId: 'c1');
+      final result = Completer<ConversationEntity?>();
+      final subscription = fixture.container.listen(
+        provider,
         (_, next) {
-          if (next.hasValue && !completer.isCompleted) {
-            completer.complete();
-          }
+          if (next case AsyncData(:final value)) result.complete(value);
         },
         fireImmediately: true,
       );
+      final value = await result.future;
+      subscription.close();
 
-      fixture.repository.emitById(conversation);
-      await completer.future;
-
-      final asyncValue = fixture.container.read(
-        conversationByIdStreamProvider(conversationId: 'c1'),
-      );
-      expect(asyncValue.value, equals(conversation));
+      expect(value, equals(conversation));
     });
   });
 
@@ -129,24 +116,20 @@ void main() {
         ),
       ];
 
-      final completer = Completer<void>();
-      final _ = fixture.container.listen(
-        conversationsStreamProvider(workspaceId: 'ws1'),
+      fixture.repository.conversationsByWorkspace = conversations;
+      final provider = conversationsStreamProvider(workspaceId: 'ws1');
+      final result = Completer<List<ConversationEntity>>();
+      final subscription = fixture.container.listen(
+        provider,
         (_, next) {
-          if (next.hasValue && !completer.isCompleted) {
-            completer.complete();
-          }
+          if (next case AsyncData(:final value)) result.complete(value);
         },
         fireImmediately: true,
       );
+      final value = await result.future;
+      subscription.close();
 
-      fixture.repository.emitByWorkspace(conversations);
-      await completer.future;
-
-      final asyncValue = fixture.container.read(
-        conversationsStreamProvider(workspaceId: 'ws1'),
-      );
-      expect(asyncValue.value, equals(conversations));
+      expect(value, equals(conversations));
     });
   });
 
@@ -166,6 +149,36 @@ void main() {
       expect(container.read(streamingTitleProvider('c1')), 'New');
     });
   });
+
+  test(
+    'conversation list resolves route session without scope override',
+    () async {
+      final repository = _FakeConversationRepository()
+        ..conversationsByWorkspace = const [];
+      final container = ProviderContainer(
+        overrides: [
+          workspaceSessionForRouteProvider('ws1').overrideWith(
+            (_) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+            ),
+          ),
+          conversationRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final subscription = container.listen(
+        conversationsStreamProvider(workspaceId: 'ws1'),
+        (_, next) => next.toString(),
+      );
+      addTearDown(subscription.close);
+
+      await expectLater(
+        container.read(conversationsStreamProvider(workspaceId: 'ws1').future),
+        completes,
+      );
+    },
+  );
 }
 
 class _ConversationProviderFixture {
@@ -183,14 +196,23 @@ class _ConversationProviderFixture {
     _repository = repository;
     _container = ProviderContainer(
       overrides: [
+        workspaceSessionForRouteProvider('ws1').overrideWith(
+          (_) async => const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+          ),
+        ),
+        workspaceSessionProvider.overrideWithValue(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+          ),
+        ),
         conversationRepositoryProvider.overrideWithValue(repository),
       ],
     );
   }
 
-  Future<void> dispose() async {
+  void dispose() {
     container.dispose();
-    await repository.dispose();
     _repository = null;
     _container = null;
   }

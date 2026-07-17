@@ -68,7 +68,7 @@ final class SkillCredentialDefinitionsProvider
 }
 
 String _$skillCredentialDefinitionsHash() =>
-    r'a5a176138bc188b6169cb9e6f477854dc01abe4f';
+    r'5f5599d1fd606687c78f1bf838b6e303b3c3eee0';
 
 final class SkillCredentialDefinitionsFamily extends $Family
     with
@@ -116,6 +116,12 @@ final class SkillCredentialDefinitionProvider
          $allTransitiveDependencies: null,
        );
 
+  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
+  static final $allTransitiveDependencies1 =
+      CloudSkillStoreProvider.$allTransitiveDependencies0;
+  static final $allTransitiveDependencies2 =
+      CloudSkillStoreProvider.$allTransitiveDependencies1;
+
   @override
   String debugGetCreateSourceHash() => _$skillCredentialDefinitionHash();
 
@@ -151,7 +157,7 @@ final class SkillCredentialDefinitionProvider
 }
 
 String _$skillCredentialDefinitionHash() =>
-    r'3d2e8128b7082067fcdaf29ac723f09f1f1ee9b7';
+    r'd832920d962da4a9e23f443653ed9b00a2e6eba2';
 
 final class SkillCredentialDefinitionFamily extends $Family
     with
@@ -163,8 +169,12 @@ final class SkillCredentialDefinitionFamily extends $Family
     : super(
         retry: null,
         name: r'skillCredentialDefinitionProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
+        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
+        $allTransitiveDependencies: <ProviderOrFamily>[
+          SkillCredentialDefinitionProvider.$allTransitiveDependencies0,
+          SkillCredentialDefinitionProvider.$allTransitiveDependencies1,
+          SkillCredentialDefinitionProvider.$allTransitiveDependencies2,
+        ],
         isAutoDispose: true,
       );
 

@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/services/encryption_service.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_app/services/model_provider_services/model_provider.dart';
@@ -25,7 +26,7 @@ typedef _ModelConnectionUpdatePayload = ({
 /// operations using the Drift database. It handles the mapping between domain
 /// entities and database records, and provides proper error handling using
 /// exceptions.
-class ModelConnectionRepository {
+class ModelConnectionRepository implements ModelConnectionStore {
   ModelConnectionRepository({
     required this._database,
     required this._encryptionService,
@@ -38,6 +39,7 @@ class ModelConnectionRepository {
   final ModelProviderServices _modelProviderServices;
   static const _missingApiKeyMessage = 'Model connection has no API key';
 
+  @override
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
   ) async {
@@ -178,6 +180,7 @@ class ModelConnectionRepository {
     return _modelProviderTableToEntity(createdModelConnection);
   }
 
+  @override
   Future<ModelConnectionForEdit?> getModelConnectionForEdit(
     String modelConnectionId,
   ) async {
@@ -197,6 +200,7 @@ class ModelConnectionRepository {
     );
   }
 
+  @override
   Future<ModelConnectionEntity> updateModelConnection(
     String modelConnectionId,
     ModelConnectionToUpdate modelConnection,
@@ -383,6 +387,7 @@ class ModelConnectionRepository {
     return modelConnections.map(_modelProviderTableToEntity).toList();
   }
 
+  @override
   Stream<List<ModelConnectionEntity>> watchModelConnections(
     ModelConnectionFilter filter,
   ) {
@@ -474,6 +479,7 @@ class ModelConnectionRepository {
     );
   }
 
+  @override
   Future<void> deleteModelConnection(String modelConnectionId) async {
     // Verify the model connection exists before attempting deletion.
     final modelConnection = await _database.modelConnectionsDao

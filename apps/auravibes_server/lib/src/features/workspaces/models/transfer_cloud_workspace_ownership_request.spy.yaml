@@ -2,3 +2,5 @@ class: TransferCloudWorkspaceOwnershipRequest
 fields:
   workspaceId: int
   newOwnerUserId: String
+  requestId: String
+  expectedWorkspaceRevision: int

@@ -7,13 +7,17 @@ import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client
 import 'package:auravibes_app/features/cloud_workspaces/data/cloud_workspace_repository.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod/src/providers/future_provider.dart';
 
 final FutureProviderFamily<CloudWorkspaceUseCases?, String>
 cloudWorkspaceUseCasesProvider =
     FutureProvider.family<CloudWorkspaceUseCases?, String>((ref, userId) async {
       final client = await ref.watch(
-        serverpodClientForAccountProvider(userId).future,
+        serverpodClientForAccountProvider((
+          serverUrl: AppEnvConfig.auravibesServerUrl,
+          accountId: userId,
+        )).future,
       );
       if (client == null) return null;
 
@@ -35,7 +39,15 @@ cloudWorkspaceStateProvider =
         cloudWorkspaceUseCasesProvider(userId).future,
       );
 
-      return useCases?.load();
+      try {
+        return await useCases?.load();
+      } on CloudWorkspaceException catch (error) {
+        if (error.code != CloudWorkspaceErrorCode.authenticationRequired) {
+          rethrow;
+        }
+
+        return const CloudWorkspaceViewState.authenticationRequired();
+      }
     });
 
 typedef CloudWorkspaceDetailKey = ({String accountId, int workspaceId});

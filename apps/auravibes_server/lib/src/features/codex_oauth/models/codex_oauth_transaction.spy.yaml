@@ -1,0 +1,21 @@
+class: CodexOAuthTransaction
+table: codex_oauth_transaction
+fields:
+  transactionId: String
+  workspaceId: int
+  connectionId: String
+  userId: String
+  stateHash: String
+  verifierCiphertext: ByteData
+  verifierNonce: ByteData
+  verifierAuthenticationTag: ByteData
+  redirectUri: String
+  expiresAt: DateTime
+  consumedAt: DateTime?
+  createdAt: DateTime
+indexes:
+  codex_oauth_transaction_id_idx:
+    fields: transactionId
+    unique: true
+  codex_oauth_transaction_expiry_idx:
+    fields: expiresAt

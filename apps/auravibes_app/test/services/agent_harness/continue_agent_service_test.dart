@@ -1451,7 +1451,7 @@ AppAgentContinuationAdapter _appAgentContinuationAdapter({
 }) {
   return AppAgentContinuationAdapter(
     conversationRepository: conversationRepository,
-    workspaceModelSelectionsRepository: workspaceModelSelectionsRepository,
+    modelSelectionStore: (_) async => workspaceModelSelectionsRepository,
     apiModelRepository: apiModelRepository,
     selectPromptMessagesUsecase: selectPromptMessagesUsecase,
     buildSkillContextMessagesUsecase: buildSkillContextMessagesUsecase,

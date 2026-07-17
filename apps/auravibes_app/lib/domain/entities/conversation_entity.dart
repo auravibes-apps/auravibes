@@ -30,6 +30,9 @@ abstract class ConversationEntity with _$ConversationEntity {
     /// Timestamp when the conversation was last updated.
     required DateTime updatedAt,
 
+    /// Server revision for optimistic cloud mutations.
+    @Default(0) int revision,
+
     /// ID of the AI model used for this conversation.
     String? modelId,
 

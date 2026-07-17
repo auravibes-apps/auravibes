@@ -5,6 +5,8 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -12,8 +14,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:riverpod_annotation/experimental/scope.dart';
 
 /// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
+@Dependencies([workspaceSession])
 class AddMcpModal extends ConsumerWidget {
   const AddMcpModal({required this.workspaceId, super.key});
 
@@ -76,16 +80,6 @@ class AddMcpModal extends ConsumerWidget {
 
                         // Transport selector.
                         _TransportSelector(workspaceId: workspaceId),
-
-                        // HTTP/2 toggle (only for streamableHttp).
-                        Visibility(
-                          child: _Http2Toggle(workspaceId: workspaceId),
-                          visible: ref.watch(
-                            mcpFormProvider(workspaceId).select(
-                              (value) => value.showHttp2Toggle,
-                            ),
-                          ),
-                        ),
 
                         // Authentication selector.
                         _AuthenticationSelector(workspaceId: workspaceId),
@@ -292,6 +286,7 @@ class _Footer extends ConsumerWidget {
   }
 }
 
+@Dependencies([workspaceSession])
 class _TransportSelector extends ConsumerWidget {
   const _TransportSelector({required this.workspaceId});
 
@@ -299,6 +294,24 @@ class _TransportSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final capabilities = ref.watch(workspaceSessionProvider).capabilities;
+    final options = [
+      if (capabilities.mcpTransports.contains(
+        WorkspaceMcpTransport.streamableHttp,
+      ))
+        const AuraDropdownOption(
+          value: McpTransportTypeOptions.streamableHttp,
+          child: TextLocale(
+            LocaleKeys.mcp_modal_transport_streamable_http,
+          ),
+        ),
+      if (capabilities.mcpTransports.contains(WorkspaceMcpTransport.sse))
+        const AuraDropdownOption(
+          value: McpTransportTypeOptions.sse,
+          child: TextLocale(LocaleKeys.mcp_modal_transport_sse),
+        ),
+    ];
+
     return AuraColumn(
       children: [
         const AuraText(
@@ -306,20 +319,7 @@ class _TransportSelector extends ConsumerWidget {
           style: AuraTextStyle.bodySmall,
         ),
         AuraDropdownSelector<McpTransportTypeOptions>(
-          options: const [
-            AuraDropdownOption(
-              value: McpTransportTypeOptions.streamableHttp,
-              child: TextLocale(
-                LocaleKeys.mcp_modal_transport_streamable_http,
-              ),
-            ),
-            AuraDropdownOption(
-              value: McpTransportTypeOptions.sse,
-              child: TextLocale(
-                LocaleKeys.mcp_modal_transport_sse,
-              ),
-            ),
-          ],
+          options: options,
           value: ref.watch(
             mcpFormProvider(workspaceId).select(
               (value) => value.transport,
@@ -338,51 +338,9 @@ class _TransportSelector extends ConsumerWidget {
   }
 }
 
-class _Http2Toggle extends ConsumerWidget {
-  const _Http2Toggle({required this.workspaceId});
-
-  final String workspaceId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final useHttp2 = ref.watch(
-      mcpFormProvider(workspaceId).select(
-        (value) => value.useHttp2,
-      ),
-    );
-
-    return Row(
-      children: [
-        const Expanded(
-          child: AuraColumn(
-            children: [
-              AuraText(
-                child: TextLocale(LocaleKeys.mcp_modal_fields_use_http2_label),
-              ),
-              AuraText(
-                child: TextLocale(LocaleKeys.mcp_modal_fields_use_http2_hint),
-                style: AuraTextStyle.bodySmall,
-              ),
-            ],
-            spacing: .none,
-            crossAxisAlignment: CrossAxisAlignment.start,
-          ),
-        ),
-        AuraSwitch(
-          value: useHttp2,
-          onChanged: ref.watch(
-            mcpFormProvider(workspaceId).notifier.select(
-              (notifier) => notifier.setUseHttp2,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Renders the available authentication types from [mcpFormProvider]
 /// as a localized single-select button group and updates the selected type.
+@Dependencies([workspaceSession])
 class _AuthenticationSelector extends ConsumerWidget {
   const _AuthenticationSelector({required this.workspaceId});
 
@@ -390,11 +348,21 @@ class _AuthenticationSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final availableTypes = ref.watch(
-      mcpFormProvider(workspaceId).select(
-        (value) => value.availableAuthTypes,
-      ),
-    );
+    final capabilities = ref.watch(workspaceSessionProvider).capabilities;
+    final supportedTypes = McpAuthenticationTypeOptions.values
+        .where(
+          (type) => capabilities.mcpAuthentication.contains(
+            switch (type) {
+              McpAuthenticationTypeOptions.none =>
+                WorkspaceMcpAuthentication.none,
+              McpAuthenticationTypeOptions.bearerToken =>
+                WorkspaceMcpAuthentication.bearerToken,
+              McpAuthenticationTypeOptions.oauth =>
+                WorkspaceMcpAuthentication.oauth,
+            },
+          ),
+        )
+        .toList();
 
     return AuraColumn(
       children: [
@@ -403,7 +371,7 @@ class _AuthenticationSelector extends ConsumerWidget {
           style: AuraTextStyle.bodySmall,
         ),
         AuraButtonGroup<McpAuthenticationTypeOptions>.single(
-          items: availableTypes.map((type) {
+          items: supportedTypes.map((type) {
             return AuraButtonGroupItem(
               value: type,
               child: TextLocale(_getAuthTypeLocaleKey(type)),

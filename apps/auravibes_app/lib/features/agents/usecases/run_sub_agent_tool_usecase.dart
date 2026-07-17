@@ -1,17 +1,17 @@
-import 'package:auravibes_app/data/repositories/agents_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:collection/collection.dart';
 
 class AppSubAgentCatalog implements agent.SubAgentCatalog {
   const AppSubAgentCatalog(this._agentsRepository);
 
-  final AgentsRepository _agentsRepository;
+  final AgentRepository _agentsRepository;
 
   @override
   Future<agent.SubAgentCatalogEntry?> getSubAgent(String agentId) async {
