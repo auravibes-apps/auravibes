@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/conversation_tools_repository.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
@@ -9,9 +10,10 @@ import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissio
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class LoadConversationToolSpecsUsecase {
   const LoadConversationToolSpecsUsecase({
@@ -97,15 +99,25 @@ class LoadConversationToolSpecsUsecase {
   }
 }
 
-final loadConversationToolSpecsUsecaseProvider =
-    Provider<LoadConversationToolSpecsUsecase>((ref) {
+final ProviderFamily<LoadConversationToolSpecsUsecase, String>
+loadConversationToolSpecsUsecaseProvider =
+    Provider.family<LoadConversationToolSpecsUsecase, String>((
+      ref,
+      workspaceId,
+    ) {
+      final session = ref
+          .watch(
+            workspaceSessionForRouteProvider(workspaceId),
+          )
+          .requireValue;
+
       return LoadConversationToolSpecsUsecase(
         conversationToolsRepository: ref.watch(
-          conversationToolsRepositoryProvider,
+          conversationToolsRepositoryProvider(workspaceId),
         ),
         buildCombinedToolSpecsUseCase: BuildCombinedToolSpecsUseCase(
           getToolsGroupById: ref
-              .watch(toolsGroupsRepositoryProvider)
+              .watch(toolsGroupsRepositoryProvider(session))
               .getToolsGroupById,
           getMcpToolSpec: ref.watch(mcpToolSpecLookupProvider).call,
         ),

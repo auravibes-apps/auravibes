@@ -10,7 +10,6 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
 import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
 import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
@@ -27,10 +26,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -65,13 +62,13 @@ void main() {
         ),
         appDatabaseProvider.overrideWithValue(database),
         encryptionServiceProvider.overrideWithValue(encryptionService),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => null,
         ),
         serviceConnectionsActionUsecaseProvider(workspace.id).overrideWith(
           (_) async => ServiceConnectionsActionUsecase(
-            (_) async {},
+            (_) => Future<void>.value(),
             (_) => throw UnimplementedError(),
             DeleteServiceConnectionUsecase(
               modelConnectionRepository: ModelConnectionRepository(
@@ -253,7 +250,6 @@ void main() {
   });
 }
 
-@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 Future<void> _pumpScreen(
   WidgetTester tester,
   ProviderContainer container,
@@ -306,7 +302,7 @@ Future<void> _pumpUntil(
   for (var attempt = 0; attempt < 20 && !await condition(); attempt++) {
     await tester.pump(const Duration(milliseconds: 50));
   }
-  await tester.pumpAndSettle();
+  final _ = await tester.pumpAndSettle();
 }
 
 class _FakeSecretKeyManager extends SecretKeyManager {

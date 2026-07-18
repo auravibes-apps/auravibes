@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
@@ -20,8 +21,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
 import 'package:auravibes_server_client/auravibes_server_client.dart'
     show StartTurnResult;
-import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:riverpod/src/providers/provider.dart';
 import 'package:uuid/v7.dart';
 
 typedef ContinueAgentTurn =
@@ -172,97 +172,92 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  chatMessagesByConversation,
-])
-final sendMessageUsecaseProvider = Provider<SendMessageUsecase>(
-  (ref) {
-    final session = ref.watch(workspaceSessionProvider);
-    session.capabilities.require(
-      supported: session.capabilities.agentExecution,
-    );
-    if (session.cloud != null) {
-      return SendMessageUsecase.cloud((conversationId, draft) async {
-        final activeTurn = ref.read(
-          cloudActiveTurnStateProvider(conversationId),
-        );
-        if (activeTurn case final turn? when turn.isBusy) return turn;
+final ProviderFamily<SendMessageUsecase, String> sendMessageUsecaseProvider =
+    Provider.family<SendMessageUsecase, String>(
+      (ref, workspaceId) {
+        final session = ref
+            .watch(
+              workspaceSessionForRouteProvider(workspaceId),
+            )
+            .requireValue;
         session.capabilities.require(
-          supported:
-              draft.attachments.isEmpty || session.capabilities.attachments,
+          supported: session.capabilities.agentExecution,
         );
-        final gateway = await ref.read(
-          cloudWorkspaceStateGatewayProvider.future,
-        );
-        final attachments = await ref.read(
-          cloudChatAttachmentUsecaseProvider.future,
-        );
-        if (gateway == null) {
-          throw const UnsupportedWorkspaceCapabilityException();
-        }
-        final chat = CloudChatGateway(gateway);
-        final conversation = await chat.getConversation(conversationId);
-        final requestId = const UuidV7().generate();
-        final uploadedObjects =
-            await attachments?.uploadDraftResults(
-              attachments: draft.attachments,
-            ) ??
-            const [];
-        final StartTurnResult result;
-        try {
-          result = await chat.startTurn(
-            requestId: requestId,
-            conversationId: conversationId,
-            expectedConversationRevision: conversation.revision,
-            clientMessageId: const UuidV7().generate(),
-            content: draft.text,
-            attachmentIds: uploadedObjects
-                .map((object) => '${object.objectId}')
-                .toList(growable: false),
-            modelSelectionId: conversation.modelId,
-            agentId: conversation.agentId,
-          );
-        } on Object catch (error, stackTrace) {
-          await attachments?.deleteUploaded(
-            uploadedObjects,
-          );
-          Error.throwWithStackTrace(error, stackTrace);
-        }
-        final turn = CloudLiveTurnState(
-          turnId: result.turnId,
-          revision: result.turnRevision,
-          sequence: result.acceptedSequence,
-          state: CloudLiveTurnLifecycle.fromStatus(result.status),
-        );
-        ref
-            .read(cloudActiveTurnStatesProvider.notifier)
-            .set(
-              conversationId,
-              turn,
+        if (session.cloud != null) {
+          return SendMessageUsecase.cloud((conversationId, draft) async {
+            final activeTurn = ref.read(
+              cloudActiveTurnStateProvider(conversationId),
             );
-        ref.invalidate(chatMessagesByConversationProvider(conversationId));
+            if (activeTurn case final turn? when turn.isBusy) return turn;
+            session.capabilities.require(
+              supported:
+                  draft.attachments.isEmpty || session.capabilities.attachments,
+            );
+            final gateway = await ref.read(
+              cloudWorkspaceStateGatewayProvider(session).future,
+            );
+            final attachments = await ref.read(
+              cloudChatAttachmentUsecaseProvider(workspaceId).future,
+            );
+            if (gateway == null) {
+              throw const UnsupportedWorkspaceCapabilityException();
+            }
+            final chat = CloudChatGateway(gateway);
+            final conversation = await chat.getConversation(conversationId);
+            final requestId = const UuidV7().generate();
+            final uploadedObjects =
+                await attachments?.uploadDraftResults(
+                  attachments: draft.attachments,
+                ) ??
+                const [];
+            final StartTurnResult result;
+            try {
+              result = await chat.startTurn(
+                requestId: requestId,
+                conversationId: conversationId,
+                expectedConversationRevision: conversation.revision,
+                clientMessageId: const UuidV7().generate(),
+                content: draft.text,
+                attachmentIds: uploadedObjects
+                    .map((object) => '${object.objectId}')
+                    .toList(growable: false),
+                modelSelectionId: conversation.modelId,
+                agentId: conversation.agentId,
+              );
+            } on Object catch (error, stackTrace) {
+              await attachments?.deleteUploaded(
+                uploadedObjects,
+              );
+              Error.throwWithStackTrace(error, stackTrace);
+            }
+            final turn = CloudLiveTurnState(
+              turnId: result.turnId,
+              revision: result.turnRevision,
+              sequence: result.acceptedSequence,
+              state: CloudLiveTurnLifecycle.fromStatus(result.status),
+            );
+            ref
+                .read(cloudActiveTurnStatesProvider.notifier)
+                .set(
+                  conversationId,
+                  turn,
+                );
+            ref.invalidate(
+              chatMessagesByConversationProvider(workspaceId, conversationId),
+            );
 
-        return turn;
-      });
-    }
-    final agentService = ref.watch(auraAgentServiceProvider);
+            return turn;
+          });
+        }
+        final agentService = ref.watch(auraAgentServiceProvider);
 
-    return SendMessageUsecase(
-      continueAgentTurn: agentService.agent.continueTurn,
-      messageRepository: ref.watch(messageRepositoryProvider),
-      getConversationBusyStateUsecase: ref.watch(
-        getConversationBusyStateUsecaseProvider,
-      ),
-      sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+        return SendMessageUsecase(
+          continueAgentTurn: agentService.agent.continueTurn,
+          messageRepository: ref.watch(messageRepositoryProvider),
+          getConversationBusyStateUsecase: ref.watch(
+            getConversationBusyStateUsecaseProvider,
+          ),
+          sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+        );
+      },
     );
-  },
-  dependencies: [
-    auraAgentServiceProvider,
-    workspaceSessionProvider,
-    cloudWorkspaceStateGatewayProvider,
-    cloudChatAttachmentUsecaseProvider,
-    chatMessagesByConversationProvider,
-  ],
-);

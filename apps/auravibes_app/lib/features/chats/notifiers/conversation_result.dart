@@ -2,7 +2,6 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_result.g.dart';
@@ -24,19 +23,25 @@ class ConversationWorkspaceMismatch extends ConversationResult {
   const ConversationWorkspaceMismatch();
 }
 
-@Riverpod(
-  dependencies: [
-    conversationSelected,
-    conversationByIdStream,
-    cloudConversationUsecase,
-  ],
-)
+@riverpod
 class ConversationChatNotifier extends _$ConversationChatNotifier {
+  String? _workspaceIdValue;
+
+  String get _workspaceId =>
+      _workspaceIdValue ??
+      (throw StateError('Conversation is not initialized'));
+
   @override
-  Future<ConversationResult> build(String workspaceId) async {
-    final conversationId = ref.watch(conversationSelectedProvider);
+  Future<ConversationResult> build(
+    String workspaceId,
+    String conversationId,
+  ) async {
+    _workspaceIdValue = workspaceId;
     final conversation = await ref.watch(
-      conversationByIdStreamProvider(conversationId: conversationId).future,
+      conversationByIdStreamProvider(
+        workspaceId,
+        conversationId: conversationId,
+      ).future,
     );
 
     if (conversation == null) {
@@ -56,7 +61,9 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final result = state.value;
     if (result is! ConversationFound) return;
 
-    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(_workspaceId).future,
+    );
     if (cloud != null) {
       final updated = await cloud.update(
         result.conversation,
@@ -92,7 +99,9 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
     final patch = agentId == null
         ? const ConversationPatch(clearAgent: true)
         : ConversationPatch(agentId: agentId);
-    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(_workspaceId).future,
+    );
     if (cloud != null) {
       final updated = await cloud.update(result.conversation, patch);
 

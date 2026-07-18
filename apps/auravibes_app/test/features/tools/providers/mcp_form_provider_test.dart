@@ -1,19 +1,12 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
-import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   Future<void> addMcpServer(
@@ -24,11 +17,6 @@ class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   }
 }
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   Future<void> addMcpServer(
@@ -39,7 +27,6 @@ class _FailingMcpConnectionNotifier extends McpConnectionNotifier {
   }
 }
 
-@Dependencies([workspaceSession])
 void main() {
   group('McpFormState', () {
     test('defaults are correct', () {
@@ -190,7 +177,6 @@ void main() {
     McpFormNotifier? notifier;
     ProviderContainer readContainer() =>
         container ?? fail('ProviderContainer not initialized');
-    @Dependencies([workspaceSession])
     McpFormNotifier readNotifier() =>
         notifier ?? fail('McpFormNotifier not initialized');
 

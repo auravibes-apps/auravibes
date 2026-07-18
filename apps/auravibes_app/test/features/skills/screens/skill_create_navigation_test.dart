@@ -6,8 +6,6 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
@@ -24,14 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -52,11 +43,22 @@ void main() {
         workspaceSessionProvider.overrideWithValue(
           WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );
     addTearDown(container.dispose);
+    container.updateOverrides([
+      skillsRepositoryProvider.overrideWithValue(
+        container.read(skillsRepositoryProvider),
+      ),
+      skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
+        container.read(skillCredentialDefinitionsRepositoryProvider),
+      ),
+      createSkillUsecaseProvider(workspace.id).overrideWithValue(
+        CreateSkillUsecase(container.read(skillsRepositoryProvider)),
+      ),
+    ]);
     final _ =
         await SkillCredentialDefinitionsRepository(
           database,
@@ -99,41 +101,14 @@ void main() {
           builder: (context) {
             return UncontrolledProviderScope(
               container: container,
-              child: ProviderScope(
-                overrides: [
-                  workspaceSessionProvider.overrideWithValue(
-                    WorkspaceSession(
-                      LocalWorkspaceRef(localWorkspaceId: workspace.id),
-                    ),
-                  ),
-                  cloudWorkspaceStateGatewayProvider.overrideWith(
-                    (_) async => null,
-                  ),
-                  cloudSkillStoreProvider.overrideWithValue(null),
-                  skillsRepositoryProvider.overrideWithValue(
-                    container.read(skillsRepositoryProvider),
-                  ),
-                  skillCredentialDefinitionsRepositoryProvider
-                      .overrideWithValue(
-                        container.read(
-                          skillCredentialDefinitionsRepositoryProvider,
-                        ),
-                      ),
-                  createSkillUsecaseProvider.overrideWithValue(
-                    CreateSkillUsecase(
-                      container.read(skillsRepositoryProvider),
-                    ),
-                  ),
-                ],
-                child: MaterialApp.router(
-                  routerConfig: router,
-                  builder: (context, child) => AuraSnackBarHost(
-                    child: child ?? const SizedBox.shrink(),
-                  ),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
+              child: MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) => AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
                 ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             );
           },

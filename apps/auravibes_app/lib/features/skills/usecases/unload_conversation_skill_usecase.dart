@@ -1,10 +1,11 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class UnloadConversationSkillUsecase {
   const UnloadConversationSkillUsecase(
@@ -80,10 +81,11 @@ class UnloadConversationSkillUsecase {
   }
 }
 
-final unloadConversationSkillUsecaseProvider =
-    Provider<UnloadConversationSkillUsecase>(
-      (ref) {
-        final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<UnloadConversationSkillUsecase, String>
+unloadConversationSkillUsecaseProvider =
+    Provider.family<UnloadConversationSkillUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
         return UnloadConversationSkillUsecase(
           cloud == null ? ref.watch(skillsRepositoryProvider) : null,
@@ -94,5 +96,4 @@ final unloadConversationSkillUsecaseProvider =
           cloud,
         );
       },
-      dependencies: [cloudSkillStoreProvider],
     );

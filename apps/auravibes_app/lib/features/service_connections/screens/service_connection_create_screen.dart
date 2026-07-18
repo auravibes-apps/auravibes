@@ -10,7 +10,6 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -21,16 +20,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('service_connection_create_screen');
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 class ServiceConnectionCreateScreen extends ConsumerStatefulWidget {
   const ServiceConnectionCreateScreen({
     required this.workspaceId,
@@ -235,7 +227,7 @@ class _ServiceConnectionCreateScreenState
         'attributes=${_describeAttributes(attributes)}',
       );
       final credential = await ref
-          .read(skillCredentialOperationsProvider)
+          .read(skillCredentialOperationsProvider(widget.workspaceId))
           .create(
             widget.workspaceId,
             SkillCredentialToCreate(

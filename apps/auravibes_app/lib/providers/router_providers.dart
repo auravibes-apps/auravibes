@@ -2,16 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
-import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
 import 'package:collection/collection.dart';
@@ -19,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'router_providers.g.dart';
 
 /// Global route observer for listening to navigation events across the app.
 ///
@@ -31,54 +24,37 @@ final routeObserverProvider = Provider<RouteObserver<ModalRoute<void>>>(
 
 final _logger = Logger('routerProvider');
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  serviceConnectionsActionUsecase,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
-final routerProvider = Provider<GoRouter>(
-  (ref) {
-    final routeObserver = ref.read(routeObserverProvider);
+@Riverpod(keepAlive: true)
+GoRouter router(Ref ref) {
+  final routeObserver = ref.read(routeObserverProvider);
 
-    return GoRouter(
-      routes: $appRoutes,
-      redirect: (context, state) async {
-        final workspaces = await ref
-            .read(workspaceRepositoryProvider)
-            .getAllWorkspaces()
-            .onError(
-              (error, stackTrace) {
-                _logger.severe(
-                  'Failed to load workspaces for router redirect',
-                  error,
-                  stackTrace,
-                );
+  return GoRouter(
+    routes: $appRoutes,
+    redirect: (context, state) async {
+      final workspaces = await ref
+          .read(workspaceRepositoryProvider)
+          .getAllWorkspaces()
+          .onError(
+            (error, stackTrace) {
+              _logger.severe(
+                'Failed to load workspaces for router redirect',
+                error,
+                stackTrace,
+              );
 
-                return [];
-              },
-            );
+              return [];
+            },
+          );
 
-        return resolveWorkspaceRedirect(state.uri, workspaces);
-      },
-      initialLocation: '/',
-      observers: [
-        routeObserver,
-      ],
-      navigatorKey: rootNavigatorKey,
-    );
-  },
-);
+      return resolveWorkspaceRedirect(state.uri, workspaces);
+    },
+    initialLocation: '/',
+    observers: [
+      routeObserver,
+    ],
+    navigatorKey: rootNavigatorKey,
+  );
+}
 
 final routerInformationProvider = Provider<GoRouteInformationProvider>(
   (ref) {
@@ -111,22 +87,6 @@ String? matchWorkspaceId(Uri uri) {
   return pathSegments[1];
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  serviceConnectionsActionUsecase,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 @visibleForTesting
 String? resolveWorkspaceRedirect(
   Uri currentUri,
@@ -162,22 +122,6 @@ String? resolveWorkspaceRedirect(
   return NewChatRoute(workspaceId: firstWorkspaceId).location;
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  serviceConnectionsActionUsecase,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 String? _mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {
   final pathSegments = uri.pathSegments;
 

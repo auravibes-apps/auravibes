@@ -449,7 +449,7 @@ void main() {
         const AppSkillRegistry(),
       );
       final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
-        listAvailableSkillsUsecase,
+        (_) => listAvailableSkillsUsecase,
         const AppSkillRegistry(),
         ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
       );
@@ -491,7 +491,7 @@ void main() {
         workspaceId: workspace.id,
         slug: skill.slug,
       );
-      final loadableSkills = await listAvailableSkillsUsecase.call(
+      final loadableSkills = await listAvailableSkillsUsecase(
         conversationId: conversation.id,
         workspaceId: workspace.id,
         filter: SkillLoadFilter.loadable,
@@ -531,15 +531,16 @@ void main() {
         isLoaded: true,
       );
       final usecase = BuildSkillContextMessagesService(
-        listAvailableSkillsUsecase,
+        listAvailableSkillsUsecase.call,
         ListConversationAgentSkillsUsecase(
-          conversationRepository.getConversationById,
-          AgentsRepository(database),
+          (conversationId, _) =>
+              conversationRepository.getConversationById(conversationId),
+          (_) => AgentsRepository(database),
           ResolveAgentSkillsUsecase(
             skillsRepository,
             appSkillSettingsRepository,
             const AppSkillRegistry(),
-          ),
+          ).call,
         ),
       );
 
@@ -597,7 +598,7 @@ void main() {
         ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
       );
 
-      final loadableSkills = await listAvailableSkillsUsecase.call(
+      final loadableSkills = await listAvailableSkillsUsecase(
         conversationId: conversation.id,
         workspaceId: workspace.id,
         filter: SkillLoadFilter.loadable,
@@ -618,7 +619,7 @@ void main() {
           isCredentialOptional: true,
         ),
       );
-      final optionalLoadableSkills = await listAvailableSkillsUsecase.call(
+      final optionalLoadableSkills = await listAvailableSkillsUsecase(
         conversationId: conversation.id,
         workspaceId: workspace.id,
         filter: SkillLoadFilter.loadable,
@@ -651,7 +652,7 @@ void main() {
           attributes: const {'api_key': 'secret-token'},
         ),
       );
-      final readySkills = await listAvailableSkillsUsecase.call(
+      final readySkills = await listAvailableSkillsUsecase(
         conversationId: conversation.id,
         workspaceId: workspace.id,
         filter: SkillLoadFilter.loadable,
@@ -712,12 +713,12 @@ void main() {
 
         await skillCredentialsRepository.deleteCredential(credential.id);
 
-        final loadedSkills = await listAvailableSkillsUsecase.call(
+        final loadedSkills = await listAvailableSkillsUsecase(
           conversationId: conversation.id,
           workspaceId: workspace.id,
           filter: SkillLoadFilter.loaded,
         );
-        final loadableSkills = await listAvailableSkillsUsecase.call(
+        final loadableSkills = await listAvailableSkillsUsecase(
           conversationId: conversation.id,
           workspaceId: workspace.id,
           filter: SkillLoadFilter.loadable,
@@ -817,7 +818,7 @@ void main() {
         isLoaded: true,
       );
       final buildSpecsUsecase = BuildSkillTemplateToolSpecsUsecase(
-        listAvailableSkillsUsecase,
+        (_) => listAvailableSkillsUsecase,
         toolsRepository,
         skillCredentialsRepository,
       );
@@ -950,7 +951,7 @@ void main() {
         isLoaded: true,
       );
       final buildSpecsUsecase = BuildSkillTemplateToolSpecsUsecase(
-        listAvailableSkillsUsecase,
+        (_) => listAvailableSkillsUsecase,
         toolsRepository,
         skillCredentialsRepository,
       );
@@ -1053,7 +1054,7 @@ void main() {
               required arguments,
             }) async => '',
         conversationRepository: conversationRepository,
-        listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+        listAvailableSkillsUsecase: (_) => listAvailableSkillsUsecase,
         skillCredentialsRepository: skillCredentialsRepository,
       );
 
@@ -1453,7 +1454,7 @@ void main() {
         isLoaded: true,
       );
       final buildSpecsUsecase = BuildAppSkillNativeToolSpecsUsecase(
-        listAvailableSkillsUsecase,
+        (_) => listAvailableSkillsUsecase,
         ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
       );
       final runUsecase = runSkillsManagerToolUsecase();

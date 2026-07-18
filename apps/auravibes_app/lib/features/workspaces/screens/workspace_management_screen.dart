@@ -1,18 +1,10 @@
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_management_mode.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_switcher.dart';
 import 'package:auravibes_app/features/workspaces/usecases/usecases.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -26,23 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  workspaceSession,
-  workspaceModelSelectionById,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class WorkspaceManagementScreen extends ConsumerWidget {
   const WorkspaceManagementScreen({required this.workspaceId, super.key});
 
@@ -80,21 +56,6 @@ class WorkspaceManagementScreen extends ConsumerWidget {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  workspaceModelSelectionById,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class _WorkspaceList extends ConsumerWidget {
   const _WorkspaceList({
     required this.activeWorkspaceId,

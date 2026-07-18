@@ -3,6 +3,7 @@
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/data/cloud_tools_repository.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
@@ -12,11 +13,20 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_notifier.g.dart';
 
-@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
-WorkspaceToolsRepositoryContract workspaceToolsRepository(Ref ref) {
-  if (ref.watch(workspaceSessionProvider).cloud != null) {
+extension WorkspaceToolsRepositoryFamilyTestOverride
+    on WorkspaceToolsRepositoryFamily {
+  Override overrideWithValue(WorkspaceToolsRepositoryContract value) =>
+      overrideWith((_, _) => value);
+}
+
+@riverpod
+WorkspaceToolsRepositoryContract workspaceToolsRepository(
+  Ref ref,
+  WorkspaceSession session,
+) {
+  if (session.cloud != null) {
     return CloudToolsRepository(
-      ref.read(cloudWorkspaceStateGatewayProvider.future),
+      ref.read(cloudWorkspaceStateGatewayProvider(session).future),
     );
   }
   final appDatabase = ref.watch(appDatabaseProvider);
@@ -24,11 +34,11 @@ WorkspaceToolsRepositoryContract workspaceToolsRepository(Ref ref) {
   return WorkspaceToolsRepository(appDatabase);
 }
 
-@Riverpod(dependencies: [])
+@riverpod
 int workspaceToolIndexNotifier(Ref _) =>
     throw Exception('implement workspaceToolIndexNotifier');
 
-@Riverpod(dependencies: [workspaceToolsRepository])
+@riverpod
 class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   WorkspaceToolsRepositoryContract? _repository;
   String _workspaceId = '';
@@ -44,7 +54,10 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
-    final repository = ref.watch(workspaceToolsRepositoryProvider);
+    final session = await ref.watch(
+      workspaceSessionForRouteProvider(workspaceId).future,
+    );
+    final repository = ref.watch(workspaceToolsRepositoryProvider(session));
     _repository = repository;
     _workspaceId = workspaceId;
 
@@ -130,12 +143,15 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
 /// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
-@Riverpod(dependencies: [workspaceSession, WorkspaceToolsNotifier])
+@riverpod
 Future<List<UserToolType>> availableToolsToAdd(
   Ref ref,
   String workspaceId,
 ) async {
-  if (!ref.watch(workspaceSessionProvider).capabilities.nativeTools) {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  if (!session.capabilities.nativeTools) {
     return const [];
   }
   final workspaceTools = await ref.watch(
@@ -153,7 +169,7 @@ Future<List<UserToolType>> availableToolsToAdd(
       .toList();
 }
 
-@Riverpod(dependencies: [workspaceToolIndexNotifier, WorkspaceToolsNotifier])
+@riverpod
 WorkspaceToolEntity? workspaceToolRow(Ref ref, String workspaceId) {
   final workspaceToolIndex = ref.watch(workspaceToolIndexProvider);
   final workspaceTools = ref.watch(workspaceToolsProvider(workspaceId)).value;

@@ -38,7 +38,7 @@ class ServiceConnectionsActionUsecase {
   }
 }
 
-@Riverpod(dependencies: [deleteServiceConnectionUsecase])
+@riverpod
 Future<ServiceConnectionsActionUsecase> serviceConnectionsActionUsecase(
   Ref ref,
   String workspaceId,

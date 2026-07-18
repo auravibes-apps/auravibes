@@ -13,7 +13,7 @@ void main() {
       final listUseCase = _MockListAvailableSkillsUsecase();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final usecase = BuildSkillContextMessagesService(
-        listUseCase,
+        listUseCase.call,
         listAgentSkills,
       );
       when(
@@ -63,7 +63,7 @@ void main() {
       final listUseCase = _MockListAvailableSkillsUsecase();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final usecase = BuildSkillContextMessagesService(
-        listUseCase,
+        listUseCase.call,
         listAgentSkills,
       );
       final now = DateTime(2026);
@@ -141,7 +141,7 @@ void main() {
       final listUseCase = _MockListAvailableSkillsUsecase();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
       final usecase = BuildSkillContextMessagesService(
-        listUseCase,
+        listUseCase.call,
         listAgentSkills,
       );
       when(

@@ -108,7 +108,7 @@ class SkillsScreen extends ConsumerWidget {
     WorkspaceSkill skill,
     bool isEnabled,
   ) async {
-    final usecase = ref.read(disableSkillUsecaseProvider);
+    final usecase = ref.read(disableSkillUsecaseProvider(workspaceId));
     await usecase.call(
       workspaceId: workspaceId,
       source: skill.source,
@@ -139,7 +139,7 @@ class SkillsScreen extends ConsumerWidget {
     );
     if (shouldDelete != true) return;
 
-    await ref.read(deleteSkillProvider)(skill.id);
+    await ref.read(deleteSkillProvider(workspaceId))(skill.id);
     ref.invalidate(workspaceSkillsProvider(workspaceId));
   }
 }

@@ -139,7 +139,7 @@ void main() {
     test('startConversation sets isLoading and returns conversation', () async {
       final sendContainer = ProviderContainer(
         overrides: [
-          sendNewMessageUsecaseProvider.overrideWithValue(
+          sendNewMessageUsecaseProvider('ws-1').overrideWithValue(
             _FakeSendNewMessageUsecase(),
           ),
         ],
@@ -165,7 +165,7 @@ void main() {
     test('startConversation resets isLoading on error', () async {
       final sendContainer = ProviderContainer(
         overrides: [
-          sendNewMessageUsecaseProvider.overrideWithValue(
+          sendNewMessageUsecaseProvider('ws-1').overrideWithValue(
             _ErrorSendNewMessageUsecase(),
           ),
         ],

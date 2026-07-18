@@ -11,7 +11,7 @@ part of 'grouped_tools_notifier.dart';
 /// Provider for the tools groups repository.
 
 @ProviderFor(toolsGroupsRepository)
-final toolsGroupsRepositoryProvider = ToolsGroupsRepositoryProvider._();
+final toolsGroupsRepositoryProvider = ToolsGroupsRepositoryFamily._();
 
 /// Provider for the tools groups repository.
 
@@ -24,28 +24,26 @@ final class ToolsGroupsRepositoryProvider
         >
     with $Provider<ToolsGroupsRepositoryContract> {
   /// Provider for the tools groups repository.
-  ToolsGroupsRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'toolsGroupsRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ToolsGroupsRepositoryProvider.$allTransitiveDependencies0,
-          ToolsGroupsRepositoryProvider.$allTransitiveDependencies1,
-        ],
-      );
-
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
+  ToolsGroupsRepositoryProvider._({
+    required ToolsGroupsRepositoryFamily super.from,
+    required WorkspaceSession super.argument,
+  }) : super(
+         retry: null,
+         name: r'toolsGroupsRepositoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$toolsGroupsRepositoryHash();
+
+  @override
+  String toString() {
+    return r'toolsGroupsRepositoryProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -55,7 +53,8 @@ final class ToolsGroupsRepositoryProvider
 
   @override
   ToolsGroupsRepositoryContract create(Ref ref) {
-    return toolsGroupsRepository(ref);
+    final argument = this.argument as WorkspaceSession;
+    return toolsGroupsRepository(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -67,10 +66,46 @@ final class ToolsGroupsRepositoryProvider
       ),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ToolsGroupsRepositoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$toolsGroupsRepositoryHash() =>
-    r'21fb43ba53e76cd895854e3a4b3a525f6353e6a7';
+    r'4d0d5e678317838b6c32e9b6b03c228188e3f4c2';
+
+/// Provider for the tools groups repository.
+
+final class ToolsGroupsRepositoryFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          ToolsGroupsRepositoryContract,
+          WorkspaceSession
+        > {
+  ToolsGroupsRepositoryFamily._()
+    : super(
+        retry: null,
+        name: r'toolsGroupsRepositoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provider for the tools groups repository.
+
+  ToolsGroupsRepositoryProvider call(WorkspaceSession session) =>
+      ToolsGroupsRepositoryProvider._(argument: session, from: this);
+
+  @override
+  String toString() => r'toolsGroupsRepositoryProvider';
+}
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -117,18 +152,6 @@ final class GroupedToolsNotifierProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = toolsGroupsRepositoryProvider;
-  static final $allTransitiveDependencies1 =
-      ToolsGroupsRepositoryProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      ToolsGroupsRepositoryProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies3 = workspaceToolsProvider;
-  static final $allTransitiveDependencies4 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies5 = mcpConnectionProvider;
-  static final $allTransitiveDependencies6 =
-      McpConnectionNotifierProvider.$allTransitiveDependencies0;
-
   @override
   String debugGetCreateSourceHash() => _$groupedToolsNotifierHash();
 
@@ -155,7 +178,7 @@ final class GroupedToolsNotifierProvider
 }
 
 String _$groupedToolsNotifierHash() =>
-    r'075af298075f5c6b50389ec512e0161447ab605c';
+    r'55ad6848629ebad1b2f79cf165ec50d552cc5b77';
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
@@ -179,23 +202,8 @@ final class GroupedToolsNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'groupedToolsProvider',
-        dependencies: <ProviderOrFamily>[
-          toolsGroupsRepositoryProvider,
-          workspaceToolsProvider,
-          mcpConnectionProvider,
-          mcpServersRepositoryProvider,
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          GroupedToolsNotifierProvider.$allTransitiveDependencies0,
-          GroupedToolsNotifierProvider.$allTransitiveDependencies1,
-          GroupedToolsNotifierProvider.$allTransitiveDependencies2,
-          GroupedToolsNotifierProvider.$allTransitiveDependencies3,
-          GroupedToolsNotifierProvider.$allTransitiveDependencies4,
-          GroupedToolsNotifierProvider.$allTransitiveDependencies5,
-          GroupedToolsNotifierProvider.$allTransitiveDependencies6,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -276,22 +284,6 @@ final class EnabledToolsCountProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = groupedToolsProvider;
-  static final $allTransitiveDependencies1 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies3 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies2;
-  static final $allTransitiveDependencies4 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies3;
-  static final $allTransitiveDependencies5 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies4;
-  static final $allTransitiveDependencies6 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies5;
-  static final $allTransitiveDependencies7 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies6;
-
   @override
   String debugGetCreateSourceHash() => _$enabledToolsCountHash();
 
@@ -324,7 +316,7 @@ final class EnabledToolsCountProvider
   }
 }
 
-String _$enabledToolsCountHash() => r'fb71a22f446d6b290a8ceb5ce0dcd5018127363c';
+String _$enabledToolsCountHash() => r'8b2b496ae84eee9417a256708a5c99890327af31';
 
 /// Provider that returns the count of enabled tools across all groups.
 
@@ -334,17 +326,8 @@ final class EnabledToolsCountFamily extends $Family
     : super(
         retry: null,
         name: r'enabledToolsCountProvider',
-        dependencies: <ProviderOrFamily>[groupedToolsProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          EnabledToolsCountProvider.$allTransitiveDependencies0,
-          EnabledToolsCountProvider.$allTransitiveDependencies1,
-          EnabledToolsCountProvider.$allTransitiveDependencies2,
-          EnabledToolsCountProvider.$allTransitiveDependencies3,
-          EnabledToolsCountProvider.$allTransitiveDependencies4,
-          EnabledToolsCountProvider.$allTransitiveDependencies5,
-          EnabledToolsCountProvider.$allTransitiveDependencies6,
-          EnabledToolsCountProvider.$allTransitiveDependencies7,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -379,22 +362,6 @@ final class TotalToolsCountProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = groupedToolsProvider;
-  static final $allTransitiveDependencies1 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies3 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies2;
-  static final $allTransitiveDependencies4 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies3;
-  static final $allTransitiveDependencies5 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies4;
-  static final $allTransitiveDependencies6 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies5;
-  static final $allTransitiveDependencies7 =
-      GroupedToolsNotifierProvider.$allTransitiveDependencies6;
-
   @override
   String debugGetCreateSourceHash() => _$totalToolsCountHash();
 
@@ -427,7 +394,7 @@ final class TotalToolsCountProvider
   }
 }
 
-String _$totalToolsCountHash() => r'73b828e83271a407339c56be8da9b998c033bb00';
+String _$totalToolsCountHash() => r'65fe5867268d59f0c7816a38e7f644c7467e3435';
 
 /// Provider that returns the total count of tools across all groups.
 
@@ -437,17 +404,8 @@ final class TotalToolsCountFamily extends $Family
     : super(
         retry: null,
         name: r'totalToolsCountProvider',
-        dependencies: <ProviderOrFamily>[groupedToolsProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          TotalToolsCountProvider.$allTransitiveDependencies0,
-          TotalToolsCountProvider.$allTransitiveDependencies1,
-          TotalToolsCountProvider.$allTransitiveDependencies2,
-          TotalToolsCountProvider.$allTransitiveDependencies3,
-          TotalToolsCountProvider.$allTransitiveDependencies4,
-          TotalToolsCountProvider.$allTransitiveDependencies5,
-          TotalToolsCountProvider.$allTransitiveDependencies6,
-          TotalToolsCountProvider.$allTransitiveDependencies7,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

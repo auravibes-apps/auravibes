@@ -37,7 +37,8 @@ class BuildAppSkillNativeToolSpecsUsecase {
     this._conversationRepository,
   ]);
 
-  final ListAvailableSkillsUsecase _listAvailableSkillsUsecase;
+  final ListAvailableSkillsUsecase Function(String workspaceId)
+  _listAvailableSkillsUsecase;
   final ListAppSkillCredentialCandidatesUsecase
   _listAppSkillCredentialCandidatesUsecase;
   final ConversationRepository? _conversationRepository;
@@ -47,7 +48,7 @@ class BuildAppSkillNativeToolSpecsUsecase {
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
   }) async {
-    final loadedSkills = await _listAvailableSkillsUsecase.call(
+    final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
@@ -469,7 +470,8 @@ final _skillsManagerToolSpecs = [
 final buildAppSkillNativeToolSpecsUsecaseProvider =
     Provider<BuildAppSkillNativeToolSpecsUsecase>((ref) {
       return BuildAppSkillNativeToolSpecsUsecase(
-        ref.watch(listAvailableSkillsUsecaseProvider),
+        (workspaceId) =>
+            ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
         ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
         ref.watch(conversationRepositoryProvider),
       );

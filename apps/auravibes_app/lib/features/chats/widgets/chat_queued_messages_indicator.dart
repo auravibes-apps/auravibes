@@ -1,20 +1,19 @@
 // Required: Existing code repeats lookups where extraction adds noise.
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([conversationSelected])
 class ChatQueuedMessagesIndicator extends ConsumerWidget {
   const ChatQueuedMessagesIndicator({
+    required this.conversationId,
     required this.queuedDrafts,
     super.key,
   });
 
+  final String conversationId;
   final List<ConversationQueuedDraft> queuedDrafts;
 
   @override
@@ -23,7 +22,6 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final conversationId = ref.read(conversationSelectedProvider);
     final notifier = ref.read(conversationSendQueueProvider.notifier);
 
     return Padding(

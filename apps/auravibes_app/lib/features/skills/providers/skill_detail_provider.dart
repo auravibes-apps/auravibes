@@ -7,15 +7,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_detail_provider.g.dart';
 
-@Riverpod(
-  dependencies: [cloudSkillStore],
-)
+@riverpod
 Future<SkillDetail?> skillDetail(
   Ref ref,
   String workspaceId,
   String skillId,
 ) async {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
   if (cloud != null) {
     final skill = await cloud.skill(skillId);
 

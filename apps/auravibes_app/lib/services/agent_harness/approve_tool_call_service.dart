@@ -1,3 +1,4 @@
+// ignore_for_file: always_put_required_named_parameters_first
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 
@@ -26,6 +27,8 @@ class AppApproveToolCallDataProvider
     required this.conversationRepository,
     required this.conversationToolsRepository,
     required this.resolveToolApprovalDecisionUsecase,
+    this.conversationToolsRepositoryForWorkspace,
+    this.resolveToolApprovalDecisionUsecaseForWorkspace,
     required this.toolResolverService,
     required this.agentToolResumeService,
     required this.runResolvedToolUsecase,
@@ -37,6 +40,10 @@ class AppApproveToolCallDataProvider
   final ConversationRepository conversationRepository;
   final ConversationToolsRepository conversationToolsRepository;
   final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecisionUsecase;
+  final ConversationToolsRepository Function(String workspaceId)?
+  conversationToolsRepositoryForWorkspace;
+  final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
+  resolveToolApprovalDecisionUsecaseForWorkspace;
   final ToolResolverService toolResolverService;
   final AgentToolResumeService agentToolResumeService;
   final ResolvedToolService runResolvedToolUsecase;
@@ -76,20 +83,29 @@ class AppApproveToolCallDataProvider
     final conversation = await conversationRepository.getConversationById(
       conversationId,
     );
-    final permissionTableId = conversation == null
-        ? null
-        : await resolveToolApprovalDecisionUsecase.resolvePermissionTableId(
-            conversationId: conversationId,
-            workspaceId: conversation.workspaceId,
-            resolvedTool: tool,
-          );
+    if (conversation == null) return;
+    final permissionTableId =
+        await (resolveToolApprovalDecisionUsecaseForWorkspace?.call(
+                  conversation.workspaceId,
+                ) ??
+                resolveToolApprovalDecisionUsecase)
+            .resolvePermissionTableId(
+              conversationId: conversationId,
+              workspaceId: conversation.workspaceId,
+              resolvedTool: tool,
+            );
     if (permissionTableId == null) return;
 
-    final _ = await conversationToolsRepository.setConversationToolPermission(
-      conversationId,
-      permissionTableId,
-      permissionMode: ToolPermissionMode.alwaysAllow,
-    );
+    final _ =
+        await (conversationToolsRepositoryForWorkspace?.call(
+                  conversation.workspaceId,
+                ) ??
+                conversationToolsRepository)
+            .setConversationToolPermission(
+              conversationId,
+              permissionTableId,
+              permissionMode: ToolPermissionMode.alwaysAllow,
+            );
   }
 
   @override

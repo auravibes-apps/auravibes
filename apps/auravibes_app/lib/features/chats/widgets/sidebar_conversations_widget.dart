@@ -8,18 +8,11 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -29,24 +22,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  cloudConversationUsecase,
-])
+
 class SidebarConversationsWidget extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
   // ignore: unnecessary-nullable
@@ -195,21 +172,6 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class _SidebarConversationsViewAllButton extends StatelessWidget {
   const _SidebarConversationsViewAllButton({required this.workspaceId});
 
@@ -237,22 +199,6 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  cloudConversationUsecase,
-])
 class _SidebarConversationTile extends ConsumerStatefulWidget {
   const _SidebarConversationTile({
     required this.chat,
@@ -283,7 +229,9 @@ class _SidebarConversationTileState
     final confirmed = await showDeleteConversationConfirmDialog(context);
     if (!confirmed) return;
 
-    final cloud = await ref.read(cloudConversationUsecaseProvider.future);
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
+    );
     if (cloud != null) {
       await cloud.delete(widget.chat);
 

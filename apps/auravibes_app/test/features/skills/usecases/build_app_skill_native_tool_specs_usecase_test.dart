@@ -12,7 +12,7 @@ void main() {
     test('builds loaded service app skill tool specs', () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        listUsecase,
+        (_) => listUsecase,
         _FakeAppSkillCandidates({
           'openai': [_candidate('model:openai-1')],
         }),
@@ -41,7 +41,7 @@ void main() {
     test('requires credentialId only with multiple credentials', () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        listUsecase,
+        (_) => listUsecase,
         _FakeAppSkillCandidates({
           'openai': [
             _candidate('model:openai-1', name: 'OpenAI key ****1234'),
@@ -76,7 +76,7 @@ void main() {
     test('keeps skills manager specs with loaded service app skills', () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        listUsecase,
+        (_) => listUsecase,
         _FakeAppSkillCandidates({
           'brave': [_candidate('service:brave-1')],
         }),
@@ -112,7 +112,7 @@ void main() {
     test('builds agents skill with list_agents only', () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        listUsecase,
+        (_) => listUsecase,
         const _FakeAppSkillCandidates({}),
       );
       when(
@@ -162,7 +162,7 @@ void main() {
     test('builds Codex tool spec with Codex credential candidate', () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        listUsecase,
+        (_) => listUsecase,
         _FakeAppSkillCandidates({
           'codex': [_candidate('model:codex-1')],
         }),
@@ -192,7 +192,7 @@ void main() {
       () async {
         final listUsecase = _MockListAvailableSkillsUsecase();
         final usecase = BuildAppSkillNativeToolSpecsUsecase(
-          listUsecase,
+          (_) => listUsecase,
           const _FakeAppSkillCandidates({}),
         );
         when(
@@ -222,7 +222,7 @@ void main() {
     test('omits SearXNG search without a configured instance', () async {
       final listUsecase = _MockListAvailableSkillsUsecase();
       final usecase = BuildAppSkillNativeToolSpecsUsecase(
-        listUsecase,
+        (_) => listUsecase,
         const _FakeAppSkillCandidates({}),
       );
       when(
@@ -246,7 +246,7 @@ void main() {
       () async {
         final listUsecase = _MockListAvailableSkillsUsecase();
         final usecase = BuildAppSkillNativeToolSpecsUsecase(
-          listUsecase,
+          (_) => listUsecase,
           _FakeAppSkillCandidates({
             'searxng': [_candidate('service:searxng-1')],
           }),

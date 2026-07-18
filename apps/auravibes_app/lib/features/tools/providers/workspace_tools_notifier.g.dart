@@ -10,7 +10,7 @@ part of 'workspace_tools_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(workspaceToolsRepository)
-final workspaceToolsRepositoryProvider = WorkspaceToolsRepositoryProvider._();
+final workspaceToolsRepositoryProvider = WorkspaceToolsRepositoryFamily._();
 
 final class WorkspaceToolsRepositoryProvider
     extends
@@ -20,28 +20,26 @@ final class WorkspaceToolsRepositoryProvider
           WorkspaceToolsRepositoryContract
         >
     with $Provider<WorkspaceToolsRepositoryContract> {
-  WorkspaceToolsRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'workspaceToolsRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          WorkspaceToolsRepositoryProvider.$allTransitiveDependencies0,
-          WorkspaceToolsRepositoryProvider.$allTransitiveDependencies1,
-        ],
-      );
-
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
+  WorkspaceToolsRepositoryProvider._({
+    required WorkspaceToolsRepositoryFamily super.from,
+    required WorkspaceSession super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceToolsRepositoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$workspaceToolsRepositoryHash();
+
+  @override
+  String toString() {
+    return r'workspaceToolsRepositoryProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -51,7 +49,8 @@ final class WorkspaceToolsRepositoryProvider
 
   @override
   WorkspaceToolsRepositoryContract create(Ref ref) {
-    return workspaceToolsRepository(ref);
+    final argument = this.argument as WorkspaceSession;
+    return workspaceToolsRepository(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -63,10 +62,43 @@ final class WorkspaceToolsRepositoryProvider
       ),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceToolsRepositoryProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$workspaceToolsRepositoryHash() =>
-    r'dbb34024bc95631647adfb57d1c39f30136fc022';
+    r'96a2c8d6482f43b6c32296f96d532390390f8ea0';
+
+final class WorkspaceToolsRepositoryFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          WorkspaceToolsRepositoryContract,
+          WorkspaceSession
+        > {
+  WorkspaceToolsRepositoryFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceToolsRepositoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceToolsRepositoryProvider call(WorkspaceSession session) =>
+      WorkspaceToolsRepositoryProvider._(argument: session, from: this);
+
+  @override
+  String toString() => r'workspaceToolsRepositoryProvider';
+}
 
 @ProviderFor(workspaceToolIndexNotifier)
 final workspaceToolIndexProvider = WorkspaceToolIndexNotifierProvider._();
@@ -81,8 +113,8 @@ final class WorkspaceToolIndexNotifierProvider
         retry: null,
         name: r'workspaceToolIndexProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[],
-        $allTransitiveDependencies: <ProviderOrFamily>[],
+        dependencies: null,
+        $allTransitiveDependencies: null,
       );
 
   @override
@@ -108,7 +140,7 @@ final class WorkspaceToolIndexNotifierProvider
 }
 
 String _$workspaceToolIndexNotifierHash() =>
-    r'3b576a17fc24c68fad98ebf210ecdc27c96598f9';
+    r'933fbd618fcee33e7b6a43c10352eadd91bacbdf';
 
 @ProviderFor(WorkspaceToolsNotifier)
 final workspaceToolsProvider = WorkspaceToolsNotifierFamily._();
@@ -129,12 +161,6 @@ final class WorkspaceToolsNotifierProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
-
-  static final $allTransitiveDependencies0 = workspaceToolsRepositoryProvider;
-  static final $allTransitiveDependencies1 =
-      WorkspaceToolsRepositoryProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      WorkspaceToolsRepositoryProvider.$allTransitiveDependencies1;
 
   @override
   String debugGetCreateSourceHash() => _$workspaceToolsNotifierHash();
@@ -163,7 +189,7 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'1e1823541d1af426935099f13816bcc7821b3dea';
+    r'24dd1b4b359fa303ab2c74c210db7f0b3fcfc28e';
 
 final class WorkspaceToolsNotifierFamily extends $Family
     with
@@ -178,12 +204,8 @@ final class WorkspaceToolsNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'workspaceToolsProvider',
-        dependencies: <ProviderOrFamily>[workspaceToolsRepositoryProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          WorkspaceToolsNotifierProvider.$allTransitiveDependencies0,
-          WorkspaceToolsNotifierProvider.$allTransitiveDependencies1,
-          WorkspaceToolsNotifierProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -256,13 +278,6 @@ final class AvailableToolsToAddProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = workspaceToolsProvider;
-  static final $allTransitiveDependencies2 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies3 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies2;
-
   @override
   String debugGetCreateSourceHash() => _$availableToolsToAddHash();
 
@@ -297,7 +312,7 @@ final class AvailableToolsToAddProvider
 }
 
 String _$availableToolsToAddHash() =>
-    r'89240caa30120407f7c291a68e2f927378055367';
+    r'87a48b704d9cb6bf3e014813570d0da2a1048687';
 
 /// Provider that returns the list of available built-in tools.
 /// that can be added to the workspace
@@ -308,16 +323,8 @@ final class AvailableToolsToAddFamily extends $Family
     : super(
         retry: null,
         name: r'availableToolsToAddProvider',
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          workspaceToolsProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          AvailableToolsToAddProvider.$allTransitiveDependencies0,
-          AvailableToolsToAddProvider.$allTransitiveDependencies1,
-          AvailableToolsToAddProvider.$allTransitiveDependencies2,
-          AvailableToolsToAddProvider.$allTransitiveDependencies3,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -352,15 +359,6 @@ final class WorkspaceToolRowProvider
          dependencies: null,
          $allTransitiveDependencies: null,
        );
-
-  static final $allTransitiveDependencies0 = workspaceToolIndexProvider;
-  static final $allTransitiveDependencies1 = workspaceToolsProvider;
-  static final $allTransitiveDependencies2 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies3 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies4 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies2;
 
   @override
   String debugGetCreateSourceHash() => _$workspaceToolRowHash();
@@ -403,7 +401,7 @@ final class WorkspaceToolRowProvider
   }
 }
 
-String _$workspaceToolRowHash() => r'ecf8cfcf10429288dae39712a5a6eb9f7b6506c7';
+String _$workspaceToolRowHash() => r'b1842c887747b5328f27a5c41cb66e6ab24445d6';
 
 final class WorkspaceToolRowFamily extends $Family
     with $FunctionalFamilyOverride<WorkspaceToolEntity?, String> {
@@ -411,17 +409,8 @@ final class WorkspaceToolRowFamily extends $Family
     : super(
         retry: null,
         name: r'workspaceToolRowProvider',
-        dependencies: <ProviderOrFamily>[
-          workspaceToolIndexProvider,
-          workspaceToolsProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          WorkspaceToolRowProvider.$allTransitiveDependencies0,
-          WorkspaceToolRowProvider.$allTransitiveDependencies1,
-          WorkspaceToolRowProvider.$allTransitiveDependencies2,
-          WorkspaceToolRowProvider.$allTransitiveDependencies3,
-          WorkspaceToolRowProvider.$allTransitiveDependencies4,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

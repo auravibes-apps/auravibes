@@ -180,7 +180,9 @@ class _AgentsList extends ConsumerWidget {
     );
     if (shouldDelete != true) return;
 
-    final _ = await ref.read(deleteAgentUsecaseProvider).call(agentId);
+    final _ = await ref
+        .read(deleteAgentUsecaseProvider(workspaceId))
+        .call(agentId);
     final _ = ref.invalidate(agentsProvider(workspaceId));
   }
 }

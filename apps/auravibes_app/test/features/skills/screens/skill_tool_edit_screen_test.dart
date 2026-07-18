@@ -48,7 +48,7 @@ void main() {
         workspaceSessionProvider.overrideWithValue(
           WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );
@@ -74,6 +74,29 @@ void main() {
         credentialDefinitionId: definition.id,
       ),
     );
+    container.updateOverrides([
+      skillsRepositoryProvider.overrideWithValue(
+        container.read(skillsRepositoryProvider),
+      ),
+      skillTemplateToolsRepositoryProvider.overrideWithValue(
+        container.read(skillTemplateToolsRepositoryProvider),
+      ),
+      skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
+        container.read(skillCredentialDefinitionsRepositoryProvider),
+      ),
+      skillDetailProvider(workspace.id, skill.id).overrideWith(
+        (_) async => SkillDetail.fromUserSkill(skill),
+      ),
+      createSkillTemplateToolUsecaseProvider(workspace.id).overrideWithValue(
+        CreateSkillTemplateToolUsecase(
+          container.read(skillTemplateToolsRepositoryProvider),
+          skillsRepository: container.read(skillsRepositoryProvider),
+          skillCredentialDefinitionsRepository: container.read(
+            skillCredentialDefinitionsRepositoryProvider,
+          ),
+        ),
+      ),
+    ]);
     final router = GoRouter(
       routes: [
         GoRoute(
@@ -98,56 +121,14 @@ void main() {
           builder: (context) {
             return UncontrolledProviderScope(
               container: container,
-              child: ProviderScope(
-                overrides: [
-                  workspaceSessionProvider.overrideWithValue(
-                    WorkspaceSession(
-                      LocalWorkspaceRef(localWorkspaceId: workspace.id),
-                    ),
-                  ),
-                  cloudWorkspaceStateGatewayProvider.overrideWith(
-                    (_) async => null,
-                  ),
-                  cloudSkillStoreProvider.overrideWithValue(null),
-                  skillsRepositoryProvider.overrideWithValue(
-                    container.read(skillsRepositoryProvider),
-                  ),
-                  skillTemplateToolsRepositoryProvider.overrideWithValue(
-                    container.read(skillTemplateToolsRepositoryProvider),
-                  ),
-                  skillCredentialDefinitionsRepositoryProvider
-                      .overrideWithValue(
-                        container.read(
-                          skillCredentialDefinitionsRepositoryProvider,
-                        ),
-                      ),
-                  skillDetailProvider(
-                    workspace.id,
-                    skill.id,
-                  ).overrideWith(
-                    (_) async => SkillDetail.fromUserSkill(skill),
-                  ),
-                  createSkillTemplateToolUsecaseProvider.overrideWithValue(
-                    CreateSkillTemplateToolUsecase(
-                      container.read(skillTemplateToolsRepositoryProvider),
-                      skillsRepository: container.read(
-                        skillsRepositoryProvider,
-                      ),
-                      skillCredentialDefinitionsRepository: container.read(
-                        skillCredentialDefinitionsRepositoryProvider,
-                      ),
-                    ),
-                  ),
-                ],
-                child: MaterialApp.router(
-                  routerConfig: router,
-                  builder: (context, child) => AuraSnackBarHost(
-                    child: child ?? const SizedBox.shrink(),
-                  ),
-                  locale: context.locale,
-                  localizationsDelegates: context.localizationDelegates,
-                  supportedLocales: context.supportedLocales,
+              child: MaterialApp.router(
+                routerConfig: router,
+                builder: (context, child) => AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
                 ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
               ),
             );
           },

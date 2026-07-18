@@ -15,9 +15,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([workspaceSession])
 class CompactionSettingsSection extends ConsumerStatefulWidget {
   const CompactionSettingsSection({required this.workspaceId, super.key});
 
@@ -205,7 +203,12 @@ class _CompactionSettingsSectionState
     );
 
     try {
-      final _ = await ref.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+      final usecase = await ref.read(
+        saveWorkspaceCompactionSettingsUsecaseProvider(
+          widget.workspaceId,
+        ).future,
+      );
+      final _ = await usecase(
         workspaceId: widget.workspaceId,
         settings: settings,
       );
@@ -235,15 +238,18 @@ class _CompactionSettingsSectionState
   Future<void> _resetDefaults() async {
     try {
       var isCloud = false;
-      try {
-        isCloud = ref.read(workspaceSessionProvider).cloud != null;
-      } on Exception {
-        isCloud = false;
-      }
+      isCloud =
+          (await ref.read(
+            workspaceSessionForRouteProvider(widget.workspaceId).future,
+          )).cloud !=
+          null;
       if (isCloud) {
-        await ref
-            .read(saveWorkspaceCompactionSettingsUsecaseProvider)
-            .reset(workspaceId: widget.workspaceId);
+        final usecase = await ref.read(
+          saveWorkspaceCompactionSettingsUsecaseProvider(
+            widget.workspaceId,
+          ).future,
+        );
+        await usecase.reset(workspaceId: widget.workspaceId);
       } else {
         final _ = await ref
             .read(workspaceCompactionSettingsRepositoryProvider)

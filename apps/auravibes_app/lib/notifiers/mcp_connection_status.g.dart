@@ -72,29 +72,9 @@ final class McpConnectionNotifierProvider
         retry: null,
         name: r'mcpConnectionProvider',
         isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          mcpServersRepositoryProvider,
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-          workspaceToolsProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          McpConnectionNotifierProvider.$allTransitiveDependencies0,
-          McpConnectionNotifierProvider.$allTransitiveDependencies1,
-          McpConnectionNotifierProvider.$allTransitiveDependencies2,
-          McpConnectionNotifierProvider.$allTransitiveDependencies3,
-          McpConnectionNotifierProvider.$allTransitiveDependencies4,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
       );
-
-  static final $allTransitiveDependencies0 = mcpServersRepositoryProvider;
-  static final $allTransitiveDependencies1 =
-      McpServersRepositoryProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      McpServersRepositoryProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies3 = workspaceToolsProvider;
-  static final $allTransitiveDependencies4 =
-      WorkspaceToolsNotifierProvider.$allTransitiveDependencies0;
 
   @override
   String debugGetCreateSourceHash() => _$mcpConnectionNotifierHash();
@@ -113,7 +93,7 @@ final class McpConnectionNotifierProvider
 }
 
 String _$mcpConnectionNotifierHash() =>
-    r'762cec40a6740a79ef42bc9e4793fa5895359291';
+    r'8bd8a1e9be4ab022c9c52c30eef4e6bbc1786a92';
 
 /// Manages MCP server connections and their tools.
 ///

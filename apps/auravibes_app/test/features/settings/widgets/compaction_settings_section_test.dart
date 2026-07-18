@@ -8,14 +8,12 @@ import 'package:auravibes_app/features/settings/providers/compaction_settings_pr
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -25,7 +23,6 @@ class MockSaveUsecase extends Mock
 class MockCompactionSettingsRepository extends Mock
     implements WorkspaceCompactionSettingsRepository {}
 
-@Dependencies([workspaceSession])
 void main() {
   const testWorkspaceId = 'test-ws';
 
@@ -54,7 +51,6 @@ void main() {
     final _ = settingsController?.close();
   });
 
-  @Dependencies([workspaceSession])
   Widget buildSubject() {
     return TestableApp(
       child: Theme(
@@ -71,7 +67,9 @@ void main() {
         compactionSettingsProvider(testWorkspaceId).overrideWith(
           (ref) => readSettingsController().stream,
         ),
-        saveWorkspaceCompactionSettingsUsecaseProvider.overrideWith(
+        saveWorkspaceCompactionSettingsUsecaseProvider(
+          testWorkspaceId,
+        ).overrideWith(
           (ref) => readMockSave(),
         ),
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
@@ -81,7 +79,6 @@ void main() {
     );
   }
 
-  @Dependencies([workspaceSession])
   Future<void> pumpSubject(WidgetTester tester) async {
     await tester.runAsync(() async {
       await tester.pumpWidget(buildSubject());

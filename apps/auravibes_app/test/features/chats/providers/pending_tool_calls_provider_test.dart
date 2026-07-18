@@ -26,7 +26,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart' as hooks;
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
 MessageToolCallEntity _pendingToolCall({
@@ -170,7 +169,6 @@ class _StaticMessageRepository implements MessageRepository {
   Null noSuchMethod(Invocation invocation) => null;
 }
 
-@Dependencies([chatMessageIds, messageConversationById, pendingToolCalls])
 void main() {
   testWidgets(
     'updates from real chatMessagesProvider without overlapping '
@@ -189,16 +187,20 @@ void main() {
             ),
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
+              'ws-1',
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
             conversationByIdStreamProvider(
+              'ws-1',
               conversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data(null)),
             messageRepositoryProvider.overrideWithValue(repository),
           ],
           child: hooks.Consumer(
             builder: (context, ref, child) {
-              final pendingCalls = ref.watch(pendingToolCallsProvider);
+              final pendingCalls = ref.watch(
+                pendingToolCallsProvider('ws-1', 'conv-1'),
+              );
 
               return Directionality(
                 textDirection: TextDirection.ltr,
@@ -249,11 +251,19 @@ void main() {
               if (!widgetRefCompleter.isCompleted) {
                 widgetRefCompleter.complete(ref);
               }
-              final messageIds = ref.watch(chatMessageIdsProvider);
+              final messageIds = ref.watch(
+                chatMessageIdsProvider('ws-1', 'conv-1'),
+              );
               final contents = [
                 for (final messageId in messageIds)
                   ref
-                      .watch(messageConversationByIdProvider(messageId))
+                      .watch(
+                        messageConversationByIdProvider(
+                          'ws-1',
+                          'conv-1',
+                          messageId,
+                        ),
+                      )
                       ?.content,
               ].nonNulls.join('|');
 
@@ -328,12 +338,14 @@ void main() {
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
+            'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider.overrideWithValue(
+          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
           conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
           ).overrideWithValue(
             AsyncValue<ConversationEntity?>.data(
@@ -347,7 +359,7 @@ void main() {
               ),
             ),
           ),
-          resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-granted': const ToolApprovalDecision(
                 toolCallId: 'tc-granted',
@@ -364,7 +376,9 @@ void main() {
         ],
       );
 
-      final result = await container.read(pendingToolCallsProvider.future);
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
 
       expect(result.length, 1);
       expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
@@ -397,12 +411,14 @@ void main() {
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
+            'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider.overrideWithValue(
+          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
           conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
           ).overrideWithValue(
             AsyncValue<ConversationEntity?>.data(
@@ -416,7 +432,7 @@ void main() {
               ),
             ),
           ),
-          resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-needs-confirm-1': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm-1',
@@ -433,7 +449,9 @@ void main() {
         ],
       );
 
-      final result = await container.read(pendingToolCallsProvider.future);
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
 
       expect(result.length, 2);
       expect(
@@ -474,24 +492,30 @@ void main() {
           ),
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
+            'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(AsyncValue.data([childConversation])),
-          chatMessagesProvider.overrideWithValue(
+          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
             const AsyncValue<List<MessageEntity>>.data([]),
           ),
-          chatMessagesByConversationProvider('child-1').overrideWithValue(
+          chatMessagesByConversationProvider(
+            'ws-1',
+            'child-1',
+          ).overrideWithValue(
             AsyncValue.data(childMessages),
           ),
           conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'child-1',
           ).overrideWithValue(AsyncValue.data(childConversation)),
           conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data(null)),
           messageRepositoryProvider.overrideWithValue(
             _StaticMessageRepository({'child-1': childMessages}),
           ),
-          resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
             _FakeResolveToolApprovalDecisionUsecase({
               'child-tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'child-tc-needs-confirm',
@@ -503,7 +527,9 @@ void main() {
         ],
       );
 
-      final result = await container.read(pendingToolCallsProvider.future);
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
 
       expect(result, hasLength(1));
       expect(result.single.toolCall.id, 'child-tc-needs-confirm');
@@ -535,12 +561,14 @@ void main() {
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
+            'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider.overrideWithValue(
+          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
           conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
           ).overrideWithValue(
             AsyncValue<ConversationEntity?>.data(
@@ -554,7 +582,7 @@ void main() {
               ),
             ),
           ),
-          resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-needs-confirm': const ToolApprovalDecision(
                 toolCallId: 'tc-needs-confirm',
@@ -566,7 +594,9 @@ void main() {
         ],
       );
 
-      final result = await container.read(pendingToolCallsProvider.future);
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
 
       expect(result.length, 1);
       expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
@@ -588,12 +618,14 @@ void main() {
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
+            'ws-1',
             parentConversationId: 'conv-1',
           ).overrideWithValue(const AsyncValue.data([])),
-          chatMessagesProvider.overrideWithValue(
+          chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
             AsyncValue<List<MessageEntity>>.data(messages),
           ),
           conversationByIdStreamProvider(
+            'ws-1',
             conversationId: 'conv-1',
           ).overrideWithValue(
             AsyncValue<ConversationEntity?>.data(
@@ -607,7 +639,7 @@ void main() {
               ),
             ),
           ),
-          resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+          resolveToolApprovalDecisionUsecaseProvider('ws-1').overrideWithValue(
             _FakeResolveToolApprovalDecisionUsecase({
               'tc-1': const ToolApprovalDecision(
                 toolCallId: 'tc-1',
@@ -624,7 +656,9 @@ void main() {
         ],
       );
 
-      final result = await container.read(pendingToolCallsProvider.future);
+      final result = await container.read(
+        pendingToolCallsProvider('ws-1', 'conv-1').future,
+      );
 
       expect(result, isEmpty);
     });
@@ -666,12 +700,14 @@ void main() {
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
+              'ws-1',
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider.overrideWithValue(
+            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
             conversationByIdStreamProvider(
+              'ws-1',
               conversationId: 'conv-1',
             ).overrideWithValue(
               AsyncValue<ConversationEntity?>.data(
@@ -685,13 +721,17 @@ void main() {
                 ),
               ),
             ),
-            resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+            resolveToolApprovalDecisionUsecaseProvider(
+              'ws-1',
+            ).overrideWithValue(
               needsConfirmUseCase,
             ),
           ],
         );
 
-        final first = await container.read(pendingToolCallsProvider.future);
+        final first = await container.read(
+          pendingToolCallsProvider('ws-1', 'conv-1').future,
+        );
         expect(first.length, 1);
         expect(first.firstOrNull?.toolCall.id, 'tc-1');
 
@@ -701,12 +741,14 @@ void main() {
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
+              'ws-1',
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider.overrideWithValue(
+            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
             conversationByIdStreamProvider(
+              'ws-1',
               conversationId: 'conv-1',
             ).overrideWithValue(
               AsyncValue<ConversationEntity?>.data(
@@ -720,13 +762,17 @@ void main() {
                 ),
               ),
             ),
-            resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+            resolveToolApprovalDecisionUsecaseProvider(
+              'ws-1',
+            ).overrideWithValue(
               grantedUseCase,
             ),
           ],
         );
 
-        final second = await container.read(pendingToolCallsProvider.future);
+        final second = await container.read(
+          pendingToolCallsProvider('ws-1', 'conv-1').future,
+        );
         expect(second, isEmpty);
       },
     );
@@ -769,12 +815,14 @@ void main() {
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
+              'ws-1',
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider.overrideWithValue(
+            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
             conversationByIdStreamProvider(
+              'ws-1',
               conversationId: 'conv-1',
             ).overrideWithValue(
               AsyncValue<ConversationEntity?>.data(
@@ -788,13 +836,17 @@ void main() {
                 ),
               ),
             ),
-            resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+            resolveToolApprovalDecisionUsecaseProvider(
+              'ws-1',
+            ).overrideWithValue(
               _FakeResolveToolApprovalDecisionUsecase(decisions),
             ),
           ],
         );
 
-        final result = await container.read(pendingToolCallsProvider.future);
+        final result = await container.read(
+          pendingToolCallsProvider('ws-1', 'conv-1').future,
+        );
         expect(result, isEmpty);
       },
     );
@@ -838,12 +890,14 @@ void main() {
           overrides: [
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
+              'ws-1',
               parentConversationId: 'conv-1',
             ).overrideWithValue(const AsyncValue.data([])),
-            chatMessagesProvider.overrideWithValue(
+            chatMessagesProvider('ws-1', 'conv-1').overrideWithValue(
               AsyncValue<List<MessageEntity>>.data(messages),
             ),
             conversationByIdStreamProvider(
+              'ws-1',
               conversationId: 'conv-1',
             ).overrideWithValue(
               AsyncValue<ConversationEntity?>.data(
@@ -857,7 +911,9 @@ void main() {
                 ),
               ),
             ),
-            resolveToolApprovalDecisionUsecaseProvider.overrideWithValue(
+            resolveToolApprovalDecisionUsecaseProvider(
+              'ws-1',
+            ).overrideWithValue(
               _FakeResolveToolApprovalDecisionUsecase({
                 'tc-needs-confirm': const ToolApprovalDecision(
                   toolCallId: 'tc-needs-confirm',
@@ -869,7 +925,9 @@ void main() {
           ],
         );
 
-        final result = await container.read(pendingToolCallsProvider.future);
+        final result = await container.read(
+          pendingToolCallsProvider('ws-1', 'conv-1').future,
+        );
         expect(result.length, 1);
         expect(result.firstOrNull?.toolCall.id, 'tc-needs-confirm');
       },

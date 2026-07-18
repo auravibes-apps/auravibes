@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
@@ -5,7 +6,7 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_template_tool_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class DuplicateSkillTemplateToolUsecase {
   const DuplicateSkillTemplateToolUsecase(
@@ -68,23 +69,20 @@ class DuplicateSkillTemplateToolUsecase {
   }
 }
 
-final duplicateSkillTemplateToolUsecaseProvider =
-    Provider<DuplicateSkillTemplateToolUsecase>(
-      (ref) {
-        final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<DuplicateSkillTemplateToolUsecase, String>
+duplicateSkillTemplateToolUsecaseProvider =
+    Provider.family<DuplicateSkillTemplateToolUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
         return DuplicateSkillTemplateToolUsecase(
           cloud == null
               ? ref.watch(skillTemplateToolsRepositoryProvider)
               : null,
           createSkillTemplateToolUsecase: ref.watch(
-            createSkillTemplateToolUsecaseProvider,
+            createSkillTemplateToolUsecaseProvider(workspaceId),
           ),
           cloudStore: cloud,
         );
       },
-      dependencies: [
-        cloudSkillStoreProvider,
-        createSkillTemplateToolUsecaseProvider,
-      ],
     );

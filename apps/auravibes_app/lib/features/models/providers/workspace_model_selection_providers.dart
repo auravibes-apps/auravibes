@@ -2,25 +2,19 @@
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_model_selection_providers.g.dart';
 
-@Riverpod(
-  dependencies: [workspaceSession],
-)
+@riverpod
 Future<WorkspaceModelSelectionWithConnectionEntity?>
 workspaceModelSelectionById(
   Ref ref,
+  String workspaceId,
   String workspaceModelSelectionId,
 ) async {
-  final workspaceId = ref
-      .watch(workspaceSessionProvider)
-      .workspace
-      .localWorkspaceId;
   final workspaceModelSelectionRepository = await ref.watch(
     modelSelectionStoreProvider(workspaceId).future,
   );
@@ -55,27 +49,21 @@ workspaceModelSelectionById(
   );
 }
 
-@Riverpod(
-  dependencies: [
-    workspaceModelSelectionById,
-    workspaceSession,
-  ],
-)
+@riverpod
 Future<int?> modelContextLimit(
   Ref ref,
+  String workspaceId,
   String workspaceModelSelectionId,
 ) async {
   final selectedModel = await ref.watch(
-    workspaceModelSelectionByIdProvider(workspaceModelSelectionId).future,
+    workspaceModelSelectionByIdProvider(
+      workspaceId,
+      workspaceModelSelectionId,
+    ).future,
   );
   final modelId = selectedModel?.workspaceModelSelection.modelId;
   final providerId = selectedModel?.modelsProvider.id;
   if (modelId == null || providerId == null) return null;
-  final workspaceId = ref
-      .watch(workspaceSessionProvider)
-      .workspace
-      .localWorkspaceId;
-
   final value = await ref.watch(
     getModelByProviderAndModelIdProvider(
       workspaceId: workspaceId,

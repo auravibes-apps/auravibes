@@ -13,13 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('service_connections_screen');
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 
-@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 class ServiceConnectionsScreen extends ConsumerWidget {
   const ServiceConnectionsScreen({required this.workspaceId, super.key});
 
@@ -82,7 +80,6 @@ class ServiceConnectionsScreen extends ConsumerWidget {
   }
 }
 
-@Dependencies([serviceConnectionsActionUsecase])
 class _ConnectionsList extends StatelessWidget {
   const _ConnectionsList({
     required this.connections,
@@ -131,7 +128,6 @@ class _ConnectionsList extends StatelessWidget {
   }
 }
 
-@Dependencies([serviceConnectionsActionUsecase])
 class _ConnectionTile extends ConsumerWidget {
   const _ConnectionTile({required this.connection});
 

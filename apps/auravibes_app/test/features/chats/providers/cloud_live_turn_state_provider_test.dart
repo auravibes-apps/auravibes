@@ -5,9 +5,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([conversationBusyState])
 void main() {
   test('retains active turn identity across route listeners', () {
     final container = ProviderContainer();
@@ -82,7 +80,9 @@ void main() {
           ),
         );
 
-    final busy = await container.read(conversationBusyStateProvider.future);
+    final busy = await container.read(
+      conversationBusyStateProvider('local', 'chat-1').future,
+    );
 
     expect(busy.isBusy, isTrue);
     expect(busy.cloudTurn?.state, CloudLiveTurnLifecycle.awaitingApproval);

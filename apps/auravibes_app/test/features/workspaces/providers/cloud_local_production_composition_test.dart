@@ -44,7 +44,6 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
 
@@ -55,14 +54,6 @@ class _Conversation extends Mock implements EndpointConversation {}
 Never _local(String dependency) =>
     throw StateError('Cloud composition touched local $dependency');
 
-@Dependencies([
-  chatMessagesByConversation,
-  serviceConnectionOperations,
-  agentToolsRepository,
-  mcpServersRepository,
-  cloudWorkspaceStateGateway,
-  workspaceSession,
-])
 void main() {
   const cloud = WorkspaceSession(
     CloudWorkspaceRef(
@@ -127,7 +118,9 @@ void main() {
       overrides: [
         workspaceSessionProvider.overrideWithValue(cloud),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+        cloudWorkspaceStateGatewayProvider.overrideWith(
+          (_, _) async => gateway,
+        ),
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => gateway,
         ),
@@ -192,7 +185,10 @@ void main() {
     addTearDown(container.dispose);
 
     final conversations = conversationsStreamProvider(workspaceId: 'mirror-a');
-    final messages = chatMessagesByConversationProvider('conversation-a');
+    final messages = chatMessagesByConversationProvider(
+      'mirror-a',
+      'conversation-a',
+    );
     final compaction = compactionSettingsProvider('mirror-a');
     final conversationsSubscription = container.listen(
       conversations,
@@ -213,16 +209,21 @@ void main() {
       isEmpty,
     );
     expect(
-      await container.read(cloudConversationUsecaseProvider.future),
-      isNotNull,
-    );
-    expect(await container.read(cloudTurnUsecaseProvider.future), isNotNull);
-    expect(
-      await container.read(cloudChatAttachmentUsecaseProvider.future),
+      await container.read(cloudConversationUsecaseProvider('mirror-a').future),
       isNotNull,
     );
     expect(
-      container.read(sendMessageUsecaseProvider),
+      await container.read(cloudTurnUsecaseProvider('mirror-a').future),
+      isNotNull,
+    );
+    expect(
+      await container.read(
+        cloudChatAttachmentUsecaseProvider('mirror-a').future,
+      ),
+      isNotNull,
+    );
+    expect(
+      container.read(sendMessageUsecaseProvider('mirror-a')),
       isA<SendMessageUsecase>(),
     );
     expect(
@@ -240,26 +241,29 @@ void main() {
       isA<ServiceConnectionOperations>(),
     );
     expect(
-      container.read(mcpServersRepositoryProvider),
+      container.read(mcpServersRepositoryProvider(cloud)),
       isA<CloudToolsRepository>(),
     );
     expect(
-      container.read(toolsGroupsRepositoryProvider),
+      container.read(toolsGroupsRepositoryProvider(cloud)),
       isA<CloudToolsRepository>(),
     );
     expect(
-      container.read(workspaceToolsRepositoryProvider),
+      container.read(workspaceToolsRepositoryProvider(cloud)),
       isA<CloudToolsRepository>(),
     );
     expect(
-      container.read(agentRepositoryProvider),
+      container.read(agentRepositoryProvider('mirror-a')),
       isA<CloudAgentRepository>(),
     );
     expect(
-      container.read(agentToolsRepositoryProvider),
+      container.read(agentToolsRepositoryProvider('mirror-a')),
       isA<CloudAgentToolsRepository>(),
     );
-    expect(container.read(skillCredentialOperationsProvider), isNotNull);
+    expect(
+      container.read(skillCredentialOperationsProvider('mirror-a')),
+      isNotNull,
+    );
     expect(
       await container.read(workspaceSkillsProvider('mirror-a').future),
       isEmpty,
@@ -294,7 +298,10 @@ void main() {
     addTearDown(container.dispose);
 
     final conversations = conversationsStreamProvider(workspaceId: 'local-a');
-    final messages = chatMessagesByConversationProvider('conversation-a');
+    final messages = chatMessagesByConversationProvider(
+      'local-a',
+      'conversation-a',
+    );
     final conversationsSubscription = container.listen(
       conversations,
       (_, _) => 0,
@@ -307,16 +314,21 @@ void main() {
     expect(await container.read(messages.future), isEmpty);
 
     expect(
-      await container.read(cloudWorkspaceStateGatewayProvider.future),
+      await container.read(cloudWorkspaceStateGatewayProvider(local).future),
       isNull,
     );
     expect(
-      await container.read(cloudConversationUsecaseProvider.future),
+      await container.read(cloudConversationUsecaseProvider('local-a').future),
       isNull,
     );
-    expect(await container.read(cloudTurnUsecaseProvider.future), isNull);
     expect(
-      await container.read(cloudChatAttachmentUsecaseProvider.future),
+      await container.read(cloudTurnUsecaseProvider('local-a').future),
+      isNull,
+    );
+    expect(
+      await container.read(
+        cloudChatAttachmentUsecaseProvider('local-a').future,
+      ),
       isNull,
     );
     expect(
@@ -328,23 +340,29 @@ void main() {
       isNot(isA<CloudModelStore>()),
     );
     expect(
-      container.read(mcpServersRepositoryProvider),
+      container.read(mcpServersRepositoryProvider(local)),
       isA<McpServersRepository>(),
     );
     expect(
-      container.read(toolsGroupsRepositoryProvider),
+      container.read(toolsGroupsRepositoryProvider(local)),
       isA<ToolsGroupsRepository>(),
     );
     expect(
-      container.read(workspaceToolsRepositoryProvider),
+      container.read(workspaceToolsRepositoryProvider(local)),
       isA<WorkspaceToolsRepository>(),
     );
-    expect(container.read(agentRepositoryProvider), isA<AgentsRepository>());
     expect(
-      container.read(agentToolsRepositoryProvider),
+      container.read(agentRepositoryProvider('local-a')),
+      isA<AgentsRepository>(),
+    );
+    expect(
+      container.read(agentToolsRepositoryProvider('local-a')),
       isA<AgentToolsRepository>(),
     );
-    expect(container.read(skillCredentialOperationsProvider), isNotNull);
+    expect(
+      container.read(skillCredentialOperationsProvider('local-a')),
+      isNotNull,
+    );
     expect(
       container.read(workspaceCompactionSettingsRepositoryProvider),
       isNotNull,

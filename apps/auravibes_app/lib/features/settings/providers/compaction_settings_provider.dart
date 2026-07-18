@@ -7,17 +7,24 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'compaction_settings_provider.g.dart';
 
-@Riverpod(dependencies: [cloudWorkspaceStateGateway])
-Stream<CompactionSettings> compactionSettings(Ref ref, String workspaceId) {
-  final gateway = ref.watch(cloudWorkspaceStateGatewayProvider);
-
-  return gateway.when(
-    data: (value) => value == null
-        ? ref
-              .watch(workspaceCompactionSettingsRepositoryProvider)
-              .watchEffectiveSettings(workspaceId)
-        : CloudSkillSettingsAdapter(value).watchCompactionSettings(),
-    error: Stream.error,
-    loading: () => const Stream.empty(),
+@riverpod
+Stream<CompactionSettings> compactionSettings(
+  Ref ref,
+  String workspaceId,
+) async* {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
   );
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
+  if (gateway == null) {
+    yield* ref
+        .watch(workspaceCompactionSettingsRepositoryProvider)
+        .watchEffectiveSettings(workspaceId);
+
+    return;
+  }
+
+  yield* CloudSkillSettingsAdapter(gateway).watchCompactionSettings();
 }

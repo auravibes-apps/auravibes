@@ -24,7 +24,7 @@ final class ConversationByIdStreamProvider
         $StreamProvider<ConversationEntity?> {
   ConversationByIdStreamProvider._({
     required ConversationByIdStreamFamily super.from,
-    required String super.argument,
+    required (String, {String conversationId}) super.argument,
   }) : super(
          retry: null,
          name: r'conversationByIdStreamProvider',
@@ -33,8 +33,6 @@ final class ConversationByIdStreamProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-
   @override
   String debugGetCreateSourceHash() => _$conversationByIdStreamHash();
 
@@ -42,7 +40,7 @@ final class ConversationByIdStreamProvider
   String toString() {
     return r'conversationByIdStreamProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -53,8 +51,12 @@ final class ConversationByIdStreamProvider
 
   @override
   Stream<ConversationEntity?> create(Ref ref) {
-    final argument = this.argument as String;
-    return conversationByIdStream(ref, conversationId: argument);
+    final argument = this.argument as (String, {String conversationId});
+    return conversationByIdStream(
+      ref,
+      argument.$1,
+      conversationId: argument.conversationId,
+    );
   }
 
   @override
@@ -70,23 +72,30 @@ final class ConversationByIdStreamProvider
 }
 
 String _$conversationByIdStreamHash() =>
-    r'72bc8aa806531fb1093d9984b526359076d762d9';
+    r'74ddcfe17b939c1ea30b2a20b1044a6e31c94d58';
 
 final class ConversationByIdStreamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<ConversationEntity?>, String> {
+    with
+        $FunctionalFamilyOverride<
+          Stream<ConversationEntity?>,
+          (String, {String conversationId})
+        > {
   ConversationByIdStreamFamily._()
     : super(
         retry: null,
         name: r'conversationByIdStreamProvider',
-        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ConversationByIdStreamProvider.$allTransitiveDependencies0,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  ConversationByIdStreamProvider call({required String conversationId}) =>
-      ConversationByIdStreamProvider._(argument: conversationId, from: this);
+  ConversationByIdStreamProvider call(
+    String workspaceId, {
+    required String conversationId,
+  }) => ConversationByIdStreamProvider._(
+    argument: (workspaceId, conversationId: conversationId),
+    from: this,
+  );
 
   @override
   String toString() => r'conversationByIdStreamProvider';
@@ -196,7 +205,7 @@ final class ChildConversationsStreamProvider
         $StreamProvider<List<ConversationEntity>> {
   ChildConversationsStreamProvider._({
     required ChildConversationsStreamFamily super.from,
-    required String super.argument,
+    required (String, {String parentConversationId}) super.argument,
   }) : super(
          retry: null,
          name: r'childConversationsStreamProvider',
@@ -205,8 +214,6 @@ final class ChildConversationsStreamProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-
   @override
   String debugGetCreateSourceHash() => _$childConversationsStreamHash();
 
@@ -214,7 +221,7 @@ final class ChildConversationsStreamProvider
   String toString() {
     return r'childConversationsStreamProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -225,8 +232,12 @@ final class ChildConversationsStreamProvider
 
   @override
   Stream<List<ConversationEntity>> create(Ref ref) {
-    final argument = this.argument as String;
-    return childConversationsStream(ref, parentConversationId: argument);
+    final argument = this.argument as (String, {String parentConversationId});
+    return childConversationsStream(
+      ref,
+      argument.$1,
+      parentConversationId: argument.parentConversationId,
+    );
   }
 
   @override
@@ -242,25 +253,28 @@ final class ChildConversationsStreamProvider
 }
 
 String _$childConversationsStreamHash() =>
-    r'145728e59d30613ec6184bfa85b36d58f586d87d';
+    r'2cfba31fe742c833f51c1c382a75f1c65eacdefe';
 
 final class ChildConversationsStreamFamily extends $Family
-    with $FunctionalFamilyOverride<Stream<List<ConversationEntity>>, String> {
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<ConversationEntity>>,
+          (String, {String parentConversationId})
+        > {
   ChildConversationsStreamFamily._()
     : super(
         retry: null,
         name: r'childConversationsStreamProvider',
-        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ChildConversationsStreamProvider.$allTransitiveDependencies0,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  ChildConversationsStreamProvider call({
+  ChildConversationsStreamProvider call(
+    String workspaceId, {
     required String parentConversationId,
   }) => ChildConversationsStreamProvider._(
-    argument: parentConversationId,
+    argument: (workspaceId, parentConversationId: parentConversationId),
     from: this,
   );
 

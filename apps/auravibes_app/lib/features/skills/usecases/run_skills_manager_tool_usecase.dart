@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'dart:convert';
 
 import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
@@ -17,7 +18,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class RunSkillsManagerToolUsecase {
   const RunSkillsManagerToolUsecase(
@@ -672,10 +673,11 @@ class RunSkillsManagerToolUsecase {
   }
 }
 
-final runSkillsManagerToolUsecaseProvider =
-    Provider<RunSkillsManagerToolUsecase>(
-      (ref) {
-        final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<RunSkillsManagerToolUsecase, String>
+runSkillsManagerToolUsecaseProvider =
+    Provider.family<RunSkillsManagerToolUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
         return RunSkillsManagerToolUsecase(
           cloud == null ? ref.watch(skillsRepositoryProvider) : null,
@@ -685,22 +687,17 @@ final runSkillsManagerToolUsecaseProvider =
           cloud == null
               ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
               : null,
-          ref.watch(createSkillUsecaseProvider),
-          ref.watch(updateSkillUsecaseProvider),
-          ref.watch(createSkillTemplateToolUsecaseProvider),
-          ref.watch(updateSkillTemplateToolUsecaseProvider),
-          ref.watch(createSkillCredentialDefinitionUsecaseProvider),
-          ref.watch(updateSkillCredentialDefinitionUsecaseProvider),
+          ref.watch(createSkillUsecaseProvider(workspaceId)),
+          ref.watch(updateSkillUsecaseProvider(workspaceId)),
+          ref.watch(createSkillTemplateToolUsecaseProvider(workspaceId)),
+          ref.watch(updateSkillTemplateToolUsecaseProvider(workspaceId)),
+          ref.watch(
+            createSkillCredentialDefinitionUsecaseProvider(workspaceId),
+          ),
+          ref.watch(
+            updateSkillCredentialDefinitionUsecaseProvider(workspaceId),
+          ),
           cloudStore: cloud,
         );
       },
-      dependencies: [
-        cloudSkillStoreProvider,
-        createSkillUsecaseProvider,
-        updateSkillUsecaseProvider,
-        createSkillTemplateToolUsecaseProvider,
-        updateSkillTemplateToolUsecaseProvider,
-        createSkillCredentialDefinitionUsecaseProvider,
-        updateSkillCredentialDefinitionUsecaseProvider,
-      ],
     );

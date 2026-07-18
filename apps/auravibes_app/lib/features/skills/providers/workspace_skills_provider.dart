@@ -4,12 +4,10 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adapter.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_skills_provider.g.dart';
 
-@Dependencies([cloudWorkspaceStateGateway])
 @riverpod
 Future<List<WorkspaceSkill>> workspaceSkills(
   Ref ref,
@@ -17,7 +15,12 @@ Future<List<WorkspaceSkill>> workspaceSkills(
 ) async {
   CloudWorkspaceStateGateway? gateway;
   try {
-    gateway = await ref.watch(cloudWorkspaceStateGatewayProvider.future);
+    final session = await ref.watch(
+      workspaceSessionForRouteProvider(workspaceId).future,
+    );
+    gateway = await ref.watch(
+      cloudWorkspaceStateGatewayProvider(session).future,
+    );
   } on Exception {
     gateway = null;
   }

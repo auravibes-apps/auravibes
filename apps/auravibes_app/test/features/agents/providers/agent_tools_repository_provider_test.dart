@@ -9,11 +9,9 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 class _AppDatabase extends Mock implements AppDatabase {}
 
-@Dependencies([agentToolsRepository])
 void main() {
   test('cloud provider resolves before local Drift construction', () {
     final container = ProviderContainer(
@@ -29,7 +27,7 @@ void main() {
           ),
         ),
         cloudWorkspaceStateGatewayProvider.overrideWith(
-          (_) => throw StateError('gateway should remain lazy'),
+          (_, _) => throw StateError('gateway should remain lazy'),
         ),
         appDatabaseProvider.overrideWith(
           (_) => throw StateError('Drift touched'),
@@ -38,18 +36,17 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final repository = container.read(agentToolsRepositoryProvider);
+    final repository = container.read(
+      agentToolsRepositoryProvider('local'),
+    );
     expect(repository, isA<AgentToolsRepositoryContract>());
     expect(repository, isA<CloudAgentToolsRepository>());
   });
 
   test('agent repository uses the workspace session scope', () {
-    final parent = ProviderContainer(
-      overrides: [appDatabaseProvider.overrideWithValue(_AppDatabase())],
-    );
-    final child = ProviderContainer(
-      parent: parent,
+    final container = ProviderContainer(
       overrides: [
+        appDatabaseProvider.overrideWithValue(_AppDatabase()),
         workspaceSessionProvider.overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'local'),
@@ -57,9 +54,11 @@ void main() {
         ),
       ],
     );
-    addTearDown(child.dispose);
-    addTearDown(parent.dispose);
+    addTearDown(container.dispose);
 
-    expect(child.read(agentRepositoryProvider), isA<AgentsRepository>());
+    expect(
+      container.read(agentRepositoryProvider('local')),
+      isA<AgentsRepository>(),
+    );
   });
 }

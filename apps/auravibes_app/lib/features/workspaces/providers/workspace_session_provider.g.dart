@@ -10,7 +10,7 @@ part of 'workspace_session_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(workspaceSession)
-final workspaceSessionProvider = WorkspaceSessionProvider._();
+final workspaceSessionProvider = WorkspaceSessionFamily._();
 
 final class WorkspaceSessionProvider
     extends
@@ -20,19 +20,26 @@ final class WorkspaceSessionProvider
           WorkspaceSession
         >
     with $Provider<WorkspaceSession> {
-  WorkspaceSessionProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'workspaceSessionProvider',
-        isAutoDispose: false,
-        dependencies: <ProviderOrFamily>[],
-        $allTransitiveDependencies: <ProviderOrFamily>[],
-      );
+  WorkspaceSessionProvider._({
+    required WorkspaceSessionFamily super.from,
+    required WorkspaceSession super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceSessionProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$workspaceSessionHash();
+
+  @override
+  String toString() {
+    return r'workspaceSessionProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -41,7 +48,8 @@ final class WorkspaceSessionProvider
 
   @override
   WorkspaceSession create(Ref ref) {
-    return workspaceSession(ref);
+    final argument = this.argument as WorkspaceSession;
+    return workspaceSession(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -51,9 +59,37 @@ final class WorkspaceSessionProvider
       providerOverride: $SyncValueProvider<WorkspaceSession>(value),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceSessionProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
-String _$workspaceSessionHash() => r'428c5736e6311d04ef532bde19a741486b035826';
+String _$workspaceSessionHash() => r'c142049a5fb62dd4aa50aa84a69e2353ad2499b7';
+
+final class WorkspaceSessionFamily extends $Family
+    with $FunctionalFamilyOverride<WorkspaceSession, WorkspaceSession> {
+  WorkspaceSessionFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceSessionProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceSessionProvider call(WorkspaceSession session) =>
+      WorkspaceSessionProvider._(argument: session, from: this);
+
+  @override
+  String toString() => r'workspaceSessionProvider';
+}
 
 @ProviderFor(workspaceSessionForRoute)
 final workspaceSessionForRouteProvider = WorkspaceSessionForRouteFamily._();
@@ -214,8 +250,7 @@ final class WorkspaceAvailabilityFamily extends $Family
 }
 
 @ProviderFor(cloudWorkspaceStateGateway)
-final cloudWorkspaceStateGatewayProvider =
-    CloudWorkspaceStateGatewayProvider._();
+final cloudWorkspaceStateGatewayProvider = CloudWorkspaceStateGatewayFamily._();
 
 final class CloudWorkspaceStateGatewayProvider
     extends
@@ -227,23 +262,26 @@ final class CloudWorkspaceStateGatewayProvider
     with
         $FutureModifier<CloudWorkspaceStateGateway?>,
         $FutureProvider<CloudWorkspaceStateGateway?> {
-  CloudWorkspaceStateGatewayProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'cloudWorkspaceStateGatewayProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          CloudWorkspaceStateGatewayProvider.$allTransitiveDependencies0,
-        ],
-      );
-
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
+  CloudWorkspaceStateGatewayProvider._({
+    required CloudWorkspaceStateGatewayFamily super.from,
+    required WorkspaceSession super.argument,
+  }) : super(
+         retry: null,
+         name: r'cloudWorkspaceStateGatewayProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$cloudWorkspaceStateGatewayHash();
+
+  @override
+  String toString() {
+    return r'cloudWorkspaceStateGatewayProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -253,12 +291,46 @@ final class CloudWorkspaceStateGatewayProvider
 
   @override
   FutureOr<CloudWorkspaceStateGateway?> create(Ref ref) {
-    return cloudWorkspaceStateGateway(ref);
+    final argument = this.argument as WorkspaceSession;
+    return cloudWorkspaceStateGateway(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CloudWorkspaceStateGatewayProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
 String _$cloudWorkspaceStateGatewayHash() =>
-    r'5107663e9c7282ae1eb3518954936b2b73237c87';
+    r'f7c66e77ab1860cc42ac428212ee4693ed31f9f3';
+
+final class CloudWorkspaceStateGatewayFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<CloudWorkspaceStateGateway?>,
+          WorkspaceSession
+        > {
+  CloudWorkspaceStateGatewayFamily._()
+    : super(
+        retry: null,
+        name: r'cloudWorkspaceStateGatewayProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CloudWorkspaceStateGatewayProvider call(WorkspaceSession session) =>
+      CloudWorkspaceStateGatewayProvider._(argument: session, from: this);
+
+  @override
+  String toString() => r'cloudWorkspaceStateGatewayProvider';
+}
 
 @ProviderFor(cloudWorkspaceStateGatewayForWorkspace)
 final cloudWorkspaceStateGatewayForWorkspaceProvider =
@@ -350,11 +422,9 @@ final class CloudWorkspaceStateGatewayForWorkspaceFamily extends $Family
 }
 
 @ProviderFor(cloudWorkspaceConfiguration)
-@Dependencies([cloudWorkspaceStateGateway])
 final cloudWorkspaceConfigurationProvider =
-    CloudWorkspaceConfigurationProvider._();
+    CloudWorkspaceConfigurationFamily._();
 
-@Dependencies([cloudWorkspaceStateGateway])
 final class CloudWorkspaceConfigurationProvider
     extends
         $FunctionalProvider<
@@ -365,19 +435,26 @@ final class CloudWorkspaceConfigurationProvider
     with
         $FutureModifier<List<WorkspaceResource>>,
         $StreamProvider<List<WorkspaceResource>> {
-  CloudWorkspaceConfigurationProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'cloudWorkspaceConfigurationProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+  CloudWorkspaceConfigurationProvider._({
+    required CloudWorkspaceConfigurationFamily super.from,
+    required WorkspaceSession super.argument,
+  }) : super(
+         retry: null,
+         name: r'cloudWorkspaceConfigurationProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$cloudWorkspaceConfigurationHash();
+
+  @override
+  String toString() {
+    return r'cloudWorkspaceConfigurationProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -387,9 +464,43 @@ final class CloudWorkspaceConfigurationProvider
 
   @override
   Stream<List<WorkspaceResource>> create(Ref ref) {
-    return cloudWorkspaceConfiguration(ref);
+    final argument = this.argument as WorkspaceSession;
+    return cloudWorkspaceConfiguration(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CloudWorkspaceConfigurationProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
   }
 }
 
 String _$cloudWorkspaceConfigurationHash() =>
-    r'408ba82e70735ec4c349107389ba914c4f88cc97';
+    r'41996fd8d87a951802ff4d0c3fdfaed7b491a2c6';
+
+final class CloudWorkspaceConfigurationFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<List<WorkspaceResource>>,
+          WorkspaceSession
+        > {
+  CloudWorkspaceConfigurationFamily._()
+    : super(
+        retry: null,
+        name: r'cloudWorkspaceConfigurationProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CloudWorkspaceConfigurationProvider call(WorkspaceSession session) =>
+      CloudWorkspaceConfigurationProvider._(argument: session, from: this);
+
+  @override
+  String toString() => r'cloudWorkspaceConfigurationProvider';
+}

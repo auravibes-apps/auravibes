@@ -107,7 +107,7 @@ final class SkillCredentialDefinitionProvider
         $FutureProvider<SkillCredentialDefinitionEntity?> {
   SkillCredentialDefinitionProvider._({
     required SkillCredentialDefinitionFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'skillCredentialDefinitionProvider',
@@ -116,12 +116,6 @@ final class SkillCredentialDefinitionProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
-  static final $allTransitiveDependencies1 =
-      CloudSkillStoreProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      CloudSkillStoreProvider.$allTransitiveDependencies1;
-
   @override
   String debugGetCreateSourceHash() => _$skillCredentialDefinitionHash();
 
@@ -129,7 +123,7 @@ final class SkillCredentialDefinitionProvider
   String toString() {
     return r'skillCredentialDefinitionProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -140,8 +134,8 @@ final class SkillCredentialDefinitionProvider
 
   @override
   FutureOr<SkillCredentialDefinitionEntity?> create(Ref ref) {
-    final argument = this.argument as String;
-    return skillCredentialDefinition(ref, argument);
+    final argument = this.argument as (String, String);
+    return skillCredentialDefinition(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -157,29 +151,30 @@ final class SkillCredentialDefinitionProvider
 }
 
 String _$skillCredentialDefinitionHash() =>
-    r'd832920d962da4a9e23f443653ed9b00a2e6eba2';
+    r'53531836bc4fe97c9d4e597a7f3caf5aa9cc037b';
 
 final class SkillCredentialDefinitionFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<SkillCredentialDefinitionEntity?>,
-          String
+          (String, String)
         > {
   SkillCredentialDefinitionFamily._()
     : super(
         retry: null,
         name: r'skillCredentialDefinitionProvider',
-        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          SkillCredentialDefinitionProvider.$allTransitiveDependencies0,
-          SkillCredentialDefinitionProvider.$allTransitiveDependencies1,
-          SkillCredentialDefinitionProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  SkillCredentialDefinitionProvider call(String definitionId) =>
-      SkillCredentialDefinitionProvider._(argument: definitionId, from: this);
+  SkillCredentialDefinitionProvider call(
+    String workspaceId,
+    String definitionId,
+  ) => SkillCredentialDefinitionProvider._(
+    argument: (workspaceId, definitionId),
+    from: this,
+  );
 
   @override
   String toString() => r'skillCredentialDefinitionProvider';

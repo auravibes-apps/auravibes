@@ -78,7 +78,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
     final toolId = widget.toolId;
     final toolAsync = toolId == null
         ? null
-        : ref.watch(skillTemplateToolProvider(toolId));
+        : ref.watch(skillTemplateToolProvider(widget.workspaceId, toolId));
     final currentTool = toolAsync?.value;
     final skillDetailAsync = ref.watch(
       skillDetailProvider(widget.workspaceId, widget.skillId),
@@ -319,7 +319,9 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
               null &&
           _requiresCredential;
       if (_isCreate) {
-        final usecase = ref.read(createSkillTemplateToolUsecaseProvider);
+        final usecase = ref.read(
+          createSkillTemplateToolUsecaseProvider(widget.workspaceId),
+        );
         final _ = await usecase.call(
           widget.skillId,
           SkillTemplateToolToCreate(
@@ -335,7 +337,9 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       } else {
         final toolId = widget.toolId;
         if (toolId == null) return;
-        final usecase = ref.read(updateSkillTemplateToolUsecaseProvider);
+        final usecase = ref.read(
+          updateSkillTemplateToolUsecaseProvider(widget.workspaceId),
+        );
         final _ = await usecase.call(
           toolId,
           SkillTemplateToolToUpdate(

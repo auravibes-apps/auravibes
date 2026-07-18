@@ -13,9 +13,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([ConversationChatNotifier])
 void main() {
   group('ConversationResult types', () {
     test('ConversationFound holds conversation', () {
@@ -59,7 +57,7 @@ void main() {
 
         final container = ProviderContainer(
           overrides: [
-            conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
             conversationByIdStreamProvider.overrideWith(
               (ref, conversationId) => Stream.value(conversation),
             ),
@@ -68,7 +66,7 @@ void main() {
         addTearDown(container.dispose);
 
         final sub = container.listen<AsyncValue<ConversationResult>>(
-          conversationChatProvider('ws-1'),
+          conversationChatProvider('ws-1', 'conv-1'),
           (_, next) {
             if (next is AsyncData<ConversationResult>) {
               completer.complete(next);
@@ -95,7 +93,7 @@ void main() {
 
         final container = ProviderContainer(
           overrides: [
-            conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
             conversationByIdStreamProvider.overrideWith(
               (ref, conversationId) => controller.stream,
             ),
@@ -104,7 +102,7 @@ void main() {
         addTearDown(container.dispose);
 
         final sub = container.listen<AsyncValue<ConversationResult>>(
-          conversationChatProvider('ws-1'),
+          conversationChatProvider('ws-1', 'conv-1'),
           (_, next) {
             if (next is AsyncData<ConversationResult>) {
               completer.complete(next);
@@ -114,7 +112,7 @@ void main() {
         );
 
         expect(
-          container.read(conversationChatProvider('ws-1')).isLoading,
+          container.read(conversationChatProvider('ws-1', 'conv-1')).isLoading,
           true,
         );
 
@@ -135,7 +133,7 @@ void main() {
 
         final container = ProviderContainer(
           overrides: [
-            conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+            conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
             conversationByIdStreamProvider.overrideWith(
               (ref, conversationId) => Stream.value(conversation),
             ),
@@ -144,7 +142,7 @@ void main() {
         addTearDown(container.dispose);
 
         final sub = container.listen<AsyncValue<ConversationResult>>(
-          conversationChatProvider('ws-other'),
+          conversationChatProvider('ws-other', 'conv-1'),
           (_, next) {
             if (next is AsyncData<ConversationResult>) {
               completer.complete(next);
@@ -166,7 +164,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
           conversationByIdStreamProvider.overrideWith(
             (ref, conversationId) => Stream.value(null),
           ),
@@ -175,7 +173,7 @@ void main() {
       addTearDown(container.dispose);
 
       final sub = container.listen<AsyncValue<ConversationResult>>(
-        conversationChatProvider('ws-1'),
+        conversationChatProvider('ws-1', 'conv-1'),
         (_, next) {
           if (next is AsyncData<ConversationResult>) {
             completer.complete(next);
@@ -206,7 +204,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
           conversationByIdStreamProvider.overrideWith(
             (ref, conversationId) => Stream.value(conversation),
           ),
@@ -219,9 +217,7 @@ void main() {
               },
             ),
           ),
-          cloudConversationUsecaseProvider.overrideWithValue(
-            const AsyncValue.data(null),
-          ),
+          cloudConversationUsecaseProvider.overrideWithValue(null),
         ],
       );
       addTearDown(container.dispose);
@@ -229,7 +225,7 @@ void main() {
       var resolved = false;
       final completer = Completer<AsyncValue<ConversationResult>>();
       final sub = container.listen<AsyncValue<ConversationResult>>(
-        conversationChatProvider('ws-1'),
+        conversationChatProvider('ws-1', 'conv-1'),
         (_, next) {
           if (next is AsyncData<ConversationResult> && !resolved) {
             resolved = true;
@@ -242,14 +238,16 @@ void main() {
       final _ = await completer.future;
 
       final notifier = container.read(
-        conversationChatProvider('ws-1').notifier,
+        conversationChatProvider('ws-1', 'conv-1').notifier,
       );
       await notifier.setModel('model-1');
 
       expect(patched, hasLength(1));
       expect(patched.firstOrNull?.modelId, 'model-1');
 
-      final state = container.read(conversationChatProvider('ws-1')).value;
+      final state = container
+          .read(conversationChatProvider('ws-1', 'conv-1'))
+          .value;
       expect(state, isA<ConversationFound>());
       expect(
         ((state ?? fail('Expected state to be non-null')) as ConversationFound)
@@ -266,7 +264,7 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
           conversationByIdStreamProvider.overrideWith(
             (ref, conversationId) => Stream.value(conversation),
           ),
@@ -285,7 +283,7 @@ void main() {
 
       final completer = Completer<AsyncValue<ConversationResult>>();
       final sub = container.listen<AsyncValue<ConversationResult>>(
-        conversationChatProvider('ws-1'),
+        conversationChatProvider('ws-1', 'conv-1'),
         (_, next) {
           if (next is AsyncData<ConversationResult>) {
             completer.complete(next);
@@ -297,7 +295,7 @@ void main() {
       final _ = await completer.future;
 
       await container
-          .read(conversationChatProvider('ws-1').notifier)
+          .read(conversationChatProvider('ws-1', 'conv-1').notifier)
           .setModel(null);
 
       expect(patched, isEmpty);
@@ -308,7 +306,7 @@ void main() {
     test('setModel does nothing when ConversationNotFound', () async {
       final container = ProviderContainer(
         overrides: [
-          conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
           conversationByIdStreamProvider.overrideWith(
             (ref, conversationId) => Stream.value(null),
           ),
@@ -318,7 +316,7 @@ void main() {
 
       final completer = Completer<AsyncValue<ConversationResult>>();
       final sub = container.listen<AsyncValue<ConversationResult>>(
-        conversationChatProvider('ws-1'),
+        conversationChatProvider('ws-1', 'conv-1'),
         (_, next) {
           if (next is AsyncData<ConversationResult>) {
             completer.complete(next);
@@ -330,11 +328,13 @@ void main() {
       final _ = await completer.future;
 
       final notifier = container.read(
-        conversationChatProvider('ws-1').notifier,
+        conversationChatProvider('ws-1', 'conv-1').notifier,
       );
       await notifier.setModel('model-1');
 
-      final state = container.read(conversationChatProvider('ws-1')).value;
+      final state = container
+          .read(conversationChatProvider('ws-1', 'conv-1'))
+          .value;
       expect(state, isA<ConversationNotFound>());
 
       sub.close();
@@ -343,7 +343,7 @@ void main() {
     test('setModel does nothing when ConversationWorkspaceMismatch', () async {
       final container = ProviderContainer(
         overrides: [
-          conversationSelectedProvider.overrideWith((ref) => 'conv-1'),
+          conversationSelectedProvider.overrideWith((ref, _) => 'conv-1'),
           conversationByIdStreamProvider.overrideWith(
             (ref, conversationId) => Stream.value(conversation),
           ),
@@ -353,7 +353,7 @@ void main() {
 
       final completer = Completer<AsyncValue<ConversationResult>>();
       final sub = container.listen<AsyncValue<ConversationResult>>(
-        conversationChatProvider('ws-other'),
+        conversationChatProvider('ws-other', 'conv-1'),
         (_, next) {
           if (next is AsyncData<ConversationResult>) {
             completer.complete(next);
@@ -365,11 +365,13 @@ void main() {
       final _ = await completer.future;
 
       final notifier = container.read(
-        conversationChatProvider('ws-other').notifier,
+        conversationChatProvider('ws-other', 'conv-1').notifier,
       );
       await notifier.setModel('model-1');
 
-      final state = container.read(conversationChatProvider('ws-other')).value;
+      final state = container
+          .read(conversationChatProvider('ws-other', 'conv-1'))
+          .value;
       expect(state, isA<ConversationWorkspaceMismatch>());
 
       sub.close();

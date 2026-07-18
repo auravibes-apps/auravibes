@@ -19,7 +19,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('chat_input_widget');
 
@@ -44,9 +43,9 @@ const String _voiceRecordLabelKey =
 const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
 
-@Dependencies([workspaceSession])
 class ChatInputWidget extends HookConsumerWidget {
   const ChatInputWidget({
+    required this.workspaceId,
     required this.onSendMessage,
     required this.onToolsPress,
     required this.modelSheetControl,
@@ -67,6 +66,7 @@ class ChatInputWidget extends HookConsumerWidget {
   });
 
   final bool disabled;
+  final String workspaceId;
   final bool isBusy;
   final bool? showStopButton;
   final FutureOr<void> Function(ChatDraft draft) onSendMessage;
@@ -95,7 +95,9 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
     final workspaceCapabilities = ref.watch(
-      workspaceSessionProvider.select((session) => session.capabilities),
+      workspaceSessionForRouteProvider(workspaceId).select(
+        (session) => session.value?.capabilities,
+      ),
     );
 
     final isTextEmpty = useListenableSelector(
@@ -129,7 +131,7 @@ class ChatInputWidget extends HookConsumerWidget {
 
     final shouldShowStopButton = showStopButton ?? isBusy;
     final supportsLocalAttachments =
-        workspaceCapabilities.attachments && !kIsWeb;
+        (workspaceCapabilities?.attachments ?? false) && !kIsWeb;
     final supportsAudio =
         supportsLocalAttachments &&
         supportsAttachmentModality(
@@ -137,7 +139,7 @@ class ChatInputWidget extends HookConsumerWidget {
           modalitiesInput,
         );
     final supportsImage =
-        workspaceCapabilities.attachments &&
+        (workspaceCapabilities?.attachments ?? false) &&
         supportsAttachmentModality(
           MessageAttachmentModality.image,
           modalitiesInput,

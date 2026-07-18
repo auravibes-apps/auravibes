@@ -24,7 +24,7 @@ final class SkillTemplateToolsProvider
         $FutureProvider<List<SkillTemplateToolEntity>> {
   SkillTemplateToolsProvider._({
     required SkillTemplateToolsFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'skillTemplateToolsProvider',
@@ -33,12 +33,6 @@ final class SkillTemplateToolsProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
-  static final $allTransitiveDependencies1 =
-      CloudSkillStoreProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      CloudSkillStoreProvider.$allTransitiveDependencies1;
-
   @override
   String debugGetCreateSourceHash() => _$skillTemplateToolsHash();
 
@@ -46,7 +40,7 @@ final class SkillTemplateToolsProvider
   String toString() {
     return r'skillTemplateToolsProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -57,8 +51,8 @@ final class SkillTemplateToolsProvider
 
   @override
   FutureOr<List<SkillTemplateToolEntity>> create(Ref ref) {
-    final argument = this.argument as String;
-    return skillTemplateTools(ref, argument);
+    final argument = this.argument as (String, String);
+    return skillTemplateTools(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -73,29 +67,28 @@ final class SkillTemplateToolsProvider
 }
 
 String _$skillTemplateToolsHash() =>
-    r'1350e42726539d666293e6d8520a721f7a3e7d7f';
+    r'd45878787dfebed34bda0c50273fefde31d74104';
 
 final class SkillTemplateToolsFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<List<SkillTemplateToolEntity>>,
-          String
+          (String, String)
         > {
   SkillTemplateToolsFamily._()
     : super(
         retry: null,
         name: r'skillTemplateToolsProvider',
-        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          SkillTemplateToolsProvider.$allTransitiveDependencies0,
-          SkillTemplateToolsProvider.$allTransitiveDependencies1,
-          SkillTemplateToolsProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  SkillTemplateToolsProvider call(String skillId) =>
-      SkillTemplateToolsProvider._(argument: skillId, from: this);
+  SkillTemplateToolsProvider call(String workspaceId, String skillId) =>
+      SkillTemplateToolsProvider._(
+        argument: (workspaceId, skillId),
+        from: this,
+      );
 
   @override
   String toString() => r'skillTemplateToolsProvider';
@@ -116,7 +109,7 @@ final class SkillTemplateToolProvider
         $FutureProvider<SkillTemplateToolEntity?> {
   SkillTemplateToolProvider._({
     required SkillTemplateToolFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'skillTemplateToolProvider',
@@ -125,12 +118,6 @@ final class SkillTemplateToolProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = cloudSkillStoreProvider;
-  static final $allTransitiveDependencies1 =
-      CloudSkillStoreProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      CloudSkillStoreProvider.$allTransitiveDependencies1;
-
   @override
   String debugGetCreateSourceHash() => _$skillTemplateToolHash();
 
@@ -138,7 +125,7 @@ final class SkillTemplateToolProvider
   String toString() {
     return r'skillTemplateToolProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -149,8 +136,8 @@ final class SkillTemplateToolProvider
 
   @override
   FutureOr<SkillTemplateToolEntity?> create(Ref ref) {
-    final argument = this.argument as String;
-    return skillTemplateTool(ref, argument);
+    final argument = this.argument as (String, String);
+    return skillTemplateTool(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -164,25 +151,25 @@ final class SkillTemplateToolProvider
   }
 }
 
-String _$skillTemplateToolHash() => r'3814d2bc8990144b3e29988f304ad99b944b8a0d';
+String _$skillTemplateToolHash() => r'97ae19654ce0204f49fe72d3453e25a20a84aacc';
 
 final class SkillTemplateToolFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<SkillTemplateToolEntity?>, String> {
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<SkillTemplateToolEntity?>,
+          (String, String)
+        > {
   SkillTemplateToolFamily._()
     : super(
         retry: null,
         name: r'skillTemplateToolProvider',
-        dependencies: <ProviderOrFamily>[cloudSkillStoreProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          SkillTemplateToolProvider.$allTransitiveDependencies0,
-          SkillTemplateToolProvider.$allTransitiveDependencies1,
-          SkillTemplateToolProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  SkillTemplateToolProvider call(String toolId) =>
-      SkillTemplateToolProvider._(argument: toolId, from: this);
+  SkillTemplateToolProvider call(String workspaceId, String toolId) =>
+      SkillTemplateToolProvider._(argument: (workspaceId, toolId), from: this);
 
   @override
   String toString() => r'skillTemplateToolProvider';

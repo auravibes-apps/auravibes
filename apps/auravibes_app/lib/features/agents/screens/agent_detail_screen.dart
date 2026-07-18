@@ -26,9 +26,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([WorkspaceToolsNotifier])
 class AgentDetailScreen extends ConsumerStatefulWidget {
   const AgentDetailScreen({required this.workspaceId, this.agentId, super.key});
 
@@ -64,7 +62,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     final agentId = widget.agentId;
     if (agentId != null && !_loaded) {
       return FutureBuilder<AgentEntity?>(
-        future: ref.read(agentRepositoryProvider).getAgentById(agentId),
+        future: ref
+            .read(agentRepositoryProvider(widget.workspaceId))
+            .getAgentById(agentId),
         builder: (context, snapshot) {
           final agent = snapshot.data;
           if (agent == null) return const Center(child: AuraSpinner());
@@ -82,7 +82,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     final agentId = widget.agentId;
     if (agentId != null && !_toolOverridesLoaded) {
       return FutureBuilder<List<AgentToolOverrideEntity>>(
-        future: ref.read(listAgentToolOverridesUsecaseProvider).call(agentId),
+        future: ref
+            .read(listAgentToolOverridesUsecaseProvider(widget.workspaceId))
+            .call(agentId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const AuraScreen(child: Center(child: AuraSpinner()));
@@ -312,7 +314,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     if (!(confirmed ?? false)) return;
 
     await ref
-        .read(disableSkillUsecaseProvider)
+        .read(disableSkillUsecaseProvider(widget.workspaceId))
         .call(
           workspaceId: widget.workspaceId,
           source: skill.source,
@@ -329,7 +331,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final usecase = ref.read(saveAgentUsecaseProvider);
+      final usecase = ref.read(saveAgentUsecaseProvider(widget.workspaceId));
       final agentId = widget.agentId;
       final agent = agentId == null
           ? await usecase.create(
@@ -364,7 +366,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
 
   Future<void> _saveToolOverrides(String agentId) {
     return ref
-        .read(saveAgentToolOverridesUsecaseProvider)
+        .read(saveAgentToolOverridesUsecaseProvider(widget.workspaceId))
         .call(
           agentId: agentId,
           permissionsByToolId: _toolPermissionModes,

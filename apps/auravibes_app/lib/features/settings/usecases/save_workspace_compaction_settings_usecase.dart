@@ -9,8 +9,9 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_settings_adap
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'save_workspace_compaction_settings_usecase.g.dart';
 
 class SaveWorkspaceCompactionSettingsUsecase {
   const SaveWorkspaceCompactionSettingsUsecase({
@@ -68,35 +69,26 @@ class SaveWorkspaceCompactionSettingsUsecase {
   }
 }
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
-final saveWorkspaceCompactionSettingsUsecaseProvider =
-    Provider<SaveWorkspaceCompactionSettingsUsecase>(
-      (ref) {
-        CloudWorkspaceRef? cloud;
-        try {
-          cloud = ref.watch(workspaceSessionProvider).cloud;
-        } on Exception {
-          cloud = null;
-        }
-        if (cloud != null) {
-          final gateway = ref
-              .watch(cloudWorkspaceStateGatewayProvider)
-              .requireValue;
-          if (gateway == null) {
-            throw StateError('Cloud workspace gateway is unavailable');
-          }
-
-          return SaveWorkspaceCompactionSettingsUsecase(
-            cloudAdapter: CloudSkillSettingsAdapter(gateway),
-          );
-        }
-
-        return SaveWorkspaceCompactionSettingsUsecase(
-          repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
-        );
-      },
-      dependencies: [
-        workspaceSessionProvider,
-        cloudWorkspaceStateGatewayProvider,
-      ],
+@riverpod
+Future<SaveWorkspaceCompactionSettingsUsecase>
+saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  if (session.cloud case final CloudWorkspaceRef _) {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayProvider(session).future,
     );
+    if (gateway == null) {
+      throw StateError('Cloud workspace gateway is unavailable');
+    }
+
+    return SaveWorkspaceCompactionSettingsUsecase(
+      cloudAdapter: CloudSkillSettingsAdapter(gateway),
+    );
+  }
+
+  return SaveWorkspaceCompactionSettingsUsecase(
+    repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
+  );
+}

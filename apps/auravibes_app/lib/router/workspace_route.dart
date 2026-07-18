@@ -2,10 +2,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
@@ -16,13 +13,9 @@ import 'package:auravibes_app/features/cloud_accounts/screens/cloud_account_regi
 import 'package:auravibes_app/features/cloud_accounts/screens/cloud_accounts_screen.dart';
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
 import 'package:auravibes_app/features/intro/screens/intro_screen.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_create_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connection_edit_screen.dart';
 import 'package:auravibes_app/features/service_connections/screens/service_connections_screen.dart';
-import 'package:auravibes_app/features/service_connections/usecases/service_connections_action_usecase.dart';
 import 'package:auravibes_app/features/settings/screens/more_screen.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
@@ -38,7 +31,6 @@ import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 part 'workspace_route.g.dart';
 
@@ -49,21 +41,6 @@ final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @TypedGoRoute<IntroRoute>(path: introPath)
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class IntroRoute extends GoRouteData with $IntroRoute {
   const IntroRoute();
 
@@ -186,22 +163,6 @@ class IntroRoute extends GoRouteData with $IntroRoute {
     ),
   ],
 )
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  serviceConnectionsActionUsecase,
-])
 class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
   WorkspaceRoute({required this.workspaceId});
 
@@ -224,21 +185,6 @@ class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class MyShellRouteData extends StatefulShellRouteData {
   const MyShellRouteData();
 
@@ -264,21 +210,6 @@ class MyShellRouteData extends StatefulShellRouteData {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class _WorkspaceSessionGate extends ConsumerWidget {
   const _WorkspaceSessionGate({
     required this.workspaceId,
@@ -291,10 +222,7 @@ class _WorkspaceSessionGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(workspaceSessionForRouteProvider(workspaceId))) {
-      AsyncData(:final value) => ProviderScope(
-        overrides: [workspaceSessionProvider.overrideWithValue(value)],
-        child: _workspaceShell(),
-      ),
+      AsyncData() => _workspaceShell(),
       AsyncError(:final error) => ErrorWidget(error),
       _ => const SizedBox.shrink(),
     };
@@ -309,21 +237,6 @@ class _WorkspaceSessionGate extends ConsumerWidget {
   );
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class ChatsRoute extends GoRouteData with $ChatsRoute {
   ChatsRoute({required this.workspaceId});
 
@@ -335,21 +248,6 @@ class ChatsRoute extends GoRouteData with $ChatsRoute {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class NewChatRoute extends GoRouteData with $NewChatRoute {
   NewChatRoute({required this.workspaceId});
 
@@ -361,18 +259,6 @@ class NewChatRoute extends GoRouteData with $NewChatRoute {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class ConversationRoute extends GoRouteData with $ConversationRoute {
   ConversationRoute({required this.workspaceId, required this.chatId});
 
@@ -385,18 +271,6 @@ class ConversationRoute extends GoRouteData with $ConversationRoute {
   }
 }
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class SubAgentConversationRoute extends GoRouteData
     with $SubAgentConversationRoute {
   SubAgentConversationRoute({
@@ -419,18 +293,6 @@ class SubAgentConversationRoute extends GoRouteData
   }
 }
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class _SubAgentConversationGate extends ConsumerWidget {
   const _SubAgentConversationGate({
     required this.workspaceId,
@@ -445,7 +307,7 @@ class _SubAgentConversationGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversation = ref.watch(
-      conversationByIdStreamProvider(conversationId: chatId),
+      conversationByIdStreamProvider(workspaceId, conversationId: chatId),
     );
 
     return switch (conversation) {
@@ -462,7 +324,6 @@ class _SubAgentConversationGate extends ConsumerWidget {
   }
 }
 
-@Dependencies([workspaceSession])
 class ToolsRoute extends GoRouteData with $ToolsRoute {
   ToolsRoute({required this.workspaceId});
 
@@ -474,7 +335,6 @@ class ToolsRoute extends GoRouteData with $ToolsRoute {
   }
 }
 
-@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 class ModelsRoute extends GoRouteData with $ModelsRoute {
   ModelsRoute({required this.workspaceId});
 
@@ -497,12 +357,6 @@ class SkillsRoute extends GoRouteData with $SkillsRoute {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 class SkillCreateRoute extends GoRouteData with $SkillCreateRoute {
   SkillCreateRoute({required this.workspaceId});
 
@@ -548,12 +402,6 @@ class AgentDetailRoute extends GoRouteData with $AgentDetailRoute {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 class SkillDetailRoute extends GoRouteData with $SkillDetailRoute {
   SkillDetailRoute({required this.workspaceId, required this.skillId});
 
@@ -642,7 +490,6 @@ class SkillCredentialDefinitionEditRoute extends GoRouteData
   }
 }
 
-@Dependencies([serviceConnections, serviceConnectionsActionUsecase])
 class ServiceConnectionsRoute extends GoRouteData
     with $ServiceConnectionsRoute {
   ServiceConnectionsRoute({required this.workspaceId});
@@ -655,12 +502,6 @@ class ServiceConnectionsRoute extends GoRouteData
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 class ServiceConnectionCreateRoute extends GoRouteData
     with $ServiceConnectionCreateRoute {
   ServiceConnectionCreateRoute({
@@ -685,7 +526,6 @@ class ServiceConnectionCreateRoute extends GoRouteData
   }
 }
 
-@Dependencies([serviceConnectionOperations])
 class ServiceConnectionEditRoute extends GoRouteData
     with $ServiceConnectionEditRoute {
   ServiceConnectionEditRoute({
@@ -705,7 +545,6 @@ class ServiceConnectionEditRoute extends GoRouteData
   }
 }
 
-@Dependencies([workspaceSession])
 class SettingsRoute extends GoRouteData with $SettingsRoute {
   SettingsRoute({required this.workspaceId});
 
@@ -717,21 +556,6 @@ class SettingsRoute extends GoRouteData with $SettingsRoute {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class MoreRoute extends GoRouteData with $MoreRoute {
   MoreRoute({required this.workspaceId});
 
@@ -838,21 +662,6 @@ class CloudAccountForgotPasswordRoute extends GoRouteData
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class WorkspaceManagementRoute extends GoRouteData
     with $WorkspaceManagementRoute {
   WorkspaceManagementRoute({required this.workspaceId});
@@ -865,21 +674,6 @@ class WorkspaceManagementRoute extends GoRouteData
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class WorkspaceCreateRoute extends GoRouteData with $WorkspaceCreateRoute {
   WorkspaceCreateRoute({required this.workspaceId});
 

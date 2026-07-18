@@ -46,7 +46,9 @@ void main() {
         workspaceSessionForRouteProvider.overrideWith(
           (_, _) async => const WorkspaceSession(workspace),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+        cloudWorkspaceStateGatewayProvider.overrideWith(
+          (_, _) async => gateway,
+        ),
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => gateway,
         ),

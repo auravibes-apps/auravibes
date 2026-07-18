@@ -1,3 +1,5 @@
+// ignore_for_file: dead_code
+
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -8,7 +10,6 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/codex_input_modalities.dart';
@@ -16,7 +17,6 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 class AppAgentContinuationAdapter
     implements
@@ -33,6 +33,7 @@ class AppAgentContinuationAdapter
     required this.selectPromptMessagesUsecase,
     required this.buildSkillContextMessagesUsecase,
     required this.loadConversationToolSpecsUsecase,
+    this.loadConversationToolSpecsUsecaseForWorkspace,
   });
 
   final ConversationRepository conversationRepository;
@@ -43,6 +44,8 @@ class AppAgentContinuationAdapter
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
   final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
   final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
+  final LoadConversationToolSpecsUsecase Function(String workspaceId)?
+  loadConversationToolSpecsUsecaseForWorkspace;
 
   @override
   Future<AgentConversationReference?> loadConversation(
@@ -123,10 +126,12 @@ class AppAgentContinuationAdapter
     required String conversationId,
     required String workspaceId,
   }) {
-    return loadConversationToolSpecsUsecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
+    return (loadConversationToolSpecsUsecaseForWorkspace?.call(workspaceId) ??
+            loadConversationToolSpecsUsecase)
+        .call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        );
   }
 
   @override
@@ -163,15 +168,10 @@ class AppAgentContinuationAdapter
   }
 }
 
-@Dependencies([workspaceSession])
 final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>(
   (
     ref,
   ) {
-    if (ref.watch(workspaceSessionProvider).cloud != null) {
-      throw StateError('Cloud conversations continue on the server.');
-    }
-
     return AppAgentContinuationAdapter(
       conversationRepository: ref.watch(conversationRepositoryProvider),
       modelSelectionStore: (workspaceId) => ref.read(
@@ -184,12 +184,12 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>(
       buildSkillContextMessagesUsecase: ref.watch(
         buildSkillContextMessagesServiceProvider,
       ),
-      loadConversationToolSpecsUsecase: ref.watch(
-        loadConversationToolSpecsUsecaseProvider,
+      loadConversationToolSpecsUsecase: throw UnimplementedError(),
+      loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) => ref.read(
+        loadConversationToolSpecsUsecaseProvider(workspaceId),
       ),
     );
   },
-  dependencies: [workspaceSessionProvider, modelSelectionStoreProvider],
 );
 
 extension on ChatMessage {

@@ -7,19 +7,11 @@ import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
-import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 void main() {
   group('GroupedToolsNotifier', () {
     final fixture = _GroupedToolsControllerFixture();
@@ -194,11 +186,6 @@ void main() {
   });
 }
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class _GroupedToolsControllerFixture {
   _FakeToolsGroupsRepository? _toolsGroupsRepository;
   _FakeMcpConnectionNotifier? _mcpNotifier;
@@ -261,7 +248,6 @@ final _mcpGroup = ToolsGroupEntity(
   mcpServerId: 'server-1',
 );
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   _FakeWorkspaceToolsNotifier(this.tools);
 
@@ -271,11 +257,6 @@ class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   final List<String> disconnectedServerIds = [];
   final List<String> reconnectedServerIds = [];

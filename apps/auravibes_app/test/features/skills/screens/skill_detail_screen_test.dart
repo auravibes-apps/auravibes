@@ -8,8 +8,6 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
@@ -30,15 +28,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -47,12 +38,6 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  @Dependencies([
-    workspaceSession,
-    cloudWorkspaceStateGateway,
-    serviceConnectionOperations,
-    serviceConnections,
-  ])
   Widget buildScreen(ValueNotifier<_SkillDetailScreenFixture> fixture) {
     return EasyLocalization(
       key: UniqueKey(),
@@ -61,67 +46,59 @@ void main() {
           return ValueListenableBuilder<_SkillDetailScreenFixture>(
             valueListenable: fixture,
             builder: (context, value, _) {
-              return UncontrolledProviderScope(
-                container: value.container,
-                child: ProviderScope(
-                  key: ValueKey('${value.workspaceId}:${value.skillId}:scope'),
-                  overrides: [
-                    workspaceSessionProvider.overrideWithValue(
-                      WorkspaceSession(
-                        LocalWorkspaceRef(
-                          localWorkspaceId: value.workspaceId,
-                        ),
-                      ),
+              value.container.updateOverrides([
+                skillsRepositoryProvider.overrideWithValue(
+                  value.container.read(skillsRepositoryProvider),
+                ),
+                appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
+                  value.container.read(
+                    appSkillWorkspaceSettingsRepositoryProvider,
+                  ),
+                ),
+                skillDetailProvider(
+                  value.workspaceId,
+                  value.skillId,
+                ).overrideWith((_) async => value.detail),
+                if (value.detail.credentialDefinitionId case final id?) ...[
+                  skillCredentialDefinitionProvider(
+                    value.workspaceId,
+                    id,
+                  ).overrideWith(
+                    (_) => value.container.read(
+                      skillCredentialDefinitionProvider(
+                        value.workspaceId,
+                        id,
+                      ).future,
                     ),
-                    cloudWorkspaceStateGatewayProvider.overrideWith(
-                      (_) async => null,
-                    ),
-                    cloudSkillStoreProvider.overrideWithValue(null),
-                    skillsRepositoryProvider.overrideWithValue(
-                      value.container.read(skillsRepositoryProvider),
-                    ),
-                    appSkillWorkspaceSettingsRepositoryProvider
-                        .overrideWithValue(
-                          value.container.read(
-                            appSkillWorkspaceSettingsRepositoryProvider,
-                          ),
-                        ),
-                    skillDetailProvider(
-                      value.workspaceId,
-                      value.skillId,
-                    ).overrideWith((_) async => value.detail),
-                    if (value.detail.credentialDefinitionId case final id?) ...[
-                      skillCredentialDefinitionProvider(id).overrideWith(
-                        (_) => value.container.read(
-                          skillCredentialDefinitionProvider(id).future,
-                        ),
-                      ),
+                  ),
+                  skillCredentialsForDefinitionProvider(
+                    value.workspaceId,
+                    id,
+                  ).overrideWith(
+                    (_) => value.container.read(
                       skillCredentialsForDefinitionProvider(
                         value.workspaceId,
                         id,
-                      ).overrideWith(
-                        (_) => value.container.read(
-                          skillCredentialsForDefinitionProvider(
-                            value.workspaceId,
-                            id,
-                          ).future,
-                        ),
-                      ),
-                    ],
-                  ],
-                  child: MaterialApp(
-                    home: SkillDetailScreen(
-                      workspaceId: value.workspaceId,
-                      skillId: value.skillId,
-                      key: ValueKey('${value.workspaceId}:${value.skillId}'),
+                      ).future,
                     ),
-                    builder: (context, child) => AuraSnackBarHost(
-                      child: child ?? const SizedBox.shrink(),
-                    ),
-                    locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
-                    supportedLocales: context.supportedLocales,
                   ),
+                ],
+              ]);
+
+              return UncontrolledProviderScope(
+                container: value.container,
+                child: MaterialApp(
+                  home: SkillDetailScreen(
+                    workspaceId: value.workspaceId,
+                    skillId: value.skillId,
+                    key: ValueKey('${value.workspaceId}:${value.skillId}'),
+                  ),
+                  builder: (context, child) => AuraSnackBarHost(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
                 ),
               );
             },
@@ -170,7 +147,7 @@ void main() {
             LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
           ),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );
@@ -200,7 +177,7 @@ void main() {
             LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
           ),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );
@@ -285,7 +262,7 @@ void main() {
             LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
           ),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );

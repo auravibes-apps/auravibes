@@ -16,9 +16,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([serviceConnectionOperations])
 class ServiceConnectionEditScreen extends ConsumerStatefulWidget {
   const ServiceConnectionEditScreen({
     required this.workspaceId,
@@ -145,13 +143,14 @@ class _ServiceConnectionEditScreenState
       return _GenericServiceConnectionEditState(connection: generic);
     }
     final credential = await ref
-        .read(skillCredentialOperationsProvider)
+        .read(skillCredentialOperationsProvider(widget.workspaceId))
         .getForEdit(
           widget.connectionId,
         );
     if (credential != null) {
       final definition = await ref.read(
         skillCredentialDefinitionProvider(
+          widget.workspaceId,
           credential.credentialDefinitionId,
         ).future,
       );
@@ -213,7 +212,7 @@ class _ServiceConnectionEditScreenState
     setState(() => _isSaving = true);
     try {
       final _ = await ref
-          .read(skillCredentialOperationsProvider)
+          .read(skillCredentialOperationsProvider(widget.workspaceId))
           .update(
             widget.connectionId,
             SkillCredentialToUpdate(

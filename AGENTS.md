@@ -20,6 +20,7 @@
 | ----------------------- | ---------------------------------------------------------------------------- |
 | Bootstrap               | `fvm dart run melos bootstrap`                                               |
 | App/UI focused test     | `fvm flutter test test/path/to/file_test.dart --no-pub` from target package  |
+| App fatal analyzer      | `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` |
 | Engine focused test     | `fvm dart test test/path/to/file_test.dart` from `packages/auravibes_engine` |
 | Quick validation        | `fvm dart run melos run validate:quick`                                      |
 | Full validation         | `fvm dart run melos run validate`                                            |
@@ -37,6 +38,16 @@
 - Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
 - If verification cannot run, say why and name the next command to run.
 - Generated-code changes require generator output review.
+
+## Analyzer-only migrations
+
+- For provider scope/dependency cleanup, fix every machine diagnostic including infos; run only the app fatal analyzer, not tests or broader gates.
+
+## Riverpod practices
+
+- Use families for route, workspace, conversation, and service state.
+- Scope only measured list, row, or item rebuilds; never screens, routes, services, repositories, usecases, or test helpers.
+- Treat analyzer dependency diagnostics as authoritative: remove unused declarations; add only observable dependencies after restructuring; never suppress them.
 
 ## Project Rules
 

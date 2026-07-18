@@ -10,10 +10,8 @@ import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
@@ -21,8 +19,6 @@ import 'package:auravibes_app/features/chats/widgets/chat_attachment_image.dart'
 import 'package:auravibes_app/features/chats/widgets/chat_thinking_indicator.dart';
 import 'package:auravibes_app/features/chats/widgets/compacted_message_details.dart';
 import 'package:auravibes_app/features/chats/widgets/tool_call_response_preview.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
@@ -37,33 +33,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  conversationCompactionExecutionState,
-  childConversationsStream,
-  conversationByIdStream,
-  conversationSelected,
-  messageConversationById,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  toolDisplayName,
-])
 class ChatMessagesWidget extends HookConsumerWidget {
   // Null lets callers fall back to per-message provider reads.
   // ignore: unnecessary-nullable
   const ChatMessagesWidget({
+    required this.workspaceId,
+    required this.conversationId,
     required this.messages,
     this.messageEntitiesById,
     this.pendingToolCalls = const [],
     super.key,
   });
 
+  final String workspaceId;
+  final String conversationId;
   final List<String> messages;
   final Map<String, MessageEntity>? messageEntitiesById;
   final List<PendingToolCall> pendingToolCalls;
@@ -72,26 +56,22 @@ class ChatMessagesWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
     final controller = useScrollController();
-    final parentConversationId = ref.watch(conversationSelectedProvider);
+    final parentConversationId = conversationId;
     final childConversations =
         ref
             .watch(
               childConversationsStreamProvider(
+                workspaceId,
                 parentConversationId: parentConversationId,
               ),
             )
             .value ??
         const <ConversationEntity>[];
-    final workspaceId = ref
-        .watch(
-          conversationByIdStreamProvider(
-            conversationId: parentConversationId,
-          ),
-        )
-        .value
-        ?.workspaceId;
     final compactionState = ref.watch(
-      conversationCompactionExecutionStateProvider,
+      conversationCompactionExecutionStateProvider(
+        workspaceId,
+        conversationId,
+      ),
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
@@ -127,19 +107,6 @@ class ChatMessagesWidget extends HookConsumerWidget {
   }
 }
 
-@Dependencies([
-  messageConversationById,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  toolDisplayName,
-])
 class _ChatMessageRow extends HookConsumerWidget {
   const _ChatMessageRow({
     required this.messageId,
@@ -155,7 +122,7 @@ class _ChatMessageRow extends HookConsumerWidget {
   final List<PendingToolCall> pendingToolCalls;
   final String parentConversationId;
   final List<ConversationEntity> childConversations;
-  final String? workspaceId;
+  final String workspaceId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -167,7 +134,13 @@ class _ChatMessageRow extends HookConsumerWidget {
         baseMessage,
         streamingResult,
       ),
-      null => ref.watch(messageConversationByIdProvider(messageId)),
+      null => ref.watch(
+        messageConversationByIdProvider(
+          workspaceId,
+          parentConversationId,
+          messageId,
+        ),
+      ),
     };
     if (message == null) {
       return const SizedBox.shrink();
@@ -465,19 +438,6 @@ class _AiMessageContent extends StatelessWidget {
 }
 
 /// Widget that displays a single tool call with optional confirmation UI.
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-  toolDisplayName,
-])
 class _ToolCallWidget extends ConsumerWidget {
   const _ToolCallWidget({
     required this.toolCall,
@@ -498,14 +458,24 @@ class _ToolCallWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final displayNameAsync = ref.watch(toolDisplayNameProvider(toolCall.name));
-    final displayName = displayNameAsync.maybeWhen(
-      data: (name) => name,
-      orElse: () => ToolNameFormatter.formatDisplayName(
-        ToolNameFormatter.parse(toolCall.name),
-        rawName: toolCall.name,
-      ),
-    );
+    final currentWorkspaceId = workspaceId;
+    final displayNameAsync = currentWorkspaceId == null
+        ? null
+        : ref.watch(
+            toolDisplayNameProvider(currentWorkspaceId, toolCall.name),
+          );
+    final displayName =
+        displayNameAsync?.maybeWhen(
+          data: (name) => name,
+          orElse: () => ToolNameFormatter.formatDisplayName(
+            ToolNameFormatter.parse(toolCall.name),
+            rawName: toolCall.name,
+          ),
+        ) ??
+        ToolNameFormatter.formatDisplayName(
+          ToolNameFormatter.parse(toolCall.name),
+          rawName: toolCall.name,
+        );
 
     final decodedArgs = tryDecodeToolMetadata(toolCall.argumentsRaw);
     final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);

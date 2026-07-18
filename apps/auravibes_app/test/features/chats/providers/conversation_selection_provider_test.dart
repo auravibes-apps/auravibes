@@ -3,9 +3,7 @@
 import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([conversationSelected])
 void main() {
   group('conversationSelectedProvider', () {
     test(
@@ -16,7 +14,7 @@ void main() {
         addTearDown(container.dispose);
 
         expect(
-          () => container.read(conversationSelectedProvider),
+          () => container.read(conversationSelectedProvider('ws-1')),
           throwsA(
             isA<Exception>().having(
               (e) => e.toString(),
@@ -36,7 +34,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      expect(container.read(conversationSelectedProvider), 'conv-123');
+      expect(container.read(conversationSelectedProvider('ws-1')), 'conv-123');
     });
 
     test('can be overridden with different values', () {
@@ -47,7 +45,7 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      expect(container.read(conversationSelectedProvider), 'conv-456');
+      expect(container.read(conversationSelectedProvider('ws-1')), 'conv-456');
     });
   });
 }

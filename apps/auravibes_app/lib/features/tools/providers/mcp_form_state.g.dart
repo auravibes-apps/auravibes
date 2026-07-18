@@ -28,17 +28,6 @@ final class McpFormNotifierProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = mcpConnectionProvider;
-  static final $allTransitiveDependencies2 =
-      McpConnectionNotifierProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies3 =
-      McpConnectionNotifierProvider.$allTransitiveDependencies2;
-  static final $allTransitiveDependencies4 =
-      McpConnectionNotifierProvider.$allTransitiveDependencies3;
-  static final $allTransitiveDependencies5 =
-      McpConnectionNotifierProvider.$allTransitiveDependencies4;
-
   @override
   String debugGetCreateSourceHash() => _$mcpFormNotifierHash();
 
@@ -72,7 +61,7 @@ final class McpFormNotifierProvider
   }
 }
 
-String _$mcpFormNotifierHash() => r'48a90c508820f04594d06efab5b0c83edf6050f1';
+String _$mcpFormNotifierHash() => r'e3d7e7a45f123f9771c5139e94cf5c5ed971d7de';
 
 /// Notifier for managing MCP form state.
 
@@ -89,18 +78,8 @@ final class McpFormNotifierFamily extends $Family
     : super(
         retry: null,
         name: r'mcpFormProvider',
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          mcpConnectionProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          McpFormNotifierProvider.$allTransitiveDependencies0,
-          McpFormNotifierProvider.$allTransitiveDependencies1,
-          McpFormNotifierProvider.$allTransitiveDependencies2,
-          McpFormNotifierProvider.$allTransitiveDependencies3,
-          McpFormNotifierProvider.$allTransitiveDependencies4,
-          McpFormNotifierProvider.$allTransitiveDependencies5,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

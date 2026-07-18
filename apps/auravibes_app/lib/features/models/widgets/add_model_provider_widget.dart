@@ -26,12 +26,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class AddModelProviderWidget extends HookConsumerWidget {
   const AddModelProviderWidget({
     required this.workspaceId,
@@ -245,7 +240,6 @@ class _ModalHeader extends StatelessWidget {
 }
 
 /// API configuration section with key and URL.
-@Dependencies([])
 class _ApiConfigSection extends StatelessWidget {
   const _ApiConfigSection({
     required this.workspaceId,
@@ -624,10 +618,6 @@ class _CodexDeviceCodePanel extends StatelessWidget {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class _SelectModelProvider extends HookConsumerWidget {
   const _SelectModelProvider({required this.workspaceId});
 

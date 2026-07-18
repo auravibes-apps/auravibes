@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/data/repositories/service_connection_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
@@ -161,16 +162,10 @@ class McpToolIdComponents {
 /// - toolIdentifier: Original tool identifier from the MCP server
 ///
 /// See [McpToolIdComponents] for parsing composite IDs.
-@Riverpod(
-  dependencies: [
-    mcpServersRepository,
-    workspaceSession,
-    cloudWorkspaceStateGateway,
-    WorkspaceToolsNotifier,
-  ],
-)
+@riverpod
 class McpConnectionNotifier extends _$McpConnectionNotifier {
   McpManagerService? _mcpManagerService;
+  String? _activeWorkspaceId;
   var _isCloud = false;
   var _isDisposed = false;
   var _lastKnownState = const <McpConnectionState>[];
@@ -187,8 +182,6 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         sync: true,
       );
     }
-    _isCloud = ref.watch(mcpServersRepositoryProvider) is CloudToolsRepository;
-    _mcpManagerService = _isCloud ? null : ref.watch(mcpManagerServiceProvider);
     ref
       ..onDispose(_onDispose)
       ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
@@ -260,7 +253,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
       mcpTools = await manager.getTools(client);
 
-      final repository = ref.read(mcpServersRepositoryProvider);
+      final repository = _repositoryFor(workspaceId);
       savedServer = await repository.addMcpServerWithTools(
         workspaceId: workspaceId,
         serverToCreate: serverForPersistence,
@@ -323,7 +316,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     _setState(state.where((c) => c.server.id != serverId).toList());
 
     // Delete from database (cascades to tools group and tools).
-    final repository = ref.read(mcpServersRepositoryProvider);
+    final repository = _activeRepository;
     final _ = await repository.deleteMcpServer(serverId);
   }
 
@@ -347,7 +340,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       return;
     }
 
-    final repository = ref.read(mcpServersRepositoryProvider);
+    final repository = _activeRepository;
     final server = await repository.getMcpServerById(serverId);
     if (server != null) {
       await _connectToMcp(server);
@@ -500,7 +493,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// Load enabled MCPs only for the active workspace.
   Future<void> _loadMcpsForWorkspace(String workspaceId) async {
     try {
-      final repository = ref.read(mcpServersRepositoryProvider);
+      _activeWorkspaceId = workspaceId;
+      final repository = _repositoryFor(workspaceId);
+      _isCloud = repository is CloudToolsRepository;
+      _mcpManagerService = _isCloud
+          ? null
+          : ref.read(mcpManagerServiceProvider);
       if (_isDisposed) {
         return;
       }
@@ -694,7 +692,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     List<McpToolInfo> tools,
   ) async {
     try {
-      final repository = ref.read(mcpServersRepositoryProvider);
+      final repository = _repositoryFor(server.workspaceId);
 
       await repository.syncMcpTools(
         mcpServerId: server.id,
@@ -714,12 +712,31 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       (throw const UnsupportedWorkspaceCapabilityException());
 
   CloudToolsRepository get _cloudRepository {
-    final repository = ref.read(mcpServersRepositoryProvider);
+    final repository = _activeRepository;
     if (repository case final CloudToolsRepository cloudRepository) {
       return cloudRepository;
     }
 
     throw const UnsupportedWorkspaceCapabilityException();
+  }
+
+  McpServersRepositoryContract get _activeRepository {
+    final workspaceId = _activeWorkspaceId;
+    if (workspaceId == null) {
+      throw StateError('No active workspace for MCP operation');
+    }
+
+    return _repositoryFor(workspaceId);
+  }
+
+  McpServersRepositoryContract _repositoryFor(String workspaceId) {
+    final session = ref
+        .read(
+          workspaceSessionForRouteProvider(workspaceId),
+        )
+        .requireValue;
+
+    return ref.read(mcpServersRepositoryProvider(session));
   }
 
   Future<void> _addCloudMcpServer(

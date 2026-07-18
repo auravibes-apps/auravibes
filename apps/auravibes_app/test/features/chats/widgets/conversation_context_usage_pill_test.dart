@@ -7,31 +7,37 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([contextUsage])
 void main() {
   Widget buildSubject({required ContextUsageData data}) {
-    return EasyLocalization(
-      child: ProviderScope(
-        overrides: [
-          contextUsageProvider.overrideWithValue(data),
-        ],
+    final container = ProviderContainer(
+      overrides: [
+        contextUsageProvider.overrideWithValue(data),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    return UncontrolledProviderScope(
+      container: container,
+      child: EasyLocalization(
         child: MaterialApp(
           home: Theme(
             data: ThemeData(extensions: [AuraTheme.light]),
             child: const Material(
-              child: ConversationContextUsagePill(),
+              child: ConversationContextUsagePill(
+                workspaceId: 'ws-1',
+                conversationId: 'conv-1',
+              ),
             ),
           ),
         ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
     );
   }
 

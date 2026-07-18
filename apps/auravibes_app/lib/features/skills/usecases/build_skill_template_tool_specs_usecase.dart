@@ -15,7 +15,8 @@ class BuildSkillTemplateToolSpecsUsecase {
     this._skillCredentialsRepository,
   );
 
-  final ListAvailableSkillsUsecase _listAvailableSkillsUsecase;
+  final ListAvailableSkillsUsecase Function(String workspaceId)
+  _listAvailableSkillsUsecase;
   final SkillTemplateToolsRepository _skillTemplateToolsRepository;
   final SkillCredentialsRepository _skillCredentialsRepository;
 
@@ -24,7 +25,7 @@ class BuildSkillTemplateToolSpecsUsecase {
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
   }) async {
-    final loadedSkills = await _listAvailableSkillsUsecase.call(
+    final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
@@ -157,7 +158,8 @@ class _CredentialSchema {
 final buildSkillTemplateToolSpecsUsecaseProvider =
     Provider<BuildSkillTemplateToolSpecsUsecase>((ref) {
       return BuildSkillTemplateToolSpecsUsecase(
-        ref.watch(listAvailableSkillsUsecaseProvider),
+        (workspaceId) =>
+            ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
         ref.watch(skillTemplateToolsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
       );

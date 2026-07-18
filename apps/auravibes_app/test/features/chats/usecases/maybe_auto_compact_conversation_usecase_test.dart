@@ -364,7 +364,7 @@ void main() {
         shouldCompactConversationUsecaseProvider.overrideWith(
           (ref) => fixture.mockShouldCompact,
         ),
-        compactConversationUsecaseProvider.overrideWith(
+        compactConversationUsecaseProvider('ws-1').overrideWith(
           (ref) => fixture.mockCompact,
         ),
       ],

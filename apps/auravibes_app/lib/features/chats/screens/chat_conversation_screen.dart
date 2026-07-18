@@ -19,11 +19,8 @@ import 'package:auravibes_app/features/chats/providers/aura_agent_service_provid
 import 'package:auravibes_app/features/chats/providers/cloud_live_turn_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
-import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
@@ -50,23 +47,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('chat_conversation_screen');
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-  toolDisplayName,
-])
 class ChatConversationScreen extends ConsumerWidget {
   const ChatConversationScreen({
     required this.workspaceId,
@@ -81,44 +64,30 @@ class ChatConversationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ProviderScope(
-      overrides: [conversationSelectedProvider.overrideWithValue(chatId)],
-      child: _ChatConversationScreen(
-        workspaceId: workspaceId,
-        showInputComposer: showInputComposer,
-      ),
+    return _ChatConversationScreen(
+      workspaceId: workspaceId,
+      chatId: chatId,
+      showInputComposer: showInputComposer,
     );
   }
 }
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationQueuedDrafts,
-  conversationCompactionExecutionState,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  conversationSelected,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-  toolDisplayName,
-])
 class _ChatConversationScreen extends HookConsumerWidget {
   const _ChatConversationScreen({
     required this.workspaceId,
+    required this.chatId,
     required this.showInputComposer,
   });
 
   final String workspaceId;
+  final String chatId;
   final bool showInputComposer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final conversationAsync = ref.watch(conversationChatProvider(workspaceId));
+    final conversationAsync = ref.watch(
+      conversationChatProvider(workspaceId, chatId),
+    );
 
     if (conversationAsync.isLoading && !conversationAsync.hasValue) {
       return const AuraScreen(
@@ -164,22 +133,6 @@ class _ChatConversationScreen extends HookConsumerWidget {
   }
 }
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  conversationQueuedDrafts,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  conversationSelected,
-  toolDisplayName,
-  contextUsage,
-  chatMessages,
-  conversationCompactionExecutionState,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class _LoadedChatConversation extends HookConsumerWidget {
   const _LoadedChatConversation({
     required this.workspaceId,
@@ -209,44 +162,56 @@ class _LoadedChatConversation extends HookConsumerWidget {
     final onStop = useCallback(
       () {
         stopRequested.value = true;
-        unawaited(_stopConversation(context, ref));
+        unawaited(
+          _stopConversation(context, ref, workspaceId, conversation.id),
+        );
       },
       [ref, stopRequested],
     );
 
     final onSendMessage = useCallback<Future<void> Function(ChatDraft)>(
-      (draft) => _sendMessage(context, ref, draft),
+      (draft) =>
+          _sendMessage(context, ref, workspaceId, conversation.id, draft),
       [ref],
     );
 
     final onCompact = useCallback(
       () {
-        unawaited(_manualCompact(context, ref, conversation.id));
+        unawaited(_manualCompact(context, ref, workspaceId, conversation.id));
       },
       [ref, conversation.id],
     );
 
     final busyState = _conversationBusyStateValue(
-      ref.watch(conversationBusyStateProvider),
+      ref.watch(conversationBusyStateProvider(workspaceId, conversation.id)),
     );
     final cloudTurn = ref.watch(cloudActiveTurnStateProvider(conversation.id));
-    final isCloud = ref.watch(workspaceSessionProvider).cloud != null;
+    final isCloud =
+        ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
+        null;
     final rateLimitRetryAt = ref.watch(
       conversationRateLimitRetryProvider.select(
         (retries) => retries[conversation.id],
       ),
     );
-    final queuedDrafts = ref.watch(conversationQueuedDraftsProvider);
+    final queuedDrafts = ref.watch(
+      conversationQueuedDraftsProvider(workspaceId, conversation.id),
+    );
     final selectedModelId = conversation.modelId;
     final selectedModelAsync = selectedModelId == null
         ? null
-        : ref.watch(workspaceModelSelectionByIdProvider(selectedModelId));
+        : ref.watch(
+            workspaceModelSelectionByIdProvider(workspaceId, selectedModelId),
+          );
     final modalitiesInput =
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
     final pendingCalls = isCloud
         ? const <PendingToolCall>[]
-        : ref.watch(pendingToolCallsProvider).value ?? const [];
+        : ref
+                  .watch(pendingToolCallsProvider(workspaceId, conversation.id))
+                  .value ??
+              const [];
     final hasPendingApprovals = pendingCalls.isNotEmpty;
     final compactionState = ref.watch(
       compactionExecutionStateProvider(conversation.id),
@@ -278,8 +243,17 @@ class _LoadedChatConversation extends HookConsumerWidget {
     return AuraScreen(
       child: AuraColumn(
         children: [
-          const _ChatControlsBar(),
-          Expanded(child: _ChatList(pendingToolCalls: pendingCalls)),
+          _ChatControlsBar(
+            workspaceId: workspaceId,
+            conversationId: conversation.id,
+          ),
+          Expanded(
+            child: _ChatList(
+              workspaceId: workspaceId,
+              conversationId: conversation.id,
+              pendingToolCalls: pendingCalls,
+            ),
+          ),
           if (isCloud && cloudTurn != null && !hidesStoppedRun)
             _CloudTurnLifecycleIndicator(state: cloudTurn.state)
           else if (busyState?.isStreaming == true && !hidesStoppedRun)
@@ -287,12 +261,20 @@ class _LoadedChatConversation extends HookConsumerWidget {
           if (rateLimitRetryAt != null && !hidesStoppedRun)
             _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
           if (queuedDrafts.isNotEmpty)
-            ChatQueuedMessagesIndicator(queuedDrafts: queuedDrafts),
-          if (hasPendingApprovals) const ChatToolApprovalCard(),
+            ChatQueuedMessagesIndicator(
+              conversationId: conversation.id,
+              queuedDrafts: queuedDrafts,
+            ),
+          if (hasPendingApprovals)
+            ChatToolApprovalCard(
+              workspaceId: workspaceId,
+              conversationId: conversation.id,
+            ),
           if (showInputComposer)
             Offstage(
               offstage: hasPendingApprovals,
               child: ChatInputWidget(
+                workspaceId: workspaceId,
                 onSendMessage: onSendMessage,
                 onToolsPress: onToolsPress,
                 modelSheetControl: CompactWorkspaceModelSelector(
@@ -304,6 +286,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
                         context: context,
                         ref: ref,
                         workspaceId: workspaceId,
+                        conversationId: conversation.id,
                         modelId: modelId,
                       ),
                     );
@@ -316,7 +299,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
                   onChanged: (agentId) {
                     unawaited(
                       ref
-                          .read(conversationChatProvider(workspaceId).notifier)
+                          .read(
+                            conversationChatProvider(
+                              workspaceId,
+                              conversation.id,
+                            ).notifier,
+                          )
                           .setAgent(agentId),
                     );
                   },
@@ -328,7 +316,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
                   onChanged: (modelId) {
                     unawaited(
                       ref
-                          .read(conversationChatProvider(workspaceId).notifier)
+                          .read(
+                            conversationChatProvider(
+                              workspaceId,
+                              conversation.id,
+                            ).notifier,
+                          )
                           .setModel(modelId),
                     );
                   },
@@ -340,7 +333,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
                   onChanged: (agentId) {
                     unawaited(
                       ref
-                          .read(conversationChatProvider(workspaceId).notifier)
+                          .read(
+                            conversationChatProvider(
+                              workspaceId,
+                              conversation.id,
+                            ).notifier,
+                          )
                           .setAgent(agentId),
                     );
                   },
@@ -355,7 +353,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
                 onContinueAgent: isInputBusy
                     ? null
                     : () => unawaited(
-                        _continueAgent(context, ref, conversation.id),
+                        _continueAgent(
+                          context,
+                          ref,
+                          workspaceId,
+                          conversation.id,
+                        ),
                       ),
                 isBusy: isInputBusy,
                 showStopButton: isInputBusy && !hidesStoppedRun,
@@ -383,9 +386,14 @@ class _LoadedChatConversation extends HookConsumerWidget {
   }
 }
 
-@Dependencies([contextUsage])
 class _ChatControlsBar extends StatelessWidget {
-  const _ChatControlsBar();
+  const _ChatControlsBar({
+    required this.workspaceId,
+    required this.conversationId,
+  });
+
+  final String workspaceId;
+  final String conversationId;
 
   @override
   Widget build(BuildContext context) {
@@ -406,9 +414,12 @@ class _ChatControlsBar extends StatelessWidget {
             top: context.auraTheme.fromSpacing(.sm),
             right: context.auraTheme.fromSpacing(.sm),
           ),
-          child: const Align(
+          child: Align(
             alignment: Alignment.centerRight,
-            child: ConversationContextUsagePill(),
+            child: ConversationContextUsagePill(
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            ),
           ),
         ),
       ),
@@ -523,7 +534,6 @@ void _showSkillsModal({
   );
 }
 
-@Dependencies([workspaceSession])
 void _showToolsModal({
   required BuildContext context,
   required String workspaceId,
@@ -542,31 +552,33 @@ void _showToolsModal({
   );
 }
 
-@Dependencies([
-  chatMessages,
-  ConversationChatNotifier,
-  workspaceModelSelectionById,
-])
 Future<void> _setModelWithAttachmentWarning({
   required BuildContext context,
   required WidgetRef ref,
   required String workspaceId,
+  required String conversationId,
   required String? modelId,
 }) async {
   if (modelId == null) {
     await ref
-        .read(conversationChatProvider(workspaceId).notifier)
+        .read(conversationChatProvider(workspaceId, conversationId).notifier)
         .setModel(null);
 
     return;
   }
 
   final selectedModel = await ref.read(
-    workspaceModelSelectionByIdProvider(modelId).future,
+    workspaceModelSelectionByIdProvider(workspaceId, modelId).future,
   );
   final supported =
       selectedModel?.workspaceModelSelection.modalitiesInput ?? [];
-  final messages = ref.read(chatMessagesProvider).value ?? const [];
+  final messages =
+      ref
+          .read(
+            chatMessagesProvider(workspaceId, conversationId),
+          )
+          .value ??
+      const [];
   final missing = <String>{};
   for (final message in messages) {
     for (final attachment in message.attachments) {
@@ -617,18 +629,18 @@ Future<void> _setModelWithAttachmentWarning({
   }
 
   await ref
-      .read(conversationChatProvider(workspaceId).notifier)
+      .read(conversationChatProvider(workspaceId, conversationId).notifier)
       .setModel(modelId);
 }
 
-@Dependencies([conversationBusyState])
 Future<void> _continueAgent(
   BuildContext context,
   WidgetRef ref,
+  String workspaceId,
   String conversationId,
 ) async {
   final busyState = _conversationBusyStateValue(
-    ref.read(conversationBusyStateProvider),
+    ref.read(conversationBusyStateProvider(workspaceId, conversationId)),
   );
   final rateLimitRetryAt = ref.read(
     conversationRateLimitRetryProvider,
@@ -671,10 +683,13 @@ Future<void> _continueAgent(
   }
 }
 
-@Dependencies([conversationSelected])
-Future<void> _stopConversation(BuildContext context, WidgetRef ref) async {
-  final conversationId = ref.read(conversationSelectedProvider);
-  final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+Future<void> _stopConversation(
+  BuildContext context,
+  WidgetRef ref,
+  String workspaceId,
+  String conversationId,
+) async {
+  final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
   if (cloud != null) {
     final turn = ref.read(cloudActiveTurnStateProvider(conversationId));
     if (turn == null || !turn.isBusy) return;
@@ -782,16 +797,16 @@ class _CloudTurnLifecycleIndicator extends StatelessWidget {
   }
 }
 
-@Dependencies([conversationSelected])
 Future<void> _sendMessage(
   BuildContext context,
   WidgetRef ref,
+  String workspaceId,
+  String conversationId,
   ChatDraft draft,
 ) async {
-  final conversationId = ref.read(conversationSelectedProvider);
   try {
     await ref
-        .read(sendMessageUsecaseProvider)
+        .read(sendMessageUsecaseProvider(workspaceId))
         .call(conversationId: conversationId, draft: draft);
   } on Exception catch (error, stackTrace) {
     _logger.severe(
@@ -814,10 +829,11 @@ Future<void> _sendMessage(
 Future<void> _manualCompact(
   BuildContext context,
   WidgetRef ref,
+  String workspaceId,
   String conversationId,
 ) async {
   try {
-    switch (await ref.read(compactConversationUsecaseProvider)(
+    switch (await ref.read(compactConversationUsecaseProvider(workspaceId))(
       conversationId: conversationId,
       trigger: CompactionTrigger.manual,
     )) {
@@ -842,29 +858,22 @@ Future<void> _manualCompact(
   }
 }
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  conversationCompactionExecutionState,
-  childConversationsStream,
-  conversationByIdStream,
-  conversationSelected,
-  messageConversationById,
-  toolDisplayName,
-])
 class _ChatList extends ConsumerWidget {
-  const _ChatList({required this.pendingToolCalls});
+  const _ChatList({
+    required this.workspaceId,
+    required this.conversationId,
+    required this.pendingToolCalls,
+  });
 
+  final String workspaceId;
+  final String conversationId;
   final List<PendingToolCall> pendingToolCalls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatMessages = ref.watch(chatMessagesProvider);
+    final chatMessages = ref.watch(
+      chatMessagesProvider(workspaceId, conversationId),
+    );
     final isLoading = chatMessages.isLoading && chatMessages.value == null;
 
     if (isLoading) {
@@ -888,6 +897,8 @@ class _ChatList extends ConsumerWidget {
     };
 
     return ChatMessagesWidget(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
       messages: messageIds,
       messageEntitiesById: messageEntitiesById,
       pendingToolCalls: pendingToolCalls,

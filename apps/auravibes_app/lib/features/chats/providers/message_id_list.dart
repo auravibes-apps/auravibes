@@ -14,7 +14,6 @@ import 'package:auravibes_app/features/chats/providers/cloud_live_turn_state_pro
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_selection_provider.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
@@ -33,22 +32,37 @@ export 'conversation_selection_provider.dart';
 
 part 'message_id_list.g.dart';
 
-@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
+extension ChatMessagesFamilyTestOverride on ChatMessagesFamily {
+  Override overrideWithValue(Stream<List<MessageEntity>> value) =>
+      overrideWith((_, _) => value);
+}
+
+extension ConversationCompactionExecutionStateFamilyTestOverride
+    on ConversationCompactionExecutionStateFamily {
+  Override overrideWithValue(CompactionExecutionState? value) =>
+      overrideWith((_, _) => value);
+}
+
+@riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(
   Ref ref,
+  String workspaceId,
   String conversationId,
 ) {
-  if (ref.watch(workspaceSessionProvider).cloud != null) {
-    return _cloudMessages(
-      ref,
-      ref.watch(cloudWorkspaceStateGatewayProvider.future),
-      conversationId,
-    );
+  final session = ref
+      .watch(workspaceSessionForRouteProvider(workspaceId))
+      .value;
+  if (session == null || session.cloud == null) {
+    return ref
+        .watch(messageRepositoryProvider)
+        .watchMessagesByConversation(conversationId);
   }
 
-  return ref
-      .watch(messageRepositoryProvider)
-      .watchMessagesByConversation(conversationId);
+  return _cloudMessages(
+    ref,
+    ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
+    conversationId,
+  );
 }
 
 Stream<List<MessageEntity>> _cloudMessages(
@@ -72,7 +86,11 @@ Stream<List<MessageEntity>> _cloudMessages(
     return;
   }
   final events = StreamIterator(
-    ref.watch(cloudLiveTurnEventsProvider(turn.turnId)),
+    ref.watch(
+      cloudLiveTurnEventsProvider(
+        (workspaceId: gateway.workspace.localWorkspaceId, turnId: turn.turnId),
+      ),
+    ),
   );
   try {
     var nextEvent = events.moveNext();
@@ -218,17 +236,15 @@ Stream<MessageEntity?> latestAssistantMessageByConversation(
       .watchLatestAssistantMessageByConversation(conversationId);
 }
 
-@Riverpod(
-  dependencies: [
-    conversationSelected,
-    chatMessagesByConversation,
-  ],
-)
-Stream<List<MessageEntity>> chatMessages(Ref ref) {
-  final conversationId = ref.watch(conversationSelectedProvider);
+@riverpod
+Stream<List<MessageEntity>> chatMessages(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) {
   final controller = StreamController<List<MessageEntity>>();
   final subscription = ref.listen(
-    chatMessagesByConversationProvider(conversationId),
+    chatMessagesByConversationProvider(workspaceId, conversationId),
     (_, next) {
       switch (next) {
         case AsyncData(:final value):
@@ -249,21 +265,29 @@ Stream<List<MessageEntity>> chatMessages(Ref ref) {
   return controller.stream;
 }
 
-@Riverpod(dependencies: [chatMessages])
-List<String> chatMessageIds(Ref ref) {
-  final messages = ref.watch(chatMessagesProvider).value;
+@riverpod
+List<String> chatMessageIds(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) {
+  final messages = ref
+      .watch(chatMessagesProvider(workspaceId, conversationId))
+      .value;
   if (messages == null || messages.isEmpty) return const <String>[];
 
   return List<String>.unmodifiable(messages.map((m) => m.id));
 }
 
-@Riverpod(dependencies: [chatMessages])
+@riverpod
 MessageEntity? messageConversationById(
   Ref ref,
+  String workspaceId,
+  String conversationId,
   String messageId,
 ) {
   final messageEntity = ref
-      .watch(chatMessagesProvider)
+      .watch(chatMessagesProvider(workspaceId, conversationId))
       .value
       ?.firstWhereOrNull((c) => c.id == messageId);
 
@@ -318,21 +342,18 @@ bool isMessageStreaming(Ref ref, String messageId) {
   );
 }
 
-@Riverpod(
-  dependencies: [
-    conversationSelected,
-    workspaceSession,
-    chatMessages,
-  ],
-)
-Future<ConversationBusyState> conversationBusyState(Ref ref) {
-  final conversationId = ref.watch(conversationSelectedProvider);
-  final session = ref.watch(workspaceSessionProvider);
+@riverpod
+Future<ConversationBusyState> conversationBusyState(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
   if (session.cloud != null) {
-    return Future.value(
-      ConversationBusyState.cloud(
-        ref.watch(cloudActiveTurnStateProvider(conversationId)),
-      ),
+    return ConversationBusyState.cloud(
+      ref.watch(cloudActiveTurnStateProvider(conversationId)),
     );
   }
   ref
@@ -341,7 +362,7 @@ Future<ConversationBusyState> conversationBusyState(Ref ref) {
         (conversations) => conversations.contains(conversationId),
       ),
     )
-    ..watch(chatMessagesProvider);
+    ..watch(chatMessagesProvider(workspaceId, conversationId));
 
   final compactionExecution = ref.watch(compactionExecutionProvider);
   final isCompacting =
@@ -356,10 +377,12 @@ Future<ConversationBusyState> conversationBusyState(Ref ref) {
   );
 }
 
-@Riverpod(dependencies: [conversationSelected])
-List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
-  final conversationId = ref.watch(conversationSelectedProvider);
-
+@riverpod
+List<ConversationQueuedDraft> conversationQueuedDrafts(
+  Ref ref,
+  String _,
+  String conversationId,
+) {
   return ref.watch(
     conversationSendQueueProvider.select(
       (queues) => queues[conversationId] ?? const <ConversationQueuedDraft>[],
@@ -367,10 +390,12 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(Ref ref) {
   );
 }
 
-@Riverpod(dependencies: [conversationSelected])
-CompactionExecutionState? conversationCompactionExecutionState(Ref ref) {
-  final conversationId = ref.watch(conversationSelectedProvider);
-
+@riverpod
+CompactionExecutionState? conversationCompactionExecutionState(
+  Ref ref,
+  String _,
+  String conversationId,
+) {
   return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
@@ -388,9 +413,11 @@ class PendingToolCall {
   final String? sourceLabel;
 }
 
-@Riverpod(dependencies: [chatMessages])
-int conversationUsedTokens(Ref ref) {
-  final messages = ref.watch(chatMessagesProvider).value;
+@riverpod
+int conversationUsedTokens(Ref ref, String workspaceId, String conversationId) {
+  final messages = ref
+      .watch(chatMessagesProvider(workspaceId, conversationId))
+      .value;
   if (messages == null || messages.isEmpty) return 0;
 
   final latestAssistantMessage = messages.lastWhereOrNull(
@@ -409,35 +436,47 @@ int conversationUsedTokens(Ref ref) {
       0;
 }
 
-@Riverpod(
-  dependencies: [
-    conversationSelected,
-    conversationByIdStream,
-    modelContextLimit,
-  ],
-)
-Future<int?> conversationContextLimit(Ref ref) async {
-  final conversationId = ref.watch(conversationSelectedProvider);
+@riverpod
+Future<int?> conversationContextLimit(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) async {
   final conversationModelId = ref
-      .watch(conversationByIdStreamProvider(conversationId: conversationId))
+      .watch(
+        conversationByIdStreamProvider(
+          workspaceId,
+          conversationId: conversationId,
+        ),
+      )
       .value
       ?.modelId;
 
   if (conversationModelId == null) return null;
 
-  return await ref.watch(modelContextLimitProvider(conversationModelId).future);
+  final conversation = await ref.watch(
+    conversationByIdStreamProvider(
+      workspaceId,
+      conversationId: conversationId,
+    ).future,
+  );
+  final conversationWorkspaceId = conversation?.workspaceId;
+  if (conversationWorkspaceId == null) return null;
+
+  return await ref.watch(
+    modelContextLimitProvider(
+      conversationWorkspaceId,
+      conversationModelId,
+    ).future,
+  );
 }
 
-@Riverpod(
-  dependencies: [
-    conversationSelected,
-    chatMessages,
-    childConversationsStream,
-    conversationByIdStream,
-  ],
-)
-Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
-  final conversationId = ref.watch(conversationSelectedProvider);
+@riverpod
+Future<List<PendingToolCall>> pendingToolCalls(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) async {
   final activeChildren = ref.watch(
     activeSubAgentRuntimeProvider.select(
       (state) => state[conversationId] ?? const <String>{},
@@ -447,6 +486,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
       ref
           .watch(
             childConversationsStreamProvider(
+              workspaceId,
               parentConversationId: conversationId,
             ),
           )
@@ -459,7 +499,9 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
       ...childConversations.map((conversation) => conversation.id),
     },
   ];
-  final currentMessages = ref.watch(chatMessagesProvider).value;
+  final currentMessages = ref
+      .watch(chatMessagesProvider(workspaceId, conversationId))
+      .value;
   final inactiveChildIds = conversations
       .where((id) => id != conversationId && !activeChildren.contains(id))
       .toList();
@@ -491,10 +533,11 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
               (conversation) => conversation.id == sourceConversationId,
             );
 
-      final workspaceId =
+      final sourceWorkspaceId =
           sourceConversation?.workspaceId ??
           (await ref.watch(
             conversationByIdStreamProvider(
+              workspaceId,
               conversationId: sourceConversationId,
             ).future,
           ))?.workspaceId;
@@ -502,7 +545,7 @@ Future<List<PendingToolCall>> pendingToolCalls(Ref ref) async {
       return _pendingToolCallsForConversation(
         ref,
         conversationId: sourceConversationId,
-        workspaceId: workspaceId,
+        workspaceId: sourceWorkspaceId,
         messages: messages,
         sourceLabel: sourceConversation?.title,
       );
@@ -551,7 +594,9 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
         .toList();
   }
 
-  final decisionUsecase = ref.watch(resolveToolApprovalDecisionUsecaseProvider);
+  final decisionUsecase = ref.watch(
+    resolveToolApprovalDecisionUsecaseProvider(resolvedWorkspaceId),
+  );
   const resolver = ToolResolverService();
 
   final entries = await Future.wait(

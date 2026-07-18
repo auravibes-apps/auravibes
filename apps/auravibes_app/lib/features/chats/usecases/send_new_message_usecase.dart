@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
@@ -11,8 +12,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
-import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class SendNewMessageUsecase {
   const SendNewMessageUsecase({
@@ -99,14 +99,21 @@ class SendNewMessageUsecase {
   }
 }
 
-@Dependencies([workspaceSession, cloudConversationUsecase])
-final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
-  (ref) {
-    final isCloud = ref.watch(workspaceSessionProvider).cloud != null;
+final ProviderFamily<SendNewMessageUsecase, String>
+sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>(
+  (ref, workspaceId) {
+    final isCloud =
+        ref
+            .watch(
+              workspaceSessionForRouteProvider(workspaceId),
+            )
+            .requireValue
+            .cloud !=
+        null;
 
     return SendNewMessageUsecase(
       conversationRepo: ref.watch(conversationRepositoryProvider),
-      sendMessageUsecase: ref.watch(sendMessageUsecaseProvider),
+      sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
       modelSelectionStore: (workspaceId) => ref.read(
         modelSelectionStoreProvider(workspaceId).future,
       ),
@@ -115,7 +122,7 @@ final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
       cloudCreate: isCloud
           ? (value) async {
               final usecase = await ref.read(
-                cloudConversationUsecaseProvider.future,
+                cloudConversationUsecaseProvider(workspaceId).future,
               );
               if (usecase == null) {
                 throw StateError('Cloud workspace unavailable');
@@ -138,9 +145,4 @@ final sendNewMessageUsecaseProvider = Provider<SendNewMessageUsecase>(
           : null,
     );
   },
-  dependencies: [
-    sendMessageUsecaseProvider,
-    workspaceSessionProvider,
-    cloudConversationUsecaseProvider,
-  ],
 );

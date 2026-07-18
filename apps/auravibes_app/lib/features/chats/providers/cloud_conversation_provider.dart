@@ -5,10 +5,24 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cloud_conversation_provider.g.dart';
 
-@Riverpod(dependencies: [workspaceSession, cloudWorkspaceStateGateway])
-Future<CloudConversationUsecase?> cloudConversationUsecase(Ref ref) async {
-  if (ref.watch(workspaceSessionProvider).cloud == null) return null;
-  final gateway = await ref.watch(cloudWorkspaceStateGatewayProvider.future);
+extension CloudConversationUsecaseFamilyTestOverride
+    on CloudConversationUsecaseFamily {
+  Override overrideWithValue(CloudConversationUsecase? value) =>
+      overrideWith((_, _) => value);
+}
+
+@riverpod
+Future<CloudConversationUsecase?> cloudConversationUsecase(
+  Ref ref,
+  String workspaceId,
+) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  if (session.cloud == null) return null;
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
 
   return gateway == null
       ? null

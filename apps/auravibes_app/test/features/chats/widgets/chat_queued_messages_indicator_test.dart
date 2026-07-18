@@ -32,11 +32,16 @@ void main() {
   Widget buildSubject({
     required List<ConversationQueuedDraft> queuedDrafts,
   }) {
-    return _EasyLocalizationTestWrapper(
-      child: ProviderScope(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-        ],
+    final container = ProviderContainer(
+      overrides: [
+        conversationSelectedProvider.overrideWithValue('conv-1'),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    return UncontrolledProviderScope(
+      container: container,
+      child: _EasyLocalizationTestWrapper(
         child: Builder(
           builder: (context) {
             return MaterialApp(
@@ -44,6 +49,7 @@ void main() {
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
                   child: ChatQueuedMessagesIndicator(
+                    conversationId: 'conv-1',
                     queuedDrafts: queuedDrafts,
                   ),
                 ),

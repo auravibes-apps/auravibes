@@ -3,16 +3,8 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
@@ -25,7 +17,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 /// A sidebar widget that handles business logic and navigation state.
 ///
@@ -84,21 +75,6 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
   };
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class AuraSidebarWrapper extends HookConsumerWidget {
   /// Creates a Aura sidebar widget.
   const AuraSidebarWrapper({
@@ -156,21 +132,6 @@ class AuraSidebarWrapper extends HookConsumerWidget {
   }
 }
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class AppWithResponsiveDrawer extends StatefulWidget {
   const AppWithResponsiveDrawer({
     required this.child,

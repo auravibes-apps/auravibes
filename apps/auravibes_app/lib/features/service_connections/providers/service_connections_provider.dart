@@ -14,13 +14,16 @@ import 'package:rxdart/rxdart.dart';
 
 part 'service_connections_provider.g.dart';
 
-@Riverpod(dependencies: [cloudWorkspaceStateGateway])
+@riverpod
 Stream<List<ServiceConnectionListItem>> serviceConnections(
   Ref ref,
   String workspaceId,
 ) async* {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
   final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider.future,
+    cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway != null) {
     final modelStore = await ref.watch(

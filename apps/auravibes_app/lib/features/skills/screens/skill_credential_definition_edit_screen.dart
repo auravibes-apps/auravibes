@@ -53,7 +53,9 @@ class _SkillCredentialDefinitionEditScreenState
     final definitionId = widget.definitionId;
     final definitionAsync = definitionId == null
         ? null
-        : ref.watch(skillCredentialDefinitionProvider(definitionId));
+        : ref.watch(
+            skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
+          );
     final currentDefinition = definitionAsync?.value;
     final Widget child;
     if (definitionAsync == null) {
@@ -182,7 +184,7 @@ class _SkillCredentialDefinitionEditScreenState
       final attributesJson = _buildAttributesJson();
       if (_isCreate) {
         final usecase = ref.read(
-          createSkillCredentialDefinitionUsecaseProvider,
+          createSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
         );
         final _ = await usecase.call(
           widget.workspaceId,
@@ -195,7 +197,7 @@ class _SkillCredentialDefinitionEditScreenState
         final definitionId = widget.definitionId;
         if (definitionId == null) return;
         final usecase = ref.read(
-          updateSkillCredentialDefinitionUsecaseProvider,
+          updateSkillCredentialDefinitionUsecaseProvider(widget.workspaceId),
         );
         final _ = await usecase.call(
           definitionId,
@@ -204,7 +206,9 @@ class _SkillCredentialDefinitionEditScreenState
             attributesJson: attributesJson,
           ),
         );
-        ref.invalidate(skillCredentialDefinitionProvider(definitionId));
+        ref.invalidate(
+          skillCredentialDefinitionProvider(widget.workspaceId, definitionId),
+        );
       }
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
@@ -280,7 +284,9 @@ class _SkillCredentialDefinitionEditScreenState
 
     setState(() => _isSaving = true);
     try {
-      await ref.read(deleteSkillCredentialDefinitionProvider)(definitionId);
+      await ref.read(
+        deleteSkillCredentialDefinitionProvider(widget.workspaceId),
+      )(definitionId);
       ref.invalidate(skillCredentialDefinitionsProvider(widget.workspaceId));
       if (!context.mounted) return;
       Navigator.of(context).pop();

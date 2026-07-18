@@ -14,6 +14,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'conversation_tool_state.freezed.dart';
 part 'conversation_tool_state.g.dart';
 
+extension ConversationToolsRepositoryFamilyTestOverride
+    on ConversationToolsRepositoryFamily {
+  Override overrideWithValue(ConversationToolsRepository value) =>
+      overrideWith((_, _) => value);
+}
+
 /// State for a single tool in a conversation context.
 @freezed
 abstract class ConversationToolState with _$ConversationToolState {
@@ -27,14 +33,21 @@ abstract class ConversationToolState with _$ConversationToolState {
   }) = _ConversationToolState;
 }
 
-@Riverpod(dependencies: [workspaceSession, workspaceToolsRepository])
-ConversationToolsRepository conversationToolsRepository(Ref ref) {
-  final session = ref.watch(workspaceSessionProvider);
+@riverpod
+ConversationToolsRepository conversationToolsRepository(
+  Ref ref,
+  String workspaceId,
+) {
+  final session = ref
+      .watch(workspaceSessionForRouteProvider(workspaceId))
+      .requireValue;
   session.capabilities.require(
     supported: session.capabilities.conversationToolOverrides,
   );
   final appDatabase = ref.watch(appDatabaseProvider);
-  final workspaceToolsRepository = ref.watch(workspaceToolsRepositoryProvider);
+  final workspaceToolsRepository = ref.watch(
+    workspaceToolsRepositoryProvider(session),
+  );
 
   return ConversationToolsRepository(
     appDatabase,
@@ -45,15 +58,16 @@ ConversationToolsRepository conversationToolsRepository(Ref ref) {
 /// Provider for managing conversation tool settings
 ///
 /// Returns a list of all workspace tools with their conversation-level states.
-@Riverpod(
-  dependencies: [
-    conversationToolsRepository,
-    workspaceToolsRepository,
-  ],
-)
+@riverpod
 class ConversationToolsNotifier extends _$ConversationToolsNotifier {
+  String? _workspaceIdValue;
+
+  String get _workspaceId =>
+      _workspaceIdValue ??
+      (throw StateError('Conversation tools are not initialized'));
+
   ConversationToolsRepository get _repository => ref.read(
-    conversationToolsRepositoryProvider,
+    conversationToolsRepositoryProvider(_workspaceId),
   );
 
   @override
@@ -61,8 +75,14 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     required String workspaceId,
     String? conversationId,
   }) async {
+    _workspaceIdValue = workspaceId;
+    final session = ref
+        .watch(
+          workspaceSessionForRouteProvider(workspaceId),
+        )
+        .requireValue;
     final workspaceToolsRepository = ref.watch(
-      workspaceToolsRepositoryProvider,
+      workspaceToolsRepositoryProvider(session),
     );
 
     final states =
@@ -193,10 +213,16 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
 
 /// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
-@Riverpod(dependencies: [conversationToolsRepository])
+@riverpod
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
+  String? _workspaceIdValue;
+
+  String get _workspaceId =>
+      _workspaceIdValue ??
+      (throw StateError('Context-aware tools are not initialized'));
+
   ConversationToolsRepository get _repository => ref.read(
-    conversationToolsRepositoryProvider,
+    conversationToolsRepositoryProvider(_workspaceId),
   );
 
   @override
@@ -204,6 +230,8 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     required String conversationId,
     required String workspaceId,
   }) async {
+    _workspaceIdValue = workspaceId;
+
     return _getContextAwareTools();
   }
 
@@ -230,11 +258,17 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
 /// Returns [WorkspaceToolEntity] list with table IDs needed for
 /// generating composite tool IDs.
 /// (conversation -> workspace -> app defaults)
-@Riverpod(dependencies: [conversationToolsRepository])
+@riverpod
 class ContextAwareToolEntitiesNotifier
     extends _$ContextAwareToolEntitiesNotifier {
+  String? _workspaceIdValue;
+
+  String get _workspaceId =>
+      _workspaceIdValue ??
+      (throw StateError('Context-aware tool entities are not initialized'));
+
   ConversationToolsRepository get _repository => ref.read(
-    conversationToolsRepositoryProvider,
+    conversationToolsRepositoryProvider(_workspaceId),
   );
 
   @override
@@ -242,6 +276,8 @@ class ContextAwareToolEntitiesNotifier
     required String conversationId,
     required String workspaceId,
   }) async {
+    _workspaceIdValue = workspaceId;
+
     return _getContextAwareToolEntities();
   }
 

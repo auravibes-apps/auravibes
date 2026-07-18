@@ -18,7 +18,8 @@ class BuildDynamicSkillToolSpecsUsecase {
     this._listAppSkillCredentialCandidatesUsecase,
   );
 
-  final ListAvailableSkillsUsecase _listAvailableSkillsUsecase;
+  final ListAvailableSkillsUsecase Function(String workspaceId)
+  _listAvailableSkillsUsecase;
   final AppSkillRegistry _appSkillRegistry;
   final ListAppSkillCredentialCandidatesUsecase
   _listAppSkillCredentialCandidatesUsecase;
@@ -27,12 +28,12 @@ class BuildDynamicSkillToolSpecsUsecase {
     required String conversationId,
     required String workspaceId,
   }) async {
-    final loadableSkills = await _listAvailableSkillsUsecase.call(
+    final loadableSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loadable,
     );
-    final loadedSkills = await _listAvailableSkillsUsecase.call(
+    final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
       filter: SkillLoadFilter.loaded,
@@ -158,7 +159,8 @@ class BuildDynamicSkillToolSpecsUsecase {
 final buildDynamicSkillToolSpecsUsecaseProvider =
     Provider<BuildDynamicSkillToolSpecsUsecase>((ref) {
       return BuildDynamicSkillToolSpecsUsecase(
-        ref.watch(listAvailableSkillsUsecaseProvider),
+        (workspaceId) =>
+            ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
         ref.watch(appSkillRegistryProvider),
         ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
       );
