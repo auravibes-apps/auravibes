@@ -3,18 +3,16 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
+import 'package:auravibes_app/features/chats/usecases/select_compaction_range_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
-import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 const _kDefaultMaxOutputTokens = 4096;
 
@@ -97,55 +95,23 @@ class MaybeAutoCompactConversationUsecase {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  conversationByIdStream,
-  chatMessagesByConversation,
-  compactionSettings,
-])
 final maybeAutoCompactConversationUsecaseProvider =
     Provider<MaybeAutoCompactConversationUsecase>(
       (ref) {
-        var isCloud = false;
-        try {
-          isCloud = ref.watch(workspaceSessionProvider).cloud != null;
-        } on Exception {
-          isCloud = false;
-        }
-        if (isCloud) {
-          return MaybeAutoCompactConversationUsecase(
-            compactConversationUsecase: ref.watch(
-              compactConversationUsecaseProvider,
-            ),
-            cloudShouldCompact: (conversationId) async {
-              final conversation = await ref.read(
-                conversationByIdStreamProvider(
-                  conversationId: conversationId,
-                ).future,
-              );
-              if (conversation == null) return false;
-              final settings = await ref.read(
-                compactionSettingsProvider(conversation.workspaceId).future,
-              );
-              if (!settings.autoCompactionEnabled) return false;
-              final messages = await ref.read(
-                chatMessagesByConversationProvider(conversationId).future,
-              );
-              final metadata = messages.lastOrNull?.metadata;
-              final used = metadata?.usedTokens ?? 0;
-              final contextLimit = metadata?.modelMetadata['contextLimit'];
-              if (contextLimit is! int || contextLimit <= 0) return false;
-
-              return used * 100 >=
-                      contextLimit * settings.usagePercentageThreshold ||
-                  contextLimit - used <= settings.remainingTokenThreshold;
-            },
-          );
-        }
-
         return MaybeAutoCompactConversationUsecase(
-          compactConversationUsecase: ref.watch(
-            compactConversationUsecaseProvider,
+          compactConversationUsecase: CompactConversationUsecase(
+            compactionExecution: ref.watch(
+              compactionExecutionRuntimeProvider,
+            ),
+            messageRepository: ref.watch(messageRepositoryProvider),
+            conversationRepository: ref.watch(conversationRepositoryProvider),
+            modelSelectionStore: (workspaceId) => ref.read(
+              modelSelectionStoreProvider(workspaceId).future,
+            ),
+            chatbotService: ref.watch(chatbotServiceProvider),
+            selectCompactionRangeUsecase: ref.watch(
+              selectCompactionRangeUsecaseProvider,
+            ),
           ),
           conversationRepository: ref.watch(conversationRepositoryProvider),
           modelSelectionStore: (workspaceId) => ref.read(
@@ -157,8 +123,4 @@ final maybeAutoCompactConversationUsecaseProvider =
           ),
         );
       },
-      dependencies: [
-        workspaceSessionProvider,
-        compactConversationUsecaseProvider,
-      ],
     );

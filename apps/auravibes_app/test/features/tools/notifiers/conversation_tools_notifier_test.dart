@@ -453,7 +453,7 @@ void main() {
       'conversationToolsRepositoryProvider returns impl',
       () {
         final repo = fixture.container.read(
-          conversationToolsRepositoryProvider,
+          conversationToolsRepositoryProvider('workspace-1'),
         );
         expect(repo, isNotNull);
       },

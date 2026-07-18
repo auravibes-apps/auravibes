@@ -19,12 +19,7 @@ final _logger = Logger('WorkspaceSwitcher');
 /// action is a transient mutation, not initialized state. Per the Mutation
 /// State Contract, manual AsyncValue toggling is avoided; the state object
 /// itself tracks idle/loading/error status.
-// The router owns route construction, which transitively references this
-// provider. Declaring that dependency would create a provider cycle.
-// ignore: provider_dependencies
-@Riverpod(
-  keepAlive: true,
-)
+@Riverpod(keepAlive: true)
 class WorkspaceSwitcher extends _$WorkspaceSwitcher {
   Timer? _debounceTimer;
 

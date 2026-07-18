@@ -80,6 +80,24 @@ T07..T14 -> T15 -> T16
 
 ## Active Tasks
 
+### T17 - Replace Riverpod Scoped Providers With Families
+
+- Status: `done`
+- Depends on: T16 (`done`)
+- Goal: remove Riverpod scoped-provider metadata, route overrides, and widget
+  `@Dependencies` annotations except list rendering scopes, by passing
+  workspace and conversation identity through generated provider families.
+- Scope: `apps/auravibes_app` providers, consumers, generated output, and
+  focused tests only.
+- Completion gates:
+  - [x] Only list widgets retain `riverpod_annotation/experimental/scope.dart`
+        and `@Dependencies` metadata; no route override remains.
+  - [x] Workspace and conversation context is explicit provider-family input.
+  - [x] Provider generation, analyzer, and whitespace verification pass.
+- Evidence: `fvm dart run build_runner build`; `fvm dart analyze
+--fatal-infos --fatal-warnings`; scope/session/cloud-skill source audits;
+  `git diff --check`.
+
 ### T08 - Move MCP Definitions And Result Normalization
 
 - Status: `done`
@@ -825,3 +843,10 @@ test/services/chatbot_service/chat_completions_plugin_test.dart --no-pub`
   - `pass` - `fvm dart run melos run validate`, including explicit
     public-barrel false-positive exclusions for DCL unused-file checks.
   - `pass` - `git diff --check`.
+
+## Analyzer Cleanup
+
+- Status: `done`.
+- Scope: removed unneeded Riverpod scope metadata, resolved analyzer diagnostics
+  in `apps/auravibes_app`, and documented analyzer-only cleanup rules.
+- Evidence: `fvm dart analyze apps/auravibes_app --fatal-infos --fatal-warnings --format=machine` exited zero. No tests or broader checks run.

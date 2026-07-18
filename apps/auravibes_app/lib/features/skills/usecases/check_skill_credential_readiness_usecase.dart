@@ -1,9 +1,10 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class CheckSkillCredentialReadinessUsecase {
   const CheckSkillCredentialReadinessUsecase(
@@ -39,15 +40,15 @@ class CheckSkillCredentialReadinessUsecase {
   }
 }
 
-final checkSkillCredentialReadinessUsecaseProvider =
-    Provider<CheckSkillCredentialReadinessUsecase>(
-      (ref) {
-        final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<CheckSkillCredentialReadinessUsecase, String>
+checkSkillCredentialReadinessUsecaseProvider =
+    Provider.family<CheckSkillCredentialReadinessUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
         return CheckSkillCredentialReadinessUsecase(
           cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
           cloudStore: cloud,
         );
       },
-      dependencies: [cloudSkillStoreProvider],
     );

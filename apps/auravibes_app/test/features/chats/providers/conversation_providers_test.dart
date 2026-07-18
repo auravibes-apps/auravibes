@@ -9,7 +9,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 class _FakeConversationRepository implements ConversationRepository {
   ConversationEntity? conversationById;
@@ -61,7 +60,6 @@ class _FakeConversationRepository implements ConversationRepository {
   }
 }
 
-@Dependencies([conversationByIdStream])
 void main() {
   group('conversationByIdStreamProvider', () {
     final fixture = _ConversationProviderFixture();
@@ -81,7 +79,10 @@ void main() {
       );
 
       fixture.repository.conversationById = conversation;
-      final provider = conversationByIdStreamProvider(conversationId: 'c1');
+      final provider = conversationByIdStreamProvider(
+        'ws1',
+        conversationId: 'c1',
+      );
       final result = Completer<ConversationEntity?>();
       final subscription = fixture.container.listen(
         provider,

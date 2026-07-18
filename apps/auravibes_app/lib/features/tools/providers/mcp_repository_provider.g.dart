@@ -11,7 +11,7 @@ part of 'mcp_repository_provider.dart';
 /// Provides the MCP servers repository instance.
 
 @ProviderFor(mcpServersRepository)
-final mcpServersRepositoryProvider = McpServersRepositoryProvider._();
+final mcpServersRepositoryProvider = McpServersRepositoryFamily._();
 
 /// Provides the MCP servers repository instance.
 
@@ -24,28 +24,26 @@ final class McpServersRepositoryProvider
         >
     with $Provider<McpServersRepositoryContract> {
   /// Provides the MCP servers repository instance.
-  McpServersRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'mcpServersRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          McpServersRepositoryProvider.$allTransitiveDependencies0,
-          McpServersRepositoryProvider.$allTransitiveDependencies1,
-        ],
-      );
-
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
+  McpServersRepositoryProvider._({
+    required McpServersRepositoryFamily super.from,
+    required WorkspaceSession super.argument,
+  }) : super(
+         retry: null,
+         name: r'mcpServersRepositoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$mcpServersRepositoryHash();
+
+  @override
+  String toString() {
+    return r'mcpServersRepositoryProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -55,7 +53,8 @@ final class McpServersRepositoryProvider
 
   @override
   McpServersRepositoryContract create(Ref ref) {
-    return mcpServersRepository(ref);
+    final argument = this.argument as WorkspaceSession;
+    return mcpServersRepository(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -65,7 +64,43 @@ final class McpServersRepositoryProvider
       providerOverride: $SyncValueProvider<McpServersRepositoryContract>(value),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is McpServersRepositoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$mcpServersRepositoryHash() =>
-    r'95b8789a0e79450cdd04b5d4c6b8993de374e519';
+    r'0b1356031e56c1ac0dd7a50018a88fd3192b7305';
+
+/// Provides the MCP servers repository instance.
+
+final class McpServersRepositoryFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          McpServersRepositoryContract,
+          WorkspaceSession
+        > {
+  McpServersRepositoryFamily._()
+    : super(
+        retry: null,
+        name: r'mcpServersRepositoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Provides the MCP servers repository instance.
+
+  McpServersRepositoryProvider call(WorkspaceSession session) =>
+      McpServersRepositoryProvider._(argument: session, from: this);
+
+  @override
+  String toString() => r'mcpServersRepositoryProvider';
+}

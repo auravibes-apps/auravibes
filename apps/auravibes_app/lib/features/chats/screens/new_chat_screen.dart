@@ -4,18 +4,12 @@ import 'dart:async';
 
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
-import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/send_new_message_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/compact_workspace_model_selector.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
-import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/tools_management_modal.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -29,25 +23,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 final _logger = Logger('new_chat_screen');
 
-@Dependencies([
-  workspaceModelSelectionById,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 class NewChatScreen extends ConsumerWidget {
   const NewChatScreen({required this.workspaceId, super.key});
 
@@ -65,7 +43,6 @@ class NewChatScreen extends ConsumerWidget {
     );
     final hasNoProviders = groupedModelsAsync.asData?.value.isEmpty ?? false;
 
-    @Dependencies([workspaceSession])
     void onToolsPress() {
       if (workspaceId.isNotEmpty && context.mounted) {
         unawaited(
@@ -81,28 +58,21 @@ class NewChatScreen extends ConsumerWidget {
     final selectedModelId = state.modelId;
     final selectedModelAsync = selectedModelId == null
         ? null
-        : ref.watch(workspaceModelSelectionByIdProvider(selectedModelId));
+        : ref.watch(
+            workspaceModelSelectionByIdProvider(workspaceId, selectedModelId),
+          );
     final modalitiesInput =
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
 
-    @Dependencies([
-      workspaceModelSelectionById,
-      workspaceSession,
-      ConversationChatNotifier,
-      conversationBusyState,
-      pendingToolCalls,
-      contextUsage,
-      chatMessages,
-      childConversationsStream,
-      conversationByIdStream,
-      messageConversationById,
-    ])
     Future<void> handleSendMessage(ChatDraft draft) async {
       try {
         final conversation = await ref
             .read(newChatProvider(workspaceId).notifier)
-            .startConversation(draft, ref.read(sendNewMessageUsecaseProvider));
+            .startConversation(
+              draft,
+              ref.read(sendNewMessageUsecaseProvider(workspaceId)),
+            );
 
         if (context.mounted) {
           ConversationRoute(
@@ -140,6 +110,7 @@ class NewChatScreen extends ConsumerWidget {
                   : const SizedBox.shrink(),
             ),
             ChatInputWidget(
+              workspaceId: workspaceId,
               onSendMessage: handleSendMessage,
               onToolsPress: onToolsPress,
               modelSheetControl: CompactWorkspaceModelSelector(
@@ -188,7 +159,6 @@ class NewChatScreen extends ConsumerWidget {
   }
 }
 
-@Dependencies([workspaceSession])
 class _NewChatUnavailable extends StatelessWidget {
   const _NewChatUnavailable({required this.workspaceId});
 
@@ -214,6 +184,7 @@ class _NewChatUnavailable extends StatelessWidget {
             ),
           ),
           ChatInputWidget(
+            workspaceId: workspaceId,
             onSendMessage: (_) {
               return;
             },
@@ -283,12 +254,6 @@ class _WorkspaceSelector extends ConsumerWidget {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-  serviceConnectionOperations,
-  serviceConnections,
-])
 class _NoModelProviderPrompt extends StatelessWidget {
   const _NoModelProviderPrompt({required this.workspaceId});
 

@@ -5,27 +5,25 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_template_tools_provider.g.dart';
 
-@Riverpod(
-  dependencies: [cloudSkillStore],
-)
+@riverpod
 Future<List<SkillTemplateToolEntity>> skillTemplateTools(
   Ref ref,
+  String workspaceId,
   String skillId,
 ) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
   if (cloud != null) return cloud.tools(skillId);
 
   return ref.watch(skillTemplateToolsRepositoryProvider).getSkillTools(skillId);
 }
 
-@Riverpod(
-  dependencies: [cloudSkillStore],
-)
+@riverpod
 Future<SkillTemplateToolEntity?> skillTemplateTool(
   Ref ref,
+  String workspaceId,
   String toolId,
 ) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
   if (cloud != null) return cloud.tool(toolId);
 
   return ref.watch(skillTemplateToolsRepositoryProvider).getToolById(toolId);

@@ -5,15 +5,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_credentials_provider.g.dart';
 
-@Riverpod(
-  dependencies: [cloudSkillStore],
-)
+@riverpod
 Future<List<SkillCredentialEntity>> skillCredentialsForDefinition(
   Ref ref,
   String workspaceId,
   String credentialDefinitionId,
 ) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
   if (cloud != null) return cloud.credentials(credentialDefinitionId);
 
   return ref

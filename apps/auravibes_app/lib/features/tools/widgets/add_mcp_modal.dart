@@ -14,10 +14,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 /// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
-@Dependencies([workspaceSession])
 class AddMcpModal extends ConsumerWidget {
   const AddMcpModal({required this.workspaceId, super.key});
 
@@ -286,7 +284,6 @@ class _Footer extends ConsumerWidget {
   }
 }
 
-@Dependencies([workspaceSession])
 class _TransportSelector extends ConsumerWidget {
   const _TransportSelector({required this.workspaceId});
 
@@ -294,7 +291,10 @@ class _TransportSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final capabilities = ref.watch(workspaceSessionProvider).capabilities;
+    final capabilities = ref
+        .watch(workspaceSessionForRouteProvider(workspaceId))
+        .requireValue
+        .capabilities;
     final options = [
       if (capabilities.mcpTransports.contains(
         WorkspaceMcpTransport.streamableHttp,
@@ -340,7 +340,6 @@ class _TransportSelector extends ConsumerWidget {
 
 /// Renders the available authentication types from [mcpFormProvider]
 /// as a localized single-select button group and updates the selected type.
-@Dependencies([workspaceSession])
 class _AuthenticationSelector extends ConsumerWidget {
   const _AuthenticationSelector({required this.workspaceId});
 
@@ -348,7 +347,10 @@ class _AuthenticationSelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final capabilities = ref.watch(workspaceSessionProvider).capabilities;
+    final capabilities = ref
+        .watch(workspaceSessionForRouteProvider(workspaceId))
+        .requireValue
+        .capabilities;
     final supportedTypes = McpAuthenticationTypeOptions.values
         .where(
           (type) => capabilities.mcpAuthentication.contains(

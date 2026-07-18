@@ -16,11 +16,9 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_app.dart';
 
-@Dependencies([workspaceSession, cloudWorkspaceStateGateway])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -74,11 +72,10 @@ void main() {
 
     await tester.pumpWidget(
       TestableApp(
-        workspaceId: fixture.workspace.id,
         child: AgentDetailScreen(workspaceId: fixture.workspace.id),
         overrides: [
           appDatabaseProvider.overrideWithValue(fixture.database),
-          cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+          cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
           workspaceSkillsProvider(fixture.workspace.id).overrideWith(
             (_) async => const [
               WorkspaceSkill(
@@ -96,6 +93,7 @@ void main() {
             WorkspaceToolsRepository(fixture.database),
           ),
         ],
+        workspaceId: fixture.workspace.id,
       ),
     );
     await _pumpUntilFound(tester, find.text('Prompt'));

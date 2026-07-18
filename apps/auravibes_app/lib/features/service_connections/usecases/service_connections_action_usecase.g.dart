@@ -34,13 +34,6 @@ final class ServiceConnectionsActionUsecaseProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 =
-      deleteServiceConnectionUsecaseProvider;
-  static final $allTransitiveDependencies1 =
-      DeleteServiceConnectionUsecaseProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      DeleteServiceConnectionUsecaseProvider.$allTransitiveDependencies1;
-
   @override
   String debugGetCreateSourceHash() => _$serviceConnectionsActionUsecaseHash();
 
@@ -76,7 +69,7 @@ final class ServiceConnectionsActionUsecaseProvider
 }
 
 String _$serviceConnectionsActionUsecaseHash() =>
-    r'c9e56bb8e6ab8edf424ef76bcaf89af71a71f5bd';
+    r'43454291342011901c3704ee20b0ed4c874579b0';
 
 final class ServiceConnectionsActionUsecaseFamily extends $Family
     with
@@ -88,14 +81,8 @@ final class ServiceConnectionsActionUsecaseFamily extends $Family
     : super(
         retry: null,
         name: r'serviceConnectionsActionUsecaseProvider',
-        dependencies: <ProviderOrFamily>[
-          deleteServiceConnectionUsecaseProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ServiceConnectionsActionUsecaseProvider.$allTransitiveDependencies0,
-          ServiceConnectionsActionUsecaseProvider.$allTransitiveDependencies1,
-          ServiceConnectionsActionUsecaseProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

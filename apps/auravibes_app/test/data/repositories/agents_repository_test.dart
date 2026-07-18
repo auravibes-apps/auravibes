@@ -251,9 +251,10 @@ void main() {
           ),
         );
     final conversationSkills = await ListConversationAgentSkillsUsecase(
-      fixture.conversationRepository.getConversationById,
-      fixture.agentsRepository,
-      fixture.resolveAgentSkillsUsecase,
+      (conversationId, _) =>
+          fixture.conversationRepository.getConversationById(conversationId),
+      (_) => fixture.agentsRepository,
+      fixture.resolveAgentSkillsUsecase.call,
     ).call(conversationId: conversation.id, workspaceId: fixture.workspaceId);
     expect(conversationSkills.single.id, skill.id);
 
@@ -266,9 +267,12 @@ void main() {
         );
     final noAgentSkills =
         await ListConversationAgentSkillsUsecase(
-          fixture.conversationRepository.getConversationById,
-          fixture.agentsRepository,
-          fixture.resolveAgentSkillsUsecase,
+          (conversationId, _) =>
+              fixture.conversationRepository.getConversationById(
+                conversationId,
+              ),
+          (_) => fixture.agentsRepository,
+          fixture.resolveAgentSkillsUsecase.call,
         ).call(
           conversationId: noAgentConversation.id,
           workspaceId: fixture.workspaceId,
@@ -279,9 +283,10 @@ void main() {
       WorkspacesCompanion.insert(name: 'Other', type: WorkspaceType.local),
     );
     final wrongWorkspaceSkills = await ListConversationAgentSkillsUsecase(
-      fixture.conversationRepository.getConversationById,
-      fixture.agentsRepository,
-      fixture.resolveAgentSkillsUsecase,
+      (conversationId, _) =>
+          fixture.conversationRepository.getConversationById(conversationId),
+      (_) => fixture.agentsRepository,
+      fixture.resolveAgentSkillsUsecase.call,
     ).call(conversationId: conversation.id, workspaceId: otherWorkspace.id);
     expect(wrongWorkspaceSkills, isEmpty);
 
@@ -304,9 +309,10 @@ void main() {
         );
     final crossWorkspaceAgentSkills =
         await ListConversationAgentSkillsUsecase(
-          fixture.conversationRepository.getConversationById,
-          fixture.agentsRepository,
-          fixture.resolveAgentSkillsUsecase,
+          (conversationId, _) => fixture.conversationRepository
+              .getConversationById(conversationId),
+          (_) => fixture.agentsRepository,
+          fixture.resolveAgentSkillsUsecase.call,
         ).call(
           conversationId: crossWorkspaceConversation.id,
           workspaceId: fixture.workspaceId,

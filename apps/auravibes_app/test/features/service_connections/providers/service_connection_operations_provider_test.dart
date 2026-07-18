@@ -6,9 +6,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([serviceConnectionOperations])
 void main() {
   test('cloud create never constructs local credential repository', () async {
     final gateway = CloudWorkspaceStateGateway.forTesting(
@@ -33,7 +31,9 @@ void main() {
             ),
           ),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+        cloudWorkspaceStateGatewayProvider.overrideWith(
+          (_, _) async => gateway,
+        ),
         serviceConnectionRepositoryProvider.overrideWith(
           (_) => throw StateError('local credential repository touched'),
         ),
@@ -95,7 +95,9 @@ void main() {
             ),
           ),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+        cloudWorkspaceStateGatewayProvider.overrideWith(
+          (_, _) async => gateway,
+        ),
         serviceConnectionRepositoryProvider.overrideWith(
           (_) => throw StateError('local credential repository touched'),
         ),

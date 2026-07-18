@@ -32,13 +32,16 @@ class ServiceConnectionOperations {
   updateGeneric;
 }
 
-@Riverpod(dependencies: [cloudWorkspaceStateGateway])
+@riverpod
 Future<ServiceConnectionOperations> serviceConnectionOperations(
   Ref ref,
   String workspaceId,
 ) async {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
   final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider.future,
+    cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway != null) {
     final cloud = CloudServiceConnectionUsecases(

@@ -33,14 +33,13 @@ Future<CloudSkillStore?> _cloudSkillStore(Ref ref, String workspaceId) async {
   );
 }
 
-@Riverpod(
-  dependencies: [cloudSkillStore],
-)
+@riverpod
 Future<SkillCredentialDefinitionEntity?> skillCredentialDefinition(
   Ref ref,
+  String workspaceId,
   String definitionId,
 ) {
-  final cloud = ref.watch(cloudSkillStoreProvider);
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
   if (cloud != null) return cloud.definition(definitionId);
 
   return ref

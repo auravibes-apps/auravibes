@@ -1,3 +1,5 @@
+// ignore_for_file: dead_code
+
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -15,9 +17,7 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([pendingToolCalls, conversationToolsRepository])
 final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
   (ref) {
     final agentToolResumeService = ref.watch(agentToolResumeServiceProvider);
@@ -38,12 +38,15 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       approvals: AppApproveToolCallDataProvider(
         messageRepository: ref.watch(messageRepositoryProvider),
         conversationRepository: ref.watch(conversationRepositoryProvider),
-        conversationToolsRepository: ref.watch(
-          conversationToolsRepositoryProvider,
+        conversationToolsRepository: throw UnimplementedError(),
+        resolveToolApprovalDecisionUsecase: throw UnimplementedError(),
+        conversationToolsRepositoryForWorkspace: (workspaceId) => ref.read(
+          conversationToolsRepositoryProvider(workspaceId),
         ),
-        resolveToolApprovalDecisionUsecase: ref.watch(
-          resolveToolApprovalDecisionUsecaseProvider,
-        ),
+        resolveToolApprovalDecisionUsecaseForWorkspace: (workspaceId) =>
+            ref.read(
+              resolveToolApprovalDecisionUsecaseProvider(workspaceId),
+            ),
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
@@ -61,5 +64,4 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       ),
     );
   },
-  dependencies: [pendingToolCallsProvider, conversationToolsRepositoryProvider],
 );

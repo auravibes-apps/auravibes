@@ -7,15 +7,20 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([contextUsage])
 class ConversationContextUsagePill extends ConsumerWidget {
-  const ConversationContextUsagePill({super.key});
+  const ConversationContextUsagePill({
+    required this.workspaceId,
+    required this.conversationId,
+    super.key,
+  });
+
+  final String workspaceId;
+  final String conversationId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(contextUsageProvider);
+    final data = ref.watch(contextUsageProvider(workspaceId, conversationId));
     final tooltip = _tooltip(data);
     final semanticValue = _semanticValue(data);
     final auraColors = context.auraColors;

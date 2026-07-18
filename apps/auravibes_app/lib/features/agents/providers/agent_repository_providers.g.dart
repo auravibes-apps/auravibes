@@ -56,7 +56,7 @@ final class AgentsRepositoryProvider
 String _$agentsRepositoryHash() => r'665f61f3b474d21b235ab28ac514cca0bc7a7329';
 
 @ProviderFor(agentToolsRepository)
-final agentToolsRepositoryProvider = AgentToolsRepositoryProvider._();
+final agentToolsRepositoryProvider = AgentToolsRepositoryFamily._();
 
 final class AgentToolsRepositoryProvider
     extends
@@ -66,28 +66,26 @@ final class AgentToolsRepositoryProvider
           AgentToolsRepositoryContract
         >
     with $Provider<AgentToolsRepositoryContract> {
-  AgentToolsRepositoryProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'agentToolsRepositoryProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          AgentToolsRepositoryProvider.$allTransitiveDependencies0,
-          AgentToolsRepositoryProvider.$allTransitiveDependencies1,
-        ],
-      );
-
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
+  AgentToolsRepositoryProvider._({
+    required AgentToolsRepositoryFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'agentToolsRepositoryProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$agentToolsRepositoryHash();
+
+  @override
+  String toString() {
+    return r'agentToolsRepositoryProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -97,7 +95,8 @@ final class AgentToolsRepositoryProvider
 
   @override
   AgentToolsRepositoryContract create(Ref ref) {
-    return agentToolsRepository(ref);
+    final argument = this.argument as String;
+    return agentToolsRepository(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -107,7 +106,35 @@ final class AgentToolsRepositoryProvider
       providerOverride: $SyncValueProvider<AgentToolsRepositoryContract>(value),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is AgentToolsRepositoryProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
 String _$agentToolsRepositoryHash() =>
-    r'a3489fbf222882e50b0890e0e91f266f2ababaf1';
+    r'b9126ee855a2b18ff90ed55ffd6bfe63a31f525a';
+
+final class AgentToolsRepositoryFamily extends $Family
+    with $FunctionalFamilyOverride<AgentToolsRepositoryContract, String> {
+  AgentToolsRepositoryFamily._()
+    : super(
+        retry: null,
+        name: r'agentToolsRepositoryProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  AgentToolsRepositoryProvider call(String workspaceId) =>
+      AgentToolsRepositoryProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'agentToolsRepositoryProvider';
+}

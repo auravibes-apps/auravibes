@@ -25,20 +25,16 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
-@Dependencies([chatMessages])
 List<String> _messageIds(ProviderContainer container) =>
-    container.read(chatMessagesProvider).value?.map((m) => m.id).toList() ??
+    container
+        .read(chatMessagesProvider('workspace-1', 'conversation-1'))
+        .value
+        ?.map((m) => m.id)
+        .toList() ??
     const [];
 
-@Dependencies([
-  chatMessages,
-  conversationUsedTokens,
-  messageConversationById,
-  modelContextLimit,
-])
 void main() {
   group('chatMessagesProvider', () {
     var repository = _FakeMessageRepository();
@@ -77,7 +73,7 @@ void main() {
     test('updates from repository stream without one-shot refetches', () async {
       final secondEmission = Completer<void>();
       final _ = container.listen(
-        chatMessagesProvider,
+        chatMessagesProvider('workspace-1', 'conversation-1'),
         (_, next) {
           if (next.value?.length == 2 && !secondEmission.isCompleted) {
             secondEmission.complete();
@@ -94,7 +90,9 @@ void main() {
       expect(repository.watchedConversationIds, ['conversation-1']);
       expect(repository.getMessagesByConversationCallCount, 0);
       expect(
-        container.read(chatMessagesProvider).value,
+        container
+            .read(chatMessagesProvider('workspace-1', 'conversation-1'))
+            .value,
         [
           _message(id: 'message-1', content: 'hello', isUser: true),
         ],
@@ -108,7 +106,9 @@ void main() {
       await secondEmission.future;
 
       expect(
-        container.read(chatMessagesProvider).value,
+        container
+            .read(chatMessagesProvider('workspace-1', 'conversation-1'))
+            .value,
         [
           _message(id: 'message-1', content: 'hello', isUser: true),
           _message(id: 'message-2', content: 'hi there', isUser: false),
@@ -120,14 +120,18 @@ void main() {
     test('applies streaming overlay only in message provider', () async {
       container
         ..listen(
-          chatMessagesProvider,
+          chatMessagesProvider('workspace-1', 'conversation-1'),
           (_, _) {
             final _ = Object();
           },
           fireImmediately: true,
         )
         ..listen(
-          messageConversationByIdProvider('message-1'),
+          messageConversationByIdProvider(
+            'workspace-1',
+            'conversation-1',
+            'message-1',
+          ),
           (_, _) {
             final _ = Object();
           },
@@ -151,11 +155,21 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(
-        container.read(chatMessagesProvider).value,
+        container
+            .read(chatMessagesProvider('workspace-1', 'conversation-1'))
+            .value,
         [_message(id: 'message-1', content: 'persisted', isUser: false)],
       );
       expect(
-        container.read(messageConversationByIdProvider('message-1'))?.content,
+        container
+            .read(
+              messageConversationByIdProvider(
+                'workspace-1',
+                'conversation-1',
+                'message-1',
+              ),
+            )
+            ?.content,
         'streaming',
       );
     });
@@ -165,14 +179,14 @@ void main() {
       () async {
         container
           ..listen(
-            chatMessagesProvider,
+            chatMessagesProvider('workspace-1', 'conversation-1'),
             (_, _) {
               final _ = Object();
             },
             fireImmediately: true,
           )
           ..listen(
-            conversationUsedTokensProvider,
+            conversationUsedTokensProvider('workspace-1', 'conversation-1'),
             (_, _) {
               final _ = Object();
             },
@@ -195,7 +209,12 @@ void main() {
         ]);
         await Future<void>.delayed(Duration.zero);
 
-        expect(container.read(conversationUsedTokensProvider), 500);
+        expect(
+          container.read(
+            conversationUsedTokensProvider('workspace-1', 'conversation-1'),
+          ),
+          500,
+        );
 
         container.read(messagesStreamingProvider.notifier)
           ..startSubscription(CompositeSubscription(), 'message-2')
@@ -208,7 +227,12 @@ void main() {
           );
         await Future<void>.delayed(Duration.zero);
 
-        expect(container.read(conversationUsedTokensProvider), 900);
+        expect(
+          container.read(
+            conversationUsedTokensProvider('workspace-1', 'conversation-1'),
+          ),
+          900,
+        );
       },
     );
   });
@@ -249,7 +273,7 @@ void main() {
       addTearDown(container.dispose);
 
       final limit = await container.read(
-        modelContextLimitProvider('cm-1').future,
+        modelContextLimitProvider('workspace-1', 'cm-1').future,
       );
 
       expect(limit, 2500);
@@ -293,7 +317,7 @@ void main() {
       addTearDown(container.dispose);
 
       final limit = await container.read(
-        modelContextLimitProvider('cm-2').future,
+        modelContextLimitProvider('workspace-1', 'cm-2').future,
       );
 
       expect(limit, isNull);

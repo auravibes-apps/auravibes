@@ -337,8 +337,8 @@ void main() {
             required toolIdentifier,
             required arguments,
           }) async => 'mcp result',
-      loadConversationSkillUsecase: loadSkill,
-      unloadConversationSkillUsecase: unloadSkill,
+      loadConversationSkillUsecase: (_) => loadSkill,
+      unloadConversationSkillUsecase: (_) => unloadSkill,
     );
 
     expect(
@@ -417,7 +417,7 @@ void main() {
             required toolIdentifier,
             required arguments,
           }) async => 'mcp result',
-      listAvailableSkillsUsecase: listSkills,
+      listAvailableSkillsUsecase: (_) => listSkills,
       listAppSkillCredentialCandidatesUsecase: appCandidates,
       appSkillRegistry: const AppSkillRegistry(),
       skillCredentialsRepository: _MockSkillCredentialsRepository(),
@@ -480,7 +480,7 @@ void main() {
             }) async => 'mcp result',
         runSkillTemplateToolUsecase: templateTool,
         runAppSkillToolUsecase: appSkillTool,
-        runSkillsManagerToolUsecase: nativeTool,
+        runSkillsManagerToolUsecase: (_) => nativeTool,
         onSkillsManagerToolSuccess:
             ({required workspaceId, required toolSlug, required result}) {
               nativeSuccesses.add((

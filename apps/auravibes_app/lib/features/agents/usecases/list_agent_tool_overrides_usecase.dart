@@ -1,8 +1,8 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/agent_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
-import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class ListAgentToolOverridesUsecase {
   const ListAgentToolOverridesUsecase(this._repository);
@@ -14,13 +14,12 @@ class ListAgentToolOverridesUsecase {
   }
 }
 
-@Dependencies([agentToolsRepository])
-final listAgentToolOverridesUsecaseProvider =
-    Provider<ListAgentToolOverridesUsecase>(
-      (ref) {
+final ProviderFamily<ListAgentToolOverridesUsecase, String>
+listAgentToolOverridesUsecaseProvider =
+    Provider.family<ListAgentToolOverridesUsecase, String>(
+      (ref, workspaceId) {
         return ListAgentToolOverridesUsecase(
-          ref.watch(agentToolsRepositoryProvider),
+          ref.watch(agentToolsRepositoryProvider(workspaceId)),
         );
       },
-      dependencies: [agentToolsRepositoryProvider],
     );

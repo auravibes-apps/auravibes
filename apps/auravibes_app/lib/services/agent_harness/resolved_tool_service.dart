@@ -25,7 +25,6 @@ import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecas
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/agent_harness/mcp_tool_caller.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
@@ -33,7 +32,6 @@ import 'package:auravibes_app/services/tools/native_tool_service.dart';
 import 'package:auravibes_app/services/tools/tool_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
@@ -52,12 +50,16 @@ class ResolvedToolService {
     required AgentCancellationRuntime agentCancellationRuntime,
     required McpToolCaller mcpToolCaller,
     ConversationRepository? conversationRepository,
-    LoadConversationSkillUsecase? loadConversationSkillUsecase,
-    UnloadConversationSkillUsecase? unloadConversationSkillUsecase,
+    LoadConversationSkillUsecase Function(String workspaceId)?
+    loadConversationSkillUsecase,
+    UnloadConversationSkillUsecase Function(String workspaceId)?
+    unloadConversationSkillUsecase,
     RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
     RunAppSkillToolUsecase? runAppSkillToolUsecase,
-    RunSkillsManagerToolUsecase? runSkillsManagerToolUsecase,
-    ListAvailableSkillsUsecase? listAvailableSkillsUsecase,
+    RunSkillsManagerToolUsecase Function(String workspaceId)?
+    runSkillsManagerToolUsecase,
+    ListAvailableSkillsUsecase Function(String workspaceId)?
+    listAvailableSkillsUsecase,
     ListAppSkillCredentialCandidatesUsecase?
     listAppSkillCredentialCandidatesUsecase,
     AppSkillRegistry? appSkillRegistry,
@@ -127,12 +129,16 @@ class AppResolvedToolProvider
   final AgentCancellationRuntime agentCancellationRuntime;
   final McpToolCaller mcpToolCaller;
   final ConversationRepository? conversationRepository;
-  final LoadConversationSkillUsecase? loadConversationSkillUsecase;
-  final UnloadConversationSkillUsecase? unloadConversationSkillUsecase;
+  final LoadConversationSkillUsecase Function(String workspaceId)?
+  loadConversationSkillUsecase;
+  final UnloadConversationSkillUsecase Function(String workspaceId)?
+  unloadConversationSkillUsecase;
   final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase;
   final RunAppSkillToolUsecase? runAppSkillToolUsecase;
-  final RunSkillsManagerToolUsecase? runSkillsManagerToolUsecase;
-  final ListAvailableSkillsUsecase? listAvailableSkillsUsecase;
+  final RunSkillsManagerToolUsecase Function(String workspaceId)?
+  runSkillsManagerToolUsecase;
+  final ListAvailableSkillsUsecase Function(String workspaceId)?
+  listAvailableSkillsUsecase;
   final ListAppSkillCredentialCandidatesUsecase?
   listAppSkillCredentialCandidatesUsecase;
   final AppSkillRegistry? appSkillRegistry;
@@ -293,7 +299,7 @@ class AppResolvedToolProvider
       return operation.valueOrCancellation();
     }
 
-    final usecase = runSkillsManagerToolUsecase;
+    final usecase = runSkillsManagerToolUsecase?.call(workspaceId);
     if (usecase == null) {
       throw StateError('RunSkillsManagerToolUsecase is not configured.');
     }
@@ -442,7 +448,9 @@ Future<Object?> _runSkillControlTool({
   }
 
   if (toolIdentifier == loadSkillToolName) {
-    final usecase = dependencies.loadConversationSkillUsecase;
+    final usecase = dependencies.loadConversationSkillUsecase?.call(
+      workspaceId,
+    );
     if (usecase == null) {
       throw StateError('LoadConversationSkillUsecase is not configured.');
     }
@@ -455,7 +463,9 @@ Future<Object?> _runSkillControlTool({
     return 'Skill "$slug" loaded.';
   }
 
-  final usecase = dependencies.unloadConversationSkillUsecase;
+  final usecase = dependencies.unloadConversationSkillUsecase?.call(
+    workspaceId,
+  );
   if (usecase == null) {
     throw StateError('UnloadConversationSkillUsecase is not configured.');
   }
@@ -478,9 +488,12 @@ class _SkillControlToolDependencies {
     required this.skillCredentialsRepository,
   });
 
-  final LoadConversationSkillUsecase? loadConversationSkillUsecase;
-  final UnloadConversationSkillUsecase? unloadConversationSkillUsecase;
-  final ListAvailableSkillsUsecase? listAvailableSkillsUsecase;
+  final LoadConversationSkillUsecase Function(String workspaceId)?
+  loadConversationSkillUsecase;
+  final UnloadConversationSkillUsecase Function(String workspaceId)?
+  unloadConversationSkillUsecase;
+  final ListAvailableSkillsUsecase Function(String workspaceId)?
+  listAvailableSkillsUsecase;
   final ListAppSkillCredentialCandidatesUsecase?
   listAppSkillCredentialCandidatesUsecase;
   final AppSkillRegistry? appSkillRegistry;
@@ -512,7 +525,8 @@ Future<Object> _listSkillCredentials({
   required String workspaceId,
   required String conversationId,
   required Map<String, dynamic> arguments,
-  required ListAvailableSkillsUsecase? listAvailableSkillsUsecase,
+  required ListAvailableSkillsUsecase Function(String workspaceId)?
+  listAvailableSkillsUsecase,
   required ListAppSkillCredentialCandidatesUsecase?
   listAppSkillCredentialCandidatesUsecase,
   required AppSkillRegistry? appSkillRegistry,
@@ -524,7 +538,7 @@ Future<Object> _listSkillCredentials({
       'Skill credential listing requires a skillSlug.',
     );
   }
-  final listSkills = listAvailableSkillsUsecase;
+  final listSkills = listAvailableSkillsUsecase?.call(workspaceId);
   final appCandidates = listAppSkillCredentialCandidatesUsecase;
   final registry = appSkillRegistry;
   final credentialsRepository = skillCredentialsRepository;
@@ -584,13 +598,9 @@ Future<Object> _listSkillCredentials({
   };
 }
 
-@Dependencies([workspaceSession, serviceConnections])
 final Provider<ResolvedToolService>
 resolvedToolServiceProvider = Provider<ResolvedToolService>(
   (ref) {
-    if (ref.watch(workspaceSessionProvider).cloud != null) {
-      return ResolvedToolService.cloud();
-    }
     final agentCancellationRuntime = ref.watch(
       agentCancellationRuntimeProvider,
     );
@@ -600,11 +610,11 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>(
       agentCancellationRuntime: agentCancellationRuntime,
       mcpToolCaller: ref.watch(mcpToolCallerProvider),
       conversationRepository: ref.watch(conversationRepositoryProvider),
-      loadConversationSkillUsecase: ref.watch(
-        loadConversationSkillUsecaseProvider,
+      loadConversationSkillUsecase: (workspaceId) => ref.read(
+        loadConversationSkillUsecaseProvider(workspaceId),
       ),
-      unloadConversationSkillUsecase: ref.watch(
-        unloadConversationSkillUsecaseProvider,
+      unloadConversationSkillUsecase: (workspaceId) => ref.read(
+        unloadConversationSkillUsecaseProvider(workspaceId),
       ),
       runSkillTemplateToolUsecase: ref.watch(
         runSkillTemplateToolUsecaseProvider,
@@ -612,11 +622,11 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>(
       runAppSkillToolUsecase: ref.watch(
         runAppSkillToolUsecaseProvider,
       ),
-      runSkillsManagerToolUsecase: ref.watch(
-        runSkillsManagerToolUsecaseProvider,
+      runSkillsManagerToolUsecase: (workspaceId) => ref.read(
+        runSkillsManagerToolUsecaseProvider(workspaceId),
       ),
-      listAvailableSkillsUsecase: ref.watch(
-        listAvailableSkillsUsecaseProvider,
+      listAvailableSkillsUsecase: (workspaceId) => ref.read(
+        listAvailableSkillsUsecaseProvider(workspaceId),
       ),
       listAppSkillCredentialCandidatesUsecase: ref.watch(
         listAppSkillCredentialCandidatesUsecaseProvider,
@@ -670,17 +680,8 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>(
           },
     );
   },
-  dependencies: [
-    workspaceSessionProvider,
-    serviceConnectionsProvider,
-    loadConversationSkillUsecaseProvider,
-    unloadConversationSkillUsecaseProvider,
-    runSkillsManagerToolUsecaseProvider,
-    listAvailableSkillsUsecaseProvider,
-  ],
 );
 
-@Dependencies([serviceConnections])
 void _invalidateSkillsManagerToolState(
   Ref ref, {
   required String workspaceId,
@@ -707,7 +708,9 @@ void _invalidateSkillsManagerToolState(
         ..invalidate(serviceConnectionsProvider(workspaceId));
       if (definitionId is String && definitionId.isNotEmpty) {
         ref
-          ..invalidate(skillCredentialDefinitionProvider(definitionId))
+          ..invalidate(
+            skillCredentialDefinitionProvider(workspaceId, definitionId),
+          )
           ..invalidate(
             skillCredentialsForDefinitionProvider(workspaceId, definitionId),
           );
@@ -716,7 +719,7 @@ void _invalidateSkillsManagerToolState(
     case updateSkillTemplateToolSlug:
     case deleteSkillTemplateToolSlug:
       if (skillId is String && skillId.isNotEmpty) {
-        ref.invalidate(skillTemplateToolsProvider(skillId));
+        ref.invalidate(skillTemplateToolsProvider(workspaceId, skillId));
       }
   }
 }

@@ -6,38 +6,18 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
-import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
-import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  conversationCompactionExecutionState,
-  childConversationsStream,
-  conversationByIdStream,
-  conversationSelected,
-  messageConversationById,
-])
 Widget buildSubject({
   required List<String> messages,
   required List<Object> overrides,
@@ -54,20 +34,6 @@ Widget buildSubject({
   );
 }
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  conversationCompactionExecutionState,
-  childConversationsStream,
-  conversationByIdStream,
-  conversationSelected,
-  messageConversationById,
-])
 void main() {
   MessageEntity _createMessage({
     String id = 'msg-1',
@@ -106,7 +72,7 @@ void main() {
           messages: [],
           overrides: [
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -132,7 +98,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -159,7 +125,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -186,7 +152,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -215,7 +181,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -245,7 +211,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -268,7 +234,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => null),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -303,7 +269,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -341,7 +307,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -362,15 +328,15 @@ void main() {
           messages: ['msg-1', 'msg-2'],
           overrides: [
             messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(
-                id: id,
-                content: 'Message $id',
-                isUser: id == 'msg-1',
+              (ref, key) => _createMessage(
+                id: key.$3,
+                content: 'Message ${key.$3}',
+                isUser: key.$3 == 'msg-1',
               ),
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -406,7 +372,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -440,7 +406,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: true,
               ),
@@ -477,7 +443,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: true,
               ),
@@ -512,7 +478,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -545,7 +511,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -578,7 +544,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -613,7 +579,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -639,7 +605,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -666,7 +632,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -701,7 +667,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -734,7 +700,7 @@ void main() {
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -771,7 +737,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -803,7 +769,7 @@ void main() {
             messageConversationByIdProvider.overrideWith((ref, id) => message),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
-              (ref) async => const ConversationBusyState(
+              (ref, _) async => const ConversationBusyState(
                 isStreaming: false,
                 hasPendingTools: false,
               ),
@@ -820,20 +786,6 @@ void main() {
 class _MockConversationRepository extends Mock
     implements ConversationRepository {}
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  workspaceModelSelectionById,
-  workspaceSession,
-  contextUsage,
-  chatMessages,
-  conversationCompactionExecutionState,
-  childConversationsStream,
-  conversationByIdStream,
-  conversationSelected,
-  messageConversationById,
-])
 class _ChatMessagesTestSubject extends StatelessWidget {
   const _ChatMessagesTestSubject({
     required this.conversationId,
@@ -865,7 +817,7 @@ class _ChatMessagesTestSubject extends StatelessWidget {
         conversationRepositoryProvider.overrideWithValue(
           conversationRepository,
         ),
-        pendingToolCallsProvider.overrideWith((ref) => pendingToolCalls),
+        pendingToolCallsProvider.overrideWith((ref, _) => pendingToolCalls),
         ...overrides.cast(),
       ],
       child: EasyLocalization(
@@ -876,6 +828,8 @@ class _ChatMessagesTestSubject extends StatelessWidget {
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: Material(
                   child: ChatMessagesWidget(
+                    workspaceId: 'ws-1',
+                    conversationId: conversationId,
                     messages: messages,
                     messageEntitiesById: messageEntitiesById,
                     pendingToolCalls: pendingToolCalls,

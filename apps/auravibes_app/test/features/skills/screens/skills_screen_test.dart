@@ -32,61 +32,44 @@ void main() {
     WorkspaceEntity workspace,
     SkillEntity skill,
   ) {
+    container.updateOverrides([
+      skillsRepositoryProvider.overrideWithValue(
+        container.read(skillsRepositoryProvider),
+      ),
+      appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
+        container.read(appSkillWorkspaceSettingsRepositoryProvider),
+      ),
+      workspaceSkillsProvider(workspace.id).overrideWith(
+        (_) async => [
+          WorkspaceSkill(
+            id: skill.id,
+            slug: skill.slug,
+            title: skill.title,
+            description: skill.description,
+            source: SkillSource.user,
+            kind: skill.kind,
+            isEnabled: skill.isEnabled,
+          ),
+        ],
+      ),
+      deleteSkillProvider(workspace.id).overrideWithValue(
+        container.read(skillsRepositoryProvider).deleteSkill,
+      ),
+    ]);
+
     return EasyLocalization(
       child: Builder(
         builder: (context) {
           return UncontrolledProviderScope(
             container: container,
-            child: ProviderScope(
-              overrides: [
-                workspaceSessionProvider.overrideWithValue(
-                  WorkspaceSession(
-                    LocalWorkspaceRef(
-                      localWorkspaceId: container
-                          .read(
-                            workspaceSessionProvider,
-                          )
-                          .workspace
-                          .localWorkspaceId,
-                    ),
-                  ),
-                ),
-                cloudWorkspaceStateGatewayProvider.overrideWith(
-                  (_) async => null,
-                ),
-                cloudSkillStoreProvider.overrideWithValue(null),
-                skillsRepositoryProvider.overrideWithValue(
-                  container.read(skillsRepositoryProvider),
-                ),
-                appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
-                  container.read(appSkillWorkspaceSettingsRepositoryProvider),
-                ),
-                workspaceSkillsProvider(workspace.id).overrideWith(
-                  (_) async => [
-                    WorkspaceSkill(
-                      id: skill.id,
-                      slug: skill.slug,
-                      title: skill.title,
-                      description: skill.description,
-                      source: SkillSource.user,
-                      kind: skill.kind,
-                      isEnabled: skill.isEnabled,
-                    ),
-                  ],
-                ),
-                deleteSkillProvider.overrideWithValue(
-                  container.read(skillsRepositoryProvider).deleteSkill,
-                ),
-              ],
-              child: MaterialApp.router(
-                routerConfig: router,
-                builder: (context, child) => AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
+            child: MaterialApp.router(
+              routerConfig: router,
+              builder: (context, child) => AuraSnackBarHost(
+                child: child ?? const SizedBox.shrink(),
               ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             ),
           );
         },
@@ -126,7 +109,7 @@ void main() {
         workspaceSessionProvider.overrideWithValue(
           WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );

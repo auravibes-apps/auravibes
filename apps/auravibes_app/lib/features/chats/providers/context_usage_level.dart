@@ -9,12 +9,25 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';
 
-@Riverpod(
-  dependencies: [conversationUsedTokens, conversationContextLimit],
-)
-ContextUsageData contextUsage(Ref ref) {
-  final usedTokens = ref.watch(conversationUsedTokensProvider);
-  final limitTokens = ref.watch(conversationContextLimitProvider).value;
+extension ContextUsageFamilyTestOverride on ContextUsageFamily {
+  Override overrideWithValue(ContextUsageData value) =>
+      overrideWith((_, _) => value);
+}
+
+@riverpod
+ContextUsageData contextUsage(
+  Ref ref,
+  String workspaceId,
+  String conversationId,
+) {
+  final usedTokens = ref.watch(
+    conversationUsedTokensProvider(workspaceId, conversationId),
+  );
+  final limitTokens = ref
+      .watch(
+        conversationContextLimitProvider(workspaceId, conversationId),
+      )
+      .value;
 
   return ContextUsageData.compute(
     usedTokens: usedTokens,

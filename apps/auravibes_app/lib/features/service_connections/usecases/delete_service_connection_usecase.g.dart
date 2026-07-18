@@ -34,10 +34,6 @@ final class DeleteServiceConnectionUsecaseProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = cloudWorkspaceStateGatewayProvider;
-  static final $allTransitiveDependencies1 =
-      CloudWorkspaceStateGatewayProvider.$allTransitiveDependencies0;
-
   @override
   String debugGetCreateSourceHash() => _$deleteServiceConnectionUsecaseHash();
 
@@ -73,7 +69,7 @@ final class DeleteServiceConnectionUsecaseProvider
 }
 
 String _$deleteServiceConnectionUsecaseHash() =>
-    r'192d8e8742e20b221920f808024befedb2e0f3fe';
+    r'46079f6b338bd4cf24ee0b65a2a804e935db9daa';
 
 final class DeleteServiceConnectionUsecaseFamily extends $Family
     with
@@ -85,11 +81,8 @@ final class DeleteServiceConnectionUsecaseFamily extends $Family
     : super(
         retry: null,
         name: r'deleteServiceConnectionUsecaseProvider',
-        dependencies: <ProviderOrFamily>[cloudWorkspaceStateGatewayProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          DeleteServiceConnectionUsecaseProvider.$allTransitiveDependencies0,
-          DeleteServiceConnectionUsecaseProvider.$allTransitiveDependencies1,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

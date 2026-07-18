@@ -24,15 +24,22 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([pendingToolCalls, toolDisplayName])
 class ChatToolApprovalCard extends HookConsumerWidget {
-  const ChatToolApprovalCard({super.key});
+  const ChatToolApprovalCard({
+    required this.workspaceId,
+    required this.conversationId,
+    super.key,
+  });
+
+  final String workspaceId;
+  final String conversationId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncCalls = ref.watch(pendingToolCallsProvider);
+    final asyncCalls = ref.watch(
+      pendingToolCallsProvider(workspaceId, conversationId),
+    );
     if (asyncCalls.hasError) {
       debugPrint(
         '[ChatToolApprovalCard] Error: ${asyncCalls.error}',
@@ -62,6 +69,7 @@ class ChatToolApprovalCard extends HookConsumerWidget {
     final total = pendingCalls.length;
 
     return _ApprovalCardContent(
+      workspaceId: workspaceId,
       current: item,
       currentIndex: clamped,
       totalCount: total,
@@ -73,9 +81,9 @@ class ChatToolApprovalCard extends HookConsumerWidget {
   }
 }
 
-@Dependencies([toolDisplayName])
 class _ApprovalCardContent extends ConsumerWidget {
   const _ApprovalCardContent({
+    required this.workspaceId,
     required this.current,
     required this.currentIndex,
     required this.totalCount,
@@ -84,6 +92,8 @@ class _ApprovalCardContent extends ConsumerWidget {
     required this.onPrev,
     required this.onNext,
   });
+
+  final String workspaceId;
 
   final PendingToolCall current;
   final int currentIndex;
@@ -99,7 +109,7 @@ class _ApprovalCardContent extends ConsumerWidget {
     final toolCall = current.toolCall;
 
     final displayNameAsync = ref.watch(
-      toolDisplayNameProvider(toolCall.name),
+      toolDisplayNameProvider(workspaceId, toolCall.name),
     );
     final displayName = displayNameAsync.maybeWhen(
       data: (name) => name,
@@ -145,6 +155,7 @@ class _ApprovalCardContent extends ConsumerWidget {
             sourceLabel: current.sourceLabel,
           ),
           _ConfirmationButtons(
+            workspaceId: workspaceId,
             toolCall: toolCall,
             messageId: current.messageId,
           ),
@@ -416,10 +427,12 @@ Map<String, String>? _urlRequestSummary(Object? arguments) {
 
 class _ConfirmationButtons extends ConsumerWidget {
   const _ConfirmationButtons({
+    required this.workspaceId,
     required this.toolCall,
     required this.messageId,
   });
 
+  final String workspaceId;
   final MessageToolCallEntity toolCall;
   final String messageId;
 
@@ -489,7 +502,9 @@ class _ConfirmationButtons extends ConsumerWidget {
         final revision = toolCall.turnRevision;
         final argumentsDigest = toolCall.argumentsDigest;
         if (turnId != null && revision != null && argumentsDigest != null) {
-          final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+          final cloud = await ref.read(
+            cloudTurnUsecaseProvider(workspaceId).future,
+          );
           if (cloud == null) throw StateError('Cloud turn unavailable');
 
           return switch (await cloud.decide(
@@ -528,7 +543,9 @@ class _ConfirmationButtons extends ConsumerWidget {
         final revision = toolCall.turnRevision;
         final argumentsDigest = toolCall.argumentsDigest;
         if (turnId != null && revision != null && argumentsDigest != null) {
-          final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+          final cloud = await ref.read(
+            cloudTurnUsecaseProvider(workspaceId).future,
+          );
           if (cloud == null) throw StateError('Cloud turn unavailable');
 
           return switch (await cloud.decide(
@@ -564,7 +581,9 @@ class _ConfirmationButtons extends ConsumerWidget {
         final revision = toolCall.turnRevision;
         final argumentsDigest = toolCall.argumentsDigest;
         if (turnId != null && revision != null && argumentsDigest != null) {
-          final cloud = await ref.read(cloudTurnUsecaseProvider.future);
+          final cloud = await ref.read(
+            cloudTurnUsecaseProvider(workspaceId).future,
+          );
           if (cloud == null) throw StateError('Cloud turn unavailable');
 
           return switch (await cloud.decide(

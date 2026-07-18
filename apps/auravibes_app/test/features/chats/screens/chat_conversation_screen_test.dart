@@ -11,14 +11,12 @@ import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart'
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -29,7 +27,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -40,18 +37,6 @@ final _busyRefreshProvider = NotifierProvider<_BusyRefreshNotifier, int>(
   _BusyRefreshNotifier.new,
 );
 
-@Dependencies([
-  ConversationChatNotifier,
-  conversationBusyState,
-  pendingToolCalls,
-  contextUsage,
-  chatMessages,
-  workspaceModelSelectionById,
-  workspaceSession,
-  childConversationsStream,
-  conversationByIdStream,
-  messageConversationById,
-])
 void main() {
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -118,7 +103,7 @@ void main() {
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(repo),
-          conversationChatProvider(_workspaceId).overrideWith(
+          conversationChatProvider(_workspaceId, _chatId).overrideWith(
             _ForeverLoadingChatNotifier.new,
           ),
         ],
@@ -145,7 +130,7 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
-          conversationChatProvider(_workspaceId).overrideWith(
+          conversationChatProvider(_workspaceId, _chatId).overrideWith(
             _ErrorChatNotifier.new,
           ),
         ],
@@ -173,7 +158,7 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
-          conversationChatProvider(_workspaceId).overrideWith(
+          conversationChatProvider(_workspaceId, _chatId).overrideWith(
             () => _ResultChatNotifier(const ConversationNotFound()),
           ),
         ],
@@ -204,7 +189,7 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
-          conversationChatProvider(_workspaceId).overrideWith(
+          conversationChatProvider(_workspaceId, _chatId).overrideWith(
             () => _ResultChatNotifier(
               const ConversationWorkspaceMismatch(),
             ),
@@ -279,7 +264,7 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
-          conversationChatProvider(_workspaceId).overrideWith(
+          conversationChatProvider(_workspaceId, _chatId).overrideWith(
             () => _ResultChatNotifier(const ConversationNotFound()),
           ),
         ],
@@ -423,31 +408,34 @@ void main() {
                     conversationRepositoryProvider.overrideWithValue(
                       _StubConversationRepository(),
                     ),
-                    conversationChatProvider(_workspaceId).overrideWith(
+                    conversationChatProvider(
+                      _workspaceId,
+                      _chatId,
+                    ).overrideWith(
                       () => _ResultChatNotifier(
                         ConversationFound(conversation),
                       ),
                     ),
                     conversationBusyStateProvider.overrideWith(
-                      (ref) async => const ConversationBusyState(
+                      (ref, _) async => const ConversationBusyState(
                         isStreaming: false,
                         hasPendingTools: false,
                       ),
                     ),
                     chatMessagesProvider.overrideWith(
-                      (ref) => Stream.value(const <MessageEntity>[]),
+                      (ref, _) => Stream.value(const <MessageEntity>[]),
                     ),
                     chatMessageIdsProvider.overrideWith(
-                      (ref) => const <String>[],
+                      (ref, _) => const <String>[],
                     ),
                     contextUsageProvider.overrideWith(
-                      (ref) => ContextUsageData.compute(
+                      (ref, _) => ContextUsageData.compute(
                         usedTokens: 0,
                         limitTokens: null,
                       ),
                     ),
                     pendingToolCallsProvider.overrideWith(
-                      (ref) async => const <PendingToolCall>[],
+                      (ref, _) async => const <PendingToolCall>[],
                     ),
                     listModelsGroupedByProviderProvider(
                       workspaceId: _workspaceId,
@@ -509,31 +497,31 @@ void main() {
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
-                  conversationChatProvider(_workspaceId).overrideWith(
+                  conversationChatProvider(_workspaceId, _chatId).overrideWith(
                     () => _ResultChatNotifier(
                       ConversationFound(conversation),
                     ),
                   ),
                   conversationBusyStateProvider.overrideWith(
-                    (ref) async => const ConversationBusyState(
+                    (ref, _) async => const ConversationBusyState(
                       isStreaming: false,
                       hasPendingTools: false,
                     ),
                   ),
                   chatMessagesProvider.overrideWith(
-                    (ref) => Stream.value(const <MessageEntity>[]),
+                    (ref, _) => Stream.value(const <MessageEntity>[]),
                   ),
                   chatMessageIdsProvider.overrideWith(
-                    (ref) => const <String>[],
+                    (ref, _) => const <String>[],
                   ),
                   contextUsageProvider.overrideWith(
-                    (ref) => ContextUsageData.compute(
+                    (ref, _) => ContextUsageData.compute(
                       usedTokens: 0,
                       limitTokens: null,
                     ),
                   ),
                   pendingToolCallsProvider.overrideWith(
-                    (ref) async => const <PendingToolCall>[],
+                    (ref, _) async => const <PendingToolCall>[],
                   ),
                   listModelsGroupedByProviderProvider(
                     workspaceId: _workspaceId,
@@ -603,12 +591,12 @@ void main() {
         conversationRepositoryProvider.overrideWithValue(
           _StubConversationRepository(),
         ),
-        conversationChatProvider(_workspaceId).overrideWith(
+        conversationChatProvider(_workspaceId, _chatId).overrideWith(
           () => _ResultChatNotifier(
             ConversationFound(conversation),
           ),
         ),
-        conversationBusyStateProvider.overrideWith((ref) {
+        conversationBusyStateProvider.overrideWith((ref, _) {
           final refresh = ref.watch(_busyRefreshProvider);
           if (refresh == 0) {
             return Future.value(
@@ -622,19 +610,19 @@ void main() {
           return refreshCompleter.future;
         }),
         chatMessagesProvider.overrideWith(
-          (ref) => Stream.value(const <MessageEntity>[]),
+          (ref, _) => Stream.value(const <MessageEntity>[]),
         ),
         chatMessageIdsProvider.overrideWith(
-          (ref) => const <String>[],
+          (ref, _) => const <String>[],
         ),
         contextUsageProvider.overrideWith(
-          (ref) => ContextUsageData.compute(
+          (ref, _) => ContextUsageData.compute(
             usedTokens: 0,
             limitTokens: null,
           ),
         ),
         pendingToolCallsProvider.overrideWith(
-          (ref) async => const <PendingToolCall>[],
+          (ref, _) async => const <PendingToolCall>[],
         ),
         listModelsGroupedByProviderProvider(
           workspaceId: _workspaceId,
@@ -719,13 +707,13 @@ void main() {
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
-                  conversationChatProvider(_workspaceId).overrideWith(
+                  conversationChatProvider(_workspaceId, _chatId).overrideWith(
                     () => _ResultChatNotifier(
                       ConversationFound(conversation),
                     ),
                   ),
                   conversationBusyStateProvider.overrideWith(
-                    (ref) async => const ConversationBusyState(
+                    (ref, _) async => const ConversationBusyState(
                       isStreaming: false,
                       hasPendingTools: false,
                     ),
@@ -734,19 +722,19 @@ void main() {
                     () => _StaticRateLimitRetryNotifier(retryAt),
                   ),
                   chatMessagesProvider.overrideWith(
-                    (ref) => Stream.value(const <MessageEntity>[]),
+                    (ref, _) => Stream.value(const <MessageEntity>[]),
                   ),
                   chatMessageIdsProvider.overrideWith(
-                    (ref) => const <String>[],
+                    (ref, _) => const <String>[],
                   ),
                   contextUsageProvider.overrideWith(
-                    (ref) => ContextUsageData.compute(
+                    (ref, _) => ContextUsageData.compute(
                       usedTokens: 0,
                       limitTokens: null,
                     ),
                   ),
                   pendingToolCallsProvider.overrideWith(
-                    (ref) async => const <PendingToolCall>[],
+                    (ref, _) async => const <PendingToolCall>[],
                   ),
                   listModelsGroupedByProviderProvider(
                     workspaceId: _workspaceId,
@@ -791,14 +779,17 @@ void main() {
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
   @override
-  Future<ConversationResult> build(String workspaceId) {
+  Future<ConversationResult> build(String workspaceId, String conversationId) {
     return Completer<ConversationResult>().future;
   }
 }
 
 class _ErrorChatNotifier extends ConversationChatNotifier {
   @override
-  Future<ConversationResult> build(String workspaceId) async {
+  Future<ConversationResult> build(
+    String workspaceId,
+    String conversationId,
+  ) async {
     throw Exception('test error');
   }
 }
@@ -808,7 +799,10 @@ class _ResultChatNotifier extends ConversationChatNotifier {
   final ConversationResult result;
 
   @override
-  Future<ConversationResult> build(String workspaceId) async => result;
+  Future<ConversationResult> build(
+    String workspaceId,
+    String conversationId,
+  ) async => result;
 }
 
 class _StaticRateLimitRetryNotifier extends ConversationRateLimitRetryNotifier {

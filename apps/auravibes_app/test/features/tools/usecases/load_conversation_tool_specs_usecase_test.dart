@@ -48,7 +48,7 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
     extends BuildDynamicSkillToolSpecsUsecase {
   _FakeBuildDynamicSkillToolSpecsUsecase(this._result)
     : super(
-        ListAvailableSkillsUsecase(
+        (_) => ListAvailableSkillsUsecase(
           _NeverSkillsRepository(),
           _NeverConversationSkillsRepository(),
           _NeverAppSkillSettingsRepository(),

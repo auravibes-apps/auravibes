@@ -10,12 +10,16 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_providers.g.dart';
 
-@Riverpod(dependencies: [workspaceSession])
+@riverpod
 Stream<ConversationEntity?> conversationByIdStream(
-  Ref ref, {
+  Ref ref,
+  String workspaceId, {
   required String conversationId,
 }) {
-  final session = ref.watch(workspaceSessionProvider);
+  final session = ref
+      .watch(workspaceSessionForRouteProvider(workspaceId))
+      .value;
+  if (session == null) return const Stream.empty();
   if (session.cloud case final cloud?) {
     return _cloudConversations(ref, cloud).map(
       (conversations) => conversations
@@ -52,12 +56,16 @@ Stream<List<ConversationEntity>> conversationsStream(
       .watchConversationsByWorkspace(workspaceId, limit: limit);
 }
 
-@Riverpod(dependencies: [workspaceSession])
+@riverpod
 Stream<List<ConversationEntity>> childConversationsStream(
-  Ref ref, {
+  Ref ref,
+  String workspaceId, {
   required String parentConversationId,
 }) {
-  final session = ref.watch(workspaceSessionProvider);
+  final session = ref
+      .watch(workspaceSessionForRouteProvider(workspaceId))
+      .value;
+  if (session == null) return const Stream.empty();
   if (session.cloud case final cloud?) {
     return _cloudConversations(ref, cloud).map(
       (conversations) => conversations

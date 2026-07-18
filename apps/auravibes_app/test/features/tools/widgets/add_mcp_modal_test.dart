@@ -3,42 +3,31 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
 
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
-import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 class _FakeMcpConnectionNotifier extends McpConnectionNotifier {
   @override
   List<McpConnectionState> build() => [];
 }
 
-@Dependencies([workspaceSession])
 class _FakeMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) => const McpFormState();
 }
 
-@Dependencies([workspaceSession])
 class _SubmittingMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) =>
       const McpFormState(isSubmitting: true);
 }
 
-@Dependencies([workspaceSession])
 class _SuccessfulMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) => const McpFormState();
@@ -47,7 +36,6 @@ class _SuccessfulMcpFormNotifier extends McpFormNotifier {
   Future<bool> submit() async => true;
 }
 
-@Dependencies([workspaceSession])
 class _ErrorMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
@@ -114,7 +102,6 @@ Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
   await tester.pump();
 }
 
-@Dependencies([workspaceSession])
 Future<void> _showDialog(WidgetTester tester) async {
   await tester.runAsync(() {
     AddMcpModal.show(
@@ -128,7 +115,6 @@ Future<void> _showDialog(WidgetTester tester) async {
   await tester.pump();
 }
 
-@Dependencies([workspaceSession])
 void main() {
   test('constructor stores workspaceId', () {
     const modal = AddMcpModal(workspaceId: _wsId);

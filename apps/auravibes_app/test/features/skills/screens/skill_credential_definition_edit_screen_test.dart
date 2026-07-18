@@ -27,46 +27,34 @@ void main() {
     required String workspaceId,
     String? definitionId,
   }) {
+    container.updateOverrides([
+      skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
+        container.read(skillCredentialDefinitionsRepositoryProvider),
+      ),
+      createSkillCredentialDefinitionUsecaseProvider(workspaceId)
+          .overrideWithValue(
+            CreateSkillCredentialDefinitionUsecase(
+              container.read(skillCredentialDefinitionsRepositoryProvider),
+            ),
+          ),
+    ]);
+
     return EasyLocalization(
       child: Builder(
         builder: (context) {
           return UncontrolledProviderScope(
             container: container,
-            child: ProviderScope(
-              overrides: [
-                workspaceSessionProvider.overrideWithValue(
-                  WorkspaceSession(
-                    LocalWorkspaceRef(localWorkspaceId: workspaceId),
-                  ),
-                ),
-                cloudWorkspaceStateGatewayProvider.overrideWith(
-                  (_) async => null,
-                ),
-                cloudSkillStoreProvider.overrideWithValue(null),
-                skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
-                  container.read(skillCredentialDefinitionsRepositoryProvider),
-                ),
-                createSkillCredentialDefinitionUsecaseProvider
-                    .overrideWithValue(
-                      CreateSkillCredentialDefinitionUsecase(
-                        container.read(
-                          skillCredentialDefinitionsRepositoryProvider,
-                        ),
-                      ),
-                    ),
-              ],
-              child: MaterialApp(
-                home: SkillCredentialDefinitionEditScreen(
-                  workspaceId: workspaceId,
-                  definitionId: definitionId,
-                ),
-                builder: (context, child) => AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
-                locale: context.locale,
-                localizationsDelegates: context.localizationDelegates,
-                supportedLocales: context.supportedLocales,
+            child: MaterialApp(
+              home: SkillCredentialDefinitionEditScreen(
+                workspaceId: workspaceId,
+                definitionId: definitionId,
               ),
+              builder: (context, child) => AuraSnackBarHost(
+                child: child ?? const SizedBox.shrink(),
+              ),
+              locale: context.locale,
+              localizationsDelegates: context.localizationDelegates,
+              supportedLocales: context.supportedLocales,
             ),
           );
         },
@@ -101,7 +89,7 @@ void main() {
         workspaceSessionProvider.overrideWithValue(
           WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
         ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_) async => null),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider.overrideWithValue(null),
       ],
     );

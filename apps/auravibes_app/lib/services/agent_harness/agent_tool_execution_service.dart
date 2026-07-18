@@ -1,3 +1,4 @@
+// ignore_for_file: always_put_required_named_parameters_first, dead_code
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -24,6 +25,8 @@ class AgentToolExecutionService
     required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
     required MessageRepository messageRepository,
     required ResolveToolApprovalDecisionUsecase resolveToolApprovalDecision,
+    ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
+    resolveToolApprovalDecisionForWorkspace,
     required ResolvedToolService runResolvedToolUsecase,
     required AgentToolDecisionService getAgentIterationDecisionUsecase,
     required AgentCancellationRuntime agentCancellationRuntime,
@@ -32,6 +35,8 @@ class AgentToolExecutionService
            messageRepository: messageRepository,
            loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
            resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+           resolveToolApprovalDecisionUsecaseForWorkspace:
+               resolveToolApprovalDecisionForWorkspace,
            resolvedToolService: runResolvedToolUsecase,
            toolDecisionService: getAgentIterationDecisionUsecase,
            agentCancellationRuntime: agentCancellationRuntime,
@@ -45,6 +50,7 @@ class AppAllowedToolsDataProvider
     required this.messageRepository,
     required this.loadLatestMessageToolCallsService,
     required this.resolveToolApprovalDecisionUsecase,
+    this.resolveToolApprovalDecisionUsecaseForWorkspace,
     required this.resolvedToolService,
     required this.toolDecisionService,
     required this.agentCancellationRuntime,
@@ -53,6 +59,8 @@ class AppAllowedToolsDataProvider
   final MessageRepository messageRepository;
   final AgentToolCallLoader loadLatestMessageToolCallsService;
   final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecisionUsecase;
+  final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
+  resolveToolApprovalDecisionUsecaseForWorkspace;
   final ResolvedToolService resolvedToolService;
   final AgentToolDecisionService toolDecisionService;
   final AgentCancellationRuntime agentCancellationRuntime;
@@ -72,12 +80,17 @@ class AppAllowedToolsDataProvider
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    final decision = await resolveToolApprovalDecisionUsecase.call(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-      toolCallId: toolCallId,
-      resolvedTool: resolvedTool,
-    );
+    final decision =
+        await (resolveToolApprovalDecisionUsecaseForWorkspace?.call(
+                  workspaceId,
+                ) ??
+                resolveToolApprovalDecisionUsecase)
+            .call(
+              conversationId: conversationId,
+              workspaceId: workspaceId,
+              toolCallId: toolCallId,
+              resolvedTool: resolvedTool,
+            );
 
     return agent.AgentToolApprovalDecision(
       permissionResult: toAgentToolPermissionResult(
@@ -216,8 +229,9 @@ final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
           agentToolCallLoaderProvider,
         ),
         messageRepository: ref.watch(messageRepositoryProvider),
-        resolveToolApprovalDecision: ref.watch(
-          resolveToolApprovalDecisionUsecaseProvider,
+        resolveToolApprovalDecision: throw UnimplementedError(),
+        resolveToolApprovalDecisionForWorkspace: (workspaceId) => ref.read(
+          resolveToolApprovalDecisionUsecaseProvider(workspaceId),
         ),
         runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
         getAgentIterationDecisionUsecase: ref.watch(

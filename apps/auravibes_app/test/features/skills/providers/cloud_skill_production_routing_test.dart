@@ -165,7 +165,9 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           workspaceSessionProvider.overrideWithValue(workspace),
-          cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+          cloudWorkspaceStateGatewayProvider.overrideWith(
+            (_, _) async => gateway,
+          ),
           cloudWorkspaceStateGatewayForWorkspaceProvider(
             workspaceId,
           ).overrideWith((_) async => gateway),
@@ -190,22 +192,23 @@ void main() {
         await container.read(workspaceSkillsProvider(workspaceId).future),
         isEmpty,
       );
-      final skill = await container.read(createSkillUsecaseProvider)(
-        workspaceId,
-        const SkillToCreate(
-          kind: SkillKind.template,
-          title: 'Weather',
-          description: 'Forecast',
-          content: 'Use weather',
-        ),
-      );
-      await container.read(disableSkillUsecaseProvider)(
+      final skill =
+          await container.read(createSkillUsecaseProvider(workspaceId))(
+            workspaceId,
+            const SkillToCreate(
+              kind: SkillKind.template,
+              title: 'Weather',
+              description: 'Forecast',
+              content: 'Use weather',
+            ),
+          );
+      await container.read(disableSkillUsecaseProvider(workspaceId))(
         workspaceId: workspaceId,
         source: SkillSource.user,
         skillId: skill.id,
         isEnabled: false,
       );
-      await container.read(disableSkillUsecaseProvider)(
+      await container.read(disableSkillUsecaseProvider(workspaceId))(
         workspaceId: workspaceId,
         source: SkillSource.app,
         skillId: 'skills_manager',
@@ -215,26 +218,29 @@ void main() {
         description: 'Manage skills',
         content: 'Manage workspace skills',
       );
-      await container.read(loadConversationSkillUsecaseProvider)(
+      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
         slug: 'skills_manager',
       );
-      await container.read(unloadConversationSkillUsecaseProvider)(
+      await container.read(unloadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
         slug: 'skills_manager',
       );
-      final updatedSkill = await container.read(updateSkillUsecaseProvider)(
-        skill.id,
-        const SkillToUpdate(description: 'Updated forecast'),
-      );
+      final updatedSkill =
+          await container.read(updateSkillUsecaseProvider(workspaceId))(
+            skill.id,
+            const SkillToUpdate(description: 'Updated forecast'),
+          );
       final duplicatedSkill = await container.read(
-        duplicateSkillUsecaseProvider,
+        duplicateSkillUsecaseProvider(workspaceId),
       )(skill.id);
 
       final definition =
-          await container.read(createSkillCredentialDefinitionUsecaseProvider)(
+          await container.read(
+            createSkillCredentialDefinitionUsecaseProvider(workspaceId),
+          )(
             workspaceId,
             const SkillCredentialDefinitionToCreate(
               title: 'API',
@@ -242,42 +248,51 @@ void main() {
             ),
           );
       final updatedDefinition =
-          await container.read(updateSkillCredentialDefinitionUsecaseProvider)(
+          await container.read(
+            updateSkillCredentialDefinitionUsecaseProvider(workspaceId),
+          )(
             definition.id,
             const SkillCredentialDefinitionToUpdate(title: 'API Key'),
           );
-      final credentialSkill = await container.read(createSkillUsecaseProvider)(
-        workspaceId,
-        SkillToCreate(
-          kind: SkillKind.template,
-          title: 'Protected Weather',
-          description: 'Forecast',
-          content: 'Use weather',
-          credentialDefinitionId: definition.id,
-        ),
-      );
-      final tool = await container.read(createSkillTemplateToolUsecaseProvider)(
-        credentialSkill.id,
-        const SkillTemplateToolToCreate(
-          templateType: SkillTemplateToolType.url,
-          title: 'Forecast',
-          description: 'Get forecast',
-          templateJson: '{"url":"https://example.com/{{credential.token}}"}',
-          inputsJson: '{}',
-          requiresCredential: true,
-        ),
-      );
+      final credentialSkill =
+          await container.read(createSkillUsecaseProvider(workspaceId))(
+            workspaceId,
+            SkillToCreate(
+              kind: SkillKind.template,
+              title: 'Protected Weather',
+              description: 'Forecast',
+              content: 'Use weather',
+              credentialDefinitionId: definition.id,
+            ),
+          );
+      final tool =
+          await container.read(
+            createSkillTemplateToolUsecaseProvider(workspaceId),
+          )(
+            credentialSkill.id,
+            const SkillTemplateToolToCreate(
+              templateType: SkillTemplateToolType.url,
+              title: 'Forecast',
+              description: 'Get forecast',
+              templateJson:
+                  '{"url":"https://example.com/{{credential.token}}"}',
+              inputsJson: '{}',
+              requiresCredential: true,
+            ),
+          );
       final updatedTool =
-          await container.read(updateSkillTemplateToolUsecaseProvider)(
+          await container.read(
+            updateSkillTemplateToolUsecaseProvider(workspaceId),
+          )(
             tool.id,
             const SkillTemplateToolToUpdate(description: 'Updated tool'),
           );
       final duplicatedTool = await container.read(
-        duplicateSkillTemplateToolUsecaseProvider,
+        duplicateSkillTemplateToolUsecaseProvider(workspaceId),
       )(tool.id);
 
       final credential = await container
-          .read(skillCredentialOperationsProvider)
+          .read(skillCredentialOperationsProvider(workspaceId))
           .create(
             workspaceId,
             SkillCredentialToCreate(
@@ -287,10 +302,10 @@ void main() {
             ),
           );
       final edited = await container
-          .read(skillCredentialOperationsProvider)
+          .read(skillCredentialOperationsProvider(workspaceId))
           .getForEdit(credential.id);
       final updatedCredential = await container
-          .read(skillCredentialOperationsProvider)
+          .read(skillCredentialOperationsProvider(workspaceId))
           .update(
             credential.id,
             const SkillCredentialToUpdate(
@@ -300,16 +315,16 @@ void main() {
           );
       expect(
         await container.read(
-          checkSkillCredentialReadinessUsecaseProvider,
+          checkSkillCredentialReadinessUsecaseProvider(workspaceId),
         )(workspaceId: workspaceId, skill: credentialSkill),
         isTrue,
       );
-      await container.read(loadConversationSkillUsecaseProvider)(
+      await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
         slug: credentialSkill.slug,
       );
-      await container.read(unloadConversationSkillUsecaseProvider)(
+      await container.read(unloadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
         slug: credentialSkill.slug,
@@ -317,7 +332,7 @@ void main() {
 
       expect(
         await container.read(
-          skillTemplateToolsProvider(credentialSkill.id).future,
+          skillTemplateToolsProvider(workspaceId, credentialSkill.id).future,
         ),
         isNotEmpty,
       );
@@ -334,11 +349,14 @@ void main() {
       expect(duplicatedTool.title, 'Forecast Copy');
       expect(edited?.id, credential.id);
       expect(updatedCredential.name, 'Updated credential');
-      final managed = await container.read(runSkillsManagerToolUsecaseProvider)(
-        workspaceId: workspaceId,
-        toolSlug: 'list_user_skills',
-        arguments: const {},
-      );
+      final managed =
+          await container.read(
+            runSkillsManagerToolUsecaseProvider(workspaceId),
+          )(
+            workspaceId: workspaceId,
+            toolSlug: 'list_user_skills',
+            arguments: const {},
+          );
       expect((managed as Map)['skills'], isNotEmpty);
 
       expect(credential.attributes, isEmpty);
@@ -355,15 +373,21 @@ void main() {
       ).called(2);
 
       await container
-          .read(skillCredentialOperationsProvider)
+          .read(skillCredentialOperationsProvider(workspaceId))
           .delete(
             credential.id,
           );
-      await container.read(deleteSkillTemplateToolProvider)(duplicatedTool.id);
-      await container.read(deleteSkillCredentialDefinitionProvider)(
+      await container.read(deleteSkillTemplateToolProvider(workspaceId))(
+        duplicatedTool.id,
+      );
+      await container.read(
+        deleteSkillCredentialDefinitionProvider(workspaceId),
+      )(
         updatedDefinition.id,
       );
-      await container.read(deleteSkillProvider)(duplicatedSkill.id);
+      await container.read(deleteSkillProvider(workspaceId))(
+        duplicatedSkill.id,
+      );
     },
   );
 }

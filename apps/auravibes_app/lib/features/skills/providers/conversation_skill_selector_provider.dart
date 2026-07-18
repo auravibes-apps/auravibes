@@ -10,7 +10,7 @@ Future<ConversationSkillSelectorState> conversationSkillSelector(
   String workspaceId,
   String conversationId,
 ) async {
-  final usecase = ref.watch(listAvailableSkillsUsecaseProvider);
+  final usecase = ref.watch(listAvailableSkillsUsecaseProvider(workspaceId));
   final loaded = await usecase.call(
     conversationId: conversationId,
     workspaceId: workspaceId,

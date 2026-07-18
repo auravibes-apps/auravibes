@@ -8,7 +8,6 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
@@ -20,11 +19,6 @@ QueryExecutor _testConnection() {
   );
 }
 
-@Dependencies([
-  mcpServersRepository,
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -55,13 +49,31 @@ void main() {
 
   group('mcpServersRepositoryProvider', () {
     test('returns a McpServersRepository instance', () {
-      final repo = readContainer().read(mcpServersRepositoryProvider);
+      final repo = readContainer().read(
+        mcpServersRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+          ),
+        ),
+      );
       expect(repo, isA<McpServersRepository>());
     });
 
     test('returns same instance on subsequent reads (keepAlive)', () {
-      final first = readContainer().read(mcpServersRepositoryProvider);
-      final second = readContainer().read(mcpServersRepositoryProvider);
+      final first = readContainer().read(
+        mcpServersRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+          ),
+        ),
+      );
+      final second = readContainer().read(
+        mcpServersRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+          ),
+        ),
+      );
       expect(identical(first, second), isTrue);
     });
   });

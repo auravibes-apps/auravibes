@@ -33,7 +33,7 @@ final class ToolDisplayNameProvider
   /// Uses Riverpod's family caching to avoid repeated lookups.
   ToolDisplayNameProvider._({
     required ToolDisplayNameFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'toolDisplayNameProvider',
@@ -42,14 +42,6 @@ final class ToolDisplayNameProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = mcpServerNameProvider;
-  static final $allTransitiveDependencies1 =
-      McpServerNameProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      McpServerNameProvider.$allTransitiveDependencies1;
-  static final $allTransitiveDependencies3 =
-      McpServerNameProvider.$allTransitiveDependencies2;
-
   @override
   String debugGetCreateSourceHash() => _$toolDisplayNameHash();
 
@@ -57,7 +49,7 @@ final class ToolDisplayNameProvider
   String toString() {
     return r'toolDisplayNameProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -67,8 +59,8 @@ final class ToolDisplayNameProvider
 
   @override
   FutureOr<String> create(Ref ref) {
-    final argument = this.argument as String;
-    return toolDisplayName(ref, argument);
+    final argument = this.argument as (String, String);
+    return toolDisplayName(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -82,7 +74,7 @@ final class ToolDisplayNameProvider
   }
 }
 
-String _$toolDisplayNameHash() => r'dbd6aebd57b28f291a176efbc129b57da8d9ab81';
+String _$toolDisplayNameHash() => r'7a7d088a9c67007baed1882042a2e43632297c85';
 
 /// Provides a human-friendly display name for a tool composite ID.
 ///
@@ -91,21 +83,13 @@ String _$toolDisplayNameHash() => r'dbd6aebd57b28f291a176efbc129b57da8d9ab81';
 /// Uses Riverpod's family caching to avoid repeated lookups.
 
 final class ToolDisplayNameFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<String>, String> {
+    with $FunctionalFamilyOverride<FutureOr<String>, (String, String)> {
   ToolDisplayNameFamily._()
     : super(
         retry: null,
         name: r'toolDisplayNameProvider',
-        dependencies: <ProviderOrFamily>[
-          mcpServerNameProvider,
-          mcpServersRepositoryProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          ToolDisplayNameProvider.$allTransitiveDependencies0,
-          ToolDisplayNameProvider.$allTransitiveDependencies1,
-          ToolDisplayNameProvider.$allTransitiveDependencies2,
-          ToolDisplayNameProvider.$allTransitiveDependencies3,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -115,8 +99,11 @@ final class ToolDisplayNameFamily extends $Family
   /// For built-in tools, formats the tool identifier.
   /// Uses Riverpod's family caching to avoid repeated lookups.
 
-  ToolDisplayNameProvider call(String compositeToolId) =>
-      ToolDisplayNameProvider._(argument: compositeToolId, from: this);
+  ToolDisplayNameProvider call(String workspaceId, String compositeToolId) =>
+      ToolDisplayNameProvider._(
+        argument: (workspaceId, compositeToolId),
+        from: this,
+      );
 
   @override
   String toString() => r'toolDisplayNameProvider';
@@ -128,7 +115,6 @@ final class ToolDisplayNameFamily extends $Family
 /// Cached per server ID via Riverpod's family mechanism.
 
 @ProviderFor(mcpServerName)
-@Dependencies([mcpServersRepository])
 final mcpServerNameProvider = McpServerNameFamily._();
 
 /// Provides the name of an MCP server by its ID.
@@ -136,7 +122,6 @@ final mcpServerNameProvider = McpServerNameFamily._();
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 
-@Dependencies([mcpServersRepository])
 final class McpServerNameProvider
     extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
     with $FutureModifier<String?>, $FutureProvider<String?> {
@@ -146,7 +131,7 @@ final class McpServerNameProvider
   /// Cached per server ID via Riverpod's family mechanism.
   McpServerNameProvider._({
     required McpServerNameFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'mcpServerNameProvider',
@@ -155,12 +140,6 @@ final class McpServerNameProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = mcpServersRepositoryProvider;
-  static final $allTransitiveDependencies1 =
-      McpServersRepositoryProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies2 =
-      McpServersRepositoryProvider.$allTransitiveDependencies1;
-
   @override
   String debugGetCreateSourceHash() => _$mcpServerNameHash();
 
@@ -168,7 +147,7 @@ final class McpServerNameProvider
   String toString() {
     return r'mcpServerNameProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -178,8 +157,8 @@ final class McpServerNameProvider
 
   @override
   FutureOr<String?> create(Ref ref) {
-    final argument = this.argument as String;
-    return mcpServerName(ref, argument);
+    final argument = this.argument as (String, String);
+    return mcpServerName(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -193,26 +172,21 @@ final class McpServerNameProvider
   }
 }
 
-String _$mcpServerNameHash() => r'a39c7f8de9252417ea1fb2303879e420a69eed5c';
+String _$mcpServerNameHash() => r'2999fc88bffc8a1df293073f80e80297f97f4da0';
 
 /// Provides the name of an MCP server by its ID.
 ///
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 
-@Dependencies([mcpServersRepository])
 final class McpServerNameFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<String?>, String> {
+    with $FunctionalFamilyOverride<FutureOr<String?>, (String, String)> {
   McpServerNameFamily._()
     : super(
         retry: null,
         name: r'mcpServerNameProvider',
-        dependencies: <ProviderOrFamily>[mcpServersRepositoryProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          McpServerNameProvider.$allTransitiveDependencies0,
-          McpServerNameProvider.$allTransitiveDependencies1,
-          McpServerNameProvider.$allTransitiveDependencies2,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
@@ -221,9 +195,8 @@ final class McpServerNameFamily extends $Family
   /// Returns null if the server is not found.
   /// Cached per server ID via Riverpod's family mechanism.
 
-  @Dependencies([mcpServersRepository])
-  McpServerNameProvider call(String mcpServerId) =>
-      McpServerNameProvider._(argument: mcpServerId, from: this);
+  McpServerNameProvider call(String workspaceId, String mcpServerId) =>
+      McpServerNameProvider._(argument: (workspaceId, mcpServerId), from: this);
 
   @override
   String toString() => r'mcpServerNameProvider';

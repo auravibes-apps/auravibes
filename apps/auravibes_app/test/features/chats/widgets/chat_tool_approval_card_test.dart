@@ -9,11 +9,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([pendingToolCalls])
 void main() {
-  @Dependencies([pendingToolCalls])
   Widget buildSubject({
     required List<Object> overrides,
   }) {
@@ -26,7 +23,10 @@ void main() {
               home: Theme(
                 data: ThemeData(extensions: [AuraTheme.light]),
                 child: const Material(
-                  child: ChatToolApprovalCard(),
+                  child: ChatToolApprovalCard(
+                    workspaceId: 'ws-1',
+                    conversationId: 'conv-1',
+                  ),
                 ),
               ),
               locale: context.locale,
@@ -76,7 +76,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => []),
+            pendingToolCallsProvider.overrideWith((ref, _) => []),
           ],
         ),
       );
@@ -96,7 +96,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -115,7 +115,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -132,7 +132,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -153,7 +153,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -180,7 +180,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -209,7 +209,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -226,7 +226,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -244,7 +244,7 @@ void main() {
         buildSubject(
           overrides: [
             pendingToolCallsProvider.overrideWith(
-              (ref) => throw Exception('fail'),
+              (ref, _) => throw Exception('fail'),
             ),
           ],
         ),
@@ -263,7 +263,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -285,7 +285,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -312,7 +312,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -337,7 +337,7 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => pendingCalls),
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
           ],
         ),
       );
@@ -353,7 +353,9 @@ void main() {
         tester,
         buildSubject(
           overrides: [
-            pendingToolCallsProvider.overrideWith((ref) => <PendingToolCall>[]),
+            pendingToolCallsProvider.overrideWith(
+              (ref, _) => <PendingToolCall>[],
+            ),
           ],
         ),
       );

@@ -5,7 +5,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_session_provider.g.dart';
@@ -24,11 +23,14 @@ final class WorkspaceAuthenticationRequired extends WorkspaceAvailability {
   const WorkspaceAuthenticationRequired(super.session);
 }
 
-@Riverpod(keepAlive: true, dependencies: [])
-WorkspaceSession workspaceSession(Ref _) {
-  throw StateError(
-    'WorkspaceSession must be overridden at the workspace route',
-  );
+@riverpod
+WorkspaceSession workspaceSession(Ref _, WorkspaceSession session) => session;
+
+/// Supports legacy test fixtures while every production read stays keyed.
+extension WorkspaceSessionFamilyTestOverride on WorkspaceSessionFamily {
+  Override overrideWithValue(WorkspaceSession value) {
+    return overrideWith((_, _) => value);
+  }
 }
 
 @riverpod
@@ -100,9 +102,12 @@ Future<WorkspaceAvailability> workspaceAvailability(
   return WorkspaceAvailable(session);
 }
 
-@Riverpod(dependencies: [workspaceSession])
-Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGateway(Ref ref) async {
-  final cloud = ref.watch(workspaceSessionProvider).cloud;
+@riverpod
+Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGateway(
+  Ref ref,
+  WorkspaceSession session,
+) async {
+  final cloud = session.cloud;
   if (cloud == null) return null;
 
   final client = await ref.watch(
@@ -136,10 +141,14 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
   return CloudWorkspaceStateGateway(client: client, workspace: cloud);
 }
 
-@Dependencies([cloudWorkspaceStateGateway])
 @riverpod
-Stream<List<WorkspaceResource>> cloudWorkspaceConfiguration(Ref ref) async* {
-  final gateway = await ref.watch(cloudWorkspaceStateGatewayProvider.future);
+Stream<List<WorkspaceResource>> cloudWorkspaceConfiguration(
+  Ref ref,
+  WorkspaceSession session,
+) async* {
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
   if (gateway == null) {
     yield const [];
 

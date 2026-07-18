@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
@@ -5,7 +6,7 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class CreateSkillUsecase {
   const CreateSkillUsecase(this._skillsRepository, {this.cloudStore});
@@ -49,14 +50,14 @@ class CreateSkillUsecase {
   }
 }
 
-final createSkillUsecaseProvider = Provider<CreateSkillUsecase>(
-  (ref) {
-    final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<CreateSkillUsecase, String> createSkillUsecaseProvider =
+    Provider.family<CreateSkillUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-    return CreateSkillUsecase(
-      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-      cloudStore: cloud,
+        return CreateSkillUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloudStore: cloud,
+        );
+      },
     );
-  },
-  dependencies: [cloudSkillStoreProvider],
-);

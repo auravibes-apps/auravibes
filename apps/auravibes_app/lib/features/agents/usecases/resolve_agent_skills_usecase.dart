@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/agent_entity.dart';
@@ -7,7 +8,7 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class ResolveAgentSkillsUsecase {
   const ResolveAgentSkillsUsecase(
@@ -90,21 +91,22 @@ class ResolvedAgentSkills {
   final List<AgentSkillRef> unavailable;
 }
 
-final resolveAgentSkillsUsecaseProvider = Provider<ResolveAgentSkillsUsecase>(
-  (ref) {
-    final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<ResolveAgentSkillsUsecase, String>
+resolveAgentSkillsUsecaseProvider =
+    Provider.family<ResolveAgentSkillsUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-    return ResolveAgentSkillsUsecase(
-      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-      cloud == null
-          ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-          : null,
-      ref.watch(appSkillRegistryProvider),
-      cloud,
+        return ResolveAgentSkillsUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloud == null
+              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+              : null,
+          ref.watch(appSkillRegistryProvider),
+          cloud,
+        );
+      },
     );
-  },
-  dependencies: [cloudSkillStoreProvider],
-);
 
 extension AgentSkillEntityAvailableSkill on SkillEntity {
   AvailableSkill toAvailableSkill() {

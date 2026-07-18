@@ -58,7 +58,7 @@ class ConversationSkillSelectorModal extends ConsumerWidget {
   }
 
   Future<void> _load(WidgetRef ref, AvailableSkill skill) async {
-    final usecase = ref.read(loadConversationSkillUsecaseProvider);
+    final usecase = ref.read(loadConversationSkillUsecaseProvider(workspaceId));
     final _ = await usecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -70,7 +70,9 @@ class ConversationSkillSelectorModal extends ConsumerWidget {
   }
 
   Future<void> _unload(WidgetRef ref, AvailableSkill skill) async {
-    final usecase = ref.read(unloadConversationSkillUsecaseProvider);
+    final usecase = ref.read(
+      unloadConversationSkillUsecaseProvider(workspaceId),
+    );
     final _ = await usecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,

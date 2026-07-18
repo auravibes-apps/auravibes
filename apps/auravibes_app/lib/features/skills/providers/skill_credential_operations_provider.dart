@@ -1,7 +1,8 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class SkillCredentialOperations {
   const SkillCredentialOperations({
@@ -25,27 +26,26 @@ class SkillCredentialOperations {
   final Future<void> Function(String id) delete;
 }
 
-final skillCredentialOperationsProvider = Provider<SkillCredentialOperations>(
-  (
-    ref,
-  ) {
-    final cloud = ref.watch(cloudSkillStoreProvider);
-    if (cloud != null) {
-      return SkillCredentialOperations(
-        create: (_, value) => cloud.createCredential(value),
-        getForEdit: cloud.credentialForEdit,
-        update: cloud.updateCredential,
-        delete: cloud.deleteCredential,
-      );
-    }
-    final local = ref.watch(skillCredentialsRepositoryProvider);
+final ProviderFamily<SkillCredentialOperations, String>
+skillCredentialOperationsProvider =
+    Provider.family<SkillCredentialOperations, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+        if (cloud != null) {
+          return SkillCredentialOperations(
+            create: (_, value) => cloud.createCredential(value),
+            getForEdit: cloud.credentialForEdit,
+            update: cloud.updateCredential,
+            delete: cloud.deleteCredential,
+          );
+        }
+        final local = ref.watch(skillCredentialsRepositoryProvider);
 
-    return SkillCredentialOperations(
-      create: local.createCredential,
-      getForEdit: local.getCredentialForEdit,
-      update: local.updateCredential,
-      delete: local.deleteCredential,
+        return SkillCredentialOperations(
+          create: local.createCredential,
+          getForEdit: local.getCredentialForEdit,
+          update: local.updateCredential,
+          delete: local.deleteCredential,
+        );
+      },
     );
-  },
-  dependencies: [cloudSkillStoreProvider],
-);

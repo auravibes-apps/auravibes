@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -11,7 +12,7 @@ import 'package:auravibes_app/features/skills/usecases/check_skill_credential_re
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class ListAvailableSkillsUsecase {
   const ListAvailableSkillsUsecase(
@@ -138,29 +139,29 @@ class ListAvailableSkillsUsecase {
   }
 }
 
-final listAvailableSkillsUsecaseProvider = Provider<ListAvailableSkillsUsecase>(
-  (ref) {
-    final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<ListAvailableSkillsUsecase, String>
+listAvailableSkillsUsecaseProvider =
+    Provider.family<ListAvailableSkillsUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-    return ListAvailableSkillsUsecase(
-      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-      cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
-      cloud == null
-          ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-          : null,
-      ref.watch(appSkillRegistryProvider),
-      ref.watch(checkSkillCredentialReadinessUsecaseProvider),
-      cloud == null
-          ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
-          : null,
-      cloud,
+        return ListAvailableSkillsUsecase(
+          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+          cloud == null
+              ? ref.watch(conversationSkillsRepositoryProvider)
+              : null,
+          cloud == null
+              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+              : null,
+          ref.watch(appSkillRegistryProvider),
+          ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
+          cloud == null
+              ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
+              : null,
+          cloud,
+        );
+      },
     );
-  },
-  dependencies: [
-    cloudSkillStoreProvider,
-    checkSkillCredentialReadinessUsecaseProvider,
-  ],
-);
 
 enum SkillLoadFilter {
   loadable,

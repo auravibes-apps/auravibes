@@ -12,7 +12,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
 /// Modal for managing conversation tools.
 ///
@@ -21,7 +20,6 @@ import 'package:riverpod_annotation/experimental/scope.dart';
 /// - MCP status indicators for MCP groups
 /// - Group-level toggle to enable/disable all tools at once
 /// - Reconnect button for MCP groups with connection issues
-@Dependencies([workspaceSession])
 class ToolsManagementModal extends ConsumerWidget {
   const ToolsManagementModal({
     required this.workspaceId,
@@ -35,7 +33,8 @@ class ToolsManagementModal extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref
-        .watch(workspaceSessionProvider)
+        .watch(workspaceSessionForRouteProvider(workspaceId))
+        .requireValue
         .capabilities
         .conversationToolOverrides) {
       return const Dialog(

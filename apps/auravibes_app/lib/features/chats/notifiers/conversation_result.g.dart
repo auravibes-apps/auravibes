@@ -17,7 +17,7 @@ final class ConversationChatNotifierProvider
         $AsyncNotifierProvider<ConversationChatNotifier, ConversationResult> {
   ConversationChatNotifierProvider._({
     required ConversationChatNotifierFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'conversationChatProvider',
@@ -26,14 +26,6 @@ final class ConversationChatNotifierProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = conversationSelectedProvider;
-  static final $allTransitiveDependencies1 = conversationByIdStreamProvider;
-  static final $allTransitiveDependencies2 =
-      ConversationByIdStreamProvider.$allTransitiveDependencies0;
-  static final $allTransitiveDependencies3 = cloudConversationUsecaseProvider;
-  static final $allTransitiveDependencies4 =
-      CloudConversationUsecaseProvider.$allTransitiveDependencies1;
-
   @override
   String debugGetCreateSourceHash() => _$conversationChatNotifierHash();
 
@@ -41,7 +33,7 @@ final class ConversationChatNotifierProvider
   String toString() {
     return r'conversationChatProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -61,7 +53,7 @@ final class ConversationChatNotifierProvider
 }
 
 String _$conversationChatNotifierHash() =>
-    r'4792c66a931f3593e7c897b49fc2c691c0cc238c';
+    r'484de31a01243d58f961f0d826aebc17b0099cda';
 
 final class ConversationChatNotifierFamily extends $Family
     with
@@ -70,29 +62,24 @@ final class ConversationChatNotifierFamily extends $Family
           AsyncValue<ConversationResult>,
           ConversationResult,
           FutureOr<ConversationResult>,
-          String
+          (String, String)
         > {
   ConversationChatNotifierFamily._()
     : super(
         retry: null,
         name: r'conversationChatProvider',
-        dependencies: <ProviderOrFamily>[
-          conversationSelectedProvider,
-          conversationByIdStreamProvider,
-          cloudConversationUsecaseProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>{
-          ConversationChatNotifierProvider.$allTransitiveDependencies0,
-          ConversationChatNotifierProvider.$allTransitiveDependencies1,
-          ConversationChatNotifierProvider.$allTransitiveDependencies2,
-          ConversationChatNotifierProvider.$allTransitiveDependencies3,
-          ConversationChatNotifierProvider.$allTransitiveDependencies4,
-        },
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  ConversationChatNotifierProvider call(String workspaceId) =>
-      ConversationChatNotifierProvider._(argument: workspaceId, from: this);
+  ConversationChatNotifierProvider call(
+    String workspaceId,
+    String conversationId,
+  ) => ConversationChatNotifierProvider._(
+    argument: (workspaceId, conversationId),
+    from: this,
+  );
 
   @override
   String toString() => r'conversationChatProvider';
@@ -100,10 +87,11 @@ final class ConversationChatNotifierFamily extends $Family
 
 abstract class _$ConversationChatNotifier
     extends $AsyncNotifier<ConversationResult> {
-  late final _$args = ref.$arg as String;
-  String get workspaceId => _$args;
+  late final _$args = ref.$arg as (String, String);
+  String get workspaceId => _$args.$1;
+  String get conversationId => _$args.$2;
 
-  FutureOr<ConversationResult> build(String workspaceId);
+  FutureOr<ConversationResult> build(String workspaceId, String conversationId);
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
@@ -117,6 +105,6 @@ abstract class _$ConversationChatNotifier
               Object?,
               Object?
             >;
-    return element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args.$1, _$args.$2));
   }
 }

@@ -14,9 +14,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-@Dependencies([workspaceSession])
 class ToolsScreen extends ConsumerWidget {
   const ToolsScreen({required this.workspaceId, super.key});
 
@@ -24,7 +22,10 @@ class ToolsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final capabilities = ref.watch(workspaceSessionProvider).capabilities;
+    final capabilities = ref
+        .watch(workspaceSessionForRouteProvider(workspaceId))
+        .requireValue
+        .capabilities;
 
     return AuraScreen(
       child: Stack(

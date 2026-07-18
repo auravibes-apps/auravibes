@@ -1,7 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'tool_display_name_provider.g.dart';
@@ -11,20 +11,21 @@ part 'tool_display_name_provider.g.dart';
 /// For MCP tools, fetches the original server name from the database.
 /// For built-in tools, formats the tool identifier.
 /// Uses Riverpod's family caching to avoid repeated lookups.
-@Riverpod(
-  dependencies: [
-    mcpServerName,
-    mcpServersRepository,
-  ],
-)
-Future<String> toolDisplayName(Ref ref, String compositeToolId) async {
+@riverpod
+Future<String> toolDisplayName(
+  Ref ref,
+  String workspaceId,
+  String compositeToolId,
+) async {
   final parsed = ToolNameFormatter.parse(compositeToolId);
 
   // For MCP tools, try to get the original server name.
   String? mcpServerName;
   final mcpServerId = parsed?.mcpServerId;
   if (mcpServerId != null) {
-    mcpServerName = await ref.watch(mcpServerNameProvider(mcpServerId).future);
+    mcpServerName = await ref.watch(
+      mcpServerNameProvider(workspaceId, mcpServerId).future,
+    );
   }
 
   return ToolNameFormatter.formatDisplayName(
@@ -38,11 +39,17 @@ Future<String> toolDisplayName(Ref ref, String compositeToolId) async {
 ///
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
-@Dependencies([mcpServersRepository])
-@Riverpod(dependencies: [mcpServersRepository])
-Future<String?> mcpServerName(Ref ref, String mcpServerId) async {
+@riverpod
+Future<String?> mcpServerName(
+  Ref ref,
+  String workspaceId,
+  String mcpServerId,
+) async {
   try {
-    final repository = ref.read(mcpServersRepositoryProvider);
+    final session = await ref.watch(
+      workspaceSessionForRouteProvider(workspaceId).future,
+    );
+    final repository = ref.read(mcpServersRepositoryProvider(session));
     final server = await repository.getMcpServerById(mcpServerId);
 
     return server?.name;

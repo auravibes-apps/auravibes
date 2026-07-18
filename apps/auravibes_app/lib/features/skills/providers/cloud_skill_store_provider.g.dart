@@ -10,7 +10,7 @@ part of 'cloud_skill_store_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(cloudSkillStore)
-final cloudSkillStoreProvider = CloudSkillStoreProvider._();
+final cloudSkillStoreProvider = CloudSkillStoreFamily._();
 
 final class CloudSkillStoreProvider
     extends
@@ -20,28 +20,26 @@ final class CloudSkillStoreProvider
           CloudSkillStore?
         >
     with $Provider<CloudSkillStore?> {
-  CloudSkillStoreProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'cloudSkillStoreProvider',
-        isAutoDispose: true,
-        dependencies: <ProviderOrFamily>[
-          workspaceSessionProvider,
-          cloudWorkspaceStateGatewayProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          CloudSkillStoreProvider.$allTransitiveDependencies0,
-          CloudSkillStoreProvider.$allTransitiveDependencies1,
-        ],
-      );
-
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-  static final $allTransitiveDependencies1 = cloudWorkspaceStateGatewayProvider;
+  CloudSkillStoreProvider._({
+    required CloudSkillStoreFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'cloudSkillStoreProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
 
   @override
   String debugGetCreateSourceHash() => _$cloudSkillStoreHash();
+
+  @override
+  String toString() {
+    return r'cloudSkillStoreProvider'
+        ''
+        '($argument)';
+  }
 
   @$internal
   @override
@@ -50,7 +48,8 @@ final class CloudSkillStoreProvider
 
   @override
   CloudSkillStore? create(Ref ref) {
-    return cloudSkillStore(ref);
+    final argument = this.argument as String;
+    return cloudSkillStore(ref, argument);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -60,6 +59,34 @@ final class CloudSkillStoreProvider
       providerOverride: $SyncValueProvider<CloudSkillStore?>(value),
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is CloudSkillStoreProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
 }
 
-String _$cloudSkillStoreHash() => r'2c99c7693e43d688f5355f06bd5e50555edb9eb9';
+String _$cloudSkillStoreHash() => r'0910731dd06891d532bd5a172533e495f87a7e27';
+
+final class CloudSkillStoreFamily extends $Family
+    with $FunctionalFamilyOverride<CloudSkillStore?, String> {
+  CloudSkillStoreFamily._()
+    : super(
+        retry: null,
+        name: r'cloudSkillStoreProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  CloudSkillStoreProvider call(String workspaceId) =>
+      CloudSkillStoreProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'cloudSkillStoreProvider';
+}

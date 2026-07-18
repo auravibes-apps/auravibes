@@ -224,7 +224,11 @@ void main() {
       );
 
       final _ =
-          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+          await (await container.read(
+            saveWorkspaceCompactionSettingsUsecaseProvider(
+              testWorkspaceId,
+            ).future,
+          ))(
             workspaceId: testWorkspaceId,
             settings: newSettings,
           );
@@ -237,7 +241,7 @@ void main() {
       );
     });
 
-    test('rejects usage percentage below 5', () {
+    test('rejects usage percentage below 5', () async {
       final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 4,
@@ -245,15 +249,20 @@ void main() {
       );
 
       expect(
-        () => container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-          workspaceId: testWorkspaceId,
-          settings: invalid,
-        ),
+        () async =>
+            (await container.read(
+              saveWorkspaceCompactionSettingsUsecaseProvider(
+                testWorkspaceId,
+              ).future,
+            ))(
+              workspaceId: testWorkspaceId,
+              settings: invalid,
+            ),
         throwsA(isA<CompactionSettingsValidationException>()),
       );
     });
 
-    test('rejects usage percentage above 100', () {
+    test('rejects usage percentage above 100', () async {
       final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 101,
@@ -261,15 +270,20 @@ void main() {
       );
 
       expect(
-        () => container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-          workspaceId: testWorkspaceId,
-          settings: invalid,
-        ),
+        () async =>
+            (await container.read(
+              saveWorkspaceCompactionSettingsUsecaseProvider(
+                testWorkspaceId,
+              ).future,
+            ))(
+              workspaceId: testWorkspaceId,
+              settings: invalid,
+            ),
         throwsA(isA<CompactionSettingsValidationException>()),
       );
     });
 
-    test('rejects remaining token threshold <= 0', () {
+    test('rejects remaining token threshold <= 0', () async {
       final container = fixture.container;
       const invalid = CompactionSettings(
         usagePercentageThreshold: 50,
@@ -277,10 +291,15 @@ void main() {
       );
 
       expect(
-        () => container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
-          workspaceId: testWorkspaceId,
-          settings: invalid,
-        ),
+        () async =>
+            (await container.read(
+              saveWorkspaceCompactionSettingsUsecaseProvider(
+                testWorkspaceId,
+              ).future,
+            ))(
+              workspaceId: testWorkspaceId,
+              settings: invalid,
+            ),
         throwsA(isA<CompactionSettingsValidationException>()),
       );
     });
@@ -297,7 +316,11 @@ void main() {
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
       final result =
-          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+          await (await container.read(
+            saveWorkspaceCompactionSettingsUsecaseProvider(
+              testWorkspaceId,
+            ).future,
+          ))(
             workspaceId: testWorkspaceId,
             settings: valid,
           );
@@ -317,7 +340,11 @@ void main() {
       ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
       final result =
-          await container.read(saveWorkspaceCompactionSettingsUsecaseProvider)(
+          await (await container.read(
+            saveWorkspaceCompactionSettingsUsecaseProvider(
+              testWorkspaceId,
+            ).future,
+          ))(
             workspaceId: testWorkspaceId,
             settings: valid,
           );

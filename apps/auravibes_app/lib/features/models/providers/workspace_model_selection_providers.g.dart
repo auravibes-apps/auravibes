@@ -25,7 +25,7 @@ final class WorkspaceModelSelectionByIdProvider
         $FutureProvider<WorkspaceModelSelectionWithConnectionEntity?> {
   WorkspaceModelSelectionByIdProvider._({
     required WorkspaceModelSelectionByIdFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'workspaceModelSelectionByIdProvider',
@@ -34,8 +34,6 @@ final class WorkspaceModelSelectionByIdProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = workspaceSessionProvider;
-
   @override
   String debugGetCreateSourceHash() => _$workspaceModelSelectionByIdHash();
 
@@ -43,7 +41,7 @@ final class WorkspaceModelSelectionByIdProvider
   String toString() {
     return r'workspaceModelSelectionByIdProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -53,8 +51,8 @@ final class WorkspaceModelSelectionByIdProvider
 
   @override
   FutureOr<WorkspaceModelSelectionWithConnectionEntity?> create(Ref ref) {
-    final argument = this.argument as String;
-    return workspaceModelSelectionById(ref, argument);
+    final argument = this.argument as (String, String);
+    return workspaceModelSelectionById(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -70,30 +68,30 @@ final class WorkspaceModelSelectionByIdProvider
 }
 
 String _$workspaceModelSelectionByIdHash() =>
-    r'16f1026bd0c475a3a1ea981ea7641561c512fbf9';
+    r'20f9d4c49e77e6817adbc5a3ca9c07979d82886f';
 
 final class WorkspaceModelSelectionByIdFamily extends $Family
     with
         $FunctionalFamilyOverride<
           FutureOr<WorkspaceModelSelectionWithConnectionEntity?>,
-          String
+          (String, String)
         > {
   WorkspaceModelSelectionByIdFamily._()
     : super(
         retry: null,
         name: r'workspaceModelSelectionByIdProvider',
-        dependencies: <ProviderOrFamily>[workspaceSessionProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          WorkspaceModelSelectionByIdProvider.$allTransitiveDependencies0,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  WorkspaceModelSelectionByIdProvider call(String workspaceModelSelectionId) =>
-      WorkspaceModelSelectionByIdProvider._(
-        argument: workspaceModelSelectionId,
-        from: this,
-      );
+  WorkspaceModelSelectionByIdProvider call(
+    String workspaceId,
+    String workspaceModelSelectionId,
+  ) => WorkspaceModelSelectionByIdProvider._(
+    argument: (workspaceId, workspaceModelSelectionId),
+    from: this,
+  );
 
   @override
   String toString() => r'workspaceModelSelectionByIdProvider';
@@ -107,7 +105,7 @@ final class ModelContextLimitProvider
     with $FutureModifier<int?>, $FutureProvider<int?> {
   ModelContextLimitProvider._({
     required ModelContextLimitFamily super.from,
-    required String super.argument,
+    required (String, String) super.argument,
   }) : super(
          retry: null,
          name: r'modelContextLimitProvider',
@@ -116,11 +114,6 @@ final class ModelContextLimitProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 =
-      workspaceModelSelectionByIdProvider;
-  static final $allTransitiveDependencies1 =
-      WorkspaceModelSelectionByIdProvider.$allTransitiveDependencies0;
-
   @override
   String debugGetCreateSourceHash() => _$modelContextLimitHash();
 
@@ -128,7 +121,7 @@ final class ModelContextLimitProvider
   String toString() {
     return r'modelContextLimitProvider'
         ''
-        '($argument)';
+        '$argument';
   }
 
   @$internal
@@ -138,8 +131,8 @@ final class ModelContextLimitProvider
 
   @override
   FutureOr<int?> create(Ref ref) {
-    final argument = this.argument as String;
-    return modelContextLimit(ref, argument);
+    final argument = this.argument as (String, String);
+    return modelContextLimit(ref, argument.$1, argument.$2);
   }
 
   @override
@@ -153,30 +146,26 @@ final class ModelContextLimitProvider
   }
 }
 
-String _$modelContextLimitHash() => r'494c179a5623529c3c1b93c2f3ad6b066d07fe03';
+String _$modelContextLimitHash() => r'da03227f2043dd827030c2c3e829b9a1af4bbd62';
 
 final class ModelContextLimitFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<int?>, String> {
+    with $FunctionalFamilyOverride<FutureOr<int?>, (String, String)> {
   ModelContextLimitFamily._()
     : super(
         retry: null,
         name: r'modelContextLimitProvider',
-        dependencies: <ProviderOrFamily>[
-          workspaceModelSelectionByIdProvider,
-          workspaceSessionProvider,
-        ],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ModelContextLimitProvider.$allTransitiveDependencies0,
-          ModelContextLimitProvider.$allTransitiveDependencies1,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  ModelContextLimitProvider call(String workspaceModelSelectionId) =>
-      ModelContextLimitProvider._(
-        argument: workspaceModelSelectionId,
-        from: this,
-      );
+  ModelContextLimitProvider call(
+    String workspaceId,
+    String workspaceModelSelectionId,
+  ) => ModelContextLimitProvider._(
+    argument: (workspaceId, workspaceModelSelectionId),
+    from: this,
+  );
 
   @override
   String toString() => r'modelContextLimitProvider';

@@ -17,13 +17,11 @@ import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
 AppDatabase _inMemoryDatabase() =>
     AppDatabase(connection: NativeDatabase.memory());
 
-@Dependencies([serviceConnections])
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 

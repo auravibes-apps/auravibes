@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -8,7 +9,7 @@ import 'package:auravibes_app/features/skills/usecases/check_skill_credential_re
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
 class LoadConversationSkillException implements Exception {
   const LoadConversationSkillException(this.localizationKey);
@@ -137,10 +138,11 @@ class LoadConversationSkillUsecase {
   }
 }
 
-final loadConversationSkillUsecaseProvider =
-    Provider<LoadConversationSkillUsecase>(
-      (ref) {
-        final cloud = ref.watch(cloudSkillStoreProvider);
+final ProviderFamily<LoadConversationSkillUsecase, String>
+loadConversationSkillUsecaseProvider =
+    Provider.family<LoadConversationSkillUsecase, String>(
+      (ref, workspaceId) {
+        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
         return LoadConversationSkillUsecase(
           cloud == null ? ref.watch(skillsRepositoryProvider) : null,
@@ -151,15 +153,11 @@ final loadConversationSkillUsecaseProvider =
               ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
               : null,
           ref.watch(appSkillRegistryProvider),
-          ref.watch(checkSkillCredentialReadinessUsecaseProvider),
+          ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
           cloud == null
               ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
               : null,
           cloud,
         );
       },
-      dependencies: [
-        cloudSkillStoreProvider,
-        checkSkillCredentialReadinessUsecaseProvider,
-      ],
     );

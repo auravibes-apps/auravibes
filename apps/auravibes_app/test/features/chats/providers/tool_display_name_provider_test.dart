@@ -73,7 +73,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        toolDisplayNameProvider('mcp_srv1_myserver_read_file').future,
+        toolDisplayNameProvider('ws1', 'mcp_srv1_myserver_read_file').future,
       );
       expect(name, 'My Server: Read File');
     });
@@ -89,7 +89,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        toolDisplayNameProvider('built_in_123_calculator').future,
+        toolDisplayNameProvider('ws1', 'built_in_123_calculator').future,
       );
       expect(name, 'Calculator');
     });
@@ -105,7 +105,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        toolDisplayNameProvider('native_456_read_file').future,
+        toolDisplayNameProvider('ws1', 'native_456_read_file').future,
       );
       expect(name, 'Read File');
     });
@@ -121,7 +121,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        toolDisplayNameProvider('unknown_tool').future,
+        toolDisplayNameProvider('ws1', 'unknown_tool').future,
       );
       expect(name, 'Unknown Tool');
     });
@@ -137,7 +137,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        toolDisplayNameProvider('mcp_missing_myserver_do_stuff').future,
+        toolDisplayNameProvider('ws1', 'mcp_missing_myserver_do_stuff').future,
       );
       expect(name, 'Myserver: Do Stuff');
     });
@@ -155,7 +155,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        mcpServerNameProvider('nonexistent').future,
+        mcpServerNameProvider('ws1', 'nonexistent').future,
       );
       expect(name, isNull);
     });
@@ -182,7 +182,7 @@ void main() {
       addTearDown(container.dispose);
 
       final name = await container.read(
-        mcpServerNameProvider('srv1').future,
+        mcpServerNameProvider('ws1', 'srv1').future,
       );
       expect(name, 'Test Server');
     });

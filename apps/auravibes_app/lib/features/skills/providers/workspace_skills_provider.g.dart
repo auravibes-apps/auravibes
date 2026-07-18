@@ -10,10 +10,8 @@ part of 'workspace_skills_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(workspaceSkills)
-@Dependencies([cloudWorkspaceStateGateway])
 final workspaceSkillsProvider = WorkspaceSkillsFamily._();
 
-@Dependencies([cloudWorkspaceStateGateway])
 final class WorkspaceSkillsProvider
     extends
         $FunctionalProvider<
@@ -68,9 +66,8 @@ final class WorkspaceSkillsProvider
   }
 }
 
-String _$workspaceSkillsHash() => r'c8643618755ad6d0b342016797825cd0e7a29d81';
+String _$workspaceSkillsHash() => r'35ad1f6e464aefa680e6ea560177b559ab5c6caf';
 
-@Dependencies([cloudWorkspaceStateGateway])
 final class WorkspaceSkillsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<WorkspaceSkill>>, String> {
   WorkspaceSkillsFamily._()
@@ -82,7 +79,6 @@ final class WorkspaceSkillsFamily extends $Family
         isAutoDispose: true,
       );
 
-  @Dependencies([cloudWorkspaceStateGateway])
   WorkspaceSkillsProvider call(String workspaceId) =>
       WorkspaceSkillsProvider._(argument: workspaceId, from: this);
 

@@ -33,10 +33,6 @@ final class ServiceConnectionsProvider
          $allTransitiveDependencies: null,
        );
 
-  static final $allTransitiveDependencies0 = cloudWorkspaceStateGatewayProvider;
-  static final $allTransitiveDependencies1 =
-      CloudWorkspaceStateGatewayProvider.$allTransitiveDependencies0;
-
   @override
   String debugGetCreateSourceHash() => _$serviceConnectionsHash();
 
@@ -71,7 +67,7 @@ final class ServiceConnectionsProvider
 }
 
 String _$serviceConnectionsHash() =>
-    r'5ddff40982e9bee1332f7e25590666d648c9ef8e';
+    r'892093e6eb80d2b49eda9062064f382aa6fc89a0';
 
 final class ServiceConnectionsFamily extends $Family
     with
@@ -83,11 +79,8 @@ final class ServiceConnectionsFamily extends $Family
     : super(
         retry: null,
         name: r'serviceConnectionsProvider',
-        dependencies: <ProviderOrFamily>[cloudWorkspaceStateGatewayProvider],
-        $allTransitiveDependencies: <ProviderOrFamily>[
-          ServiceConnectionsProvider.$allTransitiveDependencies0,
-          ServiceConnectionsProvider.$allTransitiveDependencies1,
-        ],
+        dependencies: null,
+        $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 

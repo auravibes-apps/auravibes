@@ -1,9 +1,11 @@
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_app/core/exceptions/no_conversation_selected_exception.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_selection_provider.g.dart';
 
-@Riverpod(dependencies: [])
-String conversationSelected(Ref _) =>
-    throw const NoConversationSelectedException();
+extension ConversationSelectedFamilyTestOverride on ConversationSelectedFamily {
+  Override overrideWithValue(String value) => overrideWith((_, _) => value);
+}
+
+@riverpod
+String conversationSelected(Ref _, String conversationId) => conversationId;

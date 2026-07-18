@@ -35,12 +35,17 @@ class DeleteServiceConnectionUsecase {
   }
 }
 
-@Riverpod(dependencies: [cloudWorkspaceStateGateway])
+@riverpod
 Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
   Ref ref,
   String workspaceId,
 ) async {
-  final gateway = await ref.watch(cloudWorkspaceStateGatewayProvider.future);
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
 
   return DeleteServiceConnectionUsecase(
     modelConnectionRepository: await ref.watch(

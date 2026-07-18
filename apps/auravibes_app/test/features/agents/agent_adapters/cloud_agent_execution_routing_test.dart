@@ -94,7 +94,9 @@ void main() {
               ),
             ),
           ),
-          cloudWorkspaceStateGatewayProvider.overrideWith((_) async => gateway),
+          cloudWorkspaceStateGatewayProvider.overrideWith(
+            (_, _) async => gateway,
+          ),
           agentsRepositoryProvider.overrideWith(
             (_) => throw StateError('local agents touched'),
           ),

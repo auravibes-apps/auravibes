@@ -8,20 +8,30 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 
-typedef LoadAgentConversation = Future<ConversationEntity?> Function(String id);
+typedef LoadAgentConversation =
+    Future<ConversationEntity?> Function(
+      String id,
+      String workspaceId,
+    );
+
+typedef ResolveAgentSkills =
+    Future<ResolvedAgentSkills> Function({
+      required String workspaceId,
+      required List<AgentSkillRef> refs,
+    });
 
 class ListConversationAgentSkillsUsecase {
   const ListConversationAgentSkillsUsecase(
     this._loadConversation,
-    this._agentRepository,
+    this._agentRepositoryForWorkspace,
     this._resolveAgentSkillsUsecase,
   );
 
   final LoadAgentConversation _loadConversation;
-  final AgentRepository _agentRepository;
-  final ResolveAgentSkillsUsecase _resolveAgentSkillsUsecase;
+  final AgentRepository Function(String workspaceId)
+  _agentRepositoryForWorkspace;
+  final ResolveAgentSkills _resolveAgentSkillsUsecase;
 
   Future<List<AvailableSkill>> call({
     required String conversationId,
@@ -31,27 +41,28 @@ class ListConversationAgentSkillsUsecase {
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    if (context == null) return const [];
 
-    final resolved = await _resolveAgentSkillsUsecase.call(
-      workspaceId: workspaceId,
-      refs: context.skills,
-    );
-
-    return resolved.available;
+    return context == null
+        ? const []
+        : (await _resolveAgentSkillsUsecase(
+            workspaceId: workspaceId,
+            refs: context.skills,
+          )).available;
   }
 
   Future<AgentEntity?> loadSelectedAgent({
     required String conversationId,
     required String workspaceId,
   }) async {
-    final conversation = await _loadConversation(conversationId);
+    final conversation = await _loadConversation(conversationId, workspaceId);
     if (conversation?.workspaceId != workspaceId) return null;
 
     final agentId = conversation?.agentId;
     if (agentId == null) return null;
 
-    final agent = await _agentRepository.getAgentById(agentId);
+    final agent = await _agentRepositoryForWorkspace(workspaceId).getAgentById(
+      agentId,
+    );
     if (agent == null || agent.workspaceId != workspaceId) return null;
     if (!agent.isEnabled) return null;
 
@@ -66,51 +77,48 @@ class ListConversationAgentSkillsUsecase {
   }
 }
 
-@Dependencies([
-  workspaceSession,
-  cloudWorkspaceStateGateway,
-])
 final listConversationAgentSkillsUsecaseProvider =
     Provider<ListConversationAgentSkillsUsecase>(
       (ref) {
-        final session = ref.watch(workspaceSessionProvider);
-        final gateway = ref.watch(cloudWorkspaceStateGatewayProvider.future);
-
         return ListConversationAgentSkillsUsecase(
-          session.cloud == null
-              ? ref.watch(conversationRepositoryProvider).getConversationById
-              : (conversationId) async {
-                  final cloud = await gateway;
-                  if (cloud == null) return null;
-                  final conversation =
-                      await CloudChatGateway(
-                        cloud,
-                      ).getConversation(
-                        conversationId,
-                      );
+          (conversationId, workspaceId) async {
+            final session = ref
+                .read(
+                  workspaceSessionForRouteProvider(workspaceId),
+                )
+                .requireValue;
+            if (session.cloud == null) {
+              return ref
+                  .read(conversationRepositoryProvider)
+                  .getConversationById(conversationId);
+            }
+            final cloud = await ref.read(
+              cloudWorkspaceStateGatewayProvider(session).future,
+            );
+            if (cloud == null) return null;
+            final conversation = await CloudChatGateway(cloud).getConversation(
+              conversationId,
+            );
 
-                  return ConversationEntity(
-                    id: conversation.id,
-                    title: conversation.title,
-                    workspaceId: session.workspace.localWorkspaceId,
-                    isPinned: conversation.isPinned,
-                    createdAt: conversation.createdAt,
-                    updatedAt: conversation.updatedAt,
-                    revision: conversation.revision,
-                    modelId: conversation.modelId,
-                    agentId: conversation.agentId,
-                    parentConversationId: conversation.parentConversationId,
-                  );
-                },
-
-          ref.watch(agentRepositoryProvider),
-          ref.watch(resolveAgentSkillsUsecaseProvider),
+            return ConversationEntity(
+              id: conversation.id,
+              title: conversation.title,
+              workspaceId: session.workspace.localWorkspaceId,
+              isPinned: conversation.isPinned,
+              createdAt: conversation.createdAt,
+              updatedAt: conversation.updatedAt,
+              revision: conversation.revision,
+              modelId: conversation.modelId,
+              agentId: conversation.agentId,
+              parentConversationId: conversation.parentConversationId,
+            );
+          },
+          (workspaceId) => ref.read(
+            agentRepositoryProvider(workspaceId),
+          ),
+          ({required workspaceId, required refs}) => ref
+              .read(resolveAgentSkillsUsecaseProvider(workspaceId))
+              .call(workspaceId: workspaceId, refs: refs),
         );
       },
-      dependencies: [
-        workspaceSessionProvider,
-        cloudWorkspaceStateGatewayProvider,
-        agentRepositoryProvider,
-        resolveAgentSkillsUsecaseProvider,
-      ],
     );

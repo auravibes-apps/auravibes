@@ -14,7 +14,6 @@ import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
 import 'package:rxdart/rxdart.dart';
 
 MessageEntity _message({
@@ -188,12 +187,6 @@ class _MessagesProvidersFixture {
   }
 }
 
-@Dependencies([
-  chatMessageIds,
-  chatMessages,
-  conversationQueuedDrafts,
-  conversationUsedTokens,
-])
 void main() {
   group('chatMessageIdsProvider', () {
     final fixture = _MessagesProvidersFixture();
@@ -203,34 +196,45 @@ void main() {
     tearDown(fixture.tearDown);
 
     test('returns empty list when no messages', () async {
-      final _ = fixture.container.listen(
-        chatMessagesProvider,
+      final subscription = fixture.container.listen(
+        chatMessagesProvider('ws-1', 'conv-1'),
         (_, _) {
           final _ = Object();
         },
         fireImmediately: true,
       );
-      fixture.repository.emit([]);
+      addTearDown(subscription.close);
+      final _ = fixture.repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(fixture.container.read(chatMessageIdsProvider), isEmpty);
+      expect(
+        fixture.container.read(chatMessageIdsProvider('ws-1', 'conv-1')),
+        isEmpty,
+      );
     });
 
     test('returns message ids from messages', () async {
-      final _ = fixture.container.listen(
-        chatMessagesProvider,
+      final subscription = fixture.container.listen(
+        chatMessagesProvider('ws-1', 'conv-1'),
         (_, _) {
           final _ = Object();
         },
         fireImmediately: true,
       );
-      fixture.repository.emit([
+      addTearDown(subscription.close);
+      final _ = fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
         _message(id: 'm2', content: 'hello', isUser: false),
       ]);
-      await fixture.container.read(chatMessagesProvider.future);
+      final messages = await fixture.container.read(
+        chatMessagesProvider('ws-1', 'conv-1').future,
+      );
+      expect(messages, hasLength(2));
 
-      expect(fixture.container.read(chatMessageIdsProvider), ['m1', 'm2']);
+      expect(fixture.container.read(chatMessageIdsProvider('ws-1', 'conv-1')), [
+        'm1',
+        'm2',
+      ]);
     });
   });
 
@@ -242,17 +246,21 @@ void main() {
     tearDown(fixture.tearDown);
 
     test('returns false when message is not streaming', () async {
-      final _ = fixture.container.listen(
-        chatMessagesProvider,
+      final subscription = fixture.container.listen(
+        chatMessagesProvider('ws-1', 'conv-1'),
         (_, _) {
           final _ = Object();
         },
         fireImmediately: true,
       );
-      fixture.repository.emit([
+      addTearDown(subscription.close);
+      final _ = fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
       ]);
-      await fixture.container.read(chatMessagesProvider.future);
+      final messages = await fixture.container.read(
+        chatMessagesProvider('ws-1', 'conv-1').future,
+      );
+      expect(messages, hasLength(1));
 
       expect(
         fixture.container.read(isMessageStreamingProvider('m1')),
@@ -263,7 +271,7 @@ void main() {
     test('returns true when message is streaming', () async {
       fixture.container
         ..listen(
-          chatMessagesProvider,
+          chatMessagesProvider('ws-1', 'conv-1'),
           (_, _) {
             final _ = Object();
           },
@@ -302,7 +310,7 @@ void main() {
 
     test('returns 0 when no messages', () async {
       final _ = fixture.container.listen(
-        chatMessagesProvider,
+        chatMessagesProvider('ws-1', 'conv-1'),
         (_, _) {
           final _ = Object();
         },
@@ -311,12 +319,17 @@ void main() {
       fixture.repository.emit([]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(fixture.container.read(conversationUsedTokensProvider), 0);
+      expect(
+        fixture.container.read(
+          conversationUsedTokensProvider('ws-1', 'conv-1'),
+        ),
+        0,
+      );
     });
 
     test('returns 0 when only user messages exist', () async {
       final _ = fixture.container.listen(
-        chatMessagesProvider,
+        chatMessagesProvider('ws-1', 'conv-1'),
         (_, _) {
           final _ = Object();
         },
@@ -327,12 +340,17 @@ void main() {
       ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(fixture.container.read(conversationUsedTokensProvider), 0);
+      expect(
+        fixture.container.read(
+          conversationUsedTokensProvider('ws-1', 'conv-1'),
+        ),
+        0,
+      );
     });
 
     test('returns metadata tokens from latest assistant message', () async {
       final _ = fixture.container.listen(
-        chatMessagesProvider,
+        chatMessagesProvider('ws-1', 'conv-1'),
         (_, _) {
           final _ = Object();
         },
@@ -349,7 +367,12 @@ void main() {
       ]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(fixture.container.read(conversationUsedTokensProvider), 500);
+      expect(
+        fixture.container.read(
+          conversationUsedTokensProvider('ws-1', 'conv-1'),
+        ),
+        500,
+      );
     });
   });
 
@@ -362,7 +385,10 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      expect(container.read(conversationQueuedDraftsProvider), isEmpty);
+      expect(
+        container.read(conversationQueuedDraftsProvider('ws-1', 'conv-1')),
+        isEmpty,
+      );
     });
   });
 }

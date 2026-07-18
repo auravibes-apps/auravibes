@@ -1,23 +1,33 @@
+// ignore_for_file: implementation_imports
 import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod_annotation/experimental/scope.dart';
+import 'package:riverpod/src/providers/provider.dart';
 
-// The stream crosses the scoped cloud gateway boundary.
-// ignore: specify_nonobvious_property_types
-final cloudLiveTurnEventsProvider = Provider.autoDispose
-    .family<Stream<CloudLiveTurnState>, String>(
+typedef CloudLiveTurnKey = ({String workspaceId, String turnId});
+
+final ProviderFamily<Stream<CloudLiveTurnState>, CloudLiveTurnKey>
+cloudLiveTurnEventsProvider = Provider.autoDispose
+    .family<Stream<CloudLiveTurnState>, CloudLiveTurnKey>(
       _watchLiveTurn,
-      dependencies: [cloudWorkspaceStateGatewayProvider],
     );
 
-@Dependencies([cloudWorkspaceStateGateway])
-Stream<CloudLiveTurnState> _watchLiveTurn(Ref ref, String turnId) async* {
-  final gateway = await ref.watch(cloudWorkspaceStateGatewayProvider.future);
+Stream<CloudLiveTurnState> _watchLiveTurn(
+  Ref ref,
+  CloudLiveTurnKey key,
+) async* {
+  final session = await ref.watch(
+    workspaceSessionForRouteProvider(key.workspaceId).future,
+  );
+  final gateway = await ref.watch(
+    cloudWorkspaceStateGatewayProvider(session).future,
+  );
   if (gateway == null) return;
 
-  await for (final event in CloudChatGateway(gateway).subscribeTurn(turnId)) {
+  await for (final event in CloudChatGateway(
+    gateway,
+  ).subscribeTurn(key.turnId)) {
     final state = CloudLiveTurnState.fromEvent(event);
     yield state;
     if (state.isTerminal) return;

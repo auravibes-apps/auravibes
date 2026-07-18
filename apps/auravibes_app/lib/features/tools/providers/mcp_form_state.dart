@@ -82,7 +82,7 @@ abstract class McpFormState with _$McpFormState {
 }
 
 /// Notifier for managing MCP form state.
-@Riverpod(dependencies: [workspaceSession, McpConnectionNotifier])
+@riverpod
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
 
@@ -93,8 +93,10 @@ class McpFormNotifier extends _$McpFormNotifier {
     return const McpFormState();
   }
 
-  WorkspaceCapabilities get _capabilities =>
-      ref.read(workspaceSessionProvider).capabilities;
+  WorkspaceCapabilities get _capabilities => ref
+      .read(workspaceSessionForRouteProvider(_workspaceId))
+      .requireValue
+      .capabilities;
 
   /// Update the name field.
   void setName(String value) {

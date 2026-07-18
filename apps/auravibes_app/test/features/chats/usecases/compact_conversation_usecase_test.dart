@@ -191,7 +191,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final usecase = container.read(compactConversationUsecaseProvider);
+      final usecase = container.read(
+        compactConversationUsecaseProvider('ws-1'),
+      );
 
       expect(usecase.compactionExecution, isA<CompactionExecutionRuntime>());
     });

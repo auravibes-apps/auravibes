@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/skills/usecases/sync_skill_tool_permissio
 import 'package:auravibes_app/features/tools/models/conversation_tools_group_with_tools.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -20,13 +21,7 @@ part 'grouped_conversation_tools_notifier.g.dart';
 /// - Enriches MCP groups with their connection state
 /// - Filters out empty groups
 /// - Sorts groups: Default first, then MCP errors, then by creation date
-@Riverpod(
-  dependencies: [
-    ConversationToolsNotifier,
-    toolsGroupsRepository,
-    McpConnectionNotifier,
-  ],
-)
+@riverpod
 class GroupedConversationToolsNotifier
     extends _$GroupedConversationToolsNotifier {
   @override
@@ -53,7 +48,10 @@ class GroupedConversationToolsNotifier
     );
 
     // Get all tools groups for the workspace.
-    final toolsGroupsRepo = ref.watch(toolsGroupsRepositoryProvider);
+    final session = await ref.watch(
+      workspaceSessionForRouteProvider(workspaceId).future,
+    );
+    final toolsGroupsRepo = ref.watch(toolsGroupsRepositoryProvider(session));
     final groups = await toolsGroupsRepo.getToolsGroupsForWorkspace(
       workspaceId,
     );
