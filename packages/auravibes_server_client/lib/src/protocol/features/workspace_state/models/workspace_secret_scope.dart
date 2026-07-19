@@ -14,7 +14,8 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
 enum WorkspaceSecretScope implements _i1.SerializableModel {
   workspace,
-  user;
+  user
+  ;
 
   static WorkspaceSecretScope fromJson(String name) {
     switch (name) {

@@ -34,7 +34,8 @@ enum CloudWorkspaceErrorCode implements _i1.SerializableModel {
   invalidCursor,
   staleRevision,
   idempotencyConflict,
-  conflict;
+  conflict
+  ;
 
   static CloudWorkspaceErrorCode fromJson(String name) {
     switch (name) {

@@ -94,6 +94,21 @@ class CloudChatGateway {
       ),
     ),
   );
+  Future<ConversationMutationResult> continueTurn({
+    required String requestId,
+    required String conversationId,
+    required int expectedConversationRevision,
+  }) => guardCloudCall(
+    .conversation,
+    () => _client.conversation.continueTurn(
+      ContinueTurnRequest(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedConversationRevision: expectedConversationRevision,
+      ),
+    ),
+  );
   Future<TurnSnapshot> getTurn({required String turnId}) => guardCloudCall(
     .conversation,
     () => _client.conversation.getTurn(

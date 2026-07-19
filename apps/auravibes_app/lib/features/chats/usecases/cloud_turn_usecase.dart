@@ -46,6 +46,28 @@ class CloudTurnUsecase {
     ),
   );
 
+  Future<ConversationMutationResult> continueConversation(
+    String conversationId,
+  ) async {
+    final conversation = await _gateway.getConversation(conversationId);
+    try {
+      return await _gateway.continueTurn(
+        requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+        conversationId: conversationId,
+        expectedConversationRevision: conversation.revision,
+      );
+    } on CloudAppException catch (error) {
+      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
+      final latest = await _gateway.getConversation(conversationId);
+
+      return _gateway.continueTurn(
+        requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+        conversationId: conversationId,
+        expectedConversationRevision: latest.revision,
+      );
+    }
+  }
+
   Future<ConversationMutationResult> _retryStale(
     String turnId,
     int revision,

@@ -23,7 +23,7 @@ abstract final class SyncWakeups {
 
   static Future<void> publishConversationJob(
     Session session,
-    StartTurnResult result,
+    SerializableModel result,
   ) => _publish(session, conversationJobsChannel, result);
 
   static Future<void> _publish(

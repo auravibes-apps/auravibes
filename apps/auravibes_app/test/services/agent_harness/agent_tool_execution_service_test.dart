@@ -94,6 +94,55 @@ void main() {
       );
     });
 
+    test('uses a workspace resolver without a legacy fallback', () async {
+      final workspaceResolver = MockResolveToolApprovalDecisionUsecase();
+      final provider = AppAllowedToolsDataProvider(
+        messageRepository: messageRepository,
+        loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+        resolveToolApprovalDecisionUsecaseForWorkspace: (_) =>
+            workspaceResolver,
+        resolvedToolService: ResolvedToolService(
+          agentCancellationRuntime: agentCancellationRuntime,
+          mcpToolCaller:
+              ({
+                required mcpServerId,
+                required toolIdentifier,
+                required arguments,
+              }) async => 'unused',
+        ),
+        toolDecisionService: getAgentIterationDecisionUsecase,
+        agentCancellationRuntime: agentCancellationRuntime,
+      );
+      final tool = ResolvedTool.mcp(
+        tableId: 'tool-1',
+        toolIdentifier: 'sum',
+        mcpServerId: 'server-1',
+        mcpSlug: 'server-1',
+      );
+      when(
+        () => workspaceResolver(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: tool,
+        ),
+      ).thenAnswer(
+        (_) async => const ToolApprovalDecision(
+          toolCallId: 'tool-call-1',
+          permissionResult: ToolPermissionResult.granted,
+        ),
+      );
+
+      final decision = await provider.resolveToolApprovalDecision(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        toolCallId: 'tool-call-1',
+        resolvedTool: tool,
+      );
+
+      expect(decision.permissionResult.name, 'granted');
+    });
+
     test('passes raw argument maps to MCP tools', () async {
       final tool = ToolToCall(
         tool: ResolvedTool.mcp(

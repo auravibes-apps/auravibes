@@ -24,6 +24,44 @@ void main() {
     ).called(1);
   });
 
+  test('continues with the latest cloud conversation revision', () async {
+    final gateway = _Gateway();
+    final result = MockConversationMutationResult();
+    final now = DateTime(2026);
+    when(
+      () => gateway.getConversation('conversation-1'),
+    ).thenAnswer(
+      (_) async => ConversationSummary(
+        id: 'conversation-1',
+        title: 'Conversation',
+        isPinned: false,
+        revision: 3,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    when(
+      () => gateway.continueTurn(
+        requestId: any(named: 'requestId'),
+        conversationId: 'conversation-1',
+        expectedConversationRevision: 3,
+      ),
+    ).thenAnswer((_) async => result);
+
+    final actual = await CloudTurnUsecase(gateway).continueConversation(
+      'conversation-1',
+    );
+
+    expect(actual, same(result));
+    verify(
+      () => gateway.continueTurn(
+        requestId: any(named: 'requestId'),
+        conversationId: 'conversation-1',
+        expectedConversationRevision: 3,
+      ),
+    ).called(1);
+  });
+
   test('decide forwards client-observed arguments digest', () async {
     final gateway = _Gateway();
     final result = MockConversationMutationResult();

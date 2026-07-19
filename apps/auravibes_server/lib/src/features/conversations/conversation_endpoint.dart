@@ -86,6 +86,18 @@ class ConversationEndpoint extends Endpoint {
     );
   }
 
+  Future<ConversationMutationResult> continueTurn(
+    Session session,
+    ContinueTurnRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.continueTurn(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<TurnSnapshot> getTurn(Session session, GetTurnRequest request) async {
     final account = await const AuthenticatedAccountResolver()(session);
     return _useCases.getTurn(session, userId: account.userId, request: request);

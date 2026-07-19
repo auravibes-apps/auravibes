@@ -23,6 +23,7 @@ conversation:
   - update:
   - delete:
   - startTurn:
+  - continueTurn:
   - getTurn:
   - subscribeTurn:
   - submitToolDecision:

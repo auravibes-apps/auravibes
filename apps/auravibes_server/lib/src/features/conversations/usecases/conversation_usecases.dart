@@ -411,6 +411,86 @@ class ConversationUseCases {
     return result;
   }
 
+  Future<ConversationMutationResult> continueTurn(
+    Session session, {
+    required String userId,
+    required ContinueTurnRequest request,
+  }) async {
+    _requireId(request.requestId);
+    final requestHash = jsonEncode({
+      'conversationId': request.conversationId,
+      'expectedRevision': request.expectedConversationRevision,
+    });
+    final result = await _mutate(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.continueTurn',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: ConversationMutationResult.fromJson,
+      run: (transaction, now) async {
+        final duplicate = await _repository.findTurnByRequest(
+          session,
+          workspaceId: request.workspaceId,
+          requestId: request.requestId,
+          transaction: transaction,
+        );
+        if (duplicate != null) {
+          if (duplicate.requestHash != requestHash) {
+            _fail(ConversationErrorCode.idempotencyConflict);
+          }
+          final replay = await _mutationResult(session, duplicate);
+          return _Mutation(replay, 'turnContinued', request.conversationId);
+        }
+        final conversation = await _repository.findConversationByStableId(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
+          transaction: transaction,
+          lock: true,
+        );
+        if (conversation == null) _fail(ConversationErrorCode.notFound);
+        if (conversation.revision != request.expectedConversationRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        await _validateStartTurnReferences(
+          session,
+          workspaceId: request.workspaceId,
+          modelSelectionId: conversation.modelId,
+          agentId: conversation.agentId,
+          transaction: transaction,
+        );
+        if (await _repository.hasActiveMutation(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          transaction: transaction,
+        )) {
+          _fail(ConversationErrorCode.turnConflict);
+        }
+        final turn = await _repository.insertContinuationTurn(
+          session,
+          conversation: conversation,
+          actorUserId: userId,
+          request: request,
+          requestHash: requestHash,
+          now: now,
+          transaction: transaction,
+        );
+        final mutation = await _mutationResult(session, turn);
+        return _Mutation(mutation, 'turnContinued', request.conversationId);
+      },
+    );
+    session.log(
+      'Conversation continuation queued: workspace=${request.workspaceId}, '
+      'conversation=${request.conversationId}, turn=${result.turnId}.',
+    );
+    await SyncWakeups.publishWorkspace(session, request.workspaceId);
+    await SyncWakeups.publishConversationJob(session, result);
+    return result;
+  }
+
   Future<TurnSnapshot> getTurn(
     Session session, {
     required String userId,

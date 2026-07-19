@@ -15,7 +15,8 @@ import 'package:serverpod/serverpod.dart' as _i1;
 enum WorkspaceSecretKind implements _i1.SerializableModel {
   provider,
   mcp,
-  skillCredential;
+  skillCredential
+  ;
 
   static WorkspaceSecretKind fromJson(String name) {
     switch (name) {
