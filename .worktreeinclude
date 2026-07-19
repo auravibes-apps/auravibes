@@ -1,2 +1,6 @@
 .dart_tool/
 .fvm/
+
+# Local Serverpod credentials are copied from the primary worktree only.
+apps/auravibes_server/.env
+apps/auravibes_server/config/passwords.yaml
