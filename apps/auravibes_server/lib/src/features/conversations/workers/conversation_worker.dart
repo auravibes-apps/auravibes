@@ -117,7 +117,7 @@ class ConversationWorker {
         level: LogLevel.warning,
       );
       return true;
-    } on Object {
+    } on Object catch (error, stackTrace) {
       final updated = await leases.retryOrFail(
         session,
         jobId: job.id!,
@@ -134,8 +134,11 @@ class ConversationWorker {
         );
       }
       session.log(
-        'Conversation job provider execution failed: job=${job.id}.',
+        'Conversation job provider execution failed: job=${job.id}, '
+        'workspace=${job.workspaceId}, turn=${job.turnId}.',
         level: LogLevel.error,
+        exception: error,
+        stackTrace: stackTrace,
       );
       return true;
     }
