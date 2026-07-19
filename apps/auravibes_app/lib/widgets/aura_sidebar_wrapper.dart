@@ -6,7 +6,6 @@
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -113,22 +112,15 @@ class AuraSidebarWrapper extends HookConsumerWidget {
           return;
         }
 
-        _goBranch(context, index, workspaceId);
+        _goBranch(index);
       },
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,
     );
   }
 
-  void _goBranch(BuildContext context, int index, String workspaceId) {
-    switch (index) {
-      case 0:
-        NewChatRoute(workspaceId: workspaceId).go(context);
-      case 1:
-        MoreRoute(workspaceId: workspaceId).go(context);
-      case 2:
-        SettingsRoute(workspaceId: workspaceId).go(context);
-    }
+  void _goBranch(int index) {
+    navigationShell.goBranch(index, initialLocation: true);
   }
 }
 
