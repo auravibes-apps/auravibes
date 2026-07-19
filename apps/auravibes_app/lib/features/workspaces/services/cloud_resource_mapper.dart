@@ -120,7 +120,13 @@ abstract final class CloudResourceMapper {
           (entry.value == String && value is String) ||
           (entry.value == bool && value is bool) ||
           (entry.value == Map && value is Map);
-      if (!hasExpectedType || value is String && value.isEmpty) {
+      final isLegacyEmptyAgentPrompt =
+          kind == WorkspaceResourceKind.agent &&
+          entry.key == 'content' &&
+          value is String &&
+          value.isEmpty;
+      if (!hasExpectedType ||
+          value is String && value.isEmpty && !isLegacyEmptyAgentPrompt) {
         throw const FormatException();
       }
     }

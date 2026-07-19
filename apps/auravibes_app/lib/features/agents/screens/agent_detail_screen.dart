@@ -329,22 +329,30 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _save() async {
+    final draft = AgentToCreate(
+      name: _nameController.text,
+      description: _descriptionController.text,
+      content: _contentController.text,
+      isEnabled: _isEnabled,
+      visibility: _visibility,
+      skills: _selectedSkills.toList(),
+    );
+    if (!draft.isValid) {
+      final _ = showAuraSnackBar(
+        context: context,
+        content: const TextLocale(LocaleKeys.cloud_errors_validation),
+        variant: AuraSnackBarVariant.error,
+      );
+
+      return;
+    }
+
     setState(() => _saving = true);
     try {
       final usecase = ref.read(saveAgentUsecaseProvider(widget.workspaceId));
       final agentId = widget.agentId;
       final agent = agentId == null
-          ? await usecase.create(
-              widget.workspaceId,
-              AgentToCreate(
-                name: _nameController.text,
-                description: _descriptionController.text,
-                content: _contentController.text,
-                isEnabled: _isEnabled,
-                visibility: _visibility,
-                skills: _selectedSkills.toList(),
-              ),
-            )
+          ? await usecase.create(widget.workspaceId, draft)
           : await usecase.update(
               agentId,
               AgentToUpdate(

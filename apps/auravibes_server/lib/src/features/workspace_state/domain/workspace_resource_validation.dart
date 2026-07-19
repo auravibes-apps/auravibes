@@ -59,7 +59,30 @@ class WorkspaceResourceValidation {
         (payloadWorkspaceId != null && payloadWorkspaceId != workspaceId)) {
       throw const FormatException();
     }
+    _validateKind(kind, decoded);
     return decoded;
+  }
+
+  static void _validateKind(
+    WorkspaceResourceKind kind,
+    Map<String, Object?> data,
+  ) {
+    if (kind != WorkspaceResourceKind.agent) return;
+
+    final name = data['name'];
+    final description = data['description'];
+    final content = data['content'];
+    final visibility = data['visibility'];
+    if (name is! String ||
+        name.trim().isEmpty ||
+        description is! String ||
+        description.trim().isEmpty ||
+        content is! String ||
+        content.trim().isEmpty ||
+        visibility is! String ||
+        !const {'chatSelector', 'subAgentList', 'both'}.contains(visibility)) {
+      throw const FormatException();
+    }
   }
 
   static void validateDataSize(String data) {

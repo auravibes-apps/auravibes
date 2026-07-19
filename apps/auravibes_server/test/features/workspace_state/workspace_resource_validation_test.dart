@@ -31,6 +31,25 @@ void main() {
     },
   );
 
+  test('rejects incomplete agent resources', () {
+    for (final data in [
+      '{"name":"","description":"Description","content":"Prompt","visibility":"both"}',
+      '{"name":"Agent","description":"","content":"Prompt","visibility":"both"}',
+      '{"name":"Agent","description":"Description","content":"","visibility":"both"}',
+      '{"name":"Agent","description":"Description","content":"Prompt","visibility":"invalid"}',
+    ]) {
+      expect(
+        () => WorkspaceResourceValidation.decode(
+          kind: WorkspaceResourceKind.agent,
+          resourceId: 'agent-1',
+          workspaceId: 1,
+          data: data,
+        ),
+        throwsFormatException,
+      );
+    }
+  });
+
   test('rejects model metadata resources', () {
     for (final kind in [
       WorkspaceResourceKind.modelConnection,
@@ -190,10 +209,15 @@ void main() {
         kind: kind,
         resourceId: 'resource-1',
         workspaceId: 1,
-        data: kind == WorkspaceResourceKind.agentAssociation
-            ? '{"agentId":"agent-1","toolId":"tool-1",'
-                  '"permissionMode":"alwaysAsk"}'
-            : '{}',
+        data: switch (kind) {
+          WorkspaceResourceKind.agentAssociation =>
+            '{"agentId":"agent-1","toolId":"tool-1",'
+                '"permissionMode":"alwaysAsk"}',
+          WorkspaceResourceKind.agent =>
+            '{"name":"Agent","description":"Description",'
+                '"content":"Prompt","visibility":"both"}',
+          _ => '{}',
+        },
       );
       expect(
         () => WorkspaceResourceValidation.references(kind, data),
