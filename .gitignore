@@ -68,6 +68,7 @@ yarn-error.log*
 .pi/npm/
 .pi/plans/
 .pi/sessions/
+.pi/tasks/*.json
 .pi/tmp/
 .pi-lens/cache/
 .pi-lens/logs/
