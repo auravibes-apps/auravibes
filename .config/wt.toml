@@ -8,3 +8,12 @@ copy = "wt step copy-ignored"
 [[pre-start]]
 # Install the FVM Flutter version configured in .fvmrc
 fvm = "fvm use"
+
+[aliases]
+# Start or stop only the Docker project derived for the current worktree.
+server-start = "./scripts/start_server.sh"
+server-stop = "./scripts/stop_server.sh"
+
+[pre-remove]
+# Worktree removal must not leave its isolated database containers running.
+server-stop = "./scripts/stop_server.sh"
