@@ -65,10 +65,7 @@ class ConversationChatNotifier extends _$ConversationChatNotifier {
       cloudConversationUsecaseProvider(_workspaceId).future,
     );
     if (cloud != null) {
-      final updated = await cloud.update(
-        result.conversation,
-        ConversationPatch(modelId: modelId),
-      );
+      final updated = await cloud.updateModel(result.conversation, modelId);
 
       state = AsyncData(
         ConversationFound(
