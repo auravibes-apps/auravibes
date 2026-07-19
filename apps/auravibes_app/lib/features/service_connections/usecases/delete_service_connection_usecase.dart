@@ -40,21 +40,26 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
   Ref ref,
   String workspaceId,
 ) async {
-  final session = await ref.watch(
-    workspaceSessionForRouteProvider(workspaceId).future,
-  );
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayProvider(session).future,
-  );
+  final link = ref.keepAlive();
+  try {
+    final session = await ref.watch(
+      workspaceSessionForRouteProvider(workspaceId).future,
+    );
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayProvider(session).future,
+    );
 
-  return DeleteServiceConnectionUsecase(
-    modelConnectionRepository: await ref.watch(
-      modelConnectionStoreProvider(workspaceId).future,
-    ),
-    deleteSkillCredential: gateway == null
-        ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
-        : CloudServiceConnectionUsecases(
-            CloudWorkspaceResourceStore(gateway),
-          ).deleteById,
-  );
+    return DeleteServiceConnectionUsecase(
+      modelConnectionRepository: await ref.watch(
+        modelConnectionStoreProvider(workspaceId).future,
+      ),
+      deleteSkillCredential: gateway == null
+          ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
+          : CloudServiceConnectionUsecases(
+              CloudWorkspaceResourceStore(gateway),
+            ).deleteById,
+    );
+  } finally {
+    link.close();
+  }
 }

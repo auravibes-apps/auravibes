@@ -1,8 +1,16 @@
+import 'dart:async';
+
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
+import 'package:auravibes_app/features/models/models/model_stores.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/usecases/delete_service_connection_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 
 void main() {
@@ -107,11 +115,49 @@ void main() {
         () => credentialsRepository.deleteCredential(any()),
       );
     });
+
+    test(
+      'resolves after an unobserved read crosses an async dependency',
+      () async {
+        final session = Completer<WorkspaceSession>();
+        final container = ProviderContainer(
+          overrides: [
+            workspaceSessionForRouteProvider('workspace').overrideWith(
+              (_) => session.future,
+            ),
+            cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async {
+              return _MockCloudWorkspaceStateGateway();
+            }),
+            modelConnectionStoreProvider('workspace').overrideWith(
+              (_) async => _MockModelConnectionStore(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final usecase = container.read(
+          deleteServiceConnectionUsecaseProvider('workspace').future,
+        );
+        await container.pump();
+        session.complete(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+          ),
+        );
+
+        await expectLater(usecase, completes);
+      },
+    );
   });
 }
 
+class _MockCloudWorkspaceStateGateway extends Mock
+    implements CloudWorkspaceStateGateway {}
+
 class _MockModelConnectionRepository extends Mock
     implements ModelConnectionRepository {}
+
+class _MockModelConnectionStore extends Mock implements ModelConnectionStore {}
 
 class _MockSkillCredentialsRepository extends Mock
     implements SkillCredentialsRepository {}
