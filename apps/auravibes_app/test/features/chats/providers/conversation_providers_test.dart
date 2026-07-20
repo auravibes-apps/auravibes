@@ -105,6 +105,41 @@ void main() {
 
     tearDown(fixture.dispose);
 
+    test(
+      'does not use Ref after listener disposal while session resolves',
+      () async {
+        final session = Completer<WorkspaceSession>();
+        final sessionProviderStarted = Completer<void>();
+        final container = ProviderContainer(
+          overrides: [
+            workspaceSessionForRouteProvider('ws1').overrideWith((_) {
+              sessionProviderStarted.complete();
+
+              return session.future;
+            }),
+            conversationRepositoryProvider.overrideWithValue(
+              _FakeConversationRepository(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        final subscription = container.listen(
+          conversationsStreamProvider(workspaceId: 'ws1'),
+          (_, _) => fail('Unexpected emission before listener disposal'),
+        );
+        await sessionProviderStarted.future;
+        expect(sessionProviderStarted.isCompleted, isTrue);
+        subscription.close();
+        container.dispose();
+
+        session.complete(
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+        );
+        await Future<void>.value();
+      },
+    );
+
     test('emits conversations list from repository stream', () async {
       final conversations = [
         ConversationEntity(

@@ -42,6 +42,7 @@ Stream<List<ConversationEntity>> conversationsStream(
   final session = await ref.watch(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
+  if (!ref.mounted) return;
   if (session.cloud case final cloud?) {
     yield* _cloudConversations(ref, cloud).map(
       (conversations) =>
