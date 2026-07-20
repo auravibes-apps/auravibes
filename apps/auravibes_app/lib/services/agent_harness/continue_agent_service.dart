@@ -371,6 +371,7 @@ class ContinueAgentService
 
   @override
   void trackResponseStreamError(Object error, StackTrace stackTrace) {
+    _logger.severe('Generation stream failed', error, stackTrace);
     monitoringService.trackError(
       'Error in continue agent stream',
       error: error,

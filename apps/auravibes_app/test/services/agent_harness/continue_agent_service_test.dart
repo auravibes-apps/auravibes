@@ -19,6 +19,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
+import 'package:logging/logging.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../test_mocks.dart';
@@ -1145,8 +1146,11 @@ void main() {
     });
 
     test(
-      'rethrows when stream errors before any chunk',
+      'logs and rethrows when stream errors before any chunk',
       () async {
+        final records = <LogRecord>[];
+        final subscription = Logger.root.onRecord.listen(records.add);
+        addTearDown(subscription.cancel);
         when(
           () => conversationRepository.getConversationById('conversation-1'),
         ).thenAnswer((_) async => _conversation);
@@ -1191,6 +1195,31 @@ void main() {
             () => messageRepository.patchMessage(any(), any()),
           );
         }
+
+        verify(
+          () => monitoringService.trackError(
+            'Error in continue agent stream',
+            error: any(named: 'error'),
+            stackTrace: any(named: 'stackTrace'),
+          ),
+        ).called(1);
+        expect(
+          records,
+          contains(
+            isA<LogRecord>()
+                .having(
+                  (record) => record.loggerName,
+                  'logger name',
+                  'continue_agent_service',
+                )
+                .having((record) => record.level, 'level', Level.SEVERE)
+                .having(
+                  (record) => record.message,
+                  'message',
+                  'Generation stream failed',
+                ),
+          ),
+        );
       },
     );
     test(

@@ -108,6 +108,16 @@ void main() {
     );
   });
 
+  test('allows a legacy agent with an empty prompt to be repaired', () {
+    final data = <String, Object?>{
+      'name': 'Agent',
+      'content': '',
+      'visibility': 'both',
+    };
+
+    expect(CloudResourceMapper.decode(_resource(.agent, data)), data);
+  });
+
   test('unknown permission and visibility never default', () {
     for (final value in [null, '', 'futureValue']) {
       expect(

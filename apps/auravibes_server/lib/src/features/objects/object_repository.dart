@@ -100,27 +100,71 @@ class ObjectRepository {
   Future<void> completeDeletion(
     Session session, {
     required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
     required DateTime now,
-  }) => ObjectDeletion.db.updateRow(
-    session,
-    deletion.copyWith(completedAt: now, lastError: null),
-  );
+  }) => session.db.transaction((transaction) async {
+    if (!await _ownsCoordinator(session, transaction, coordinator)) return;
+    final current = await ObjectDeletion.db.findById(
+      session,
+      deletion.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null || current.completedAt != null) return;
+    await ObjectDeletion.db.updateRow(
+      session,
+      current.copyWith(completedAt: now, lastError: null),
+      transaction: transaction,
+    );
+  });
 
   Future<void> failDeletion(
     Session session, {
     required ObjectDeletion deletion,
+    required WorkerCoordinatorLease coordinator,
     required DateTime now,
     required String error,
-  }) {
-    final attempts = deletion.attempts + 1;
-    final delayMinutes = 1 << (attempts - 1).clamp(0, 6);
-    return ObjectDeletion.db.updateRow(
+  }) => session.db.transaction((transaction) async {
+    if (!await _ownsCoordinator(session, transaction, coordinator)) return;
+    final current = await ObjectDeletion.db.findById(
       session,
-      deletion.copyWith(
+      deletion.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null || current.completedAt != null) return;
+    final attempts = current.attempts + 1;
+    final delayMinutes = 1 << (attempts - 1).clamp(0, 6);
+    await ObjectDeletion.db.updateRow(
+      session,
+      current.copyWith(
         attempts: attempts,
         availableAt: now.add(Duration(minutes: delayMinutes)),
         lastError: error,
       ),
+      transaction: transaction,
     );
+  });
+
+  Future<bool> _ownsCoordinator(
+    Session session,
+    Transaction transaction,
+    WorkerCoordinatorLease coordinator,
+  ) async {
+    final lease = await WorkerCoordinatorLease.db.findFirstRow(
+      session,
+      where: (table) => table.key.equals('global'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final result = await session.db.unsafeQuery(
+      'SELECT clock_timestamp() AS "now"',
+      transaction: transaction,
+    );
+    final now = result.first.toColumnMap()['now']! as DateTime;
+    return lease != null &&
+        lease.ownerId == coordinator.ownerId &&
+        lease.fencingToken == coordinator.fencingToken &&
+        lease.expiresAt.isAfter(now);
   }
 }

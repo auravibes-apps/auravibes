@@ -1,4 +1,4 @@
-// ignore_for_file: always_put_required_named_parameters_first, dead_code
+// ignore_for_file: always_put_required_named_parameters_first
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
@@ -24,7 +24,7 @@ class AgentToolExecutionService
   AgentToolExecutionService({
     required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
     required MessageRepository messageRepository,
-    required ResolveToolApprovalDecisionUsecase resolveToolApprovalDecision,
+    ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecision,
     ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
     resolveToolApprovalDecisionForWorkspace,
     required ResolvedToolService runResolvedToolUsecase,
@@ -49,7 +49,7 @@ class AppAllowedToolsDataProvider
   const AppAllowedToolsDataProvider({
     required this.messageRepository,
     required this.loadLatestMessageToolCallsService,
-    required this.resolveToolApprovalDecisionUsecase,
+    this.resolveToolApprovalDecisionUsecase,
     this.resolveToolApprovalDecisionUsecaseForWorkspace,
     required this.resolvedToolService,
     required this.toolDecisionService,
@@ -58,7 +58,7 @@ class AppAllowedToolsDataProvider
 
   final MessageRepository messageRepository;
   final AgentToolCallLoader loadLatestMessageToolCallsService;
-  final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecisionUsecase;
+  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase;
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionUsecaseForWorkspace;
   final ResolvedToolService resolvedToolService;
@@ -80,17 +80,18 @@ class AppAllowedToolsDataProvider
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    final decision =
-        await (resolveToolApprovalDecisionUsecaseForWorkspace?.call(
-                  workspaceId,
-                ) ??
-                resolveToolApprovalDecisionUsecase)
-            .call(
-              conversationId: conversationId,
-              workspaceId: workspaceId,
-              toolCallId: toolCallId,
-              resolvedTool: resolvedTool,
-            );
+    final resolver =
+        resolveToolApprovalDecisionUsecaseForWorkspace?.call(workspaceId) ??
+        resolveToolApprovalDecisionUsecase;
+    if (resolver == null) {
+      throw StateError('No tool approval resolver is configured');
+    }
+    final decision = await resolver.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+      toolCallId: toolCallId,
+      resolvedTool: resolvedTool,
+    );
 
     return agent.AgentToolApprovalDecision(
       permissionResult: toAgentToolPermissionResult(
@@ -229,7 +230,6 @@ final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
           agentToolCallLoaderProvider,
         ),
         messageRepository: ref.watch(messageRepositoryProvider),
-        resolveToolApprovalDecision: throw UnimplementedError(),
         resolveToolApprovalDecisionForWorkspace: (workspaceId) => ref.read(
           resolveToolApprovalDecisionUsecaseProvider(workspaceId),
         ),

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:serverpod/serverpod.dart';
 
+import '../../../generated/protocol.dart';
 import '../repositories/model_catalog_repository.dart';
 
 typedef ModelsDevCatalogFetcher = Future<Object?> Function(Uri uri);
@@ -23,10 +24,20 @@ class ModelsDevCatalogSyncService {
   Future<ModelsDevCatalog> load() async =>
       ModelsDevCatalog.parse(await _fetch(uri));
 
-  Future<ModelsDevCatalog> sync(Session session) async {
+  Future<ModelsDevCatalog?> sync(
+    Session session, {
+    required bool Function() isActive,
+    required WorkerCoordinatorLease coordinator,
+  }) async {
+    if (!isActive()) return null;
     final catalog = await load();
-    await _repository.replace(session, catalog: catalog);
-    return catalog;
+    if (!isActive()) return null;
+    final applied = await _repository.replace(
+      session,
+      catalog: catalog,
+      coordinator: coordinator,
+    );
+    return applied ? catalog : null;
   }
 }
 

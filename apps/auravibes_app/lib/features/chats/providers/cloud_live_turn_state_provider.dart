@@ -2,10 +2,13 @@
 import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
 typedef CloudLiveTurnKey = ({String workspaceId, String turnId});
+
+final _logger = Logger('cloud_live_turn');
 
 final ProviderFamily<Stream<CloudLiveTurnState>, CloudLiveTurnKey>
 cloudLiveTurnEventsProvider = Provider.autoDispose
@@ -29,6 +32,12 @@ Stream<CloudLiveTurnState> _watchLiveTurn(
     gateway,
   ).subscribeTurn(key.turnId)) {
     final state = CloudLiveTurnState.fromEvent(event);
+    if (state.state == CloudLiveTurnLifecycle.failed) {
+      _logger.severe(
+        'Cloud generation failed: workspaceId=${key.workspaceId}, '
+        'turnId=${key.turnId}, errorCode=${state.errorCode ?? 'unknown'}.',
+      );
+    }
     yield state;
     if (state.isTerminal) return;
   }

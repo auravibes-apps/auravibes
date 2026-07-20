@@ -48,130 +48,132 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _i19;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_request.dart'
     as _i20;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/turn_snapshot.dart'
-    as _i21;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/get_turn_request.dart'
-    as _i22;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/live_turn_event.dart'
-    as _i23;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/live_turn_subscribe_request.dart'
-    as _i24;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_mutation_result.dart'
+    as _i21;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/continue_turn_request.dart'
+    as _i22;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/turn_snapshot.dart'
+    as _i23;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/get_turn_request.dart'
+    as _i24;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/live_turn_event.dart'
     as _i25;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/live_turn_subscribe_request.dart'
     as _i26;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/cancel_turn_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/submit_tool_decision_request.dart'
     as _i27;
-import 'package:auravibes_server_client/src/protocol/features/conversations/models/compact_conversation_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/cancel_turn_request.dart'
     as _i28;
-import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/create_mcp_server_result.dart'
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/compact_conversation_request.dart'
     as _i29;
-import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/create_mcp_server_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/create_mcp_server_result.dart'
     as _i30;
-import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/delete_mcp_server_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/create_mcp_server_request.dart'
     as _i31;
-import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/discover_mcp_server_result.dart'
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/delete_mcp_server_request.dart'
     as _i32;
-import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/discover_mcp_server_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i33;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model_provider.dart'
+import 'package:auravibes_server_client/src/protocol/features/mcp_servers/models/discover_mcp_server_request.dart'
     as _i34;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model_provider.dart'
     as _i35;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/model_connection_view.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/api_model.dart'
     as _i36;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/create_model_connection_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/model_connection_view.dart'
     as _i37;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_model_connections_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/create_model_connection_request.dart'
     as _i38;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_model_connection_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_model_connections_request.dart'
     as _i39;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/delete_model_connection_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/update_model_connection_request.dart'
     as _i40;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/workspace_model_selection_view.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/delete_model_connection_request.dart'
     as _i41;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_workspace_model_selections_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/workspace_model_selection_view.dart'
     as _i42;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/model_sync_result.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/list_workspace_model_selections_request.dart'
     as _i43;
-import 'package:auravibes_server_client/src/protocol/features/model_connections/models/test_and_sync_model_connection_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/model_sync_result.dart'
     as _i44;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/begin_upload_result.dart'
+import 'package:auravibes_server_client/src/protocol/features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _i45;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/begin_upload_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/begin_upload_result.dart'
     as _i46;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/object_result.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/begin_upload_request.dart'
     as _i47;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/complete_upload_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/object_result.dart'
     as _i48;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/get_download_result.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/complete_upload_request.dart'
     as _i49;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/get_download_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/get_download_result.dart'
     as _i50;
-import 'package:auravibes_server_client/src/protocol/features/objects/models/delete_object_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/get_download_request.dart'
     as _i51;
-import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_stream_envelope.dart'
+import 'package:auravibes_server_client/src/protocol/features/objects/models/delete_object_request.dart'
     as _i52;
-import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_subscribe_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_stream_envelope.dart'
     as _i53;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/put_workspace_secret_response.dart'
+import 'package:auravibes_server_client/src/protocol/features/sync/stream/models/workspace_subscribe_request.dart'
     as _i54;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/put_workspace_secret_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/put_workspace_secret_response.dart'
     as _i55;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/put_workspace_secret_request.dart'
     as _i56;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_response.dart'
     as _i57;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/patch_workspace_state_response.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/read_workspace_state_request.dart'
     as _i58;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/patch_workspace_state_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/patch_workspace_state_response.dart'
     as _i59;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_response.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/patch_workspace_state_request.dart'
     as _i60;
-import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_response.dart'
     as _i61;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_summary.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i62;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/pending_workspace_invite_summary.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_summary.dart'
     as _i63;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/pending_workspace_invite_summary.dart'
     as _i64;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/get_cloud_workspace_detail_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_detail.dart'
     as _i65;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_member_summary.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _i66;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/list_workspace_members_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_member_summary.dart'
     as _i67;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_invite_summary.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/list_workspace_members_request.dart'
     as _i68;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/list_cloud_workspace_invites_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i69;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/create_cloud_workspace_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/list_cloud_workspace_invites_request.dart'
     as _i70;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/invite_workspace_member_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/create_cloud_workspace_request.dart'
     as _i71;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/renew_workspace_invite_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/invite_workspace_member_request.dart'
     as _i72;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/revoke_workspace_invite_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/renew_workspace_invite_request.dart'
     as _i73;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _i74;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/decline_workspace_invite_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i75;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/rename_cloud_workspace_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/decline_workspace_invite_request.dart'
     as _i76;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/leave_cloud_workspace_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/rename_cloud_workspace_request.dart'
     as _i77;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/leave_cloud_workspace_request.dart'
     as _i78;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/update_workspace_member_role_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
     as _i79;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/remove_workspace_member_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/update_workspace_member_role_request.dart'
     as _i80;
-import 'package:auravibes_server_client/src/protocol/features/workspaces/models/delete_cloud_workspace_request.dart'
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/remove_workspace_member_request.dart'
     as _i81;
-import 'package:http/http.dart' as _i82;
-import 'protocol.dart' as _i83;
+import 'package:auravibes_server_client/src/protocol/features/workspaces/models/delete_cloud_workspace_request.dart'
+    as _i82;
+import 'package:http/http.dart' as _i83;
+import 'protocol.dart' as _i84;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -502,19 +504,27 @@ class EndpointConversation extends _i2.EndpointRef {
         {'request': request},
       );
 
-  _i3.Future<_i21.TurnSnapshot> getTurn(_i22.GetTurnRequest request) =>
-      caller.callServerEndpoint<_i21.TurnSnapshot>(
+  _i3.Future<_i21.ConversationMutationResult> continueTurn(
+    _i22.ContinueTurnRequest request,
+  ) => caller.callServerEndpoint<_i21.ConversationMutationResult>(
+    'conversation',
+    'continueTurn',
+    {'request': request},
+  );
+
+  _i3.Future<_i23.TurnSnapshot> getTurn(_i24.GetTurnRequest request) =>
+      caller.callServerEndpoint<_i23.TurnSnapshot>(
         'conversation',
         'getTurn',
         {'request': request},
       );
 
-  _i3.Stream<_i23.LiveTurnEvent> subscribeTurn(
-    _i24.LiveTurnSubscribeRequest request,
+  _i3.Stream<_i25.LiveTurnEvent> subscribeTurn(
+    _i26.LiveTurnSubscribeRequest request,
   ) =>
       caller.callStreamingServerEndpoint<
-        _i3.Stream<_i23.LiveTurnEvent>,
-        _i23.LiveTurnEvent
+        _i3.Stream<_i25.LiveTurnEvent>,
+        _i25.LiveTurnEvent
       >(
         'conversation',
         'subscribeTurn',
@@ -522,25 +532,25 @@ class EndpointConversation extends _i2.EndpointRef {
         {},
       );
 
-  _i3.Future<_i25.ConversationMutationResult> submitToolDecision(
-    _i26.SubmitToolDecisionRequest request,
-  ) => caller.callServerEndpoint<_i25.ConversationMutationResult>(
+  _i3.Future<_i21.ConversationMutationResult> submitToolDecision(
+    _i27.SubmitToolDecisionRequest request,
+  ) => caller.callServerEndpoint<_i21.ConversationMutationResult>(
     'conversation',
     'submitToolDecision',
     {'request': request},
   );
 
-  _i3.Future<_i25.ConversationMutationResult> cancelTurn(
-    _i27.CancelTurnRequest request,
-  ) => caller.callServerEndpoint<_i25.ConversationMutationResult>(
+  _i3.Future<_i21.ConversationMutationResult> cancelTurn(
+    _i28.CancelTurnRequest request,
+  ) => caller.callServerEndpoint<_i21.ConversationMutationResult>(
     'conversation',
     'cancelTurn',
     {'request': request},
   );
 
-  _i3.Future<_i25.ConversationMutationResult> compact(
-    _i28.CompactConversationRequest request,
-  ) => caller.callServerEndpoint<_i25.ConversationMutationResult>(
+  _i3.Future<_i21.ConversationMutationResult> compact(
+    _i29.CompactConversationRequest request,
+  ) => caller.callServerEndpoint<_i21.ConversationMutationResult>(
     'conversation',
     'compact',
     {'request': request},
@@ -554,24 +564,24 @@ class EndpointMcpServer extends _i2.EndpointRef {
   @override
   String get name => 'mcpServer';
 
-  _i3.Future<_i29.CreateMcpServerResult> create(
-    _i30.CreateMcpServerRequest request,
-  ) => caller.callServerEndpoint<_i29.CreateMcpServerResult>(
+  _i3.Future<_i30.CreateMcpServerResult> create(
+    _i31.CreateMcpServerRequest request,
+  ) => caller.callServerEndpoint<_i30.CreateMcpServerResult>(
     'mcpServer',
     'create',
     {'request': request},
   );
 
-  _i3.Future<void> delete(_i31.DeleteMcpServerRequest request) =>
+  _i3.Future<void> delete(_i32.DeleteMcpServerRequest request) =>
       caller.callServerEndpoint<void>(
         'mcpServer',
         'delete',
         {'request': request},
       );
 
-  _i3.Future<_i32.DiscoverMcpServerResult> discoverAndCheck(
-    _i33.DiscoverMcpServerRequest request,
-  ) => caller.callServerEndpoint<_i32.DiscoverMcpServerResult>(
+  _i3.Future<_i33.DiscoverMcpServerResult> discoverAndCheck(
+    _i34.DiscoverMcpServerRequest request,
+  ) => caller.callServerEndpoint<_i33.DiscoverMcpServerResult>(
     'mcpServer',
     'discoverAndCheck',
     {'request': request},
@@ -585,62 +595,62 @@ class EndpointModelConnection extends _i2.EndpointRef {
   @override
   String get name => 'modelConnection';
 
-  _i3.Future<List<_i34.ApiModelProvider>> listCatalogProviders() =>
-      caller.callServerEndpoint<List<_i34.ApiModelProvider>>(
+  _i3.Future<List<_i35.ApiModelProvider>> listCatalogProviders() =>
+      caller.callServerEndpoint<List<_i35.ApiModelProvider>>(
         'modelConnection',
         'listCatalogProviders',
         {},
       );
 
-  _i3.Future<List<_i35.ApiModel>> listCatalogModels({String? providerId}) =>
-      caller.callServerEndpoint<List<_i35.ApiModel>>(
+  _i3.Future<List<_i36.ApiModel>> listCatalogModels({String? providerId}) =>
+      caller.callServerEndpoint<List<_i36.ApiModel>>(
         'modelConnection',
         'listCatalogModels',
         {'providerId': providerId},
       );
 
-  _i3.Future<_i36.ModelConnectionView> create(
-    _i37.CreateModelConnectionRequest request,
-  ) => caller.callServerEndpoint<_i36.ModelConnectionView>(
+  _i3.Future<_i37.ModelConnectionView> create(
+    _i38.CreateModelConnectionRequest request,
+  ) => caller.callServerEndpoint<_i37.ModelConnectionView>(
     'modelConnection',
     'create',
     {'request': request},
   );
 
-  _i3.Future<List<_i36.ModelConnectionView>> list(
-    _i38.ListModelConnectionsRequest request,
-  ) => caller.callServerEndpoint<List<_i36.ModelConnectionView>>(
+  _i3.Future<List<_i37.ModelConnectionView>> list(
+    _i39.ListModelConnectionsRequest request,
+  ) => caller.callServerEndpoint<List<_i37.ModelConnectionView>>(
     'modelConnection',
     'list',
     {'request': request},
   );
 
-  _i3.Future<_i36.ModelConnectionView> update(
-    _i39.UpdateModelConnectionRequest request,
-  ) => caller.callServerEndpoint<_i36.ModelConnectionView>(
+  _i3.Future<_i37.ModelConnectionView> update(
+    _i40.UpdateModelConnectionRequest request,
+  ) => caller.callServerEndpoint<_i37.ModelConnectionView>(
     'modelConnection',
     'update',
     {'request': request},
   );
 
-  _i3.Future<void> delete(_i40.DeleteModelConnectionRequest request) =>
+  _i3.Future<void> delete(_i41.DeleteModelConnectionRequest request) =>
       caller.callServerEndpoint<void>(
         'modelConnection',
         'delete',
         {'request': request},
       );
 
-  _i3.Future<List<_i41.WorkspaceModelSelectionView>> listSelections(
-    _i42.ListWorkspaceModelSelectionsRequest request,
-  ) => caller.callServerEndpoint<List<_i41.WorkspaceModelSelectionView>>(
+  _i3.Future<List<_i42.WorkspaceModelSelectionView>> listSelections(
+    _i43.ListWorkspaceModelSelectionsRequest request,
+  ) => caller.callServerEndpoint<List<_i42.WorkspaceModelSelectionView>>(
     'modelConnection',
     'listSelections',
     {'request': request},
   );
 
-  _i3.Future<_i43.ModelSyncResult> testAndSync(
-    _i44.TestAndSyncModelConnectionRequest request,
-  ) => caller.callServerEndpoint<_i43.ModelSyncResult>(
+  _i3.Future<_i44.ModelSyncResult> testAndSync(
+    _i45.TestAndSyncModelConnectionRequest request,
+  ) => caller.callServerEndpoint<_i44.ModelSyncResult>(
     'modelConnection',
     'testAndSync',
     {'request': request},
@@ -654,31 +664,31 @@ class EndpointObject extends _i2.EndpointRef {
   @override
   String get name => 'object';
 
-  _i3.Future<_i45.BeginUploadResult> beginUpload(
-    _i46.BeginUploadRequest request,
-  ) => caller.callServerEndpoint<_i45.BeginUploadResult>(
+  _i3.Future<_i46.BeginUploadResult> beginUpload(
+    _i47.BeginUploadRequest request,
+  ) => caller.callServerEndpoint<_i46.BeginUploadResult>(
     'object',
     'beginUpload',
     {'request': request},
   );
 
-  _i3.Future<_i47.ObjectResult> completeUpload(
-    _i48.CompleteUploadRequest request,
-  ) => caller.callServerEndpoint<_i47.ObjectResult>(
+  _i3.Future<_i48.ObjectResult> completeUpload(
+    _i49.CompleteUploadRequest request,
+  ) => caller.callServerEndpoint<_i48.ObjectResult>(
     'object',
     'completeUpload',
     {'request': request},
   );
 
-  _i3.Future<_i49.GetDownloadResult> getDownload(
-    _i50.GetDownloadRequest request,
-  ) => caller.callServerEndpoint<_i49.GetDownloadResult>(
+  _i3.Future<_i50.GetDownloadResult> getDownload(
+    _i51.GetDownloadRequest request,
+  ) => caller.callServerEndpoint<_i50.GetDownloadResult>(
     'object',
     'getDownload',
     {'request': request},
   );
 
-  _i3.Future<void> delete(_i51.DeleteObjectRequest request) =>
+  _i3.Future<void> delete(_i52.DeleteObjectRequest request) =>
       caller.callServerEndpoint<void>(
         'object',
         'delete',
@@ -693,12 +703,12 @@ class EndpointWorkspaceStream extends _i2.EndpointRef {
   @override
   String get name => 'workspaceStream';
 
-  _i3.Stream<_i52.WorkspaceStreamEnvelope> subscribe(
-    _i53.WorkspaceSubscribeRequest request,
+  _i3.Stream<_i53.WorkspaceStreamEnvelope> subscribe(
+    _i54.WorkspaceSubscribeRequest request,
   ) =>
       caller.callStreamingServerEndpoint<
-        _i3.Stream<_i52.WorkspaceStreamEnvelope>,
-        _i52.WorkspaceStreamEnvelope
+        _i3.Stream<_i53.WorkspaceStreamEnvelope>,
+        _i53.WorkspaceStreamEnvelope
       >(
         'workspaceStream',
         'subscribe',
@@ -714,9 +724,9 @@ class EndpointWorkspaceSecret extends _i2.EndpointRef {
   @override
   String get name => 'workspaceSecret';
 
-  _i3.Future<_i54.PutWorkspaceSecretResponse> put(
-    _i55.PutWorkspaceSecretRequest request,
-  ) => caller.callServerEndpoint<_i54.PutWorkspaceSecretResponse>(
+  _i3.Future<_i55.PutWorkspaceSecretResponse> put(
+    _i56.PutWorkspaceSecretRequest request,
+  ) => caller.callServerEndpoint<_i55.PutWorkspaceSecretResponse>(
     'workspaceSecret',
     'put',
     {'request': request},
@@ -730,25 +740,25 @@ class EndpointWorkspaceState extends _i2.EndpointRef {
   @override
   String get name => 'workspaceState';
 
-  _i3.Future<_i56.ReadWorkspaceStateResponse> read(
-    _i57.ReadWorkspaceStateRequest request,
-  ) => caller.callServerEndpoint<_i56.ReadWorkspaceStateResponse>(
+  _i3.Future<_i57.ReadWorkspaceStateResponse> read(
+    _i58.ReadWorkspaceStateRequest request,
+  ) => caller.callServerEndpoint<_i57.ReadWorkspaceStateResponse>(
     'workspaceState',
     'read',
     {'request': request},
   );
 
-  _i3.Future<_i58.PatchWorkspaceStateResponse> patch(
-    _i59.PatchWorkspaceStateRequest request,
-  ) => caller.callServerEndpoint<_i58.PatchWorkspaceStateResponse>(
+  _i3.Future<_i59.PatchWorkspaceStateResponse> patch(
+    _i60.PatchWorkspaceStateRequest request,
+  ) => caller.callServerEndpoint<_i59.PatchWorkspaceStateResponse>(
     'workspaceState',
     'patch',
     {'request': request},
   );
 
-  _i3.Future<_i60.MutateWorkspaceCredentialResponse> mutateCredential(
-    _i61.MutateWorkspaceCredentialRequest request,
-  ) => caller.callServerEndpoint<_i60.MutateWorkspaceCredentialResponse>(
+  _i3.Future<_i61.MutateWorkspaceCredentialResponse> mutateCredential(
+    _i62.MutateWorkspaceCredentialRequest request,
+  ) => caller.callServerEndpoint<_i61.MutateWorkspaceCredentialResponse>(
     'workspaceState',
     'mutateCredential',
     {'request': request},
@@ -762,99 +772,99 @@ class EndpointCloudWorkspace extends _i2.EndpointRef {
   @override
   String get name => 'cloudWorkspace';
 
-  _i3.Future<List<_i62.CloudWorkspaceSummary>> listAuthorizedWorkspaces() =>
-      caller.callServerEndpoint<List<_i62.CloudWorkspaceSummary>>(
+  _i3.Future<List<_i63.CloudWorkspaceSummary>> listAuthorizedWorkspaces() =>
+      caller.callServerEndpoint<List<_i63.CloudWorkspaceSummary>>(
         'cloudWorkspace',
         'listAuthorizedWorkspaces',
         {},
       );
 
-  _i3.Future<List<_i63.PendingWorkspaceInviteSummary>> listPendingInvites() =>
-      caller.callServerEndpoint<List<_i63.PendingWorkspaceInviteSummary>>(
+  _i3.Future<List<_i64.PendingWorkspaceInviteSummary>> listPendingInvites() =>
+      caller.callServerEndpoint<List<_i64.PendingWorkspaceInviteSummary>>(
         'cloudWorkspace',
         'listPendingInvites',
         {},
       );
 
-  _i3.Future<_i64.CloudWorkspaceDetail> getWorkspaceDetail(
-    _i65.GetCloudWorkspaceDetailRequest request,
-  ) => caller.callServerEndpoint<_i64.CloudWorkspaceDetail>(
+  _i3.Future<_i65.CloudWorkspaceDetail> getWorkspaceDetail(
+    _i66.GetCloudWorkspaceDetailRequest request,
+  ) => caller.callServerEndpoint<_i65.CloudWorkspaceDetail>(
     'cloudWorkspace',
     'getWorkspaceDetail',
     {'request': request},
   );
 
-  _i3.Future<List<_i66.CloudWorkspaceMemberSummary>> listMembers(
-    _i67.ListWorkspaceMembersRequest request,
-  ) => caller.callServerEndpoint<List<_i66.CloudWorkspaceMemberSummary>>(
+  _i3.Future<List<_i67.CloudWorkspaceMemberSummary>> listMembers(
+    _i68.ListWorkspaceMembersRequest request,
+  ) => caller.callServerEndpoint<List<_i67.CloudWorkspaceMemberSummary>>(
     'cloudWorkspace',
     'listMembers',
     {'request': request},
   );
 
-  _i3.Future<List<_i68.CloudWorkspaceInviteSummary>> listWorkspaceInvites(
-    _i69.ListCloudWorkspaceInvitesRequest request,
-  ) => caller.callServerEndpoint<List<_i68.CloudWorkspaceInviteSummary>>(
+  _i3.Future<List<_i69.CloudWorkspaceInviteSummary>> listWorkspaceInvites(
+    _i70.ListCloudWorkspaceInvitesRequest request,
+  ) => caller.callServerEndpoint<List<_i69.CloudWorkspaceInviteSummary>>(
     'cloudWorkspace',
     'listWorkspaceInvites',
     {'request': request},
   );
 
-  _i3.Future<_i62.CloudWorkspaceSummary> createWorkspace(
-    _i70.CreateCloudWorkspaceRequest request,
-  ) => caller.callServerEndpoint<_i62.CloudWorkspaceSummary>(
+  _i3.Future<_i63.CloudWorkspaceSummary> createWorkspace(
+    _i71.CreateCloudWorkspaceRequest request,
+  ) => caller.callServerEndpoint<_i63.CloudWorkspaceSummary>(
     'cloudWorkspace',
     'createWorkspace',
     {'request': request},
   );
 
-  _i3.Future<_i63.PendingWorkspaceInviteSummary> inviteMember(
-    _i71.InviteWorkspaceMemberRequest request,
-  ) => caller.callServerEndpoint<_i63.PendingWorkspaceInviteSummary>(
+  _i3.Future<_i64.PendingWorkspaceInviteSummary> inviteMember(
+    _i72.InviteWorkspaceMemberRequest request,
+  ) => caller.callServerEndpoint<_i64.PendingWorkspaceInviteSummary>(
     'cloudWorkspace',
     'inviteMember',
     {'request': request},
   );
 
-  _i3.Future<_i68.CloudWorkspaceInviteSummary> renewInvite(
-    _i72.RenewWorkspaceInviteRequest request,
-  ) => caller.callServerEndpoint<_i68.CloudWorkspaceInviteSummary>(
+  _i3.Future<_i69.CloudWorkspaceInviteSummary> renewInvite(
+    _i73.RenewWorkspaceInviteRequest request,
+  ) => caller.callServerEndpoint<_i69.CloudWorkspaceInviteSummary>(
     'cloudWorkspace',
     'renewInvite',
     {'request': request},
   );
 
-  _i3.Future<void> revokeInvite(_i73.RevokeWorkspaceInviteRequest request) =>
+  _i3.Future<void> revokeInvite(_i74.RevokeWorkspaceInviteRequest request) =>
       caller.callServerEndpoint<void>(
         'cloudWorkspace',
         'revokeInvite',
         {'request': request},
       );
 
-  _i3.Future<_i62.CloudWorkspaceSummary> acceptInvite(
-    _i74.AcceptWorkspaceInviteRequest request,
-  ) => caller.callServerEndpoint<_i62.CloudWorkspaceSummary>(
+  _i3.Future<_i63.CloudWorkspaceSummary> acceptInvite(
+    _i75.AcceptWorkspaceInviteRequest request,
+  ) => caller.callServerEndpoint<_i63.CloudWorkspaceSummary>(
     'cloudWorkspace',
     'acceptInvite',
     {'request': request},
   );
 
-  _i3.Future<void> declineInvite(_i75.DeclineWorkspaceInviteRequest request) =>
+  _i3.Future<void> declineInvite(_i76.DeclineWorkspaceInviteRequest request) =>
       caller.callServerEndpoint<void>(
         'cloudWorkspace',
         'declineInvite',
         {'request': request},
       );
 
-  _i3.Future<_i62.CloudWorkspaceSummary> renameWorkspace(
-    _i76.RenameCloudWorkspaceRequest request,
-  ) => caller.callServerEndpoint<_i62.CloudWorkspaceSummary>(
+  _i3.Future<_i63.CloudWorkspaceSummary> renameWorkspace(
+    _i77.RenameCloudWorkspaceRequest request,
+  ) => caller.callServerEndpoint<_i63.CloudWorkspaceSummary>(
     'cloudWorkspace',
     'renameWorkspace',
     {'request': request},
   );
 
-  _i3.Future<void> leaveWorkspace(_i77.LeaveCloudWorkspaceRequest request) =>
+  _i3.Future<void> leaveWorkspace(_i78.LeaveCloudWorkspaceRequest request) =>
       caller.callServerEndpoint<void>(
         'cloudWorkspace',
         'leaveWorkspace',
@@ -862,7 +872,7 @@ class EndpointCloudWorkspace extends _i2.EndpointRef {
       );
 
   _i3.Future<void> transferOwnership(
-    _i78.TransferCloudWorkspaceOwnershipRequest request,
+    _i79.TransferCloudWorkspaceOwnershipRequest request,
   ) => caller.callServerEndpoint<void>(
     'cloudWorkspace',
     'transferOwnership',
@@ -870,21 +880,21 @@ class EndpointCloudWorkspace extends _i2.EndpointRef {
   );
 
   _i3.Future<void> updateMemberRole(
-    _i79.UpdateWorkspaceMemberRoleRequest request,
+    _i80.UpdateWorkspaceMemberRoleRequest request,
   ) => caller.callServerEndpoint<void>(
     'cloudWorkspace',
     'updateMemberRole',
     {'request': request},
   );
 
-  _i3.Future<void> removeMember(_i80.RemoveWorkspaceMemberRequest request) =>
+  _i3.Future<void> removeMember(_i81.RemoveWorkspaceMemberRequest request) =>
       caller.callServerEndpoint<void>(
         'cloudWorkspace',
         'removeMember',
         {'request': request},
       );
 
-  _i3.Future<void> deleteWorkspace(_i81.DeleteCloudWorkspaceRequest request) =>
+  _i3.Future<void> deleteWorkspace(_i82.DeleteCloudWorkspaceRequest request) =>
       caller.callServerEndpoint<void>(
         'cloudWorkspace',
         'deleteWorkspace',
@@ -921,10 +931,10 @@ class Client extends _i2.ServerpodClientShared {
     onFailedCall,
     Function(_i2.MethodCallContext)? onSucceededCall,
     bool? disconnectStreamsOnLostInternetConnection,
-    _i82.Client? httpClientOverride,
+    _i83.Client? httpClientOverride,
   }) : super(
          host,
-         _i83.Protocol(),
+         _i84.Protocol(),
          securityContext: securityContext,
          streamingConnectionTimeout: streamingConnectionTimeout,
          connectionTimeout: connectionTimeout,

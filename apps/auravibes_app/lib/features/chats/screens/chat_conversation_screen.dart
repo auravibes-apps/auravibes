@@ -648,6 +648,32 @@ Future<void> _continueAgent(
   if ((busyState?.isBusy ?? false) || rateLimitRetryAt != null) return;
 
   try {
+    final cloud = await ref.read(
+      cloudTurnUsecaseProvider(workspaceId).future,
+    );
+    if (cloud != null) {
+      final result = await cloud.continueConversation(conversationId);
+      final turnId = result.turnId;
+      if (turnId == null) {
+        throw StateError('Cloud continuation did not return a turn ID');
+      }
+      ref
+          .read(cloudActiveTurnStatesProvider.notifier)
+          .set(
+            conversationId,
+            CloudLiveTurnState(
+              turnId: turnId,
+              revision: result.revision,
+              sequence: 0,
+              state: CloudLiveTurnLifecycle.fromStatus(result.status),
+            ),
+          );
+      ref.invalidate(
+        chatMessagesByConversationProvider(workspaceId, conversationId),
+      );
+
+      return;
+    }
     final _ = await ref
         .read(auraAgentServiceProvider)
         .agent

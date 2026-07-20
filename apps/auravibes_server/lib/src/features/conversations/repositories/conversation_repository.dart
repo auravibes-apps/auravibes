@@ -346,6 +346,82 @@ class ConversationRepository {
     );
   }
 
+  Future<ConversationTurn> insertContinuationTurn(
+    Session session, {
+    required Conversation conversation,
+    required String actorUserId,
+    required ContinueTurnRequest request,
+    required String requestHash,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final assistantMessage = await ConversationMessage.db.insertRow(
+      session,
+      ConversationMessage(
+        workspaceId: request.workspaceId,
+        conversationId: conversation.id!,
+        stableId: '${request.requestId}:assistant',
+        role: 'assistant',
+        kind: 'text',
+        status: ConversationStatuses.queued,
+        content: '',
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    final turn = await ConversationTurn.db.insertRow(
+      session,
+      ConversationTurn(
+        workspaceId: request.workspaceId,
+        conversationId: conversation.id!,
+        requestId: request.requestId,
+        requestHash: requestHash,
+        initiatorUserId: actorUserId,
+        assistantMessageId: assistantMessage.id,
+        status: ConversationStatuses.queued,
+        revision: 1,
+        acceptedSequence: conversation.revision + 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationMessage.db.updateRow(
+      session,
+      assistantMessage.copyWith(turnId: turn.id),
+      transaction: transaction,
+    );
+    await ConversationJob.db.insertRow(
+      session,
+      ConversationJob(
+        workspaceId: request.workspaceId,
+        conversationId: conversation.id!,
+        turnId: turn.id,
+        requestId: request.requestId,
+        kind: ConversationJobKinds.turn,
+        status: ConversationJobStatuses.queued,
+        payloadJson: conversationTurnJobPayload(actorUserId),
+        attempt: 0,
+        maxAttempts: 3,
+        availableAt: now,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await Conversation.db.updateRow(
+      session,
+      conversation.copyWith(
+        revision: conversation.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    return turn;
+  }
+
   Future<List<ConversationMessage>> listMessages(
     Session session, {
     required ConversationTurn turn,
