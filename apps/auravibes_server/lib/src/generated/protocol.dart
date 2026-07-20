@@ -105,99 +105,101 @@ import 'features/sync/stream/models/workspace_stream_envelope.dart' as _i77;
 import 'features/sync/stream/models/workspace_stream_envelope_kind.dart'
     as _i78;
 import 'features/sync/stream/models/workspace_subscribe_request.dart' as _i79;
+import 'features/workers/models/recurring_worker_schedule.dart' as _i80;
+import 'features/workers/models/worker_coordinator_lease.dart' as _i81;
 import 'features/workspace_state/models/mutate_workspace_credential_request.dart'
-    as _i80;
-import 'features/workspace_state/models/mutate_workspace_credential_response.dart'
-    as _i81;
-import 'features/workspace_state/models/patch_workspace_state_request.dart'
     as _i82;
-import 'features/workspace_state/models/patch_workspace_state_response.dart'
+import 'features/workspace_state/models/mutate_workspace_credential_response.dart'
     as _i83;
-import 'features/workspace_state/models/put_workspace_secret_request.dart'
+import 'features/workspace_state/models/patch_workspace_state_request.dart'
     as _i84;
-import 'features/workspace_state/models/put_workspace_secret_response.dart'
+import 'features/workspace_state/models/patch_workspace_state_response.dart'
     as _i85;
-import 'features/workspace_state/models/read_workspace_state_request.dart'
+import 'features/workspace_state/models/put_workspace_secret_request.dart'
     as _i86;
-import 'features/workspace_state/models/read_workspace_state_response.dart'
+import 'features/workspace_state/models/put_workspace_secret_response.dart'
     as _i87;
-import 'features/workspace_state/models/workspace_patch_operation.dart' as _i88;
-import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
+import 'features/workspace_state/models/read_workspace_state_request.dart'
+    as _i88;
+import 'features/workspace_state/models/read_workspace_state_response.dart'
     as _i89;
-import 'features/workspace_state/models/workspace_resource.dart' as _i90;
-import 'features/workspace_state/models/workspace_resource_kind.dart' as _i91;
-import 'features/workspace_state/models/workspace_resource_page.dart' as _i92;
+import 'features/workspace_state/models/workspace_patch_operation.dart' as _i90;
+import 'features/workspace_state/models/workspace_patch_operation_kind.dart'
+    as _i91;
+import 'features/workspace_state/models/workspace_resource.dart' as _i92;
+import 'features/workspace_state/models/workspace_resource_kind.dart' as _i93;
+import 'features/workspace_state/models/workspace_resource_page.dart' as _i94;
 import 'features/workspace_state/models/workspace_resource_page_request.dart'
-    as _i93;
-import 'features/workspace_state/models/workspace_secret.dart' as _i94;
-import 'features/workspace_state/models/workspace_secret_kind.dart' as _i95;
-import 'features/workspace_state/models/workspace_secret_scope.dart' as _i96;
+    as _i95;
+import 'features/workspace_state/models/workspace_secret.dart' as _i96;
+import 'features/workspace_state/models/workspace_secret_kind.dart' as _i97;
+import 'features/workspace_state/models/workspace_secret_scope.dart' as _i98;
 import 'features/workspaces/models/accept_workspace_invite_request.dart'
-    as _i97;
-import 'features/workspaces/models/cloud_workspace.dart' as _i98;
-import 'features/workspaces/models/cloud_workspace_capabilities.dart' as _i99;
-import 'features/workspaces/models/cloud_workspace_detail.dart' as _i100;
-import 'features/workspaces/models/cloud_workspace_error_code.dart' as _i101;
-import 'features/workspaces/models/cloud_workspace_exception.dart' as _i102;
+    as _i99;
+import 'features/workspaces/models/cloud_workspace.dart' as _i100;
+import 'features/workspaces/models/cloud_workspace_capabilities.dart' as _i101;
+import 'features/workspaces/models/cloud_workspace_detail.dart' as _i102;
+import 'features/workspaces/models/cloud_workspace_error_code.dart' as _i103;
+import 'features/workspaces/models/cloud_workspace_exception.dart' as _i104;
 import 'features/workspaces/models/cloud_workspace_invite_summary.dart'
-    as _i103;
+    as _i105;
 import 'features/workspaces/models/cloud_workspace_member_summary.dart'
-    as _i104;
-import 'features/workspaces/models/cloud_workspace_summary.dart' as _i105;
-import 'features/workspaces/models/create_cloud_workspace_request.dart'
     as _i106;
-import 'features/workspaces/models/decline_workspace_invite_request.dart'
-    as _i107;
-import 'features/workspaces/models/delete_cloud_workspace_request.dart'
+import 'features/workspaces/models/cloud_workspace_summary.dart' as _i107;
+import 'features/workspaces/models/create_cloud_workspace_request.dart'
     as _i108;
-import 'features/workspaces/models/get_cloud_workspace_detail_request.dart'
+import 'features/workspaces/models/decline_workspace_invite_request.dart'
     as _i109;
-import 'features/workspaces/models/invite_workspace_member_request.dart'
+import 'features/workspaces/models/delete_cloud_workspace_request.dart'
     as _i110;
-import 'features/workspaces/models/leave_cloud_workspace_request.dart' as _i111;
-import 'features/workspaces/models/list_cloud_workspace_invites_request.dart'
+import 'features/workspaces/models/get_cloud_workspace_detail_request.dart'
+    as _i111;
+import 'features/workspaces/models/invite_workspace_member_request.dart'
     as _i112;
-import 'features/workspaces/models/list_workspace_members_request.dart'
-    as _i113;
-import 'features/workspaces/models/pending_workspace_invite_summary.dart'
+import 'features/workspaces/models/leave_cloud_workspace_request.dart' as _i113;
+import 'features/workspaces/models/list_cloud_workspace_invites_request.dart'
     as _i114;
-import 'features/workspaces/models/remove_workspace_member_request.dart'
+import 'features/workspaces/models/list_workspace_members_request.dart'
     as _i115;
-import 'features/workspaces/models/rename_cloud_workspace_request.dart'
+import 'features/workspaces/models/pending_workspace_invite_summary.dart'
     as _i116;
-import 'features/workspaces/models/renew_workspace_invite_request.dart'
+import 'features/workspaces/models/remove_workspace_member_request.dart'
     as _i117;
-import 'features/workspaces/models/revoke_workspace_invite_request.dart'
+import 'features/workspaces/models/rename_cloud_workspace_request.dart'
     as _i118;
-import 'features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+import 'features/workspaces/models/renew_workspace_invite_request.dart'
     as _i119;
-import 'features/workspaces/models/update_workspace_member_role_request.dart'
+import 'features/workspaces/models/revoke_workspace_invite_request.dart'
     as _i120;
-import 'features/workspaces/models/workspace_audit_record.dart' as _i121;
-import 'features/workspaces/models/workspace_event.dart' as _i122;
-import 'features/workspaces/models/workspace_invite.dart' as _i123;
-import 'features/workspaces/models/workspace_member.dart' as _i124;
-import 'features/workspaces/models/workspace_mutation_receipt.dart' as _i125;
+import 'features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+    as _i121;
+import 'features/workspaces/models/update_workspace_member_role_request.dart'
+    as _i122;
+import 'features/workspaces/models/workspace_audit_record.dart' as _i123;
+import 'features/workspaces/models/workspace_event.dart' as _i124;
+import 'features/workspaces/models/workspace_invite.dart' as _i125;
+import 'features/workspaces/models/workspace_member.dart' as _i126;
+import 'features/workspaces/models/workspace_mutation_receipt.dart' as _i127;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
-    as _i126;
-import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
-    as _i127;
-import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
     as _i128;
-import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
     as _i129;
-import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
     as _i130;
-import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
     as _i131;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
     as _i132;
-import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
     as _i133;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
     as _i134;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
     as _i135;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
+    as _i136;
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
+    as _i137;
 export 'features/accounts/models/account_summary.dart';
 export 'features/codex_oauth/models/codex_oauth_transaction.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_request.dart';
@@ -273,6 +275,8 @@ export 'features/objects/models/workspace_object.dart';
 export 'features/sync/stream/models/workspace_stream_envelope.dart';
 export 'features/sync/stream/models/workspace_stream_envelope_kind.dart';
 export 'features/sync/stream/models/workspace_subscribe_request.dart';
+export 'features/workers/models/recurring_worker_schedule.dart';
+export 'features/workers/models/worker_coordinator_lease.dart';
 export 'features/workspace_state/models/mutate_workspace_credential_request.dart';
 export 'features/workspace_state/models/mutate_workspace_credential_response.dart';
 export 'features/workspace_state/models/patch_workspace_state_request.dart';
@@ -2429,6 +2433,147 @@ class Protocol extends _i1.DatabaseSerializationManager {
       managed: true,
     ),
     _i2.TableDefinition(
+      name: 'recurring_worker_schedule',
+      dartName: 'RecurringWorkerSchedule',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _i2.ColumnDefinition(
+          name: 'workerKey',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'nextRunAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _i2.ColumnDefinition(
+          name: 'runToken',
+          columnType: _i2.ColumnType.text,
+          isNullable: true,
+          dartType: 'String?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'leaderFencingToken',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: true,
+          dartType: 'int?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'runLeaseExpiresAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: true,
+          dartType: 'DateTime?',
+        ),
+        _i2.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'recurring_worker_schedule_worker_key_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'workerKey',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _i2.IndexDefinition(
+          indexName: 'recurring_worker_schedule_due_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'nextRunAt',
+            ),
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'runLeaseExpiresAt',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
+      name: 'worker_coordinator_lease',
+      dartName: 'WorkerCoordinatorLease',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _i2.ColumnDefinition(
+          name: 'id',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _i2.ColumnDefinition(
+          name: 'key',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'ownerId',
+          columnType: _i2.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _i2.ColumnDefinition(
+          name: 'fencingToken',
+          columnType: _i2.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _i2.ColumnDefinition(
+          name: 'expiresAt',
+          columnType: _i2.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [],
+      indexes: [
+        _i2.IndexDefinition(
+          indexName: 'worker_coordinator_lease_key_idx',
+          tableSpace: null,
+          elements: [
+            _i2.IndexElementDefinition(
+              type: _i2.IndexElementDefinitionType.column,
+              definition: 'key',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _i2.TableDefinition(
       name: 'workspace_audit_record',
       dartName: 'WorkspaceAuditRecord',
       schema: 'public',
@@ -3806,143 +3951,149 @@ class Protocol extends _i1.DatabaseSerializationManager {
     if (t == _i79.WorkspaceSubscribeRequest) {
       return _i79.WorkspaceSubscribeRequest.fromJson(data) as T;
     }
-    if (t == _i80.MutateWorkspaceCredentialRequest) {
-      return _i80.MutateWorkspaceCredentialRequest.fromJson(data) as T;
+    if (t == _i80.RecurringWorkerSchedule) {
+      return _i80.RecurringWorkerSchedule.fromJson(data) as T;
     }
-    if (t == _i81.MutateWorkspaceCredentialResponse) {
-      return _i81.MutateWorkspaceCredentialResponse.fromJson(data) as T;
+    if (t == _i81.WorkerCoordinatorLease) {
+      return _i81.WorkerCoordinatorLease.fromJson(data) as T;
     }
-    if (t == _i82.PatchWorkspaceStateRequest) {
-      return _i82.PatchWorkspaceStateRequest.fromJson(data) as T;
+    if (t == _i82.MutateWorkspaceCredentialRequest) {
+      return _i82.MutateWorkspaceCredentialRequest.fromJson(data) as T;
     }
-    if (t == _i83.PatchWorkspaceStateResponse) {
-      return _i83.PatchWorkspaceStateResponse.fromJson(data) as T;
+    if (t == _i83.MutateWorkspaceCredentialResponse) {
+      return _i83.MutateWorkspaceCredentialResponse.fromJson(data) as T;
     }
-    if (t == _i84.PutWorkspaceSecretRequest) {
-      return _i84.PutWorkspaceSecretRequest.fromJson(data) as T;
+    if (t == _i84.PatchWorkspaceStateRequest) {
+      return _i84.PatchWorkspaceStateRequest.fromJson(data) as T;
     }
-    if (t == _i85.PutWorkspaceSecretResponse) {
-      return _i85.PutWorkspaceSecretResponse.fromJson(data) as T;
+    if (t == _i85.PatchWorkspaceStateResponse) {
+      return _i85.PatchWorkspaceStateResponse.fromJson(data) as T;
     }
-    if (t == _i86.ReadWorkspaceStateRequest) {
-      return _i86.ReadWorkspaceStateRequest.fromJson(data) as T;
+    if (t == _i86.PutWorkspaceSecretRequest) {
+      return _i86.PutWorkspaceSecretRequest.fromJson(data) as T;
     }
-    if (t == _i87.ReadWorkspaceStateResponse) {
-      return _i87.ReadWorkspaceStateResponse.fromJson(data) as T;
+    if (t == _i87.PutWorkspaceSecretResponse) {
+      return _i87.PutWorkspaceSecretResponse.fromJson(data) as T;
     }
-    if (t == _i88.WorkspacePatchOperation) {
-      return _i88.WorkspacePatchOperation.fromJson(data) as T;
+    if (t == _i88.ReadWorkspaceStateRequest) {
+      return _i88.ReadWorkspaceStateRequest.fromJson(data) as T;
     }
-    if (t == _i89.WorkspacePatchOperationKind) {
-      return _i89.WorkspacePatchOperationKind.fromJson(data) as T;
+    if (t == _i89.ReadWorkspaceStateResponse) {
+      return _i89.ReadWorkspaceStateResponse.fromJson(data) as T;
     }
-    if (t == _i90.WorkspaceResource) {
-      return _i90.WorkspaceResource.fromJson(data) as T;
+    if (t == _i90.WorkspacePatchOperation) {
+      return _i90.WorkspacePatchOperation.fromJson(data) as T;
     }
-    if (t == _i91.WorkspaceResourceKind) {
-      return _i91.WorkspaceResourceKind.fromJson(data) as T;
+    if (t == _i91.WorkspacePatchOperationKind) {
+      return _i91.WorkspacePatchOperationKind.fromJson(data) as T;
     }
-    if (t == _i92.WorkspaceResourcePage) {
-      return _i92.WorkspaceResourcePage.fromJson(data) as T;
+    if (t == _i92.WorkspaceResource) {
+      return _i92.WorkspaceResource.fromJson(data) as T;
     }
-    if (t == _i93.WorkspaceResourcePageRequest) {
-      return _i93.WorkspaceResourcePageRequest.fromJson(data) as T;
+    if (t == _i93.WorkspaceResourceKind) {
+      return _i93.WorkspaceResourceKind.fromJson(data) as T;
     }
-    if (t == _i94.WorkspaceSecret) {
-      return _i94.WorkspaceSecret.fromJson(data) as T;
+    if (t == _i94.WorkspaceResourcePage) {
+      return _i94.WorkspaceResourcePage.fromJson(data) as T;
     }
-    if (t == _i95.WorkspaceSecretKind) {
-      return _i95.WorkspaceSecretKind.fromJson(data) as T;
+    if (t == _i95.WorkspaceResourcePageRequest) {
+      return _i95.WorkspaceResourcePageRequest.fromJson(data) as T;
     }
-    if (t == _i96.WorkspaceSecretScope) {
-      return _i96.WorkspaceSecretScope.fromJson(data) as T;
+    if (t == _i96.WorkspaceSecret) {
+      return _i96.WorkspaceSecret.fromJson(data) as T;
     }
-    if (t == _i97.AcceptWorkspaceInviteRequest) {
-      return _i97.AcceptWorkspaceInviteRequest.fromJson(data) as T;
+    if (t == _i97.WorkspaceSecretKind) {
+      return _i97.WorkspaceSecretKind.fromJson(data) as T;
     }
-    if (t == _i98.CloudWorkspace) {
-      return _i98.CloudWorkspace.fromJson(data) as T;
+    if (t == _i98.WorkspaceSecretScope) {
+      return _i98.WorkspaceSecretScope.fromJson(data) as T;
     }
-    if (t == _i99.CloudWorkspaceCapabilities) {
-      return _i99.CloudWorkspaceCapabilities.fromJson(data) as T;
+    if (t == _i99.AcceptWorkspaceInviteRequest) {
+      return _i99.AcceptWorkspaceInviteRequest.fromJson(data) as T;
     }
-    if (t == _i100.CloudWorkspaceDetail) {
-      return _i100.CloudWorkspaceDetail.fromJson(data) as T;
+    if (t == _i100.CloudWorkspace) {
+      return _i100.CloudWorkspace.fromJson(data) as T;
     }
-    if (t == _i101.CloudWorkspaceErrorCode) {
-      return _i101.CloudWorkspaceErrorCode.fromJson(data) as T;
+    if (t == _i101.CloudWorkspaceCapabilities) {
+      return _i101.CloudWorkspaceCapabilities.fromJson(data) as T;
     }
-    if (t == _i102.CloudWorkspaceException) {
-      return _i102.CloudWorkspaceException.fromJson(data) as T;
+    if (t == _i102.CloudWorkspaceDetail) {
+      return _i102.CloudWorkspaceDetail.fromJson(data) as T;
     }
-    if (t == _i103.CloudWorkspaceInviteSummary) {
-      return _i103.CloudWorkspaceInviteSummary.fromJson(data) as T;
+    if (t == _i103.CloudWorkspaceErrorCode) {
+      return _i103.CloudWorkspaceErrorCode.fromJson(data) as T;
     }
-    if (t == _i104.CloudWorkspaceMemberSummary) {
-      return _i104.CloudWorkspaceMemberSummary.fromJson(data) as T;
+    if (t == _i104.CloudWorkspaceException) {
+      return _i104.CloudWorkspaceException.fromJson(data) as T;
     }
-    if (t == _i105.CloudWorkspaceSummary) {
-      return _i105.CloudWorkspaceSummary.fromJson(data) as T;
+    if (t == _i105.CloudWorkspaceInviteSummary) {
+      return _i105.CloudWorkspaceInviteSummary.fromJson(data) as T;
     }
-    if (t == _i106.CreateCloudWorkspaceRequest) {
-      return _i106.CreateCloudWorkspaceRequest.fromJson(data) as T;
+    if (t == _i106.CloudWorkspaceMemberSummary) {
+      return _i106.CloudWorkspaceMemberSummary.fromJson(data) as T;
     }
-    if (t == _i107.DeclineWorkspaceInviteRequest) {
-      return _i107.DeclineWorkspaceInviteRequest.fromJson(data) as T;
+    if (t == _i107.CloudWorkspaceSummary) {
+      return _i107.CloudWorkspaceSummary.fromJson(data) as T;
     }
-    if (t == _i108.DeleteCloudWorkspaceRequest) {
-      return _i108.DeleteCloudWorkspaceRequest.fromJson(data) as T;
+    if (t == _i108.CreateCloudWorkspaceRequest) {
+      return _i108.CreateCloudWorkspaceRequest.fromJson(data) as T;
     }
-    if (t == _i109.GetCloudWorkspaceDetailRequest) {
-      return _i109.GetCloudWorkspaceDetailRequest.fromJson(data) as T;
+    if (t == _i109.DeclineWorkspaceInviteRequest) {
+      return _i109.DeclineWorkspaceInviteRequest.fromJson(data) as T;
     }
-    if (t == _i110.InviteWorkspaceMemberRequest) {
-      return _i110.InviteWorkspaceMemberRequest.fromJson(data) as T;
+    if (t == _i110.DeleteCloudWorkspaceRequest) {
+      return _i110.DeleteCloudWorkspaceRequest.fromJson(data) as T;
     }
-    if (t == _i111.LeaveCloudWorkspaceRequest) {
-      return _i111.LeaveCloudWorkspaceRequest.fromJson(data) as T;
+    if (t == _i111.GetCloudWorkspaceDetailRequest) {
+      return _i111.GetCloudWorkspaceDetailRequest.fromJson(data) as T;
     }
-    if (t == _i112.ListCloudWorkspaceInvitesRequest) {
-      return _i112.ListCloudWorkspaceInvitesRequest.fromJson(data) as T;
+    if (t == _i112.InviteWorkspaceMemberRequest) {
+      return _i112.InviteWorkspaceMemberRequest.fromJson(data) as T;
     }
-    if (t == _i113.ListWorkspaceMembersRequest) {
-      return _i113.ListWorkspaceMembersRequest.fromJson(data) as T;
+    if (t == _i113.LeaveCloudWorkspaceRequest) {
+      return _i113.LeaveCloudWorkspaceRequest.fromJson(data) as T;
     }
-    if (t == _i114.PendingWorkspaceInviteSummary) {
-      return _i114.PendingWorkspaceInviteSummary.fromJson(data) as T;
+    if (t == _i114.ListCloudWorkspaceInvitesRequest) {
+      return _i114.ListCloudWorkspaceInvitesRequest.fromJson(data) as T;
     }
-    if (t == _i115.RemoveWorkspaceMemberRequest) {
-      return _i115.RemoveWorkspaceMemberRequest.fromJson(data) as T;
+    if (t == _i115.ListWorkspaceMembersRequest) {
+      return _i115.ListWorkspaceMembersRequest.fromJson(data) as T;
     }
-    if (t == _i116.RenameCloudWorkspaceRequest) {
-      return _i116.RenameCloudWorkspaceRequest.fromJson(data) as T;
+    if (t == _i116.PendingWorkspaceInviteSummary) {
+      return _i116.PendingWorkspaceInviteSummary.fromJson(data) as T;
     }
-    if (t == _i117.RenewWorkspaceInviteRequest) {
-      return _i117.RenewWorkspaceInviteRequest.fromJson(data) as T;
+    if (t == _i117.RemoveWorkspaceMemberRequest) {
+      return _i117.RemoveWorkspaceMemberRequest.fromJson(data) as T;
     }
-    if (t == _i118.RevokeWorkspaceInviteRequest) {
-      return _i118.RevokeWorkspaceInviteRequest.fromJson(data) as T;
+    if (t == _i118.RenameCloudWorkspaceRequest) {
+      return _i118.RenameCloudWorkspaceRequest.fromJson(data) as T;
     }
-    if (t == _i119.TransferCloudWorkspaceOwnershipRequest) {
-      return _i119.TransferCloudWorkspaceOwnershipRequest.fromJson(data) as T;
+    if (t == _i119.RenewWorkspaceInviteRequest) {
+      return _i119.RenewWorkspaceInviteRequest.fromJson(data) as T;
     }
-    if (t == _i120.UpdateWorkspaceMemberRoleRequest) {
-      return _i120.UpdateWorkspaceMemberRoleRequest.fromJson(data) as T;
+    if (t == _i120.RevokeWorkspaceInviteRequest) {
+      return _i120.RevokeWorkspaceInviteRequest.fromJson(data) as T;
     }
-    if (t == _i121.WorkspaceAuditRecord) {
-      return _i121.WorkspaceAuditRecord.fromJson(data) as T;
+    if (t == _i121.TransferCloudWorkspaceOwnershipRequest) {
+      return _i121.TransferCloudWorkspaceOwnershipRequest.fromJson(data) as T;
     }
-    if (t == _i122.WorkspaceEvent) {
-      return _i122.WorkspaceEvent.fromJson(data) as T;
+    if (t == _i122.UpdateWorkspaceMemberRoleRequest) {
+      return _i122.UpdateWorkspaceMemberRoleRequest.fromJson(data) as T;
     }
-    if (t == _i123.WorkspaceInvite) {
-      return _i123.WorkspaceInvite.fromJson(data) as T;
+    if (t == _i123.WorkspaceAuditRecord) {
+      return _i123.WorkspaceAuditRecord.fromJson(data) as T;
     }
-    if (t == _i124.WorkspaceMember) {
-      return _i124.WorkspaceMember.fromJson(data) as T;
+    if (t == _i124.WorkspaceEvent) {
+      return _i124.WorkspaceEvent.fromJson(data) as T;
     }
-    if (t == _i125.WorkspaceMutationReceipt) {
-      return _i125.WorkspaceMutationReceipt.fromJson(data) as T;
+    if (t == _i125.WorkspaceInvite) {
+      return _i125.WorkspaceInvite.fromJson(data) as T;
+    }
+    if (t == _i126.WorkspaceMember) {
+      return _i126.WorkspaceMember.fromJson(data) as T;
+    }
+    if (t == _i127.WorkspaceMutationReceipt) {
+      return _i127.WorkspaceMutationReceipt.fromJson(data) as T;
     }
     if (t == _i1.getType<_i5.AccountSummary?>()) {
       return (data != null ? _i5.AccountSummary.fromJson(data) : null) as T;
@@ -4262,245 +4413,253 @@ class Protocol extends _i1.DatabaseSerializationManager {
               : null)
           as T;
     }
-    if (t == _i1.getType<_i80.MutateWorkspaceCredentialRequest?>()) {
+    if (t == _i1.getType<_i80.RecurringWorkerSchedule?>()) {
+      return (data != null ? _i80.RecurringWorkerSchedule.fromJson(data) : null)
+          as T;
+    }
+    if (t == _i1.getType<_i81.WorkerCoordinatorLease?>()) {
+      return (data != null ? _i81.WorkerCoordinatorLease.fromJson(data) : null)
+          as T;
+    }
+    if (t == _i1.getType<_i82.MutateWorkspaceCredentialRequest?>()) {
       return (data != null
-              ? _i80.MutateWorkspaceCredentialRequest.fromJson(data)
+              ? _i82.MutateWorkspaceCredentialRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i81.MutateWorkspaceCredentialResponse?>()) {
+    if (t == _i1.getType<_i83.MutateWorkspaceCredentialResponse?>()) {
       return (data != null
-              ? _i81.MutateWorkspaceCredentialResponse.fromJson(data)
+              ? _i83.MutateWorkspaceCredentialResponse.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i82.PatchWorkspaceStateRequest?>()) {
+    if (t == _i1.getType<_i84.PatchWorkspaceStateRequest?>()) {
       return (data != null
-              ? _i82.PatchWorkspaceStateRequest.fromJson(data)
+              ? _i84.PatchWorkspaceStateRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i83.PatchWorkspaceStateResponse?>()) {
+    if (t == _i1.getType<_i85.PatchWorkspaceStateResponse?>()) {
       return (data != null
-              ? _i83.PatchWorkspaceStateResponse.fromJson(data)
+              ? _i85.PatchWorkspaceStateResponse.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i84.PutWorkspaceSecretRequest?>()) {
+    if (t == _i1.getType<_i86.PutWorkspaceSecretRequest?>()) {
       return (data != null
-              ? _i84.PutWorkspaceSecretRequest.fromJson(data)
+              ? _i86.PutWorkspaceSecretRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i85.PutWorkspaceSecretResponse?>()) {
+    if (t == _i1.getType<_i87.PutWorkspaceSecretResponse?>()) {
       return (data != null
-              ? _i85.PutWorkspaceSecretResponse.fromJson(data)
+              ? _i87.PutWorkspaceSecretResponse.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i86.ReadWorkspaceStateRequest?>()) {
+    if (t == _i1.getType<_i88.ReadWorkspaceStateRequest?>()) {
       return (data != null
-              ? _i86.ReadWorkspaceStateRequest.fromJson(data)
+              ? _i88.ReadWorkspaceStateRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i87.ReadWorkspaceStateResponse?>()) {
+    if (t == _i1.getType<_i89.ReadWorkspaceStateResponse?>()) {
       return (data != null
-              ? _i87.ReadWorkspaceStateResponse.fromJson(data)
+              ? _i89.ReadWorkspaceStateResponse.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i88.WorkspacePatchOperation?>()) {
-      return (data != null ? _i88.WorkspacePatchOperation.fromJson(data) : null)
+    if (t == _i1.getType<_i90.WorkspacePatchOperation?>()) {
+      return (data != null ? _i90.WorkspacePatchOperation.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i89.WorkspacePatchOperationKind?>()) {
+    if (t == _i1.getType<_i91.WorkspacePatchOperationKind?>()) {
       return (data != null
-              ? _i89.WorkspacePatchOperationKind.fromJson(data)
+              ? _i91.WorkspacePatchOperationKind.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i90.WorkspaceResource?>()) {
-      return (data != null ? _i90.WorkspaceResource.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i92.WorkspaceResource?>()) {
+      return (data != null ? _i92.WorkspaceResource.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i91.WorkspaceResourceKind?>()) {
-      return (data != null ? _i91.WorkspaceResourceKind.fromJson(data) : null)
+    if (t == _i1.getType<_i93.WorkspaceResourceKind?>()) {
+      return (data != null ? _i93.WorkspaceResourceKind.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i92.WorkspaceResourcePage?>()) {
-      return (data != null ? _i92.WorkspaceResourcePage.fromJson(data) : null)
+    if (t == _i1.getType<_i94.WorkspaceResourcePage?>()) {
+      return (data != null ? _i94.WorkspaceResourcePage.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i93.WorkspaceResourcePageRequest?>()) {
+    if (t == _i1.getType<_i95.WorkspaceResourcePageRequest?>()) {
       return (data != null
-              ? _i93.WorkspaceResourcePageRequest.fromJson(data)
+              ? _i95.WorkspaceResourcePageRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i94.WorkspaceSecret?>()) {
-      return (data != null ? _i94.WorkspaceSecret.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i96.WorkspaceSecret?>()) {
+      return (data != null ? _i96.WorkspaceSecret.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i95.WorkspaceSecretKind?>()) {
-      return (data != null ? _i95.WorkspaceSecretKind.fromJson(data) : null)
+    if (t == _i1.getType<_i97.WorkspaceSecretKind?>()) {
+      return (data != null ? _i97.WorkspaceSecretKind.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i96.WorkspaceSecretScope?>()) {
-      return (data != null ? _i96.WorkspaceSecretScope.fromJson(data) : null)
+    if (t == _i1.getType<_i98.WorkspaceSecretScope?>()) {
+      return (data != null ? _i98.WorkspaceSecretScope.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i97.AcceptWorkspaceInviteRequest?>()) {
+    if (t == _i1.getType<_i99.AcceptWorkspaceInviteRequest?>()) {
       return (data != null
-              ? _i97.AcceptWorkspaceInviteRequest.fromJson(data)
+              ? _i99.AcceptWorkspaceInviteRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i98.CloudWorkspace?>()) {
-      return (data != null ? _i98.CloudWorkspace.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i100.CloudWorkspace?>()) {
+      return (data != null ? _i100.CloudWorkspace.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i99.CloudWorkspaceCapabilities?>()) {
+    if (t == _i1.getType<_i101.CloudWorkspaceCapabilities?>()) {
       return (data != null
-              ? _i99.CloudWorkspaceCapabilities.fromJson(data)
+              ? _i101.CloudWorkspaceCapabilities.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i100.CloudWorkspaceDetail?>()) {
-      return (data != null ? _i100.CloudWorkspaceDetail.fromJson(data) : null)
+    if (t == _i1.getType<_i102.CloudWorkspaceDetail?>()) {
+      return (data != null ? _i102.CloudWorkspaceDetail.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i101.CloudWorkspaceErrorCode?>()) {
+    if (t == _i1.getType<_i103.CloudWorkspaceErrorCode?>()) {
       return (data != null
-              ? _i101.CloudWorkspaceErrorCode.fromJson(data)
+              ? _i103.CloudWorkspaceErrorCode.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i102.CloudWorkspaceException?>()) {
+    if (t == _i1.getType<_i104.CloudWorkspaceException?>()) {
       return (data != null
-              ? _i102.CloudWorkspaceException.fromJson(data)
+              ? _i104.CloudWorkspaceException.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i103.CloudWorkspaceInviteSummary?>()) {
+    if (t == _i1.getType<_i105.CloudWorkspaceInviteSummary?>()) {
       return (data != null
-              ? _i103.CloudWorkspaceInviteSummary.fromJson(data)
+              ? _i105.CloudWorkspaceInviteSummary.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i104.CloudWorkspaceMemberSummary?>()) {
+    if (t == _i1.getType<_i106.CloudWorkspaceMemberSummary?>()) {
       return (data != null
-              ? _i104.CloudWorkspaceMemberSummary.fromJson(data)
+              ? _i106.CloudWorkspaceMemberSummary.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i105.CloudWorkspaceSummary?>()) {
-      return (data != null ? _i105.CloudWorkspaceSummary.fromJson(data) : null)
+    if (t == _i1.getType<_i107.CloudWorkspaceSummary?>()) {
+      return (data != null ? _i107.CloudWorkspaceSummary.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i106.CreateCloudWorkspaceRequest?>()) {
+    if (t == _i1.getType<_i108.CreateCloudWorkspaceRequest?>()) {
       return (data != null
-              ? _i106.CreateCloudWorkspaceRequest.fromJson(data)
+              ? _i108.CreateCloudWorkspaceRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i107.DeclineWorkspaceInviteRequest?>()) {
+    if (t == _i1.getType<_i109.DeclineWorkspaceInviteRequest?>()) {
       return (data != null
-              ? _i107.DeclineWorkspaceInviteRequest.fromJson(data)
+              ? _i109.DeclineWorkspaceInviteRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i108.DeleteCloudWorkspaceRequest?>()) {
+    if (t == _i1.getType<_i110.DeleteCloudWorkspaceRequest?>()) {
       return (data != null
-              ? _i108.DeleteCloudWorkspaceRequest.fromJson(data)
+              ? _i110.DeleteCloudWorkspaceRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i109.GetCloudWorkspaceDetailRequest?>()) {
+    if (t == _i1.getType<_i111.GetCloudWorkspaceDetailRequest?>()) {
       return (data != null
-              ? _i109.GetCloudWorkspaceDetailRequest.fromJson(data)
+              ? _i111.GetCloudWorkspaceDetailRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i110.InviteWorkspaceMemberRequest?>()) {
+    if (t == _i1.getType<_i112.InviteWorkspaceMemberRequest?>()) {
       return (data != null
-              ? _i110.InviteWorkspaceMemberRequest.fromJson(data)
+              ? _i112.InviteWorkspaceMemberRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i111.LeaveCloudWorkspaceRequest?>()) {
+    if (t == _i1.getType<_i113.LeaveCloudWorkspaceRequest?>()) {
       return (data != null
-              ? _i111.LeaveCloudWorkspaceRequest.fromJson(data)
+              ? _i113.LeaveCloudWorkspaceRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i112.ListCloudWorkspaceInvitesRequest?>()) {
+    if (t == _i1.getType<_i114.ListCloudWorkspaceInvitesRequest?>()) {
       return (data != null
-              ? _i112.ListCloudWorkspaceInvitesRequest.fromJson(data)
+              ? _i114.ListCloudWorkspaceInvitesRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i113.ListWorkspaceMembersRequest?>()) {
+    if (t == _i1.getType<_i115.ListWorkspaceMembersRequest?>()) {
       return (data != null
-              ? _i113.ListWorkspaceMembersRequest.fromJson(data)
+              ? _i115.ListWorkspaceMembersRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i114.PendingWorkspaceInviteSummary?>()) {
+    if (t == _i1.getType<_i116.PendingWorkspaceInviteSummary?>()) {
       return (data != null
-              ? _i114.PendingWorkspaceInviteSummary.fromJson(data)
+              ? _i116.PendingWorkspaceInviteSummary.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i115.RemoveWorkspaceMemberRequest?>()) {
+    if (t == _i1.getType<_i117.RemoveWorkspaceMemberRequest?>()) {
       return (data != null
-              ? _i115.RemoveWorkspaceMemberRequest.fromJson(data)
+              ? _i117.RemoveWorkspaceMemberRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i116.RenameCloudWorkspaceRequest?>()) {
+    if (t == _i1.getType<_i118.RenameCloudWorkspaceRequest?>()) {
       return (data != null
-              ? _i116.RenameCloudWorkspaceRequest.fromJson(data)
+              ? _i118.RenameCloudWorkspaceRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i117.RenewWorkspaceInviteRequest?>()) {
+    if (t == _i1.getType<_i119.RenewWorkspaceInviteRequest?>()) {
       return (data != null
-              ? _i117.RenewWorkspaceInviteRequest.fromJson(data)
+              ? _i119.RenewWorkspaceInviteRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i118.RevokeWorkspaceInviteRequest?>()) {
+    if (t == _i1.getType<_i120.RevokeWorkspaceInviteRequest?>()) {
       return (data != null
-              ? _i118.RevokeWorkspaceInviteRequest.fromJson(data)
+              ? _i120.RevokeWorkspaceInviteRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i119.TransferCloudWorkspaceOwnershipRequest?>()) {
+    if (t == _i1.getType<_i121.TransferCloudWorkspaceOwnershipRequest?>()) {
       return (data != null
-              ? _i119.TransferCloudWorkspaceOwnershipRequest.fromJson(data)
+              ? _i121.TransferCloudWorkspaceOwnershipRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i120.UpdateWorkspaceMemberRoleRequest?>()) {
+    if (t == _i1.getType<_i122.UpdateWorkspaceMemberRoleRequest?>()) {
       return (data != null
-              ? _i120.UpdateWorkspaceMemberRoleRequest.fromJson(data)
+              ? _i122.UpdateWorkspaceMemberRoleRequest.fromJson(data)
               : null)
           as T;
     }
-    if (t == _i1.getType<_i121.WorkspaceAuditRecord?>()) {
-      return (data != null ? _i121.WorkspaceAuditRecord.fromJson(data) : null)
+    if (t == _i1.getType<_i123.WorkspaceAuditRecord?>()) {
+      return (data != null ? _i123.WorkspaceAuditRecord.fromJson(data) : null)
           as T;
     }
-    if (t == _i1.getType<_i122.WorkspaceEvent?>()) {
-      return (data != null ? _i122.WorkspaceEvent.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i124.WorkspaceEvent?>()) {
+      return (data != null ? _i124.WorkspaceEvent.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i123.WorkspaceInvite?>()) {
-      return (data != null ? _i123.WorkspaceInvite.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i125.WorkspaceInvite?>()) {
+      return (data != null ? _i125.WorkspaceInvite.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i124.WorkspaceMember?>()) {
-      return (data != null ? _i124.WorkspaceMember.fromJson(data) : null) as T;
+    if (t == _i1.getType<_i126.WorkspaceMember?>()) {
+      return (data != null ? _i126.WorkspaceMember.fromJson(data) : null) as T;
     }
-    if (t == _i1.getType<_i125.WorkspaceMutationReceipt?>()) {
+    if (t == _i1.getType<_i127.WorkspaceMutationReceipt?>()) {
       return (data != null
-              ? _i125.WorkspaceMutationReceipt.fromJson(data)
+              ? _i127.WorkspaceMutationReceipt.fromJson(data)
               : null)
           as T;
     }
@@ -4537,91 +4696,91 @@ class Protocol extends _i1.DatabaseSerializationManager {
           )
           as T;
     }
-    if (t == List<_i88.WorkspacePatchOperation>) {
+    if (t == List<_i90.WorkspacePatchOperation>) {
       return (data as List)
-              .map((e) => deserialize<_i88.WorkspacePatchOperation>(e))
+              .map((e) => deserialize<_i90.WorkspacePatchOperation>(e))
               .toList()
           as T;
     }
-    if (t == List<_i90.WorkspaceResource>) {
+    if (t == List<_i92.WorkspaceResource>) {
       return (data as List)
-              .map((e) => deserialize<_i90.WorkspaceResource>(e))
+              .map((e) => deserialize<_i92.WorkspaceResource>(e))
               .toList()
           as T;
     }
-    if (t == List<_i93.WorkspaceResourcePageRequest>) {
+    if (t == List<_i95.WorkspaceResourcePageRequest>) {
       return (data as List)
-              .map((e) => deserialize<_i93.WorkspaceResourcePageRequest>(e))
+              .map((e) => deserialize<_i95.WorkspaceResourcePageRequest>(e))
               .toList()
           as T;
     }
-    if (t == List<_i92.WorkspaceResourcePage>) {
+    if (t == List<_i94.WorkspaceResourcePage>) {
       return (data as List)
-              .map((e) => deserialize<_i92.WorkspaceResourcePage>(e))
+              .map((e) => deserialize<_i94.WorkspaceResourcePage>(e))
               .toList()
           as T;
     }
-    if (t == List<_i122.WorkspaceEvent>) {
+    if (t == List<_i124.WorkspaceEvent>) {
       return (data as List)
-              .map((e) => deserialize<_i122.WorkspaceEvent>(e))
+              .map((e) => deserialize<_i124.WorkspaceEvent>(e))
               .toList()
           as T;
     }
-    if (t == List<_i126.ConversationSummary>) {
+    if (t == List<_i128.ConversationSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i126.ConversationSummary>(e))
+              .map((e) => deserialize<_i128.ConversationSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i127.ConversationMessageView>) {
+    if (t == List<_i129.ConversationMessageView>) {
       return (data as List)
-              .map((e) => deserialize<_i127.ConversationMessageView>(e))
+              .map((e) => deserialize<_i129.ConversationMessageView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i128.ApiModelProvider>) {
+    if (t == List<_i130.ApiModelProvider>) {
       return (data as List)
-              .map((e) => deserialize<_i128.ApiModelProvider>(e))
+              .map((e) => deserialize<_i130.ApiModelProvider>(e))
               .toList()
           as T;
     }
-    if (t == List<_i129.ApiModel>) {
-      return (data as List).map((e) => deserialize<_i129.ApiModel>(e)).toList()
+    if (t == List<_i131.ApiModel>) {
+      return (data as List).map((e) => deserialize<_i131.ApiModel>(e)).toList()
           as T;
     }
-    if (t == List<_i130.ModelConnectionView>) {
+    if (t == List<_i132.ModelConnectionView>) {
       return (data as List)
-              .map((e) => deserialize<_i130.ModelConnectionView>(e))
+              .map((e) => deserialize<_i132.ModelConnectionView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i131.WorkspaceModelSelectionView>) {
+    if (t == List<_i133.WorkspaceModelSelectionView>) {
       return (data as List)
-              .map((e) => deserialize<_i131.WorkspaceModelSelectionView>(e))
+              .map((e) => deserialize<_i133.WorkspaceModelSelectionView>(e))
               .toList()
           as T;
     }
-    if (t == List<_i132.CloudWorkspaceSummary>) {
+    if (t == List<_i134.CloudWorkspaceSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i132.CloudWorkspaceSummary>(e))
+              .map((e) => deserialize<_i134.CloudWorkspaceSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i133.PendingWorkspaceInviteSummary>) {
+    if (t == List<_i135.PendingWorkspaceInviteSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i133.PendingWorkspaceInviteSummary>(e))
+              .map((e) => deserialize<_i135.PendingWorkspaceInviteSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i134.CloudWorkspaceMemberSummary>) {
+    if (t == List<_i136.CloudWorkspaceMemberSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i134.CloudWorkspaceMemberSummary>(e))
+              .map((e) => deserialize<_i136.CloudWorkspaceMemberSummary>(e))
               .toList()
           as T;
     }
-    if (t == List<_i135.CloudWorkspaceInviteSummary>) {
+    if (t == List<_i137.CloudWorkspaceInviteSummary>) {
       return (data as List)
-              .map((e) => deserialize<_i135.CloudWorkspaceInviteSummary>(e))
+              .map((e) => deserialize<_i137.CloudWorkspaceInviteSummary>(e))
               .toList()
           as T;
     }
@@ -4716,57 +4875,59 @@ class Protocol extends _i1.DatabaseSerializationManager {
       _i77.WorkspaceStreamEnvelope => 'WorkspaceStreamEnvelope',
       _i78.WorkspaceStreamEnvelopeKind => 'WorkspaceStreamEnvelopeKind',
       _i79.WorkspaceSubscribeRequest => 'WorkspaceSubscribeRequest',
-      _i80.MutateWorkspaceCredentialRequest =>
+      _i80.RecurringWorkerSchedule => 'RecurringWorkerSchedule',
+      _i81.WorkerCoordinatorLease => 'WorkerCoordinatorLease',
+      _i82.MutateWorkspaceCredentialRequest =>
         'MutateWorkspaceCredentialRequest',
-      _i81.MutateWorkspaceCredentialResponse =>
+      _i83.MutateWorkspaceCredentialResponse =>
         'MutateWorkspaceCredentialResponse',
-      _i82.PatchWorkspaceStateRequest => 'PatchWorkspaceStateRequest',
-      _i83.PatchWorkspaceStateResponse => 'PatchWorkspaceStateResponse',
-      _i84.PutWorkspaceSecretRequest => 'PutWorkspaceSecretRequest',
-      _i85.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
-      _i86.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
-      _i87.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
-      _i88.WorkspacePatchOperation => 'WorkspacePatchOperation',
-      _i89.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
-      _i90.WorkspaceResource => 'WorkspaceResource',
-      _i91.WorkspaceResourceKind => 'WorkspaceResourceKind',
-      _i92.WorkspaceResourcePage => 'WorkspaceResourcePage',
-      _i93.WorkspaceResourcePageRequest => 'WorkspaceResourcePageRequest',
-      _i94.WorkspaceSecret => 'WorkspaceSecret',
-      _i95.WorkspaceSecretKind => 'WorkspaceSecretKind',
-      _i96.WorkspaceSecretScope => 'WorkspaceSecretScope',
-      _i97.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
-      _i98.CloudWorkspace => 'CloudWorkspace',
-      _i99.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
-      _i100.CloudWorkspaceDetail => 'CloudWorkspaceDetail',
-      _i101.CloudWorkspaceErrorCode => 'CloudWorkspaceErrorCode',
-      _i102.CloudWorkspaceException => 'CloudWorkspaceException',
-      _i103.CloudWorkspaceInviteSummary => 'CloudWorkspaceInviteSummary',
-      _i104.CloudWorkspaceMemberSummary => 'CloudWorkspaceMemberSummary',
-      _i105.CloudWorkspaceSummary => 'CloudWorkspaceSummary',
-      _i106.CreateCloudWorkspaceRequest => 'CreateCloudWorkspaceRequest',
-      _i107.DeclineWorkspaceInviteRequest => 'DeclineWorkspaceInviteRequest',
-      _i108.DeleteCloudWorkspaceRequest => 'DeleteCloudWorkspaceRequest',
-      _i109.GetCloudWorkspaceDetailRequest => 'GetCloudWorkspaceDetailRequest',
-      _i110.InviteWorkspaceMemberRequest => 'InviteWorkspaceMemberRequest',
-      _i111.LeaveCloudWorkspaceRequest => 'LeaveCloudWorkspaceRequest',
-      _i112.ListCloudWorkspaceInvitesRequest =>
+      _i84.PatchWorkspaceStateRequest => 'PatchWorkspaceStateRequest',
+      _i85.PatchWorkspaceStateResponse => 'PatchWorkspaceStateResponse',
+      _i86.PutWorkspaceSecretRequest => 'PutWorkspaceSecretRequest',
+      _i87.PutWorkspaceSecretResponse => 'PutWorkspaceSecretResponse',
+      _i88.ReadWorkspaceStateRequest => 'ReadWorkspaceStateRequest',
+      _i89.ReadWorkspaceStateResponse => 'ReadWorkspaceStateResponse',
+      _i90.WorkspacePatchOperation => 'WorkspacePatchOperation',
+      _i91.WorkspacePatchOperationKind => 'WorkspacePatchOperationKind',
+      _i92.WorkspaceResource => 'WorkspaceResource',
+      _i93.WorkspaceResourceKind => 'WorkspaceResourceKind',
+      _i94.WorkspaceResourcePage => 'WorkspaceResourcePage',
+      _i95.WorkspaceResourcePageRequest => 'WorkspaceResourcePageRequest',
+      _i96.WorkspaceSecret => 'WorkspaceSecret',
+      _i97.WorkspaceSecretKind => 'WorkspaceSecretKind',
+      _i98.WorkspaceSecretScope => 'WorkspaceSecretScope',
+      _i99.AcceptWorkspaceInviteRequest => 'AcceptWorkspaceInviteRequest',
+      _i100.CloudWorkspace => 'CloudWorkspace',
+      _i101.CloudWorkspaceCapabilities => 'CloudWorkspaceCapabilities',
+      _i102.CloudWorkspaceDetail => 'CloudWorkspaceDetail',
+      _i103.CloudWorkspaceErrorCode => 'CloudWorkspaceErrorCode',
+      _i104.CloudWorkspaceException => 'CloudWorkspaceException',
+      _i105.CloudWorkspaceInviteSummary => 'CloudWorkspaceInviteSummary',
+      _i106.CloudWorkspaceMemberSummary => 'CloudWorkspaceMemberSummary',
+      _i107.CloudWorkspaceSummary => 'CloudWorkspaceSummary',
+      _i108.CreateCloudWorkspaceRequest => 'CreateCloudWorkspaceRequest',
+      _i109.DeclineWorkspaceInviteRequest => 'DeclineWorkspaceInviteRequest',
+      _i110.DeleteCloudWorkspaceRequest => 'DeleteCloudWorkspaceRequest',
+      _i111.GetCloudWorkspaceDetailRequest => 'GetCloudWorkspaceDetailRequest',
+      _i112.InviteWorkspaceMemberRequest => 'InviteWorkspaceMemberRequest',
+      _i113.LeaveCloudWorkspaceRequest => 'LeaveCloudWorkspaceRequest',
+      _i114.ListCloudWorkspaceInvitesRequest =>
         'ListCloudWorkspaceInvitesRequest',
-      _i113.ListWorkspaceMembersRequest => 'ListWorkspaceMembersRequest',
-      _i114.PendingWorkspaceInviteSummary => 'PendingWorkspaceInviteSummary',
-      _i115.RemoveWorkspaceMemberRequest => 'RemoveWorkspaceMemberRequest',
-      _i116.RenameCloudWorkspaceRequest => 'RenameCloudWorkspaceRequest',
-      _i117.RenewWorkspaceInviteRequest => 'RenewWorkspaceInviteRequest',
-      _i118.RevokeWorkspaceInviteRequest => 'RevokeWorkspaceInviteRequest',
-      _i119.TransferCloudWorkspaceOwnershipRequest =>
+      _i115.ListWorkspaceMembersRequest => 'ListWorkspaceMembersRequest',
+      _i116.PendingWorkspaceInviteSummary => 'PendingWorkspaceInviteSummary',
+      _i117.RemoveWorkspaceMemberRequest => 'RemoveWorkspaceMemberRequest',
+      _i118.RenameCloudWorkspaceRequest => 'RenameCloudWorkspaceRequest',
+      _i119.RenewWorkspaceInviteRequest => 'RenewWorkspaceInviteRequest',
+      _i120.RevokeWorkspaceInviteRequest => 'RevokeWorkspaceInviteRequest',
+      _i121.TransferCloudWorkspaceOwnershipRequest =>
         'TransferCloudWorkspaceOwnershipRequest',
-      _i120.UpdateWorkspaceMemberRoleRequest =>
+      _i122.UpdateWorkspaceMemberRoleRequest =>
         'UpdateWorkspaceMemberRoleRequest',
-      _i121.WorkspaceAuditRecord => 'WorkspaceAuditRecord',
-      _i122.WorkspaceEvent => 'WorkspaceEvent',
-      _i123.WorkspaceInvite => 'WorkspaceInvite',
-      _i124.WorkspaceMember => 'WorkspaceMember',
-      _i125.WorkspaceMutationReceipt => 'WorkspaceMutationReceipt',
+      _i123.WorkspaceAuditRecord => 'WorkspaceAuditRecord',
+      _i124.WorkspaceEvent => 'WorkspaceEvent',
+      _i125.WorkspaceInvite => 'WorkspaceInvite',
+      _i126.WorkspaceMember => 'WorkspaceMember',
+      _i127.WorkspaceMutationReceipt => 'WorkspaceMutationReceipt',
       _ => null,
     };
   }
@@ -4931,97 +5092,101 @@ class Protocol extends _i1.DatabaseSerializationManager {
         return 'WorkspaceStreamEnvelopeKind';
       case _i79.WorkspaceSubscribeRequest():
         return 'WorkspaceSubscribeRequest';
-      case _i80.MutateWorkspaceCredentialRequest():
+      case _i80.RecurringWorkerSchedule():
+        return 'RecurringWorkerSchedule';
+      case _i81.WorkerCoordinatorLease():
+        return 'WorkerCoordinatorLease';
+      case _i82.MutateWorkspaceCredentialRequest():
         return 'MutateWorkspaceCredentialRequest';
-      case _i81.MutateWorkspaceCredentialResponse():
+      case _i83.MutateWorkspaceCredentialResponse():
         return 'MutateWorkspaceCredentialResponse';
-      case _i82.PatchWorkspaceStateRequest():
+      case _i84.PatchWorkspaceStateRequest():
         return 'PatchWorkspaceStateRequest';
-      case _i83.PatchWorkspaceStateResponse():
+      case _i85.PatchWorkspaceStateResponse():
         return 'PatchWorkspaceStateResponse';
-      case _i84.PutWorkspaceSecretRequest():
+      case _i86.PutWorkspaceSecretRequest():
         return 'PutWorkspaceSecretRequest';
-      case _i85.PutWorkspaceSecretResponse():
+      case _i87.PutWorkspaceSecretResponse():
         return 'PutWorkspaceSecretResponse';
-      case _i86.ReadWorkspaceStateRequest():
+      case _i88.ReadWorkspaceStateRequest():
         return 'ReadWorkspaceStateRequest';
-      case _i87.ReadWorkspaceStateResponse():
+      case _i89.ReadWorkspaceStateResponse():
         return 'ReadWorkspaceStateResponse';
-      case _i88.WorkspacePatchOperation():
+      case _i90.WorkspacePatchOperation():
         return 'WorkspacePatchOperation';
-      case _i89.WorkspacePatchOperationKind():
+      case _i91.WorkspacePatchOperationKind():
         return 'WorkspacePatchOperationKind';
-      case _i90.WorkspaceResource():
+      case _i92.WorkspaceResource():
         return 'WorkspaceResource';
-      case _i91.WorkspaceResourceKind():
+      case _i93.WorkspaceResourceKind():
         return 'WorkspaceResourceKind';
-      case _i92.WorkspaceResourcePage():
+      case _i94.WorkspaceResourcePage():
         return 'WorkspaceResourcePage';
-      case _i93.WorkspaceResourcePageRequest():
+      case _i95.WorkspaceResourcePageRequest():
         return 'WorkspaceResourcePageRequest';
-      case _i94.WorkspaceSecret():
+      case _i96.WorkspaceSecret():
         return 'WorkspaceSecret';
-      case _i95.WorkspaceSecretKind():
+      case _i97.WorkspaceSecretKind():
         return 'WorkspaceSecretKind';
-      case _i96.WorkspaceSecretScope():
+      case _i98.WorkspaceSecretScope():
         return 'WorkspaceSecretScope';
-      case _i97.AcceptWorkspaceInviteRequest():
+      case _i99.AcceptWorkspaceInviteRequest():
         return 'AcceptWorkspaceInviteRequest';
-      case _i98.CloudWorkspace():
+      case _i100.CloudWorkspace():
         return 'CloudWorkspace';
-      case _i99.CloudWorkspaceCapabilities():
+      case _i101.CloudWorkspaceCapabilities():
         return 'CloudWorkspaceCapabilities';
-      case _i100.CloudWorkspaceDetail():
+      case _i102.CloudWorkspaceDetail():
         return 'CloudWorkspaceDetail';
-      case _i101.CloudWorkspaceErrorCode():
+      case _i103.CloudWorkspaceErrorCode():
         return 'CloudWorkspaceErrorCode';
-      case _i102.CloudWorkspaceException():
+      case _i104.CloudWorkspaceException():
         return 'CloudWorkspaceException';
-      case _i103.CloudWorkspaceInviteSummary():
+      case _i105.CloudWorkspaceInviteSummary():
         return 'CloudWorkspaceInviteSummary';
-      case _i104.CloudWorkspaceMemberSummary():
+      case _i106.CloudWorkspaceMemberSummary():
         return 'CloudWorkspaceMemberSummary';
-      case _i105.CloudWorkspaceSummary():
+      case _i107.CloudWorkspaceSummary():
         return 'CloudWorkspaceSummary';
-      case _i106.CreateCloudWorkspaceRequest():
+      case _i108.CreateCloudWorkspaceRequest():
         return 'CreateCloudWorkspaceRequest';
-      case _i107.DeclineWorkspaceInviteRequest():
+      case _i109.DeclineWorkspaceInviteRequest():
         return 'DeclineWorkspaceInviteRequest';
-      case _i108.DeleteCloudWorkspaceRequest():
+      case _i110.DeleteCloudWorkspaceRequest():
         return 'DeleteCloudWorkspaceRequest';
-      case _i109.GetCloudWorkspaceDetailRequest():
+      case _i111.GetCloudWorkspaceDetailRequest():
         return 'GetCloudWorkspaceDetailRequest';
-      case _i110.InviteWorkspaceMemberRequest():
+      case _i112.InviteWorkspaceMemberRequest():
         return 'InviteWorkspaceMemberRequest';
-      case _i111.LeaveCloudWorkspaceRequest():
+      case _i113.LeaveCloudWorkspaceRequest():
         return 'LeaveCloudWorkspaceRequest';
-      case _i112.ListCloudWorkspaceInvitesRequest():
+      case _i114.ListCloudWorkspaceInvitesRequest():
         return 'ListCloudWorkspaceInvitesRequest';
-      case _i113.ListWorkspaceMembersRequest():
+      case _i115.ListWorkspaceMembersRequest():
         return 'ListWorkspaceMembersRequest';
-      case _i114.PendingWorkspaceInviteSummary():
+      case _i116.PendingWorkspaceInviteSummary():
         return 'PendingWorkspaceInviteSummary';
-      case _i115.RemoveWorkspaceMemberRequest():
+      case _i117.RemoveWorkspaceMemberRequest():
         return 'RemoveWorkspaceMemberRequest';
-      case _i116.RenameCloudWorkspaceRequest():
+      case _i118.RenameCloudWorkspaceRequest():
         return 'RenameCloudWorkspaceRequest';
-      case _i117.RenewWorkspaceInviteRequest():
+      case _i119.RenewWorkspaceInviteRequest():
         return 'RenewWorkspaceInviteRequest';
-      case _i118.RevokeWorkspaceInviteRequest():
+      case _i120.RevokeWorkspaceInviteRequest():
         return 'RevokeWorkspaceInviteRequest';
-      case _i119.TransferCloudWorkspaceOwnershipRequest():
+      case _i121.TransferCloudWorkspaceOwnershipRequest():
         return 'TransferCloudWorkspaceOwnershipRequest';
-      case _i120.UpdateWorkspaceMemberRoleRequest():
+      case _i122.UpdateWorkspaceMemberRoleRequest():
         return 'UpdateWorkspaceMemberRoleRequest';
-      case _i121.WorkspaceAuditRecord():
+      case _i123.WorkspaceAuditRecord():
         return 'WorkspaceAuditRecord';
-      case _i122.WorkspaceEvent():
+      case _i124.WorkspaceEvent():
         return 'WorkspaceEvent';
-      case _i123.WorkspaceInvite():
+      case _i125.WorkspaceInvite():
         return 'WorkspaceInvite';
-      case _i124.WorkspaceMember():
+      case _i126.WorkspaceMember():
         return 'WorkspaceMember';
-      case _i125.WorkspaceMutationReceipt():
+      case _i127.WorkspaceMutationReceipt():
         return 'WorkspaceMutationReceipt';
     }
     className = _i3.Protocol().getClassNameForObject(data);
@@ -5276,145 +5441,151 @@ class Protocol extends _i1.DatabaseSerializationManager {
     if (dataClassName == 'WorkspaceSubscribeRequest') {
       return deserialize<_i79.WorkspaceSubscribeRequest>(data['data']);
     }
+    if (dataClassName == 'RecurringWorkerSchedule') {
+      return deserialize<_i80.RecurringWorkerSchedule>(data['data']);
+    }
+    if (dataClassName == 'WorkerCoordinatorLease') {
+      return deserialize<_i81.WorkerCoordinatorLease>(data['data']);
+    }
     if (dataClassName == 'MutateWorkspaceCredentialRequest') {
-      return deserialize<_i80.MutateWorkspaceCredentialRequest>(data['data']);
+      return deserialize<_i82.MutateWorkspaceCredentialRequest>(data['data']);
     }
     if (dataClassName == 'MutateWorkspaceCredentialResponse') {
-      return deserialize<_i81.MutateWorkspaceCredentialResponse>(data['data']);
+      return deserialize<_i83.MutateWorkspaceCredentialResponse>(data['data']);
     }
     if (dataClassName == 'PatchWorkspaceStateRequest') {
-      return deserialize<_i82.PatchWorkspaceStateRequest>(data['data']);
+      return deserialize<_i84.PatchWorkspaceStateRequest>(data['data']);
     }
     if (dataClassName == 'PatchWorkspaceStateResponse') {
-      return deserialize<_i83.PatchWorkspaceStateResponse>(data['data']);
+      return deserialize<_i85.PatchWorkspaceStateResponse>(data['data']);
     }
     if (dataClassName == 'PutWorkspaceSecretRequest') {
-      return deserialize<_i84.PutWorkspaceSecretRequest>(data['data']);
+      return deserialize<_i86.PutWorkspaceSecretRequest>(data['data']);
     }
     if (dataClassName == 'PutWorkspaceSecretResponse') {
-      return deserialize<_i85.PutWorkspaceSecretResponse>(data['data']);
+      return deserialize<_i87.PutWorkspaceSecretResponse>(data['data']);
     }
     if (dataClassName == 'ReadWorkspaceStateRequest') {
-      return deserialize<_i86.ReadWorkspaceStateRequest>(data['data']);
+      return deserialize<_i88.ReadWorkspaceStateRequest>(data['data']);
     }
     if (dataClassName == 'ReadWorkspaceStateResponse') {
-      return deserialize<_i87.ReadWorkspaceStateResponse>(data['data']);
+      return deserialize<_i89.ReadWorkspaceStateResponse>(data['data']);
     }
     if (dataClassName == 'WorkspacePatchOperation') {
-      return deserialize<_i88.WorkspacePatchOperation>(data['data']);
+      return deserialize<_i90.WorkspacePatchOperation>(data['data']);
     }
     if (dataClassName == 'WorkspacePatchOperationKind') {
-      return deserialize<_i89.WorkspacePatchOperationKind>(data['data']);
+      return deserialize<_i91.WorkspacePatchOperationKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceResource') {
-      return deserialize<_i90.WorkspaceResource>(data['data']);
+      return deserialize<_i92.WorkspaceResource>(data['data']);
     }
     if (dataClassName == 'WorkspaceResourceKind') {
-      return deserialize<_i91.WorkspaceResourceKind>(data['data']);
+      return deserialize<_i93.WorkspaceResourceKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceResourcePage') {
-      return deserialize<_i92.WorkspaceResourcePage>(data['data']);
+      return deserialize<_i94.WorkspaceResourcePage>(data['data']);
     }
     if (dataClassName == 'WorkspaceResourcePageRequest') {
-      return deserialize<_i93.WorkspaceResourcePageRequest>(data['data']);
+      return deserialize<_i95.WorkspaceResourcePageRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceSecret') {
-      return deserialize<_i94.WorkspaceSecret>(data['data']);
+      return deserialize<_i96.WorkspaceSecret>(data['data']);
     }
     if (dataClassName == 'WorkspaceSecretKind') {
-      return deserialize<_i95.WorkspaceSecretKind>(data['data']);
+      return deserialize<_i97.WorkspaceSecretKind>(data['data']);
     }
     if (dataClassName == 'WorkspaceSecretScope') {
-      return deserialize<_i96.WorkspaceSecretScope>(data['data']);
+      return deserialize<_i98.WorkspaceSecretScope>(data['data']);
     }
     if (dataClassName == 'AcceptWorkspaceInviteRequest') {
-      return deserialize<_i97.AcceptWorkspaceInviteRequest>(data['data']);
+      return deserialize<_i99.AcceptWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'CloudWorkspace') {
-      return deserialize<_i98.CloudWorkspace>(data['data']);
+      return deserialize<_i100.CloudWorkspace>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceCapabilities') {
-      return deserialize<_i99.CloudWorkspaceCapabilities>(data['data']);
+      return deserialize<_i101.CloudWorkspaceCapabilities>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceDetail') {
-      return deserialize<_i100.CloudWorkspaceDetail>(data['data']);
+      return deserialize<_i102.CloudWorkspaceDetail>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceErrorCode') {
-      return deserialize<_i101.CloudWorkspaceErrorCode>(data['data']);
+      return deserialize<_i103.CloudWorkspaceErrorCode>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceException') {
-      return deserialize<_i102.CloudWorkspaceException>(data['data']);
+      return deserialize<_i104.CloudWorkspaceException>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceInviteSummary') {
-      return deserialize<_i103.CloudWorkspaceInviteSummary>(data['data']);
+      return deserialize<_i105.CloudWorkspaceInviteSummary>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceMemberSummary') {
-      return deserialize<_i104.CloudWorkspaceMemberSummary>(data['data']);
+      return deserialize<_i106.CloudWorkspaceMemberSummary>(data['data']);
     }
     if (dataClassName == 'CloudWorkspaceSummary') {
-      return deserialize<_i105.CloudWorkspaceSummary>(data['data']);
+      return deserialize<_i107.CloudWorkspaceSummary>(data['data']);
     }
     if (dataClassName == 'CreateCloudWorkspaceRequest') {
-      return deserialize<_i106.CreateCloudWorkspaceRequest>(data['data']);
+      return deserialize<_i108.CreateCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'DeclineWorkspaceInviteRequest') {
-      return deserialize<_i107.DeclineWorkspaceInviteRequest>(data['data']);
+      return deserialize<_i109.DeclineWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'DeleteCloudWorkspaceRequest') {
-      return deserialize<_i108.DeleteCloudWorkspaceRequest>(data['data']);
+      return deserialize<_i110.DeleteCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'GetCloudWorkspaceDetailRequest') {
-      return deserialize<_i109.GetCloudWorkspaceDetailRequest>(data['data']);
+      return deserialize<_i111.GetCloudWorkspaceDetailRequest>(data['data']);
     }
     if (dataClassName == 'InviteWorkspaceMemberRequest') {
-      return deserialize<_i110.InviteWorkspaceMemberRequest>(data['data']);
+      return deserialize<_i112.InviteWorkspaceMemberRequest>(data['data']);
     }
     if (dataClassName == 'LeaveCloudWorkspaceRequest') {
-      return deserialize<_i111.LeaveCloudWorkspaceRequest>(data['data']);
+      return deserialize<_i113.LeaveCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'ListCloudWorkspaceInvitesRequest') {
-      return deserialize<_i112.ListCloudWorkspaceInvitesRequest>(data['data']);
+      return deserialize<_i114.ListCloudWorkspaceInvitesRequest>(data['data']);
     }
     if (dataClassName == 'ListWorkspaceMembersRequest') {
-      return deserialize<_i113.ListWorkspaceMembersRequest>(data['data']);
+      return deserialize<_i115.ListWorkspaceMembersRequest>(data['data']);
     }
     if (dataClassName == 'PendingWorkspaceInviteSummary') {
-      return deserialize<_i114.PendingWorkspaceInviteSummary>(data['data']);
+      return deserialize<_i116.PendingWorkspaceInviteSummary>(data['data']);
     }
     if (dataClassName == 'RemoveWorkspaceMemberRequest') {
-      return deserialize<_i115.RemoveWorkspaceMemberRequest>(data['data']);
+      return deserialize<_i117.RemoveWorkspaceMemberRequest>(data['data']);
     }
     if (dataClassName == 'RenameCloudWorkspaceRequest') {
-      return deserialize<_i116.RenameCloudWorkspaceRequest>(data['data']);
+      return deserialize<_i118.RenameCloudWorkspaceRequest>(data['data']);
     }
     if (dataClassName == 'RenewWorkspaceInviteRequest') {
-      return deserialize<_i117.RenewWorkspaceInviteRequest>(data['data']);
+      return deserialize<_i119.RenewWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'RevokeWorkspaceInviteRequest') {
-      return deserialize<_i118.RevokeWorkspaceInviteRequest>(data['data']);
+      return deserialize<_i120.RevokeWorkspaceInviteRequest>(data['data']);
     }
     if (dataClassName == 'TransferCloudWorkspaceOwnershipRequest') {
-      return deserialize<_i119.TransferCloudWorkspaceOwnershipRequest>(
+      return deserialize<_i121.TransferCloudWorkspaceOwnershipRequest>(
         data['data'],
       );
     }
     if (dataClassName == 'UpdateWorkspaceMemberRoleRequest') {
-      return deserialize<_i120.UpdateWorkspaceMemberRoleRequest>(data['data']);
+      return deserialize<_i122.UpdateWorkspaceMemberRoleRequest>(data['data']);
     }
     if (dataClassName == 'WorkspaceAuditRecord') {
-      return deserialize<_i121.WorkspaceAuditRecord>(data['data']);
+      return deserialize<_i123.WorkspaceAuditRecord>(data['data']);
     }
     if (dataClassName == 'WorkspaceEvent') {
-      return deserialize<_i122.WorkspaceEvent>(data['data']);
+      return deserialize<_i124.WorkspaceEvent>(data['data']);
     }
     if (dataClassName == 'WorkspaceInvite') {
-      return deserialize<_i123.WorkspaceInvite>(data['data']);
+      return deserialize<_i125.WorkspaceInvite>(data['data']);
     }
     if (dataClassName == 'WorkspaceMember') {
-      return deserialize<_i124.WorkspaceMember>(data['data']);
+      return deserialize<_i126.WorkspaceMember>(data['data']);
     }
     if (dataClassName == 'WorkspaceMutationReceipt') {
-      return deserialize<_i125.WorkspaceMutationReceipt>(data['data']);
+      return deserialize<_i127.WorkspaceMutationReceipt>(data['data']);
     }
     if (dataClassName.startsWith('serverpod_auth_core.')) {
       data['className'] = dataClassName.substring(20);
@@ -5491,22 +5662,26 @@ class Protocol extends _i1.DatabaseSerializationManager {
         return _i75.ObjectUpload.t;
       case _i76.WorkspaceObject:
         return _i76.WorkspaceObject.t;
-      case _i90.WorkspaceResource:
-        return _i90.WorkspaceResource.t;
-      case _i94.WorkspaceSecret:
-        return _i94.WorkspaceSecret.t;
-      case _i98.CloudWorkspace:
-        return _i98.CloudWorkspace.t;
-      case _i121.WorkspaceAuditRecord:
-        return _i121.WorkspaceAuditRecord.t;
-      case _i122.WorkspaceEvent:
-        return _i122.WorkspaceEvent.t;
-      case _i123.WorkspaceInvite:
-        return _i123.WorkspaceInvite.t;
-      case _i124.WorkspaceMember:
-        return _i124.WorkspaceMember.t;
-      case _i125.WorkspaceMutationReceipt:
-        return _i125.WorkspaceMutationReceipt.t;
+      case _i80.RecurringWorkerSchedule:
+        return _i80.RecurringWorkerSchedule.t;
+      case _i81.WorkerCoordinatorLease:
+        return _i81.WorkerCoordinatorLease.t;
+      case _i92.WorkspaceResource:
+        return _i92.WorkspaceResource.t;
+      case _i96.WorkspaceSecret:
+        return _i96.WorkspaceSecret.t;
+      case _i100.CloudWorkspace:
+        return _i100.CloudWorkspace.t;
+      case _i123.WorkspaceAuditRecord:
+        return _i123.WorkspaceAuditRecord.t;
+      case _i124.WorkspaceEvent:
+        return _i124.WorkspaceEvent.t;
+      case _i125.WorkspaceInvite:
+        return _i125.WorkspaceInvite.t;
+      case _i126.WorkspaceMember:
+        return _i126.WorkspaceMember.t;
+      case _i127.WorkspaceMutationReceipt:
+        return _i127.WorkspaceMutationReceipt.t;
     }
     return null;
   }

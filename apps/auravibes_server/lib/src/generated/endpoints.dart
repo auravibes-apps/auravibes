@@ -123,8 +123,6 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i62;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i63;
-import 'package:auravibes_server/src/generated/future_calls.dart' as _i64;
-export 'future_calls.dart' show ServerpodFutureCallsGetter;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -1496,10 +1494,5 @@ class Endpoints extends _i1.EndpointDispatch {
       ..initializeEndpoints(server);
     modules['serverpod_auth_idp'] = _i63.Endpoints()
       ..initializeEndpoints(server);
-  }
-
-  @override
-  _i1.FutureCallDispatch? get futureCalls {
-    return _i64.FutureCalls();
   }
 }

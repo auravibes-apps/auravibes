@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 
+import '../../generated/protocol.dart';
 import 'object_repository.dart';
 import 'object_store.dart';
 
@@ -18,7 +19,12 @@ class ObjectCleanupService {
   final int batchSize;
   final int maxAttempts;
 
-  Future<int> runOnce(Session session) async {
+  Future<int> runOnce(
+    Session session, {
+    bool Function()? isActive,
+    required WorkerCoordinatorLease coordinator,
+  }) async {
+    if (isActive != null && !isActive()) return 0;
     final now = DateTime.now().toUtc();
     final rows = await repository.listPendingDeletions(
       session,
@@ -28,14 +34,23 @@ class ObjectCleanupService {
     );
     var completed = 0;
     for (final row in rows) {
+      if (isActive != null && !isActive()) return completed;
       try {
         await store.delete(row.objectKey);
-        await repository.completeDeletion(session, deletion: row, now: now);
+        if (isActive != null && !isActive()) return completed;
+        await repository.completeDeletion(
+          session,
+          deletion: row,
+          coordinator: coordinator,
+          now: now,
+        );
         completed++;
       } on Object catch (error) {
+        if (isActive != null && !isActive()) return completed;
         await repository.failDeletion(
           session,
           deletion: row,
+          coordinator: coordinator,
           now: now,
           error: error.runtimeType.toString(),
         );
@@ -45,42 +60,30 @@ class ObjectCleanupService {
   }
 }
 
-class ObjectCleanupFutureCall extends FutureCall {
-  static const interval = Duration(hours: 12);
-
-  @override
-  Future<void> invoke(Session session, SerializableModel? object) =>
-      poll(session);
-
-  Future<void> poll(Session session) async {
-    try {
-      final endpoint = Platform.environment['OBJECT_STORE_ENDPOINT'];
-      if (endpoint != null) {
-        await ObjectCleanupService(
-          store: HttpObjectStore(
-            endpoint: Uri.parse(endpoint),
-            bearerToken: Platform.environment['OBJECT_STORE_BEARER_TOKEN'],
-          ),
-        ).runOnce(session);
-      }
-    } on Object catch (error, stackTrace) {
-      session.log(
-        'Object cleanup failed.',
-        level: LogLevel.warning,
-        exception: error,
-        stackTrace: stackTrace,
-      );
-    } finally {
-      // ignore: deprecated_member_use
-      await session.serverpod.futureCallWithDelay(
-        objectCleanupFutureCallName,
-        null,
-        interval,
-        identifier: objectCleanupFutureCallIdentifier,
-      );
-    }
+Future<void> runObjectCleanupWorker(
+  Session session, {
+  required WorkerCoordinatorLease coordinator,
+  required bool Function() isActive,
+}) async {
+  if (!isActive()) return;
+  final endpoint = Platform.environment['OBJECT_STORE_ENDPOINT'];
+  if (endpoint == null) return;
+  try {
+    await ObjectCleanupService(
+      store: HttpObjectStore(
+        endpoint: Uri.parse(endpoint),
+        bearerToken: Platform.environment['OBJECT_STORE_BEARER_TOKEN'],
+      ),
+    ).runOnce(session, isActive: isActive, coordinator: coordinator);
+  } on Object catch (error, stackTrace) {
+    session.log(
+      'Object cleanup failed.',
+      level: LogLevel.warning,
+      exception: error,
+      stackTrace: stackTrace,
+    );
   }
 }
 
-const objectCleanupFutureCallName = 'objectCleanup';
+const objectCleanupInterval = Duration(hours: 12);
 const objectCleanupFutureCallIdentifier = 'objectCleanup.poll';

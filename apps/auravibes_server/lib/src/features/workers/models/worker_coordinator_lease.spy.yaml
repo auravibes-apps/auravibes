@@ -1,0 +1,11 @@
+class: WorkerCoordinatorLease
+table: worker_coordinator_lease
+fields:
+  key: String
+  ownerId: String
+  fencingToken: int
+  expiresAt: DateTime
+indexes:
+  worker_coordinator_lease_key_idx:
+    fields: key
+    unique: true

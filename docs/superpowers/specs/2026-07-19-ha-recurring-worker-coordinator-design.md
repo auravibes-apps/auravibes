@@ -47,6 +47,8 @@ The leader invokes the existing worker code directly after claiming its schedule
 
 The coordinator renews the execution lease while work runs. Completion is conditional on the matching `runToken`; it clears the token and advances `nextRunAt` by the worker interval. A stale leader cannot complete or advance a run claimed by a newer leader.
 
+Worker effects are at-least-once across a process pause or crash: PostgreSQL fencing protects schedule state but cannot atomically fence a remote provider sync or object-store delete. Conversation jobs retain their `SKIP LOCKED` lease boundary; catalog synchronization must remain idempotent; object deletion is idempotent by object key and its durable completion record is conditional. Callers must tolerate a reclaimed run repeating an external effect.
+
 ### Lifecycle
 
 After `pod.start()`, every server starts the coordinator heartbeat. The leader runs only the timers it owns. Timer callbacks create and close an internal Serverpod session. On lease loss, callbacks stop claiming new work. On shutdown or process death, the database lease expires and another replica takes over.
@@ -71,7 +73,7 @@ Failover starts within one lease expiry plus one heartbeat. An interrupted run b
 
 ## Migration and cleanup
 
-A forward migration adds the two coordinator tables. The migration does not modify Serverpod-owned tables. On the first successful coordinator leadership, the leader cancels the three legacy FutureCall identifiers once and then relies exclusively on durable schedules.
+A forward migration adds the two coordinator tables. The migration does not modify Serverpod-owned tables. Deploy this release only after every legacy server replica has been drained; the old binaries can otherwise reschedule a claimed legacy poll after the coordinator deletes it. Coordinators refuse to start until the deployment explicitly sets `AURAVIBES_RECURRING_WORKERS_CUTOVER=drained`; set it only after all old replicas stop. Once all replicas run this release, the leader deletes the three legacy FutureCall identifiers and relies exclusively on durable schedules.
 
 ## Testing
 

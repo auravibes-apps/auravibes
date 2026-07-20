@@ -1,0 +1,15 @@
+class: RecurringWorkerSchedule
+table: recurring_worker_schedule
+fields:
+  workerKey: String
+  nextRunAt: DateTime
+  runToken: String?
+  leaderFencingToken: int?
+  runLeaseExpiresAt: DateTime?
+  updatedAt: DateTime
+indexes:
+  recurring_worker_schedule_worker_key_idx:
+    fields: workerKey
+    unique: true
+  recurring_worker_schedule_due_idx:
+    fields: nextRunAt, runLeaseExpiresAt

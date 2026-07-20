@@ -22,7 +22,12 @@ class ConversationWorker {
   final ConversationJobLeases leases;
   final LiveTurnBroker liveTurnBroker;
 
-  Future<bool> runOnce(Session session, {required String workerId}) async {
+  Future<bool> runOnce(
+    Session session, {
+    required String workerId,
+    bool Function()? isActive,
+  }) async {
+    if (isActive != null && !isActive()) return false;
     final now = DateTime.now().toUtc();
     final leaseToken = const Uuid().v4().toString();
     final job = await leases.claim(
@@ -32,6 +37,7 @@ class ConversationWorker {
       now: now,
     );
     if (job == null) return false;
+    if (isActive != null && !isActive()) return true;
     if (job.status == ConversationJobStatuses.failed) {
       await _publishTurnEvent(
         session,
@@ -52,11 +58,12 @@ class ConversationWorker {
       'turn=${job.turnId}, kind=${job.kind}.',
     );
     try {
+      if (isActive != null && !isActive()) return true;
       if (job.kind == ConversationJobKinds.turn) {
         await liveTurns.queued();
-        await _executeTurn(session, job, leaseToken, liveTurns);
+        await _executeTurn(session, job, leaseToken, liveTurns, isActive);
       } else if (job.kind == ConversationJobKinds.compact) {
-        await _compact(session, job, leaseToken);
+        await _compact(session, job, leaseToken, isActive);
       } else {
         await leases.retryOrFail(
           session,
@@ -70,10 +77,12 @@ class ConversationWorker {
       session.log('Conversation job completed: job=${job.id}.');
       return true;
     } on ConversationCancelledException {
+      if (isActive != null && !isActive()) return true;
       await _cancel(session, job, leaseToken);
       await _publishTurnEvent(session, job, LiveTurnEventKind.cancelled);
       return true;
     } on ConversationEngineConfigurationException {
+      if (isActive != null && !isActive()) return true;
       final updated = await leases.retryOrFail(
         session,
         jobId: job.id!,
@@ -96,6 +105,7 @@ class ConversationWorker {
       );
       return true;
     } on ConversationResponseLimitException {
+      if (isActive != null && !isActive()) return true;
       final updated = await leases.retryOrFail(
         session,
         jobId: job.id!,
@@ -118,6 +128,7 @@ class ConversationWorker {
       );
       return true;
     } on Object catch (error, stackTrace) {
+      if (isActive != null && !isActive()) return true;
       final updated = await leases.retryOrFail(
         session,
         jobId: job.id!,
@@ -149,7 +160,9 @@ class ConversationWorker {
     ConversationJob job,
     String leaseToken,
     ConversationLiveTurnPublisher liveTurns,
+    bool Function()? isActive,
   ) async {
+    if (isActive != null && !isActive()) return;
     final turn = await ConversationTurn.db.findFirstRow(
       session,
       where: (table) =>
@@ -164,6 +177,7 @@ class ConversationWorker {
       await _publishTurnEvent(session, job, LiveTurnEventKind.cancelled);
       return;
     }
+    if (isActive != null && !isActive()) return;
     final messages = await ConversationMessage.db.find(
       session,
       where: (table) =>
@@ -171,6 +185,7 @@ class ConversationWorker {
           table.conversationId.equals(job.conversationId),
       orderBy: (table) => table.id,
     );
+    if (isActive != null && !isActive()) return;
     await leases.checkpoint(
       session,
       jobId: job.id!,
@@ -179,11 +194,14 @@ class ConversationWorker {
       now: DateTime.now().toUtc(),
       leaseDuration: const Duration(minutes: 2),
     );
+    if (isActive != null && !isActive()) return;
     await liveTurns.running();
+    if (isActive != null && !isActive()) return;
     final result = await _withLeaseRenewal(
       job.id!,
       leaseToken,
-      (leaseLost) => host.executeTurn(
+      isActive: isActive,
+      operation: (leaseLost) => host.executeTurn(
         session,
         job: job,
         turn: turn,
@@ -192,6 +210,7 @@ class ConversationWorker {
         leaseLost: leaseLost,
       ),
     );
+    if (isActive != null && !isActive()) return;
     if (result.awaitingApproval) {
       await _pauseForApproval(session, job, turn, leaseToken);
       await _publishTurnEvent(session, job, LiveTurnEventKind.awaitingApproval);
@@ -443,7 +462,9 @@ class ConversationWorker {
     Session session,
     ConversationJob job,
     String leaseToken,
+    bool Function()? isActive,
   ) async {
+    if (isActive != null && !isActive()) return;
     final messages = await ConversationMessage.db.find(
       session,
       where: (table) =>
@@ -451,16 +472,19 @@ class ConversationWorker {
           table.conversationId.equals(job.conversationId),
       orderBy: (table) => table.id,
     );
+    if (isActive != null && !isActive()) return;
     final result = await _withLeaseRenewal(
       job.id!,
       leaseToken,
-      (leaseLost) => host.compact(
+      isActive: isActive,
+      operation: (leaseLost) => host.compact(
         session,
         job: job,
         messages: messages,
         leaseLost: leaseLost,
       ),
     );
+    if (isActive != null && !isActive()) return;
     await _commitCompaction(session, job, leaseToken, result);
   }
 
@@ -633,15 +657,22 @@ class ConversationWorker {
 
   Future<T> _withLeaseRenewal<T>(
     int jobId,
-    String leaseToken,
-    Future<T> Function(Future<void> leaseLost) operation,
-  ) async {
+    String leaseToken, {
+    bool Function()? isActive,
+    required Future<T> Function(Future<void> leaseLost) operation,
+  }) async {
     var renewing = false;
     Future<void>? renewal;
     Object? renewalError;
     StackTrace? renewalStackTrace;
     final leaseLost = Completer<void>();
+    final activityTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (isActive != null && !isActive() && !leaseLost.isCompleted) {
+        leaseLost.complete();
+      }
+    });
     final timer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (leaseLost.isCompleted) return;
       if (renewing || renewalError != null) return;
       renewing = true;
       renewal = _renewLease(jobId, leaseToken)
@@ -658,6 +689,7 @@ class ConversationWorker {
     try {
       return await operation(leaseLost.future);
     } finally {
+      activityTimer.cancel();
       timer.cancel();
       await renewal;
       if (renewalError != null) {
@@ -692,27 +724,21 @@ Map<String, dynamic> _jsonMap(String? source) {
   return value;
 }
 
-class ConversationWorkerFutureCall extends FutureCall {
-  @override
-  Future<void> invoke(Session session, SerializableModel? object) =>
-      poll(session);
-
-  Future<void> poll(Session session) async {
-    final worker = const ConversationWorker();
-    final workerId = session.serverpod.serverId;
-    var worked = false;
-    do {
-      worked = await worker.runOnce(session, workerId: workerId);
-    } while (worked);
-    // ignore: deprecated_member_use
-    await session.serverpod.futureCallWithDelay(
-      conversationWorkerFutureCallName,
-      null,
-      const Duration(seconds: 1),
-      identifier: conversationWorkerFutureCallIdentifier,
+Future<void> runConversationWorker(
+  Session session, {
+  required bool Function() isActive,
+}) async {
+  final worker = const ConversationWorker();
+  final workerId = session.serverpod.serverId;
+  var worked = false;
+  do {
+    if (!isActive()) return;
+    worked = await worker.runOnce(
+      session,
+      workerId: workerId,
+      isActive: isActive,
     );
-  }
+  } while (worked && isActive());
 }
 
-const conversationWorkerFutureCallName = 'conversationWorker';
 const conversationWorkerFutureCallIdentifier = 'conversationWorker.poll';
