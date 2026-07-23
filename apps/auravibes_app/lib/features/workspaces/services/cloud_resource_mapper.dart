@@ -5,16 +5,30 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('cloud_resource_mapper');
 
 abstract final class CloudResourceMapper {
   static Map<String, dynamic> decode(WorkspaceResource resource) {
+    Map<String, dynamic>? decoded;
     try {
-      final decoded = jsonDecode(resource.data);
-      if (decoded is! Map<String, dynamic>) throw const FormatException();
+      final data = jsonDecode(resource.data);
+      if (data is! Map<String, dynamic>) throw const FormatException();
+      decoded = data;
       _validate(resource.resourceKind, decoded);
 
       return decoded;
     } on Object catch (error) {
+      final skillMetadata = resource.resourceKind == WorkspaceResourceKind.skill
+          ? ' skillKind=${decoded?['kind']} skillSource=${decoded?['source']}'
+          : '';
+      _logger.warning(
+        'Rejected workspace resource: '
+        'kind=${resource.resourceKind.name} id=${resource.resourceId}'
+        '$skillMetadata errorType=${error.runtimeType}.',
+      );
+
       return translateCloudException(error, CloudOperationContext.resource);
     }
   }
@@ -120,14 +134,26 @@ abstract final class CloudResourceMapper {
           (entry.value == String && value is String) ||
           (entry.value == bool && value is bool) ||
           (entry.value == Map && value is Map);
+      final isEmptySkillMetadata =
+          kind == WorkspaceResourceKind.skill &&
+          (entry.key == 'content' || entry.key == 'description') &&
+          value is String &&
+          value.isEmpty;
       final isLegacyEmptyAgentPrompt =
           kind == WorkspaceResourceKind.agent &&
           entry.key == 'content' &&
           value is String &&
           value.isEmpty;
-      if (!hasExpectedType ||
-          value is String && value.isEmpty && !isLegacyEmptyAgentPrompt) {
-        throw const FormatException();
+      if (!hasExpectedType) {
+        throw FormatException(
+          'Invalid ${kind.name}.${entry.key} type: ${value.runtimeType}',
+        );
+      }
+      if (value is String &&
+          value.isEmpty &&
+          !isEmptySkillMetadata &&
+          !isLegacyEmptyAgentPrompt) {
+        throw FormatException('Empty ${kind.name}.${entry.key}');
       }
     }
     if (kind == WorkspaceResourceKind.agent) {

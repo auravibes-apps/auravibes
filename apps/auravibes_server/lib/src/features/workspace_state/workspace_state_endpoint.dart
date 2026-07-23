@@ -14,8 +14,30 @@ class WorkspaceStateEndpoint extends Endpoint {
     Session session,
     ReadWorkspaceStateRequest request,
   ) async {
-    final account = await const AuthenticatedAccountResolver()(session);
-    return _useCases.read(session, userId: account.userId, request: request);
+    try {
+      final account = await const AuthenticatedAccountResolver()(session);
+      final response = await _useCases.read(
+        session,
+        userId: account.userId,
+        request: request,
+      );
+      session.log(
+        'Workspace state read completed: workspace=${request.workspaceId}, '
+        'kinds=${request.pages.map((page) => page.resourceKind.name).join(',')}, '
+        'resources=${response.pages.fold<int>(0, (count, page) => count + page.resources.length)}, '
+        'sequence=${response.currentSequence}.',
+      );
+      return response;
+    } on Object catch (error, stackTrace) {
+      session.log(
+        'Workspace state read failed: workspace=${request.workspaceId}, '
+        'kinds=${request.pages.map((page) => page.resourceKind.name).join(',')}.',
+        level: LogLevel.warning,
+        exception: error,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   Future<PatchWorkspaceStateResponse> patch(

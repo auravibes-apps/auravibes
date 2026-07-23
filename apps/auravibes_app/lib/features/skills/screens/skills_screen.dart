@@ -8,6 +8,7 @@ import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/delete_cloud_routed_skill_usecases.dart';
 import 'package:auravibes_app/features/skills/usecases/disable_skill_usecase.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -44,9 +45,9 @@ class SkillsScreen extends ConsumerWidget {
               _setSkillEnabled(ref, skill, change.isEnabled),
         ),
         AsyncLoading() => const Center(child: AuraSpinner()),
-        AsyncError() => const Center(
+        AsyncError(:final error) => Center(
           child: AuraText(
-            child: TextLocale(LocaleKeys.skills_screen_load_error),
+            child: TextLocale(cloudErrorLocalizationKey(error)),
           ),
         ),
       },

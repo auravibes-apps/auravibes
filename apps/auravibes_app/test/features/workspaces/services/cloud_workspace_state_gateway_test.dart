@@ -14,6 +14,74 @@ void main() {
     cloudWorkspaceId: 7,
   );
 
+  test('turns a stalled state read into a typed cloud error', () async {
+    final gateway = CloudWorkspaceStateGateway.forTesting(
+      workspace: workspace,
+      readState: (_) => Completer<ReadWorkspaceStateResponse>().future,
+      subscribe: (_) => const Stream.empty(),
+      readTimeout: Duration.zero,
+    );
+
+    await expectLater(
+      gateway.read(
+        pages: [
+          WorkspaceResourcePageRequest(
+            resourceKind: WorkspaceResourceKind.skill,
+            limit: 1,
+          ),
+        ],
+      ),
+      throwsA(
+        isA<CloudAppException>()
+            .having(
+              (error) => error.context,
+              'context',
+              CloudOperationContext.state,
+            )
+            .having((error) => error.code, 'code', isNull),
+      ),
+    );
+  });
+
+  test('does not overlap reads after a timeout', () async {
+    final firstResponse = Completer<ReadWorkspaceStateResponse>();
+    var reads = 0;
+    final gateway = CloudWorkspaceStateGateway.forTesting(
+      workspace: workspace,
+      readState: (_) {
+        reads++;
+
+        return reads == 1
+            ? firstResponse.future
+            : Future.value(_response(sequence: 1));
+      },
+      subscribe: (_) => const Stream.empty(),
+      readTimeout: Duration.zero,
+    );
+
+    final pages = [
+      WorkspaceResourcePageRequest(
+        resourceKind: WorkspaceResourceKind.skill,
+        limit: 1,
+      ),
+    ];
+
+    await expectLater(
+      gateway.read(pages: pages),
+      throwsA(isA<CloudAppException>()),
+    );
+    await expectLater(
+      gateway.read(pages: pages),
+      throwsA(isA<CloudAppException>()),
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(reads, 1);
+
+    firstResponse.complete(_response(sequence: 1));
+    await Future<void>.delayed(Duration.zero);
+    expect(reads, 2);
+  });
+
   test('paginates to exhaustion and never requests over 100', () async {
     final requests = <ReadWorkspaceStateRequest>[];
     final gateway = CloudWorkspaceStateGateway.forTesting(

@@ -27,6 +27,7 @@ class CloudWorkspaceStateGateway {
   CloudWorkspaceStateGateway({
     required Client client,
     required CloudWorkspaceRef workspace,
+    this.readTimeout = _stateReadTimeout,
   }) : _client = client,
        // Keep the public `workspace:` argument stable for gateway consumers.
        // ignore: prefer_initializing_formals
@@ -44,9 +45,11 @@ class CloudWorkspaceStateGateway {
     this._putSecret,
     this._mutateCredential,
     this._delay = _defaultDelay,
+    this.readTimeout = _stateReadTimeout,
   }) : _client = null;
 
   static const _pageSize = 100;
+  static const _stateReadTimeout = Duration(seconds: 15);
   static const _initialReconnectDelay = Duration(milliseconds: 250);
   static const _maxReconnectDelay = Duration(seconds: 8);
 
@@ -60,6 +63,8 @@ class CloudWorkspaceStateGateway {
   final WorkspaceSecretPut? _putSecret;
   final WorkspaceCredentialMutation? _mutateCredential;
   final WorkspaceReconnectDelay _delay;
+  final Duration readTimeout;
+  Future<void> _readTail = Future.value();
   bool _disposed = false;
   final _disposedSignal = Completer<bool>();
 
@@ -88,17 +93,31 @@ class CloudWorkspaceStateGateway {
     required List<WorkspaceResourcePageRequest> pages,
     int? afterSequence,
     int eventLimit = 100,
-  }) => guardCloudCall(
-    .state,
-    () => _readState(
-      ReadWorkspaceStateRequest(
-        workspaceId: _workspace.cloudWorkspaceId,
-        pages: pages,
-        afterSequence: afterSequence,
-        eventLimit: eventLimit,
-      ),
-    ),
-  );
+  }) {
+    final request = ReadWorkspaceStateRequest(
+      workspaceId: _workspace.cloudWorkspaceId,
+      pages: pages,
+      afterSequence: afterSequence,
+      eventLimit: eventLimit,
+    );
+    final read = _enqueueRead(request);
+
+    return guardCloudCall(.state, () => read.timeout(readTimeout));
+  }
+
+  Future<ReadWorkspaceStateResponse> _enqueueRead(
+    ReadWorkspaceStateRequest request,
+  ) async {
+    final previousRead = _readTail;
+    final completion = Completer<void>();
+    _readTail = completion.future;
+    await previousRead;
+    try {
+      return await _readState(request);
+    } finally {
+      completion.complete();
+    }
+  }
 
   Future<PatchWorkspaceStateResponse> patch({
     required String requestId,

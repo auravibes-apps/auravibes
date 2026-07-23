@@ -108,6 +108,22 @@ void main() {
     );
   });
 
+  test(
+    'allows a template skill without instruction content or description',
+    () {
+      final data = <String, Object?>{
+        'kind': 'template',
+        'title': 'Skills Manager',
+        'slug': 'skills_manager',
+        'description': '',
+        'content': '',
+        'isEnabled': true,
+      };
+
+      expect(CloudResourceMapper.decode(_resource(.skill, data)), data);
+    },
+  );
+
   test('allows a legacy agent with an empty prompt to be repaired', () {
     final data = <String, Object?>{
       'name': 'Agent',
