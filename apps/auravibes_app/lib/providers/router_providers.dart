@@ -2,14 +2,14 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/usecases/resolve_workspace_selection_usecase.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/utils/change_notifier_with_code_gen_extension.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:logging/logging.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'router_providers.g.dart';
@@ -22,8 +22,6 @@ final routeObserverProvider = Provider<RouteObserver<ModalRoute<void>>>(
   (ref) => RouteObserver<ModalRoute<void>>(),
 );
 
-final _logger = Logger('routerProvider');
-
 @Riverpod(keepAlive: true)
 GoRouter router(Ref ref) {
   final routeObserver = ref.read(routeObserverProvider);
@@ -31,22 +29,17 @@ GoRouter router(Ref ref) {
   return GoRouter(
     routes: $appRoutes,
     redirect: (context, state) async {
-      final workspaces = await ref
-          .read(workspaceRepositoryProvider)
-          .getAllWorkspaces()
-          .onError(
-            (error, stackTrace) {
-              _logger.severe(
-                'Failed to load workspaces for router redirect',
-                error,
-                stackTrace,
-              );
+      final selection = await ref
+          .read(resolveWorkspaceSelectionUsecaseProvider)
+          .call();
 
-              return [];
-            },
-          );
+      if (selection == null) return null;
 
-      return resolveWorkspaceRedirect(state.uri, workspaces);
+      return resolveWorkspaceRedirect(
+        state.uri,
+        selection.workspaces,
+        savedWorkspaceId: selection.savedWorkspaceId,
+      );
     },
     initialLocation: '/',
     observers: [
@@ -90,11 +83,14 @@ String? matchWorkspaceId(Uri uri) {
 @visibleForTesting
 String? resolveWorkspaceRedirect(
   Uri currentUri,
-  List<WorkspaceEntity> workspaces,
-) {
+  List<WorkspaceEntity> workspaces, {
+  String? savedWorkspaceId,
+}) {
   final workspaceMatch = matchWorkspaceId(currentUri);
   final firstWorkspaceId = workspaces.firstOrNull?.id;
-
+  final savedWorkspace = workspaces.firstWhereOrNull(
+    (workspace) => workspace.id == savedWorkspaceId,
+  );
   if (firstWorkspaceId == null) {
     if (currentUri.path == introPath) {
       return null;
@@ -103,16 +99,18 @@ String? resolveWorkspaceRedirect(
     return introPath;
   }
 
+  final fallbackWorkspaceId = savedWorkspace?.id ?? firstWorkspaceId;
+
   if (currentUri.path == introPath) {
-    return NewChatRoute(workspaceId: firstWorkspaceId).location;
+    return NewChatRoute(workspaceId: fallbackWorkspaceId).location;
   }
 
   if (workspaceMatch == null) {
     return _mapLegacyRoute(
           currentUri,
-          fallbackWorkspaceId: firstWorkspaceId,
+          fallbackWorkspaceId: fallbackWorkspaceId,
         ) ??
-        NewChatRoute(workspaceId: firstWorkspaceId).location;
+        NewChatRoute(workspaceId: fallbackWorkspaceId).location;
   }
 
   if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {

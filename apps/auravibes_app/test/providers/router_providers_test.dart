@@ -102,13 +102,53 @@ void main() {
       expect(result, '/intro');
     });
 
-    test('redirects intro to first workspace when workspace exists', () {
+    test('uses saved workspace for a workspace-less route', () {
+      final result = resolveWorkspaceRedirect(
+        Uri.parse('/'),
+        [_workspace('ws-1'), _workspace('ws-2')],
+        savedWorkspaceId: 'ws-2',
+      );
+
+      expect(result, '/workspaces/ws-2/chat/new');
+    });
+
+    test('uses the saved workspace for intro when workspace exists', () {
       final result = resolveWorkspaceRedirect(
         Uri.parse('/intro'),
+        [_workspace('ws-1'), _workspace('ws-2')],
+        savedWorkspaceId: 'ws-2',
+      );
+
+      expect(result, '/workspaces/ws-2/chat/new');
+    });
+
+    test('keeps an explicit workspace deep link over saved selection', () {
+      final result = resolveWorkspaceRedirect(
+        Uri.parse('/workspaces/ws-1/chat/new'),
+        [_workspace('ws-1'), _workspace('ws-2')],
+        savedWorkspaceId: 'ws-2',
+      );
+
+      expect(result, isNull);
+    });
+
+    test('falls back to first workspace for stale saved selection', () {
+      final result = resolveWorkspaceRedirect(
+        Uri.parse('/'),
         [_workspace('ws-1')],
+        savedWorkspaceId: 'missing',
       );
 
       expect(result, '/workspaces/ws-1/chat/new');
+    });
+
+    test('preserves query and fragment for legacy routes', () {
+      final result = resolveWorkspaceRedirect(
+        Uri.parse('/chats?filter=recent#messages'),
+        [_workspace('ws-1')],
+      );
+
+      expect(result, '/workspaces/ws-1/chats?filter=recent#messages');
     });
 
     test('redirects invalid workspace to first workspace when one exists', () {
