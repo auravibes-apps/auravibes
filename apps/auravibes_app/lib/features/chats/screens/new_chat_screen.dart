@@ -26,8 +26,20 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('new_chat_screen');
 
-class NewChatScreen extends ConsumerWidget {
+class NewChatScreen extends StatelessWidget {
   const NewChatScreen({required this.workspaceId, super.key});
+
+  final String workspaceId;
+
+  @override
+  Widget build(BuildContext context) => TickerMode(
+    enabled: true,
+    child: _NewChatContent(workspaceId: workspaceId),
+  );
+}
+
+class _NewChatContent extends ConsumerWidget {
+  const _NewChatContent({required this.workspaceId});
 
   final String workspaceId;
 

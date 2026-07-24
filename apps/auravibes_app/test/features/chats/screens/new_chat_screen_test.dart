@@ -5,12 +5,60 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../helpers/test_app.dart';
+
+Future<void> _pumpNewChatWithinPausedBranch(
+  WidgetTester tester, {
+  required List<Object> overrides,
+  bool tickerEnabled = false,
+}) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      TestableApp(
+        workspaceId: 'test-ws',
+        overrides: overrides,
+        child: TickerMode(
+          enabled: tickerEnabled,
+          child: Theme(
+            data: ThemeData(extensions: [AuraTheme.light]),
+            child: const Portal(
+              child: NewChatScreen(workspaceId: 'test-ws'),
+            ),
+          ),
+        ),
+      ),
+    );
+  });
+  await tester.pump();
+  await tester.pump();
+}
+
+WorkspaceEntity _workspace(String id) => WorkspaceEntity(
+  id: id,
+  name: 'Personal',
+  type: WorkspaceType.local,
+  createdAt: DateTime(2026),
+  updatedAt: DateTime(2026),
+);
+
+List<Object> _newChatOverrides({NewChatState state = const NewChatState()}) => [
+  newChatProvider('test-ws').overrideWithValue(state),
+  listModelsGroupedByProviderProvider.overrideWith(
+    (ref, workspaceId) => Stream.value({}),
+  ),
+  agentsProvider('test-ws').overrideWith((ref) => Stream.value(const [])),
+  allWorkspacesProvider.overrideWith(
+    (ref) => Stream.value([_workspace('test-ws')]),
+  ),
+];
 
 void main() {
   test('constructor sets workspaceId', () {
@@ -73,6 +121,66 @@ void main() {
   });
 
   group('render', () {
+    testWidgets('keeps New Chat listeners active in a paused branch', (
+      tester,
+    ) async {
+      await _pumpNewChatWithinPausedBranch(
+        tester,
+        overrides: _newChatOverrides(),
+      );
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is TickerMode &&
+              widget.enabled &&
+              widget.child is ConsumerWidget,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'renders unavailable New Chat for an unauthenticated workspace',
+      (
+        tester,
+      ) async {
+        await _pumpNewChatWithinPausedBranch(
+          tester,
+          tickerEnabled: true,
+          overrides: [
+            ..._newChatOverrides(),
+            workspaceAvailabilityProvider('test-ws').overrideWith(
+              (ref) async => const WorkspaceAuthenticationRequired(
+                WorkspaceSession(
+                  CloudWorkspaceRef(
+                    localWorkspaceId: 'test-ws',
+                    serverUrl: 'https://example.com',
+                    accountId: 'account-1',
+                    cloudWorkspaceId: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+        expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
+        expect(
+          tester.widget<ChatInputWidget>(find.byType(ChatInputWidget)).disabled,
+          isTrue,
+        );
+        expect(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is TickerMode &&
+                widget.enabled &&
+                widget.child is ConsumerWidget,
+          ),
+          findsOneWidget,
+        );
+      },
+    );
+
     testWidgets('renders NewChatScreen', (tester) async {
       await tester.runAsync(() async {
         await tester.pumpWidget(
@@ -83,28 +191,7 @@ void main() {
                 child: NewChatScreen(workspaceId: 'test-ws'),
               ),
             ),
-            overrides: [
-              newChatProvider('test-ws').overrideWithValue(
-                const NewChatState(),
-              ),
-              listModelsGroupedByProviderProvider.overrideWith(
-                (ref, workspaceId) => Stream.value({}),
-              ),
-              agentsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(const []),
-              ),
-              allWorkspacesProvider.overrideWith(
-                (ref) => Stream.value([
-                  WorkspaceEntity(
-                    id: 'test-ws',
-                    name: 'Personal',
-                    type: WorkspaceType.local,
-                    createdAt: DateTime(2026),
-                    updatedAt: DateTime(2026),
-                  ),
-                ]),
-              ),
-            ],
+            overrides: _newChatOverrides(),
             workspaceId: 'test-ws',
           ),
         );
@@ -133,28 +220,9 @@ void main() {
                 child: NewChatScreen(workspaceId: 'test-ws'),
               ),
             ),
-            overrides: [
-              newChatProvider('test-ws').overrideWithValue(
-                const NewChatState(isLoading: true),
-              ),
-              listModelsGroupedByProviderProvider.overrideWith(
-                (ref, workspaceId) => Stream.value({}),
-              ),
-              agentsProvider('test-ws').overrideWith(
-                (ref) => Stream.value(const []),
-              ),
-              allWorkspacesProvider.overrideWith(
-                (ref) => Stream.value([
-                  WorkspaceEntity(
-                    id: 'test-ws',
-                    name: 'Personal',
-                    type: WorkspaceType.local,
-                    createdAt: DateTime(2026),
-                    updatedAt: DateTime(2026),
-                  ),
-                ]),
-              ),
-            ],
+            overrides: _newChatOverrides(
+              state: const NewChatState(isLoading: true),
+            ),
             workspaceId: 'test-ws',
           ),
         );
