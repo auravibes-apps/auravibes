@@ -8,12 +8,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_credentials_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -46,46 +41,8 @@ void main() {
           return ValueListenableBuilder<_SkillDetailScreenFixture>(
             valueListenable: fixture,
             builder: (context, value, _) {
-              value.container.updateOverrides([
-                skillsRepositoryProvider.overrideWithValue(
-                  value.container.read(skillsRepositoryProvider),
-                ),
-                appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
-                  value.container.read(
-                    appSkillWorkspaceSettingsRepositoryProvider,
-                  ),
-                ),
-                skillDetailProvider(
-                  value.workspaceId,
-                  value.skillId,
-                ).overrideWith((_) async => value.detail),
-                if (value.detail.credentialDefinitionId case final id?) ...[
-                  skillCredentialDefinitionProvider(
-                    value.workspaceId,
-                    id,
-                  ).overrideWith(
-                    (_) => value.container.read(
-                      skillCredentialDefinitionProvider(
-                        value.workspaceId,
-                        id,
-                      ).future,
-                    ),
-                  ),
-                  skillCredentialsForDefinitionProvider(
-                    value.workspaceId,
-                    id,
-                  ).overrideWith(
-                    (_) => value.container.read(
-                      skillCredentialsForDefinitionProvider(
-                        value.workspaceId,
-                        id,
-                      ).future,
-                    ),
-                  ),
-                ],
-              ]);
-
               return UncontrolledProviderScope(
+                key: ValueKey(value.container),
                 container: value.container,
                 child: MaterialApp(
                   home: SkillDetailScreen(
@@ -286,7 +243,6 @@ void main() {
         container: selectedCredentialContainer,
         workspaceId: selectedCredentialWorkspace.id,
         skillId: skillWithDefinition.id,
-        detail: SkillDetail.fromUserSkill(skillWithDefinition),
       ),
     );
     addTearDown(fixture.dispose);
@@ -307,7 +263,6 @@ void main() {
       container: selectedCredentialContainer,
       workspaceId: selectedCredentialWorkspace.id,
       skillId: optionalSkill.id,
-      detail: SkillDetail.fromUserSkill(optionalSkill),
     );
     final _ = await tester.pumpAndSettle();
     final _ = await tester.pump();
@@ -322,7 +277,6 @@ void main() {
       container: staleCredentialContainer,
       workspaceId: staleCredentialWorkspace.id,
       skillId: skillWithStaleDefinition.id,
-      detail: SkillDetail.fromUserSkill(skillWithStaleDefinition),
     );
     final _ = await tester.pumpAndSettle();
     final _ = await tester.pump();
@@ -354,11 +308,9 @@ class _SkillDetailScreenFixture {
     required this.container,
     required this.workspaceId,
     required this.skillId,
-    required this.detail,
   });
 
   final ProviderContainer container;
   final String workspaceId;
   final String skillId;
-  final SkillDetail detail;
 }

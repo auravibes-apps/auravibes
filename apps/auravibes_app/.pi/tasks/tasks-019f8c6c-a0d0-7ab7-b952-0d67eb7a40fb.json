@@ -1,0 +1,43 @@
+{
+  "nextId": 7,
+  "tasks": [
+    {
+      "id": "4",
+      "subject": "Add native detail regression tests",
+      "description": "Create focused provider tests covering local/native metadata, cloud fallback, cloud precedence, collisions, and unknown IDs; run them red before production edits.",
+      "status": "completed",
+      "activeForm": "Adding native detail regression tests",
+      "metadata": {
+        "evidence": "Focused test run failed as intended: missing cloud-native fallback returned null and cloud-native resource had no app tools."
+      },
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1784768726735,
+      "updatedAt": 1784768927404
+    },
+    {
+      "id": "5",
+      "subject": "Implement native detail resolution",
+      "description": "Refactor skillDetailProvider to compose native registry metadata with local/cloud source records and attach native tools only for true native records.",
+      "status": "in_progress",
+      "activeForm": "Implementing native detail resolution",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1784768730705,
+      "updatedAt": 1784768932987
+    },
+    {
+      "id": "6",
+      "subject": "Validate native detail change",
+      "description": "Run focused provider and screen tests, fatal app analyzer, quick validation, and diff checks; update ledger evidence only if the ledger exists.",
+      "status": "pending",
+      "activeForm": "Validating native detail change",
+      "metadata": {},
+      "blocks": [],
+      "blockedBy": [],
+      "createdAt": 1784768737727,
+      "updatedAt": 1784768737727
+    }
+  ]
+}

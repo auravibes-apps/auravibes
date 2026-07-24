@@ -2,7 +2,6 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/skill_detail.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
-import 'package:collection/collection.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'skill_detail_provider.g.dart';
@@ -14,46 +13,41 @@ Future<SkillDetail?> skillDetail(
   String skillId,
 ) async {
   final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-  if (cloud != null) {
-    final skill = await cloud.skill(skillId);
-
-    return skill == null ? null : SkillDetail.fromUserSkill(skill);
+  final sourceSkill = cloud != null
+      ? await cloud.skill(skillId)
+      : await ref.watch(skillsRepositoryProvider).getSkillById(skillId);
+  final appSkill = ref.watch(appSkillRegistryProvider).getByIdentifier(skillId);
+  final isNativeAppRecord =
+      sourceSkill?.source == SkillSource.app &&
+      sourceSkill?.kind == SkillKind.native &&
+      appSkill != null;
+  if (sourceSkill != null && !isNativeAppRecord) {
+    return SkillDetail.fromUserSkill(sourceSkill);
   }
-  final skillsRepository = ref.watch(skillsRepositoryProvider);
-  final userSkill = await skillsRepository.getSkillById(skillId);
-  if (userSkill != null && userSkill.workspaceId == workspaceId) {
-    return SkillDetail.fromUserSkill(userSkill);
-  }
-
-  final appSkillRegistry = ref.watch(appSkillRegistryProvider);
-  final appSkills = appSkillRegistry.getAll().where(
-    (skill) => skill.identifier == skillId,
-  );
-  final appSkill = appSkills.firstOrNull;
   if (appSkill == null) return null;
 
-  final appSkillSettings = ref.watch(
-    appSkillWorkspaceSettingsRepositoryProvider,
-  );
-  final isEnabled = await appSkillSettings.isAppSkillEnabled(
-    workspaceId,
-    appSkill.identifier,
-  );
+  final isEnabled =
+      sourceSkill?.isEnabled ??
+      (cloud != null
+          ? await cloud.isAppSkillEnabled(appSkill.identifier)
+          : await ref
+                .watch(appSkillWorkspaceSettingsRepositoryProvider)
+                .isAppSkillEnabled(workspaceId, appSkill.identifier));
 
   return SkillDetail(
     id: appSkill.identifier,
     workspaceId: workspaceId,
     source: SkillSource.app,
     kind: SkillKind.native,
-    title: appSkill.title,
-    slug: appSkill.slug,
-    description: appSkill.description,
-    content: appSkill.content,
+    title: sourceSkill?.title ?? appSkill.title,
+    slug: sourceSkill?.slug ?? appSkill.slug,
+    description: sourceSkill?.description ?? appSkill.description,
+    content: sourceSkill?.content ?? appSkill.content,
     isEnabled: isEnabled,
-    isCredentialOptional: false,
+    isCredentialOptional: sourceSkill?.isCredentialOptional ?? false,
     appTools: appSkill.nativeTools,
-    titleKey: appSkill.titleKey,
-    descriptionKey: appSkill.descriptionKey,
-    contentKey: appSkill.contentKey,
+    titleKey: sourceSkill == null ? appSkill.titleKey : null,
+    descriptionKey: sourceSkill == null ? appSkill.descriptionKey : null,
+    contentKey: sourceSkill == null ? appSkill.contentKey : null,
   );
 }
