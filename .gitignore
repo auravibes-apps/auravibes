@@ -78,3 +78,6 @@ yarn-error.log*
 .pi-lens/*.jsonl
 .pi-lens/*.log
 .pi-subagents/artifacts/
+
+# Local Superpowers implementation plans
+/docs/superpowers/plans/
