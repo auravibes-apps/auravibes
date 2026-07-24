@@ -16,8 +16,7 @@ CloudSkillStore? cloudSkillStore(Ref ref, String workspaceId) {
       .watch(
         workspaceSessionForRouteProvider(workspaceId),
       )
-      .value;
-  if (session == null) return null;
+      .requireValue;
   final cloud = session.cloud;
   if (cloud == null) return null;
 

@@ -41,6 +41,7 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_credential_d
 import 'package:auravibes_app/features/skills/usecases/update_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
 import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
@@ -834,6 +835,9 @@ void main() {
         RunSkillUrlTemplate(
           const ResolveSkillUrlTemplate(),
           AppSkillHttpClientAdapter(urlService).execute,
+        ),
+        (workspaceId) async => WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: workspaceId),
         ),
       );
 
@@ -1927,6 +1931,9 @@ void main() {
           RunSkillUrlTemplate(
             const ResolveSkillUrlTemplate(),
             AppSkillHttpClientAdapter(urlService).execute,
+          ),
+          (workspaceId) async => WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: workspaceId),
           ),
         );
         final result = await runTemplateUsecase.call(

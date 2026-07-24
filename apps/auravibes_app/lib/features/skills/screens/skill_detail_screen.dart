@@ -1050,7 +1050,9 @@ class _AppSkillCredentialsHintState
             '?type=appSkillCredential&appSkillId=${widget.appSkillId}',
           );
     if (!mounted || result != true) return;
-    setState(() => _future = _load());
+    setState(() {
+      _future = _load();
+    });
   }
 }
 

@@ -14,7 +14,10 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     descriptor.kind == AgentResolvedToolKind.mcp ||
     descriptor.kind == AgentResolvedToolKind.skillTemplate ||
     (descriptor.kind == AgentResolvedToolKind.skillNative &&
-        descriptor.skillSlug == agentsSkillSlug);
+        (descriptor.skillSlug == agentsSkillSlug ||
+            serviceSkillDefinitions.any(
+              (skill) => skill.slug == descriptor.skillSlug,
+            )));
 
 ServerToolReplayAction serverToolReplayAction(String status) =>
     switch (status) {

@@ -68,7 +68,7 @@ final class ChatMessagesByConversationProvider
 }
 
 String _$chatMessagesByConversationHash() =>
-    r'f665513826aef314e9e303aa2d4c2a72095967ce';
+    r'398630e280f7229242e8b047774fe8cb01a58c89';
 
 final class ChatMessagesByConversationFamily extends $Family
     with
@@ -660,7 +660,7 @@ final class ConversationQueuedDraftsProvider
 }
 
 String _$conversationQueuedDraftsHash() =>
-    r'0d90753189f38f58732387c3c1b3c748fd7c1fee';
+    r'b1ef0979c72f465d5e777ee0d17d66c7b6aeae91';
 
 final class ConversationQueuedDraftsFamily extends $Family
     with
@@ -678,10 +678,10 @@ final class ConversationQueuedDraftsFamily extends $Family
       );
 
   ConversationQueuedDraftsProvider call(
-    String workspaceId,
+    String _workspaceId,
     String conversationId,
   ) => ConversationQueuedDraftsProvider._(
-    argument: (workspaceId, conversationId),
+    argument: (_workspaceId, conversationId),
     from: this,
   );
 
@@ -756,7 +756,7 @@ final class ConversationCompactionExecutionStateProvider
 }
 
 String _$conversationCompactionExecutionStateHash() =>
-    r'd21d1cc530fe4532d732a08c4c95726687ae86e2';
+    r'0b844c87eeb0566fb0a5c1e557c23877dbe25062';
 
 final class ConversationCompactionExecutionStateFamily extends $Family
     with
@@ -771,10 +771,10 @@ final class ConversationCompactionExecutionStateFamily extends $Family
       );
 
   ConversationCompactionExecutionStateProvider call(
-    String workspaceId,
+    String _workspaceId,
     String conversationId,
   ) => ConversationCompactionExecutionStateProvider._(
-    argument: (workspaceId, conversationId),
+    argument: (_workspaceId, conversationId),
     from: this,
   );
 

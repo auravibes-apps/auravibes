@@ -866,7 +866,7 @@ class WorkspaceStateUseCases {
   }
 
   String _suffix(String secret) =>
-      secret.length <= 4 ? secret : secret.substring(secret.length - 4);
+      secret.length <= 4 ? '••••' : secret.substring(secret.length - 4);
 
   Future<String?> _mergedSecret(
     Session session, {

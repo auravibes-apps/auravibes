@@ -71,7 +71,7 @@ final class CloudSkillStoreProvider
   }
 }
 
-String _$cloudSkillStoreHash() => r'0910731dd06891d532bd5a172533e495f87a7e27';
+String _$cloudSkillStoreHash() => r'ab9aa5c08be1d0a2e5e6e732d9705dbf5a6058fc';
 
 final class CloudSkillStoreFamily extends $Family
     with $FunctionalFamilyOverride<CloudSkillStore?, String> {

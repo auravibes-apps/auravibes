@@ -12,6 +12,18 @@ import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
 import 'server_tool_runtime.dart';
 
+String cloudServiceConnectionId(String credentialId) =>
+    credentialId.startsWith('service:')
+    ? credentialId.substring('service:'.length)
+    : credentialId;
+
+bool isCloudAppSkillCredential(
+  Map<String, dynamic> data,
+  String skillIdentifier,
+) =>
+    data['kind'] == 'appSkillCredential' &&
+    data['serviceId'] == skillIdentifier;
+
 class ServerToolExecutorService {
   const ServerToolExecutorService();
 
@@ -31,8 +43,84 @@ class ServerToolExecutorService {
     AgentResolvedToolKind.skillNative
         when tool.descriptor.skillSlug == agentsSkillSlug =>
       _runSubAgentTool(session, turn, tool, arguments),
+    AgentResolvedToolKind.skillNative => _runNativeSkill(
+      session,
+      turn,
+      tool,
+      arguments,
+    ),
     _ => throw const ServerToolNotConfiguredException(),
   };
+
+  Future<Object?> _runNativeSkill(
+    Session session,
+    ConversationTurn turn,
+    ServerResolvedTool tool,
+    Map<String, dynamic> arguments,
+  ) async {
+    final skill = serviceSkillDefinitions
+        .where((candidate) => candidate.slug == tool.descriptor.skillSlug)
+        .firstOrNull;
+    final nativeTool = skill?.nativeTools
+        .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
+        .firstOrNull;
+    final template = nativeTool?.urlTemplate;
+    final credentialId = arguments['credentialId'];
+    if (skill == null || nativeTool == null || template == null) {
+      throw const ServerToolNotConfiguredException();
+    }
+    var credentials = const <String, String>{};
+    if (nativeTool.requiresCredential) {
+      if (credentialId is! String || credentialId.isEmpty) {
+        throw const ServerToolNotConfiguredException();
+      }
+      final connectionId = cloudServiceConnectionId(credentialId);
+      final resource = await _resource(
+        session,
+        turn.workspaceId,
+        WorkspaceResourceKind.serviceConnection,
+        connectionId,
+      );
+      final data = _jsonMap(resource.data);
+      if (!isCloudAppSkillCredential(data, skill.identifier)) {
+        throw const ServerToolNotConfiguredException();
+      }
+      final secret = await _secret(
+        session,
+        turn.workspaceId,
+        turn.initiatorUserId,
+        WorkspaceSecretKind.skillCredential,
+        connectionId,
+      );
+      if (secret == null) throw const ServerToolNotConfiguredException();
+      credentials = Map<String, String>.from(
+        _jsonMap(await const WorkspaceSecretCipher().decrypt(session, secret)),
+      );
+    }
+    final request = const ResolveSkillUrlTemplate()(
+      template: template.template,
+      inputs: arguments,
+      credentials: credentials,
+      inputDefinitions: template.inputs,
+    );
+    final uri = requirePublicUriSyntax(
+      request.url,
+      requireHttps: credentials.isNotEmpty,
+    );
+    final addresses = await InternetAddress.lookup(uri.host);
+    if (addresses.any(
+      (address) => isPrivateIpAddress(
+        address.rawAddress,
+        isIpv6: address.type == InternetAddressType.IPv6,
+      ),
+    )) {
+      throw const FormatException(publicUrlError);
+    }
+    final response = await _request(uri, addresses, request);
+    return const UrlContentTransformer()
+        .transform(response, requestedFormat: request.format)
+        .body;
+  }
 
   Future<Object?> _runSubAgentTool(
     Session session,

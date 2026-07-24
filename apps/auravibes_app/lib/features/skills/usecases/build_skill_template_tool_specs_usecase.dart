@@ -5,6 +5,8 @@ import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -12,19 +14,28 @@ class BuildSkillTemplateToolSpecsUsecase {
   const BuildSkillTemplateToolSpecsUsecase(
     this._listAvailableSkillsUsecase,
     this._skillTemplateToolsRepository,
-    this._skillCredentialsRepository,
-  );
+    this._skillCredentialsRepository, {
+    this._workspaceSession,
+  });
 
   final ListAvailableSkillsUsecase Function(String workspaceId)
   _listAvailableSkillsUsecase;
   final SkillTemplateToolsRepository _skillTemplateToolsRepository;
   final SkillCredentialsRepository _skillCredentialsRepository;
+  final Future<WorkspaceSession> Function(String workspaceId)?
+  _workspaceSession;
 
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
     List<AvailableSkill> extraSkills = const [],
   }) async {
+    final session = await _workspaceSession?.call(workspaceId);
+    if (session?.cloud != null) {
+      throw StateError(
+        'Cloud template tools execute in the server agent loop.',
+      );
+    }
     final loadedSkills = await _listAvailableSkillsUsecase(workspaceId).call(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -162,5 +173,8 @@ final buildSkillTemplateToolSpecsUsecaseProvider =
             ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
         ref.watch(skillTemplateToolsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
+        workspaceSession: (workspaceId) => ref.read(
+          workspaceSessionForRouteProvider(workspaceId).future,
+        ),
       );
     });

@@ -5,6 +5,8 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_url_template_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         SkillCredentialAttributeDefinition,
@@ -20,6 +22,7 @@ class RunSkillTemplateToolUsecase {
     this._skillCredentialDefinitionsRepository,
     this._skillCredentialsRepository,
     this._runSkillUrlTemplateUsecase,
+    this._workspaceSession,
   );
 
   final SkillTemplateToolsRepository _skillTemplateToolsRepository;
@@ -28,6 +31,7 @@ class RunSkillTemplateToolUsecase {
   _skillCredentialDefinitionsRepository;
   final SkillCredentialsRepository _skillCredentialsRepository;
   final package_skills.RunSkillUrlTemplate _runSkillUrlTemplateUsecase;
+  final Future<WorkspaceSession> Function(String workspaceId) _workspaceSession;
 
   Future<Object?> call({
     required String workspaceId,
@@ -35,6 +39,12 @@ class RunSkillTemplateToolUsecase {
     required String toolSlug,
     required Map<String, dynamic> arguments,
   }) async {
+    final session = await _workspaceSession(workspaceId);
+    if (session.cloud != null) {
+      throw StateError(
+        'Cloud template tools execute in the server agent loop.',
+      );
+    }
     final skill = await _skillsRepository.getSkillBySlug(
       workspaceId,
       skillSlug,
@@ -136,5 +146,8 @@ final runSkillTemplateToolUsecaseProvider =
         ref.watch(skillCredentialDefinitionsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
         ref.watch(runSkillUrlTemplateUsecaseProvider),
+        (workspaceId) => ref.read(
+          workspaceSessionForRouteProvider(workspaceId).future,
+        ),
       );
     });

@@ -380,9 +380,11 @@ Future<ConversationBusyState> conversationBusyState(
 @riverpod
 List<ConversationQueuedDraft> conversationQueuedDrafts(
   Ref ref,
-  String _,
+  String _workspaceId,
   String conversationId,
 ) {
+  final _ = _workspaceId;
+
   return ref.watch(
     conversationSendQueueProvider.select(
       (queues) => queues[conversationId] ?? const <ConversationQueuedDraft>[],
@@ -393,9 +395,11 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(
 @riverpod
 CompactionExecutionState? conversationCompactionExecutionState(
   Ref ref,
-  String _,
+  String _workspaceId,
   String conversationId,
 ) {
+  final _ = _workspaceId;
+
   return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
