@@ -86,4 +86,3 @@ Future<void> runObjectCleanupWorker(
 }
 
 const objectCleanupInterval = Duration(hours: 12);
-const objectCleanupFutureCallIdentifier = 'objectCleanup.poll';

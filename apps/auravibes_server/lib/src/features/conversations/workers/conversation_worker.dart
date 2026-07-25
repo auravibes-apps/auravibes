@@ -981,5 +981,3 @@ Future<void> runConversationWorker(
     );
   } while (worked && isActive());
 }
-
-const conversationWorkerFutureCallIdentifier = 'conversationWorker.poll';

@@ -7,6 +7,9 @@ import '../../test_tools/serverpod_test_tools.dart';
 
 void main() {
   withServerpod('WorkerCoordinatorRepository', (sessionBuilder, _) {
+    setUp(() => _clearWorkerState(sessionBuilder.build()));
+    tearDownAll(() => _clearWorkerState(sessionBuilder.build()));
+
     test('renewal keeps the coordinator fencing token', () async {
       final session = sessionBuilder.build();
       final repository = const WorkerCoordinatorRepository();
@@ -269,7 +272,12 @@ void main() {
         ),
       );
     });
-  });
+  }, rollbackDatabase: RollbackDatabase.disabled);
+}
+
+Future<void> _clearWorkerState(Session session) async {
+  await session.db.unsafeQuery('DELETE FROM recurring_worker_schedule');
+  await session.db.unsafeQuery('DELETE FROM worker_coordinator_lease');
 }
 
 Future<void> _expireCoordinator(Session session) => session.db.unsafeQuery(

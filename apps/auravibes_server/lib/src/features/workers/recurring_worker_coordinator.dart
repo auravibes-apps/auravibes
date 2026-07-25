@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
 
@@ -34,7 +33,6 @@ class RecurringWorkerCoordinator {
   ConversationJobDispatcher? _conversationDispatcher;
   Session? _conversationListener;
   WorkerCoordinatorLease? _conversationDispatcherCoordinator;
-  int? _legacyCleanupFencingToken;
   bool _heartbeatInFlight = false;
   bool _stopped = false;
   int _generation = 0;
@@ -141,29 +139,6 @@ class RecurringWorkerCoordinator {
       }
       if (!_sameCoordinator(_coordinator, coordinator)) {
         _coordinator = coordinator;
-      }
-      if (Platform.environment['AURAVIBES_RECURRING_WORKERS_CUTOVER'] !=
-          'drained') {
-        _stopTimers();
-        await _stopConversationDispatcher();
-        _coordinator = null;
-        session.log(
-          'Recurring workers require a drained legacy rollout. Set '
-          'AURAVIBES_RECURRING_WORKERS_CUTOVER=drained after old replicas stop.',
-          level: LogLevel.error,
-        );
-        return;
-      }
-      if (_legacyCleanupFencingToken != coordinator.fencingToken) {
-        await session.db.unsafeQuery(
-          'DELETE FROM serverpod_future_call WHERE identifier IN '
-          '(@catalog, @cleanup)',
-          parameters: QueryParameters.named({
-            'catalog': modelCatalogSyncWorkerFutureCallIdentifier,
-            'cleanup': objectCleanupFutureCallIdentifier,
-          }),
-        );
-        _legacyCleanupFencingToken = coordinator.fencingToken;
       }
       if (!_isActive(generation)) return;
       await _startConversationDispatcher(coordinator, generation);

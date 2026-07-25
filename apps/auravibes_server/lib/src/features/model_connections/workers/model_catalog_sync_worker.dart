@@ -46,6 +46,3 @@ Future<void> runModelCatalogSyncWorker(
     );
   }
 }
-
-const modelCatalogSyncWorkerFutureCallIdentifier =
-    'modelCatalogSyncWorker.poll';
