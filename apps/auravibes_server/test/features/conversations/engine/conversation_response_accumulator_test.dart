@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('retains text in memory and publishes each chunk in order', () async {
-    final publisher = _RecordingLiveTurnPublisher();
+    final publisher = _RecordingConversationProgressPublisher();
     final response = ConversationResponseAccumulator(publisher: publisher);
 
     response.addText('Hello');
@@ -15,7 +15,7 @@ void main() {
   });
 
   test('does not publish empty provider chunks', () async {
-    final publisher = _RecordingLiveTurnPublisher();
+    final publisher = _RecordingConversationProgressPublisher();
     final response = ConversationResponseAccumulator(publisher: publisher);
 
     response.addText('');
@@ -26,7 +26,8 @@ void main() {
   });
 }
 
-class _RecordingLiveTurnPublisher implements ConversationLiveTurnPublisher {
+class _RecordingConversationProgressPublisher
+    implements ConversationProgressPublisher {
   final events = <String>[];
 
   @override
@@ -39,4 +40,7 @@ class _RecordingLiveTurnPublisher implements ConversationLiveTurnPublisher {
   Future<void> text(String text) async {
     events.add(text);
   }
+
+  @override
+  Future<void> flush() async {}
 }

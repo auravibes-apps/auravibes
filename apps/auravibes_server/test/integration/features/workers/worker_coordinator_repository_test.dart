@@ -82,10 +82,10 @@ void main() {
         session,
         ownerId: 'server-a',
       ))!;
-      await repository.seedSchedule(session, workerKey: 'conversation');
+      await repository.seedSchedule(session, workerKey: 'modelCatalogSync');
       final claimed = (await repository.claimDueRun(
         session,
-        workerKey: 'conversation',
+        workerKey: 'modelCatalogSync',
         coordinator: original,
         executionLease: const Duration(minutes: 5),
       ))!;
@@ -113,10 +113,10 @@ void main() {
         session,
         ownerId: 'server-a',
       ))!;
-      await repository.seedSchedule(session, workerKey: 'conversation');
+      await repository.seedSchedule(session, workerKey: 'modelCatalogSync');
       final claimed = (await repository.claimDueRun(
         session,
-        workerKey: 'conversation',
+        workerKey: 'modelCatalogSync',
         coordinator: coordinator,
         executionLease: const Duration(minutes: 5),
       ))!;
@@ -141,10 +141,10 @@ void main() {
         session,
         ownerId: 'server-a',
       ))!;
-      await repository.seedSchedule(session, workerKey: 'conversation');
+      await repository.seedSchedule(session, workerKey: 'modelCatalogSync');
       final claimed = (await repository.claimDueRun(
         session,
-        workerKey: 'conversation',
+        workerKey: 'modelCatalogSync',
         coordinator: coordinator,
         executionLease: const Duration(minutes: 5),
       ))!;
@@ -171,10 +171,10 @@ void main() {
           session,
           ownerId: 'server-a',
         ))!;
-        await repository.seedSchedule(session, workerKey: 'conversation');
+        await repository.seedSchedule(session, workerKey: 'modelCatalogSync');
         final claimed = (await repository.claimDueRun(
           session,
-          workerKey: 'conversation',
+          workerKey: 'modelCatalogSync',
           coordinator: coordinator,
           executionLease: const Duration(minutes: 5),
         ))!;
@@ -207,10 +207,10 @@ void main() {
         session,
         ownerId: 'server-a',
       ))!;
-      await repository.seedSchedule(session, workerKey: 'conversation');
+      await repository.seedSchedule(session, workerKey: 'modelCatalogSync');
       final first = (await repository.claimDueRun(
         session,
-        workerKey: 'conversation',
+        workerKey: 'modelCatalogSync',
         coordinator: coordinator,
         executionLease: const Duration(minutes: 5),
       ))!;
@@ -221,7 +221,7 @@ void main() {
 
       final reclaimed = await repository.claimDueRun(
         session,
-        workerKey: 'conversation',
+        workerKey: 'modelCatalogSync',
         coordinator: coordinator,
         executionLease: const Duration(minutes: 5),
       );
@@ -237,10 +237,10 @@ void main() {
         session,
         ownerId: 'server-a',
       ))!;
-      await repository.seedSchedule(session, workerKey: 'conversation');
+      await repository.seedSchedule(session, workerKey: 'modelCatalogSync');
       final claimed = (await repository.claimDueRun(
         session,
-        workerKey: 'conversation',
+        workerKey: 'modelCatalogSync',
         coordinator: coordinator,
         executionLease: const Duration(minutes: 5),
       ))!;
@@ -256,7 +256,7 @@ void main() {
       );
       final completed = await RecurringWorkerSchedule.db.findFirstRow(
         session,
-        where: (table) => table.workerKey.equals('conversation'),
+        where: (table) => table.workerKey.equals('modelCatalogSync'),
       );
 
       expect(completed!.runToken, isNull);

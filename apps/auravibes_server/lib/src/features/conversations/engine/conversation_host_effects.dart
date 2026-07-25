@@ -6,8 +6,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 import '../../objects/object_store.dart';
+import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
-import '../live_turn_broker.dart';
 
 const maxConcurrentProviderTurns = 32;
 const maxConcurrentProviderTurnsPerWorkspace = 4;
@@ -46,58 +46,79 @@ class DatabaseConversationCancellationProbe
   }
 }
 
-abstract interface class ConversationLiveTurnPublisher {
+abstract interface class ConversationProgressPublisher {
   Future<void> queued();
 
   Future<void> running();
 
   Future<void> text(String text);
+
+  Future<void> flush();
 }
 
-class BrokerConversationLiveTurnPublisher
-    implements ConversationLiveTurnPublisher {
-  BrokerConversationLiveTurnPublisher({
+class WakeupConversationProgressPublisher
+    implements ConversationProgressPublisher {
+  WakeupConversationProgressPublisher({
     required this.session,
     required this.workspaceId,
-    required this.turnId,
-    this.broker = const LiveTurnBroker(),
+    required this.conversationId,
+    required this.sequence,
+    required this.checkpoint,
   });
 
   final Session session;
   final int workspaceId;
-  final String turnId;
-  final LiveTurnBroker broker;
-  var _sequence = 0;
+  final String conversationId;
+  final int sequence;
+  final Future<void> Function(String content) checkpoint;
+  final StringBuffer _content = StringBuffer();
+  DateTime? _lastCheckpoint;
 
   @override
-  Future<void> queued() => _publish(LiveTurnEventKind.queued);
+  Future<void> queued() => Future.value();
 
   @override
-  Future<void> running() => _publish(LiveTurnEventKind.running);
+  Future<void> running() => Future.value();
 
   @override
-  Future<void> text(String text) {
-    if (text.isEmpty) return Future.value();
-    return _publish(LiveTurnEventKind.text, text: text);
+  Future<void> text(String text) async {
+    _content.write(text);
+    await SyncWakeups.publishConversationProgress(
+      session,
+      ConversationStreamEvent(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        sequence: sequence,
+        kind: ConversationEventType.executionStateChanged,
+        actorUserId: '',
+        payloadJson: '{}',
+        transientTextDelta: text,
+        createdAt: DateTime.now().toUtc(),
+      ),
+    );
+    await _checkpoint(force: false);
   }
 
-  Future<void> _publish(LiveTurnEventKind kind, {String? text}) =>
-      broker.publish(
-        session,
-        LiveTurnEvent(
-          workspaceId: workspaceId,
-          turnId: turnId,
-          sequence: ++_sequence,
-          kind: kind,
-          text: text,
-        ),
-      );
+  @override
+  Future<void> flush() => _checkpoint(force: true);
+
+  Future<void> _checkpoint({required bool force}) async {
+    if (_content.isEmpty) return;
+    final now = DateTime.now().toUtc();
+    if (!force &&
+        _lastCheckpoint != null &&
+        now.difference(_lastCheckpoint!) < const Duration(seconds: 1)) {
+      return;
+    }
+    await checkpoint(_content.toString());
+    _lastCheckpoint = now;
+  }
 }
 
 class ConversationResponseAccumulator {
   ConversationResponseAccumulator({required this.publisher});
 
-  final ConversationLiveTurnPublisher publisher;
+  final ConversationProgressPublisher publisher;
   final StringBuffer _content = StringBuffer();
   Future<void> _pending = Future.value();
   var _contentBytes = 0;
@@ -114,7 +135,7 @@ class ConversationResponseAccumulator {
     _pending = _pending.then((_) => publisher.text(text));
   }
 
-  Future<void> close() => _pending;
+  Future<void> close() => _pending.then((_) => publisher.flush());
 }
 
 abstract interface class ConversationAdmissionGate {
@@ -155,6 +176,7 @@ class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
     if (jobId == null || leaseToken == null) {
       throw StateError('Conversation job lease is missing.');
     }
+    await _ensureProviderAdmissionLock(session, transaction);
     final lock = await ProviderAdmissionLock.db.findFirstRow(
       session,
       where: (table) => table.key.equals('global'),
@@ -232,6 +254,7 @@ class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
     required String leaseToken,
   }) => session.db.transaction((transaction) async {
     final now = DateTime.now().toUtc();
+    await _ensureProviderAdmissionLock(session, transaction);
     final lock = await ProviderAdmissionLock.db.findFirstRow(
       session,
       where: (table) => table.key.equals('global'),
@@ -310,6 +333,7 @@ class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
 
   Future<void> _release(Session session, ConversationJob job) =>
       session.db.transaction((transaction) async {
+        await _ensureProviderAdmissionLock(session, transaction);
         final lock = await ProviderAdmissionLock.db.findFirstRow(
           session,
           where: (table) => table.key.equals('global'),
@@ -327,6 +351,17 @@ class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
           transaction: transaction,
         );
       });
+
+  Future<void> _ensureProviderAdmissionLock(
+    Session session,
+    Transaction transaction,
+  ) => ProviderAdmissionLock.db.insert(
+    session,
+    [ProviderAdmissionLock(key: 'global')],
+    transaction: transaction,
+    ignoreConflicts: true,
+    noReturn: true,
+  );
 }
 
 class ConversationAttachment {

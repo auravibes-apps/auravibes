@@ -4,9 +4,11 @@ import 'dart:io';
 import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
+import '../conversations/workers/conversation_job_dispatcher.dart';
 import '../conversations/workers/conversation_worker.dart';
 import '../model_connections/workers/model_catalog_sync_worker.dart';
 import '../objects/object_cleanup_service.dart';
+import '../sync/stream/sync_wakeups.dart';
 import 'worker_coordinator_repository.dart';
 import 'recurring_worker_timer_set.dart';
 
@@ -29,6 +31,9 @@ class RecurringWorkerCoordinator {
   final _runningWorkers = <String>{};
   final _claimedSchedules = <String, RecurringWorkerSchedule>{};
   WorkerCoordinatorLease? _coordinator;
+  ConversationJobDispatcher? _conversationDispatcher;
+  Session? _conversationListener;
+  WorkerCoordinatorLease? _conversationDispatcherCoordinator;
   int? _legacyCleanupFencingToken;
   bool _heartbeatInFlight = false;
   bool _stopped = false;
@@ -53,6 +58,7 @@ class RecurringWorkerCoordinator {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
     _stopTimers();
+    await _stopConversationDispatcher();
     for (final cancel in _runCancellers) {
       cancel();
     }
@@ -129,6 +135,7 @@ class RecurringWorkerCoordinator {
       if (!_isActive(generation)) return;
       if (coordinator == null) {
         _stopTimers();
+        await _stopConversationDispatcher();
         _coordinator = null;
         return;
       }
@@ -138,6 +145,7 @@ class RecurringWorkerCoordinator {
       if (Platform.environment['AURAVIBES_RECURRING_WORKERS_CUTOVER'] !=
           'drained') {
         _stopTimers();
+        await _stopConversationDispatcher();
         _coordinator = null;
         session.log(
           'Recurring workers require a drained legacy rollout. Set '
@@ -149,9 +157,8 @@ class RecurringWorkerCoordinator {
       if (_legacyCleanupFencingToken != coordinator.fencingToken) {
         await session.db.unsafeQuery(
           'DELETE FROM serverpod_future_call WHERE identifier IN '
-          '(@conversation, @catalog, @cleanup)',
+          '(@catalog, @cleanup)',
           parameters: QueryParameters.named({
-            'conversation': conversationWorkerFutureCallIdentifier,
             'catalog': modelCatalogSyncWorkerFutureCallIdentifier,
             'cleanup': objectCleanupFutureCallIdentifier,
           }),
@@ -159,6 +166,11 @@ class RecurringWorkerCoordinator {
         _legacyCleanupFencingToken = coordinator.fencingToken;
       }
       if (!_isActive(generation)) return;
+      await _startConversationDispatcher(coordinator, generation);
+      if (!_isActive(generation) ||
+          !_sameCoordinator(_coordinator, coordinator)) {
+        return;
+      }
       for (final definition in _definitions) {
         await repository.seedSchedule(session, workerKey: definition.key);
         if (!_isActive(generation)) return;
@@ -232,7 +244,14 @@ class RecurringWorkerCoordinator {
               (renewed) {
                 if (!renewed) leaseLost = true;
               },
-              onError: (_, _) {
+              onError: (Object error, StackTrace stackTrace) {
+                session!.log(
+                  'Worker coordinator lease renewal failed: '
+                  'worker=${definition.key}, coordinator=${coordinator.ownerId}.',
+                  level: LogLevel.error,
+                  exception: error,
+                  stackTrace: stackTrace,
+                );
                 leaseLost = true;
               },
             )
@@ -291,6 +310,83 @@ class RecurringWorkerCoordinator {
       first?.ownerId == second.ownerId &&
       first?.fencingToken == second.fencingToken;
 
+  Future<void> _startConversationDispatcher(
+    WorkerCoordinatorLease coordinator,
+    int generation,
+  ) async {
+    if (_conversationDispatcher != null &&
+        _sameCoordinator(_conversationDispatcherCoordinator, coordinator)) {
+      return;
+    }
+    await _stopConversationDispatcher();
+    if (!_isActive(generation) ||
+        !_sameCoordinator(_coordinator, coordinator)) {
+      return;
+    }
+    final listener = await pod.createSession();
+    if (!_isActive(generation) ||
+        !_sameCoordinator(_coordinator, coordinator)) {
+      await listener.close();
+      return;
+    }
+    final dispatcher = ConversationJobDispatcher(
+      drain: (isActive) async {
+        final session = await pod.createSession();
+        try {
+          session.log(
+            'Conversation dispatch drain started: '
+            'coordinator=${coordinator.ownerId}, '
+            'fencingToken=${coordinator.fencingToken}.',
+            level: LogLevel.info,
+          );
+          await runConversationWorker(session, isActive: isActive);
+        } finally {
+          await session.close();
+        }
+      },
+      onError: (error, stackTrace) {
+        listener.log(
+          'Conversation job dispatcher failed: '
+          'coordinator=${coordinator.ownerId}, '
+          'fencingToken=${coordinator.fencingToken}.',
+          level: LogLevel.error,
+          exception: error,
+          stackTrace: stackTrace,
+        );
+      },
+    );
+    _conversationListener = listener;
+    _conversationDispatcher = dispatcher;
+    _conversationDispatcherCoordinator = coordinator;
+    dispatcher.start(
+      wakeups: listener.messages
+          .createStream<ConversationJob>(SyncWakeups.conversationJobsChannel)
+          .map((job) {
+            listener.log(
+              'Conversation job wake received: '
+              'job=${job.id}, workspace=${job.workspaceId}, '
+              'kind=${job.kind}, coordinator=${coordinator.ownerId}, '
+              'fencingToken=${coordinator.fencingToken}.',
+              level: LogLevel.info,
+            );
+          }),
+      isActive: () =>
+          _isActive(generation) &&
+          _sameCoordinator(_coordinator, coordinator) &&
+          _sameCoordinator(_conversationDispatcherCoordinator, coordinator),
+    );
+  }
+
+  Future<void> _stopConversationDispatcher() async {
+    final dispatcher = _conversationDispatcher;
+    await dispatcher?.stop();
+    final listener = _conversationListener;
+    _conversationListener = null;
+    await listener?.close();
+    _conversationDispatcherCoordinator = null;
+    _conversationDispatcher = null;
+  }
+
   Future<void> _releaseClaimedRuns(WorkerCoordinatorLease coordinator) async {
     if (_claimedSchedules.isEmpty) return;
     final session = await pod.createSession();
@@ -333,13 +429,6 @@ class _WorkerDefinition {
 }
 
 final _definitions = [
-  _WorkerDefinition(
-    'conversation',
-    const Duration(seconds: 1),
-    const Duration(seconds: 1),
-    (session, {required coordinator, required isActive}) =>
-        runConversationWorker(session, isActive: isActive),
-  ),
   _WorkerDefinition(
     'modelCatalogSync',
     ModelCatalogSyncWorker.interval,

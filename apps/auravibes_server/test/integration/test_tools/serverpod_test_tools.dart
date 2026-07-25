@@ -57,123 +57,139 @@ import 'package:auravibes_server/src/generated/features/conversations/models/tur
     as _i24;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
     as _i25;
-import 'package:auravibes_server/src/generated/features/conversations/models/live_turn_event.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_snapshot.dart'
     as _i26;
-import 'package:auravibes_server/src/generated/features/conversations/models/live_turn_subscribe_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
     as _i27;
-import 'dart:convert' as _i28;
-import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/continue_conversation_request.dart'
+    as _i28;
+import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _i29;
-import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_stream_event.dart'
     as _i30;
-import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_subscribe_request.dart'
     as _i31;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_result.dart'
-    as _i32;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
+import 'dart:convert' as _i32;
+import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _i33;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/delete_mcp_server_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _i34;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_result.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
     as _i35;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
     as _i36;
-import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _i37;
-import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
     as _i38;
-import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
     as _i39;
-import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_result.dart'
     as _i40;
-import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
     as _i41;
-import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/delete_mcp_server_request.dart'
     as _i42;
-import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i43;
-import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
     as _i44;
-import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model_provider.dart'
     as _i45;
-import 'package:auravibes_server/src/generated/features/model_connections/models/model_sync_result.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/api_model.dart'
     as _i46;
-import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/model_connection_view.dart'
     as _i47;
-import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_result.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
     as _i48;
-import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
     as _i49;
-import 'package:auravibes_server/src/generated/features/objects/models/object_result.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i50;
-import 'package:auravibes_server/src/generated/features/objects/models/complete_upload_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
     as _i51;
-import 'package:auravibes_server/src/generated/features/objects/models/get_download_result.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/workspace_model_selection_view.dart'
     as _i52;
-import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
     as _i53;
-import 'package:auravibes_server/src/generated/features/objects/models/delete_object_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/model_sync_result.dart'
     as _i54;
-import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_stream_envelope.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _i55;
-import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_result.dart'
     as _i56;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_response.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
     as _i57;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/object_result.dart'
     as _i58;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_response.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/complete_upload_request.dart'
     as _i59;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/get_download_result.dart'
     as _i60;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_response.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
     as _i61;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/delete_object_request.dart'
     as _i62;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_response.dart'
+import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_stream_envelope.dart'
     as _i63;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
+import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
     as _i64;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_response.dart'
     as _i65;
-import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
     as _i66;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_response.dart'
     as _i67;
-import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
     as _i68;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_response.dart'
     as _i69;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
     as _i70;
-import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_response.dart'
     as _i71;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i72;
-import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_summary.dart'
     as _i73;
-import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/pending_workspace_invite_summary.dart'
     as _i74;
-import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_detail.dart'
     as _i75;
-import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _i76;
-import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_member_summary.dart'
     as _i77;
-import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
     as _i78;
-import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i79;
-import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
     as _i80;
-import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
     as _i81;
-import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
     as _i82;
-import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
     as _i83;
-import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _i84;
+import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
+    as _i85;
+import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
+    as _i86;
+import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
+    as _i87;
+import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+    as _i88;
+import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+    as _i89;
+import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+    as _i90;
+import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+    as _i91;
+import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
+    as _i92;
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:auravibes_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -1132,25 +1148,150 @@ class _ConversationEndpoint {
     });
   }
 
-  _i4.Stream<_i26.LiveTurnEvent> subscribeTurn(
+  _i4.Future<_i26.ConversationSnapshot> getConversationSnapshot(
     _i1.TestSessionBuilder sessionBuilder,
-    _i27.LiveTurnSubscribeRequest request,
+    _i15.GetConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'getConversationSnapshot',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'getConversationSnapshot',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i26.ConversationSnapshot> queueConversationMessage(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i27.QueueConversationMessageRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'queueConversationMessage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'queueConversationMessage',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i26.ConversationSnapshot> continueConversation(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i28.ContinueConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'continueConversation',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'continueConversation',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i26.ConversationSnapshot> stopConversation(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i29.StopConversationRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'stopConversation',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'stopConversation',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Stream<_i30.ConversationStreamEvent> subscribeConversation(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i31.ConversationSubscribeRequest request,
   ) {
-    var _localTestStreamManager = _i1.TestStreamManager<_i26.LiveTurnEvent>();
+    var _localTestStreamManager =
+        _i1.TestStreamManager<_i30.ConversationStreamEvent>();
     _i1.callStreamFunctionAndHandleExceptions(
       () async {
         var _localUniqueSession =
             (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
               endpoint: 'conversation',
-              method: 'subscribeTurn',
+              method: 'subscribeConversation',
             );
         var _localCallContext = await _endpointDispatch
             .getMethodStreamCallContext(
               createSessionCallback: (_) => _localUniqueSession,
               endpointPath: 'conversation',
-              methodName: 'subscribeTurn',
+              methodName: 'subscribeConversation',
               arguments: {
-                'request': _i28.jsonDecode(
+                'request': _i32.jsonDecode(
                   _i2.SerializationManager.encode(request),
                 ),
               },
@@ -1168,9 +1309,133 @@ class _ConversationEndpoint {
     return _localTestStreamManager.outputStreamController.stream;
   }
 
+  _i4.Future<_i26.ConversationSnapshot> editPendingConversationMessage(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i33.EditPendingConversationMessageRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'editPendingConversationMessage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'editPendingConversationMessage',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i26.ConversationSnapshot> reorderPendingConversationMessage(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i34.ReorderPendingConversationMessageRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'reorderPendingConversationMessage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'reorderPendingConversationMessage',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i26.ConversationSnapshot> removePendingConversationMessage(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i35.RemovePendingConversationMessageRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'removePendingConversationMessage',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'removePendingConversationMessage',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _i4.Future<_i26.ConversationSnapshot> updateConversationSettings(
+    _i1.TestSessionBuilder sessionBuilder,
+    _i36.UpdateConversationSettingsRequest request,
+  ) async {
+    return _i1.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _i1.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'updateConversationSettings',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'updateConversationSettings',
+          parameters: _i1.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _i4.Future<_i26.ConversationSnapshot>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
   _i4.Future<_i22.ConversationMutationResult> submitToolDecision(
     _i1.TestSessionBuilder sessionBuilder,
-    _i29.SubmitToolDecisionRequest request,
+    _i37.SubmitToolDecisionRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1201,7 +1466,7 @@ class _ConversationEndpoint {
 
   _i4.Future<_i22.ConversationMutationResult> cancelTurn(
     _i1.TestSessionBuilder sessionBuilder,
-    _i30.CancelTurnRequest request,
+    _i38.CancelTurnRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1232,7 +1497,7 @@ class _ConversationEndpoint {
 
   _i4.Future<_i22.ConversationMutationResult> compact(
     _i1.TestSessionBuilder sessionBuilder,
-    _i31.CompactConversationRequest request,
+    _i39.CompactConversationRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1272,9 +1537,9 @@ class _McpServerEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<_i32.CreateMcpServerResult> create(
+  _i4.Future<_i40.CreateMcpServerResult> create(
     _i1.TestSessionBuilder sessionBuilder,
-    _i33.CreateMcpServerRequest request,
+    _i41.CreateMcpServerRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1295,7 +1560,7 @@ class _McpServerEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i32.CreateMcpServerResult>);
+                as _i4.Future<_i40.CreateMcpServerResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1305,7 +1570,7 @@ class _McpServerEndpoint {
 
   _i4.Future<void> delete(
     _i1.TestSessionBuilder sessionBuilder,
-    _i34.DeleteMcpServerRequest request,
+    _i42.DeleteMcpServerRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1334,9 +1599,9 @@ class _McpServerEndpoint {
     });
   }
 
-  _i4.Future<_i35.DiscoverMcpServerResult> discoverAndCheck(
+  _i4.Future<_i43.DiscoverMcpServerResult> discoverAndCheck(
     _i1.TestSessionBuilder sessionBuilder,
-    _i36.DiscoverMcpServerRequest request,
+    _i44.DiscoverMcpServerRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1357,7 +1622,7 @@ class _McpServerEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i35.DiscoverMcpServerResult>);
+                as _i4.Future<_i43.DiscoverMcpServerResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1376,7 +1641,7 @@ class _ModelConnectionEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<List<_i37.ApiModelProvider>> listCatalogProviders(
+  _i4.Future<List<_i45.ApiModelProvider>> listCatalogProviders(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1398,7 +1663,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i37.ApiModelProvider>>);
+                as _i4.Future<List<_i45.ApiModelProvider>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1406,7 +1671,7 @@ class _ModelConnectionEndpoint {
     });
   }
 
-  _i4.Future<List<_i38.ApiModel>> listCatalogModels(
+  _i4.Future<List<_i46.ApiModel>> listCatalogModels(
     _i1.TestSessionBuilder sessionBuilder, {
     String? providerId,
   }) async {
@@ -1429,7 +1694,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i38.ApiModel>>);
+                as _i4.Future<List<_i46.ApiModel>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1437,9 +1702,9 @@ class _ModelConnectionEndpoint {
     });
   }
 
-  _i4.Future<_i39.ModelConnectionView> create(
+  _i4.Future<_i47.ModelConnectionView> create(
     _i1.TestSessionBuilder sessionBuilder,
-    _i40.CreateModelConnectionRequest request,
+    _i48.CreateModelConnectionRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1460,7 +1725,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i39.ModelConnectionView>);
+                as _i4.Future<_i47.ModelConnectionView>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1468,9 +1733,9 @@ class _ModelConnectionEndpoint {
     });
   }
 
-  _i4.Future<List<_i39.ModelConnectionView>> list(
+  _i4.Future<List<_i47.ModelConnectionView>> list(
     _i1.TestSessionBuilder sessionBuilder,
-    _i41.ListModelConnectionsRequest request,
+    _i49.ListModelConnectionsRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1491,7 +1756,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i39.ModelConnectionView>>);
+                as _i4.Future<List<_i47.ModelConnectionView>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1499,9 +1764,9 @@ class _ModelConnectionEndpoint {
     });
   }
 
-  _i4.Future<_i39.ModelConnectionView> update(
+  _i4.Future<_i47.ModelConnectionView> update(
     _i1.TestSessionBuilder sessionBuilder,
-    _i42.UpdateModelConnectionRequest request,
+    _i50.UpdateModelConnectionRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1522,7 +1787,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i39.ModelConnectionView>);
+                as _i4.Future<_i47.ModelConnectionView>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1532,7 +1797,7 @@ class _ModelConnectionEndpoint {
 
   _i4.Future<void> delete(
     _i1.TestSessionBuilder sessionBuilder,
-    _i43.DeleteModelConnectionRequest request,
+    _i51.DeleteModelConnectionRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1561,9 +1826,9 @@ class _ModelConnectionEndpoint {
     });
   }
 
-  _i4.Future<List<_i44.WorkspaceModelSelectionView>> listSelections(
+  _i4.Future<List<_i52.WorkspaceModelSelectionView>> listSelections(
     _i1.TestSessionBuilder sessionBuilder,
-    _i45.ListWorkspaceModelSelectionsRequest request,
+    _i53.ListWorkspaceModelSelectionsRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1584,7 +1849,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i44.WorkspaceModelSelectionView>>);
+                as _i4.Future<List<_i52.WorkspaceModelSelectionView>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1592,9 +1857,9 @@ class _ModelConnectionEndpoint {
     });
   }
 
-  _i4.Future<_i46.ModelSyncResult> testAndSync(
+  _i4.Future<_i54.ModelSyncResult> testAndSync(
     _i1.TestSessionBuilder sessionBuilder,
-    _i47.TestAndSyncModelConnectionRequest request,
+    _i55.TestAndSyncModelConnectionRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1615,7 +1880,7 @@ class _ModelConnectionEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i46.ModelSyncResult>);
+                as _i4.Future<_i54.ModelSyncResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1634,9 +1899,9 @@ class _ObjectEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<_i48.BeginUploadResult> beginUpload(
+  _i4.Future<_i56.BeginUploadResult> beginUpload(
     _i1.TestSessionBuilder sessionBuilder,
-    _i49.BeginUploadRequest request,
+    _i57.BeginUploadRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1657,7 +1922,7 @@ class _ObjectEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i48.BeginUploadResult>);
+                as _i4.Future<_i56.BeginUploadResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1665,9 +1930,9 @@ class _ObjectEndpoint {
     });
   }
 
-  _i4.Future<_i50.ObjectResult> completeUpload(
+  _i4.Future<_i58.ObjectResult> completeUpload(
     _i1.TestSessionBuilder sessionBuilder,
-    _i51.CompleteUploadRequest request,
+    _i59.CompleteUploadRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1688,7 +1953,7 @@ class _ObjectEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i50.ObjectResult>);
+                as _i4.Future<_i58.ObjectResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1696,9 +1961,9 @@ class _ObjectEndpoint {
     });
   }
 
-  _i4.Future<_i52.GetDownloadResult> getDownload(
+  _i4.Future<_i60.GetDownloadResult> getDownload(
     _i1.TestSessionBuilder sessionBuilder,
-    _i53.GetDownloadRequest request,
+    _i61.GetDownloadRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1719,7 +1984,7 @@ class _ObjectEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i52.GetDownloadResult>);
+                as _i4.Future<_i60.GetDownloadResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1729,7 +1994,7 @@ class _ObjectEndpoint {
 
   _i4.Future<void> delete(
     _i1.TestSessionBuilder sessionBuilder,
-    _i54.DeleteObjectRequest request,
+    _i62.DeleteObjectRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1769,12 +2034,12 @@ class _WorkspaceStreamEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Stream<_i55.WorkspaceStreamEnvelope> subscribe(
+  _i4.Stream<_i63.WorkspaceStreamEnvelope> subscribe(
     _i1.TestSessionBuilder sessionBuilder,
-    _i56.WorkspaceSubscribeRequest request,
+    _i64.WorkspaceSubscribeRequest request,
   ) {
     var _localTestStreamManager =
-        _i1.TestStreamManager<_i55.WorkspaceStreamEnvelope>();
+        _i1.TestStreamManager<_i63.WorkspaceStreamEnvelope>();
     _i1.callStreamFunctionAndHandleExceptions(
       () async {
         var _localUniqueSession =
@@ -1788,7 +2053,7 @@ class _WorkspaceStreamEndpoint {
               endpointPath: 'workspaceStream',
               methodName: 'subscribe',
               arguments: {
-                'request': _i28.jsonDecode(
+                'request': _i32.jsonDecode(
                   _i2.SerializationManager.encode(request),
                 ),
               },
@@ -1817,9 +2082,9 @@ class _WorkspaceSecretEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<_i57.PutWorkspaceSecretResponse> put(
+  _i4.Future<_i65.PutWorkspaceSecretResponse> put(
     _i1.TestSessionBuilder sessionBuilder,
-    _i58.PutWorkspaceSecretRequest request,
+    _i66.PutWorkspaceSecretRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1840,7 +2105,7 @@ class _WorkspaceSecretEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i57.PutWorkspaceSecretResponse>);
+                as _i4.Future<_i65.PutWorkspaceSecretResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1859,9 +2124,9 @@ class _WorkspaceStateEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<_i59.ReadWorkspaceStateResponse> read(
+  _i4.Future<_i67.ReadWorkspaceStateResponse> read(
     _i1.TestSessionBuilder sessionBuilder,
-    _i60.ReadWorkspaceStateRequest request,
+    _i68.ReadWorkspaceStateRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1882,7 +2147,7 @@ class _WorkspaceStateEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i59.ReadWorkspaceStateResponse>);
+                as _i4.Future<_i67.ReadWorkspaceStateResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1890,9 +2155,9 @@ class _WorkspaceStateEndpoint {
     });
   }
 
-  _i4.Future<_i61.PatchWorkspaceStateResponse> patch(
+  _i4.Future<_i69.PatchWorkspaceStateResponse> patch(
     _i1.TestSessionBuilder sessionBuilder,
-    _i62.PatchWorkspaceStateRequest request,
+    _i70.PatchWorkspaceStateRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1913,7 +2178,7 @@ class _WorkspaceStateEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i61.PatchWorkspaceStateResponse>);
+                as _i4.Future<_i69.PatchWorkspaceStateResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1921,9 +2186,9 @@ class _WorkspaceStateEndpoint {
     });
   }
 
-  _i4.Future<_i63.MutateWorkspaceCredentialResponse> mutateCredential(
+  _i4.Future<_i71.MutateWorkspaceCredentialResponse> mutateCredential(
     _i1.TestSessionBuilder sessionBuilder,
-    _i64.MutateWorkspaceCredentialRequest request,
+    _i72.MutateWorkspaceCredentialRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -1944,7 +2209,7 @@ class _WorkspaceStateEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i63.MutateWorkspaceCredentialResponse>);
+                as _i4.Future<_i71.MutateWorkspaceCredentialResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1963,7 +2228,7 @@ class _CloudWorkspaceEndpoint {
 
   final _i2.SerializationManager _serializationManager;
 
-  _i4.Future<List<_i65.CloudWorkspaceSummary>> listAuthorizedWorkspaces(
+  _i4.Future<List<_i73.CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -1985,7 +2250,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i65.CloudWorkspaceSummary>>);
+                as _i4.Future<List<_i73.CloudWorkspaceSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1993,7 +2258,7 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<List<_i66.PendingWorkspaceInviteSummary>> listPendingInvites(
+  _i4.Future<List<_i74.PendingWorkspaceInviteSummary>> listPendingInvites(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
@@ -2015,7 +2280,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i66.PendingWorkspaceInviteSummary>>);
+                as _i4.Future<List<_i74.PendingWorkspaceInviteSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2023,9 +2288,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i67.CloudWorkspaceDetail> getWorkspaceDetail(
+  _i4.Future<_i75.CloudWorkspaceDetail> getWorkspaceDetail(
     _i1.TestSessionBuilder sessionBuilder,
-    _i68.GetCloudWorkspaceDetailRequest request,
+    _i76.GetCloudWorkspaceDetailRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2046,7 +2311,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i67.CloudWorkspaceDetail>);
+                as _i4.Future<_i75.CloudWorkspaceDetail>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2054,9 +2319,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<List<_i69.CloudWorkspaceMemberSummary>> listMembers(
+  _i4.Future<List<_i77.CloudWorkspaceMemberSummary>> listMembers(
     _i1.TestSessionBuilder sessionBuilder,
-    _i70.ListWorkspaceMembersRequest request,
+    _i78.ListWorkspaceMembersRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2077,7 +2342,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i69.CloudWorkspaceMemberSummary>>);
+                as _i4.Future<List<_i77.CloudWorkspaceMemberSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2085,9 +2350,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<List<_i71.CloudWorkspaceInviteSummary>> listWorkspaceInvites(
+  _i4.Future<List<_i79.CloudWorkspaceInviteSummary>> listWorkspaceInvites(
     _i1.TestSessionBuilder sessionBuilder,
-    _i72.ListCloudWorkspaceInvitesRequest request,
+    _i80.ListCloudWorkspaceInvitesRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2108,7 +2373,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<List<_i71.CloudWorkspaceInviteSummary>>);
+                as _i4.Future<List<_i79.CloudWorkspaceInviteSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2116,9 +2381,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i65.CloudWorkspaceSummary> createWorkspace(
+  _i4.Future<_i73.CloudWorkspaceSummary> createWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i73.CreateCloudWorkspaceRequest request,
+    _i81.CreateCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2139,7 +2404,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i65.CloudWorkspaceSummary>);
+                as _i4.Future<_i73.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2147,9 +2412,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i66.PendingWorkspaceInviteSummary> inviteMember(
+  _i4.Future<_i74.PendingWorkspaceInviteSummary> inviteMember(
     _i1.TestSessionBuilder sessionBuilder,
-    _i74.InviteWorkspaceMemberRequest request,
+    _i82.InviteWorkspaceMemberRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2170,7 +2435,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i66.PendingWorkspaceInviteSummary>);
+                as _i4.Future<_i74.PendingWorkspaceInviteSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2178,9 +2443,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i71.CloudWorkspaceInviteSummary> renewInvite(
+  _i4.Future<_i79.CloudWorkspaceInviteSummary> renewInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i75.RenewWorkspaceInviteRequest request,
+    _i83.RenewWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2201,7 +2466,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i71.CloudWorkspaceInviteSummary>);
+                as _i4.Future<_i79.CloudWorkspaceInviteSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2211,7 +2476,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> revokeInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i76.RevokeWorkspaceInviteRequest request,
+    _i84.RevokeWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2240,9 +2505,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i65.CloudWorkspaceSummary> acceptInvite(
+  _i4.Future<_i73.CloudWorkspaceSummary> acceptInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i77.AcceptWorkspaceInviteRequest request,
+    _i85.AcceptWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2263,7 +2528,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i65.CloudWorkspaceSummary>);
+                as _i4.Future<_i73.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2273,7 +2538,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> declineInvite(
     _i1.TestSessionBuilder sessionBuilder,
-    _i78.DeclineWorkspaceInviteRequest request,
+    _i86.DeclineWorkspaceInviteRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2302,9 +2567,9 @@ class _CloudWorkspaceEndpoint {
     });
   }
 
-  _i4.Future<_i65.CloudWorkspaceSummary> renameWorkspace(
+  _i4.Future<_i73.CloudWorkspaceSummary> renameWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i79.RenameCloudWorkspaceRequest request,
+    _i87.RenameCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2325,7 +2590,7 @@ class _CloudWorkspaceEndpoint {
                   _localUniqueSession,
                   _localCallContext.arguments,
                 )
-                as _i4.Future<_i65.CloudWorkspaceSummary>);
+                as _i4.Future<_i73.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2335,7 +2600,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> leaveWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i80.LeaveCloudWorkspaceRequest request,
+    _i88.LeaveCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2366,7 +2631,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> transferOwnership(
     _i1.TestSessionBuilder sessionBuilder,
-    _i81.TransferCloudWorkspaceOwnershipRequest request,
+    _i89.TransferCloudWorkspaceOwnershipRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2397,7 +2662,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> updateMemberRole(
     _i1.TestSessionBuilder sessionBuilder,
-    _i82.UpdateWorkspaceMemberRoleRequest request,
+    _i90.UpdateWorkspaceMemberRoleRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2428,7 +2693,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> removeMember(
     _i1.TestSessionBuilder sessionBuilder,
-    _i83.RemoveWorkspaceMemberRequest request,
+    _i91.RemoveWorkspaceMemberRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =
@@ -2459,7 +2724,7 @@ class _CloudWorkspaceEndpoint {
 
   _i4.Future<void> deleteWorkspace(
     _i1.TestSessionBuilder sessionBuilder,
-    _i84.DeleteCloudWorkspaceRequest request,
+    _i92.DeleteCloudWorkspaceRequest request,
   ) async {
     return _i1.callAwaitableFunctionAndHandleExceptions(() async {
       var _localUniqueSession =

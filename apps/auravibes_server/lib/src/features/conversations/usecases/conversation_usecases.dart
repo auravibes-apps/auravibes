@@ -6,18 +6,30 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../../workspaces/domain/workspace_roles.dart';
 import '../../sync/stream/sync_wakeups.dart';
+import '../conversation_event_writer.dart';
 import '../domain/conversation_values.dart';
 import '../engine/conversation_host_effects.dart';
-import '../live_turn_broker.dart';
+
 import '../repositories/conversation_repository.dart' as conversation_repo;
 
+typedef ConversationJobPublisher =
+    Future<void> Function(
+      Session session,
+      ConversationJob job,
+    );
+
 class ConversationUseCases {
-  ConversationUseCases(this._repository);
+  ConversationUseCases(
+    this._repository, {
+    ConversationJobPublisher? publishConversationJob,
+  }) : _publishConversationJob =
+           publishConversationJob ?? SyncWakeups.publishConversationJob;
 
   static const _maxAttachmentsPerTurn = 4;
   static const _maxAttachmentBytesPerTurn = maxAttachmentBytes * 2;
 
   final conversation_repo.ConversationRepository _repository;
+  final ConversationJobPublisher _publishConversationJob;
 
   Future<ConversationSummary> create(
     Session session, {
@@ -63,6 +75,9 @@ class ConversationUseCases {
             agentId: request.agentId,
             parentConversationStableId: request.parentConversationId,
             revision: 1,
+            projectionRevision: 1,
+            eventSequence: 0,
+            executionState: 'idle',
             createdAt: now,
             updatedAt: now,
           ),
@@ -407,7 +422,13 @@ class ConversationUseCases {
       'conversation=${request.conversationId}, turn=${result.turnId}.',
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
-    await SyncWakeups.publishConversationJob(session, result);
+    final job = await ConversationJob.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.requestId.equals(result.turnId),
+    );
+    if (job != null) await _publishConversationJob(session, job);
     return result;
   }
 
@@ -487,7 +508,13 @@ class ConversationUseCases {
       'conversation=${request.conversationId}, turn=${result.turnId}.',
     );
     await SyncWakeups.publishWorkspace(session, request.workspaceId);
-    await SyncWakeups.publishConversationJob(session, result);
+    final job = await ConversationJob.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.requestId.equals(result.turnId),
+    );
+    if (job != null) await _publishConversationJob(session, job);
     return result;
   }
 
@@ -530,95 +557,958 @@ class ConversationUseCases {
     );
   }
 
+  Future<ConversationSnapshot> getConversationSnapshot(
+    Session session, {
+    required String userId,
+    required GetConversationRequest request,
+  }) async {
+    await _requireMember(
+      session,
+      workspaceId: request.workspaceId,
+      userId: userId,
+    );
+    final conversation = await _requireConversation(
+      session,
+      request.workspaceId,
+      request.conversationId,
+    );
+    final messages = await listMessages(
+      session,
+      userId: userId,
+      request: ListConversationMessagesRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        limit: 500,
+      ),
+    );
+    final storedMessages = await _repository.listConversationMessages(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: conversation.id!,
+      limit: 500,
+    );
+    final messageViews = {for (final message in messages) message.id: message};
+    final pendingMessages =
+        storedMessages.where((message) => message.pendingOrder != null).toList()
+          ..sort(
+            (left, right) => left.pendingOrder!.compareTo(right.pendingOrder!),
+          );
+    final execution = conversation.activeExecutionId == null
+        ? null
+        : await ConversationExecution.db.findById(
+            session,
+            conversation.activeExecutionId!,
+          );
+    final assistant = execution?.assistantMessageId == null
+        ? null
+        : await ConversationMessage.db.findById(
+            session,
+            execution!.assistantMessageId!,
+          );
+    final turns = {
+      for (final turn in await _repository.listTurns(
+        session,
+        workspaceId: request.workspaceId,
+        turnIds: storedMessages
+            .map((message) => message.turnId)
+            .whereType<int>(),
+      ))
+        turn.id!: turn,
+    };
+    final toolCalls = await _repository.listToolCallsByTurnIds(
+      session,
+      workspaceId: request.workspaceId,
+      turnIds: turns.keys,
+    );
+    return ConversationSnapshot(
+      conversation: ConversationProjectionView(
+        id: conversation.stableId,
+        workspaceId: conversation.workspaceId,
+        executionState: conversation.executionState,
+        projectionRevision: conversation.projectionRevision,
+        sequence: conversation.eventSequence,
+        modelId: conversation.modelId,
+        agentId: conversation.agentId,
+        activeExecutionId: execution?.stableId,
+        updatedAt: conversation.updatedAt,
+      ),
+      messages: messages,
+      pendingMessages: [
+        for (final message in pendingMessages)
+          if (messageViews.containsKey(message.stableId))
+            messageViews[message.stableId]!,
+      ],
+      activeExecution: execution == null
+          ? null
+          : ConversationExecutionView(
+              id: execution.stableId,
+              status: execution.status,
+              attempt: execution.attempt,
+              claimedMessageIds: List<String>.from(
+                jsonDecode(execution.claimedMessageIdsJson) as List,
+              ),
+              assistantMessageId: assistant?.stableId,
+              createdByUserId: execution.createdByUserId,
+              createdAt: execution.createdAt,
+              updatedAt: execution.updatedAt,
+              terminalAt: execution.terminalAt,
+            ),
+      toolCalls: [
+        for (final toolCall in toolCalls)
+          if (turns[toolCall.turnId] case final turn?)
+            _toolCallView(toolCall, turn, storedMessages),
+      ],
+      sequence: conversation.eventSequence,
+    );
+  }
+
+  Future<ConversationSnapshot> queueConversationMessage(
+    Session session, {
+    required String userId,
+    required QueueConversationMessageRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    _requireId(request.clientMessageId);
+    final content = request.content.trim();
+    if ((content.isEmpty && request.attachmentIds.isEmpty) ||
+        content.length > 100000 ||
+        request.attachmentIds.length > _maxAttachmentsPerTurn) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final attachmentIds = request.attachmentIds.map(_parseObjectId).toSet();
+    await ConversationEventWriter().write(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      actorUserId: userId,
+      requestId: request.requestId,
+      kind: ConversationEventType.messageQueued,
+      payloadJson: jsonEncode({'messageId': request.clientMessageId}),
+      persist: (transaction, conversation, now) async {
+        await _requireMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        if (conversation.projectionRevision !=
+            request.expectedProjectionRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        final attachmentBytes = await _repository.attachmentBytes(
+          session,
+          workspaceId: request.workspaceId,
+          actorUserId: userId,
+          objectIds: attachmentIds,
+          transaction: transaction,
+        );
+        if (attachmentBytes == null ||
+            attachmentBytes > _maxAttachmentBytesPerTurn) {
+          _fail(ConversationErrorCode.validationFailed);
+        }
+        await _repository.insertPendingMessage(
+          session,
+          conversation: conversation,
+          clientMessageId: request.clientMessageId,
+          content: content,
+          attachmentIds: attachmentIds.toList(),
+          now: now,
+          transaction: transaction,
+        );
+      },
+      updateProjection: (conversation) => conversation,
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
+  Future<ConversationSnapshot> editPendingConversationMessage(
+    Session session, {
+    required String userId,
+    required EditPendingConversationMessageRequest request,
+  }) async {
+    final content = request.content.trim();
+    if (content.isEmpty || content.length > 100000) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    await ConversationEventWriter().write(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      actorUserId: userId,
+      requestId: request.requestId,
+      kind: ConversationEventType.messageEdited,
+      payloadJson: jsonEncode({'messageId': request.messageId}),
+      persist: (transaction, conversation, now) async {
+        await _requireMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        if (conversation.projectionRevision !=
+            request.expectedProjectionRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        final message = await _repository.findPendingMessage(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          messageId: request.messageId,
+          transaction: transaction,
+        );
+        if (message == null) _fail(ConversationErrorCode.notFound);
+        await ConversationMessage.db.updateRow(
+          session,
+          message.copyWith(
+            content: content,
+            revision: message.revision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      },
+      updateProjection: (conversation) => conversation,
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
+  Future<ConversationSnapshot> reorderPendingConversationMessage(
+    Session session, {
+    required String userId,
+    required ReorderPendingConversationMessageRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    _requireId(request.messageId);
+    if (request.beforeMessageId == request.messageId) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    await ConversationEventWriter().write(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      actorUserId: userId,
+      requestId: request.requestId,
+      kind: ConversationEventType.messageReordered,
+      payloadJson: jsonEncode({
+        'messageId': request.messageId,
+        'beforeMessageId': request.beforeMessageId,
+      }),
+      persist: (transaction, conversation, now) async {
+        await _requireMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        if (conversation.projectionRevision !=
+            request.expectedProjectionRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        final pendingMessages = await _repository.listPendingMessages(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          transaction: transaction,
+        );
+        final messageIndex = pendingMessages.indexWhere(
+          (message) => message.stableId == request.messageId,
+        );
+        if (messageIndex < 0) _fail(ConversationErrorCode.notFound);
+        final message = pendingMessages.removeAt(messageIndex);
+        if (request.beforeMessageId case final beforeMessageId?) {
+          final beforeIndex = pendingMessages.indexWhere(
+            (candidate) => candidate.stableId == beforeMessageId,
+          );
+          if (beforeIndex < 0) _fail(ConversationErrorCode.notFound);
+          pendingMessages.insert(beforeIndex, message);
+        } else {
+          pendingMessages.add(message);
+        }
+        for (var index = 0; index < pendingMessages.length; index++) {
+          final pending = pendingMessages[index];
+          final pendingOrder = index + 1;
+          if (pending.pendingOrder != pendingOrder) {
+            await ConversationMessage.db.updateRow(
+              session,
+              pending.copyWith(pendingOrder: pendingOrder, updatedAt: now),
+              transaction: transaction,
+            );
+          }
+        }
+      },
+      updateProjection: (conversation) => conversation,
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
+  Future<ConversationSnapshot> continueConversation(
+    Session session, {
+    required String userId,
+    required ContinueConversationRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    final duplicateEvent = await ConversationEvent.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(request.workspaceId) &
+          table.requestId.equals(request.requestId),
+    );
+    if (duplicateEvent != null) {
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+      );
+      final conversation = await _requireConversation(
+        session,
+        request.workspaceId,
+        request.conversationId,
+      );
+      final payload = jsonDecode(duplicateEvent.payloadJson) as Map;
+      final executionId = payload['executionId'];
+      if (duplicateEvent.kind != ConversationEventType.executionStarted ||
+          duplicateEvent.conversationId != conversation.id ||
+          executionId is! String) {
+        _fail(ConversationErrorCode.idempotencyConflict);
+      }
+      final duplicateExecution = await ConversationExecution.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.stableId.equals(executionId),
+      );
+      if (duplicateExecution == null ||
+          duplicateExecution.conversationId != conversation.id) {
+        _fail(ConversationErrorCode.idempotencyConflict);
+      }
+      return getConversationSnapshot(
+        session,
+        userId: userId,
+        request: GetConversationRequest(
+          workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
+        ),
+      );
+    }
+    final executionId = const Uuid().v7();
+    late ConversationExecution execution;
+    late int executionDatabaseId;
+    late ConversationJob job;
+    try {
+      await ConversationEventWriter().write(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        actorUserId: userId,
+        requestId: request.requestId,
+        kind: ConversationEventType.executionStarted,
+        payloadJson: jsonEncode({
+          'requestId': request.requestId,
+          'executionId': executionId,
+        }),
+        persist: (transaction, conversation, now) async {
+          await _requireMember(
+            session,
+            workspaceId: request.workspaceId,
+            userId: userId,
+            transaction: transaction,
+          );
+          final duplicateEvent = await ConversationEvent.db.findFirstRow(
+            session,
+            where: (table) =>
+                table.workspaceId.equals(request.workspaceId) &
+                table.requestId.equals(request.requestId),
+            transaction: transaction,
+          );
+          if (duplicateEvent != null) {
+            final payload = jsonDecode(duplicateEvent.payloadJson) as Map;
+            final duplicateExecutionId = payload['executionId'];
+            if (duplicateEvent.kind != ConversationEventType.executionStarted ||
+                duplicateEvent.conversationId != conversation.id ||
+                duplicateExecutionId is! String) {
+              _fail(ConversationErrorCode.idempotencyConflict);
+            }
+            final duplicateExecution = await ConversationExecution.db
+                .findFirstRow(
+                  session,
+                  where: (table) =>
+                      table.workspaceId.equals(request.workspaceId) &
+                      table.stableId.equals(duplicateExecutionId),
+                  transaction: transaction,
+                );
+            if (duplicateExecution == null ||
+                duplicateExecution.conversationId != conversation.id) {
+              _fail(ConversationErrorCode.idempotencyConflict);
+            }
+            throw const _ContinueConversationReplay();
+          }
+          if (conversation.projectionRevision !=
+              request.expectedProjectionRevision) {
+            _fail(ConversationErrorCode.staleRevision);
+          }
+          if (conversation.executionState != 'idle' &&
+              conversation.executionState != ConversationStatuses.failed) {
+            _fail(ConversationErrorCode.turnConflict);
+          }
+          final pendingMessages = await _repository.listPendingMessages(
+            session,
+            workspaceId: request.workspaceId,
+            conversationId: conversation.id!,
+            transaction: transaction,
+          );
+          execution = await ConversationExecution.db.insertRow(
+            session,
+            ConversationExecution(
+              workspaceId: request.workspaceId,
+              conversationId: conversation.id!,
+              stableId: executionId,
+              status: ConversationStatuses.running,
+              settingsJson: jsonEncode({
+                'modelId': conversation.modelId,
+                'agentId': conversation.agentId,
+              }),
+              claimedMessageIdsJson: pendingMessages.isEmpty
+                  ? jsonEncode(const <String>[])
+                  : jsonEncode(
+                      pendingMessages
+                          .map((message) => message.stableId)
+                          .toList(),
+                    ),
+              attempt: 0,
+              createdByUserId: userId,
+              createdAt: now,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+          executionDatabaseId = execution.id!;
+          final assistant = await ConversationMessage.db.insertRow(
+            session,
+            ConversationMessage(
+              workspaceId: request.workspaceId,
+              conversationId: conversation.id!,
+              stableId: const Uuid().v7(),
+              role: 'assistant',
+              kind: 'text',
+              status: ConversationStatuses.running,
+              content: '',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+          execution = await ConversationExecution.db.updateRow(
+            session,
+            execution.copyWith(assistantMessageId: assistant.id),
+            transaction: transaction,
+          );
+          final turn = await ConversationTurn.db.insertRow(
+            session,
+            ConversationTurn(
+              workspaceId: request.workspaceId,
+              conversationId: conversation.id!,
+              requestId: execution.stableId,
+              requestHash: jsonEncode({'executionId': execution.stableId}),
+              initiatorUserId: userId,
+              userMessageId: pendingMessages.isEmpty
+                  ? null
+                  : pendingMessages.first.id,
+              assistantMessageId: assistant.id,
+              status: ConversationStatuses.queued,
+              revision: 1,
+              acceptedSequence: conversation.revision + 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+          await ConversationMessage.db.updateRow(
+            session,
+            assistant.copyWith(turnId: turn.id),
+            transaction: transaction,
+          );
+          for (final message in pendingMessages) {
+            final metadata = message.metadataJson == null
+                ? <String, dynamic>{}
+                : Map<String, dynamic>.from(
+                    jsonDecode(message.metadataJson!) as Map,
+                  );
+            metadata['modelSelectionId'] = conversation.modelId;
+            await ConversationMessage.db.updateRow(
+              session,
+              message.copyWith(
+                turnId: turn.id,
+                pendingOrder: null,
+                pendingAt: null,
+                status: ConversationStatuses.running,
+                metadataJson: jsonEncode(metadata),
+                revision: message.revision + 1,
+                updatedAt: now,
+              ),
+              transaction: transaction,
+            );
+          }
+          job = await ConversationJob.db.insertRow(
+            session,
+            ConversationJob(
+              workspaceId: request.workspaceId,
+              conversationId: conversation.id!,
+              turnId: turn.id,
+              requestId: execution.stableId,
+              kind: ConversationJobKinds.turn,
+              status: ConversationJobStatuses.queued,
+              payloadJson: jsonEncode({
+                'actorUserId': userId,
+                'executionId': execution.stableId,
+              }),
+              attempt: 0,
+              maxAttempts: 3,
+              availableAt: now,
+              createdAt: now,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+        },
+        updateProjection: (conversation) => conversation.copyWith(
+          executionState: ConversationStatuses.running,
+          activeExecutionId: executionDatabaseId,
+        ),
+      );
+    } on _ContinueConversationReplay {
+      return getConversationSnapshot(
+        session,
+        userId: userId,
+        request: GetConversationRequest(
+          workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
+        ),
+      );
+    }
+    await _publishConversationJob(session, job);
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
+  Future<ConversationSnapshot> stopConversation(
+    Session session, {
+    required String userId,
+    required StopConversationRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    await ConversationEventWriter().write(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      actorUserId: userId,
+      requestId: request.requestId,
+      kind: ConversationEventType.executionStopped,
+      payloadJson: jsonEncode({'requestId': request.requestId}),
+      persist: (transaction, conversation, now) async {
+        await _requireMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        if (conversation.projectionRevision !=
+            request.expectedProjectionRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        final executionId = conversation.activeExecutionId;
+        if (executionId == null ||
+            (conversation.executionState != ConversationStatuses.running &&
+                conversation.executionState !=
+                    ConversationStatuses.awaitingApproval)) {
+          _fail(ConversationErrorCode.turnConflict);
+        }
+        final execution = await ConversationExecution.db.findById(
+          session,
+          executionId,
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (execution == null) _fail(ConversationErrorCode.notFound);
+        final turn = await ConversationTurn.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.requestId.equals(execution.stableId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (turn != null && !ConversationStatuses.isTerminal(turn.status)) {
+          await ConversationTurn.db.updateRow(
+            session,
+            turn.copyWith(
+              cancellationRequestedAt: now,
+              revision: turn.revision + 1,
+              updatedAt: now,
+            ),
+            transaction: transaction,
+          );
+        }
+        await ConversationJob.db.updateWhere(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.requestId.equals(execution.stableId) &
+              table.status.equals(ConversationJobStatuses.queued),
+          columnValues: (table) => [
+            table.status(ConversationJobStatuses.cancelled),
+            table.updatedAt(now),
+          ],
+          transaction: transaction,
+        );
+        await ConversationExecution.db.updateRow(
+          session,
+          execution.copyWith(
+            status: ConversationStatuses.cancelled,
+            terminalAt: now,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+        if (execution.assistantMessageId case final assistantMessageId?) {
+          final assistant = await ConversationMessage.db.findById(
+            session,
+            assistantMessageId,
+            transaction: transaction,
+            lockMode: LockMode.forUpdate,
+          );
+          if (assistant != null) {
+            await ConversationMessage.db.updateRow(
+              session,
+              assistant.copyWith(
+                status: ConversationStatuses.cancelled,
+                revision: assistant.revision + 1,
+                updatedAt: now,
+              ),
+              transaction: transaction,
+            );
+          }
+        }
+      },
+      updateProjection: (conversation) => conversation.copyWith(
+        executionState: 'idle',
+        activeExecutionId: null,
+      ),
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
+  Future<ConversationSnapshot> removePendingConversationMessage(
+    Session session, {
+    required String userId,
+    required RemovePendingConversationMessageRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    _requireId(request.messageId);
+    await ConversationEventWriter().write(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      actorUserId: userId,
+      requestId: request.requestId,
+      kind: ConversationEventType.messageRemoved,
+      payloadJson: jsonEncode({'messageId': request.messageId}),
+      persist: (transaction, conversation, now) async {
+        await _requireMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        if (conversation.projectionRevision !=
+            request.expectedProjectionRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        final message = await _repository.findPendingMessage(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          messageId: request.messageId,
+          transaction: transaction,
+        );
+        if (message == null) _fail(ConversationErrorCode.notFound);
+        await ConversationMessage.db.deleteRow(
+          session,
+          message,
+          transaction: transaction,
+        );
+      },
+      updateProjection: (conversation) => conversation,
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
+  Future<ConversationSnapshot> updateConversationSettings(
+    Session session, {
+    required String userId,
+    required UpdateConversationSettingsRequest request,
+  }) async {
+    _requireId(request.requestId);
+    _requireId(request.conversationId);
+    await ConversationEventWriter().write(
+      session,
+      workspaceId: request.workspaceId,
+      conversationId: request.conversationId,
+      actorUserId: userId,
+      requestId: request.requestId,
+      kind: ConversationEventType.settingsChanged,
+      payloadJson: jsonEncode({
+        'modelId': request.modelId,
+        'agentId': request.agentId,
+      }),
+      persist: (transaction, conversation, _) async {
+        await _requireMember(
+          session,
+          workspaceId: request.workspaceId,
+          userId: userId,
+          transaction: transaction,
+        );
+        if (conversation.projectionRevision !=
+            request.expectedProjectionRevision) {
+          _fail(ConversationErrorCode.staleRevision);
+        }
+        await _validateReferences(
+          session,
+          workspaceId: request.workspaceId,
+          modelId: request.modelId,
+          agentId: request.agentId,
+          parentConversationId: null,
+          transaction: transaction,
+        );
+      },
+      updateProjection: (conversation) => conversation.copyWith(
+        modelId: request.modelId,
+        agentId: request.agentId,
+      ),
+    );
+    return getConversationSnapshot(
+      session,
+      userId: userId,
+      request: GetConversationRequest(
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+      ),
+    );
+  }
+
   Future<ConversationMutationResult> submitToolDecision(
     Session session, {
     required String userId,
     required SubmitToolDecisionRequest request,
-  }) => session.db.transaction((transaction) async {
-    _requireId(request.requestId);
-    if (request.decision != 'approve' && request.decision != 'deny') {
-      _fail(ConversationErrorCode.validationFailed);
-    }
-    final turn = await _requireTurnForMutation(
-      session,
-      userId: userId,
-      workspaceId: request.workspaceId,
-      turnId: request.turnId,
-      expectedRevision: request.expectedTurnRevision,
-      transaction: transaction,
-      initiatorOnly: true,
-    );
-    final toolCall = await _repository.findToolCallByStableId(
-      session,
-      workspaceId: request.workspaceId,
-      turnId: turn.id!,
-      toolCallId: request.toolCallId,
-      transaction: transaction,
-    );
-    if (toolCall == null) _fail(ConversationErrorCode.notFound);
-    if (toolCall.argumentsDigest != request.argumentsDigest) {
-      _fail(ConversationErrorCode.toolDecisionConflict);
-    }
-    if (toolCall.decision != null) {
-      if (toolCall.decision != request.decision) {
+  }) async {
+    String? conversationId;
+    ConversationJob? job;
+    final result = await session.db.transaction((transaction) async {
+      _requireId(request.requestId);
+      if (request.decision != 'approve' && request.decision != 'deny') {
+        _fail(ConversationErrorCode.validationFailed);
+      }
+      final turn = await _requireTurnForMutation(
+        session,
+        userId: userId,
+        workspaceId: request.workspaceId,
+        turnId: request.turnId,
+        expectedRevision: request.expectedTurnRevision,
+        transaction: transaction,
+        initiatorOnly: false,
+      );
+      final toolCall = await _repository.findToolCallByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        turnId: turn.id!,
+        toolCallId: request.toolCallId,
+        transaction: transaction,
+      );
+      if (toolCall == null) _fail(ConversationErrorCode.notFound);
+      if (toolCall.argumentsDigest != request.argumentsDigest) {
         _fail(ConversationErrorCode.toolDecisionConflict);
       }
-      return await _mutationResult(session, turn);
-    }
-    if (toolCall.status != 'pending') {
-      _fail(ConversationErrorCode.toolDecisionConflict);
-    }
-    final arguments = request.editedArgumentsJson ?? toolCall.argumentsJson;
-    _requireJsonObject(arguments);
-    final argumentsDigest = base64UrlEncode(
-      (await Sha256().hash(utf8.encode(arguments))).bytes,
-    );
-    final now = DateTime.now().toUtc();
-    await ConversationToolCall.db.updateRow(
+      if (toolCall.decision != null) {
+        if (toolCall.decision != request.decision) {
+          _fail(ConversationErrorCode.toolDecisionConflict);
+        }
+        return await _mutationResult(session, turn);
+      }
+      if (toolCall.status != 'pending') {
+        _fail(ConversationErrorCode.toolDecisionConflict);
+      }
+      final arguments = request.editedArgumentsJson ?? toolCall.argumentsJson;
+      _requireJsonObject(arguments);
+      final argumentsDigest = base64UrlEncode(
+        (await Sha256().hash(utf8.encode(arguments))).bytes,
+      );
+      final now = DateTime.now().toUtc();
+      await ConversationToolCall.db.updateRow(
+        session,
+        toolCall.copyWith(
+          argumentsJson: arguments,
+          argumentsDigest: argumentsDigest,
+          decision: request.decision,
+          decisionByUserId: userId,
+          decisionAt: now,
+          status: request.decision == 'approve' ? 'approved' : 'denied',
+          revision: toolCall.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      final updatedTurn = await ConversationTurn.db.updateRow(
+        session,
+        turn.copyWith(
+          status: request.decision == 'approve'
+              ? ConversationStatuses.queued
+              : ConversationStatuses.cancelled,
+          terminalAt: request.decision == 'approve' ? null : now,
+          revision: turn.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      final conversation = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(turn.conversationId) &
+            table.workspaceId.equals(request.workspaceId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (conversation == null) _fail(ConversationErrorCode.notFound);
+      conversationId = conversation.stableId;
+      final execution = conversation.activeExecutionId == null
+          ? null
+          : await ConversationExecution.db.findById(
+              session,
+              conversation.activeExecutionId!,
+              transaction: transaction,
+              lockMode: LockMode.forUpdate,
+            );
+      final projection = await Conversation.db.updateRow(
+        session,
+        conversation.copyWith(
+          eventSequence: conversation.eventSequence + 1,
+          projectionRevision: conversation.projectionRevision + 1,
+          executionState: request.decision == 'approve' ? 'running' : 'idle',
+          activeExecutionId: request.decision == 'approve'
+              ? conversation.activeExecutionId
+              : null,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      if (execution != null) {
+        await ConversationExecution.db.updateRow(
+          session,
+          execution.copyWith(
+            status: request.decision == 'approve' ? 'running' : 'cancelled',
+            terminalAt: request.decision == 'approve' ? null : now,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
+      await ConversationEvent.db.insertRow(
+        session,
+        ConversationEvent(
+          workspaceId: request.workspaceId,
+          conversationId: conversation.id!,
+          sequence: projection.eventSequence,
+          eventId: const Uuid().v7(),
+          actorUserId: userId,
+          requestId: request.requestId,
+          kind: ConversationEventType.toolDecisionRecorded,
+          payloadJson: jsonEncode({
+            'toolCallId': request.toolCallId,
+            'decision': request.decision,
+            'executionId': execution?.stableId,
+          }),
+          createdAt: now,
+        ),
+        transaction: transaction,
+      );
+      if (request.decision == 'approve') {
+        job = await _insertJob(
+          session,
+          workspaceId: turn.workspaceId,
+          conversationId: turn.conversationId,
+          turnId: turn.id,
+          requestId: request.requestId,
+          kind: ConversationJobKinds.turn,
+          payloadJson: conversation_repo.conversationTurnJobPayload(
+            turn.initiatorUserId,
+          ),
+          now: now,
+          transaction: transaction,
+        );
+      }
+      return _mutationResult(session, updatedTurn);
+    });
+    if (job != null) await _publishConversationJob(session, job!);
+    await SyncWakeups.publishConversation(
       session,
-      toolCall.copyWith(
-        argumentsJson: arguments,
-        argumentsDigest: argumentsDigest,
-        decision: request.decision,
-        decisionByUserId: userId,
-        decisionAt: now,
-        status: request.decision == 'approve' ? 'approved' : 'denied',
-        revision: toolCall.revision + 1,
-        updatedAt: now,
-      ),
-      transaction: transaction,
+      workspaceId: request.workspaceId,
+      conversationId: conversationId ?? request.turnId,
     );
-    final updatedTurn = await ConversationTurn.db.updateRow(
-      session,
-      turn.copyWith(
-        status: ConversationStatuses.queued,
-        revision: turn.revision + 1,
-        updatedAt: now,
-      ),
-      transaction: transaction,
-    );
-    await _insertJob(
-      session,
-      workspaceId: turn.workspaceId,
-      conversationId: turn.conversationId,
-      turnId: turn.id,
-      requestId: request.requestId,
-      kind: ConversationJobKinds.turn,
-      payloadJson: conversation_repo.conversationTurnJobPayload(
-        turn.initiatorUserId,
-      ),
-      now: now,
-      transaction: transaction,
-    );
-    return _mutationResult(session, updatedTurn);
-  });
+    return result;
+  }
 
   Future<ConversationMutationResult> cancelTurn(
     Session session, {
     required String userId,
     required CancelTurnRequest request,
   }) async {
-    String? cancelledTurnId;
+    String? cancelledConversationId;
     final result = await session.db.transaction((transaction) async {
       _requireId(request.requestId);
       final turn = await _requireTurnForMutation(
@@ -703,18 +1593,19 @@ class ConversationUseCases {
         ),
         transaction: transaction,
       );
-      cancelledTurnId = cancelled.requestId;
+      final conversation = await Conversation.db.findById(
+        session,
+        cancelled.conversationId,
+        transaction: transaction,
+      );
+      cancelledConversationId = conversation?.stableId;
       return _mutationResult(session, cancelled);
     });
-    if (cancelledTurnId != null) {
-      await const LiveTurnBroker().publish(
+    if (cancelledConversationId != null) {
+      await SyncWakeups.publishConversation(
         session,
-        LiveTurnEvent(
-          workspaceId: request.workspaceId,
-          turnId: cancelledTurnId!,
-          sequence: DateTime.now().toUtc().microsecondsSinceEpoch,
-          kind: LiveTurnEventKind.cancelled,
-        ),
+        workspaceId: request.workspaceId,
+        conversationId: cancelledConversationId!,
       );
     }
     return result;
@@ -724,73 +1615,79 @@ class ConversationUseCases {
     Session session, {
     required String userId,
     required CompactConversationRequest request,
-  }) => session.db.transaction((transaction) async {
-    _requireId(request.requestId);
-    await _requireMember(
-      session,
-      workspaceId: request.workspaceId,
-      userId: userId,
-      transaction: transaction,
-    );
-    final conversation = await _repository.findConversationByStableId(
-      session,
-      workspaceId: request.workspaceId,
-      conversationId: request.conversationId,
-      transaction: transaction,
-      lock: true,
-    );
-    if (conversation == null) _fail(ConversationErrorCode.notFound);
-    final existing = await ConversationJob.db.findFirstRow(
-      session,
-      where: (table) =>
-          table.workspaceId.equals(request.workspaceId) &
-          table.requestId.equals(request.requestId) &
-          table.kind.equals(ConversationJobKinds.compact),
-      transaction: transaction,
-    );
-    if (existing != null) {
-      return ConversationMutationResult(
-        conversationId: conversation.stableId,
-        revision: conversation.revision,
-        status: existing.status,
+  }) async {
+    late ConversationJob job;
+    final result = await session.db.transaction((transaction) async {
+      _requireId(request.requestId);
+      await _requireMember(
+        session,
+        workspaceId: request.workspaceId,
+        userId: userId,
+        transaction: transaction,
       );
-    }
-    if (conversation.revision != request.expectedConversationRevision) {
-      _fail(ConversationErrorCode.staleRevision);
-    }
-    if (await _repository.hasActiveMutation(
-      session,
-      workspaceId: request.workspaceId,
-      conversationId: conversation.id!,
-      transaction: transaction,
-    )) {
-      _fail(ConversationErrorCode.turnConflict);
-    }
-    final now = DateTime.now().toUtc();
-    await _insertJob(
-      session,
-      workspaceId: request.workspaceId,
-      conversationId: conversation.id!,
-      requestId: request.requestId,
-      kind: ConversationJobKinds.compact,
-      payloadJson: conversation_repo.conversationTurnJobPayload(userId),
-      now: now,
-      transaction: transaction,
-    );
-    final updated = await Conversation.db.updateRow(
-      session,
-      conversation.copyWith(
-        revision: conversation.revision + 1,
-        updatedAt: now,
-      ),
-      transaction: transaction,
-    );
-    return ConversationMutationResult(
-      conversationId: updated.stableId,
-      revision: updated.revision,
-      status: ConversationJobStatuses.queued,
-    );
-  });
+      final conversation = await _repository.findConversationByStableId(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: request.conversationId,
+        transaction: transaction,
+        lock: true,
+      );
+      if (conversation == null) _fail(ConversationErrorCode.notFound);
+      final existing = await ConversationJob.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.requestId.equals(request.requestId) &
+            table.kind.equals(ConversationJobKinds.compact),
+        transaction: transaction,
+      );
+      if (existing != null) {
+        job = existing;
+        return ConversationMutationResult(
+          conversationId: conversation.stableId,
+          revision: conversation.revision,
+          status: existing.status,
+        );
+      }
+      if (conversation.revision != request.expectedConversationRevision) {
+        _fail(ConversationErrorCode.staleRevision);
+      }
+      if (await _repository.hasActiveMutation(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: conversation.id!,
+        transaction: transaction,
+      )) {
+        _fail(ConversationErrorCode.turnConflict);
+      }
+      final now = DateTime.now().toUtc();
+      job = await _insertJob(
+        session,
+        workspaceId: request.workspaceId,
+        conversationId: conversation.id!,
+        requestId: request.requestId,
+        kind: ConversationJobKinds.compact,
+        payloadJson: conversation_repo.conversationTurnJobPayload(userId),
+        now: now,
+        transaction: transaction,
+      );
+      final updated = await Conversation.db.updateRow(
+        session,
+        conversation.copyWith(
+          revision: conversation.revision + 1,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      return ConversationMutationResult(
+        conversationId: updated.stableId,
+        revision: updated.revision,
+        status: ConversationJobStatuses.queued,
+      );
+    });
+    await _publishConversationJob(session, job);
+    return result;
+  }
 
   Future<ConversationTurn> _requireTurnForMutation(
     Session session, {
@@ -845,7 +1742,7 @@ class ConversationUseCases {
     return member;
   }
 
-  Future<void> _insertJob(
+  Future<ConversationJob> _insertJob(
     Session session, {
     required int workspaceId,
     required int conversationId,
@@ -855,26 +1752,24 @@ class ConversationUseCases {
     required Transaction transaction,
     int? turnId,
     String? payloadJson,
-  }) => ConversationJob.db
-      .insertRow(
-        session,
-        ConversationJob(
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-          turnId: turnId,
-          requestId: requestId,
-          kind: kind,
-          payloadJson: payloadJson,
-          status: ConversationJobStatuses.queued,
-          attempt: 0,
-          maxAttempts: 3,
-          availableAt: now,
-          createdAt: now,
-          updatedAt: now,
-        ),
-        transaction: transaction,
-      )
-      .then((_) {});
+  }) => ConversationJob.db.insertRow(
+    session,
+    ConversationJob(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      turnId: turnId,
+      requestId: requestId,
+      kind: kind,
+      payloadJson: payloadJson,
+      status: ConversationJobStatuses.queued,
+      attempt: 0,
+      maxAttempts: 3,
+      availableAt: now,
+      createdAt: now,
+      updatedAt: now,
+    ),
+    transaction: transaction,
+  );
 
   Future<StartTurnResult> _startResult(
     Session session,
@@ -1305,6 +2200,10 @@ class ConversationUseCases {
 
   Never _fail(ConversationErrorCode code) =>
       throw ConversationException(code: code);
+}
+
+class _ContinueConversationReplay {
+  const _ContinueConversationReplay();
 }
 
 class _ConversationCursor {

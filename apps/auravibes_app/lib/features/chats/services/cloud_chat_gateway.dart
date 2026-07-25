@@ -3,17 +3,38 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class CloudChatGateway {
-  CloudChatGateway(this._stateGateway) : _subscribeTurn = null;
+  CloudChatGateway(this._stateGateway)
+    : _subscribeConversation = null,
+      _getConversationSnapshot = null;
 
-  CloudChatGateway.forTesting({
-    required this._stateGateway,
-    required Stream<LiveTurnEvent> Function(LiveTurnSubscribeRequest request)
-    this._subscribeTurn,
-  });
+  factory CloudChatGateway.forConversationTesting({
+    required CloudWorkspaceStateGateway stateGateway,
+    required Stream<ConversationStreamEvent> Function(
+      ConversationSubscribeRequest request,
+    )
+    subscribeConversation,
+    required Future<ConversationSnapshot> Function(String conversationId)
+    getConversationSnapshot,
+  }) => CloudChatGateway._forConversationTesting(
+    stateGateway,
+    subscribeConversation,
+    getConversationSnapshot,
+  );
+
+  CloudChatGateway._forConversationTesting(
+    this._stateGateway,
+    this._subscribeConversation,
+    this._getConversationSnapshot,
+  );
 
   final CloudWorkspaceStateGateway _stateGateway;
-  final Stream<LiveTurnEvent> Function(LiveTurnSubscribeRequest request)?
-  _subscribeTurn;
+
+  final Stream<ConversationStreamEvent> Function(
+    ConversationSubscribeRequest request,
+  )?
+  _subscribeConversation;
+  final Future<ConversationSnapshot> Function(String conversationId)?
+  _getConversationSnapshot;
 
   int get _workspaceId => _stateGateway.workspace.cloudWorkspaceId;
   Client get _client => _stateGateway.client;
@@ -115,16 +136,89 @@ class CloudChatGateway {
       GetTurnRequest(workspaceId: _workspaceId, turnId: turnId),
     ),
   );
-  Stream<LiveTurnEvent> subscribeTurn(String turnId) {
+
+  Future<ConversationSnapshot> getConversationSnapshot(
+    String conversationId,
+  ) =>
+      _getConversationSnapshot?.call(conversationId) ??
+      guardCloudCall(
+        .conversation,
+        () => _client.conversation.getConversationSnapshot(
+          GetConversationRequest(
+            workspaceId: _workspaceId,
+            conversationId: conversationId,
+          ),
+        ),
+      );
+
+  Stream<ConversationStreamEvent> subscribeConversation(
+    String conversationId, {
+    required int afterSequence,
+  }) {
     if (_stateGateway.isDisposed) return const Stream.empty();
-    final request = LiveTurnSubscribeRequest(
+    final request = ConversationSubscribeRequest(
       workspaceId: _workspaceId,
-      turnId: turnId,
+      conversationId: conversationId,
+      afterSequence: afterSequence,
     );
 
-    return _subscribeTurn?.call(request) ??
-        _client.conversation.subscribeTurn(request);
+    return _subscribeConversation?.call(request) ??
+        _client.conversation.subscribeConversation(request);
   }
+
+  Future<ConversationSnapshot> continueConversation({
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+  }) => guardCloudCall(
+    .conversation,
+    () => _client.conversation.continueConversation(
+      ContinueConversationRequest(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+      ),
+    ),
+  );
+
+  Future<ConversationSnapshot> queueConversationMessage({
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+    required String clientMessageId,
+    required String content,
+    required List<String> attachmentIds,
+  }) => guardCloudCall(
+    .conversation,
+    () => _client.conversation.queueConversationMessage(
+      QueueConversationMessageRequest(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+        clientMessageId: clientMessageId,
+        content: content,
+        attachmentIds: attachmentIds,
+      ),
+    ),
+  );
+
+  Future<ConversationSnapshot> stopConversation({
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+  }) => guardCloudCall(
+    .conversation,
+    () => _client.conversation.stopConversation(
+      StopConversationRequest(
+        workspaceId: _workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+      ),
+    ),
+  );
 
   Future<ConversationMutationResult> submitToolDecision({
     required String requestId,

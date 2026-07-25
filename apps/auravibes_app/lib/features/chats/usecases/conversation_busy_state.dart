@@ -1,7 +1,7 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
+
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:riverpod/riverpod.dart';
@@ -11,21 +11,22 @@ class ConversationBusyState {
     required this.isStreaming,
     required this.hasPendingTools,
     this.isCompacting = false,
-    this.cloudTurn,
+    this.cloudExecutionBusy = false,
   });
 
-  const ConversationBusyState.cloud(this.cloudTurn)
+  const ConversationBusyState.cloud({required bool isBusy})
     : isStreaming = false,
       hasPendingTools = false,
-      isCompacting = false;
+      isCompacting = false,
+      cloudExecutionBusy = isBusy;
 
   final bool isStreaming;
   final bool hasPendingTools;
   final bool isCompacting;
-  final CloudLiveTurnState? cloudTurn;
+  final bool cloudExecutionBusy;
 
   bool get isBusy =>
-      cloudTurn?.isBusy ?? (isStreaming || hasPendingTools || isCompacting);
+      cloudExecutionBusy || isStreaming || hasPendingTools || isCompacting;
 }
 
 class GetConversationBusyStateUsecase {

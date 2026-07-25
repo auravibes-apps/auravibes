@@ -1,5 +1,4 @@
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
 import 'package:auravibes_app/features/chats/usecases/send_message_usecase.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -12,7 +11,7 @@ void main() {
         sentConversationId = conversationId;
         expect(draft.text, 'hello');
 
-        return Future.value(_turn);
+        return Future<void>.value();
       });
 
       await usecase.call(
@@ -29,7 +28,7 @@ void main() {
     final usecase = SendMessageUsecase.cloud((conversationId, draft) {
       called = true;
 
-      return Future.value(_turn);
+      return Future<void>.value();
     });
 
     await usecase.sendFirstMessage(
@@ -41,10 +40,3 @@ void main() {
     expect(called, isTrue);
   });
 }
-
-const _turn = CloudLiveTurnState(
-  turnId: 'turn-1',
-  revision: 1,
-  sequence: 1,
-  state: CloudLiveTurnLifecycle.queued,
-);

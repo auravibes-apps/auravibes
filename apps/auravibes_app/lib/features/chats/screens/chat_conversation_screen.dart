@@ -12,11 +12,10 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/agents/widgets/compact_agent_selector.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_live_turn_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
@@ -182,13 +181,22 @@ class _LoadedChatConversation extends HookConsumerWidget {
       [ref, conversation.id],
     );
 
-    final busyState = _conversationBusyStateValue(
-      ref.watch(conversationBusyStateProvider(workspaceId, conversation.id)),
-    );
-    final cloudTurn = ref.watch(cloudActiveTurnStateProvider(conversation.id));
     final isCloud =
         ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
         null;
+    final cloudConversation = isCloud
+        ? ref
+              .watch(
+                cloudConversationStateProvider((
+                  workspaceId: workspaceId,
+                  conversationId: conversation.id,
+                )),
+              )
+              .value
+        : null;
+    final busyState = _conversationBusyStateValue(
+      ref.watch(conversationBusyStateProvider(workspaceId, conversation.id)),
+    );
     final rateLimitRetryAt = ref.watch(
       conversationRateLimitRetryProvider.select(
         (retries) => retries[conversation.id],
@@ -219,7 +227,12 @@ class _LoadedChatConversation extends HookConsumerWidget {
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
     final isInputBusy =
-        (busyState?.isBusy ?? false) || rateLimitRetryAt != null;
+        (isCloud
+            ? cloudConversation?.conversation.executionState == 'running' ||
+                  cloudConversation?.conversation.executionState ==
+                      'awaitingApproval'
+            : busyState?.isBusy ?? false) ||
+        rateLimitRetryAt != null;
     useEffect(
       () {
         stopRequested.value = false;
@@ -254,9 +267,8 @@ class _LoadedChatConversation extends HookConsumerWidget {
               pendingToolCalls: pendingCalls,
             ),
           ),
-          if (isCloud && cloudTurn != null && !hidesStoppedRun)
-            _CloudTurnLifecycleIndicator(state: cloudTurn.state)
-          else if (busyState?.isStreaming == true && !hidesStoppedRun)
+          if ((isCloud && isInputBusy || busyState?.isStreaming == true) &&
+              !hidesStoppedRun)
             const ChatThinkingIndicator(),
           if (rateLimitRetryAt != null && !hidesStoppedRun)
             _RateLimitRetryIndicator(retryAt: rateLimitRetryAt),
@@ -652,24 +664,22 @@ Future<void> _continueAgent(
       cloudTurnUsecaseProvider(workspaceId).future,
     );
     if (cloud != null) {
-      final result = await cloud.continueConversation(conversationId);
-      final turnId = result.turnId;
-      if (turnId == null) {
-        throw StateError('Cloud continuation did not return a turn ID');
+      final state = ref
+          .read(
+            cloudConversationStateProvider((
+              workspaceId: workspaceId,
+              conversationId: conversationId,
+            )),
+          )
+          .value;
+      if (state == null ||
+          (state.conversation.executionState != 'idle' &&
+              state.conversation.executionState != 'failed')) {
+        return;
       }
-      ref
-          .read(cloudActiveTurnStatesProvider.notifier)
-          .set(
-            conversationId,
-            CloudLiveTurnState(
-              turnId: turnId,
-              revision: result.revision,
-              sequence: 0,
-              state: CloudLiveTurnLifecycle.fromStatus(result.status),
-            ),
-          );
-      ref.invalidate(
-        chatMessagesByConversationProvider(workspaceId, conversationId),
+      final _ = await cloud.continueSharedConversation(
+        conversationId: conversationId,
+        projectionRevision: state.conversation.projectionRevision,
       );
 
       return;
@@ -717,9 +727,23 @@ Future<void> _stopConversation(
 ) async {
   final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
   if (cloud != null) {
-    final turn = ref.read(cloudActiveTurnStateProvider(conversationId));
-    if (turn == null || !turn.isBusy) return;
-    final _ = await cloud.cancel(turnId: turn.turnId, revision: turn.revision);
+    final state = ref
+        .read(
+          cloudConversationStateProvider((
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+          )),
+        )
+        .value;
+    if (state == null ||
+        (state.conversation.executionState != 'running' &&
+            state.conversation.executionState != 'awaitingApproval')) {
+      return;
+    }
+    final _ = await cloud.stopSharedConversation(
+      conversationId: conversationId,
+      projectionRevision: state.conversation.projectionRevision,
+    );
 
     return;
   }
@@ -786,39 +810,6 @@ Future<void> _stopConversation(
         LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
       ),
       variant: AuraSnackBarVariant.error,
-    );
-  }
-}
-
-class _CloudTurnLifecycleIndicator extends StatelessWidget {
-  const _CloudTurnLifecycleIndicator({required this.state});
-
-  final CloudLiveTurnLifecycle state;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state == CloudLiveTurnLifecycle.completed) {
-      return const SizedBox.shrink();
-    }
-    final key = switch (state) {
-      .queued => LocaleKeys.chats_screens_chat_conversation_turn_queued,
-      .thinking => LocaleKeys.chats_screens_chat_conversation_turn_thinking,
-      .streaming => LocaleKeys.chats_screens_chat_conversation_turn_streaming,
-      .awaitingApproval =>
-        LocaleKeys.chats_screens_chat_conversation_turn_awaiting_approval,
-      .failed => LocaleKeys.chats_screens_chat_conversation_turn_failed,
-      .cancelled => LocaleKeys.chats_screens_chat_conversation_turn_cancelled,
-      .completed => throw StateError('Completed turns have no indicator'),
-    };
-
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: context.auraTheme.fromSpacing(.md),
-      ),
-      child: AuraText(
-        child: Text(key.tr()),
-        style: AuraTextStyle.bodySmall,
-      ),
     );
   }
 }

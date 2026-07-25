@@ -8,25 +8,33 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
+import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/context_usage_level.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
+import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/widgets/app_error_widget.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -38,6 +46,10 @@ final _busyRefreshProvider = NotifierProvider<_BusyRefreshNotifier, int>(
 );
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(_ContinueConversationRequestFake());
+  });
+
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
@@ -728,6 +740,15 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  workspaceSessionForRouteProvider(
+                    _workspaceId,
+                  ).overrideWithValue(
+                    const AsyncData(
+                      WorkspaceSession(
+                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                      ),
+                    ),
+                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
@@ -800,7 +821,281 @@ void main() {
     final input = tester.widget<ChatInputWidget>(find.byType(ChatInputWidget));
     expect(input.isBusy, isTrue);
   });
+
+  testWidgets(
+    'routes cloud Continue with the authoritative projection revision',
+    (tester) async {
+      final endpoint = _CloudConversationEndpoint();
+      when(() => endpoint.continueConversation(any())).thenAnswer(
+        (_) async => _cloudSnapshot(),
+      );
+      final usecase = _cloudTurnUsecase(endpoint);
+
+      await _pumpCloudConversationScreen(
+        tester,
+        initialState: _cloudState(projectionRevision: 42),
+        updates: const Stream.empty(),
+        usecase: usecase,
+      );
+
+      await tester.tap(find.byIcon(Icons.tune_rounded));
+      await tester.pump();
+      expect(find.byIcon(Icons.play_circle_outline), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.play_circle_outline));
+      await tester.pump();
+      await tester.pump();
+
+      final request =
+          verify(
+                () => endpoint.continueConversation(captureAny()),
+              ).captured.single
+              as ContinueConversationRequest;
+      expect(request.conversationId, _chatId);
+      expect(request.expectedProjectionRevision, 42);
+    },
+  );
+
+  testWidgets(
+    'does not route cloud Continue after authoritative state becomes running',
+    (tester) async {
+      final endpoint =
+          await _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
+            tester,
+            executionState: 'running',
+          );
+
+      expect(
+        () => verifyNever(() => endpoint.continueConversation(any())),
+        returnsNormally,
+      );
+    },
+  );
+
+  testWidgets(
+    'does not route cloud Continue after authoritative state awaits approval',
+    (tester) async {
+      final endpoint =
+          await _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
+            tester,
+            executionState: 'awaitingApproval',
+          );
+
+      expect(
+        () => verifyNever(() => endpoint.continueConversation(any())),
+        returnsNormally,
+      );
+    },
+  );
 }
+
+Future<void> _pumpCloudConversationScreen(
+  WidgetTester tester, {
+  required CloudConversationState initialState,
+  required Stream<CloudConversationState> updates,
+  CloudTurnUsecase? usecase,
+  Future<CloudTurnUsecase?>? usecaseFuture,
+}) async {
+  await tester.binding.setSurfaceSize(const Size(800, 1200));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  final conversation = ConversationEntity(
+    id: _chatId,
+    title: 'Chat',
+    workspaceId: _workspaceId,
+    isPinned: false,
+    createdAt: DateTime(2026),
+    updatedAt: DateTime(2026),
+  );
+  final cloudUsecase = usecaseFuture ?? Future.value(usecase);
+
+  await tester.runAsync(() async {
+    await tester.pumpWidget(
+      EasyLocalization(
+        child: Builder(
+          builder: (context) {
+            return TestProviderScope(
+              overrides: [
+                workspaceSessionForRouteProvider(
+                  _workspaceId,
+                ).overrideWithValue(
+                  const AsyncData(
+                    WorkspaceSession(
+                      CloudWorkspaceRef(
+                        localWorkspaceId: _workspaceId,
+                        serverUrl: 'https://example.com',
+                        accountId: 'account',
+                        cloudWorkspaceId: 7,
+                      ),
+                    ),
+                  ),
+                ),
+                conversationSelectedProvider.overrideWithValue(_chatId),
+                conversationRepositoryProvider.overrideWithValue(
+                  _StubConversationRepository(),
+                ),
+                conversationChatProvider(_workspaceId, _chatId).overrideWith(
+                  () => _ResultChatNotifier(ConversationFound(conversation)),
+                ),
+                conversationBusyStateProvider.overrideWith(
+                  (ref, _) async => const ConversationBusyState(
+                    isStreaming: false,
+                    hasPendingTools: false,
+                  ),
+                ),
+                cloudConversationStateProvider.overrideWith(
+                  (ref, _) async* {
+                    yield initialState;
+                    yield* updates;
+                  },
+                ),
+                cloudTurnUsecaseProvider(_workspaceId).overrideWith(
+                  (ref) => cloudUsecase,
+                ),
+                chatMessagesProvider.overrideWith(
+                  (ref, _) => Stream.value(const <MessageEntity>[]),
+                ),
+                chatMessageIdsProvider.overrideWith(
+                  (ref, _) => const <String>[],
+                ),
+                contextUsageProvider.overrideWith(
+                  (ref, _) => ContextUsageData.compute(
+                    usedTokens: 0,
+                    limitTokens: null,
+                  ),
+                ),
+                listModelsGroupedByProviderProvider(
+                  workspaceId: _workspaceId,
+                ).overrideWith((ref) => Stream.value(const {})),
+                agentsProvider(_workspaceId).overrideWith(
+                  (ref) => Stream.value(const []),
+                ),
+              ],
+              child: MaterialApp(
+                home: const ChatConversationScreen(
+                  workspaceId: _workspaceId,
+                  chatId: _chatId,
+                ),
+                locale: context.locale,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+              ),
+            );
+          },
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+  });
+  await tester.pump();
+  await tester.pump();
+}
+
+Future<_CloudConversationEndpoint>
+_expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
+  WidgetTester tester, {
+  required String executionState,
+}) async {
+  final endpoint = _CloudConversationEndpoint();
+  when(() => endpoint.continueConversation(any())).thenAnswer(
+    (_) async => _cloudSnapshot(),
+  );
+  final usecaseCompleter = Completer<CloudTurnUsecase?>();
+  final updates = StreamController<CloudConversationState>();
+  addTearDown(updates.close);
+
+  await _pumpCloudConversationScreen(
+    tester,
+    initialState: _cloudState(projectionRevision: 42),
+    updates: updates.stream,
+    usecaseFuture: usecaseCompleter.future,
+  );
+
+  await tester.tap(find.byIcon(Icons.tune_rounded));
+  await tester.pump();
+  await tester.tap(find.byIcon(Icons.play_circle_outline));
+  await tester.pump();
+
+  updates.add(
+    _cloudState(
+      projectionRevision: 43,
+      executionState: executionState,
+    ),
+  );
+  await tester.pump();
+  final _ = usecaseCompleter.complete(_cloudTurnUsecase(endpoint));
+  await tester.pump();
+  await tester.pump();
+
+  return endpoint;
+}
+
+CloudTurnUsecase _cloudTurnUsecase(_CloudConversationEndpoint endpoint) {
+  final gateway = _CloudWorkspaceGateway();
+  final client = _CloudClient();
+  when(() => gateway.workspace).thenReturn(
+    const CloudWorkspaceRef(
+      localWorkspaceId: _workspaceId,
+      serverUrl: 'https://example.com',
+      accountId: 'account',
+      cloudWorkspaceId: 7,
+    ),
+  );
+  when(() => gateway.client).thenReturn(client);
+  when(() => client.conversation).thenReturn(endpoint);
+
+  return CloudTurnUsecase(CloudChatGateway(gateway));
+}
+
+CloudConversationState _cloudState({
+  required int projectionRevision,
+  String executionState = 'idle',
+}) => CloudConversationState(
+  conversation: ConversationProjectionView(
+    id: _chatId,
+    workspaceId: 7,
+    executionState: executionState,
+    projectionRevision: projectionRevision,
+    sequence: projectionRevision,
+    updatedAt: DateTime.utc(2026),
+  ),
+  messages: const [],
+  pendingMessages: const [],
+  activeExecution: null,
+  toolCalls: const [],
+  sequence: projectionRevision,
+);
+
+ConversationSnapshot _cloudSnapshot() => ConversationSnapshot(
+  conversation: ConversationProjectionView(
+    id: _chatId,
+    workspaceId: 7,
+    executionState: 'running',
+    projectionRevision: 43,
+    sequence: 43,
+    updatedAt: DateTime.utc(2026),
+  ),
+  messages: const [],
+  pendingMessages: const [],
+  toolCalls: const [],
+  sequence: 43,
+);
+
+class _CloudWorkspaceGateway extends Mock
+    implements CloudWorkspaceStateGateway {}
+
+class _CloudClient extends Mock implements Client {}
+
+class _CloudConversationEndpoint extends Mock implements EndpointConversation {}
+
+class _ContinueConversationRequestFake extends Fake
+    implements ContinueConversationRequest {}
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
   @override

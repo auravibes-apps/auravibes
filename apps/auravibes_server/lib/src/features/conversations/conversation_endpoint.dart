@@ -2,7 +2,8 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 import '../accounts/authenticated_account_resolver.dart';
-import 'live_turn_broker.dart';
+import 'conversation_stream_service.dart';
+
 import 'repositories/conversation_repository.dart' as conversation_repo;
 import 'usecases/conversation_usecases.dart';
 
@@ -103,27 +104,111 @@ class ConversationEndpoint extends Endpoint {
     return _useCases.getTurn(session, userId: account.userId, request: request);
   }
 
-  Stream<LiveTurnEvent> subscribeTurn(
+  Future<ConversationSnapshot> getConversationSnapshot(
     Session session,
-    LiveTurnSubscribeRequest request,
-  ) {
-    final broker = const LiveTurnBroker();
-    final events = broker.listen(session, request);
-    return _authorizeTurnSubscription(session, request, broker, events);
+    GetConversationRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.getConversationSnapshot(
+      session,
+      userId: account.userId,
+      request: request,
+    );
   }
 
-  Stream<LiveTurnEvent> _authorizeTurnSubscription(
+  Future<ConversationSnapshot> queueConversationMessage(
     Session session,
-    LiveTurnSubscribeRequest request,
-    LiveTurnBroker broker,
-    Stream<LiveTurnEvent> events,
+    QueueConversationMessageRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.queueConversationMessage(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationSnapshot> continueConversation(
+    Session session,
+    ContinueConversationRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.continueConversation(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationSnapshot> stopConversation(
+    Session session,
+    StopConversationRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.stopConversation(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Stream<ConversationStreamEvent> subscribeConversation(
+    Session session,
+    ConversationSubscribeRequest request,
   ) async* {
     final account = await const AuthenticatedAccountResolver()(session);
-    yield* broker.authorize(
+    yield* const ConversationStreamService().subscribe(
       session,
       request: request,
       userId: account.userId,
-      events: events,
+    );
+  }
+
+  Future<ConversationSnapshot> editPendingConversationMessage(
+    Session session,
+    EditPendingConversationMessageRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.editPendingConversationMessage(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationSnapshot> reorderPendingConversationMessage(
+    Session session,
+    ReorderPendingConversationMessageRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.reorderPendingConversationMessage(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationSnapshot> removePendingConversationMessage(
+    Session session,
+    RemovePendingConversationMessageRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.removePendingConversationMessage(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationSnapshot> updateConversationSettings(
+    Session session,
+    UpdateConversationSettingsRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.updateConversationSettings(
+      session,
+      userId: account.userId,
+      request: request,
     );
   }
 

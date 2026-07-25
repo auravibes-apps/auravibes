@@ -24,6 +24,8 @@ abstract class ConversationMessage implements _i1.SerializableModel {
     required this.status,
     required this.content,
     this.metadataJson,
+    this.pendingOrder,
+    this.pendingAt,
     this.compactedThroughMessageId,
     required this.revision,
     required this.createdAt,
@@ -41,6 +43,8 @@ abstract class ConversationMessage implements _i1.SerializableModel {
     required String status,
     required String content,
     String? metadataJson,
+    int? pendingOrder,
+    DateTime? pendingAt,
     int? compactedThroughMessageId,
     required int revision,
     required DateTime createdAt,
@@ -59,6 +63,10 @@ abstract class ConversationMessage implements _i1.SerializableModel {
       status: jsonSerialization['status'] as String,
       content: jsonSerialization['content'] as String,
       metadataJson: jsonSerialization['metadataJson'] as String?,
+      pendingOrder: jsonSerialization['pendingOrder'] as int?,
+      pendingAt: jsonSerialization['pendingAt'] == null
+          ? null
+          : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['pendingAt']),
       compactedThroughMessageId:
           jsonSerialization['compactedThroughMessageId'] as int?,
       revision: jsonSerialization['revision'] as int,
@@ -94,6 +102,10 @@ abstract class ConversationMessage implements _i1.SerializableModel {
 
   String? metadataJson;
 
+  int? pendingOrder;
+
+  DateTime? pendingAt;
+
   int? compactedThroughMessageId;
 
   int revision;
@@ -116,6 +128,8 @@ abstract class ConversationMessage implements _i1.SerializableModel {
     String? status,
     String? content,
     String? metadataJson,
+    int? pendingOrder,
+    DateTime? pendingAt,
     int? compactedThroughMessageId,
     int? revision,
     DateTime? createdAt,
@@ -135,6 +149,8 @@ abstract class ConversationMessage implements _i1.SerializableModel {
       'status': status,
       'content': content,
       if (metadataJson != null) 'metadataJson': metadataJson,
+      if (pendingOrder != null) 'pendingOrder': pendingOrder,
+      if (pendingAt != null) 'pendingAt': pendingAt?.toJson(),
       if (compactedThroughMessageId != null)
         'compactedThroughMessageId': compactedThroughMessageId,
       'revision': revision,
@@ -163,6 +179,8 @@ class _ConversationMessageImpl extends ConversationMessage {
     required String status,
     required String content,
     String? metadataJson,
+    int? pendingOrder,
+    DateTime? pendingAt,
     int? compactedThroughMessageId,
     required int revision,
     required DateTime createdAt,
@@ -178,6 +196,8 @@ class _ConversationMessageImpl extends ConversationMessage {
          status: status,
          content: content,
          metadataJson: metadataJson,
+         pendingOrder: pendingOrder,
+         pendingAt: pendingAt,
          compactedThroughMessageId: compactedThroughMessageId,
          revision: revision,
          createdAt: createdAt,
@@ -199,6 +219,8 @@ class _ConversationMessageImpl extends ConversationMessage {
     String? status,
     String? content,
     Object? metadataJson = _Undefined,
+    Object? pendingOrder = _Undefined,
+    Object? pendingAt = _Undefined,
     Object? compactedThroughMessageId = _Undefined,
     int? revision,
     DateTime? createdAt,
@@ -215,6 +237,8 @@ class _ConversationMessageImpl extends ConversationMessage {
       status: status ?? this.status,
       content: content ?? this.content,
       metadataJson: metadataJson is String? ? metadataJson : this.metadataJson,
+      pendingOrder: pendingOrder is int? ? pendingOrder : this.pendingOrder,
+      pendingAt: pendingAt is DateTime? ? pendingAt : this.pendingAt,
       compactedThroughMessageId: compactedThroughMessageId is int?
           ? compactedThroughMessageId
           : this.compactedThroughMessageId,

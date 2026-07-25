@@ -58,7 +58,7 @@ abstract interface class ConversationEngineHost {
     required ConversationJob job,
     required ConversationTurn turn,
     required List<ConversationMessage> messages,
-    required ConversationLiveTurnPublisher liveTurns,
+    required ConversationProgressPublisher liveTurns,
     Future<void>? leaseLost,
   });
 
@@ -96,7 +96,7 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
     required ConversationJob job,
     required ConversationTurn turn,
     required List<ConversationMessage> messages,
-    required ConversationLiveTurnPublisher liveTurns,
+    required ConversationProgressPublisher liveTurns,
     Future<void>? leaseLost,
   }) async {
     if (await cancellationProbe.isCancelled(session, turn.id!)) {
@@ -616,13 +616,25 @@ Future<void> _closeOnAbort(
   Completer<void> transportDone,
 ) async {
   final cancellation = _waitForCancellation(session, turnId);
-  await Future.any([
-    transportDone.future,
-    cancellation,
-    ?leaseLost,
+  final winner = await Future.any([
+    transportDone.future.then((_) => _AbortSource.transportDone),
+    cancellation.then((_) => _AbortSource.durableCancellation),
+    ?leaseLost?.then((_) => _AbortSource.leaseLost),
   ]);
-  if (!transportDone.isCompleted) client.close(force: true);
+  if (transportDone.isCompleted) return;
+  session.log(
+    'Force-closing provider transport after abort: turn=$turnId, '
+    'source=${switch (winner) {
+      _AbortSource.durableCancellation => 'durable-cancellation',
+      _AbortSource.leaseLost => 'lease-lost',
+      _AbortSource.transportDone => 'transport-completed',
+    }}.',
+    level: LogLevel.info,
+  );
+  client.close(force: true);
 }
+
+enum _AbortSource { transportDone, durableCancellation, leaseLost }
 
 Future<void> _waitForCancellation(Session session, int turnId) async {
   while (!await const DatabaseConversationCancellationProbe().isCancelled(

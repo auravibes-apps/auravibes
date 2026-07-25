@@ -1,0 +1,18 @@
+enum: ConversationEventType
+serialized: byName
+values:
+  - messageQueued
+  - messageEdited
+  - messageReordered
+  - messageRemoved
+  - executionStarted
+  - executionStateChanged
+  - executionStopped
+  - executionCompleted
+  - executionFailed
+  - executionRetried
+  - settingsChanged
+  - toolCallCreated
+  - toolApprovalRequested
+  - toolDecisionRecorded
+  - toolResolved

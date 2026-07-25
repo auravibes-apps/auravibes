@@ -6,10 +6,10 @@ import 'dart:async';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
-import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
+
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_live_turn_state_provider.dart';
+
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_send_queue_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
@@ -19,10 +19,12 @@ import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AgentIterationContext, AgentIterationDecision, AgentIterationOrigin;
-import 'package:auravibes_server_client/auravibes_server_client.dart'
-    show StartTurnResult;
+
+import 'package:logging/logging.dart';
 import 'package:riverpod/src/providers/provider.dart';
 import 'package:uuid/v7.dart';
+
+final _logger = Logger('cloud_conversation_send');
 
 typedef ContinueAgentTurn =
     Future<AgentIterationDecision> Function({
@@ -39,7 +41,7 @@ class SendMessageUsecase {
   }) : cloudSend = null;
 
   const SendMessageUsecase.cloud(
-    Future<CloudLiveTurnState> Function(String conversationId, ChatDraft draft)
+    Future<void> Function(String conversationId, ChatDraft draft)
     this.cloudSend,
   ) : continueAgentTurn = null,
       messageRepository = null,
@@ -50,7 +52,7 @@ class SendMessageUsecase {
   final MessageRepository? messageRepository;
   final GetConversationBusyStateUsecase? getConversationBusyStateUsecase;
   final ConversationSendQueueRuntime? sendQueueRuntime;
-  final Future<CloudLiveTurnState> Function(
+  final Future<void> Function(
     String conversationId,
     ChatDraft draft,
   )?
@@ -172,92 +174,111 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
   }
 }
 
-final ProviderFamily<SendMessageUsecase, String> sendMessageUsecaseProvider =
-    Provider.family<SendMessageUsecase, String>(
-      (ref, workspaceId) {
-        final session = ref
-            .watch(
-              workspaceSessionForRouteProvider(workspaceId),
-            )
-            .requireValue;
-        session.capabilities.require(
-          supported: session.capabilities.agentExecution,
-        );
-        if (session.cloud != null) {
-          return SendMessageUsecase.cloud((conversationId, draft) async {
-            final activeTurn = ref.read(
-              cloudActiveTurnStateProvider(conversationId),
-            );
-            if (activeTurn case final turn? when turn.isBusy) return turn;
-            session.capabilities.require(
-              supported:
-                  draft.attachments.isEmpty || session.capabilities.attachments,
-            );
-            final gateway = await ref.read(
-              cloudWorkspaceStateGatewayProvider(session).future,
-            );
-            final attachments = await ref.read(
-              cloudChatAttachmentUsecaseProvider(workspaceId).future,
-            );
-            if (gateway == null) {
-              throw const UnsupportedWorkspaceCapabilityException();
-            }
-            final chat = CloudChatGateway(gateway);
-            final conversation = await chat.getConversation(conversationId);
-            final requestId = const UuidV7().generate();
-            final uploadedObjects =
-                await attachments?.uploadDraftResults(
-                  attachments: draft.attachments,
-                ) ??
-                const [];
-            final StartTurnResult result;
-            try {
-              result = await chat.startTurn(
-                requestId: requestId,
-                conversationId: conversationId,
-                expectedConversationRevision: conversation.revision,
-                clientMessageId: const UuidV7().generate(),
-                content: draft.text,
-                attachmentIds: uploadedObjects
-                    .map((object) => '${object.objectId}')
-                    .toList(growable: false),
-                modelSelectionId: conversation.modelId,
-                agentId: conversation.agentId,
-              );
-            } on Object catch (error, stackTrace) {
-              await attachments?.deleteUploaded(
-                uploadedObjects,
-              );
-              Error.throwWithStackTrace(error, stackTrace);
-            }
-            final turn = CloudLiveTurnState(
-              turnId: result.turnId,
-              revision: result.turnRevision,
-              sequence: result.acceptedSequence,
-              state: CloudLiveTurnLifecycle.fromStatus(result.status),
-            );
-            ref
-                .read(cloudActiveTurnStatesProvider.notifier)
-                .set(
-                  conversationId,
-                  turn,
-                );
-            ref.invalidate(
-              chatMessagesByConversationProvider(workspaceId, conversationId),
-            );
-
-            return turn;
-          });
-        }
-        final agentService = ref.watch(auraAgentServiceProvider);
-
-        return SendMessageUsecase(
-          continueAgentTurn: agentService.agent.continueTurn,
-          messageRepository: ref.watch(messageRepositoryProvider),
-          getConversationBusyStateUsecase: ref.watch(
-            getConversationBusyStateUsecaseProvider,
-          ),
-          sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-        );
-      },
+final ProviderFamily<SendMessageUsecase, String>
+sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
+  (ref, workspaceId) {
+    final session = ref
+        .watch(
+          workspaceSessionForRouteProvider(workspaceId),
+        )
+        .requireValue;
+    session.capabilities.require(
+      supported: session.capabilities.agentExecution,
     );
+    if (session.cloud != null) {
+      return SendMessageUsecase.cloud((conversationId, draft) async {
+        session.capabilities.require(
+          supported:
+              draft.attachments.isEmpty || session.capabilities.attachments,
+        );
+        final gateway = await ref.read(
+          cloudWorkspaceStateGatewayProvider(session).future,
+        );
+        final attachments = await ref.read(
+          cloudChatAttachmentUsecaseProvider(workspaceId).future,
+        );
+        if (gateway == null) {
+          throw const UnsupportedWorkspaceCapabilityException();
+        }
+        final chat = CloudChatGateway(gateway);
+        final projection = await chat.getConversationSnapshot(
+          conversationId,
+        );
+        _logger.info(
+          'Cloud send snapshot: conversationId=$conversationId, '
+          'sequence=${projection.sequence}, '
+          'projectionRevision=${projection.conversation.projectionRevision}, '
+          'executionState=${projection.conversation.executionState}.',
+        );
+        final requestId = const UuidV7().generate();
+        final uploadedObjects =
+            await attachments?.uploadDraftResults(
+              attachments: draft.attachments,
+            ) ??
+            const [];
+        final snapshot = await (() async {
+          try {
+            final queued = await chat.queueConversationMessage(
+              requestId: requestId,
+              conversationId: conversationId,
+              expectedProjectionRevision:
+                  projection.conversation.projectionRevision,
+              clientMessageId: const UuidV7().generate(),
+              content: draft.text,
+              attachmentIds: uploadedObjects
+                  .map((object) => '${object.objectId}')
+                  .toList(growable: false),
+            );
+            _logger.info(
+              'Cloud message queued: conversationId=$conversationId, '
+              'sequence=${queued.sequence}, '
+              'projectionRevision='
+              '${queued.conversation.projectionRevision}, '
+              'executionState=${queued.conversation.executionState}, '
+              'attachmentCount=${uploadedObjects.length}.',
+            );
+
+            return queued;
+          } on Object catch (error, stackTrace) {
+            await attachments?.deleteUploaded(uploadedObjects);
+            Error.throwWithStackTrace(error, stackTrace);
+          }
+        })();
+        if (snapshot.conversation.executionState == 'idle') {
+          _logger.info(
+            'Cloud execution start requested: '
+            'conversationId=$conversationId, '
+            'projectionRevision=${snapshot.conversation.projectionRevision}.',
+          );
+          final execution = await chat.continueConversation(
+            requestId: const UuidV7().generate(),
+            conversationId: conversationId,
+            expectedProjectionRevision:
+                snapshot.conversation.projectionRevision,
+          );
+          _logger.info(
+            'Cloud execution start acknowledged: '
+            'conversationId=$conversationId, sequence=${execution.sequence}, '
+            'executionState=${execution.conversation.executionState}, '
+            'activeExecutionId=${execution.activeExecution?.id}.',
+          );
+        }
+        ref.invalidate(
+          chatMessagesByConversationProvider(workspaceId, conversationId),
+        );
+
+        return;
+      });
+    }
+    final agentService = ref.watch(auraAgentServiceProvider);
+
+    return SendMessageUsecase(
+      continueAgentTurn: agentService.agent.continueTurn,
+      messageRepository: ref.watch(messageRepositoryProvider),
+      getConversationBusyStateUsecase: ref.watch(
+        getConversationBusyStateUsecaseProvider,
+      ),
+      sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+    );
+  },
+);

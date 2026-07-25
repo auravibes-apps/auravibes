@@ -5,21 +5,21 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
-import 'package:auravibes_app/features/chats/models/cloud_live_turn_state.dart';
+import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
-import 'package:auravibes_app/features/chats/providers/cloud_live_turn_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
+
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -60,118 +60,57 @@ Stream<List<MessageEntity>> chatMessagesByConversation(
 
   return _cloudMessages(
     ref,
-    ref.watch(cloudWorkspaceStateGatewayProvider(session).future),
+    workspaceId,
     conversationId,
   );
 }
 
 Stream<List<MessageEntity>> _cloudMessages(
   Ref ref,
-  Future<CloudWorkspaceStateGateway?> gatewayFuture,
+  String workspaceId,
   String conversationId,
-) async* {
-  final gateway = await gatewayFuture;
-  if (gateway == null) {
-    yield const [];
-
-    return;
-  }
-
-  final chat = CloudChatGateway(gateway);
-  final initial = await chat.listConversationMessages(conversationId);
-  final turn = _latestCloudTurn(initial);
-  if (turn == null) {
-    yield initial.map(_readCloudMessage).toList();
-
-    return;
-  }
-  final events = StreamIterator(
-    ref.watch(
-      cloudLiveTurnEventsProvider(
-        (workspaceId: gateway.workspace.localWorkspaceId, turnId: turn.turnId),
-      ),
+) {
+  final controller = StreamController<List<MessageEntity>>();
+  final subscription = ref.listen(
+    cloudConversationStateProvider(
+      (workspaceId: workspaceId, conversationId: conversationId),
     ),
+    (_, next) {
+      switch (next) {
+        case AsyncData(:final value):
+          controller.add(_readCloudConversationMessages(value));
+        case AsyncError(:final error, :final stackTrace):
+          controller.addError(error, stackTrace);
+        case AsyncLoading():
+      }
+    },
+    fireImmediately: true,
   );
-  try {
-    var nextEvent = events.moveNext();
-    final refreshed = await chat.listConversationMessages(conversationId);
-    var messages = refreshed.map(_readCloudMessage).toList();
-    yield messages;
-    final refreshedTurn = _latestCloudTurn(refreshed);
+  ref
+    ..onDispose(subscription.close)
+    ..onDispose(() => unawaited(controller.close()));
 
-    if (refreshedTurn == null) return;
+  return controller.stream;
+}
 
-    ref
-        .read(cloudActiveTurnStatesProvider.notifier)
-        .set(conversationId, refreshedTurn);
-
-    if (refreshedTurn.isTerminal) return;
-
-    var lastSequence = 0;
-    while (await nextEvent) {
-      final state = events.current;
-      nextEvent = events.moveNext();
-      if (state.sequence <= lastSequence) continue;
-      lastSequence = state.sequence;
-      ref
-          .read(cloudActiveTurnStatesProvider.notifier)
-          .update(
-            conversationId,
-            state,
-          );
-      if (state.state == .streaming) {
-        final text = state.text;
-        if (text != null) {
-          messages = _applyLiveTurnText(messages, state.messageId, text);
-        }
-      }
-      if (state.isTerminal) {
-        messages = (await chat.listConversationMessages(
-          conversationId,
-        )).map(_readCloudMessage).toList();
-      }
-      yield messages;
-      if (state.isTerminal) return;
-    }
-  } finally {
-    final _ = await events.cancel();
+List<MessageEntity> _readCloudConversationMessages(
+  CloudConversationState state,
+) {
+  final messages = state.messages.map(_readCloudMessage).toList();
+  final assistantMessageId = state.activeExecution?.assistantMessageId;
+  if (assistantMessageId == null || state.activeAssistantContent.isEmpty) {
+    return messages;
   }
-}
-
-CloudLiveTurnState? _latestCloudTurn(
-  List<ConversationMessageView> messages,
-) {
-  final message = messages.reversed.firstWhereOrNull(
-    (message) => message.turnId != null && message.turnRevision != null,
+  final index = messages.indexWhere(
+    (message) => message.id == assistantMessageId,
   );
-  if (message == null) return null;
-  final turnId = message.turnId;
-  final revision = message.turnRevision;
-  if (turnId == null || revision == null) return null;
+  if (index < 0) return messages;
 
-  return CloudLiveTurnState(
-    turnId: turnId,
-    revision: revision,
-    sequence: 0,
-    state: CloudLiveTurnLifecycle.fromStatus(message.status),
+  messages[index] = messages[index].copyWith(
+    content: '${messages[index].content}${state.activeAssistantContent}',
   );
-}
 
-List<MessageEntity> _applyLiveTurnText(
-  List<MessageEntity> messages,
-  String? messageId,
-  String text,
-) {
-  final messageIndex = messageId == null
-      ? messages.lastIndexWhere((message) => !message.isUser)
-      : messages.indexWhere((message) => message.id == messageId);
-  if (messageIndex < 0) return messages;
-
-  final updated = [...messages];
-  final message = updated[messageIndex];
-  updated[messageIndex] = message.copyWith(content: '${message.content}$text');
-
-  return updated;
+  return messages;
 }
 
 MessageEntity _readCloudMessage(ConversationMessageView message) =>
@@ -352,8 +291,20 @@ Future<ConversationBusyState> conversationBusyState(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (session.cloud != null) {
+    final projection = ref.watch(
+      cloudConversationStateProvider(
+        (
+          workspaceId: workspaceId,
+          conversationId: conversationId,
+        ),
+      ),
+    );
+
     return ConversationBusyState.cloud(
-      ref.watch(cloudActiveTurnStateProvider(conversationId)),
+      isBusy: switch (projection.asData?.value.conversation.executionState) {
+        'running' || 'awaitingApproval' => true,
+        _ => false,
+      },
     );
   }
   ref

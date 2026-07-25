@@ -10,6 +10,8 @@ fields:
   status: String
   content: String
   metadataJson: String?
+  pendingOrder: int?
+  pendingAt: DateTime?
   compactedThroughMessageId: int?
   revision: int
   createdAt: DateTime

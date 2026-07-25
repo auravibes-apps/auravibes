@@ -1,0 +1,21 @@
+class: ConversationExecution
+table: conversation_execution
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  stableId: String
+  status: String
+  settingsJson: String
+  claimedMessageIdsJson: String
+  assistantMessageId: int?
+  attempt: int
+  createdByUserId: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  terminalAt: DateTime?
+indexes:
+  conversation_execution_workspace_stable_idx:
+    fields: workspaceId, stableId
+    unique: true
+  conversation_execution_conversation_idx:
+    fields: conversationId, id

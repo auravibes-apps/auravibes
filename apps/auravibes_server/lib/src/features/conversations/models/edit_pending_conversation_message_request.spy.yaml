@@ -1,0 +1,8 @@
+class: EditPendingConversationMessageRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedProjectionRevision: int
+  messageId: String
+  content: String

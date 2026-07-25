@@ -1,0 +1,8 @@
+class: ReorderPendingConversationMessageRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedProjectionRevision: int
+  messageId: String
+  beforeMessageId: String?

@@ -280,6 +280,7 @@
       "thinking_status": "Thinking...",
       "turn_queued": "Queued...",
       "turn_thinking": "Thinking...",
+      "turn_reconnecting": "Reconnecting live updates...",
       "turn_streaming": "Responding...",
       "turn_awaiting_approval": "Awaiting approval...",
       "turn_failed": "Generation failed.",

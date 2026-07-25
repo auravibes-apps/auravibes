@@ -24,10 +24,16 @@ abstract class Conversation
     this.agentId,
     this.parentConversationStableId,
     required this.revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    this.activeExecutionId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
-  });
+  }) : projectionRevision = projectionRevision ?? 1,
+       eventSequence = eventSequence ?? 0,
+       executionState = executionState ?? 'idle';
 
   factory Conversation({
     int? id,
@@ -39,6 +45,10 @@ abstract class Conversation
     String? agentId,
     String? parentConversationStableId,
     required int revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -56,6 +66,10 @@ abstract class Conversation
       parentConversationStableId:
           jsonSerialization['parentConversationStableId'] as String?,
       revision: jsonSerialization['revision'] as int,
+      projectionRevision: jsonSerialization['projectionRevision'] as int?,
+      eventSequence: jsonSerialization['eventSequence'] as int?,
+      executionState: jsonSerialization['executionState'] as String?,
+      activeExecutionId: jsonSerialization['activeExecutionId'] as int?,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -91,6 +105,14 @@ abstract class Conversation
 
   int revision;
 
+  int projectionRevision;
+
+  int eventSequence;
+
+  String executionState;
+
+  int? activeExecutionId;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -113,6 +135,10 @@ abstract class Conversation
     String? agentId,
     String? parentConversationStableId,
     int? revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -131,6 +157,10 @@ abstract class Conversation
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
+      'projectionRevision': projectionRevision,
+      'eventSequence': eventSequence,
+      'executionState': executionState,
+      if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -151,6 +181,10 @@ abstract class Conversation
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
+      'projectionRevision': projectionRevision,
+      'eventSequence': eventSequence,
+      'executionState': executionState,
+      if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -202,6 +236,10 @@ class _ConversationImpl extends Conversation {
     String? agentId,
     String? parentConversationStableId,
     required int revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -215,6 +253,10 @@ class _ConversationImpl extends Conversation {
          agentId: agentId,
          parentConversationStableId: parentConversationStableId,
          revision: revision,
+         projectionRevision: projectionRevision,
+         eventSequence: eventSequence,
+         executionState: executionState,
+         activeExecutionId: activeExecutionId,
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
@@ -234,6 +276,10 @@ class _ConversationImpl extends Conversation {
     Object? agentId = _Undefined,
     Object? parentConversationStableId = _Undefined,
     int? revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    Object? activeExecutionId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
@@ -250,6 +296,12 @@ class _ConversationImpl extends Conversation {
           ? parentConversationStableId
           : this.parentConversationStableId,
       revision: revision ?? this.revision,
+      projectionRevision: projectionRevision ?? this.projectionRevision,
+      eventSequence: eventSequence ?? this.eventSequence,
+      executionState: executionState ?? this.executionState,
+      activeExecutionId: activeExecutionId is int?
+          ? activeExecutionId
+          : this.activeExecutionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,
@@ -298,6 +350,27 @@ class ConversationUpdateTable extends _i1.UpdateTable<ConversationTable> {
 
   _i1.ColumnValue<int, int> revision(int value) => _i1.ColumnValue(
     table.revision,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> projectionRevision(int value) => _i1.ColumnValue(
+    table.projectionRevision,
+    value,
+  );
+
+  _i1.ColumnValue<int, int> eventSequence(int value) => _i1.ColumnValue(
+    table.eventSequence,
+    value,
+  );
+
+  _i1.ColumnValue<String, String> executionState(String value) =>
+      _i1.ColumnValue(
+        table.executionState,
+        value,
+      );
+
+  _i1.ColumnValue<int, int> activeExecutionId(int? value) => _i1.ColumnValue(
+    table.activeExecutionId,
     value,
   );
 
@@ -355,6 +428,25 @@ class ConversationTable extends _i1.Table<int?> {
       'revision',
       this,
     );
+    projectionRevision = _i1.ColumnInt(
+      'projectionRevision',
+      this,
+      hasDefault: true,
+    );
+    eventSequence = _i1.ColumnInt(
+      'eventSequence',
+      this,
+      hasDefault: true,
+    );
+    executionState = _i1.ColumnString(
+      'executionState',
+      this,
+      hasDefault: true,
+    );
+    activeExecutionId = _i1.ColumnInt(
+      'activeExecutionId',
+      this,
+    );
     createdAt = _i1.ColumnDateTime(
       'createdAt',
       this,
@@ -387,6 +479,14 @@ class ConversationTable extends _i1.Table<int?> {
 
   late final _i1.ColumnInt revision;
 
+  late final _i1.ColumnInt projectionRevision;
+
+  late final _i1.ColumnInt eventSequence;
+
+  late final _i1.ColumnString executionState;
+
+  late final _i1.ColumnInt activeExecutionId;
+
   late final _i1.ColumnDateTime createdAt;
 
   late final _i1.ColumnDateTime updatedAt;
@@ -404,6 +504,10 @@ class ConversationTable extends _i1.Table<int?> {
     agentId,
     parentConversationStableId,
     revision,
+    projectionRevision,
+    eventSequence,
+    executionState,
+    activeExecutionId,
     createdAt,
     updatedAt,
     deletedAt,

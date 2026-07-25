@@ -7,9 +7,11 @@ import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart'
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_repository.dart';
 import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_repository.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
+import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/providers/aura_agent_service_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_chat_attachment_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
+import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_turn_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -123,6 +125,25 @@ void main() {
         ),
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => gateway,
+        ),
+        cloudConversationStateProvider.overrideWith(
+          (_, _) async* {
+            yield CloudConversationState(
+              conversation: ConversationProjectionView(
+                id: 'conversation-a',
+                workspaceId: 11,
+                executionState: 'idle',
+                projectionRevision: 3,
+                sequence: 0,
+                updatedAt: now,
+              ),
+              messages: const [],
+              pendingMessages: const [],
+              activeExecution: null,
+              toolCalls: const [],
+              sequence: 0,
+            );
+          },
         ),
         toolsGroupsRepositoryProvider.overrideWithValue(
           CloudToolsRepository(Future.value(gateway)),

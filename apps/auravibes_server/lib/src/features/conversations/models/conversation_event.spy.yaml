@@ -1,0 +1,19 @@
+class: ConversationEvent
+table: conversation_event
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=NoAction)
+  conversationId: int, relation(parent=conversation, onDelete=NoAction)
+  sequence: int
+  eventId: String
+  actorUserId: String
+  requestId: String
+  kind: ConversationEventType
+  payloadJson: String
+  createdAt: DateTime
+indexes:
+  conversation_event_sequence_idx:
+    fields: conversationId, sequence
+    unique: true
+  conversation_event_workspace_event_idx:
+    fields: workspaceId, eventId
+    unique: true

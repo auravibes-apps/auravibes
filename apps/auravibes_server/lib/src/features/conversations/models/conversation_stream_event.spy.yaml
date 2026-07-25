@@ -1,0 +1,10 @@
+class: ConversationStreamEvent
+fields:
+  workspaceId: int
+  conversationId: String
+  sequence: int
+  kind: ConversationEventType
+  actorUserId: String
+  payloadJson: String
+  transientTextDelta: String?
+  createdAt: DateTime

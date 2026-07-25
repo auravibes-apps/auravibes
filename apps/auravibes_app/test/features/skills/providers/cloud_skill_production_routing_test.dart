@@ -35,6 +35,8 @@ import 'package:riverpod/riverpod.dart';
 class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
 
 void main() {
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
+
   setUpAll(() {
     registerFallbackValue(WorkspaceSecretKind.skillCredential);
     registerFallbackValue(WorkspaceSecretScope.workspace);
@@ -164,6 +166,7 @@ void main() {
       Never local() => throw StateError('local storage touched');
       final container = ProviderContainer(
         overrides: [
+          workspaceSessionProvider.overrideWithValue(workspace),
           workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
             const AsyncData(workspace),
           ),

@@ -75,14 +75,17 @@ melos:
 
     # Testing Scripts
     test:local:
-      exec: |
-        if [ -f test/integration/test_tools/serverpod_test_tools.dart ]; then
-          fvm dart test test/features test/migrations --reporter=compact
-        elif grep -q '^  flutter:' pubspec.yaml; then
-          flutter test --exclude-tags=integration --reporter=compact
-        else
-          fvm dart test --exclude-tags=integration --reporter=compact
-        fi
+      exec:
+        command: |
+          if [ -f test/integration/test_tools/serverpod_test_tools.dart ]; then
+            fvm dart test test/features test/migrations --reporter=compact
+          elif grep -q '^  flutter:' pubspec.yaml; then
+            flutter test --exclude-tags=integration --reporter=compact
+          else
+            fvm dart test --exclude-tags=integration --reporter=compact
+          fi
+        # FVM has one global Flutter startup lock, so app/UI tests cannot start together.
+        concurrency: 1
       packageFilters:
         dirExists: test
       description: Run hermetic unit and widget tests without integrations

@@ -1,0 +1,6 @@
+class: ContinueConversationRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedProjectionRevision: int

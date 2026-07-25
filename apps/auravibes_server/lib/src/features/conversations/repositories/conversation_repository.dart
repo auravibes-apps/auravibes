@@ -422,6 +422,95 @@ class ConversationRepository {
     return turn;
   }
 
+  Future<ConversationMessage> insertPendingMessage(
+    Session session, {
+    required Conversation conversation,
+    required String clientMessageId,
+    required String content,
+    required List<int> attachmentIds,
+    required DateTime now,
+    required Transaction transaction,
+  }) async {
+    final messages = await ConversationMessage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(conversation.workspaceId) &
+          table.conversationId.equals(conversation.id),
+      transaction: transaction,
+    );
+    final pendingOrder =
+        messages.fold<int>(
+          0,
+          (highest, message) =>
+              message.pendingOrder != null && message.pendingOrder! > highest
+              ? message.pendingOrder!
+              : highest,
+        ) +
+        1;
+    final message = await ConversationMessage.db.insertRow(
+      session,
+      ConversationMessage(
+        workspaceId: conversation.workspaceId,
+        conversationId: conversation.id!,
+        stableId: clientMessageId,
+        role: 'user',
+        kind: 'text',
+        status: ConversationStatuses.queued,
+        content: content,
+        metadataJson: jsonEncode({'attachmentIds': attachmentIds}),
+        pendingOrder: pendingOrder,
+        pendingAt: now,
+        revision: 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    for (final objectId in attachmentIds) {
+      await _objectReferenceService.attachToMessage(
+        session,
+        workspaceId: conversation.workspaceId,
+        objectId: objectId,
+        messageId: message.id!,
+        transaction: transaction,
+      );
+    }
+    return message;
+  }
+
+  Future<ConversationMessage?> findPendingMessage(
+    Session session, {
+    required int workspaceId,
+    required int conversationId,
+    required String messageId,
+    required Transaction transaction,
+  }) => ConversationMessage.db.findFirstRow(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.conversationId.equals(conversationId) &
+        table.stableId.equals(messageId) &
+        table.pendingOrder.notEquals(null),
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+
+  Future<List<ConversationMessage>> listPendingMessages(
+    Session session, {
+    required int workspaceId,
+    required int conversationId,
+    required Transaction transaction,
+  }) => ConversationMessage.db.find(
+    session,
+    where: (table) =>
+        table.workspaceId.equals(workspaceId) &
+        table.conversationId.equals(conversationId) &
+        table.pendingOrder.notEquals(null),
+    orderBy: (table) => table.pendingOrder,
+    transaction: transaction,
+    lockMode: LockMode.forUpdate,
+  );
+
   Future<List<ConversationMessage>> listMessages(
     Session session, {
     required ConversationTurn turn,

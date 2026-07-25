@@ -1,0 +1,11 @@
+class: ConversationProjectionView
+fields:
+  id: String
+  workspaceId: int
+  executionState: String
+  projectionRevision: int
+  sequence: int
+  modelId: String?
+  agentId: String?
+  activeExecutionId: String?
+  updatedAt: DateTime

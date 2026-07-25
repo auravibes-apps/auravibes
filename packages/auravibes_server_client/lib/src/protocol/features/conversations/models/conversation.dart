@@ -23,10 +23,16 @@ abstract class Conversation implements _i1.SerializableModel {
     this.agentId,
     this.parentConversationStableId,
     required this.revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    this.activeExecutionId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
-  });
+  }) : projectionRevision = projectionRevision ?? 1,
+       eventSequence = eventSequence ?? 0,
+       executionState = executionState ?? 'idle';
 
   factory Conversation({
     int? id,
@@ -38,6 +44,10 @@ abstract class Conversation implements _i1.SerializableModel {
     String? agentId,
     String? parentConversationStableId,
     required int revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -55,6 +65,10 @@ abstract class Conversation implements _i1.SerializableModel {
       parentConversationStableId:
           jsonSerialization['parentConversationStableId'] as String?,
       revision: jsonSerialization['revision'] as int,
+      projectionRevision: jsonSerialization['projectionRevision'] as int?,
+      eventSequence: jsonSerialization['eventSequence'] as int?,
+      executionState: jsonSerialization['executionState'] as String?,
+      activeExecutionId: jsonSerialization['activeExecutionId'] as int?,
       createdAt: _i1.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -88,6 +102,14 @@ abstract class Conversation implements _i1.SerializableModel {
 
   int revision;
 
+  int projectionRevision;
+
+  int eventSequence;
+
+  String executionState;
+
+  int? activeExecutionId;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -107,6 +129,10 @@ abstract class Conversation implements _i1.SerializableModel {
     String? agentId,
     String? parentConversationStableId,
     int? revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -125,6 +151,10 @@ abstract class Conversation implements _i1.SerializableModel {
       if (parentConversationStableId != null)
         'parentConversationStableId': parentConversationStableId,
       'revision': revision,
+      'projectionRevision': projectionRevision,
+      'eventSequence': eventSequence,
+      'executionState': executionState,
+      if (activeExecutionId != null) 'activeExecutionId': activeExecutionId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
       if (deletedAt != null) 'deletedAt': deletedAt?.toJson(),
@@ -150,6 +180,10 @@ class _ConversationImpl extends Conversation {
     String? agentId,
     String? parentConversationStableId,
     required int revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
     required DateTime createdAt,
     required DateTime updatedAt,
     DateTime? deletedAt,
@@ -163,6 +197,10 @@ class _ConversationImpl extends Conversation {
          agentId: agentId,
          parentConversationStableId: parentConversationStableId,
          revision: revision,
+         projectionRevision: projectionRevision,
+         eventSequence: eventSequence,
+         executionState: executionState,
+         activeExecutionId: activeExecutionId,
          createdAt: createdAt,
          updatedAt: updatedAt,
          deletedAt: deletedAt,
@@ -182,6 +220,10 @@ class _ConversationImpl extends Conversation {
     Object? agentId = _Undefined,
     Object? parentConversationStableId = _Undefined,
     int? revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    Object? activeExecutionId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? deletedAt = _Undefined,
@@ -198,6 +240,12 @@ class _ConversationImpl extends Conversation {
           ? parentConversationStableId
           : this.parentConversationStableId,
       revision: revision ?? this.revision,
+      projectionRevision: projectionRevision ?? this.projectionRevision,
+      eventSequence: eventSequence ?? this.eventSequence,
+      executionState: executionState ?? this.executionState,
+      activeExecutionId: activeExecutionId is int?
+          ? activeExecutionId
+          : this.activeExecutionId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt is DateTime? ? deletedAt : this.deletedAt,

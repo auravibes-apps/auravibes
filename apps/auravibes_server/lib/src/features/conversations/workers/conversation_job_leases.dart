@@ -3,6 +3,12 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../domain/conversation_values.dart';
 
+final class ConversationJobLeaseLostException implements Exception {
+  const ConversationJobLeaseLostException(this.jobId);
+
+  final int jobId;
+}
+
 class ConversationJobLeases {
   const ConversationJobLeases();
 
@@ -260,7 +266,7 @@ class ConversationJobLeases {
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (job == null) throw StateError('Conversation job lease lost.');
+    if (job == null) throw ConversationJobLeaseLostException(jobId);
     return job;
   }
 }

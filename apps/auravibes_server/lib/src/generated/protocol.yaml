@@ -25,7 +25,15 @@ conversation:
   - startTurn:
   - continueTurn:
   - getTurn:
-  - subscribeTurn:
+  - getConversationSnapshot:
+  - queueConversationMessage:
+  - continueConversation:
+  - stopConversation:
+  - subscribeConversation:
+  - editPendingConversationMessage:
+  - reorderPendingConversationMessage:
+  - removePendingConversationMessage:
+  - updateConversationSettings:
   - submitToolDecision:
   - cancelTurn:
   - compact:

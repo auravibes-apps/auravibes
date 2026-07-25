@@ -1,0 +1,8 @@
+class: UpdateConversationSettingsRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  expectedProjectionRevision: int
+  modelId: String?
+  agentId: String?

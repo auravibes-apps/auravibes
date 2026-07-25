@@ -1,9 +1,0 @@
-class: LiveTurnEvent
-fields:
-  workspaceId: int
-  turnId: String
-  sequence: int
-  kind: LiveTurnEventKind
-  text: String?
-  messageId: String?
-  errorCode: String?

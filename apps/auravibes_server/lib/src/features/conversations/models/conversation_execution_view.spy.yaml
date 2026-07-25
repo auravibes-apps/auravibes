@@ -1,0 +1,11 @@
+class: ConversationExecutionView
+fields:
+  id: String
+  status: String
+  attempt: int
+  claimedMessageIds: List<String>
+  assistantMessageId: String?
+  createdByUserId: String
+  createdAt: DateTime
+  updatedAt: DateTime
+  terminalAt: DateTime?

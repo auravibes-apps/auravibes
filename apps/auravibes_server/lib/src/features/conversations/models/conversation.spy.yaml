@@ -9,6 +9,10 @@ fields:
   agentId: String?
   parentConversationStableId: String?
   revision: int
+  projectionRevision: int, default=1
+  eventSequence: int, default=0
+  executionState: String, default='idle'
+  activeExecutionId: int?
   createdAt: DateTime
   updatedAt: DateTime
   deletedAt: DateTime?

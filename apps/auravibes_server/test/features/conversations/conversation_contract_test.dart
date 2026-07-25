@@ -53,6 +53,25 @@ void main() {
     expect(summary.toJson()['parentConversationId'], 'parent-1');
   });
 
+  test('conversation stream event retains sequence and actor attribution', () {
+    final now = DateTime.utc(2026);
+    final event = ConversationStreamEvent(
+      workspaceId: 1,
+      conversationId: 'conversation-1',
+      sequence: 7,
+      kind: ConversationEventType.messageQueued,
+      actorUserId: 'member-1',
+      payloadJson: '{"messageId":"message-1"}',
+      createdAt: now,
+    );
+
+    final decoded = ConversationStreamEvent.fromJson(event.toJson());
+
+    expect(decoded.sequence, 7);
+    expect(decoded.actorUserId, 'member-1');
+    expect(decoded.kind, ConversationEventType.messageQueued);
+  });
+
   test('conversation page cursor keeps updatedAt and stableId tie break', () {
     final page = ConversationPage(
       conversations: const [],

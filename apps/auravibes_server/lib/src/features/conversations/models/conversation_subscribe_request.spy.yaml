@@ -1,0 +1,5 @@
+class: ConversationSubscribeRequest
+fields:
+  workspaceId: int
+  conversationId: String
+  afterSequence: int

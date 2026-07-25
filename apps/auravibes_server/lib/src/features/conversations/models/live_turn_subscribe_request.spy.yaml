@@ -1,4 +1,0 @@
-class: LiveTurnSubscribeRequest
-fields:
-  workspaceId: int
-  turnId: String

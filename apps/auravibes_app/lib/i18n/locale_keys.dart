@@ -372,6 +372,8 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.turn_queued';
   static const chats_screens_chat_conversation_turn_thinking =
       'chats_screens.chat_conversation.turn_thinking';
+  static const chats_screens_chat_conversation_turn_reconnecting =
+      'chats_screens.chat_conversation.turn_reconnecting';
   static const chats_screens_chat_conversation_turn_streaming =
       'chats_screens.chat_conversation.turn_streaming';
   static const chats_screens_chat_conversation_turn_awaiting_approval =

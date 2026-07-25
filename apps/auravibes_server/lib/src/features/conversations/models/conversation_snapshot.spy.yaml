@@ -1,0 +1,8 @@
+class: ConversationSnapshot
+fields:
+  conversation: ConversationProjectionView
+  messages: List<ConversationMessageView>
+  pendingMessages: List<ConversationMessageView>
+  activeExecution: ConversationExecutionView?
+  toolCalls: List<ConversationToolCallView>
+  sequence: int

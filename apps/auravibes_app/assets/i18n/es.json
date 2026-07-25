@@ -280,6 +280,7 @@
       "thinking_status": "Pensando... Los mensajes nuevos se encolarán.",
       "turn_queued": "En cola...",
       "turn_thinking": "Pensando...",
+      "turn_reconnecting": "Reconectando actualizaciones en vivo...",
       "turn_streaming": "Respondiendo...",
       "turn_awaiting_approval": "Esperando aprobación...",
       "turn_failed": "La generación falló.",

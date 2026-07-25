@@ -45,84 +45,98 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _i23;
 import 'package:auravibes_server/src/generated/features/conversations/models/get_turn_request.dart'
     as _i24;
-import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/queue_conversation_message_request.dart'
     as _i25;
-import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/continue_conversation_request.dart'
     as _i26;
-import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/stop_conversation_request.dart'
     as _i27;
-import 'package:auravibes_server/src/generated/features/conversations/models/live_turn_subscribe_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _i28;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _i29;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/delete_mcp_server_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
     as _i30;
-import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/update_conversation_settings_request.dart'
     as _i31;
-import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/submit_tool_decision_request.dart'
     as _i32;
-import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/cancel_turn_request.dart'
     as _i33;
-import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/compact_conversation_request.dart'
     as _i34;
-import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_subscribe_request.dart'
     as _i35;
-import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/create_mcp_server_request.dart'
     as _i36;
-import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/delete_mcp_server_request.dart'
     as _i37;
-import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
+import 'package:auravibes_server/src/generated/features/mcp_servers/models/discover_mcp_server_request.dart'
     as _i38;
-import 'package:auravibes_server/src/generated/features/objects/models/complete_upload_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/create_model_connection_request.dart'
     as _i39;
-import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_model_connections_request.dart'
     as _i40;
-import 'package:auravibes_server/src/generated/features/objects/models/delete_object_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/update_model_connection_request.dart'
     as _i41;
-import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/delete_model_connection_request.dart'
     as _i42;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/list_workspace_model_selections_request.dart'
     as _i43;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
+import 'package:auravibes_server/src/generated/features/model_connections/models/test_and_sync_model_connection_request.dart'
     as _i44;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/begin_upload_request.dart'
     as _i45;
-import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/complete_upload_request.dart'
     as _i46;
-import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/get_download_request.dart'
     as _i47;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
+import 'package:auravibes_server/src/generated/features/objects/models/delete_object_request.dart'
     as _i48;
-import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
+import 'package:auravibes_server/src/generated/features/sync/stream/models/workspace_subscribe_request.dart'
     as _i49;
-import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/put_workspace_secret_request.dart'
     as _i50;
-import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/read_workspace_state_request.dart'
     as _i51;
-import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/patch_workspace_state_request.dart'
     as _i52;
-import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspace_state/models/mutate_workspace_credential_request.dart'
     as _i53;
-import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/get_cloud_workspace_detail_request.dart'
     as _i54;
-import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_workspace_members_request.dart'
     as _i55;
-import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/list_cloud_workspace_invites_request.dart'
     as _i56;
-import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/create_cloud_workspace_request.dart'
     as _i57;
-import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/invite_workspace_member_request.dart'
     as _i58;
-import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/renew_workspace_invite_request.dart'
     as _i59;
-import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/revoke_workspace_invite_request.dart'
     as _i60;
-import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/accept_workspace_invite_request.dart'
     as _i61;
-import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/decline_workspace_invite_request.dart'
     as _i62;
-import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+import 'package:auravibes_server/src/generated/features/workspaces/models/rename_cloud_workspace_request.dart'
     as _i63;
+import 'package:auravibes_server/src/generated/features/workspaces/models/leave_cloud_workspace_request.dart'
+    as _i64;
+import 'package:auravibes_server/src/generated/features/workspaces/models/transfer_cloud_workspace_ownership_request.dart'
+    as _i65;
+import 'package:auravibes_server/src/generated/features/workspaces/models/update_workspace_member_role_request.dart'
+    as _i66;
+import 'package:auravibes_server/src/generated/features/workspaces/models/remove_workspace_member_request.dart'
+    as _i67;
+import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
+    as _i68;
+import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
+    as _i69;
+import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
+    as _i70;
 
 class Endpoints extends _i1.EndpointDispatch {
   @override
@@ -659,12 +673,165 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['request'],
                   ),
         ),
+        'getConversationSnapshot': _i1.MethodConnector(
+          name: 'getConversationSnapshot',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i18.GetConversationRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .getConversationSnapshot(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'queueConversationMessage': _i1.MethodConnector(
+          name: 'queueConversationMessage',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i25.QueueConversationMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .queueConversationMessage(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'continueConversation': _i1.MethodConnector(
+          name: 'continueConversation',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i26.ContinueConversationRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .continueConversation(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'stopConversation': _i1.MethodConnector(
+          name: 'stopConversation',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i27.StopConversationRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .stopConversation(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'editPendingConversationMessage': _i1.MethodConnector(
+          name: 'editPendingConversationMessage',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i28.EditPendingConversationMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .editPendingConversationMessage(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'reorderPendingConversationMessage': _i1.MethodConnector(
+          name: 'reorderPendingConversationMessage',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1
+                  .getType<_i29.ReorderPendingConversationMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .reorderPendingConversationMessage(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'removePendingConversationMessage': _i1.MethodConnector(
+          name: 'removePendingConversationMessage',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i30.RemovePendingConversationMessageRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .removePendingConversationMessage(
+                    session,
+                    params['request'],
+                  ),
+        ),
+        'updateConversationSettings': _i1.MethodConnector(
+          name: 'updateConversationSettings',
+          params: {
+            'request': _i1.ParameterDescription(
+              name: 'request',
+              type: _i1.getType<_i31.UpdateConversationSettingsRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _i1.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['conversation'] as _i6.ConversationEndpoint)
+                  .updateConversationSettings(
+                    session,
+                    params['request'],
+                  ),
+        ),
         'submitToolDecision': _i1.MethodConnector(
           name: 'submitToolDecision',
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i25.SubmitToolDecisionRequest>(),
+              type: _i1.getType<_i32.SubmitToolDecisionRequest>(),
               nullable: false,
             ),
           },
@@ -683,7 +850,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i26.CancelTurnRequest>(),
+              type: _i1.getType<_i33.CancelTurnRequest>(),
               nullable: false,
             ),
           },
@@ -702,7 +869,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i27.CompactConversationRequest>(),
+              type: _i1.getType<_i34.CompactConversationRequest>(),
               nullable: false,
             ),
           },
@@ -716,12 +883,12 @@ class Endpoints extends _i1.EndpointDispatch {
                     params['request'],
                   ),
         ),
-        'subscribeTurn': _i1.MethodStreamConnector(
-          name: 'subscribeTurn',
+        'subscribeConversation': _i1.MethodStreamConnector(
+          name: 'subscribeConversation',
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i28.LiveTurnSubscribeRequest>(),
+              type: _i1.getType<_i35.ConversationSubscribeRequest>(),
               nullable: false,
             ),
           },
@@ -733,7 +900,7 @@ class Endpoints extends _i1.EndpointDispatch {
                 Map<String, dynamic> params,
                 Map<String, Stream> streamParams,
               ) => (endpoints['conversation'] as _i6.ConversationEndpoint)
-                  .subscribeTurn(
+                  .subscribeConversation(
                     session,
                     params['request'],
                   ),
@@ -749,7 +916,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i29.CreateMcpServerRequest>(),
+              type: _i1.getType<_i36.CreateMcpServerRequest>(),
               nullable: false,
             ),
           },
@@ -768,7 +935,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i30.DeleteMcpServerRequest>(),
+              type: _i1.getType<_i37.DeleteMcpServerRequest>(),
               nullable: false,
             ),
           },
@@ -787,7 +954,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i31.DiscoverMcpServerRequest>(),
+              type: _i1.getType<_i38.DiscoverMcpServerRequest>(),
               nullable: false,
             ),
           },
@@ -843,7 +1010,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i32.CreateModelConnectionRequest>(),
+              type: _i1.getType<_i39.CreateModelConnectionRequest>(),
               nullable: false,
             ),
           },
@@ -863,7 +1030,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i33.ListModelConnectionsRequest>(),
+              type: _i1.getType<_i40.ListModelConnectionsRequest>(),
               nullable: false,
             ),
           },
@@ -883,7 +1050,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i34.UpdateModelConnectionRequest>(),
+              type: _i1.getType<_i41.UpdateModelConnectionRequest>(),
               nullable: false,
             ),
           },
@@ -903,7 +1070,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i35.DeleteModelConnectionRequest>(),
+              type: _i1.getType<_i42.DeleteModelConnectionRequest>(),
               nullable: false,
             ),
           },
@@ -923,7 +1090,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i36.ListWorkspaceModelSelectionsRequest>(),
+              type: _i1.getType<_i43.ListWorkspaceModelSelectionsRequest>(),
               nullable: false,
             ),
           },
@@ -943,7 +1110,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i37.TestAndSyncModelConnectionRequest>(),
+              type: _i1.getType<_i44.TestAndSyncModelConnectionRequest>(),
               nullable: false,
             ),
           },
@@ -969,7 +1136,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i38.BeginUploadRequest>(),
+              type: _i1.getType<_i45.BeginUploadRequest>(),
               nullable: false,
             ),
           },
@@ -988,7 +1155,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i39.CompleteUploadRequest>(),
+              type: _i1.getType<_i46.CompleteUploadRequest>(),
               nullable: false,
             ),
           },
@@ -1007,7 +1174,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i40.GetDownloadRequest>(),
+              type: _i1.getType<_i47.GetDownloadRequest>(),
               nullable: false,
             ),
           },
@@ -1026,7 +1193,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i41.DeleteObjectRequest>(),
+              type: _i1.getType<_i48.DeleteObjectRequest>(),
               nullable: false,
             ),
           },
@@ -1050,7 +1217,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i42.WorkspaceSubscribeRequest>(),
+              type: _i1.getType<_i49.WorkspaceSubscribeRequest>(),
               nullable: false,
             ),
           },
@@ -1079,7 +1246,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i43.PutWorkspaceSecretRequest>(),
+              type: _i1.getType<_i50.PutWorkspaceSecretRequest>(),
               nullable: false,
             ),
           },
@@ -1105,7 +1272,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i44.ReadWorkspaceStateRequest>(),
+              type: _i1.getType<_i51.ReadWorkspaceStateRequest>(),
               nullable: false,
             ),
           },
@@ -1125,7 +1292,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i45.PatchWorkspaceStateRequest>(),
+              type: _i1.getType<_i52.PatchWorkspaceStateRequest>(),
               nullable: false,
             ),
           },
@@ -1145,7 +1312,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i46.MutateWorkspaceCredentialRequest>(),
+              type: _i1.getType<_i53.MutateWorkspaceCredentialRequest>(),
               nullable: false,
             ),
           },
@@ -1193,7 +1360,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i47.GetCloudWorkspaceDetailRequest>(),
+              type: _i1.getType<_i54.GetCloudWorkspaceDetailRequest>(),
               nullable: false,
             ),
           },
@@ -1213,7 +1380,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i48.ListWorkspaceMembersRequest>(),
+              type: _i1.getType<_i55.ListWorkspaceMembersRequest>(),
               nullable: false,
             ),
           },
@@ -1233,7 +1400,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i49.ListCloudWorkspaceInvitesRequest>(),
+              type: _i1.getType<_i56.ListCloudWorkspaceInvitesRequest>(),
               nullable: false,
             ),
           },
@@ -1253,7 +1420,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i50.CreateCloudWorkspaceRequest>(),
+              type: _i1.getType<_i57.CreateCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
@@ -1273,7 +1440,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i51.InviteWorkspaceMemberRequest>(),
+              type: _i1.getType<_i58.InviteWorkspaceMemberRequest>(),
               nullable: false,
             ),
           },
@@ -1293,7 +1460,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i52.RenewWorkspaceInviteRequest>(),
+              type: _i1.getType<_i59.RenewWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
@@ -1313,7 +1480,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i53.RevokeWorkspaceInviteRequest>(),
+              type: _i1.getType<_i60.RevokeWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
@@ -1333,7 +1500,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i54.AcceptWorkspaceInviteRequest>(),
+              type: _i1.getType<_i61.AcceptWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
@@ -1353,7 +1520,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i55.DeclineWorkspaceInviteRequest>(),
+              type: _i1.getType<_i62.DeclineWorkspaceInviteRequest>(),
               nullable: false,
             ),
           },
@@ -1373,7 +1540,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i56.RenameCloudWorkspaceRequest>(),
+              type: _i1.getType<_i63.RenameCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
@@ -1393,7 +1560,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i57.LeaveCloudWorkspaceRequest>(),
+              type: _i1.getType<_i64.LeaveCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
@@ -1413,7 +1580,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i58.TransferCloudWorkspaceOwnershipRequest>(),
+              type: _i1.getType<_i65.TransferCloudWorkspaceOwnershipRequest>(),
               nullable: false,
             ),
           },
@@ -1433,7 +1600,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i59.UpdateWorkspaceMemberRoleRequest>(),
+              type: _i1.getType<_i66.UpdateWorkspaceMemberRoleRequest>(),
               nullable: false,
             ),
           },
@@ -1453,7 +1620,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i60.RemoveWorkspaceMemberRequest>(),
+              type: _i1.getType<_i67.RemoveWorkspaceMemberRequest>(),
               nullable: false,
             ),
           },
@@ -1473,7 +1640,7 @@ class Endpoints extends _i1.EndpointDispatch {
           params: {
             'request': _i1.ParameterDescription(
               name: 'request',
-              type: _i1.getType<_i61.DeleteCloudWorkspaceRequest>(),
+              type: _i1.getType<_i68.DeleteCloudWorkspaceRequest>(),
               nullable: false,
             ),
           },
@@ -1490,9 +1657,9 @@ class Endpoints extends _i1.EndpointDispatch {
         ),
       },
     );
-    modules['serverpod_auth_core'] = _i62.Endpoints()
+    modules['serverpod_auth_core'] = _i69.Endpoints()
       ..initializeEndpoints(server);
-    modules['serverpod_auth_idp'] = _i63.Endpoints()
+    modules['serverpod_auth_idp'] = _i70.Endpoints()
       ..initializeEndpoints(server);
   }
 }

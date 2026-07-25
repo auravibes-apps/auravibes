@@ -9,9 +9,6 @@ class CloudTurnUsecase {
 
   Future<TurnSnapshot> get(String turnId) => _gateway.getTurn(turnId: turnId);
 
-  Stream<LiveTurnEvent> subscribe(String turnId) =>
-      _gateway.subscribeTurn(turnId);
-
   Future<ConversationMutationResult> decide({
     required String turnId,
     required String toolCallId,
@@ -67,6 +64,24 @@ class CloudTurnUsecase {
       );
     }
   }
+
+  Future<ConversationSnapshot> continueSharedConversation({
+    required String conversationId,
+    required int projectionRevision,
+  }) => _gateway.continueConversation(
+    requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+    conversationId: conversationId,
+    expectedProjectionRevision: projectionRevision,
+  );
+
+  Future<ConversationSnapshot> stopSharedConversation({
+    required String conversationId,
+    required int projectionRevision,
+  }) => _gateway.stopConversation(
+    requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+    conversationId: conversationId,
+    expectedProjectionRevision: projectionRevision,
+  );
 
   Future<ConversationMutationResult> _retryStale(
     String turnId,
