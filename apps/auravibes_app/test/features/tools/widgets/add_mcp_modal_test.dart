@@ -4,11 +4,14 @@
 
 import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -63,6 +66,11 @@ class _Subject extends StatelessWidget {
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
           // ignore: deprecated_member_use - Required to override generated provider.
           mcpFormProvider.overrideWith(_FakeMcpFormNotifier.new),
+          workspaceSessionForRouteProvider(_wsId).overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
+            ),
+          ),
         ],
         child: Portal(
           child: Builder(
@@ -197,6 +205,11 @@ void main() {
               ),
               // ignore: deprecated_member_use - Required to override generated provider.
               mcpFormProvider.overrideWith(_SubmittingMcpFormNotifier.new),
+              workspaceSessionForRouteProvider(_wsId).overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
+                ),
+              ),
             ],
             child: Portal(
               child: Builder(
@@ -246,6 +259,11 @@ void main() {
               ),
               // ignore: deprecated_member_use - Required to override generated provider.
               mcpFormProvider.overrideWith(_ErrorMcpFormNotifier.new),
+              workspaceSessionForRouteProvider(_wsId).overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
+                ),
+              ),
             ],
             child: Portal(
               child: Builder(
@@ -291,6 +309,11 @@ void main() {
               ),
               // ignore: deprecated_member_use - Required to override generated provider in widget test.
               mcpFormProvider.overrideWith(_SuccessfulMcpFormNotifier.new),
+              workspaceSessionForRouteProvider(_wsId).overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
+                ),
+              ),
             ],
             child: Portal(
               child: Builder(

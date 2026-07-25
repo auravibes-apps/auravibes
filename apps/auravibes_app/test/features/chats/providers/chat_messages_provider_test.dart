@@ -45,6 +45,13 @@ void main() {
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),
         ),
+        workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
+        ),
         conversationSelectedProvider.overrideWithValue('conversation-1'),
         messageRepositoryProvider.overrideWithValue(repository),
       ],
@@ -57,6 +64,13 @@ void main() {
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
             ),
           ),
           conversationSelectedProvider.overrideWithValue('conversation-1'),

@@ -7,10 +7,8 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
-import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -48,17 +46,6 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    container.updateOverrides([
-      skillsRepositoryProvider.overrideWithValue(
-        container.read(skillsRepositoryProvider),
-      ),
-      skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
-        container.read(skillCredentialDefinitionsRepositoryProvider),
-      ),
-      createSkillUsecaseProvider(workspace.id).overrideWithValue(
-        CreateSkillUsecase(container.read(skillsRepositoryProvider)),
-      ),
-    ]);
     final _ =
         await SkillCredentialDefinitionsRepository(
           database,

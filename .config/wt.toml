@@ -17,3 +17,16 @@ server-stop = "./scripts/stop_server.sh"
 [pre-remove]
 # Worktree removal must not leave its isolated database containers running.
 server-stop = "./scripts/stop_server.sh"
+
+# Local CI: runs after rebase and before the target branch advances.
+[[pre-merge]]
+quick = "fvm dart run melos run validate:quick"
+
+[[pre-merge]]
+test = "fvm dart run melos run test:local --no-select"
+
+[[pre-merge]]
+dependencies = "fvm dart run dependency_validator"
+
+[[pre-merge]]
+imports = "fvm dart run import_sorter:main --exit-if-changed"

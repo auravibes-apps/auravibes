@@ -58,6 +58,19 @@ class _MockGroupedNotifier extends GroupedToolsNotifier {
 
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
+
+  @override
+  Future<void> setMcpGroupEnabled(
+    String groupId, {
+    required bool isEnabled,
+  }) async {
+    return;
+  }
+
+  @override
+  Future<void> reconnectMcp(String mcpServerId) async {
+    return;
+  }
 }
 
 class _MockMcpConnectionNotifier extends McpConnectionNotifier {

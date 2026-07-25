@@ -10,11 +10,14 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_messages_widget.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../helpers/test_provider_scope.dart';
 
@@ -818,6 +821,11 @@ class _ChatMessagesTestSubject extends StatelessWidget {
           conversationRepository,
         ),
         pendingToolCallsProvider.overrideWith((ref, _) => pendingToolCalls),
+        workspaceSessionForRouteProvider('ws-1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+          ),
+        ),
         ...overrides.cast(),
       ],
       child: EasyLocalization(

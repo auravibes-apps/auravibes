@@ -16,13 +16,15 @@ void main() {
   test('cloud provider resolves before local Drift construction', () {
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          const WorkspaceSession(
-            CloudWorkspaceRef(
-              localWorkspaceId: 'local',
-              serverUrl: 'https://example.com',
-              accountId: 'account',
-              cloudWorkspaceId: 7,
+        workspaceSessionForRouteProvider('local').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              CloudWorkspaceRef(
+                localWorkspaceId: 'local',
+                serverUrl: 'https://example.com',
+                accountId: 'account',
+                cloudWorkspaceId: 7,
+              ),
             ),
           ),
         ),
@@ -47,9 +49,9 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(_AppDatabase()),
-        workspaceSessionProvider.overrideWithValue(
-          const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'local'),
+        workspaceSessionForRouteProvider('local').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'local')),
           ),
         ),
       ],

@@ -7,6 +7,8 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -641,6 +643,18 @@ class _ConversationToolsNotifierFixture {
           ),
           workspaceToolsRepositoryProvider.overrideWithValue(
             workspaceToolsRepository,
+          ),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
+          ),
+          workspaceSessionForRouteProvider('ws-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+            ),
           ),
         ],
       ),

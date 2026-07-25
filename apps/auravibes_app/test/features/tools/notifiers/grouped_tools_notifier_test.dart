@@ -11,6 +11,8 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +33,13 @@ void main() {
         mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
         mcpServersRepositoryProvider.overrideWithValue(
           _FakeMcpServersRepository(),
+        ),
+        workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
         ),
       ],
     );
@@ -82,6 +91,13 @@ void main() {
           mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository(),
+          ),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
           ),
         ],
       );

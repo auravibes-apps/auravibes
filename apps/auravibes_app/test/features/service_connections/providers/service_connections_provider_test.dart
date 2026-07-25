@@ -182,6 +182,13 @@ ProviderContainer _container({
           LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
         ),
       ),
+      workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+        const AsyncData(
+          WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ),
+      ),
       appDatabaseProvider.overrideWithValue(database),
       modelConnectionRepositoryProvider.overrideWithValue(modelRepository),
       skillCredentialDefinitionsRepositoryProvider.overrideWithValue(

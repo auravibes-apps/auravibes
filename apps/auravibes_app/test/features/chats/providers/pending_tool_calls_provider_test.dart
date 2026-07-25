@@ -185,6 +185,11 @@ void main() {
                 LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
               ),
             ),
+            workspaceSessionForRouteProvider('ws-1').overrideWith(
+              (_) async => const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+              ),
+            ),
             conversationSelectedProvider.overrideWithValue('conv-1'),
             childConversationsStreamProvider(
               'ws-1',
@@ -241,6 +246,11 @@ void main() {
             workspaceSessionProvider.overrideWithValue(
               const WorkspaceSession(
                 LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
+            workspaceSessionForRouteProvider('ws-1').overrideWith(
+              (_) async => const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
               ),
             ),
             conversationSelectedProvider.overrideWithValue('conv-1'),

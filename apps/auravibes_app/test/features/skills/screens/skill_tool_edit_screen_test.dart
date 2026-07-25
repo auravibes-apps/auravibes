@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/skill_credential_definitions_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_template_tools_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
@@ -42,17 +43,6 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
-    final container = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
-        ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
-      ],
-    );
-    addTearDown(container.dispose);
     final definition = await database.skillCredentialDefinitionsDao
         .createDefinition(
           SkillCredentialDefinitionsCompanion.insert(
@@ -74,29 +64,39 @@ void main() {
         credentialDefinitionId: definition.id,
       ),
     );
-    container.updateOverrides([
-      skillsRepositoryProvider.overrideWithValue(
-        container.read(skillsRepositoryProvider),
-      ),
-      skillTemplateToolsRepositoryProvider.overrideWithValue(
-        container.read(skillTemplateToolsRepositoryProvider),
-      ),
-      skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
-        container.read(skillCredentialDefinitionsRepositoryProvider),
-      ),
-      skillDetailProvider(workspace.id, skill.id).overrideWith(
-        (_) async => SkillDetail.fromUserSkill(skill),
-      ),
-      createSkillTemplateToolUsecaseProvider(workspace.id).overrideWithValue(
-        CreateSkillTemplateToolUsecase(
-          container.read(skillTemplateToolsRepositoryProvider),
-          skillsRepository: container.read(skillsRepositoryProvider),
-          skillCredentialDefinitionsRepository: container.read(
-            skillCredentialDefinitionsRepositoryProvider,
+    final skillsRepository = SkillsRepository(database);
+    final skillTemplateToolsRepository = SkillTemplateToolsRepository(database);
+    final skillCredentialDefinitionsRepository =
+        SkillCredentialDefinitionsRepository(database);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+        skillsRepositoryProvider.overrideWithValue(skillsRepository),
+        skillTemplateToolsRepositoryProvider.overrideWithValue(
+          skillTemplateToolsRepository,
+        ),
+        skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
+          skillCredentialDefinitionsRepository,
+        ),
+        skillDetailProvider(workspace.id, skill.id).overrideWith(
+          (_) async => SkillDetail.fromUserSkill(skill),
+        ),
+        createSkillTemplateToolUsecaseProvider(workspace.id).overrideWithValue(
+          CreateSkillTemplateToolUsecase(
+            skillTemplateToolsRepository,
+            skillsRepository: skillsRepository,
+            skillCredentialDefinitionsRepository:
+                skillCredentialDefinitionsRepository,
           ),
         ),
-      ),
-    ]);
+      ],
+    );
+    addTearDown(container.dispose);
     final router = GoRouter(
       routes: [
         GoRoute(

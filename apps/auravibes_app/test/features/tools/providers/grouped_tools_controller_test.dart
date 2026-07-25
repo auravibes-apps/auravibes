@@ -8,6 +8,8 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
@@ -201,7 +203,7 @@ class _GroupedToolsControllerFixture {
   ProviderContainer get container =>
       _container ?? fail('Expected container to be initialized');
 
-  void setUp() {
+  Future<void> setUp() async {
     final toolsGroupsRepository = _FakeToolsGroupsRepository();
     final workspaceToolsNotifier = _FakeWorkspaceToolsNotifier(const []);
     final mcpNotifier = _FakeMcpConnectionNotifier();
@@ -217,8 +219,20 @@ class _GroupedToolsControllerFixture {
           _workspace.id,
         ).overrideWith(() => workspaceToolsNotifier),
         mcpConnectionProvider.overrideWith(() => mcpNotifier),
+        workspaceSessionForRouteProvider(_workspace.id).overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
+        ),
       ],
     );
+    final container = _container;
+    if (container == null) {
+      fail('Provider container fixture not initialized');
+    }
+    final _ = await container.read(groupedToolsProvider(_workspace.id).future);
   }
 
   void dispose() {

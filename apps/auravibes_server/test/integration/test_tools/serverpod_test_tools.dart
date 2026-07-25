@@ -174,7 +174,6 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/remove
     as _i83;
 import 'package:auravibes_server/src/generated/features/workspaces/models/delete_cloud_workspace_request.dart'
     as _i84;
-import 'package:auravibes_server/src/generated/future_calls.dart' as _i85;
 import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:auravibes_server/src/generated/endpoints.dart';
 export 'package:serverpod_test/serverpod_test_public_exports.dart';
@@ -298,8 +297,6 @@ void withServerpod(
 }
 
 class TestEndpoints {
-  late final futureCalls = _FutureCalls();
-
   late final _EmailIdpEndpoint emailIdp;
 
   late final _JwtRefreshEndpoint jwtRefresh;
@@ -381,14 +378,6 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
   }
-}
-
-class _FutureCalls {
-  late final conversationWorker = _ConversationWorkerFutureCall();
-
-  late final modelCatalogSyncWorker = _ModelCatalogSyncWorkerFutureCall();
-
-  late final objectCleanup = _ObjectCleanupFutureCall();
 }
 
 class _EmailIdpEndpoint {
@@ -2497,98 +2486,5 @@ class _CloudWorkspaceEndpoint {
         await _localUniqueSession.close();
       }
     });
-  }
-}
-
-class _ConversationWorkerFutureCall {
-  Future<void> invoke(
-    _i1.TestSessionBuilder sessionBuilder,
-    _i2.SerializableModel? object,
-  ) async {
-    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
-        .internalBuild();
-    try {
-      await _i85.ConversationWorkerInvokeFutureCall().invoke(
-        _localUniqueSession,
-        object,
-      );
-    } finally {
-      await _localUniqueSession.close();
-    }
-  }
-
-  Future<void> poll(_i1.TestSessionBuilder sessionBuilder) async {
-    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
-        .internalBuild();
-    try {
-      await _i85.ConversationWorkerPollFutureCall().invoke(
-        _localUniqueSession,
-        null,
-      );
-    } finally {
-      await _localUniqueSession.close();
-    }
-  }
-}
-
-class _ModelCatalogSyncWorkerFutureCall {
-  Future<void> invoke(
-    _i1.TestSessionBuilder sessionBuilder,
-    _i2.SerializableModel? object,
-  ) async {
-    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
-        .internalBuild();
-    try {
-      await _i85.ModelCatalogSyncWorkerInvokeFutureCall().invoke(
-        _localUniqueSession,
-        object,
-      );
-    } finally {
-      await _localUniqueSession.close();
-    }
-  }
-
-  Future<void> poll(_i1.TestSessionBuilder sessionBuilder) async {
-    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
-        .internalBuild();
-    try {
-      await _i85.ModelCatalogSyncWorkerPollFutureCall().invoke(
-        _localUniqueSession,
-        null,
-      );
-    } finally {
-      await _localUniqueSession.close();
-    }
-  }
-}
-
-class _ObjectCleanupFutureCall {
-  Future<void> invoke(
-    _i1.TestSessionBuilder sessionBuilder,
-    _i2.SerializableModel? object,
-  ) async {
-    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
-        .internalBuild();
-    try {
-      await _i85.ObjectCleanupInvokeFutureCall().invoke(
-        _localUniqueSession,
-        object,
-      );
-    } finally {
-      await _localUniqueSession.close();
-    }
-  }
-
-  Future<void> poll(_i1.TestSessionBuilder sessionBuilder) async {
-    var _localUniqueSession = (sessionBuilder as _i1.InternalTestSessionBuilder)
-        .internalBuild();
-    try {
-      await _i85.ObjectCleanupPollFutureCall().invoke(
-        _localUniqueSession,
-        null,
-      );
-    } finally {
-      await _localUniqueSession.close();
-    }
   }
 }

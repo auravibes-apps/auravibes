@@ -178,6 +178,11 @@ void main() {
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
           workspaceToolIndexProvider.overrideWithValue(-1),
         ],
@@ -330,6 +335,11 @@ void main() {
 
       final failContainer = ProviderContainer(
         overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(failRepo),
         ],
       );
@@ -361,6 +371,11 @@ void main() {
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
           workspaceToolIndexProvider.overrideWithValue(1),
         ],
@@ -376,6 +391,11 @@ void main() {
         ..tools = [_tool(id: 't1'), _tool(id: 't2')];
       final container2 = ProviderContainer(
         overrides: [
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
           workspaceToolIndexProvider.overrideWithValue(0),
         ],
@@ -398,6 +418,11 @@ void main() {
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
+          ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
         ],
       );
@@ -416,6 +441,11 @@ void main() {
         overrides: [
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, workspaceId) async => WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            ),
           ),
           workspaceToolsRepositoryProvider.overrideWithValue(repository),
         ],
@@ -450,6 +480,11 @@ class _WorkspaceToolsProviderFixture {
     _repository = repository;
     _container = ProviderContainer(
       overrides: [
+        workspaceSessionForRouteProvider.overrideWith(
+          (_, workspaceId) async => WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: workspaceId),
+          ),
+        ),
         workspaceToolsRepositoryProvider.overrideWithValue(repository),
         if (includeWorkspaceToolIndex)
           workspaceToolIndexProvider.overrideWithValue(0),

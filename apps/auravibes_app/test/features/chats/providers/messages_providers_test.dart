@@ -173,6 +173,13 @@ class _MessagesProvidersFixture {
             LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
           ),
         ),
+        workspaceSessionForRouteProvider('ws-1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ),
+        ),
         conversationSelectedProvider.overrideWithValue('conv-1'),
         messageRepositoryProvider.overrideWithValue(repository),
       ],

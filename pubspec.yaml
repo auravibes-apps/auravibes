@@ -74,16 +74,25 @@ melos:
       description: Fix code formatting
 
     # Testing Scripts
-    test:
+    test:local:
       exec: |
-        if grep -q '^  flutter:' pubspec.yaml; then
-          flutter test --reporter=compact
+        if [ -f test/integration/test_tools/serverpod_test_tools.dart ]; then
+          fvm dart test test/features test/migrations --reporter=compact
+        elif grep -q '^  flutter:' pubspec.yaml; then
+          flutter test --exclude-tags=integration --reporter=compact
         else
-          fvm dart test --reporter=compact
+          fvm dart test --exclude-tags=integration --reporter=compact
         fi
       packageFilters:
         dirExists: test
-      description: Run tests with the package's Flutter or Dart runner
+      description: Run hermetic unit and widget tests without integrations
+
+    test:integration:
+      exec: fvm dart test test/integration --reporter=compact
+      packageFilters:
+        scope: auravibes_server
+        dirExists: test/integration
+      description: Run Docker-backed Serverpod integration tests
 
     test:coverage:
       exec: |
@@ -100,12 +109,17 @@ melos:
 
     test:ci:
       exec: |
-        if grep -q '^  flutter:' pubspec.yaml; then
-          flutter test --coverage --concurrency=2 --timeout=30s \
-            --reporter=compact
+        if [ -f test/integration/test_tools/serverpod_test_tools.dart ]; then
+          fvm dart test test/features test/migrations --coverage=coverage \
+            --concurrency=2 --timeout=30s --reporter=compact &&
+            fvm dart run coverage:format_coverage --lcov --in=coverage \
+              --out=coverage/lcov.info --report-on=lib
+        elif grep -q '^  flutter:' pubspec.yaml; then
+          flutter test --exclude-tags=integration --coverage --concurrency=2 \
+            --timeout=30s --reporter=compact
         else
-          fvm dart test --coverage=coverage --concurrency=2 --timeout=30s \
-            --reporter=compact &&
+          fvm dart test --exclude-tags=integration --coverage=coverage \
+            --concurrency=2 --timeout=30s --reporter=compact &&
             fvm dart run coverage:format_coverage --lcov --in=coverage \
               --out=coverage/lcov.info --report-on=lib
         fi
@@ -149,7 +163,7 @@ melos:
         melos run unused:code &&
         melos run unnecessary:nullable &&
         melos run format:check &&
-        melos run test
+        melos run test:local
       description: Full validation pipeline (no coverage, fast)
 
     validate:ci:

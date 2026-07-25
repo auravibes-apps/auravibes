@@ -180,15 +180,24 @@ void main() {
     McpFormNotifier readNotifier() =>
         notifier ?? fail('McpFormNotifier not initialized');
 
-    setUp(() {
+    setUp(() async {
       final testContainer = ProviderContainer(
         overrides: [
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, _) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+            ),
+          ),
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
         ],
       );
+      final workspaceSession = await testContainer.read(
+        workspaceSessionForRouteProvider('ws1').future,
+      );
+      expect(workspaceSession, isA<WorkspaceSession>());
       container = testContainer;
       notifier = testContainer.read(mcpFormProvider('ws1').notifier);
     });
@@ -364,11 +373,20 @@ void main() {
           workspaceSessionProvider.overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
+          workspaceSessionForRouteProvider.overrideWith(
+            (_, _) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+            ),
+          ),
           mcpConnectionProvider.overrideWith(
             _FailingMcpConnectionNotifier.new,
           ),
         ],
       );
+      final workspaceSession = await failingContainer.read(
+        workspaceSessionForRouteProvider('ws1').future,
+      );
+      expect(workspaceSession, isA<WorkspaceSession>());
       container = failingContainer;
       notifier = failingContainer.read(mcpFormProvider('ws1').notifier);
 

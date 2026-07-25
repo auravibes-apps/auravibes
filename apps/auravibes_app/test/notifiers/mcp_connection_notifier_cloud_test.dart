@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -175,6 +176,7 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
+        currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
         workspaceSessionProvider.overrideWithValue(
           const WorkspaceSession(
             CloudWorkspaceRef(
@@ -182,6 +184,18 @@ void main() {
               serverUrl: 'https://example.com',
               accountId: 'account',
               cloudWorkspaceId: 7,
+            ),
+          ),
+        ),
+        workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              CloudWorkspaceRef(
+                localWorkspaceId: 'workspace-1',
+                serverUrl: 'https://example.com',
+                accountId: 'account',
+                cloudWorkspaceId: 7,
+              ),
             ),
           ),
         ),
@@ -247,7 +261,7 @@ void main() {
     await grouped.reconnectMcp('server-1');
     await grouped.deleteMcpGroup(groupId);
 
-    expect(discoveries, 2);
+    expect(discoveries, 3);
     expect(
       resources.any((item) => item.resourceId == groupServerId),
       isFalse,

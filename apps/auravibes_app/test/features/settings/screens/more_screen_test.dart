@@ -23,22 +23,22 @@ void main() {
     return UncontrolledProviderScope(
       container: container,
       child: EasyLocalization(
-      child: Builder(
-        builder: (context) {
-          return MaterialApp(
+        child: Builder(
+          builder: (context) {
+            return MaterialApp(
               home: MoreScreen(workspaceId: workspaceId),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
-          );
-        },
-      ),
-      supportedLocales: const [Locale('en')],
-      path: 'assets/i18n',
-      fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
-      useOnlyLangCode: true,
-      useFallbackTranslations: true,
+            );
+          },
+        ),
+        supportedLocales: const [Locale('en')],
+        path: 'assets/i18n',
+        fallbackLocale: const Locale('en'),
+        startLocale: const Locale('en'),
+        useOnlyLangCode: true,
+        useFallbackTranslations: true,
       ),
     );
   }

@@ -65,6 +65,9 @@ void main() {
         workspaceSessionProvider.overrideWithValue(
           const WorkspaceSession(_workspace),
         ),
+        workspaceSessionForRouteProvider('local').overrideWithValue(
+          const AsyncData(WorkspaceSession(_workspace)),
+        ),
       ],
     );
     addTearDown(container.dispose);

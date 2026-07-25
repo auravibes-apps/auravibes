@@ -8,12 +8,15 @@ import 'package:auravibes_app/features/settings/providers/compaction_settings_pr
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -47,8 +50,11 @@ void main() {
     settingsController = StreamController<CompactionSettings>.broadcast();
   });
 
-  tearDown(() {
-    final _ = settingsController?.close();
+  tearDown(() async {
+    final controller = settingsController;
+    if (controller != null) {
+      final _ = await controller.close();
+    }
   });
 
   Widget buildSubject() {
@@ -74,6 +80,13 @@ void main() {
         ),
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
           (ref) => readMockRepository(),
+        ),
+        workspaceSessionForRouteProvider(testWorkspaceId).overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: testWorkspaceId),
+            ),
+          ),
         ),
       ],
     );

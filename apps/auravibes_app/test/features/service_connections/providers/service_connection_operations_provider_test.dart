@@ -31,6 +31,18 @@ void main() {
             ),
           ),
         ),
+        workspaceSessionForRouteProvider('workspace').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              CloudWorkspaceRef(
+                localWorkspaceId: 'workspace',
+                serverUrl: 'https://example.com',
+                accountId: 'account',
+                cloudWorkspaceId: 1,
+              ),
+            ),
+          ),
+        ),
         cloudWorkspaceStateGatewayProvider.overrideWith(
           (_, _) async => gateway,
         ),
@@ -92,6 +104,18 @@ void main() {
               serverUrl: 'https://example.com',
               accountId: 'account',
               cloudWorkspaceId: 1,
+            ),
+          ),
+        ),
+        workspaceSessionForRouteProvider('workspace').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              CloudWorkspaceRef(
+                localWorkspaceId: 'workspace',
+                serverUrl: 'https://example.com',
+                accountId: 'account',
+                cloudWorkspaceId: 1,
+              ),
             ),
           ),
         ),

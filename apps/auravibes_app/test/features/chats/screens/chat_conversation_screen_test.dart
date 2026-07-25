@@ -404,6 +404,15 @@ void main() {
               builder: (context) {
                 return TestProviderScope(
                   overrides: [
+                    workspaceSessionForRouteProvider(
+                      _workspaceId,
+                    ).overrideWithValue(
+                      const AsyncData(
+                        WorkspaceSession(
+                          LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                        ),
+                      ),
+                    ),
                     conversationSelectedProvider.overrideWithValue(_chatId),
                     conversationRepositoryProvider.overrideWithValue(
                       _StubConversationRepository(),
@@ -493,6 +502,15 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
+                  workspaceSessionForRouteProvider(
+                    _workspaceId,
+                  ).overrideWithValue(
+                    const AsyncData(
+                      WorkspaceSession(
+                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                      ),
+                    ),
+                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
@@ -585,6 +603,13 @@ void main() {
         workspaceSessionProvider.overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+          ),
+        ),
+        workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+            ),
           ),
         ),
         conversationSelectedProvider.overrideWithValue(_chatId),

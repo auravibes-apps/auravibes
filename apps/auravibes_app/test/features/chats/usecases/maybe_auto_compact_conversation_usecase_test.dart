@@ -1,5 +1,6 @@
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
+import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_model_selection_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -13,12 +14,18 @@ import 'package:auravibes_app/features/chats/usecases/maybe_auto_compact_convers
 import 'package:auravibes_app/features/chats/usecases/should_compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/model_connection_repositories_providers.dart';
+import 'package:auravibes_app/providers/chatbot_service_provider.dart';
+import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class MockConversationRepository extends Mock
     implements ConversationRepository {}
+
+class MockMessageRepository extends Mock implements MessageRepository {}
+
+class MockChatbotService extends Mock implements ChatbotService {}
 
 class MockWorkspaceModelSelectionsRepository extends Mock
     implements WorkspaceModelSelectionRepository {
@@ -354,6 +361,12 @@ void main() {
       overrides: [
         conversationRepositoryProvider.overrideWith(
           (ref) => fixture.mockConvRepo,
+        ),
+        messageRepositoryProvider.overrideWith(
+          (ref) => MockMessageRepository(),
+        ),
+        chatbotServiceProvider.overrideWith(
+          (ref) => MockChatbotService(),
         ),
         workspaceModelSelectionRepositoryProvider.overrideWith(
           (ref) => fixture.mockModelRepo,

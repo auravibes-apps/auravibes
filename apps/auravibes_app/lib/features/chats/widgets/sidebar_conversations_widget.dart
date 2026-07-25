@@ -23,7 +23,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-
 class SidebarConversationsWidget extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
   // ignore: unnecessary-nullable

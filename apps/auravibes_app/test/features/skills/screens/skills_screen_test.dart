@@ -26,37 +26,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
-  Widget buildRouterScreen(
-    ProviderContainer container,
-    GoRouter router,
-    WorkspaceEntity workspace,
-    SkillEntity skill,
-  ) {
-    container.updateOverrides([
-      skillsRepositoryProvider.overrideWithValue(
-        container.read(skillsRepositoryProvider),
-      ),
-      appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
-        container.read(appSkillWorkspaceSettingsRepositoryProvider),
-      ),
-      workspaceSkillsProvider(workspace.id).overrideWith(
-        (_) async => [
-          WorkspaceSkill(
-            id: skill.id,
-            slug: skill.slug,
-            title: skill.title,
-            description: skill.description,
-            source: SkillSource.user,
-            kind: skill.kind,
-            isEnabled: skill.isEnabled,
-          ),
-        ],
-      ),
-      deleteSkillProvider(workspace.id).overrideWithValue(
-        container.read(skillsRepositoryProvider).deleteSkill,
-      ),
-    ]);
-
+  Widget buildRouterScreen(ProviderContainer container, GoRouter router) {
     return EasyLocalization(
       child: Builder(
         builder: (context) {
@@ -103,17 +73,6 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
-    final container = ProviderContainer(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
-        ),
-        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
-      ],
-    );
-    addTearDown(container.dispose);
     final skillsRepository = SkillsRepository(database);
     final skill = await skillsRepository.createSkill(
       workspace.id,
@@ -130,6 +89,37 @@ void main() {
       'skills_manager',
       isEnabled: false,
     );
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        workspaceSessionProvider.overrideWithValue(
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
+        ),
+        cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
+        cloudSkillStoreProvider.overrideWithValue(null),
+        skillsRepositoryProvider.overrideWithValue(skillsRepository),
+        appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
+          appSkillSettings,
+        ),
+        workspaceSkillsProvider(workspace.id).overrideWith(
+          (_) async => [
+            WorkspaceSkill(
+              id: skill.id,
+              slug: skill.slug,
+              title: skill.title,
+              description: skill.description,
+              source: SkillSource.user,
+              kind: skill.kind,
+              isEnabled: skill.isEnabled,
+            ),
+          ],
+        ),
+        deleteSkillProvider(workspace.id).overrideWithValue(
+          skillsRepository.deleteSkill,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
 
     return (
       database: database,
@@ -171,12 +161,7 @@ void main() {
     addTearDown(router.dispose);
 
     await tester.pumpWidget(
-      buildRouterScreen(
-        fixture.container,
-        router,
-        fixture.workspace,
-        fixture.skill,
-      ),
+      buildRouterScreen(fixture.container, router),
     );
     final _ = await tester.pumpAndSettle();
     router.go('/workspaces/${fixture.workspace.id}/more/skills');

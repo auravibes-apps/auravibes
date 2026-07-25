@@ -57,7 +57,10 @@ void main() {
     'cloud native catalog returns empty without reading local storage',
     () async {
       final container = ProviderContainer(
-        overrides: [workspaceSessionProvider.overrideWithValue(cloud)],
+        overrides: [
+          workspaceSessionProvider.overrideWithValue(cloud),
+          workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
+        ],
       );
       addTearDown(container.dispose);
 
@@ -68,11 +71,17 @@ void main() {
     },
   );
 
-  test('unsupported cloud paths fail typed before local fallback', () {
+  test('unsupported cloud paths fail typed before local fallback', () async {
     final container = ProviderContainer(
-      overrides: [workspaceSessionProvider.overrideWithValue(cloud)],
+      overrides: [
+        workspaceSessionProvider.overrideWithValue(cloud),
+        workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
+      ],
     );
     addTearDown(container.dispose);
+    final _ = await container.read(
+      workspaceSessionForRouteProvider('mirror').future,
+    );
 
     expect(
       () => cloud.capabilities.require(

@@ -7,22 +7,12 @@ import 'package:riverpod/riverpod.dart';
 void main() {
   group('conversationSelectedProvider', () {
     test(
-      'throws ProviderException containing NoConversationSelectedException '
-      'when read without override',
+      'returns the route workspace ID when read without override',
       () {
         final container = ProviderContainer();
         addTearDown(container.dispose);
 
-        expect(
-          () => container.read(conversationSelectedProvider('ws-1')),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'toString',
-              contains('NoConversationSelectedException'),
-            ),
-          ),
-        );
+        expect(container.read(conversationSelectedProvider('ws-1')), 'ws-1');
       },
     );
 

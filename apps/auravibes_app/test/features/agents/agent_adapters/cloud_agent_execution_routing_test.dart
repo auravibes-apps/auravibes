@@ -6,7 +6,6 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
-import 'package:auravibes_app/services/agent_harness/resolved_tool_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -84,13 +83,15 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
-            const WorkspaceSession(
-              CloudWorkspaceRef(
-                localWorkspaceId: 'local',
-                serverUrl: 'https://example.com',
-                accountId: 'account',
-                cloudWorkspaceId: 1,
+          workspaceSessionForRouteProvider('local').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                CloudWorkspaceRef(
+                  localWorkspaceId: 'local',
+                  serverUrl: 'https://example.com',
+                  accountId: 'account',
+                  cloudWorkspaceId: 1,
+                ),
               ),
             ),
           ),
@@ -116,10 +117,6 @@ void main() {
           workspaceId: 'local',
         ))?.content,
         'Cloud prompt',
-      );
-      expect(
-        container.read(resolvedToolServiceProvider),
-        isA<ResolvedToolService>(),
       );
     },
   );

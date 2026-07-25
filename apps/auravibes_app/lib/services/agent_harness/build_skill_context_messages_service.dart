@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
@@ -18,7 +17,8 @@ class BuildSkillContextMessagesService {
     required String conversationId,
     required String workspaceId,
     required SkillLoadFilter filter,
-  }) _listAvailableSkillsUsecase;
+  })
+  _listAvailableSkillsUsecase;
   final ListConversationAgentSkillsUsecase _listConversationAgentSkillsUsecase;
 
   Future<List<ChatMessage>> call({
@@ -70,11 +70,13 @@ final buildSkillContextMessagesServiceProvider =
     Provider<BuildSkillContextMessagesService>((ref) {
       return BuildSkillContextMessagesService(
         ({required conversationId, required workspaceId, required filter}) =>
-            ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)).call(
-              conversationId: conversationId,
-              workspaceId: workspaceId,
-              filter: filter,
-            ),
+            ref
+                .watch(listAvailableSkillsUsecaseProvider(workspaceId))
+                .call(
+                  conversationId: conversationId,
+                  workspaceId: workspaceId,
+                  filter: filter,
+                ),
         ref.watch(listConversationAgentSkillsUsecaseProvider),
       );
     });

@@ -60,8 +60,8 @@ class _TestableAppState extends State<TestableApp> {
   @override
   Widget build(BuildContext context) {
     return UncontrolledProviderScope(
-      container: _container ??
-          (throw StateError('Test app is not initialized')),
+      container:
+          _container ?? (throw StateError('Test app is not initialized')),
       child: EasyLocalization(
         child: Builder(
           builder: (context) => MaterialApp(

@@ -4,6 +4,8 @@ import 'package:auravibes_app/domain/exceptions/compaction_exception.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/providers/workspace_compaction_settings_repository_provider.dart';
 import 'package:auravibes_app/features/settings/usecases/save_workspace_compaction_settings_usecase.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
@@ -371,6 +373,13 @@ class _CompactionSettingsProviderFixture {
       overrides: [
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
           (ref) => repository,
+        ),
+        workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ),
         ),
       ],
     );

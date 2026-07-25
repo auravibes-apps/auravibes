@@ -15,8 +15,7 @@ import 'package:serverpod/serverpod.dart' as _i1;
 enum WorkspacePatchOperationKind implements _i1.SerializableModel {
   create,
   update,
-  delete
-  ;
+  delete;
 
   static WorkspacePatchOperationKind fromJson(String name) {
     switch (name) {

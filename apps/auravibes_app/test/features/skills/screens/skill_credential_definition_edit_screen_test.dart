@@ -5,9 +5,7 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/screens/skill_credential_definition_edit_screen.dart';
-import 'package:auravibes_app/features/skills/usecases/create_skill_credential_definition_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
@@ -27,18 +25,6 @@ void main() {
     required String workspaceId,
     String? definitionId,
   }) {
-    container.updateOverrides([
-      skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
-        container.read(skillCredentialDefinitionsRepositoryProvider),
-      ),
-      createSkillCredentialDefinitionUsecaseProvider(workspaceId)
-          .overrideWithValue(
-            CreateSkillCredentialDefinitionUsecase(
-              container.read(skillCredentialDefinitionsRepositoryProvider),
-            ),
-          ),
-    ]);
-
     return EasyLocalization(
       child: Builder(
         builder: (context) {

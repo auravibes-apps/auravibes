@@ -23,8 +23,6 @@ Future<void> _pumpNewChatWithinPausedBranch(
   await tester.runAsync(() async {
     await tester.pumpWidget(
       TestableApp(
-        workspaceId: 'test-ws',
-        overrides: overrides,
         child: TickerMode(
           enabled: tickerEnabled,
           child: Theme(
@@ -34,6 +32,8 @@ Future<void> _pumpNewChatWithinPausedBranch(
             ),
           ),
         ),
+        overrides: overrides,
+        workspaceId: 'test-ws',
       ),
     );
   });
@@ -147,7 +147,6 @@ void main() {
       ) async {
         await _pumpNewChatWithinPausedBranch(
           tester,
-          tickerEnabled: true,
           overrides: [
             ..._newChatOverrides(),
             workspaceAvailabilityProvider('test-ws').overrideWith(
@@ -163,6 +162,7 @@ void main() {
               ),
             ),
           ],
+          tickerEnabled: true,
         );
         expect(find.byIcon(Icons.cloud_off_outlined), findsOneWidget);
         expect(

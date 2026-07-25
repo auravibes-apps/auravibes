@@ -3,6 +3,8 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -49,6 +51,20 @@ class _FakeMcpServersRepository implements McpServersRepository {
   }
 }
 
+ProviderContainer createContainer(Map<String, McpServerEntity> servers) =>
+    ProviderContainer(
+      overrides: [
+        mcpServersRepositoryProvider.overrideWithValue(
+          _FakeMcpServersRepository(servers),
+        ),
+        workspaceSessionForRouteProvider('ws1').overrideWithValue(
+          const AsyncData(
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ),
+        ),
+      ],
+    );
+
 void main() {
   group('toolDisplayNameProvider', () {
     test('returns display name for MCP tool with server name', () async {
@@ -63,13 +79,7 @@ void main() {
         updatedAt: DateTime(2026),
       );
 
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({'srv1': server}),
-          ),
-        ],
-      );
+      final container = createContainer({'srv1': server});
       addTearDown(container.dispose);
 
       final name = await container.read(
@@ -79,13 +89,7 @@ void main() {
     });
 
     test('returns display name for built-in tool', () async {
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({}),
-          ),
-        ],
-      );
+      final container = createContainer({});
       addTearDown(container.dispose);
 
       final name = await container.read(
@@ -95,13 +99,7 @@ void main() {
     });
 
     test('returns display name for native tool', () async {
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({}),
-          ),
-        ],
-      );
+      final container = createContainer({});
       addTearDown(container.dispose);
 
       final name = await container.read(
@@ -111,13 +109,7 @@ void main() {
     });
 
     test('falls back to raw name for unknown format', () async {
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({}),
-          ),
-        ],
-      );
+      final container = createContainer({});
       addTearDown(container.dispose);
 
       final name = await container.read(
@@ -127,13 +119,7 @@ void main() {
     });
 
     test('falls back to slug when server not found', () async {
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({}),
-          ),
-        ],
-      );
+      final container = createContainer({});
       addTearDown(container.dispose);
 
       final name = await container.read(
@@ -145,13 +131,7 @@ void main() {
 
   group('mcpServerNameProvider', () {
     test('returns null when server not found', () async {
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({}),
-          ),
-        ],
-      );
+      final container = createContainer({});
       addTearDown(container.dispose);
 
       final name = await container.read(
@@ -172,13 +152,7 @@ void main() {
         updatedAt: DateTime(2026),
       );
 
-      final container = ProviderContainer(
-        overrides: [
-          mcpServersRepositoryProvider.overrideWithValue(
-            _FakeMcpServersRepository({'srv1': server}),
-          ),
-        ],
-      );
+      final container = createContainer({'srv1': server});
       addTearDown(container.dispose);
 
       final name = await container.read(

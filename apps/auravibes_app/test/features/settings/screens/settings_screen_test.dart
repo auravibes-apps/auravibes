@@ -1,4 +1,6 @@
+import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/features/settings/notifiers/app_theme.dart';
+import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_ui/ui.dart';
@@ -71,11 +73,22 @@ void main() {
 
     testWidgets('changing theme keeps settings screen visible', (tester) async {
       SharedPreferences.setMockInitialValues({});
+      final container = ProviderContainer(
+        overrides: [
+          compactionSettingsProvider('test-ws').overrideWith(
+            (ref) => Stream.value(CompactionSettings.defaults),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
 
       await tester.runAsync(() async {
         await tester.pumpWidget(
           EasyLocalization(
-            child: const ProviderScope(child: _ThemeModeTestApp()),
+            child: UncontrolledProviderScope(
+              container: container,
+              child: const _ThemeModeTestApp(),
+            ),
             supportedLocales: const [Locale('en')],
             path: 'assets/i18n',
             fallbackLocale: const Locale('en'),

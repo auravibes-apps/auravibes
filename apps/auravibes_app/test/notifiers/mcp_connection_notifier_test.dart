@@ -8,6 +8,8 @@ import 'package:auravibes_app/data/repositories/mcp_servers_repository.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
@@ -195,6 +197,34 @@ void main() {
     AppDatabase getDatabase() =>
         database ?? fail('Expected test database to be initialized');
 
+    Future<ProviderContainer> createInitializedContainer(
+      McpManagerService manager, {
+      bool initialize = true,
+    }) async {
+      final testContainer = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(getDatabase()),
+          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
+          mcpManagerServiceProvider.overrideWithValue(manager),
+          encryptionServiceProvider.overrideWithValue(_FakeEncryptionService()),
+          currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
+          ),
+        ],
+      );
+      if (initialize) {
+        final _ = testContainer.read(mcpConnectionProvider);
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      return testContainer;
+    }
+
     setUp(() {
       mcpServersRepository = _FakeMcpServersRepository();
       mcpManagerService = McpManagerService();
@@ -210,6 +240,14 @@ void main() {
           mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
           encryptionServiceProvider.overrideWithValue(
             _FakeEncryptionService(),
+          ),
+          currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
           ),
         ],
       );
@@ -581,16 +619,7 @@ void main() {
 
     test('reconnectMcpServer with server in state handles error', () async {
       final fakeService = _FailingMcpManagerService();
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(fakeService),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
-      );
+      final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
 
       final notifier = testContainer.read(mcpConnectionProvider.notifier)
@@ -611,16 +640,7 @@ void main() {
     test('reconnectMcpServer loads from repo when not in state', () async {
       mcpServersRepository.serverById = _server2;
       final fakeService = _FailingMcpManagerService();
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(fakeService),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
-      );
+      final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
 
       final notifier = testContainer.read(mcpConnectionProvider.notifier);
@@ -693,18 +713,7 @@ void main() {
       'addMcpServer persists credential, server, tools, and state',
       () async {
         final fakeService = _SuccessfulMcpManagerService();
-        final testContainer = ProviderContainer(
-          overrides: [
-            appDatabaseProvider.overrideWithValue(getDatabase()),
-            mcpServersRepositoryProvider.overrideWithValue(
-              mcpServersRepository,
-            ),
-            mcpManagerServiceProvider.overrideWithValue(fakeService),
-            encryptionServiceProvider.overrideWithValue(
-              _FakeEncryptionService(),
-            ),
-          ],
-        );
+        final testContainer = await createInitializedContainer(fakeService);
         addTearDown(testContainer.dispose);
 
         await testContainer
@@ -735,17 +744,8 @@ void main() {
 
     test('addMcpServer cleans up credential when persistence fails', () async {
       mcpServersRepository.addServerError = Exception('insert failed');
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(
-            _SuccessfulMcpManagerService(),
-          ),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
+      final testContainer = await createInitializedContainer(
+        _SuccessfulMcpManagerService(),
       );
       addTearDown(testContainer.dispose);
 
@@ -794,16 +794,9 @@ void main() {
 
       final expectedError = Exception('db offline');
       mcpServersRepository.enabledServersError = expectedError;
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(mcpManagerService),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
+      final testContainer = await createInitializedContainer(
+        mcpManagerService,
+        initialize: false,
       );
       addTearDown(testContainer.dispose);
 
@@ -835,17 +828,8 @@ void main() {
       mcpServersRepository
         ..serverById = _server
         ..syncToolsError = expectedError;
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(
-            _SuccessfulMcpManagerService(),
-          ),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
+      final testContainer = await createInitializedContainer(
+        _SuccessfulMcpManagerService(),
       );
       addTearDown(testContainer.dispose);
 
@@ -867,16 +851,7 @@ void main() {
 
     test('callTool returns service result for connected server tool', () async {
       final fakeService = _SuccessfulMcpManagerService();
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(fakeService),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
-      );
+      final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
       final client = _FakeMcpManagerClient();
       final notifier = testContainer.read(mcpConnectionProvider.notifier)
@@ -905,16 +880,7 @@ void main() {
       final fakeService = _SuccessfulMcpManagerService(
         client: _FakeMcpManagerClient(tokenUpdates: tokenController.stream),
       );
-      final testContainer = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(getDatabase()),
-          mcpServersRepositoryProvider.overrideWithValue(mcpServersRepository),
-          mcpManagerServiceProvider.overrideWithValue(fakeService),
-          encryptionServiceProvider.overrideWithValue(
-            _FakeEncryptionService(),
-          ),
-        ],
-      );
+      final testContainer = await createInitializedContainer(fakeService);
       addTearDown(testContainer.dispose);
 
       await testContainer
