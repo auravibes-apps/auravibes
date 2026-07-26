@@ -5,13 +5,9 @@ import 'package:auravibes_app/data/repositories/service_connection_repository.da
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/services/chatbot_service/provider_factory.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
-import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
-
-final _anthropicSafeToolCallId = RegExp(r'^[a-zA-Z0-9_-]+$');
-final _anthropicSafeToolCallIdChar = RegExp('[a-zA-Z0-9_-]');
 
 class ChatbotService {
   ChatbotService({
@@ -82,20 +78,14 @@ class ChatbotService {
     final ai = await _providerFactory.createGenkit(chatProvider);
     final model = _providerFactory.getModelReference(chatProvider);
 
-    final prompt =
-        'Generate a short, concise title (max 5 words) for a conversation '
-        'that starts with this message: "$firstMessage". '
-        'The title should capture the main topic or theme. '
-        'Respond with only the title, no quotes or extra text.';
-
     try {
       final responseStream = ai.generateStream<Object?, Object?>(
         model: model,
-        prompt: prompt,
+        prompt: conversationTitlePrompt(firstMessage),
         messages: [
           Message(
             role: Role.system,
-            content: [TextPart(text: 'You generate conversation titles.')],
+            content: [TextPart(text: conversationTitleSystemPrompt)],
           ),
         ],
       );
@@ -103,23 +93,18 @@ class ChatbotService {
       final accumulatedTitle = StringBuffer();
       await for (final event in responseStream) {
         accumulatedTitle.write(event.text);
-        yield _processGeneratedTitle(accumulatedTitle.toString(), firstMessage);
+        yield normalizeConversationTitle(
+          accumulatedTitle.toString(),
+          firstMessage,
+        );
       }
     } on Exception catch (_) {
-      yield generateFallbackTitle(firstMessage);
+      yield fallbackConversationTitle(firstMessage);
     }
   }
 
-  static String generateFallbackTitle(String message) {
-    final words = message
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((word) => word.isNotEmpty)
-        .take(4)
-        .join(' ');
-
-    return words.truncateCharacters(30);
-  }
+  static String generateFallbackTitle(String message) =>
+      fallbackConversationTitle(message);
 
   List<Tool<Map<String, Object?>, Object?>>? _defineGenkitTools(
     Genkit ai,
@@ -161,41 +146,20 @@ class ChatbotService {
     return switch (part) {
       ToolRequestPart(:final toolRequest) => ToolRequestPart(
         toolRequest: ToolRequest(
-          ref: _providerSafeToolCallId(toolRequest.ref),
+          ref: providerSafeToolCallId(toolRequest.ref),
           name: toolRequest.name,
           input: toolRequest.input,
         ),
       ),
       ToolResponsePart(:final toolResponse) => ToolResponsePart(
         toolResponse: ToolResponse(
-          ref: _providerSafeToolCallId(toolResponse.ref),
+          ref: providerSafeToolCallId(toolResponse.ref),
           name: toolResponse.name,
           output: toolResponse.output,
         ),
       ),
       _ => part,
     };
-  }
-
-  String _providerSafeToolCallId(String? rawId) {
-    final raw = rawId?.trim() ?? '';
-    if (raw.isEmpty) return 'tool_call';
-    if (_anthropicSafeToolCallId.hasMatch(raw)) return raw;
-
-    final buffer = StringBuffer();
-    for (final codeUnit in raw.codeUnits) {
-      final char = String.fromCharCode(codeUnit);
-      if (_anthropicSafeToolCallIdChar.hasMatch(char)) {
-        buffer.write(char);
-      } else {
-        buffer
-          ..write('_x')
-          ..write(codeUnit.toRadixString(16))
-          ..write('_');
-      }
-    }
-
-    return buffer.toString();
   }
 
   String? _extractThinking(GenerateResponseChunk<Object?> chunk) {
@@ -217,68 +181,27 @@ class ChatbotService {
         .map((req) => ToolRequestPart(toolRequest: req))
         .toList();
 
-    return ChatResult<ChatMessage>(
-      output: ChatMessage(
-        role: ChatMessageRole.model,
-        parts: toolCallParts,
-      ),
-      finishReason: _finishReasonFor(
-        hasToolRequests: finalResponse.toolRequests.isNotEmpty,
-        genkitReasonValue:
-            finalResponse.candidates?.firstOrNull?.finishReason.value,
-      ),
-      usage: LanguageModelUsage(
-        promptTokens: finalResponse.usage?.inputTokens?.toInt(),
-        responseTokens: finalResponse.usage?.outputTokens?.toInt(),
-        totalTokens: finalResponse.usage?.totalTokens?.toInt(),
-      ),
+    final normalized = normalizeCompletionResult(
+      hasToolCalls: finalResponse.toolRequests.isNotEmpty,
+      providerFinishReason:
+          finalResponse.candidates?.firstOrNull?.finishReason.value,
+      promptTokens: finalResponse.usage?.inputTokens?.toInt(),
+      responseTokens: finalResponse.usage?.outputTokens?.toInt(),
+      totalTokens: finalResponse.usage?.totalTokens?.toInt(),
       metadata:
           finalResponse.candidates?.firstOrNull?.message.metadata
               ?.cast<String, Object?>() ??
           const <String, Object?>{},
     );
-  }
 
-  ChatFinishReason _finishReasonFor({
-    required bool hasToolRequests,
-    required String? genkitReasonValue,
-  }) {
-    if (hasToolRequests) {
-      return ChatFinishReason.toolCalls;
-    }
-
-    return switch (genkitReasonValue) {
-      null => ChatFinishReason.unspecified,
-      'stop' => ChatFinishReason.stop,
-      'length' => ChatFinishReason.length,
-      'interrupted' => ChatFinishReason.interrupted,
-      _ => ChatFinishReason.other,
-    };
-  }
-
-  String _processGeneratedTitle(String title, String firstMessage) {
-    var processedTitle = title.trim();
-    // Both quote chars must be expressible; prefer-single-quotes forces
-    // escaping the apostrophe inside the single-quoted literal.
-    // ignore: avoid_escaping_inner_quotes
-    for (final quote in const ['"', '\'']) {
-      if (processedTitle.length > 1 &&
-          processedTitle.startsWith(quote) &&
-          processedTitle.endsWith(quote)) {
-        processedTitle = processedTitle.withoutEdgeCharacters();
-      }
-    }
-    if (processedTitle.startsWith('Title:')) {
-      processedTitle = processedTitle.replaceFirst('Title:', '').trim();
-    }
-    if (processedTitle.startsWith('Conversation:')) {
-      processedTitle = processedTitle.replaceFirst('Conversation:', '').trim();
-    }
-
-    if (processedTitle.isEmpty) {
-      return generateFallbackTitle(firstMessage);
-    }
-
-    return processedTitle.truncateCharacters(50);
+    return ChatResult<ChatMessage>(
+      output: ChatMessage(
+        role: ChatMessageRole.model,
+        parts: toolCallParts,
+      ),
+      finishReason: normalized.finishReason,
+      usage: normalized.usage,
+      metadata: normalized.metadata,
+    );
   }
 }

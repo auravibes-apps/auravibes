@@ -74,7 +74,10 @@ List<Map<String, dynamic>> buildCloudSkillContextMessages({
 List<Map<String, dynamic>> cloudRequestMessagesWithToolExchanges({
   required Iterable<Map<String, dynamic>> baseMessages,
   required Iterable<Map<String, dynamic>> toolExchanges,
-}) => [...baseMessages, ...toolExchanges];
+}) => composeProviderRequestMessages(
+  baseMessages: baseMessages,
+  toolExchanges: toolExchanges,
+).map((message) => Map<String, dynamic>.from(message)).toList(growable: false);
 
 const _providerToolBatchesMetadataKey = 'providerToolBatches';
 
@@ -138,33 +141,50 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
           .whereType<ConversationToolCall>()
           .toList(growable: false);
       if (batchCalls.isEmpty) continue;
-      exchanges.add(Map<String, dynamic>.from(assistant));
-      for (final call in batchCalls) {
-        replayedCallIds.add(call.stableId);
-        exchanges.add({
-          'role': 'tool',
-          'tool_call_id': call.stableId,
-          'content': call.resultJson ?? call.status,
-        });
-      }
+      replayedCallIds.addAll(batchCalls.map((call) => call.stableId));
+      exchanges.addAll(
+        providerToolExchangeMessages(
+          [
+            for (final call in batchCalls)
+              ProviderToolCallRecord(
+                id: call.stableId,
+                name: call.name,
+                arguments: Map<String, Object?>.from(
+                  jsonDecode(call.argumentsJson) as Map,
+                ),
+              ),
+          ],
+          assistantContent: assistant['content'] as String?,
+          resultsByCallId: {
+            for (final call in batchCalls)
+              call.stableId: call.resultJson ?? call.status,
+          },
+        ).map((message) => Map<String, dynamic>.from(message)),
+      );
     }
   }
   final unbatchedCalls = calls
       .where((call) => !replayedCallIds.contains(call.stableId))
       .toList(growable: false);
   if (unbatchedCalls.isNotEmpty) {
-    exchanges.add({
-      'role': 'assistant',
-      'content': null,
-      'tool_calls': unbatchedCalls.map(_persistedProviderToolCall).toList(),
-    });
-    for (final call in unbatchedCalls) {
-      exchanges.add({
-        'role': 'tool',
-        'tool_call_id': call.stableId,
-        'content': call.resultJson ?? call.status,
-      });
-    }
+    exchanges.addAll(
+      providerToolExchangeMessages(
+        [
+          for (final call in unbatchedCalls)
+            ProviderToolCallRecord(
+              id: call.stableId,
+              name: call.name,
+              arguments: Map<String, Object?>.from(
+                jsonDecode(call.argumentsJson) as Map,
+              ),
+            ),
+        ],
+        resultsByCallId: {
+          for (final call in unbatchedCalls)
+            call.stableId: call.resultJson ?? call.status,
+        },
+      ).map((message) => Map<String, dynamic>.from(message)),
+    );
   }
   return exchanges;
 }
@@ -232,13 +252,6 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
   final ServerToolRuntime? toolRuntime;
   final ConversationProviderTransport? providerTransport;
   final ConversationHostLookup lookup;
-
-  static const _compactionPrompt =
-      'Create a comprehensive but concise summary of this conversation. '
-      'Preserve user goals, constraints, decisions, current progress, technical '
-      'references, resolved errors, pending tasks, and relevant tool results. '
-      'Do not invent facts, expose sensitive tool output, or mark unresolved '
-      'work complete.';
 
   @override
   Future<ConversationEngineResult> executeTurn(
@@ -724,25 +737,27 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
       {
         'model': config.modelId,
         'messages': [
-          {'role': 'system', 'content': _compactionPrompt},
+          {'role': 'system', 'content': conversationCompactionSystemPrompt},
           for (final message in compactable)
             {'role': message.role, 'content': message.content},
           {
             'role': 'user',
-            'content': 'Summarize the conversation above.',
+            'content': conversationCompactionRequestPrompt,
           },
         ],
         'stream': false,
       },
     );
-    final summary =
+    final summaryText =
         response.message?.content
             .where((part) => part.isText)
             .map((part) => part.text ?? '')
-            .join()
-            .trim() ??
+            .join() ??
         '';
-    if (summary.isEmpty) {
+    late final String summary;
+    try {
+      summary = requireCompactionSummary(summaryText);
+    } on FormatException {
       throw const ConversationEngineConfigurationException(
         'compaction_summary',
       );
@@ -875,12 +890,6 @@ Uri providerRequestUri(String providerId, Uri baseUri) {
   final path = baseUri.path.replaceFirst(RegExp(r'/$'), '');
   return baseUri.replace(path: '$path/$endpoint', query: null);
 }
-
-Map<String, Object?> _persistedProviderToolCall(ConversationToolCall call) => {
-  'id': call.stableId,
-  'type': 'function',
-  'function': {'name': call.name, 'arguments': call.argumentsJson},
-};
 
 List<ServerToolRequest> _toolRequests(Map<String, dynamic>? raw) {
   final choices = raw?['choices'];

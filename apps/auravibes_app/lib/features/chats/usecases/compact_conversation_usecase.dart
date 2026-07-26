@@ -25,7 +25,12 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/chatbot_service_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/services/chatbot_service/chatbot_service.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' show ChatMessage;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        ChatMessage,
+        conversationCompactionRequestPrompt,
+        conversationCompactionSystemPrompt,
+        requireCompactionSummary;
 import 'package:riverpod/src/providers/provider.dart';
 
 class CompactConversationUsecase {
@@ -54,25 +59,6 @@ class CompactConversationUsecase {
       LocaleKeys.compaction_errors_auto_blocked;
   static const BuildPromptChatMessages _buildPromptChatMessages =
       BuildPromptChatMessages();
-
-  static const String _compactionSystemPrompt =
-      ''
-      'You are a conversation compaction assistant. Your task is to create '
-      'a comprehensive but concise summary of the conversation messages '
-      'provided. Preserve all of the following:\n'
-      '- User goals and intents\n'
-      '- Key constraints and requirements\n'
-      '- Important decisions made\n'
-      '- Current task status and progress\n'
-      '- Files, identifiers, and technical references mentioned\n'
-      '- Errors encountered and their resolutions\n'
-      '- Pending tasks and open questions\n'
-      '- Concise facts from tool outputs that affect the task\n\n'
-      'Do NOT:\n'
-      '- Invent code state or file contents you have not seen\n'
-      '- Preserve sensitive tool output verbatim\n'
-      '- Mark unresolved tool calls as completed\n'
-      '- Add information not present in the conversation\n';
 
   Future<CompactionExecutionState> call({
     required String conversationId,
@@ -183,11 +169,10 @@ class CompactConversationUsecase {
     List<MessageEntity> messages,
   ) async {
     return [
-      ChatMessage.system(_compactionSystemPrompt),
+      ChatMessage.system(conversationCompactionSystemPrompt),
       ...await _buildPromptChatMessages.call(messages),
       ChatMessage.user(
-        'Please create a comprehensive summary of the above conversation. '
-        'Preserve all goals, decisions, technical details, and current status.',
+        conversationCompactionRequestPrompt,
       ),
     ];
   }
@@ -207,7 +192,7 @@ class CompactConversationUsecase {
       chunks.add(chunk.output.text);
     }
 
-    return chunks.join();
+    return requireCompactionSummary(chunks.join());
   }
 
   Future<void> _persistCompactionSummary({

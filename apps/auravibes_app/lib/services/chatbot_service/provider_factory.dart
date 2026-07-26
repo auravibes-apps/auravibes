@@ -29,13 +29,11 @@ class ProviderFactory {
     final type = config.modelsProvider.type;
     final connectionUrl = _blankToNull(config.modelConnection.url);
     final baseUrl = connectionUrl ?? _blankToNull(config.modelsProvider.url);
-    final shouldUseAnthropic = _shouldUseAnthropic(type, connectionUrl);
-    final shouldUseReasoningOpenAI = _shouldUseOpenAICompatReasoning(config);
-    final shouldUseCodexOAuth = _shouldUseCodexOAuth(config);
+    final runtime = _runtimeSelection(config, connectionUrl);
 
     return Genkit(
       plugins: [
-        if (shouldUseAnthropic)
+        if (runtime.runtime == ProviderRuntime.anthropic)
           anthropic(apiKey: apiKey, baseUrl: baseUrl)
         else if (type == ModelProvidersType.openrouter)
           AppChatCompletionsPlugin(
@@ -49,14 +47,15 @@ class ProviderFactory {
               ),
             ],
           )
-        else if (shouldUseCodexOAuth)
+        else if (runtime.runtime == ProviderRuntime.codexOAuth)
           AppOpenAICodexPlugin(
             accessToken: apiKey,
             accountId: config.modelConnection.oauthMetadata?.accountId,
             sessionId: sessionId,
             models: [config.workspaceModelSelection.modelId],
           )
-        else if (shouldUseReasoningOpenAI && baseUrl != null)
+        else if (runtime.runtime == ProviderRuntime.openAiReasoning &&
+            baseUrl != null)
           AppChatCompletionsPlugin(
             name: _openAIReasoningNamespace,
             baseUrl: baseUrl,
@@ -109,7 +108,8 @@ class ProviderFactory {
     final modelId = config.workspaceModelSelection.modelId;
     final connectionUrl = config.modelConnection.url;
 
-    if (_shouldUseAnthropic(type, connectionUrl)) {
+    final runtime = _runtimeSelection(config, connectionUrl);
+    if (runtime.runtime == ProviderRuntime.anthropic) {
       return anthropic.model(modelId);
     }
 
@@ -117,12 +117,12 @@ class ProviderFactory {
       return modelRef('openrouter/$modelId');
     }
 
-    if (_shouldUseCodexOAuth(config)) {
+    if (runtime.runtime == ProviderRuntime.codexOAuth) {
       return openAICodexModel(modelId);
     }
 
-    if (_shouldUseOpenAICompatReasoning(config)) {
-      return modelRef('$_openAIReasoningNamespace/$modelId');
+    if (runtime.runtime == ProviderRuntime.openAiReasoning) {
+      return modelRef('${runtime.modelNamespace}/$modelId');
     }
 
     return openAI.model(modelId);
@@ -131,11 +131,9 @@ class ProviderFactory {
   T? getGenerationConfig<T>(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
-    if (!_shouldUseAnthropic(
-      config.modelsProvider.type,
-      config.modelConnection.url,
-    )) {
-      if (_shouldUseOpenAICompatReasoning(config)) {
+    final runtime = _runtimeSelection(config, config.modelConnection.url);
+    if (runtime.runtime != ProviderRuntime.anthropic) {
+      if (runtime.runtime == ProviderRuntime.openAiReasoning) {
         return OpenAICompatReasoningOptions(
               reasoningType: 'enabled',
             )
@@ -145,12 +143,11 @@ class ProviderFactory {
       return null;
     }
 
-    final modelId = config.workspaceModelSelection.modelId;
     if (!config.workspaceModelSelection.supportsReasoning) {
       return null;
     }
 
-    final usesAdaptiveThinking = _usesAdaptiveThinking(modelId);
+    final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
 
     return AnthropicOptions(
           thinking: ThinkingConfig(
@@ -161,33 +158,20 @@ class ProviderFactory {
         as T;
   }
 
-  bool _shouldUseAnthropic(ModelProvidersType? type, String? connectionUrl) {
-    return type == ModelProvidersType.anthropic && connectionUrl == null;
-  }
-
-  bool _shouldUseOpenAICompatReasoning(
+  ProviderRuntimeSelection _runtimeSelection(
     WorkspaceModelSelectionWithConnectionEntity config,
-  ) {
-    if (config.modelsProvider.type != ModelProvidersType.openai) return false;
-    if (!config.workspaceModelSelection.supportsReasoning) return false;
-
-    return config.modelConnection.url != null ||
-        config.modelsProvider.url != null;
-  }
-
-  bool _shouldUseCodexOAuth(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) {
-    return config.modelConnection.authMode == ModelProviderAuthMode.oauth2 &&
-        isOpenAICodexProvider(config.modelConnection.modelId);
-  }
-
-  bool _usesAdaptiveThinking(String modelId) {
-    return modelId.startsWith('claude-mythos-preview') ||
-        modelId.startsWith('claude-opus-4-7') ||
-        modelId.startsWith('claude-opus-4-6') ||
-        modelId.startsWith('claude-sonnet-4-6');
-  }
+    String? connectionUrl,
+  ) => selectProviderRuntime(
+    providerId: config.modelsProvider.type?.name ?? 'openai',
+    hasCustomUrl:
+        connectionUrl != null ||
+        (config.modelsProvider.type == ModelProvidersType.openai &&
+            _blankToNull(config.modelsProvider.url) != null),
+    supportsReasoning: config.workspaceModelSelection.supportsReasoning,
+    usesOAuth: config.modelConnection.authMode == ModelProviderAuthMode.oauth2,
+    isCodexOAuth: isOpenAICodexProvider(config.modelConnection.modelId),
+    modelId: config.workspaceModelSelection.modelId,
+  );
 
   String? _blankToNull(String? value) {
     final trimmed = value?.trim();

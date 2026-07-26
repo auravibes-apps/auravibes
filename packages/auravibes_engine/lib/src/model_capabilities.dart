@@ -93,7 +93,15 @@ bool _supportsPriorityMode(Map<String, dynamic> json) {
   final provider = fast == null ? null : _optionalMap(fast, 'provider');
   final body = provider == null ? null : _optionalMap(provider, 'body');
 
-  return body?['service_tier'] == 'priority';
+  final serviceTier = body?['service_tier'];
+  if (serviceTier == null) return false;
+  if (serviceTier is! String) {
+    throw const FormatException(
+      'Model capability experimental.modes.fast.provider.body.service_tier '
+      'must be a string.',
+    );
+  }
+  return serviceTier == 'priority';
 }
 
 Map<String, dynamic> _requiredMap(Map<String, dynamic> json, String field) {
@@ -113,7 +121,7 @@ Map<String, dynamic>? _optionalMap(Map<String, dynamic> json, String field) {
 
 String _requiredString(Map<String, dynamic> json, String field) {
   final value = json[field];
-  if (value is String) return value;
+  if (value is String && value.trim().isNotEmpty) return value;
 
   throw FormatException('Model capability "$field" must be a string.');
 }
@@ -127,7 +135,7 @@ String? _optionalString(Map<String, dynamic> json, String field) {
 int _requiredInt(Map<String, dynamic> json, String field) {
   final key = field.substring(field.lastIndexOf('.') + 1);
   final value = json[key];
-  if (value is int) return value;
+  if (value is int && value >= 0) return value;
 
   throw FormatException('Model capability "$field" must be an integer.');
 }
@@ -147,7 +155,7 @@ num? _optionalNum(Map<String, dynamic>? json, String field) {
     return null;
   }
   final value = json[field];
-  if (value is num) return value;
+  if (value is num && value.isFinite && value >= 0) return value;
 
   throw FormatException('Model capability "cost.$field" must be a number.');
 }

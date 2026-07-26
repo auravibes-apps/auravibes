@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:serverpod/serverpod.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show fallbackConversationTitle;
 
 import '../../../generated/protocol.dart';
 import '../../objects/object_store.dart';
@@ -23,12 +25,6 @@ Stream<T> cancellationCheckedStream<T>(
     if (await isCancelled()) throw const ConversationCancelledException();
     yield value;
   }
-}
-
-String fallbackConversationTitle(String content) {
-  final normalized = content.trim().replaceAll(RegExp(r'\s+'), ' ');
-  if (normalized.length <= 30) return normalized;
-  return '${normalized.substring(0, 27).trimRight()}...';
 }
 
 abstract interface class ConversationCancellationProbe {

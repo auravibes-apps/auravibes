@@ -206,7 +206,7 @@ void main() {
           'enum': ['template-credential'],
         },
       },
-      'required': ['query', 'credentialId'],
+      'required': ['query'],
       'additionalProperties': false,
     });
 
@@ -297,13 +297,13 @@ void main() {
             'enum': ['credential-1'],
           },
         },
-        'required': ['query', 'credentialId'],
+        'required': ['query'],
       },
     );
   });
 
   test(
-    'credential schemas require one eligible opaque ID',
+    'credential schemas require explicit selection only with multiple IDs',
     () {
       expect(
         cloudTemplateInputSchema(
@@ -323,6 +323,14 @@ void main() {
         ),
       );
       expect(
+        cloudTemplateInputSchema(
+          '[{"name":"query","type":"string"}]',
+          requiresCredential: true,
+          credentialIds: const ['credential-1'],
+        )['required'],
+        ['query'],
+      );
+      expect(
         cloudNativeInputSchema(
           const {'type': 'object', 'properties': <String, Object?>{}},
           requiresCredential: true,
@@ -333,15 +341,10 @@ void main() {
     },
   );
 
-  test('malformed template inputs produce a safe empty schema', () {
+  test('malformed template inputs fail fast', () {
     expect(
-      cloudTemplateInputSchema('{not-json', requiresCredential: false),
-      {
-        'type': 'object',
-        'properties': <String, Object?>{},
-        'required': <String>[],
-        'additionalProperties': false,
-      },
+      () => cloudTemplateInputSchema('{not-json', requiresCredential: false),
+      throwsFormatException,
     );
   });
 

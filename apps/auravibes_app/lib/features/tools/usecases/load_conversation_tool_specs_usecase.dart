@@ -80,7 +80,7 @@ class LoadConversationToolSpecsUsecase {
         .map((tool) => tool.toolId)
         .toSet();
 
-    return [
+    return agent.uniqueToolSpecs([
       ...toolSpecs,
       ...skillToolSpecs.where(_isAvailableSkillControlTool),
       ...skillTemplateToolSpecs.where(
@@ -90,7 +90,7 @@ class LoadConversationToolSpecsUsecase {
         (spec) => enabledSkillToolNames.contains(spec.name),
       ),
       agent.runSubAgentToolSpec,
-    ];
+    ]);
   }
 
   bool _isAvailableSkillControlTool(ToolSpec spec) {
