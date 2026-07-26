@@ -95,6 +95,7 @@ class WorkspaceStateUseCases {
     Session session, {
     required String userId,
     required PatchWorkspaceStateRequest request,
+    Future<void> Function(Transaction transaction)? guard,
   }) async {
     if (request.requestId.isEmpty ||
         request.operations.isEmpty ||
@@ -145,6 +146,7 @@ class WorkspaceStateUseCases {
         request.workspaceId,
         transaction,
       );
+      await guard?.call(transaction);
       final now = DateTime.now().toUtc();
       final changed = <WorkspaceResource>[];
       for (final operation in request.operations) {

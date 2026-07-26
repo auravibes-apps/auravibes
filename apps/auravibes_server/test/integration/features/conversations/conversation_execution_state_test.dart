@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_engine_host.dart';
 import 'package:auravibes_server/src/features/conversations/engine/conversation_host_effects.dart';
+import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
 import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_dispatcher.dart';
 import 'package:auravibes_server/src/features/conversations/workers/conversation_job_leases.dart';
@@ -125,6 +126,508 @@ void main() {
         },
         onError: (error, stackTrace) => fail('$error\n$stackTrace'),
         recoveryInterval: const Duration(milliseconds: 1),
+      );
+
+      Future<({ConversationTurn turn, List<String> toolCallIds})>
+      stageAwaitingApproval(
+        _ExecutionFixture fixture, {
+        required int calls,
+      }) async {
+        final now = DateTime.now().toUtc();
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        final turn = (await ConversationTurn.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final assistant = (await ConversationMessage.db.findById(
+          fixture.database,
+          turn.assistantMessageId!,
+        ))!;
+        final execution = (await ConversationExecution.db.findById(
+          fixture.database,
+          conversation.activeExecutionId!,
+        ))!;
+        final initialJob = (await ConversationJob.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.workspaceId.equals(fixture.workspaceId) &
+              table.turnId.equals(turn.id),
+        ))!;
+        await ConversationJob.db.updateRow(
+          fixture.database,
+          initialJob.copyWith(status: 'completed', updatedAt: now),
+        );
+        await ConversationTurn.db.updateRow(
+          fixture.database,
+          turn.copyWith(
+            status: ConversationStatuses.awaitingApproval,
+            revision: 2,
+            updatedAt: now,
+          ),
+        );
+        await ConversationMessage.db.updateRow(
+          fixture.database,
+          assistant.copyWith(
+            status: ConversationStatuses.awaitingApproval,
+            updatedAt: now,
+          ),
+        );
+        await ConversationExecution.db.updateRow(
+          fixture.database,
+          execution.copyWith(
+            status: ConversationStatuses.awaitingApproval,
+            updatedAt: now,
+          ),
+        );
+        await Conversation.db.updateRow(
+          fixture.database,
+          conversation.copyWith(
+            executionState: ConversationStatuses.awaitingApproval,
+            updatedAt: now,
+          ),
+        );
+        final toolCallIds = <String>[];
+        for (var index = 0; index < calls; index++) {
+          final stableId = 'tool-call-${index + 1}';
+          toolCallIds.add(stableId);
+          await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationDatabaseId,
+              turnId: turn.id!,
+              messageId: assistant.id!,
+              stableId: stableId,
+              name: 'tool',
+              argumentsJson: '{}',
+              argumentsDigest: 'digest-${index + 1}',
+              status: 'pending',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+        }
+        return (turn: turn, toolCallIds: toolCallIds);
+      }
+
+      ConversationUseCases decisionUseCases() => ConversationUseCases(
+        conversation_repo.ConversationRepository(),
+        publishConversationJob: (_, _) async {},
+      );
+
+      test(
+        'Skip queues a continuation that replays the denied tool result',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+
+          await decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'skip-1',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.single,
+              argumentsDigest: 'digest-1',
+              expectedTurnRevision: 2,
+              decision: 'deny',
+            ),
+          );
+
+          final call = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(staged.toolCallIds.single),
+          ))!;
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          final continuation = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.requestId.equals('skip-1'),
+          ))!;
+          expect(call.status, 'denied');
+          expect(turn.status, ConversationStatuses.queued);
+          expect(continuation.status, ConversationJobStatuses.queued);
+          expect(continuation.payloadJson, contains(fixture.userId));
+        },
+      );
+
+      test(
+        'recovery records an interrupted running tool without reexecution',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final existing = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(staged.toolCallIds.single),
+          ))!;
+          await ConversationToolCall.db.updateRow(
+            fixture.database,
+            existing.copyWith(
+              status: 'running',
+              decision: 'approve',
+              updatedAt: DateTime.now().toUtc(),
+            ),
+          );
+          var executions = 0;
+          final runtime = ServerToolRuntime(
+            executor: (_, _, _, _) async {
+              executions++;
+              return {'unexpected': true};
+            },
+          );
+
+          await runtime.handle(
+            fixture.database,
+            turn: staged.turn,
+            messageId: existing.messageId,
+            request: ServerToolRequest(
+              id: existing.stableId,
+              name: existing.name,
+              arguments: const {},
+            ),
+          );
+
+          final recovered = (await ConversationToolCall.db.findById(
+            fixture.database,
+            existing.id!,
+          ))!;
+          expect(executions, 0);
+          expect(recovered.status, 'executionError');
+          expect(recovered.resultJson, contains('interrupted'));
+        },
+      );
+
+      test(
+        'removed approved tool resolves its existing durable call',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final existing = (await ConversationToolCall.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.stableId.equals(staged.toolCallIds.single),
+          ))!;
+          await ConversationToolCall.db.updateRow(
+            fixture.database,
+            existing.copyWith(
+              status: 'approved',
+              decision: 'approve',
+              updatedAt: DateTime.now().toUtc(),
+            ),
+          );
+
+          await ServerToolRuntime().handle(
+            fixture.database,
+            turn: staged.turn,
+            messageId: existing.messageId,
+            request: ServerToolRequest(
+              id: existing.stableId,
+              name: existing.name,
+              arguments: const {},
+            ),
+          );
+
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.stableId.equals(existing.stableId),
+          );
+          expect(calls, hasLength(1));
+          expect(calls.single.status, 'toolNotFound');
+          expect(calls.single.resultJson, contains('no longer available'));
+        },
+      );
+
+      test('Skip leaves other pending approvals awaiting a decision', () async {
+        final fixture = await prepareExecution();
+        final staged = await stageAwaitingApproval(fixture, calls: 2);
+
+        await decisionUseCases().submitToolDecision(
+          fixture.database,
+          userId: fixture.userId,
+          request: SubmitToolDecisionRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'skip-one-of-two',
+            turnId: staged.turn.requestId,
+            toolCallId: staged.toolCallIds.first,
+            argumentsDigest: 'digest-1',
+            expectedTurnRevision: 2,
+            decision: 'deny',
+          ),
+        );
+
+        final calls = await ConversationToolCall.db.find(
+          fixture.database,
+          where: (table) => table.turnId.equals(staged.turn.id),
+          orderBy: (table) => table.stableId,
+        );
+        final turn = (await ConversationTurn.db.findById(
+          fixture.database,
+          staged.turn.id!,
+        ))!;
+        final execution = (await ConversationExecution.db.findFirstRow(
+          fixture.database,
+          where: (table) =>
+              table.conversationId.equals(fixture.conversationDatabaseId),
+        ))!;
+        final conversation = (await Conversation.db.findById(
+          fixture.database,
+          fixture.conversationDatabaseId,
+        ))!;
+        expect(calls.map((call) => call.status), ['denied', 'pending']);
+        expect(turn.status, ConversationStatuses.awaitingApproval);
+        expect(execution.status, ConversationStatuses.awaitingApproval);
+        expect(
+          conversation.executionState,
+          ConversationStatuses.awaitingApproval,
+        );
+        expect(
+          await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.requestId.equals('skip-one-of-two'),
+          ),
+          isNull,
+        );
+      });
+
+      test(
+        'reports stale revision for a second pending decision from one snapshot',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 2);
+          final useCases = decisionUseCases();
+
+          await useCases.submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approve-first',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.first,
+              argumentsDigest: 'digest-1',
+              expectedTurnRevision: 2,
+              decision: 'approve',
+            ),
+          );
+          await expectLater(
+            useCases.submitToolDecision(
+              fixture.database,
+              userId: fixture.userId,
+              request: SubmitToolDecisionRequest(
+                workspaceId: fixture.workspaceId,
+                requestId: 'approve-second-stale',
+                turnId: staged.turn.requestId,
+                toolCallId: staged.toolCallIds.last,
+                argumentsDigest: 'digest-2',
+                expectedTurnRevision: 2,
+                decision: 'approve',
+              ),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.staleRevision,
+              ),
+            ),
+          );
+
+          final result = await useCases.submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approve-second-retry',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.last,
+              argumentsDigest: 'digest-2',
+              expectedTurnRevision: 3,
+              decision: 'approve',
+            ),
+          );
+
+          expect(result.status, ConversationStatuses.queued);
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+            orderBy: (table) => table.stableId,
+          );
+          expect(calls.map((call) => call.status), ['approved', 'approved']);
+        },
+      );
+
+      test(
+        'tool decisions replay by request ID and reject a changed decision',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final useCases = decisionUseCases();
+          final request = SubmitToolDecisionRequest(
+            workspaceId: fixture.workspaceId,
+            requestId: 'idempotent-decision',
+            turnId: staged.turn.requestId,
+            toolCallId: staged.toolCallIds.single,
+            argumentsDigest: 'digest-1',
+            expectedTurnRevision: 2,
+            decision: 'approve',
+          );
+
+          final first = await useCases.submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          );
+          final replay = await useCases.submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: request,
+          );
+
+          expect(replay.toJson(), first.toJson());
+          expect(
+            await ConversationEvent.db.find(
+              fixture.database,
+              where: (table) => table.requestId.equals(request.requestId),
+            ),
+            hasLength(1),
+          );
+          await expectLater(
+            useCases.submitToolDecision(
+              fixture.database,
+              userId: fixture.userId,
+              request: request.copyWith(decision: 'deny'),
+            ),
+            throwsA(
+              isA<ConversationException>().having(
+                (error) => error.code,
+                'code',
+                ConversationErrorCode.idempotencyConflict,
+              ),
+            ),
+          );
+        },
+      );
+
+      test(
+        'Stop all denies remaining approvals and cancels the execution',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 2);
+
+          await decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'stop-all',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.first,
+              argumentsDigest: 'digest-1',
+              expectedTurnRevision: 2,
+              decision: 'deny',
+              stopAll: true,
+            ),
+          );
+
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          );
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final assistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            staged.turn.assistantMessageId!,
+          ))!;
+          final execution = (await ConversationExecution.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          ))!;
+          expect(
+            calls
+                .map(
+                  (call) => call.status,
+                )
+                .toSet(),
+            {'denied'},
+          );
+          expect(turn.status, ConversationStatuses.cancelled);
+          expect(assistant.status, ConversationStatuses.cancelled);
+          expect(assistant.metadataJson, '{"errorCode":"cancelled"}');
+          expect(execution.status, ConversationStatuses.cancelled);
+          expect(conversation.executionState, 'idle');
+          expect(conversation.activeExecutionId, isNull);
+        },
+      );
+
+      test(
+        'Stop all applies after a prior Skip replay for the same call',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 2);
+
+          await decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'skip-a',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.first,
+              argumentsDigest: 'digest-1',
+              expectedTurnRevision: 2,
+              decision: 'deny',
+            ),
+          );
+          await decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'stop-all-a',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.first,
+              argumentsDigest: 'digest-1',
+              // A replay carries the revision from the original prompt.
+              expectedTurnRevision: 2,
+              decision: 'deny',
+              stopAll: true,
+            ),
+          );
+
+          final calls = await ConversationToolCall.db.find(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          );
+          final turn = await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          );
+          final execution = await ConversationExecution.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationDatabaseId),
+          );
+
+          expect(calls.map((call) => call.status).toSet(), {'denied'});
+          expect(turn!.status, ConversationStatuses.cancelled);
+          expect(execution!.status, ConversationStatuses.cancelled);
+        },
       );
 
       test(
@@ -545,10 +1048,32 @@ void main() {
             fixture.database,
             turn.id!,
           );
+          final completedConversation = await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          );
+          final assistantMessages = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.role.equals('assistant'),
+            orderBy: (table) => table.id,
+          );
 
           expect(host.calls, 1);
           expect(resumedJob!.status, 'completed');
           expect(completedTurn!.status, 'completed');
+          expect(
+            assistantMessages.map((message) => message.stableId),
+            [assistant.stableId, 'approve-1:assistant'],
+          );
+          expect(assistantMessages.map((message) => message.status), [
+            'sent',
+            'sent',
+          ]);
+          expect(completedConversation!.executionState, 'idle');
+          expect(completedConversation.activeExecutionId, isNull);
         },
       );
 
@@ -575,6 +1100,208 @@ void main() {
           await _waitForIdle(fixture, endpoints);
 
           expect(host.calls, 1);
+        },
+      );
+
+      test(
+        'stop wins when it races approval pausing after the host returns',
+        () async {
+          final fixture = await prepareExecution();
+          final pauseEntered = Completer<void>();
+          final releasePause = Completer<void>();
+          final worker = ConversationWorker(
+            host: _AwaitingApprovalHost(),
+            beforePauseForApproval: () async {
+              if (!pauseEntered.isCompleted) pauseEntered.complete();
+              await releasePause.future;
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await pauseEntered.future.timeout(const Duration(seconds: 2));
+          final snapshot = await endpoints.conversation.getConversationSnapshot(
+            fixture.session,
+            GetConversationRequest(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationId,
+            ),
+          );
+          await endpoints.conversation.stopConversation(
+            fixture.session,
+            StopConversationRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'stop-before-pause',
+              conversationId: fixture.conversationId,
+              expectedProjectionRevision:
+                  snapshot.conversation.projectionRevision,
+            ),
+          );
+          releasePause.complete();
+          await running.timeout(const Duration(seconds: 2));
+
+          final conversation = (await Conversation.db.findById(
+            fixture.database,
+            fixture.conversationDatabaseId,
+          ))!;
+          final execution = (await ConversationExecution.db.findFirstRow(
+            fixture.database,
+            where: (table) =>
+                table.workspaceId.equals(fixture.workspaceId) &
+                table.stableId.equals(snapshot.activeExecution!.id),
+          ))!;
+          final turn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.requestId.equals(execution.stableId),
+          ))!;
+          final assistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            turn.assistantMessageId!,
+          ))!;
+          expect(turn.status, ConversationStatuses.cancelled);
+          expect(assistant.status, ConversationStatuses.cancelled);
+          expect(execution.status, ConversationStatuses.cancelled);
+          expect(conversation.executionState, 'idle');
+          expect(conversation.activeExecutionId, isNull);
+        },
+      );
+
+      test(
+        'approval pause and decision submission complete without lock inversion',
+        () async {
+          final fixture = await prepareExecution();
+          final staged = await stageAwaitingApproval(fixture, calls: 1);
+          final job = (await ConversationJob.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.turnId.equals(staged.turn.id),
+          ))!;
+          await ConversationJob.db.updateRow(
+            fixture.database,
+            job.copyWith(
+              status: ConversationJobStatuses.queued,
+              availableAt: DateTime.now().toUtc(),
+              updatedAt: DateTime.now().toUtc(),
+            ),
+          );
+          final pauseTurnLocked = Completer<void>();
+          final releasePause = Completer<void>();
+          final worker = ConversationWorker(
+            host: _AwaitingApprovalHost(),
+            afterApprovalTurnLock: () async {
+              pauseTurnLocked.complete();
+              await releasePause.future;
+            },
+          );
+
+          final running = runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          await pauseTurnLocked.future.timeout(const Duration(seconds: 2));
+          final decision = decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approve-racing-pause',
+              turnId: staged.turn.requestId,
+              toolCallId: staged.toolCallIds.single,
+              argumentsDigest: 'digest-1',
+              expectedTurnRevision: 3,
+              decision: 'approve',
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          releasePause.complete();
+
+          await Future.wait([running, decision]).timeout(
+            const Duration(seconds: 2),
+          );
+          final turn = (await ConversationTurn.db.findById(
+            fixture.database,
+            staged.turn.id!,
+          ))!;
+          expect(turn.status, ConversationStatuses.queued);
+        },
+      );
+
+      test(
+        'a second approval pause belongs to its resumed phase assistant',
+        () async {
+          final fixture = await prepareExecution();
+          final worker = ConversationWorker(host: _AwaitingApprovalHost());
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+          final firstTurn = (await ConversationTurn.db.findFirstRow(
+            fixture.database,
+            where: (table) => table.conversationId.equals(
+              fixture.conversationDatabaseId,
+            ),
+          ))!;
+          final firstAssistant = (await ConversationMessage.db.findById(
+            fixture.database,
+            firstTurn.assistantMessageId!,
+          ))!;
+          final now = DateTime.now().toUtc();
+          await ConversationToolCall.db.insertRow(
+            fixture.database,
+            ConversationToolCall(
+              workspaceId: fixture.workspaceId,
+              conversationId: fixture.conversationDatabaseId,
+              turnId: firstTurn.id!,
+              messageId: firstAssistant.id!,
+              stableId: 'phase-one-call',
+              name: 'tool',
+              argumentsJson: '{}',
+              argumentsDigest: 'phase-one-digest',
+              status: 'pending',
+              revision: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          await decisionUseCases().submitToolDecision(
+            fixture.database,
+            userId: fixture.userId,
+            request: SubmitToolDecisionRequest(
+              workspaceId: fixture.workspaceId,
+              requestId: 'approve-phase-one',
+              turnId: firstTurn.requestId,
+              toolCallId: 'phase-one-call',
+              argumentsDigest: 'phase-one-digest',
+              expectedTurnRevision: firstTurn.revision,
+              decision: 'approve',
+            ),
+          );
+
+          await runConversationWorker(
+            fixture.database,
+            isActive: () => true,
+            worker: worker,
+          );
+
+          final assistants = await ConversationMessage.db.find(
+            fixture.database,
+            where: (table) =>
+                table.conversationId.equals(fixture.conversationDatabaseId) &
+                table.role.equals('assistant'),
+            orderBy: (table) => table.id,
+          );
+          expect(assistants.map((assistant) => assistant.stableId), [
+            firstAssistant.stableId,
+            'approve-phase-one:assistant',
+          ]);
+          expect(assistants.map((assistant) => assistant.status), [
+            'sent',
+            ConversationStatuses.awaitingApproval,
+          ]);
         },
       );
 
@@ -1077,6 +1804,29 @@ class _CountingCompletingHost implements ConversationEngineHost {
         messageIds: ['$messageId'],
         keptTailMessageIds: const [],
       ),
+    );
+  }
+}
+
+class _AwaitingApprovalHost extends _CountingCompletingHost {
+  @override
+  Future<ConversationEngineResult> executeTurn(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+    required List<ConversationMessage> messages,
+    required ConversationProgressPublisher liveTurns,
+    Future<void>? leaseLost,
+  }) async {
+    calls++;
+    if (!started.isCompleted) started.complete();
+    return const ConversationEngineResult(
+      content: '',
+      finishReason: 'tool_calls',
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      awaitingApproval: true,
     );
   }
 }

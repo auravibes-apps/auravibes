@@ -1,10 +1,12 @@
 // ignore_for_file: implementation_imports
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+
 import 'package:riverpod/src/providers/provider.dart';
 
 class UnloadConversationSkillUsecase {
@@ -31,13 +33,18 @@ class UnloadConversationSkillUsecase {
         ? await (skillsRepository ??
                   (throw StateError('Skill store is unavailable')))
               .getSkillBySlug(workspaceId, slug)
-        : (await cloud.skills()).where((item) => item.slug == slug).firstOrNull;
+        : (await cloud.skills())
+              .where(
+                (item) => item.source == SkillSource.user && item.slug == slug,
+              )
+              .firstOrNull;
     if (userSkill != null) {
       if (cloud != null) {
         return cloud.setConversationSkill(
           conversationId,
           userSkill.id,
           selected: false,
+          isAppSkill: false,
         );
       }
       final conversationSkillsRepository = _conversationSkillsRepository;
@@ -61,6 +68,7 @@ class UnloadConversationSkillUsecase {
           conversationId,
           appSkill.identifier,
           selected: false,
+          isAppSkill: true,
         );
       }
       final conversationSkillsRepository = _conversationSkillsRepository;

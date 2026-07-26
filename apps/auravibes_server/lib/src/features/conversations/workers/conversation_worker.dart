@@ -6,6 +6,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../../sync/stream/sync_wakeups.dart';
 import '../domain/conversation_values.dart';
+import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../engine/conversation_engine_host.dart';
 import '../engine/conversation_host_effects.dart';
 
@@ -17,6 +18,7 @@ typedef ConversationJobLeaseRenewer =
     Future<ConversationJob> Function(int jobId, String leaseToken);
 typedef ConversationRenewalTimer =
     Timer Function(Duration duration, void Function() callback);
+typedef ConversationApprovalPauseBarrier = Future<void> Function();
 
 class ConversationWorker {
   const ConversationWorker({
@@ -27,6 +29,8 @@ class ConversationWorker {
     this.renewalInterval = const Duration(seconds: 15),
     this.renewalRetryDelay = const Duration(seconds: 1),
     this.renewalTimer = Timer.new,
+    this.beforePauseForApproval,
+    this.afterApprovalTurnLock,
   });
 
   final ConversationEngineHost host;
@@ -36,6 +40,8 @@ class ConversationWorker {
   final Duration renewalInterval;
   final Duration renewalRetryDelay;
   final ConversationRenewalTimer renewalTimer;
+  final ConversationApprovalPauseBarrier? beforePauseForApproval;
+  final ConversationApprovalPauseBarrier? afterApprovalTurnLock;
 
   Future<bool> runOnce(
     Session session, {
@@ -198,23 +204,12 @@ class ConversationWorker {
       'conversation=${conversation.stableId}, turn=${turn.requestId}, '
       'sequence=${conversation.eventSequence}.',
     );
-    final liveTurns = WakeupConversationProgressPublisher(
-      session: session,
-      workspaceId: job.workspaceId,
-      conversationId: conversation.stableId,
-      sequence: conversation.eventSequence,
-      checkpoint: (content) => _checkpointAssistant(
-        session,
-        assistantMessageId: turn.assistantMessageId,
-        content: content,
-      ),
-    );
     if (turn.cancellationRequestedAt != null) {
       await _cancel(session, job, leaseToken);
       return;
     }
+    if (await _cancelIfParentTurnInactive(session, job, leaseToken)) return;
     if (isActive != null && !isActive()) return;
-    await liveTurns.queued();
     final messages = await ConversationMessage.db.find(
       session,
       where: (table) =>
@@ -222,6 +217,23 @@ class ConversationWorker {
           table.conversationId.equals(job.conversationId),
       orderBy: (table) => table.id,
     );
+    final phaseTurn = await _turnForJobAssistant(
+      session,
+      job: job,
+      turn: turn,
+    );
+    final liveTurns = WakeupConversationProgressPublisher(
+      session: session,
+      workspaceId: job.workspaceId,
+      conversationId: conversation.stableId,
+      sequence: conversation.eventSequence,
+      checkpoint: (content) => _checkpointAssistant(
+        session,
+        assistantMessageId: phaseTurn.assistantMessageId,
+        content: content,
+      ),
+    );
+    await liveTurns.queued();
     if (isActive != null && !isActive()) return;
     final checkpointedJob = await leases.checkpoint(
       session,
@@ -243,7 +255,7 @@ class ConversationWorker {
       operation: (leaseLost) => host.executeTurn(
         session,
         job: job,
-        turn: turn,
+        turn: phaseTurn,
         messages: messages,
         liveTurns: liveTurns,
         leaseLost: leaseLost,
@@ -257,7 +269,9 @@ class ConversationWorker {
     );
     if (isActive != null && !isActive()) return;
     if (result.awaitingApproval) {
-      await _pauseForApproval(session, job, turn, leaseToken);
+      await beforePauseForApproval?.call();
+      if (isActive != null && !isActive()) return;
+      await _pauseForApproval(session, job, phaseTurn, leaseToken);
       await SyncWakeups.publishConversation(
         session,
         workspaceId: job.workspaceId,
@@ -271,7 +285,7 @@ class ConversationWorker {
     await _commitResult(
       session,
       job,
-      turn,
+      phaseTurn,
       leaseToken,
       result,
     );
@@ -285,6 +299,130 @@ class ConversationWorker {
         job.conversationId,
       ))!.stableId,
     );
+  }
+
+  Future<bool> _cancelIfParentTurnInactive(
+    Session session,
+    ConversationJob job,
+    String leaseToken,
+  ) async {
+    final parentTurnId = conversation_repo.conversationParentTurnIdForJob(
+      job.payloadJson,
+    );
+    if (parentTurnId == null) return false;
+    return session.db.transaction((transaction) async {
+      final now = DateTime.now().toUtc();
+      final parentTurn = await ConversationTurn.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(parentTurnId) &
+            table.workspaceId.equals(job.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (parentTurn == null) {
+        throw const ConversationEngineConfigurationException('parent_turn');
+      }
+      if (parentTurn.cancellationRequestedAt == null &&
+          !ConversationStatuses.isTerminal(parentTurn.status)) {
+        return false;
+      }
+      final childTurn = await ConversationTurn.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.id.equals(job.turnId) &
+            table.workspaceId.equals(job.workspaceId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (childTurn == null) {
+        throw const ConversationEngineConfigurationException('turn');
+      }
+      await _cancelLocked(
+        session,
+        job,
+        childTurn,
+        leaseToken,
+        now,
+        transaction,
+      );
+      return true;
+    });
+  }
+
+  Future<ConversationTurn> _turnForJobAssistant(
+    Session session, {
+    required ConversationJob job,
+    required ConversationTurn turn,
+  }) async {
+    if (job.requestId == turn.requestId) return turn;
+    final stableId = '${job.requestId}:assistant';
+    final existing = await ConversationMessage.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.conversationId.equals(job.conversationId) &
+          table.stableId.equals(stableId),
+    );
+    final message =
+        existing ??
+        await ConversationMessage.db.insertRow(
+          session,
+          ConversationMessage(
+            workspaceId: job.workspaceId,
+            conversationId: job.conversationId,
+            stableId: stableId,
+            turnId: turn.id,
+            role: 'assistant',
+            kind: 'text',
+            status: ConversationStatuses.running,
+            content: '',
+            revision: 1,
+            createdAt: DateTime.now().toUtc(),
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+    final priorAwaitingApprovalAssistants = await ConversationMessage.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.conversationId.equals(job.conversationId) &
+          table.turnId.equals(turn.id) &
+          table.role.equals('assistant') &
+          table.status.equals(ConversationStatuses.awaitingApproval),
+    );
+    for (final priorAssistant in priorAwaitingApprovalAssistants) {
+      if (priorAssistant.id == message.id) continue;
+      await ConversationMessage.db.updateRow(
+        session,
+        priorAssistant.copyWith(
+          status: 'sent',
+          revision: priorAssistant.revision + 1,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+      );
+    }
+    final executionId = conversation_repo.conversationExecutionIdForJob(
+      job.requestId,
+      job.payloadJson,
+    );
+    final execution = await ConversationExecution.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.conversationId.equals(job.conversationId) &
+          table.stableId.equals(executionId),
+    );
+    if (execution != null && execution.assistantMessageId != message.id) {
+      await ConversationExecution.db.updateRow(
+        session,
+        execution.copyWith(
+          assistantMessageId: message.id,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+      );
+    }
+    return turn.copyWith(assistantMessageId: message.id);
   }
 
   Future<void> _checkpointAssistant(
@@ -330,6 +468,18 @@ class ConversationWorker {
     if (lockedTurn == null) {
       throw const ConversationEngineConfigurationException('turn');
     }
+    await afterApprovalTurnLock?.call();
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(job.conversationId) &
+          table.workspaceId.equals(job.workspaceId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (conversation == null) {
+      throw const ConversationEngineConfigurationException('conversation');
+    }
     final lockedJob = await ConversationJob.db.findFirstRow(
       session,
       where: (table) =>
@@ -340,16 +490,46 @@ class ConversationWorker {
       lockMode: LockMode.forUpdate,
     );
     if (lockedJob == null) throw StateError('Conversation job lease lost.');
+    final executionId = conversation_repo.conversationExecutionIdForJob(
+      job.requestId,
+      job.payloadJson,
+    );
+    final execution = await ConversationExecution.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(job.workspaceId) &
+          table.conversationId.equals(job.conversationId) &
+          table.stableId.equals(executionId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (ConversationStatuses.isTerminal(lockedTurn.status)) {
+      await _completeLease(session, job, leaseToken, now, transaction);
+      return;
+    }
+    if (lockedTurn.cancellationRequestedAt != null ||
+        execution == null ||
+        conversation.activeExecutionId != execution.id) {
+      await _cancelLocked(
+        session,
+        job,
+        lockedTurn,
+        leaseToken,
+        now,
+        transaction,
+      );
+      return;
+    }
     await ConversationTurn.db.updateRow(
       session,
       lockedTurn.copyWith(
         status: ConversationStatuses.awaitingApproval,
-        revision: turn.revision + 1,
+        revision: lockedTurn.revision + 1,
         updatedAt: now,
       ),
       transaction: transaction,
     );
-    final assistantMessageId = lockedTurn.assistantMessageId;
+    final assistantMessageId = turn.assistantMessageId;
     if (assistantMessageId == null) {
       throw const ConversationEngineConfigurationException('assistant_message');
     }
@@ -359,7 +539,11 @@ class ConversationWorker {
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
-    if (assistant == null) {
+    if (assistant == null ||
+        assistant.workspaceId != job.workspaceId ||
+        assistant.conversationId != job.conversationId ||
+        assistant.turnId != lockedTurn.id ||
+        assistant.role != 'assistant') {
       throw const ConversationEngineConfigurationException('assistant_message');
     }
     await ConversationMessage.db.updateRow(
@@ -425,7 +609,7 @@ class ConversationWorker {
     }
     final assistant = await ConversationMessage.db.findFirstRow(
       session,
-      where: (table) => table.id.equals(lockedTurn.assistantMessageId),
+      where: (table) => table.id.equals(turn.assistantMessageId),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );
@@ -535,11 +719,24 @@ class ConversationWorker {
     DateTime now,
     Transaction transaction,
   ) async {
-    final assistant = turn.assistantMessageId == null
+    final phaseAssistantId = job.requestId == turn.requestId
+        ? turn.assistantMessageId
+        : await ConversationMessage.db
+              .findFirstRow(
+                session,
+                where: (table) =>
+                    table.workspaceId.equals(job.workspaceId) &
+                    table.conversationId.equals(job.conversationId) &
+                    table.stableId.equals('${job.requestId}:assistant'),
+                transaction: transaction,
+                lockMode: LockMode.forUpdate,
+              )
+              .then((message) => message?.id);
+    final assistant = phaseAssistantId == null
         ? null
         : await ConversationMessage.db.findById(
             session,
-            turn.assistantMessageId!,
+            phaseAssistantId,
             transaction: transaction,
             lockMode: LockMode.forUpdate,
           );
@@ -587,12 +784,16 @@ class ConversationWorker {
     required DateTime now,
     bool terminal = false,
   }) async {
+    final executionId = conversation_repo.conversationExecutionIdForJob(
+      job.requestId,
+      job.payloadJson,
+    );
     final execution = await ConversationExecution.db.findFirstRow(
       session,
       where: (table) =>
           table.workspaceId.equals(job.workspaceId) &
           table.conversationId.equals(job.conversationId) &
-          table.stableId.equals(job.requestId),
+          table.stableId.equals(executionId),
       transaction: transaction,
       lockMode: LockMode.forUpdate,
     );

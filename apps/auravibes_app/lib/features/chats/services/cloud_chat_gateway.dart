@@ -227,6 +227,7 @@ class CloudChatGateway {
     required String argumentsDigest,
     required int expectedTurnRevision,
     required String decision,
+    bool stopAll = false,
     String? editedArgumentsJson,
   }) => guardCloudCall(
     .conversation,
@@ -239,6 +240,7 @@ class CloudChatGateway {
         argumentsDigest: argumentsDigest,
         expectedTurnRevision: expectedTurnRevision,
         decision: decision,
+        stopAll: stopAll,
         editedArgumentsJson: editedArgumentsJson,
       ),
     ),

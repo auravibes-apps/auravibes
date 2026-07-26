@@ -226,7 +226,9 @@ class CloudSkillStore {
             final data = _data(item);
 
             return data['kind'] == 'skillCredential' &&
-                data['credentialDefinitionId'] == definitionId;
+                data['credentialDefinitionId'] == definitionId &&
+                data['isEnabled'] == true &&
+                data['hasSecret'] == true;
           })
           .map(_credential)
           .toList();
@@ -446,6 +448,7 @@ class CloudSkillStore {
     String conversationId,
     String skillId, {
     required bool selected,
+    required bool isAppSkill,
   }) async {
     final id = '$conversationId:$skillId';
     final existing = (await _active(
@@ -466,7 +469,12 @@ class CloudSkillStore {
       await _store.create(
         kind: WorkspaceResourceKind.conversationSkillSelection,
         id: id,
-        data: {'id': id, 'conversationId': conversationId, 'skillId': skillId},
+        data: {
+          'id': id,
+          'conversationId': conversationId,
+          'skillId': skillId,
+          if (isAppSkill) 'source': 'app',
+        },
       );
     }
   }
@@ -478,6 +486,19 @@ class CloudSkillStore {
     }
 
     return (await credentials(credentialDefinitionId)).isNotEmpty;
+  }
+
+  /// Matches the server's cloud template-tool materialization policy.
+  Future<bool> userSkillReady(SkillEntity skill) async {
+    if (!skill.isEnabled) return false;
+    final credentialDefinitionId = skill.credentialDefinitionId;
+    final hasCredential =
+        credentialDefinitionId != null &&
+        (await credentials(credentialDefinitionId)).isNotEmpty;
+
+    return (await tools(skill.id)).any(
+      (tool) => tool.isEnabled && (!tool.requiresCredential || hasCredential),
+    );
   }
 
   Future<bool> isAppSkillEnabled(String id) async {

@@ -2,6 +2,7 @@
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
@@ -9,6 +10,7 @@ import 'package:auravibes_app/features/skills/usecases/check_skill_credential_re
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+
 import 'package:riverpod/src/providers/provider.dart';
 
 class LoadConversationSkillException implements Exception {
@@ -52,14 +54,21 @@ class LoadConversationSkillUsecase {
         ? await (skillsRepository ??
                   (throw StateError('Skill store is unavailable')))
               .getSkillBySlug(workspaceId, slug)
-        : (await cloud.skills()).where((item) => item.slug == slug).firstOrNull;
+        : (await cloud.skills())
+              .where(
+                (item) => item.source == SkillSource.user && item.slug == slug,
+              )
+              .firstOrNull;
     if (userSkill != null) {
       final readinessUsecase = _checkSkillCredentialReadinessUsecase;
-      if (readinessUsecase != null &&
-          !await readinessUsecase.call(
-            workspaceId: workspaceId,
-            skill: userSkill,
-          )) {
+      final ready = cloud == null
+          ? readinessUsecase == null ||
+                await readinessUsecase.call(
+                  workspaceId: workspaceId,
+                  skill: userSkill,
+                )
+          : await cloud.userSkillReady(userSkill);
+      if (!ready) {
         throw const LoadConversationSkillException(
           LocaleKeys.skills_screen_error_requires_credential,
         );
@@ -69,6 +78,7 @@ class LoadConversationSkillUsecase {
           conversationId,
           userSkill.id,
           selected: true,
+          isAppSkill: false,
         );
       }
       final conversationSkillsRepository = _conversationSkillsRepository;
@@ -118,6 +128,7 @@ class LoadConversationSkillUsecase {
           conversationId,
           appSkill.identifier,
           selected: true,
+          isAppSkill: true,
         );
       }
       final conversationSkillsRepository = _conversationSkillsRepository;
@@ -154,9 +165,7 @@ loadConversationSkillUsecaseProvider =
               : null,
           ref.watch(appSkillRegistryProvider),
           ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
-          cloud == null
-              ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
-              : null,
+          ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
           cloud,
         );
       },

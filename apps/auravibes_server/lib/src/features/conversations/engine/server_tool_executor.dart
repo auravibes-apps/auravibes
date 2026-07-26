@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,8 +9,12 @@ import '../../../generated/protocol.dart';
 import '../../mcp_servers/mcp_server_policy.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../../workspace_state/workspace_secret_resolver.dart';
+import '../../workspace_state/repositories/workspace_state_repository.dart';
+import '../../workspace_state/usecases/workspace_state_usecases.dart';
+import '../domain/conversation_values.dart';
 import '../repositories/conversation_repository.dart' as conversation_repo;
 import '../usecases/conversation_usecases.dart';
+import 'conversation_host_effects.dart';
 import 'server_tool_runtime.dart';
 
 String cloudServiceConnectionId(String credentialId) =>
@@ -22,35 +27,334 @@ bool isCloudAppSkillCredential(
   String skillIdentifier,
 ) =>
     data['kind'] == 'appSkillCredential' &&
-    data['serviceId'] == skillIdentifier;
+    data['serviceId'] == skillIdentifier &&
+    data['isEnabled'] != false &&
+    data['hasSecret'] == true;
+
+bool cloudToolAllowsCredential(
+  ServerResolvedTool tool,
+  String credentialId,
+) =>
+    (((tool.spec.inputJsonSchema['properties'] as Map?)?['credentialId']
+                as Map?)?['enum']
+            as List?)
+        ?.contains(credentialId) ==
+    true;
+
+bool cloudSkillControlIsNoop({
+  required String controlName,
+  required bool isSelected,
+}) =>
+    (controlName == loadSkillToolName && isSelected) ||
+    (controlName == unloadSkillToolName && !isSelected);
+
+PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
+  required int workspaceId,
+  required String turnRequestId,
+  required String conversationId,
+  required String skillId,
+  required bool isAppSkill,
+  required String controlName,
+  required String toolCallId,
+  int? existingRevision,
+}) {
+  final resourceId = '$conversationId:$skillId';
+  final operation = switch (controlName) {
+    loadSkillToolName when existingRevision == null => WorkspacePatchOperation(
+      operation: WorkspacePatchOperationKind.create,
+      resourceKind: WorkspaceResourceKind.conversationSkillSelection,
+      resourceId: resourceId,
+      data: jsonEncode({
+        'id': resourceId,
+        'conversationId': conversationId,
+        'skillId': skillId,
+        if (isAppSkill) 'source': 'app',
+      }),
+      fieldMask: const [],
+    ),
+    unloadSkillToolName when existingRevision != null =>
+      WorkspacePatchOperation(
+        operation: WorkspacePatchOperationKind.delete,
+        resourceKind: WorkspaceResourceKind.conversationSkillSelection,
+        resourceId: resourceId,
+        fieldMask: const [],
+        expectedRevision: existingRevision,
+      ),
+    _ => throw const ServerToolNotConfiguredException(),
+  };
+  return PatchWorkspaceStateRequest(
+    workspaceId: workspaceId,
+    requestId: '$turnRequestId:$toolCallId:$controlName:$skillId',
+    operations: [operation],
+  );
+}
+
+typedef ServerToolExecutorInterlock = Future<void> Function();
 
 class ServerToolExecutorService {
-  const ServerToolExecutorService();
+  const ServerToolExecutorService({
+    this.beforeChildLaunch,
+    this.afterChildContinuation,
+    this.beforeSkillSelectionMutation,
+  });
+
+  final ServerToolExecutorInterlock? beforeChildLaunch;
+  final ServerToolExecutorInterlock? afterChildContinuation;
+  final ServerToolExecutorInterlock? beforeSkillSelectionMutation;
 
   Future<Object?> call(
     Session session,
     ConversationTurn turn,
     ServerResolvedTool tool,
-    Map<String, dynamic> arguments,
-  ) => switch (tool.descriptor.kind) {
-    AgentResolvedToolKind.mcp => _runMcp(session, turn, tool, arguments),
-    AgentResolvedToolKind.skillTemplate => _runSkill(
+    ServerToolRequest request,
+  ) async {
+    await _throwIfCancelled(session, turn);
+    return switch (tool.descriptor.kind) {
+      AgentResolvedToolKind.mcp => _runMcp(
+        session,
+        turn,
+        tool,
+        request.arguments,
+      ),
+      AgentResolvedToolKind.skillControl => _runSkillControl(
+        session,
+        turn,
+        tool,
+        request,
+      ),
+      AgentResolvedToolKind.skillTemplate => _runSkill(
+        session,
+        turn,
+        tool,
+        request.arguments,
+      ),
+      AgentResolvedToolKind.skillNative
+          when tool.descriptor.skillSlug == agentsSkillSlug =>
+        _runSubAgentTool(session, turn, tool, request.arguments),
+      AgentResolvedToolKind.skillNative => _runNativeSkill(
+        session,
+        turn,
+        tool,
+        request.arguments,
+      ),
+      _ => throw const ServerToolNotConfiguredException(),
+    };
+  }
+
+  Future<Object?> _runSkillControl(
+    Session session,
+    ConversationTurn turn,
+    ServerResolvedTool tool,
+    ServerToolRequest request,
+  ) async {
+    final slug = request.arguments['slug'];
+    if (slug is! String || slug.isEmpty) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final conversation = await Conversation.db.findFirstRow(
       session,
-      turn,
-      tool,
-      arguments,
-    ),
-    AgentResolvedToolKind.skillNative
-        when tool.descriptor.skillSlug == agentsSkillSlug =>
-      _runSubAgentTool(session, turn, tool, arguments),
-    AgentResolvedToolKind.skillNative => _runNativeSkill(
+      where: (table) =>
+          table.id.equals(turn.conversationId) &
+          table.workspaceId.equals(turn.workspaceId),
+    );
+    if (conversation == null) throw const ServerToolNotConfiguredException();
+    final resources = await WorkspaceResource.db.find(
       session,
-      turn,
-      tool,
-      arguments,
-    ),
-    _ => throw const ServerToolNotConfiguredException(),
-  };
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.deletedAt.equals(null),
+    );
+    final selectedSkillIds = resources
+        .where(
+          (resource) =>
+              resource.resourceKind ==
+              WorkspaceResourceKind.conversationSkillSelection,
+        )
+        .map((resource) => _jsonMap(resource.data))
+        .where((data) => data['conversationId'] == conversation.stableId)
+        .map((data) => data['skillId'])
+        .whereType<String>()
+        .toSet();
+    final controlName = tool.descriptor.toolIdentifier;
+    if (controlName != loadSkillToolName &&
+        controlName != unloadSkillToolName) {
+      throw const ServerToolNotConfiguredException();
+    }
+    // A provider can issue duplicate controls in one response. Check the
+    // durable selection before recomputing controls after an earlier call.
+    final existingSkillId = _cloudSkillId(
+      slug,
+      resources: resources,
+      allowUnavailable: true,
+    );
+    if (existingSkillId != null) {
+      final resourceId = '${conversation.stableId}:$existingSkillId';
+      final selection = resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                    WorkspaceResourceKind.conversationSkillSelection &&
+                resource.resourceId == resourceId,
+          )
+          .firstOrNull;
+      if (cloudSkillControlIsNoop(
+        controlName: controlName,
+        isSelected: selection != null,
+      )) {
+        return {
+          'skillId': existingSkillId,
+          'selected': controlName == loadSkillToolName,
+        };
+      }
+    }
+    final controls = materializeCloudSkillControlTools(
+      selectedSkillIds: selectedSkillIds,
+      userSkills: resources
+          .where(
+            (resource) => resource.resourceKind == WorkspaceResourceKind.skill,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonMap(resource.data),
+            },
+          ),
+      templateTools: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.skillTemplateTool,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonMap(resource.data),
+            },
+          ),
+      appSkillSettings: resources
+          .where(
+            (resource) =>
+                resource.resourceKind == WorkspaceResourceKind.skillSetting,
+          )
+          .map((resource) => _jsonMap(resource.data)),
+      serviceConnections: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.serviceConnection,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonMap(resource.data),
+            },
+          ),
+      isChildConversation: conversation.parentConversationStableId != null,
+    );
+    final control = controls
+        .where((candidate) => candidate.spec.name == tool.spec.name)
+        .firstOrNull;
+    final allowedSlugs =
+        ((control?.spec.inputJsonSchema['properties'] as Map?)?['slug']
+                as Map?)?['enum']
+            as List?;
+    if (allowedSlugs == null || !allowedSlugs.contains(slug)) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final skillId = _cloudSkillId(
+      slug,
+      resources: resources,
+      allowUnavailable: tool.descriptor.toolIdentifier == unloadSkillToolName,
+    );
+    if (skillId == null) throw const ServerToolNotConfiguredException();
+    final resourceId = '${conversation.stableId}:$skillId';
+    final selection = resources
+        .where(
+          (resource) =>
+              resource.resourceKind ==
+                  WorkspaceResourceKind.conversationSkillSelection &&
+              resource.resourceId == resourceId,
+        )
+        .firstOrNull;
+    final patchRequest = cloudSkillSelectionPatchRequest(
+      workspaceId: turn.workspaceId,
+      turnRequestId: turn.requestId,
+      conversationId: conversation.stableId,
+      skillId: skillId,
+      isAppSkill: !resources.any(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.skill &&
+            resource.resourceId == skillId &&
+            _jsonMap(resource.data)['source'] != 'app',
+      ),
+      controlName: tool.descriptor.toolIdentifier,
+      toolCallId: request.id,
+      existingRevision: selection?.revision,
+    );
+    await _throwIfCancelled(session, turn);
+    await beforeSkillSelectionMutation?.call();
+    await WorkspaceStateUseCases(WorkspaceStateRepository()).patch(
+      session,
+      userId: turn.initiatorUserId,
+      request: patchRequest,
+      guard: (transaction) => _throwIfCancelledUnderTurnLock(
+        session,
+        turn,
+        transaction,
+      ),
+    );
+    return {
+      'skillId': skillId,
+      'selected': patchRequest.operations.single.operation.name == 'create',
+    };
+  }
+
+  String? _cloudSkillId(
+    String slug, {
+    required Iterable<WorkspaceResource> resources,
+    required bool allowUnavailable,
+  }) {
+    final userSkill = resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skill &&
+              _jsonMap(resource.data)['source'] != 'app' &&
+              (allowUnavailable ||
+                  _jsonMap(resource.data)['isEnabled'] != false) &&
+              _jsonMap(resource.data)['slug'] == slug,
+        )
+        .firstOrNull;
+    if (userSkill != null) return userSkill.resourceId;
+    if (slug == agentsSkillSlug) {
+      return allowUnavailable || _appSkillEnabled(agentsSkillSlug, resources)
+          ? agentsSkillSlug
+          : null;
+    }
+    final serviceSkill = serviceSkillDefinitions
+        .where((skill) => skill.identifier == slug || skill.slug == slug)
+        .firstOrNull;
+    if (serviceSkill == null ||
+        (!allowUnavailable &&
+            !_appSkillEnabled(serviceSkill.identifier, resources))) {
+      return null;
+    }
+    return serviceSkill.identifier;
+  }
+
+  bool _appSkillEnabled(
+    String skillId,
+    Iterable<WorkspaceResource> resources,
+  ) {
+    final setting = resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skillSetting &&
+              _jsonMap(resource.data)['skillId'] == skillId,
+        )
+        .map((resource) => _jsonMap(resource.data))
+        .lastOrNull;
+    return setting?['isEnabled'] != false;
+  }
 
   Future<Object?> _runNativeSkill(
     Session session,
@@ -72,6 +376,9 @@ class ServerToolExecutorService {
     var credentials = const <String, String>{};
     if (nativeTool.requiresCredential) {
       if (credentialId is! String || credentialId.isEmpty) {
+        throw const ServerToolNotConfiguredException();
+      }
+      if (!cloudToolAllowsCredential(tool, credentialId)) {
         throw const ServerToolNotConfiguredException();
       }
       final connectionId = cloudServiceConnectionId(credentialId);
@@ -116,7 +423,8 @@ class ServerToolExecutorService {
     )) {
       throw const FormatException(publicUrlError);
     }
-    final response = await _request(uri, addresses, request);
+    await _throwIfCancelled(session, turn);
+    final response = await _request(session, turn, uri, addresses, request);
     return const UrlContentTransformer()
         .transform(response, requestedFormat: request.format)
         .body;
@@ -164,42 +472,275 @@ class ServerToolExecutorService {
     final useCases = ConversationUseCases(
       conversation_repo.ConversationRepository(),
     );
-    final child = await useCases.create(
-      session,
-      userId: turn.initiatorUserId,
-      request: CreateConversationRequest(
-        workspaceId: turn.workspaceId,
-        requestId: '$id:create',
-        conversationId: id,
-        title: title.trim(),
-        isPinned: false,
-        modelId: parent.modelId,
-        agentId: agentId as String?,
-        parentConversationId: parent.stableId,
-      ),
-    );
-    final started = await useCases.startTurn(
-      session,
-      userId: turn.initiatorUserId,
-      request: StartTurnRequest(
-        workspaceId: turn.workspaceId,
-        requestId: '$id:turn',
-        conversationId: child.id,
-        expectedConversationRevision: child.revision,
-        clientMessageId: '$id:user',
-        content: prompt.trim(),
-        attachmentIds: const [],
-        modelSelectionId: child.modelId,
-        agentId: child.agentId,
-      ),
-    );
-    return {
-      'conversationId': child.id,
-      'turnId': started.turnId,
-      'status': started.status,
-      if (child.agentId != null) 'agentId': child.agentId,
-    };
+    ConversationSummary? child;
+    try {
+      await _throwIfCancelled(session, turn);
+      child = await useCases.create(
+        session,
+        userId: turn.initiatorUserId,
+        request: CreateConversationRequest(
+          workspaceId: turn.workspaceId,
+          requestId: '$id:create',
+          conversationId: id,
+          title: title.trim(),
+          isPinned: false,
+          modelId:
+              await _activeTurnModelSelectionId(session, turn) ??
+              parent.modelId,
+          agentId: agentId as String?,
+          parentConversationId: parent.stableId,
+        ),
+      );
+      final queued = await useCases.queueConversationMessage(
+        session,
+        userId: turn.initiatorUserId,
+        request: QueueConversationMessageRequest(
+          workspaceId: turn.workspaceId,
+          requestId: '$id:queue',
+          conversationId: child.id,
+          expectedProjectionRevision: child.revision,
+          clientMessageId: '$id:user',
+          content: prompt.trim(),
+          attachmentIds: const [],
+        ),
+      );
+      await beforeChildLaunch?.call();
+      final started = await useCases.continueConversation(
+        session,
+        userId: turn.initiatorUserId,
+        request: ContinueConversationRequest(
+          workspaceId: turn.workspaceId,
+          requestId: '$id:continue',
+          conversationId: child.id,
+          expectedProjectionRevision: queued.conversation.projectionRevision,
+        ),
+        parentTurnId: turn.id,
+      );
+      final execution = started.activeExecution;
+      if (execution == null) throw const ServerToolNotConfiguredException();
+      await afterChildContinuation?.call();
+      await session.db.transaction(
+        (transaction) => _throwIfCancelledUnderTurnLock(
+          session,
+          turn,
+          transaction,
+        ),
+      );
+      return {
+        'conversationId': child.id,
+        'turnId': execution.id,
+        'status': execution.status,
+        if (child.agentId != null) 'agentId': child.agentId,
+      };
+    } on Object {
+      if (child != null && await _isCancelled(session, turn)) {
+        await _compensateCancelledChild(
+          session,
+          turn: turn,
+          childId: child.id,
+          useCases: useCases,
+        );
+      }
+      rethrow;
+    }
   }
+
+  Future<String?> _activeTurnModelSelectionId(
+    Session session,
+    ConversationTurn turn,
+  ) async {
+    final messageId = turn.userMessageId;
+    if (messageId == null) return null;
+    final message = await ConversationMessage.db.findById(session, messageId);
+    if (message?.metadataJson == null) return null;
+    final selectionId = _jsonMap(message!.metadataJson!)['modelSelectionId'];
+    return selectionId is String && selectionId.isNotEmpty ? selectionId : null;
+  }
+
+  Future<void> _compensateCancelledChild(
+    Session session, {
+    required ConversationTurn turn,
+    required String childId,
+    required ConversationUseCases useCases,
+  }) async {
+    final parent = await Conversation.db.findById(session, turn.conversationId);
+    if (parent == null) return;
+    final activeTurn = await session.db.transaction((transaction) async {
+      final child = await Conversation.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(turn.workspaceId) &
+            table.stableId.equals(childId) &
+            table.parentConversationStableId.equals(parent.stableId) &
+            table.deletedAt.equals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (child == null) return null;
+      final execution = child.activeExecutionId == null
+          ? null
+          : await ConversationExecution.db.findById(
+              session,
+              child.activeExecutionId!,
+              transaction: transaction,
+              lockMode: LockMode.forUpdate,
+            );
+      if (execution != null) {
+        return ConversationTurn.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(turn.workspaceId) &
+              table.requestId.equals(execution.stableId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+      }
+      final pending = await ConversationMessage.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(turn.workspaceId) &
+            table.conversationId.equals(child.id) &
+            table.pendingOrder.notEquals(null),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      for (final message in pending) {
+        await ConversationMessage.db.deleteRow(
+          session,
+          message,
+          transaction: transaction,
+        );
+      }
+      await Conversation.db.updateRow(
+        session,
+        child.copyWith(
+          deletedAt: DateTime.now().toUtc(),
+          revision: child.revision + 1,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+        transaction: transaction,
+      );
+      return null;
+    });
+    if (activeTurn == null ||
+        ConversationStatuses.isTerminal(activeTurn.status)) {
+      return;
+    }
+    await useCases.cancelTurn(
+      session,
+      userId: turn.initiatorUserId,
+      request: CancelTurnRequest(
+        workspaceId: turn.workspaceId,
+        requestId: '$childId:cancelled-parent',
+        turnId: activeTurn.requestId,
+        expectedTurnRevision: activeTurn.revision,
+      ),
+    );
+    await _retireCancelledChildExecution(
+      session,
+      workspaceId: turn.workspaceId,
+      childId: childId,
+      actorUserId: turn.initiatorUserId,
+    );
+  }
+
+  Future<void> _retireCancelledChildExecution(
+    Session session, {
+    required int workspaceId,
+    required String childId,
+    required String actorUserId,
+  }) => session.db.transaction((transaction) async {
+    final child = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.stableId.equals(childId),
+      transaction: transaction,
+    );
+    final childDatabaseId = child?.id;
+    final executionId = child?.activeExecutionId;
+    if (childDatabaseId == null || executionId == null) return;
+    final execution = await ConversationExecution.db.findById(
+      session,
+      executionId,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (execution == null) return;
+    final lockedChild = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.id.equals(childDatabaseId),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (lockedChild == null || lockedChild.activeExecutionId != execution.id) {
+      return;
+    }
+    final now = DateTime.now().toUtc();
+    if (execution.assistantMessageId case final assistantMessageId?) {
+      final assistant = await ConversationMessage.db.findById(
+        session,
+        assistantMessageId,
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (assistant != null &&
+          assistant.status != ConversationStatuses.cancelled) {
+        await ConversationMessage.db.updateRow(
+          session,
+          assistant.copyWith(
+            content: '',
+            status: ConversationStatuses.cancelled,
+            metadataJson: '{"errorCode":"cancelled"}',
+            revision: assistant.revision + 1,
+            updatedAt: now,
+          ),
+          transaction: transaction,
+        );
+      }
+    }
+    await ConversationExecution.db.updateRow(
+      session,
+      execution.copyWith(
+        status: ConversationStatuses.cancelled,
+        terminalAt: now,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    final sequence = lockedChild.eventSequence + 1;
+    await Conversation.db.updateRow(
+      session,
+      lockedChild.copyWith(
+        executionState: 'idle',
+        activeExecutionId: null,
+        eventSequence: sequence,
+        projectionRevision: lockedChild.projectionRevision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+    await ConversationEvent.db.insertRow(
+      session,
+      ConversationEvent(
+        workspaceId: workspaceId,
+        conversationId: lockedChild.id!,
+        sequence: sequence,
+        eventId: const Uuid().v7(),
+        actorUserId: actorUserId,
+        requestId: '$childId:cancelled-parent',
+        kind: ConversationEventType.executionStopped,
+        payloadJson: jsonEncode({
+          'executionId': execution.stableId,
+          'status': ConversationStatuses.cancelled,
+        }),
+        createdAt: now,
+      ),
+      transaction: transaction,
+    );
+  });
 
   Future<Map<String, Object?>> _listAgents(
     Session session,
@@ -285,7 +826,10 @@ class ServerToolExecutorService {
       WorkspaceSecretKind.mcp,
       serverId,
     );
+    await _throwIfCancelled(session, turn);
     final result = await _postJson(
+      session,
+      turn,
       uri,
       addresses,
       {
@@ -383,7 +927,8 @@ class ServerToolExecutorService {
     )) {
       throw const FormatException(publicUrlError);
     }
-    final response = await _request(uri, addresses, request);
+    await _throwIfCancelled(session, turn);
+    final response = await _request(session, turn, uri, addresses, request);
     return const UrlContentTransformer()
         .transform(
           response,
@@ -432,12 +977,16 @@ class ServerToolExecutorService {
   }
 
   Future<Map<String, dynamic>> _postJson(
+    Session session,
+    ConversationTurn turn,
     Uri uri,
     List<InternetAddress> addresses,
     Map<String, Object?> body, {
     String? bearerToken,
   }) async {
     final client = _client(addresses);
+    final requestDone = Completer<void>();
+    unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
     try {
       final request = await client.postUrl(uri);
       request
@@ -458,17 +1007,25 @@ class ServerToolExecutorService {
         throw const FormatException('Invalid tool response.');
       }
       return decoded['result']! as Map<String, dynamic>;
+    } on Object {
+      await _throwIfCancelled(session, turn);
+      rethrow;
     } finally {
       client.close(force: true);
+      if (!requestDone.isCompleted) requestDone.complete();
     }
   }
 
   Future<UrlResponse> _request(
+    Session session,
+    ConversationTurn turn,
     Uri uri,
     List<InternetAddress> addresses,
     UrlRequest input,
   ) async {
     final client = _client(addresses);
+    final requestDone = Completer<void>();
+    unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
     final stopwatch = Stopwatch()..start();
     try {
       final request = await client.openUrl(input.method.value, uri);
@@ -485,8 +1042,68 @@ class ServerToolExecutorService {
         headers: headers,
         elapsed: stopwatch.elapsed,
       );
+    } on Object {
+      await _throwIfCancelled(session, turn);
+      rethrow;
     } finally {
       client.close(force: true);
+      if (!requestDone.isCompleted) requestDone.complete();
+    }
+  }
+
+  Future<void> _throwIfCancelled(
+    Session session,
+    ConversationTurn turn,
+  ) async {
+    if (await _isCancelled(session, turn)) {
+      throw const ConversationCancelledException();
+    }
+  }
+
+  Future<bool> _isCancelled(
+    Session session,
+    ConversationTurn turn,
+  ) => const DatabaseConversationCancellationProbe().isCancelled(
+    session,
+    turn.id!,
+  );
+
+  Future<void> _throwIfCancelledUnderTurnLock(
+    Session session,
+    ConversationTurn turn,
+    Transaction transaction,
+  ) async {
+    final current = await ConversationTurn.db.findById(
+      session,
+      turn.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        current.cancellationRequestedAt != null ||
+        ConversationStatuses.isTerminal(current.status)) {
+      throw const ConversationCancelledException();
+    }
+  }
+
+  Future<void> _closeClientOnCancellation(
+    HttpClient client,
+    Session session,
+    ConversationTurn turn,
+    Completer<void> requestDone,
+  ) async {
+    while (!requestDone.isCompleted) {
+      if (await const DatabaseConversationCancellationProbe().isCancelled(
+        session,
+        turn.id!,
+      )) {
+        if (!requestDone.isCompleted) client.close(force: true);
+        return;
+      }
+      await Future.any([
+        Future<void>.delayed(const Duration(milliseconds: 100)),
+        requestDone.future,
+      ]);
     }
   }
 

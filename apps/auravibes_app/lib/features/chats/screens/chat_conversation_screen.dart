@@ -215,7 +215,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
     final pendingCalls = isCloud
-        ? const <PendingToolCall>[]
+        ? cloudPendingToolCalls(cloudConversation)
         : ref
                   .watch(pendingToolCallsProvider(workspaceId, conversation.id))
                   .value ??
@@ -281,6 +281,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
             ChatToolApprovalCard(
               workspaceId: workspaceId,
               conversationId: conversation.id,
+              pendingCalls: pendingCalls,
             ),
           if (showInputComposer)
             Offstage(

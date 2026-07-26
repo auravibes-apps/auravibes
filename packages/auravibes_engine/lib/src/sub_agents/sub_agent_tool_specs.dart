@@ -1,6 +1,9 @@
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 const agentsSkillSlug = 'agents';
+const agentsSkillTitle = 'Agents';
+const agentsSkillContent =
+    'Use this skill to list enabled agents and filter them by type.';
 const listAgentsToolName = 'list_agents';
 const runSubAgentToolName = 'run_sub_agent';
 

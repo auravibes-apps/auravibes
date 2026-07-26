@@ -61,6 +61,26 @@ void main() {
     expect(skills.single.isEnabled, isFalse);
   });
 
+  test('preserves persisted app skill source', () async {
+    when(() => gateway.watchResources(any())).thenAnswer(
+      (_) => Stream.value([
+        _resource(
+          kind: WorkspaceResourceKind.skill,
+          id: 'agents',
+          data:
+              '{"source":"app","slug":"agents","title":"Agents", '
+              '"description":"Run agents","kind":"native", '
+              '"content":"Instructions","isEnabled":true}',
+        ),
+      ]),
+    );
+
+    final skill = (await adapter.watchSkills().first).single;
+
+    expect(skill.source.name, 'app');
+    expect(skill.id, 'agents');
+  });
+
   test('uses effective cloud compaction setting', () async {
     when(() => gateway.watchResources(any())).thenAnswer(
       (_) => Stream.value([
@@ -154,6 +174,41 @@ void main() {
             as List<WorkspacePatchOperation>;
     expect(operations.single.operation, WorkspacePatchOperationKind.delete);
     expect(operations.single.expectedRevision, 1);
+  });
+
+  test('marks app conversation skill selections with their source', () async {
+    when(
+      () => gateway.patch(
+        requestId: any(named: 'requestId'),
+        operations: any(named: 'operations'),
+      ),
+    ).thenAnswer(
+      (_) async => PatchWorkspaceStateResponse(
+        resources: const [],
+        sequence: 2,
+      ),
+    );
+
+    await adapter.setConversationSkill(
+      conversationId: 'conversation-1',
+      skillId: 'agents',
+      isAppSkill: true,
+      selected: true,
+    );
+
+    final operations =
+        verify(
+              () => gateway.patch(
+                requestId: any(named: 'requestId'),
+                operations: captureAny(named: 'operations'),
+              ),
+            ).captured.single
+            as List<WorkspacePatchOperation>;
+    expect(
+      operations.single.data,
+      '{"id":"conversation-1:agents","conversationId":"conversation-1",'
+      '"skillId":"agents","source":"app"}',
+    );
   });
 
   test('writes credential only through secret endpoint', () async {

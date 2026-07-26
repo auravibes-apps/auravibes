@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
@@ -14,12 +15,10 @@ import 'package:auravibes_app/features/chats/providers/cloud_conversation_state_
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
-
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
@@ -42,6 +41,44 @@ extension ConversationCompactionExecutionStateFamilyTestOverride
   Override overrideWithValue(CompactionExecutionState? value) =>
       overrideWith((_, _) => value);
 }
+
+ToolCallResultStatus? cloudToolCallResultStatus(String status) =>
+    switch (status) {
+      'pending' || 'needsConfirmation' => null,
+      'approved' || 'running' || 'granted' => ToolCallResultStatus.running,
+      'success' => ToolCallResultStatus.success,
+      'denied' => ToolCallResultStatus.skippedByUser,
+      'toolNotFound' => ToolCallResultStatus.toolNotFound,
+      'disabledInWorkspace' => ToolCallResultStatus.disabledInWorkspace,
+      'disabledInConversation' => ToolCallResultStatus.disabledInConversation,
+      'disabledByAgent' => ToolCallResultStatus.disabledByAgent,
+      'notConfigured' => ToolCallResultStatus.notConfigured,
+      'executionError' => ToolCallResultStatus.executionError,
+      _ => ToolCallResultStatus.executionError,
+    };
+
+List<PendingToolCall> cloudPendingToolCalls(
+  CloudConversationState? state,
+) => [
+  if (state case final cloudState?)
+    for (final call in cloudState.toolCalls)
+      if (call.status == 'pending')
+        for (final message in cloudState.messages)
+          if (message.id == call.messageId && message.turnRevision != null)
+            PendingToolCall(
+              toolCall: MessageToolCallEntity(
+                id: call.id,
+                name: call.name,
+                argumentsRaw: call.argumentsJson,
+                argumentsDigest: call.argumentsDigest,
+                turnId: message.turnId ?? call.turnId,
+                turnRevision: message.turnRevision,
+                responseRaw: call.resultJson,
+              ),
+              messageId: call.messageId,
+              sourceConversationId: cloudState.conversation.id,
+            ),
+];
 
 @riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(
@@ -142,7 +179,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
                     turnId: message.turnId,
                     turnRevision: message.turnRevision,
                     responseRaw: call.resultJson,
-                    resultStatus: call.status == 'pending' ? null : .running,
+                    resultStatus: cloudToolCallResultStatus(call.status),
                   ),
                 )
                 .toList(),
@@ -158,7 +195,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
                     turnId: message.turnId,
                     turnRevision: message.turnRevision,
                     responseRaw: call.resultJson,
-                    resultStatus: call.status == 'pending' ? null : .running,
+                    resultStatus: cloudToolCallResultStatus(call.status),
                   ),
                 )
                 .toList(),

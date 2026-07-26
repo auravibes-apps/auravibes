@@ -8,10 +8,12 @@ class AgentSkill {
   const AgentSkill({
     required this.title,
     required this.content,
+    this.identity,
   });
 
   final String title;
   final String content;
+  final String? identity;
 }
 
 class BuildSkillContextMessages {
@@ -25,6 +27,29 @@ class BuildSkillContextMessages {
           content: _skillXml(skill),
           metadata: const {'kind': skillContextMetadataKind},
         ),
+    ];
+  }
+
+  List<AgentChatMessage> compose({
+    required Iterable<AgentSkill> conversationSkills,
+    required Iterable<AgentSkill> agentSkills,
+    String? agentContent,
+  }) {
+    final seen = <String>{};
+    final skills = [...conversationSkills, ...agentSkills]
+        .where(
+          (skill) => seen.add(
+            skill.identity ?? '${skill.title}\u0000${skill.content}',
+          ),
+        )
+        .toList(growable: false);
+    return [
+      if (agentContent != null)
+        AgentChatMessage(
+          role: AgentChatMessageRole.system,
+          content: agentContent,
+        ),
+      ...call(skills),
     ];
   }
 

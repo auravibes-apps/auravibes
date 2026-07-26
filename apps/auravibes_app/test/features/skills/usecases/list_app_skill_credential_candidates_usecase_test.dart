@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/service_connections/providers/service_con
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,6 +108,16 @@ void main() {
           kind: 'appSkillCredential',
         ),
         CloudServiceConnection(
+          id: 'disabled-secret',
+          revision: 1,
+          name: 'Disabled credential',
+          serviceId: 'example-search',
+          hasSecret: true,
+          scope: WorkspaceSecretScope.workspace,
+          kind: 'appSkillCredential',
+          isEnabled: false,
+        ),
+        CloudServiceConnection(
           id: 'wrong-kind',
           revision: 1,
           name: 'Model provider',
@@ -130,4 +141,54 @@ void main() {
       [(id: 'service:matching', name: 'Example Search credential')],
     );
   });
+
+  test(
+    'cloud eligibility excludes local callbacks and keeps server tools',
+    () async {
+      final repository = _ServiceConnectionRepository();
+      final usecase = ListAppSkillCredentialCandidatesUsecase(repository);
+      const registry = AppSkillRegistry();
+      final skillsManager =
+          registry.getByIdentifier('skills_manager') ??
+          (throw StateError('Skills Manager must be registered.'));
+      final agents =
+          registry.getByIdentifier(agentsSkillSlug) ??
+          (throw StateError('Agents must be registered.'));
+      final anthropic =
+          registry.getByIdentifier('anthropic') ??
+          (throw StateError('Anthropic must be registered.'));
+      final jina =
+          registry.getByIdentifier('jina') ??
+          (throw StateError('Jina must be registered.'));
+
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: skillsManager,
+        ),
+        isFalse,
+      );
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: agents,
+        ),
+        isTrue,
+      );
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: anthropic,
+        ),
+        isFalse,
+      );
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: jina,
+        ),
+        isTrue,
+      );
+    },
+  );
 }

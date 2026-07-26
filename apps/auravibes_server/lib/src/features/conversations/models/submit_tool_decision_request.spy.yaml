@@ -7,4 +7,5 @@ fields:
   argumentsDigest: String
   expectedTurnRevision: int
   decision: String
+  stopAll: bool, default=false
   editedArgumentsJson: String?

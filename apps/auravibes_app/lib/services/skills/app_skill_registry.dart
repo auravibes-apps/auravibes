@@ -134,9 +134,9 @@ Only create user skills from explicit user intent.
     AppSkillDefinition(
       identifier: agentsSkillSlug,
       slug: agentsSkillSlug,
-      title: 'Agents',
+      title: agentsSkillTitle,
       description: 'Inspect enabled workspace agents.',
-      content: 'Use this skill to list enabled agents and filter them by type.',
+      content: agentsSkillContent,
       nativeTools: [
         AppSkillToolDefinition(
           slug: listAgentsToolSpec.name,

@@ -29,29 +29,33 @@ class ChatToolApprovalCard extends HookConsumerWidget {
   const ChatToolApprovalCard({
     required this.workspaceId,
     required this.conversationId,
+    this.pendingCalls,
     super.key,
   });
 
   final String workspaceId;
   final String conversationId;
+  final List<PendingToolCall>? pendingCalls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final asyncCalls = ref.watch(
-      pendingToolCallsProvider(workspaceId, conversationId),
-    );
-    if (asyncCalls.hasError) {
+    final projectedCalls = pendingCalls;
+    final asyncCalls = projectedCalls == null
+        ? ref.watch(pendingToolCallsProvider(workspaceId, conversationId))
+        : null;
+    if (asyncCalls?.hasError ?? false) {
       debugPrint(
-        '[ChatToolApprovalCard] Error: ${asyncCalls.error}',
+        '[ChatToolApprovalCard] Error: ${asyncCalls?.error}',
       );
 
       return const SizedBox.shrink();
     }
-    final pendingCalls = asyncCalls.value ?? const <PendingToolCall>[];
-    if (pendingCalls.isEmpty) return const SizedBox.shrink();
+    final resolvedPendingCalls =
+        projectedCalls ?? asyncCalls?.value ?? const <PendingToolCall>[];
+    if (resolvedPendingCalls.isEmpty) return const SizedBox.shrink();
 
     final currentIndex = useState(0);
-    final lastIndex = pendingCalls.length - 1;
+    final lastIndex = resolvedPendingCalls.length - 1;
     useEffect(
       () {
         if (currentIndex.value > lastIndex) {
@@ -65,8 +69,8 @@ class ChatToolApprovalCard extends HookConsumerWidget {
 
     final clamped = math.min(currentIndex.value, lastIndex);
 
-    final item = pendingCalls[clamped];
-    final total = pendingCalls.length;
+    final item = resolvedPendingCalls[clamped];
+    final total = resolvedPendingCalls.length;
 
     return _ApprovalCardContent(
       workspaceId: workspaceId,
@@ -438,6 +442,11 @@ class _ConfirmationButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isCloudCall =
+        toolCall.turnId != null &&
+        toolCall.turnRevision != null &&
+        toolCall.argumentsDigest != null;
+
     return AuraColumn(
       children: [
         AuraRow(
@@ -452,16 +461,17 @@ class _ConfirmationButtons extends ConsumerWidget {
                 size: AuraButtonSize.small,
               ),
             ),
-            Expanded(
-              child: AuraButton(
-                onPressed: () => _onAllowForConversation(ref, context),
-                child: const TextLocale(
-                  LocaleKeys.tool_confirmation_allow_conversation,
+            if (!isCloudCall)
+              Expanded(
+                child: AuraButton(
+                  onPressed: () => _onAllowForConversation(ref, context),
+                  child: const TextLocale(
+                    LocaleKeys.tool_confirmation_allow_conversation,
+                  ),
+                  variant: AuraButtonVariant.outlined,
+                  size: AuraButtonSize.small,
                 ),
-                variant: AuraButtonVariant.outlined,
-                size: AuraButtonSize.small,
               ),
-            ),
           ],
         ),
         AuraRow(
@@ -609,6 +619,29 @@ class _ConfirmationButtons extends ConsumerWidget {
   }
 
   Future<void> _onStopAll(WidgetRef ref, BuildContext context) async {
+    final turnId = toolCall.turnId;
+    final revision = toolCall.turnRevision;
+    final argumentsDigest = toolCall.argumentsDigest;
+    if (turnId != null && revision != null && argumentsDigest != null) {
+      return _runAction(
+        context,
+        errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
+        action: () async {
+          final cloud = await ref.read(
+            cloudTurnUsecaseProvider(workspaceId).future,
+          );
+          if (cloud == null) throw StateError('Cloud turn unavailable');
+          final _ = await cloud.decide(
+            turnId: turnId,
+            toolCallId: toolCall.id,
+            argumentsDigest: argumentsDigest,
+            revision: revision,
+            approved: false,
+            stopAll: true,
+          );
+        },
+      );
+    }
     await _runAction(
       context,
       errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,

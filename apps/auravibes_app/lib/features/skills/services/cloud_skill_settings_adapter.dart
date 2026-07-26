@@ -96,6 +96,7 @@ class CloudSkillSettingsAdapter {
   Future<void> setConversationSkill({
     required String conversationId,
     required String skillId,
+    required bool isAppSkill,
     required bool selected,
     int? expectedRevision,
   }) async {
@@ -120,6 +121,7 @@ class CloudSkillSettingsAdapter {
                   'id': resourceId,
                   'conversationId': conversationId,
                   'skillId': skillId,
+                  if (isAppSkill) 'source': 'app',
                 })
               : null,
           fieldMask: const [],
@@ -181,7 +183,9 @@ class CloudSkillSettingsAdapter {
             slug: data['slug'] as String,
             title: data['title'] as String,
             description: data['description'] as String,
-            source: SkillSource.user,
+            source: SkillSource.values.byName(
+              data['source'] as String? ?? SkillSource.user.name,
+            ),
             kind: kind,
             isEnabled:
                 settings[resource.resourceId] ?? data['isEnabled'] as bool,

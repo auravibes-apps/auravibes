@@ -42,6 +42,7 @@ class ListAppSkillCredentialCandidatesUsecase {
         for (final connection in cloudConnections)
           if (connection.kind == 'appSkillCredential' &&
               connection.serviceId == skill.identifier &&
+              connection.isEnabled &&
               connection.hasSecret)
             AppSkillCredentialCandidate(
               id: 'service:${connection.id}',
@@ -75,11 +76,16 @@ class ListAppSkillCredentialCandidatesUsecase {
     required String workspaceId,
     required AppSkillDefinition skill,
   }) async {
-    if (skill.nativeTools.any((tool) => !tool.requiresCredential)) {
+    if (skill.identifier == agentsSkillSlug) return true;
+
+    final serverNativeTools = skill.nativeTools
+        .where((tool) => tool.urlTemplate != null)
+        .toList(growable: false);
+    if (serverNativeTools.isEmpty) return false;
+
+    if (serverNativeTools.any((tool) => !tool.requiresCredential)) {
       return true;
     }
-
-    if (!isCredentialRequired(skill)) return true;
 
     return (await call(workspaceId: workspaceId, skill: skill)).isNotEmpty;
   }

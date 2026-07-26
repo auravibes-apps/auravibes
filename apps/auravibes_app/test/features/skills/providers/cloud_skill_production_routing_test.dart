@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
@@ -140,10 +141,11 @@ void main() {
         final operation =
             invocation.namedArguments[#resourceOperation]
                 as WorkspacePatchOperation;
+        final data = jsonDecode(operation.data ?? '{}') as Map<String, dynamic>;
         final resource = _resource(
           kind: operation.resourceKind,
           id: operation.resourceId,
-          data: operation.data ?? '{}',
+          data: jsonEncode({...data, 'hasSecret': true}),
           revision: (operation.expectedRevision ?? 0) + 1,
         );
         resources
@@ -216,22 +218,22 @@ void main() {
       await container.read(disableSkillUsecaseProvider(workspaceId))(
         workspaceId: workspaceId,
         source: SkillSource.app,
-        skillId: 'skills_manager',
+        skillId: 'agents',
         isEnabled: true,
-        slug: 'skills_manager',
-        title: 'Skills Manager',
-        description: 'Manage skills',
-        content: 'Manage workspace skills',
+        slug: 'agents',
+        title: 'Agents',
+        description: 'Run agents',
+        content: 'Run workspace agents',
       );
       await container.read(loadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
-        slug: 'skills_manager',
+        slug: 'agents',
       );
       await container.read(unloadConversationSkillUsecaseProvider(workspaceId))(
         conversationId: 'conversation-1',
         workspaceId: workspaceId,
-        slug: 'skills_manager',
+        slug: 'agents',
       );
       final updatedSkill =
           await container.read(updateSkillUsecaseProvider(workspaceId))(

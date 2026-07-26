@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/app_skill_workspace_settings_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_skills_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_credentials_repository.dart';
@@ -5,11 +7,14 @@ import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
+import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/check_skill_credential_readiness_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -28,6 +33,7 @@ void main() {
           now: now,
           credentialDefinitionId: 'credential-definition-1',
         );
+
         final optionalSkill = _skill(
           id: 'optional-skill',
           workspaceId: workspaceId,
@@ -37,6 +43,7 @@ void main() {
           isCredentialOptional: true,
           credentialDefinitionId: 'credential-definition-1',
         );
+
         final loadedSkill = _skill(
           id: 'loaded-skill',
           workspaceId: workspaceId,
@@ -80,6 +87,173 @@ void main() {
       },
     );
 
+    test('hides disabled selected user skills', () async {
+      final now = DateTime(2026);
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      final disabledSkill = _skill(
+        id: 'disabled-skill',
+        workspaceId: workspaceId,
+        title: 'Disabled Skill',
+        slug: 'disabled_skill',
+        now: now,
+        isEnabled: false,
+      );
+      final usecase = ListAvailableSkillsUsecase(
+        _FakeSkillsRepository([disabledSkill]),
+        _FakeConversationSkillsRepository([
+          ConversationSkillEntity(
+            id: 'conversation-skill-1',
+            conversationId: conversationId,
+            isLoaded: true,
+            createdAt: now,
+            updatedAt: now,
+            workspaceSkillId: disabledSkill.id,
+          ),
+        ]),
+        const _FakeAppSkillWorkspaceSettingsRepository(),
+        const AppSkillRegistry(),
+      );
+
+      final skills = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: SkillLoadFilter.loaded,
+      );
+
+      expect(skills, isEmpty);
+    });
+
+    test(
+      'does not expose persisted app skills through the user path',
+      () async {
+        final now = DateTime(2026);
+        const workspaceId = 'workspace-1';
+        const conversationId = 'conversation-1';
+        final persistedAppSkill = _skill(
+          id: 'duckduckgo',
+          workspaceId: workspaceId,
+          title: 'Persisted DuckDuckGo',
+          slug: 'duckduckgo',
+          now: now,
+          source: SkillSource.app,
+        );
+        final usecase = ListAvailableSkillsUsecase(
+          _FakeSkillsRepository([persistedAppSkill]),
+          const _FakeConversationSkillsRepository([]),
+          const _FakeAppSkillWorkspaceSettingsRepository({'duckduckgo'}),
+          const AppSkillRegistry(),
+          null,
+          const _FakeAppSkillCandidates(),
+        );
+
+        final skills = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: SkillLoadFilter.loadable,
+        );
+
+        expect(
+          skills.where((skill) => skill.slug == 'duckduckgo'),
+          hasLength(1),
+        );
+        expect(
+          skills.singleWhere((skill) => skill.slug == 'duckduckgo').source,
+          SkillSource.app,
+        );
+      },
+    );
+
+    test('cloud app skill is listed once through the app registry', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      final cloud = _cloudStore([
+        _cloudResource(
+          kind: WorkspaceResourceKind.skill,
+          id: 'jina',
+          data: {
+            'id': 'jina',
+            'source': 'app',
+            'kind': 'native',
+            'title': 'Persisted Jina',
+            'slug': 'jina',
+            'description': 'Persisted description',
+            'content': 'Persisted content',
+            'isEnabled': true,
+            'isCredentialOptional': true,
+          },
+        ),
+        _cloudResource(
+          kind: WorkspaceResourceKind.skillSetting,
+          id: 'jina',
+          data: {
+            'id': 'jina',
+            'skillId': 'jina',
+            'isEnabled': true,
+          },
+        ),
+      ]);
+      final usecase = ListAvailableSkillsUsecase(
+        null,
+        null,
+        null,
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        cloud,
+      );
+
+      final skills = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: SkillLoadFilter.loadable,
+      );
+
+      expect(skills.where((skill) => skill.slug == 'jina'), hasLength(1));
+      expect(
+        skills.singleWhere((skill) => skill.slug == 'jina').source,
+        SkillSource.app,
+      );
+    });
+
+    test('cloud list excludes callback-only app skills', () async {
+      const workspaceId = 'workspace-1';
+      const conversationId = 'conversation-1';
+      final cloud = _cloudStore([
+        _cloudResource(
+          kind: WorkspaceResourceKind.skillSetting,
+          id: 'anthropic',
+          data: const {
+            'id': 'anthropic',
+            'skillId': 'anthropic',
+            'isEnabled': true,
+          },
+        ),
+      ]);
+      final usecase = ListAvailableSkillsUsecase(
+        null,
+        null,
+        null,
+        const AppSkillRegistry(),
+        null,
+        const _FakeAppSkillCandidates(),
+        cloud,
+      );
+
+      final skills = await usecase.call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        filter: SkillLoadFilter.loadable,
+      );
+
+      expect(skills.map((skill) => skill.slug), contains(agentsSkillSlug));
+      expect(skills.map((skill) => skill.slug), isNot(contains('anthropic')));
+      expect(
+        skills.map((skill) => skill.slug),
+        isNot(contains('skills_manager')),
+      );
+    });
+
     test(
       'hides enabled required-credential app skills without credentials',
       () async {
@@ -101,6 +275,40 @@ void main() {
         );
 
         expect(skills.map((skill) => skill.slug), isNot(contains('openai')));
+      },
+    );
+
+    test(
+      'keeps loaded app skills visible after their credentials disappear',
+      () async {
+        const workspaceId = 'workspace-1';
+        const conversationId = 'conversation-1';
+        final now = DateTime.utc(2026);
+        final usecase = ListAvailableSkillsUsecase(
+          const _FakeSkillsRepository([]),
+          _FakeConversationSkillsRepository([
+            ConversationSkillEntity(
+              id: 'loaded-openai',
+              conversationId: conversationId,
+              isLoaded: true,
+              createdAt: now,
+              updatedAt: now,
+              appSkillIdentifier: 'openai',
+            ),
+          ]),
+          const _FakeAppSkillWorkspaceSettingsRepository({'openai'}),
+          const AppSkillRegistry(),
+          null,
+          const _FakeAppSkillCandidates(),
+        );
+
+        final loaded = await usecase.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          filter: SkillLoadFilter.loaded,
+        );
+
+        expect(loaded.map((skill) => skill.slug), contains('openai'));
       },
     );
 
@@ -193,6 +401,57 @@ void main() {
   });
 }
 
+CloudSkillStore _cloudStore(List<WorkspaceResource> resources) =>
+    CloudSkillStore(
+      CloudWorkspaceResourceStore.forTesting(
+        watch: (kinds) => Stream.value(
+          resources
+              .where((resource) => kinds.contains(resource.resourceKind))
+              .toList(),
+        ),
+        patch: ({required requestId, required operations}) =>
+            throw UnimplementedError(),
+        putSecret:
+            ({
+              required requestId,
+              required secretKind,
+              required scope,
+              required resourceId,
+              secret,
+              expectedRevision,
+            }) => throw UnimplementedError(),
+        mutateCredential:
+            ({
+              required requestId,
+              required resourceOperation,
+              required secretKind,
+              required scope,
+              required secret,
+              required clearSecret,
+              expectedSecretRevision,
+            }) => throw UnimplementedError(),
+      ),
+      'workspace-1',
+    );
+
+WorkspaceResource _cloudResource({
+  required WorkspaceResourceKind kind,
+  required String id,
+  required Map<String, Object?> data,
+}) {
+  final now = DateTime.utc(2026);
+
+  return WorkspaceResource(
+    workspaceId: 1,
+    resourceKind: kind,
+    resourceId: id,
+    data: jsonEncode(data),
+    revision: 1,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 SkillEntity _skill({
   required String id,
   required String workspaceId,
@@ -201,17 +460,19 @@ SkillEntity _skill({
   required DateTime now,
   bool isCredentialOptional = false,
   String? credentialDefinitionId,
+  bool isEnabled = true,
+  SkillSource source = SkillSource.user,
 }) {
   return SkillEntity(
     id: id,
     workspaceId: workspaceId,
-    source: SkillSource.user,
+    source: source,
     kind: SkillKind.template,
     title: title,
     slug: slug,
     description: '$title description',
     content: '$title content',
-    isEnabled: true,
+    isEnabled: isEnabled,
     isCredentialOptional: isCredentialOptional,
     createdAt: now,
     updatedAt: now,
@@ -350,7 +611,12 @@ class _FakeAppSkillCandidates
     required String workspaceId,
     required AppSkillDefinition skill,
   }) async {
-    if (skill.nativeTools.any((tool) => !tool.requiresCredential)) {
+    if (skill.identifier == agentsSkillSlug) return true;
+    final serverNativeTools = skill.nativeTools
+        .where((tool) => tool.urlTemplate != null)
+        .toList(growable: false);
+    if (serverNativeTools.isEmpty) return false;
+    if (serverNativeTools.any((tool) => !tool.requiresCredential)) {
       return true;
     }
 

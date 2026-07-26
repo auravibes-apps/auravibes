@@ -26,6 +26,7 @@ class ConversationEventWriter {
     required String requestId,
     required ConversationEventType kind,
     required String payloadJson,
+    Future<void> Function(Transaction transaction)? guard,
     Future<void> Function(
       Transaction transaction,
       Conversation conversation,
@@ -49,6 +50,7 @@ class ConversationEventWriter {
       }
 
       final now = DateTime.now().toUtc();
+      await guard?.call(transaction);
       await persist?.call(transaction, conversation, now);
       final sequence = conversation.eventSequence + 1;
       final projection = await Conversation.db.updateRow(

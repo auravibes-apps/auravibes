@@ -12,7 +12,8 @@ import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.da
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
-import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show ToolSpec, loadSkillToolName, unloadSkillToolName;
 import 'package:riverpod/src/providers/provider.dart';
 
 class LoadConversationToolSpecsUsecase {

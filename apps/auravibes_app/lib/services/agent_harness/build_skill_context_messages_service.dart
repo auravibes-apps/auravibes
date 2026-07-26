@@ -39,18 +39,27 @@ class BuildSkillContextMessagesService {
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
-    final skillKeys = <String>{};
-    final runtimeSkills = [...loadedSkills, ...agentSkills]
-        .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
-        .toList();
-
-    final agentMessages = _builder.call([
-      for (final skill in runtimeSkills)
-        agent.AgentSkill(title: skill.title, content: skill.content),
-    ]);
+    final agentMessages = _builder.compose(
+      agentContent: selectedAgent?.content,
+      conversationSkills: [
+        for (final skill in loadedSkills)
+          agent.AgentSkill(
+            title: skill.title,
+            content: skill.content,
+            identity: '${skill.source.name}:${skill.id}',
+          ),
+      ],
+      agentSkills: [
+        for (final skill in agentSkills)
+          agent.AgentSkill(
+            title: skill.title,
+            content: skill.content,
+            identity: '${skill.source.name}:${skill.id}',
+          ),
+      ],
+    );
 
     return [
-      if (selectedAgent != null) ChatMessage.system(selectedAgent.content),
       for (final message in agentMessages)
         ChatMessage(
           role: switch (message.role) {

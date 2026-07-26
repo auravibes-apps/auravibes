@@ -68,10 +68,22 @@ class ListAvailableSkillsUsecase {
     };
     final result = <AvailableSkill>[];
 
-    for (final skill in userSkills) {
+    for (final skill in userSkills.where(
+      (skill) => skill.source == SkillSource.user,
+    )) {
       if (!skill.isEnabled) continue;
       final isLoaded = loadedUserIds.contains(skill.id);
-      if (!isLoaded && !await _isCredentialReady(workspaceId, skill)) continue;
+      final isCredentialReady = cloud == null
+          ? isLoaded || await _isCredentialReady(workspaceId, skill)
+          : await cloud.userSkillReady(skill);
+      if (!isSkillLoadable(
+            isEnabled: skill.isEnabled,
+            isLoaded: isLoaded,
+            isCredentialReady: isCredentialReady,
+          ) &&
+          !isLoaded) {
+        continue;
+      }
       if (!filter.matches(isLoaded: isLoaded)) continue;
       result.add(skill.toAvailableSkill());
     }
@@ -85,7 +97,10 @@ class ListAvailableSkillsUsecase {
           : await cloud.isAppSkillEnabled(skill.identifier);
       if (!isEnabled) continue;
       final isLoaded = loadedAppIds.contains(skill.identifier);
-      if (!await _hasUsableAppSkillTool(workspaceId, skill)) continue;
+      final hasUsableTool = cloud == null
+          ? await _hasLocallyUsableAppSkillTool(workspaceId, skill)
+          : await _hasUsableAppSkillTool(workspaceId, skill);
+      if (!isLoaded && !hasUsableTool) continue;
       if (!filter.matches(isLoaded: isLoaded)) continue;
       result.add(
         AvailableSkill(
@@ -128,6 +143,23 @@ class ListAvailableSkillsUsecase {
     return repository;
   }
 
+  Future<bool> _hasLocallyUsableAppSkillTool(
+    String workspaceId,
+    AppSkillDefinition skill,
+  ) async {
+    final usecase = _listAppSkillCredentialCandidatesUsecase;
+    if (usecase == null ||
+        skill.nativeTools.any((tool) => !tool.requiresCredential) ||
+        !usecase.isCredentialRequired(skill)) {
+      return true;
+    }
+
+    return (await usecase.call(
+      workspaceId: workspaceId,
+      skill: skill,
+    )).isNotEmpty;
+  }
+
   Future<bool> _hasUsableAppSkillTool(
     String workspaceId,
     AppSkillDefinition skill,
@@ -155,9 +187,7 @@ listAvailableSkillsUsecaseProvider =
               : null,
           ref.watch(appSkillRegistryProvider),
           ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
-          cloud == null
-              ? ref.watch(listAppSkillCredentialCandidatesUsecaseProvider)
-              : null,
+          ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
           cloud,
         );
       },

@@ -13,6 +13,7 @@ class CloudServiceConnection {
     this.secretRevision,
     this.keySuffix,
     this.credentialDefinitionId,
+    this.isEnabled = true,
   });
 
   factory CloudServiceConnection.fromResource(WorkspaceResource resource) {
@@ -31,6 +32,7 @@ class CloudServiceConnection {
       secretRevision: data['secretRevision'] as int?,
       keySuffix: data['keySuffix'] as String?,
       credentialDefinitionId: data['credentialDefinitionId'] as String?,
+      isEnabled: data['isEnabled'] as bool? ?? true,
     );
   }
 
@@ -44,6 +46,7 @@ class CloudServiceConnection {
   final int? secretRevision;
   final String? keySuffix;
   final String? credentialDefinitionId;
+  final bool isEnabled;
 }
 
 enum ServiceConnectionSecretEdit { preserve, replace, clear }

@@ -15,20 +15,28 @@ class CloudTurnUsecase {
     required String argumentsDigest,
     required int revision,
     required bool approved,
+    bool stopAll = false,
     String? editedArgumentsJson,
-  }) => _retryStale(
-    turnId,
-    revision,
-    (expectedRevision) => _gateway.submitToolDecision(
-      requestId: DateTime.now().microsecondsSinceEpoch.toString(),
+  }) {
+    final requestId = DateTime.now().microsecondsSinceEpoch.toString();
+
+    return _retryStaleDecision(
       turnId: turnId,
       toolCallId: toolCallId,
       argumentsDigest: argumentsDigest,
-      expectedTurnRevision: expectedRevision,
-      decision: approved ? 'approve' : 'deny',
-      editedArgumentsJson: editedArgumentsJson,
-    ),
-  );
+      revision: revision,
+      action: (expectedRevision) => _gateway.submitToolDecision(
+        requestId: requestId,
+        turnId: turnId,
+        toolCallId: toolCallId,
+        argumentsDigest: argumentsDigest,
+        expectedTurnRevision: expectedRevision,
+        decision: approved ? 'approve' : 'deny',
+        stopAll: stopAll,
+        editedArgumentsJson: editedArgumentsJson,
+      ),
+    );
+  }
 
   Future<ConversationMutationResult> cancel({
     required String turnId,
@@ -82,6 +90,33 @@ class CloudTurnUsecase {
     conversationId: conversationId,
     expectedProjectionRevision: projectionRevision,
   );
+
+  Future<ConversationMutationResult> _retryStaleDecision({
+    required String turnId,
+    required String toolCallId,
+    required String argumentsDigest,
+    required int revision,
+    required Future<ConversationMutationResult> Function(int revision) action,
+  }) async {
+    try {
+      return await action(revision);
+    } on CloudAppException catch (error) {
+      if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
+      final snapshot = await get(turnId);
+      final call = snapshot.toolCalls
+          .where(
+            (candidate) => candidate.id == toolCallId,
+          )
+          .firstOrNull;
+      if (call == null ||
+          call.status != 'pending' ||
+          call.argumentsDigest != argumentsDigest) {
+        rethrow;
+      }
+
+      return action(snapshot.turn.revision);
+    }
+  }
 
   Future<ConversationMutationResult> _retryStale(
     String turnId,

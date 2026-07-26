@@ -21,8 +21,9 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
     required this.argumentsDigest,
     required this.expectedTurnRevision,
     required this.decision,
+    bool? stopAll,
     this.editedArgumentsJson,
-  });
+  }) : stopAll = stopAll ?? false;
 
   factory SubmitToolDecisionRequest({
     required int workspaceId,
@@ -32,6 +33,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
     required String argumentsDigest,
     required int expectedTurnRevision,
     required String decision,
+    bool? stopAll,
     String? editedArgumentsJson,
   }) = _SubmitToolDecisionRequestImpl;
 
@@ -46,6 +48,9 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
       argumentsDigest: jsonSerialization['argumentsDigest'] as String,
       expectedTurnRevision: jsonSerialization['expectedTurnRevision'] as int,
       decision: jsonSerialization['decision'] as String,
+      stopAll: jsonSerialization['stopAll'] == null
+          ? null
+          : _i1.BoolJsonExtension.fromJson(jsonSerialization['stopAll']),
       editedArgumentsJson: jsonSerialization['editedArgumentsJson'] as String?,
     );
   }
@@ -64,6 +69,8 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
 
   String decision;
 
+  bool stopAll;
+
   String? editedArgumentsJson;
 
   /// Returns a shallow copy of this [SubmitToolDecisionRequest]
@@ -77,6 +84,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
     String? argumentsDigest,
     int? expectedTurnRevision,
     String? decision,
+    bool? stopAll,
     String? editedArgumentsJson,
   });
   @override
@@ -90,6 +98,7 @@ abstract class SubmitToolDecisionRequest implements _i1.SerializableModel {
       'argumentsDigest': argumentsDigest,
       'expectedTurnRevision': expectedTurnRevision,
       'decision': decision,
+      'stopAll': stopAll,
       if (editedArgumentsJson != null)
         'editedArgumentsJson': editedArgumentsJson,
     };
@@ -112,6 +121,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
     required String argumentsDigest,
     required int expectedTurnRevision,
     required String decision,
+    bool? stopAll,
     String? editedArgumentsJson,
   }) : super._(
          workspaceId: workspaceId,
@@ -121,6 +131,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
          argumentsDigest: argumentsDigest,
          expectedTurnRevision: expectedTurnRevision,
          decision: decision,
+         stopAll: stopAll,
          editedArgumentsJson: editedArgumentsJson,
        );
 
@@ -136,6 +147,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
     String? argumentsDigest,
     int? expectedTurnRevision,
     String? decision,
+    bool? stopAll,
     Object? editedArgumentsJson = _Undefined,
   }) {
     return SubmitToolDecisionRequest(
@@ -146,6 +158,7 @@ class _SubmitToolDecisionRequestImpl extends SubmitToolDecisionRequest {
       argumentsDigest: argumentsDigest ?? this.argumentsDigest,
       expectedTurnRevision: expectedTurnRevision ?? this.expectedTurnRevision,
       decision: decision ?? this.decision,
+      stopAll: stopAll ?? this.stopAll,
       editedArgumentsJson: editedArgumentsJson is String?
           ? editedArgumentsJson
           : this.editedArgumentsJson,

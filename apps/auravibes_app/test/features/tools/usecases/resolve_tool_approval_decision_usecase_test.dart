@@ -2,7 +2,6 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
-import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
@@ -129,7 +128,7 @@ void main() {
             () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolName: loadSkillToolName,
+              toolName: agent.loadSkillToolName,
             ),
           ).thenAnswer((_) async => 'skill-tool-1');
           final usecase = ResolveToolApprovalDecisionUsecase(
@@ -154,7 +153,7 @@ void main() {
             workspaceId: 'ws-1',
             toolCallId: 'tc-1',
             resolvedTool: ResolvedTool.skillControl(
-              toolIdentifier: loadSkillToolName,
+              toolIdentifier: agent.loadSkillToolName,
             ),
           );
 

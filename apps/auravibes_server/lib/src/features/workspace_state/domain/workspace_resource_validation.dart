@@ -150,9 +150,10 @@ class WorkspaceResourceValidation {
       WorkspaceResourceKind.conversationToolSelection => const {
         'toolId': WorkspaceResourceKind.tool,
       },
-      WorkspaceResourceKind.conversationSkillSelection => const {
-        'skillId': WorkspaceResourceKind.skill,
-      },
+      WorkspaceResourceKind.conversationSkillSelection =>
+        data['source'] == 'app'
+            ? const {}
+            : const {'skillId': WorkspaceResourceKind.skill},
       WorkspaceResourceKind.agent ||
       WorkspaceResourceKind.serviceConnection ||
       WorkspaceResourceKind.toolGroup ||

@@ -85,6 +85,23 @@ void main() {
     expect(references.single.id, 'skill-1');
   });
 
+  test('app conversation skill selections do not reference user skills', () {
+    expect(
+      WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.conversationSkillSelection,
+        {'skillId': 'agents', 'source': 'app'},
+      ),
+      isEmpty,
+    );
+    expect(
+      WorkspaceResourceValidation.references(
+        WorkspaceResourceKind.conversationSkillSelection,
+        {'skillId': 'user-skill'},
+      ).single.id,
+      'user-skill',
+    );
+  });
+
   test('agent skill associations reference agent and skill', () {
     final references = WorkspaceResourceValidation.references(
       WorkspaceResourceKind.agentAssociation,

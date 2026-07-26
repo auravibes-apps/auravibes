@@ -7,6 +7,7 @@ import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/agents/usecases/list_agents_usecase.dart';
 import 'package:auravibes_app/features/chats/models/cloud_conversation_state.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
@@ -78,6 +79,103 @@ void main() {
     );
     expect(screen.workspaceId, _workspaceId);
     expect(screen.chatId, _chatId);
+  });
+
+  test('maps the cloud tool-call status vocabulary intentionally', () {
+    expect(cloudToolCallResultStatus('pending'), isNull);
+    expect(
+      cloudToolCallResultStatus('needsConfirmation'),
+      isNull,
+    );
+    expect(
+      cloudToolCallResultStatus('approved'),
+      ToolCallResultStatus.running,
+    );
+    expect(
+      cloudToolCallResultStatus('running'),
+      ToolCallResultStatus.running,
+    );
+    expect(
+      cloudToolCallResultStatus('success'),
+      ToolCallResultStatus.success,
+    );
+    expect(
+      cloudToolCallResultStatus('denied'),
+      ToolCallResultStatus.skippedByUser,
+    );
+    expect(
+      cloudToolCallResultStatus('toolNotFound'),
+      ToolCallResultStatus.toolNotFound,
+    );
+    expect(
+      cloudToolCallResultStatus('disabledInWorkspace'),
+      ToolCallResultStatus.disabledInWorkspace,
+    );
+    expect(
+      cloudToolCallResultStatus('disabledInConversation'),
+      ToolCallResultStatus.disabledInConversation,
+    );
+    expect(
+      cloudToolCallResultStatus('disabledByAgent'),
+      ToolCallResultStatus.disabledByAgent,
+    );
+    expect(
+      cloudToolCallResultStatus('notConfigured'),
+      ToolCallResultStatus.notConfigured,
+    );
+    expect(
+      cloudToolCallResultStatus('executionError'),
+      ToolCallResultStatus.executionError,
+    );
+    expect(
+      cloudToolCallResultStatus('unknown'),
+      ToolCallResultStatus.executionError,
+    );
+  });
+
+  test('cloud pending tool calls become approval inputs', () {
+    final now = DateTime.utc(2026);
+    final pendingCalls = cloudPendingToolCalls(
+      _cloudState(
+        projectionRevision: 7,
+        messages: [
+          ConversationMessageView(
+            id: 'message-1',
+            conversationId: _chatId,
+            turnId: 'turn-1',
+            turnRevision: 11,
+            role: 'assistant',
+            kind: 'message',
+            status: 'awaitingApproval',
+            content: '',
+            toolCalls: const [],
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ],
+        toolCalls: [
+          ConversationToolCallView(
+            id: 'tool-call-1',
+            turnId: 'turn-1',
+            messageId: 'message-1',
+            name: 'load_skill',
+            argumentsJson: '{"slug":"research"}',
+            argumentsDigest: 'digest-1',
+            status: 'pending',
+            revision: 3,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ],
+      ),
+    );
+
+    expect(pendingCalls, hasLength(1));
+    expect(pendingCalls.single.toolCall.turnId, 'turn-1');
+    expect(pendingCalls.single.toolCall.turnRevision, 11);
+    expect(pendingCalls.single.toolCall.argumentsDigest, 'digest-1');
+    expect(pendingCalls.single.messageId, 'message-1');
   });
 
   test('ConversationResult subclasses have correct types', () {
@@ -1056,6 +1154,8 @@ CloudTurnUsecase _cloudTurnUsecase(_CloudConversationEndpoint endpoint) {
 CloudConversationState _cloudState({
   required int projectionRevision,
   String executionState = 'idle',
+  List<ConversationMessageView> messages = const [],
+  List<ConversationToolCallView> toolCalls = const [],
 }) => CloudConversationState(
   conversation: ConversationProjectionView(
     id: _chatId,
@@ -1065,10 +1165,10 @@ CloudConversationState _cloudState({
     sequence: projectionRevision,
     updatedAt: DateTime.utc(2026),
   ),
-  messages: const [],
+  messages: messages,
   pendingMessages: const [],
   activeExecution: null,
-  toolCalls: const [],
+  toolCalls: toolCalls,
   sequence: projectionRevision,
 );
 

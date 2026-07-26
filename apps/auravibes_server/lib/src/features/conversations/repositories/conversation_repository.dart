@@ -7,8 +7,41 @@ import '../../model_connections/domain/virtual_workspace_model_selection.dart';
 import '../../objects/object_reference_service.dart';
 import '../domain/conversation_values.dart';
 
-String conversationTurnJobPayload(String actorUserId) =>
-    jsonEncode({'actorUserId': actorUserId});
+String conversationTurnJobPayload(
+  String actorUserId, {
+  String? executionId,
+  int? parentTurnId,
+}) => jsonEncode({
+  'actorUserId': actorUserId,
+  'executionId': ?executionId,
+  'parentTurnId': ?parentTurnId,
+});
+
+String conversationExecutionIdForJob(
+  String jobRequestId,
+  String? payloadJson,
+) {
+  if (payloadJson == null) return jobRequestId;
+  final payload = jsonDecode(payloadJson);
+  return payload is Map && payload['executionId'] is String
+      ? payload['executionId']! as String
+      : jobRequestId;
+}
+
+int? conversationParentTurnIdForJob(String? payloadJson) {
+  if (payloadJson == null) return null;
+  final payload = jsonDecode(payloadJson);
+  return payload is Map && payload['parentTurnId'] is int
+      ? payload['parentTurnId']! as int
+      : null;
+}
+
+int? conversationParentTurnIdForExecutionSettings(String settingsJson) {
+  final settings = jsonDecode(settingsJson);
+  return settings is Map && settings['parentTurnId'] is int
+      ? settings['parentTurnId']! as int
+      : null;
+}
 
 class ConversationRepository {
   ConversationRepository({ObjectReferenceService? objectReferenceService})

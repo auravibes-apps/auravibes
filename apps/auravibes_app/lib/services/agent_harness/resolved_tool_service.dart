@@ -447,7 +447,7 @@ Future<Object?> _runSkillControlTool({
     throw const FormatException('Skill control tools require a slug.');
   }
 
-  if (toolIdentifier == loadSkillToolName) {
+  if (toolIdentifier == agent.loadSkillToolName) {
     final usecase = dependencies.loadConversationSkillUsecase?.call(
       workspaceId,
     );
