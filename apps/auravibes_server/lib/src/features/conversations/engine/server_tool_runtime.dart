@@ -220,30 +220,11 @@ Map<String, Object?> cloudTemplateInputSchema(
   required bool requiresCredential,
   Iterable<String> credentialIds = const [],
 }) {
-  final properties = <String, Object?>{};
-  final required = <String>[];
-  for (final input in _templateInputs(inputsJson).whereType<Map>()) {
-    final name = input['name'];
-    if (name is! String || name.isEmpty) continue;
-    properties[name] = {
-      'type': input['type'] is String ? input['type'] : 'string',
-      if (input['description'] case final String description)
-        'description': description,
-    };
-    if (input['isOptional'] != true) required.add(name);
-  }
-  _addCredentialSchema(
-    properties: properties,
-    required: required,
+  return templateInputSchema(
+    inputsJson,
     requiresCredential: requiresCredential,
     credentialIds: credentialIds,
   );
-  return {
-    'type': 'object',
-    'properties': properties,
-    'required': required,
-    'additionalProperties': false,
-  };
 }
 
 Map<String, Object?> cloudNativeInputSchema(
@@ -251,49 +232,11 @@ Map<String, Object?> cloudNativeInputSchema(
   required bool requiresCredential,
   Iterable<String> credentialIds = const [],
 }) {
-  final properties = Map<String, Object?>.from(
-    inputJsonSchema['properties'] as Map? ?? const {},
-  );
-  final required = [
-    ...(inputJsonSchema['required'] as List? ?? const <Object?>[])
-        .whereType<String>(),
-  ];
-  _addCredentialSchema(
-    properties: properties,
-    required: required,
+  return materializeSkillToolSchema(
+    inputJsonSchema,
     requiresCredential: requiresCredential,
     credentialIds: credentialIds,
   );
-  return {
-    ...inputJsonSchema,
-    'properties': properties,
-    if (required.isNotEmpty) 'required': required,
-  };
-}
-
-List<Object?> _templateInputs(Object? inputsJson) {
-  try {
-    final decoded = switch (inputsJson) {
-      List<Object?> value => value,
-      String value => jsonDecode(value),
-      _ => const <Object?>[],
-    };
-    return decoded is List<Object?> ? decoded : const <Object?>[];
-  } on FormatException {
-    return const <Object?>[];
-  }
-}
-
-void _addCredentialSchema({
-  required Map<String, Object?> properties,
-  required List<String> required,
-  required bool requiresCredential,
-  required Iterable<String> credentialIds,
-}) {
-  final ids = credentialIds.toSet().toList(growable: false);
-  if (!requiresCredential || ids.isEmpty) return;
-  properties['credentialId'] = {'type': 'string', 'enum': ids};
-  required.add('credentialId');
 }
 
 List<String> _templateCredentialIds(

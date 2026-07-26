@@ -13,6 +13,8 @@ export 'src/aura_agent_service.dart';
 export 'src/chat_result.dart';
 export 'src/context_window.dart';
 export 'src/continue_agent_result.dart';
+export 'src/conversation_compaction.dart';
+export 'src/conversation_title.dart';
 export 'src/genkit_providers/chat_completions_provider.dart'
     show
         ChatCompletionsCodec,
@@ -27,10 +29,13 @@ export 'src/genkit_providers/openai_compat_reasoning.dart'
 export 'src/genkit_providers/openrouter.dart' show OpenRouterOptions;
 export 'src/mcp.dart';
 export 'src/model_capabilities.dart';
+export 'src/models_dev_catalog.dart';
 export 'src/namespaces/agent_namespace.dart';
 export 'src/namespaces/conversations_namespace.dart';
 export 'src/namespaces/tools_namespace.dart';
 export 'src/prompt_messages.dart';
+export 'src/provider_profile.dart';
+export 'src/provider_tool_exchange.dart';
 export 'src/providers/agent_data_provider.dart';
 export 'src/providers/agent_model_provider.dart';
 export 'src/public_url_classifier.dart';
@@ -54,6 +59,8 @@ export 'src/skills/models/url_response_format.dart';
 export 'src/skills/service_skills/service_skill_definitions.dart';
 export 'src/skills/skill_control_tools.dart';
 export 'src/skills/skill_eligibility.dart';
+export 'src/skills/skill_tool_materialization.dart';
+export 'src/skills/skills_manager.dart';
 export 'src/sub_agents/sub_agent_runner.dart';
 export 'src/sub_agents/sub_agent_tool_specs.dart';
 export 'src/tool_call_actions.dart'
@@ -68,3 +75,4 @@ export 'src/transcript_context.dart';
 export 'src/transcript_selection.dart';
 export 'src/url_content_format.dart';
 export 'src/url_content_transformer.dart';
+export 'src/url_tool.dart';

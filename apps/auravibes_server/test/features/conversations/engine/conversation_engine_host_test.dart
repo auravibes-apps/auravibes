@@ -211,25 +211,33 @@ void main() {
             'content': 'A text',
             'tool_calls': [
               {
-                'id': 'call-a',
+                'id': 'tool_63_61_6c_6c_2d_61',
                 'type': 'function',
                 'function': {'name': 'a', 'arguments': '{}'},
               },
             ],
           },
-          {'role': 'tool', 'tool_call_id': 'call-a', 'content': 'a-result'},
+          {
+            'role': 'tool',
+            'tool_call_id': 'tool_63_61_6c_6c_2d_61',
+            'content': 'a-result',
+          },
           {
             'role': 'assistant',
             'content': 'B text',
             'tool_calls': [
               {
-                'id': 'call-b',
+                'id': 'tool_63_61_6c_6c_2d_62',
                 'type': 'function',
                 'function': {'name': 'b', 'arguments': '{}'},
               },
             ],
           },
-          {'role': 'tool', 'tool_call_id': 'call-b', 'content': 'b-result'},
+          {
+            'role': 'tool',
+            'tool_call_id': 'tool_63_61_6c_6c_2d_62',
+            'content': 'b-result',
+          },
         ],
       );
     },

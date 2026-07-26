@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:auravibes_engine/auravibes_engine.dart';
+
 import '../../generated/protocol.dart';
 import 'mcp_server_policy.dart';
 
@@ -65,29 +67,21 @@ class McpServerProbe {
         const <String, Object?>{},
         sessionId: initialized.sessionId,
       );
-      final toolsJson = toolsResult.result['tools'];
-      if (toolsJson is! List || toolsJson.length > McpServerPolicy.maxTools) {
+      final discovered = parseMcpToolsList(toolsResult.result);
+      if (discovered.length > McpServerPolicy.maxTools) {
         throw const FormatException('Invalid MCP tools response.');
       }
-      final tools = toolsJson
-          .map((value) {
-            if (value is! Map<Object?, Object?> || value['name'] is! String) {
+      final tools = discovered
+          .map((tool) {
+            if (tool.name.length > 200 ||
+                (tool.description?.length ?? 0) > 4000) {
               throw const FormatException('Invalid MCP tool.');
             }
-            final name = value['name']! as String;
-            if (name.isEmpty || name.length > 200) {
-              throw const FormatException('Invalid MCP tool name.');
-            }
-            final description = value['description'];
-            if (description != null &&
-                (description is! String || description.length > 4000)) {
-              throw const FormatException('Invalid MCP tool description.');
-            }
             return DiscoveredMcpTool(
-              name: name,
-              description: description as String?,
+              name: tool.name,
+              description: tool.description,
               inputSchemaJson: McpServerPolicy.boundedSchema(
-                value['inputSchema'] ?? const <String, Object?>{},
+                tool.inputSchema,
               ),
             );
           })

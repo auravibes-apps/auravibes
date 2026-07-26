@@ -239,7 +239,7 @@ void main() {
     });
 
     group('fetchAllModels', () {
-      test('parses successful response with providers', () async {
+      test('rejects a catalog without models', () {
         final dio = _createDioWithEndpointResponses(
           apiData: {
             'openai': <String, dynamic>{
@@ -252,9 +252,7 @@ void main() {
         );
         final service = ModelApiService(dio: dio);
 
-        final result = await service.fetchAllModels();
-        expect(result.providers, hasLength(1));
-        expect(result.providers.first.modelProvider.id, 'openai');
+        expect(service.fetchAllModels, throwsFormatException);
 
         dio.close();
       });
@@ -340,7 +338,7 @@ void main() {
         dio.close();
       });
 
-      test('skips non-map provider entries', () async {
+      test('rejects non-map provider entries', () {
         final dio = _createDioWithEndpointResponses(
           apiData: {
             'openai': <String, dynamic>{
@@ -354,10 +352,7 @@ void main() {
         );
         final service = ModelApiService(dio: dio);
 
-        final result = await service.fetchAllModels();
-
-        expect(result.providers, hasLength(1));
-        expect(result.providers.single.modelProvider.id, 'openai');
+        expect(service.fetchAllModels, throwsFormatException);
 
         dio.close();
       });
@@ -421,7 +416,7 @@ void main() {
         dio.close();
       });
 
-      test('skips invalid model entries while storing provider', () async {
+      test('rejects invalid model entries', () {
         final dio = _createDioWithEndpointResponses(
           apiData: {
             'gateway': <String, dynamic>{
@@ -434,11 +429,7 @@ void main() {
         );
         final service = ModelApiService(dio: dio);
 
-        final result = await service.fetchAllModels();
-
-        expect(result.providers, hasLength(1));
-        expect(result.providers.single.modelProvider.id, 'gateway');
-        expect(result.providers.expand((p) => p.models), isEmpty);
+        expect(service.fetchAllModels, throwsFormatException);
 
         dio.close();
       });

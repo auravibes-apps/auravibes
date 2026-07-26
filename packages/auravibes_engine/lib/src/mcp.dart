@@ -1,6 +1,45 @@
 import 'dart:collection';
 import 'dart:convert';
 
+final class McpDiscoveredTool {
+  McpDiscoveredTool({
+    required this.name,
+    required Map<String, Object?> inputSchema,
+    this.description,
+  }) : inputSchema = _freezeMap(inputSchema);
+
+  final String name;
+  final String? description;
+  final Map<String, Object?> inputSchema;
+}
+
+List<McpDiscoveredTool> parseMcpToolsList(Map<String, Object?> result) {
+  final rawTools = result['tools'];
+  if (rawTools is! List) {
+    throw const FormatException('Invalid MCP tools response.');
+  }
+  return rawTools
+      .map((raw) {
+        if (raw is! Map) throw const FormatException('Invalid MCP tool.');
+        final name = raw['name'];
+        final description = raw['description'];
+        final schema = raw['inputSchema'] ?? const <String, Object?>{};
+        if (name is! String ||
+            name.isEmpty ||
+            (description != null && description is! String) ||
+            schema is! Map ||
+            !schema.keys.every((key) => key is String)) {
+          throw const FormatException('Invalid MCP tool.');
+        }
+        return McpDiscoveredTool(
+          name: name,
+          description: description as String?,
+          inputSchema: Map<String, Object?>.from(schema),
+        );
+      })
+      .toList(growable: false);
+}
+
 sealed class McpContent {
   const McpContent();
   Map<String, Object?> toJson();

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
@@ -391,56 +392,40 @@ class ModelConnectionUseCases {
   );
 }
 
-String defaultProviderUrl(String providerId) => switch (providerId) {
-  'openai-codex' => 'https://chatgpt.com/backend-api/codex/',
-  'openai' => 'https://api.openai.com/v1',
-  'openrouter' => 'https://openrouter.ai/api/v1',
-  'anthropic' => 'https://api.anthropic.com/v1',
-  _ => throw CloudWorkspaceException(
-    code: CloudWorkspaceErrorCode.validationFailed,
-  ),
-};
+String defaultProviderUrl(String providerId) {
+  try {
+    return providerProfile(providerId).defaultUrl;
+  } on FormatException {
+    return _invalid();
+  }
+}
 
-Map<String, String> providerHeaders(String providerId, String apiKey) =>
-    switch (providerId) {
-      'openai-codex' => {
-        'authorization': 'Bearer $apiKey',
-        'originator': 'auravibes',
-        'user-agent': 'AuraVibes',
-      },
-      'anthropic' => {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      'openai' || 'openrouter' => {'authorization': 'Bearer $apiKey'},
-      _ => _invalid(),
-    };
+Map<String, String> providerHeaders(String providerId, String apiKey) {
+  try {
+    return providerAuthorizationHeaders(providerId, apiKey);
+  } on FormatException {
+    return _invalid();
+  }
+}
 
 Uri modelCatalogUri(String providerId, Uri baseUri) {
-  final path = baseUri.path.replaceFirst(RegExp(r'/$'), '');
-  return baseUri.replace(
-    path: '$path/models',
-    queryParameters: providerId == 'anthropic'
-        ? {'limit': '${ModelConnectionUseCases.maxModels}'}
-        : null,
-  );
+  try {
+    return providerModelCatalogUri(
+      providerId,
+      baseUri,
+      maxModels: ModelConnectionUseCases.maxModels,
+    );
+  } on FormatException {
+    return _invalid();
+  }
 }
 
 List<String> parseModelIds(Object? response, {required int maxModels}) {
-  if (response is! Map<String, dynamic> || response['data'] is! List) {
+  try {
+    return parseProviderModelIds(response, maxModels: maxModels);
+  } on FormatException {
     return _invalid();
   }
-  final ids = <String>[];
-  for (final item in response['data'] as List) {
-    if (item is! Map ||
-        item['id'] is! String ||
-        (item['id'] as String).isEmpty) {
-      return _invalid();
-    }
-    if (ids.length == maxModels) break;
-    ids.add(item['id'] as String);
-  }
-  return List.unmodifiable(ids);
 }
 
 Future<Uri> requirePublicHttpsUri(
