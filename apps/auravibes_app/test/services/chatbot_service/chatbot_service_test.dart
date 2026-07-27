@@ -193,9 +193,9 @@ void main() {
       ];
 
       expect(refs, [
-        'skill_context_x3a_example',
-        'tool_x3a_1',
-        'tool_x3a_1',
+        'tool_73_6b_69_6c_6c_5f_63_6f_6e_74_65_78_74_3a_65_78_61_6d_70_6c_65',
+        'tool_74_6f_6f_6c_3a_31',
+        'tool_74_6f_6f_6c_3a_31',
       ]);
       expect(refs, everyElement(matches(RegExp(r'^[a-zA-Z0-9_-]+$'))));
     });

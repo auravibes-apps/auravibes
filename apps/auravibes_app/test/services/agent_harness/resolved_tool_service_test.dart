@@ -65,6 +65,7 @@ AvailableSkill _appAvailableSkill(String slug) {
 }
 
 void main() {
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
   var cancellationRuntime = AgentCancellationRuntime();
   var mcpCalls = <({String serverId, String toolIdentifier})>[];
   var usecase = ResolvedToolService(
