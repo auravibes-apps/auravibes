@@ -68,7 +68,7 @@ final class ChatMessagesByConversationProvider
 }
 
 String _$chatMessagesByConversationHash() =>
-    r'398630e280f7229242e8b047774fe8cb01a58c89';
+    r'b014de623241f467421706f18302ba0b552c6ab7';
 
 final class ChatMessagesByConversationFamily extends $Family
     with
@@ -564,7 +564,7 @@ final class ConversationBusyStateProvider
 }
 
 String _$conversationBusyStateHash() =>
-    r'09d239b004e295d62861efd0d11cd7d66623d9d6';
+    r'a0ade899c719b719ca9fa55c7eedaed993938317';
 
 final class ConversationBusyStateFamily extends $Family
     with

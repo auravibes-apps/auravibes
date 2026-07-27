@@ -132,13 +132,13 @@ melos:
 
     # Code Generation Scripts
     generate:
-      exec: dart run build_runner build --delete-conflicting-outputs
+      exec: dart run build_runner build
       description: Run code generation for all packages
       packageFilters:
         dependsOn: build_runner
 
     generate:watch:
-      exec: dart run build_runner watch --delete-conflicting-outputs
+      exec: dart run build_runner watch
       description: Run code generation in watch mode
       packageFilters:
         dependsOn: build_runner
