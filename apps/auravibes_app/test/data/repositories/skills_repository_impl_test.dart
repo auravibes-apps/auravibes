@@ -982,6 +982,15 @@ void main() {
           attributes: const {'api_key': 'secret-token'},
         ),
       );
+      final secondCredential = await skillCredentialsRepository
+          .createCredential(
+            workspace.id,
+            SkillCredentialToCreate(
+              credentialDefinitionId: definition.id,
+              name: 'Second Example Credential',
+              attributes: const {'api_key': 'second-secret-token'},
+            ),
+          );
       specs = await buildSpecsUsecase.call(
         conversationId: conversation.id,
         workspaceId: workspace.id,
@@ -993,12 +1002,15 @@ void main() {
         (spec) => spec.name.endsWith('__private_search'),
       );
 
-      expect(_propertyEnumFor(publicSpec, 'credentialId'), [credential.id]);
-      expect(
-        publicSpec.inputJsonSchema['required']! as List<Object?>,
-        isNot(contains('credentialId')),
-      );
-      expect(_propertyEnumFor(privateSpec, 'credentialId'), [credential.id]);
+      expect(_propertyEnumFor(publicSpec, 'credentialId'), [
+        credential.id,
+        secondCredential.id,
+      ]);
+      expect(publicSpec.inputJsonSchema, isNot(contains('required')));
+      expect(_propertyEnumFor(privateSpec, 'credentialId'), [
+        credential.id,
+        secondCredential.id,
+      ]);
       expect(
         privateSpec.inputJsonSchema['required']! as List<Object?>,
         contains('credentialId'),
