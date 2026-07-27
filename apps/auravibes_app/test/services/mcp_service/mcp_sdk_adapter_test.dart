@@ -32,4 +32,16 @@ void main() {
     expect(result.structuredContent, {'ok': true});
     expect(result.isError, isTrue);
   });
+
+  test('drops SDK legacy streaming hint', () {
+    final result = mcpToolResultFromSdk(
+      const mcp.CallToolResult(
+        [mcp.TextContent(text: 'legacy')],
+        // ignore: deprecated_member_use - Verifies the legacy SDK hint is dropped.
+        isStreaming: true,
+      ),
+    );
+
+    expect(result.isStreaming, isFalse);
+  });
 }

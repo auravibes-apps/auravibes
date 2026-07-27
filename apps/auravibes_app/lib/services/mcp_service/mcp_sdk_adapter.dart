@@ -4,7 +4,6 @@ import 'package:mcp_client/mcp_client.dart' as mcp;
 McpToolResult mcpToolResultFromSdk(mcp.CallToolResult result) => McpToolResult(
   content: result.content.map(_contentFromSdk).toList(),
   structuredContent: result.structuredContent,
-  isStreaming: result.isStreaming,
   isError: result.isError,
 );
 

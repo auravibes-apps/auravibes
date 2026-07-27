@@ -152,7 +152,7 @@ final class ConversationToolsNotifierProvider
 }
 
 String _$conversationToolsNotifierHash() =>
-    r'9f13fce469f338a92477c3aae361069e2d2c3902';
+    r'2d24155512db1888f6e361bd5ac4eeb3d6a9b39b';
 
 /// Provider for managing conversation tool settings
 ///
@@ -287,7 +287,7 @@ final class ContextAwareToolsNotifierProvider
 }
 
 String _$contextAwareToolsNotifierHash() =>
-    r'423dd423d62b538d8a5a4cd6b03e86055de0a960';
+    r'c280cb49fe771a2a7847b24bbfd2b3c51fdde2b4';
 
 /// Provider to get context-aware tools for chat.
 /// (conversation -> workspace -> app defaults)
@@ -425,7 +425,7 @@ final class ContextAwareToolEntitiesNotifierProvider
 }
 
 String _$contextAwareToolEntitiesNotifierHash() =>
-    r'df25e9b9481a3bc5c72947a3875a199ae0346bbe';
+    r'458109237a208244713bc3d47b482e5e53bc04e7';
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
