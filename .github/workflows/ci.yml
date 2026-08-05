@@ -166,6 +166,7 @@ jobs:
               next if sf_index.nil?
 
               path = lines[sf_index].delete_prefix('SF:')
+              path = path.delete_prefix("#{Dir.pwd}/")
               path = File.join(package_dir, path) if path.start_with?('lib/')
               excluded = path.end_with?('.g.dart', '.freezed.dart', '.mocks.dart') ||
                 path.end_with?('/drift_worker.js') ||
