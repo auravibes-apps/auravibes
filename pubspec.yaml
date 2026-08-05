@@ -113,17 +113,17 @@ melos:
     test:ci:
       exec: |
         if [ -f test/integration/test_tools/serverpod_test_tools.dart ]; then
-          fvm dart test test/features test/migrations --coverage=coverage \
+          dart test test/features test/migrations --coverage=coverage \
             --concurrency=2 --timeout=30s --reporter=compact &&
-            fvm dart run coverage:format_coverage --lcov --in=coverage \
+            dart run coverage:format_coverage --lcov --in=coverage \
               --out=coverage/lcov.info --report-on=lib
         elif grep -q '^  flutter:' pubspec.yaml; then
           flutter test --exclude-tags=integration --coverage --concurrency=2 \
             --timeout=30s --reporter=compact
         else
-          fvm dart test --exclude-tags=integration --coverage=coverage \
+          dart test --exclude-tags=integration --coverage=coverage \
             --concurrency=2 --timeout=30s --reporter=compact &&
-            fvm dart run coverage:format_coverage --lcov --in=coverage \
+            dart run coverage:format_coverage --lcov --in=coverage \
               --out=coverage/lcov.info --report-on=lib
         fi
       packageFilters:
