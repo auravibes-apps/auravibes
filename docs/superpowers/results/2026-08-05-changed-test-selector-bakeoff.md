@@ -6,7 +6,7 @@
 
 ## Decision
 
-Resolved Dart import-graph selector is only candidate passing ship bar: **92.5/100** (`correctness 60`, `time 17.5`, `maintainability 15`). It selected exact test files for all 14 fixture cases, including direct, transitive, shared, cross-package, generated/part, delete, rename, config, manifest, docs, multiple-change, and empty-diff cases.
+Resolved Dart import-graph selector is only candidate passing ship bar: **92.5/100** (`correctness 60`, `time 17.5`, `maintainability 15`). It produced exact outcomes for all 14 fixture cases: selected files for 10 file-impact cases, explicit unsupported results for G2/X2, and empty sets for N1/E1.
 
 This does **not** approve CI integration yet. No CI, dependency, source, generated, or workspace files changed. Next implementation requires cached graph/snapshot materialization and an explicit selected-test LCOV policy.
 
@@ -18,54 +18,117 @@ This does **not** approve CI integration yet. No CI, dependency, source, generat
 - `dart_diff_cli`: 0.0.4
 - Fixture base: `65dc3af618c1592d552951478aab420e8e8b8fac`
 
-| Case | Head commit |
-| --- | --- |
-| P1 | `49f718be4421aa2ffadb1e029b1492fda45465aa` |
-| T1 | `75b09d32ccdbc55639fcd3deee61ddeb9deb9075` |
-| T2 | `c9bea1ea637bc817db32ee436bf7d89dc7253855` |
-| S1 | `669664d6d3e6b4968a31992f57f7c0e4ce94a24b` |
-| X1 | `82dfcf684bca718a30e59a896b6419adbe1c4434` |
-| D1 | `0bfdcefbb6e82a8396d4b30aa2a7238dc30662f3` |
-| R1 | `08e5a418b0cbcffb0ba0843b2dc6080244d886d9` |
-| R2 | `44459fd48ba28c590c917b27fe6b487b7e8621d5` |
-| G1 | `8c248097ec2ad69c35b67352cd0450fb182a1173` |
-| G2 | `2f77dbda1d55a7a8548aa76567919b1811895088` |
-| X2 | `cb8087d6ba3ec7f2f924a762a27934ce001e9469` |
-| N1 | `3033a1582647f0c96b497af3a72edec1f63b8a98` |
-| M1 | `63fb200b606ed9ae4bca37be2be08ebdcb8ea3a2` |
-| E1 | `65dc3af618c1592d552951478aab420e8e8b8fac` |
+| Case | Head commit                                |
+| ---- | ------------------------------------------ |
+| P1   | `49f718be4421aa2ffadb1e029b1492fda45465aa` |
+| T1   | `75b09d32ccdbc55639fcd3deee61ddeb9deb9075` |
+| T2   | `c9bea1ea637bc817db32ee436bf7d89dc7253855` |
+| S1   | `669664d6d3e6b4968a31992f57f7c0e4ce94a24b` |
+| X1   | `82dfcf684bca718a30e59a896b6419adbe1c4434` |
+| D1   | `0bfdcefbb6e82a8396d4b30aa2a7238dc30662f3` |
+| R1   | `08e5a418b0cbcffb0ba0843b2dc6080244d886d9` |
+| R2   | `44459fd48ba28c590c917b27fe6b487b7e8621d5` |
+| G1   | `8c248097ec2ad69c35b67352cd0450fb182a1173` |
+| G2   | `2f77dbda1d55a7a8548aa76567919b1811895088` |
+| X2   | `cb8087d6ba3ec7f2f924a762a27934ce001e9469` |
+| N1   | `3033a1582647f0c96b497af3a72edec1f63b8a98` |
+| M1   | `63fb200b606ed9ae4bca37be2be08ebdcb8ea3a2` |
+| E1   | `65dc3af618c1592d552951478aab420e8e8b8fac` |
 
 ## Matrix
 
 `A` = analyzer actual output; `S` = Sentinel; `D` = diff CLI; `B` = package-wide baseline. `U(reason)` means explicit unsupported. Every analyzer row was exact across one cold plus three warm runs.
 
-| Case | Expected test set | A | S | D | B |
-| --- | --- | --- | --- | --- | --- |
-| P1 | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| T1 | `packages/core_fixture/test/shared_first_test.dart` | same | same | U(no explicit set) | 8 tests |
-| T2 | `packages/core_fixture/test/transitive_consumer_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| S1 | `packages/core_fixture/test/shared_first_test.dart`, `packages/core_fixture/test/shared_second_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| X1 | `packages/ui_fixture/test/ui_contract_test.dart`, `apps/app_fixture/test/app_behavior_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| D1 | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| R1 | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| R2 | `packages/core_fixture/test/shared_renamed_test.dart` | same | same | U(no explicit set) | 8 tests |
-| G1 | `packages/core_fixture/test/generated_consumer_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| G2 | explicit unsupported: analyzer config | U(global analyzer configuration changed) | U | U | 8 tests |
-| X2 | explicit unsupported: package manifest | U(package manifest changed) | U | U | 8 tests |
-| N1 | `[]` | same | U(no impact) | U(no explicit set) | same `[]` |
-| M1 | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart`, `packages/core_fixture/test/shared_first_test.dart`, `packages/core_fixture/test/shared_second_test.dart` | same | U(partial impact) | U(no explicit set) | 8 tests |
-| E1 | `[]` | same | U(no impact) | U(no explicit set) | same `[]` |
+| Case | Expected test set                                                                                                                                                              | A                                        | S                 | D                  | B         |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ----------------- | ------------------ | --------- |
+| P1   | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart`                                                                                                            | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| T1   | `packages/core_fixture/test/shared_first_test.dart`                                                                                                                            | same                                     | same              | U(no explicit set) | 8 tests   |
+| T2   | `packages/core_fixture/test/transitive_consumer_test.dart`                                                                                                                     | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| S1   | `packages/core_fixture/test/shared_first_test.dart`, `packages/core_fixture/test/shared_second_test.dart`                                                                      | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| X1   | `packages/ui_fixture/test/ui_contract_test.dart`, `apps/app_fixture/test/app_behavior_test.dart`                                                                               | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| D1   | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart`                                                                                                            | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| R1   | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart`                                                                                                            | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| R2   | `packages/core_fixture/test/shared_renamed_test.dart`                                                                                                                          | same                                     | same              | U(no explicit set) | 8 tests   |
+| G1   | `packages/core_fixture/test/generated_consumer_test.dart`                                                                                                                      | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| G2   | explicit unsupported: analyzer config                                                                                                                                          | U(global analyzer configuration changed) | U                 | U                  | 8 tests   |
+| X2   | explicit unsupported: package manifest                                                                                                                                         | U(package manifest changed)              | U                 | U                  | 8 tests   |
+| N1   | `[]`                                                                                                                                                                           | same                                     | U(no impact)      | U(no explicit set) | same `[]` |
+| M1   | `packages/core_fixture/test/behavior_with_unrelated_name_test.dart`, `packages/core_fixture/test/shared_first_test.dart`, `packages/core_fixture/test/shared_second_test.dart` | same                                     | U(partial impact) | U(no explicit set) | 8 tests   |
+| E1   | `[]`                                                                                                                                                                           | same                                     | U(no impact)      | U(no explicit set) | same `[]` |
+
+### Concrete candidate outputs
+
+Literal per-candidate outcomes from `summary.json`; `unsupported:` includes returned reason.
+
+| Candidate | Case | Expected | Actual |
+| --- | --- | --- | --- |
+| analyzer | D1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` |
+| analyzer | E1 | `[]` | `[]` |
+| analyzer | G1 | `["packages/core_fixture/test/generated_consumer_test.dart"]` | `["packages/core_fixture/test/generated_consumer_test.dart"]` |
+| analyzer | G2 | `unsupported: global analyzer configuration changed` | `unsupported: global analyzer configuration changed` |
+| analyzer | M1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` |
+| analyzer | N1 | `[]` | `[]` |
+| analyzer | P1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` |
+| analyzer | R1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` |
+| analyzer | R2 | `["packages/core_fixture/test/shared_renamed_test.dart"]` | `["packages/core_fixture/test/shared_renamed_test.dart"]` |
+| analyzer | S1 | `["packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `["packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` |
+| analyzer | T1 | `["packages/core_fixture/test/shared_first_test.dart"]` | `["packages/core_fixture/test/shared_first_test.dart"]` |
+| analyzer | T2 | `["packages/core_fixture/test/transitive_consumer_test.dart"]` | `["packages/core_fixture/test/transitive_consumer_test.dart"]` |
+| analyzer | X1 | `["apps/app_fixture/test/app_behavior_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| analyzer | X2 | `unsupported: package manifest changed` | `unsupported: package manifest changed` |
+| dart_diff_cli | D1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | E1 | `[]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | G1 | `["packages/core_fixture/test/generated_consumer_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | G2 | `unsupported: global analyzer configuration changed` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | M1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | N1 | `[]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | P1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | R1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | R2 | `["packages/core_fixture/test/shared_renamed_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | S1 | `["packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | T1 | `["packages/core_fixture/test/shared_first_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | T2 | `["packages/core_fixture/test/transitive_consumer_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | X1 | `["apps/app_fixture/test/app_behavior_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_diff_cli | X2 | `unsupported: package manifest changed` | `unsupported: dart_diff_cli emitted no explicit test file set (SHA/local-base evidence captured)` |
+| dart_sentinel | D1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/leaf.dart` |
+| dart_sentinel | E1 | `[]` | `unsupported: dart_sentinel produced no affected test files` |
+| dart_sentinel | G1 | `["packages/core_fixture/test/generated_consumer_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/generated.g.dart` |
+| dart_sentinel | G2 | `unsupported: global analyzer configuration changed` | `unsupported: dart_sentinel produced no affected test files` |
+| dart_sentinel | M1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/leaf.dart; no complete test impact for packages/core_fixture/lib/shared.dart` |
+| dart_sentinel | N1 | `[]` | `unsupported: dart_sentinel produced no affected test files` |
+| dart_sentinel | P1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/leaf.dart` |
+| dart_sentinel | R1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/renamed_leaf.dart` |
+| dart_sentinel | R2 | `["packages/core_fixture/test/shared_renamed_test.dart"]` | `["packages/core_fixture/test/shared_renamed_test.dart"]` |
+| dart_sentinel | S1 | `["packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/shared.dart` |
+| dart_sentinel | T1 | `["packages/core_fixture/test/shared_first_test.dart"]` | `["packages/core_fixture/test/shared_first_test.dart"]` |
+| dart_sentinel | T2 | `["packages/core_fixture/test/transitive_consumer_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/deep_leaf.dart` |
+| dart_sentinel | X1 | `["apps/app_fixture/test/app_behavior_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` | `unsupported: dart_sentinel incomplete: no complete test impact for packages/core_fixture/lib/cross_shared.dart` |
+| dart_sentinel | X2 | `unsupported: package manifest changed` | `unsupported: dart_sentinel produced no affected test files` |
+| package-wide-baseline | D1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | E1 | `[]` | `[]` |
+| package-wide-baseline | G1 | `["packages/core_fixture/test/generated_consumer_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | G2 | `unsupported: global analyzer configuration changed` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | M1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | N1 | `[]` | `[]` |
+| package-wide-baseline | P1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | R1 | `["packages/core_fixture/test/behavior_with_unrelated_name_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | R2 | `["packages/core_fixture/test/shared_renamed_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_renamed_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | S1 | `["packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | T1 | `["packages/core_fixture/test/shared_first_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | T2 | `["packages/core_fixture/test/transitive_consumer_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | X1 | `["apps/app_fixture/test/app_behavior_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
+| package-wide-baseline | X2 | `unsupported: package manifest changed` | `["apps/app_fixture/test/app_behavior_test.dart","packages/core_fixture/test/behavior_with_unrelated_name_test.dart","packages/core_fixture/test/generated_consumer_test.dart","packages/core_fixture/test/shared_first_test.dart","packages/core_fixture/test/shared_second_test.dart","packages/core_fixture/test/transitive_consumer_test.dart","packages/core_fixture/test/unrelated_test.dart","packages/ui_fixture/test/ui_contract_test.dart"]` |
 
 Analyzer output had no directory arguments, duplicate paths, deleted paths, or filename-based guesses. Fake runner rejected those invalid forms; global unsupported results were accepted only with non-empty reasons.
 
 ## Scores
 
-| Candidate | Required exact | Correctness | Time | Maintainability | Total | Ship |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| analyzer | 11/11 | 60 | 17.5 | 15.0 | **92.5** | **yes** |
-| dart_sentinel | 2/11 | 0 | 20.0 | 11.25 | 31.25 | no |
-| dart_diff_cli | 0/11 | 0 | 20.0 | 7.5 | 27.5 | no |
-| package-wide-baseline | 2/11 | 0 | 20.0 | 7.5 | 27.5 | no |
+| Candidate             | Required exact | Correctness | Time | Maintainability |    Total | Ship    |
+| --------------------- | -------------: | ----------: | ---: | --------------: | -------: | ------- |
+| analyzer              |          11/11 |          60 | 17.5 |            15.0 | **92.5** | **yes** |
+| dart_sentinel         |           2/11 |           0 | 20.0 |           11.25 |    31.25 | no      |
+| dart_diff_cli         |           0/11 |           0 | 20.0 |             7.5 |     27.5 | no      |
+| package-wide-baseline |           2/11 |           0 | 20.0 |             7.5 |     27.5 | no      |
 
 Time formula:
 
