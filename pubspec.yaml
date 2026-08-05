@@ -12,11 +12,13 @@ workspace:
   - widgetbook
 
 dev_dependencies:
+  analyzer: ^12.1.0
   dart_code_linter: ^4.1.6
   dependency_validator: ^5.0.4
   import_sorter: ^5.0.0-releasecandidate.1
   melos: ^8.1.0
   riverpod_lint: 3.1.4
+  test: ^1.31.0
   very_good_analysis: ^10.3.0
 
 dependency_overrides:
