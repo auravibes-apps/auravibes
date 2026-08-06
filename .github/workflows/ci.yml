@@ -117,36 +117,30 @@ jobs:
         id: test-scope
         if: github.event_name == 'pull_request'
         run: |
-          if git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | \
-            grep -qE '^(\.github/|\.fvmrc$|analysis_options\.yaml$|dart_dependency_validator\.yaml$|pubspec\.yaml$|pubspec\.lock$)'; then
-            echo 'run_all=true' >> "$GITHUB_OUTPUT"
-            echo 'run_tests=true' >> "$GITHUB_OUTPUT"
-          elif melos list --diff="${{ github.event.pull_request.base.sha }}...HEAD" \
-            --include-dependents --dir-exists=test --parsable | grep -q .; then
-            echo 'run_all=false' >> "$GITHUB_OUTPUT"
-            echo 'run_tests=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'run_all=false' >> "$GITHUB_OUTPUT"
-            echo 'run_tests=false' >> "$GITHUB_OUTPUT"
+          manifest="$RUNNER_TEMP/changed-tests.json"
+          if ! fvm dart run tool/changed_test_selector.dart select \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head HEAD \
+            --output "$manifest"; then
+            printf '%s\n' '{"mode":"full","packages":{},"reason":"selector failed"}' > "$manifest"
           fi
+          mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "$manifest")"
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
 
-      - name: 🧪 Run affected tests with coverage
-        if: github.event_name == 'pull_request' && steps.test-scope.outputs.run_all != 'true' && steps.test-scope.outputs.run_tests == 'true'
-        run: >-
-          melos run test:ci
-          --diff="${{ github.event.pull_request.base.sha }}...HEAD"
-          --include-dependents
-          --no-select
+      - name: 🧪 Run affected tests
+        if: github.event_name == 'pull_request' && steps.test-scope.outputs.mode == 'affected'
+        run: fvm dart run tool/changed_test_selector.dart run --manifest "$RUNNER_TEMP/changed-tests.json"
 
       - name: 🧪 No affected tests
-        if: github.event_name == 'pull_request' && steps.test-scope.outputs.run_tests == 'false'
+        if: github.event_name == 'pull_request' && steps.test-scope.outputs.mode == 'none'
         run: echo 'No workspace package tests are affected by this pull request.'
 
       - name: 🧪 Run all tests with coverage
-        if: github.event_name != 'pull_request' || steps.test-scope.outputs.run_all == 'true'
+        if: github.event_name != 'pull_request' || steps.test-scope.outputs.mode == 'full'
         run: melos run test:ci --no-select
 
       - name: 🧭 Merge LCOV reports for Sonar
+        if: github.event_name != 'pull_request' || steps.test-scope.outputs.mode == 'full'
         run: |
           ruby <<'RUBY'
           package_dirs = Dir.glob('{apps,packages,widgetbook}/*')
@@ -195,7 +189,7 @@ jobs:
           fi
 
       - name: ☁️ SonarCloud Scan
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) && (github.event_name != 'pull_request' || steps.test-scope.outputs.mode == 'full') }}
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
