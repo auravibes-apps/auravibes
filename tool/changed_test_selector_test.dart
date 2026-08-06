@@ -205,9 +205,9 @@ void main() {
     const sources = <String, String>{
       'services/custom-root/lib/leaf.dart': 'class Leaf {}',
       'services/custom-root/test/features/feature_test.dart':
-          "import 'package:odd_name/leaf.dart';\nvoid main() {}",
+          '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
       'services/custom-root/test/unit_test.dart':
-          "import 'package:odd_name/leaf.dart';\nvoid main() {}",
+          '''import 'package:odd_name/leaf.dart';\nvoid main() {}''',
       'services/custom-root/test/integration/test_tools/serverpod_test_tools.dart':
           'class ServerpodMarker {}',
     };
@@ -257,10 +257,10 @@ void main() {
     final conditionalSources = {
       ..._sources,
       'packages/core/lib/conditional.dart':
-          "import 'leaf.dart' if (dart.library.io) 'leaf_io.dart';\n",
+          '''import 'leaf.dart' if (dart.library.io) 'leaf_io.dart';\n''',
       'packages/core/lib/leaf_io.dart': 'class LeafIo {}',
       'packages/core/test/conditional_test.dart':
-          "import 'package:core/conditional.dart';\nvoid main() {}",
+          '''import 'package:core/conditional.dart';\nvoid main() {}''',
     };
     final conditional = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/lib/leaf.dart')],
@@ -315,7 +315,7 @@ void main() {
       changes: [const ChangedFile.modified('packages/core/lib/bad.dart')],
       headSources: {
         ..._sources,
-        'packages/core/lib/bad.dart': "import 'package:core/missing.dart';",
+        'packages/core/lib/bad.dart': '''import 'package:core/missing.dart';''',
       },
       baseSources: _sources,
       packageRoots: _roots,
@@ -338,7 +338,7 @@ void main() {
       headSources: {
         ..._sources,
         'packages/core/lib/escape.dart':
-            "import 'package:core/../../ui/lib/widget.dart';",
+            '''import 'package:core/../../ui/lib/widget.dart';''',
       },
       baseSources: _sources,
       packageRoots: _roots,
@@ -404,6 +404,7 @@ void main() {
             required workingDirectory,
           }) async {
             launches++;
+
             return 0;
           },
     );
@@ -421,7 +422,7 @@ void main() {
       },
       reason: 'test',
     );
-    late List<String> capturedArguments;
+    var capturedArguments = <String>[];
     final code = await runSelectedTests(
       selection,
       rootPath: root.path,
@@ -433,6 +434,7 @@ void main() {
           }) async {
             capturedArguments = arguments;
             expect(executable, 'fvm');
+
             return 7;
           },
     );
@@ -453,7 +455,7 @@ void main() {
       },
       reason: 'test',
     );
-    late List<String> capturedArguments;
+    var capturedArguments = <String>[];
     final code = await runSelectedTests(
       selection,
       rootPath: root.path,
@@ -464,6 +466,7 @@ void main() {
             required workingDirectory,
           }) async {
             capturedArguments = arguments;
+
             return 0;
           },
     );
@@ -479,28 +482,31 @@ Future<Directory> _runnerFixture({
 }) async {
   final root = await Directory.systemTemp.createTemp('changed-selector-');
   final package = Directory('${root.path}/packages/core');
-  await Directory('${package.path}/test/features').create(recursive: true);
-  await File('${root.path}/pubspec.yaml').writeAsString('''
+  final _ = await Directory('${package.path}/test/features').create(
+    recursive: true,
+  );
+  final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
 name: fixture
 workspace:
   - packages/core
 ''');
-  await File('${package.path}/pubspec.yaml').writeAsString('''
+  final _ = await File('${package.path}/pubspec.yaml').writeAsString('''
 name: core
 dependencies:
 ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
 ''');
-  await File(
+  final _ = await File(
     '${package.path}/test/behavior_test.dart',
   ).writeAsString('void main() {}');
-  await File(
+  final _ = await File(
     '${package.path}/test/features/example_test.dart',
   ).writeAsString('void main() {}');
   if (serverpod) {
-    await File(
+    final _ = await File(
       '${package.path}/test/integration/test_tools/serverpod_test_tools.dart',
     ).create(recursive: true);
   }
+
   return root;
 }
 
@@ -512,19 +518,19 @@ const _roots = <String, String>{
 const _sources = <String, String>{
   'packages/core/lib/leaf.dart': 'class Leaf {}',
   'packages/core/lib/transitive.dart':
-      "import 'leaf.dart';\nclass Transitive {}",
+      '''import 'leaf.dart';\nclass Transitive {}''',
   'packages/core/lib/shared.dart': 'class Shared {}',
   'packages/core/test/behavior_test.dart':
-      "import 'package:core/leaf.dart';\nvoid main() {}",
+      '''import 'package:core/leaf.dart';\nvoid main() {}''',
   'packages/core/test/transitive_behavior_test.dart':
-      "import 'package:core/transitive.dart';\nvoid main() {}",
+      '''import 'package:core/transitive.dart';\nvoid main() {}''',
   'packages/core/test/shared_one_test.dart':
-      "import 'package:core/shared.dart';\nvoid main() {}",
+      '''import 'package:core/shared.dart';\nvoid main() {}''',
   'packages/core/test/shared_two_test.dart':
-      "import 'package:core/shared.dart';\nvoid main() {}",
+      '''import 'package:core/shared.dart';\nvoid main() {}''',
   'packages/core/test/unrelated_test.dart': 'void main() {}',
   'packages/ui/lib/widget.dart':
-      "import 'package:core/leaf.dart';\nclass Widget {}",
+      '''import 'package:core/leaf.dart';\nclass Widget {}''',
   'packages/ui/test/widget_render_test.dart':
-      "import 'package:ui/widget.dart';\nvoid main() {}",
+      '''import 'package:ui/widget.dart';\nvoid main() {}''',
 };
