@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
@@ -51,6 +54,50 @@ class SelectionResult {
     required Map<String, List<String>> packages,
     required this.reason,
   }) : packages = _freezePackages(packages);
+
+  factory SelectionResult.fromJson(Object? value) {
+    if (value is! Map) {
+      throw const FormatException('Manifest must be an object');
+    }
+    final modeValue = value['mode'];
+    final reasonValue = value['reason'];
+    if (modeValue is! String ||
+        (reasonValue != null && reasonValue is! String)) {
+      throw const FormatException('Manifest mode is required');
+    }
+    final mode = SelectionMode.values.firstWhere(
+      (candidate) => candidate.name == modeValue,
+      orElse: () => throw const FormatException('Invalid manifest mode'),
+    );
+    final rawPackages = value['packages'];
+    final packages = <String, List<String>>{};
+    if (rawPackages != null) {
+      if (rawPackages is! Map) throw const FormatException('Invalid packages');
+      for (final entry in rawPackages.entries) {
+        if (entry.key is! String ||
+            entry.value is! List ||
+            (entry.value as List).any((path) => path is! String)) {
+          throw const FormatException('Invalid package paths');
+        }
+        final paths = (entry.value as List).cast<String>();
+        if (entry.key == '' || paths.isEmpty) {
+          throw const FormatException('Invalid package paths');
+        }
+        packages[entry.key as String] = paths;
+      }
+    }
+    if (mode != SelectionMode.affected && packages.isNotEmpty) {
+      throw const FormatException('Only affected manifests may list packages');
+    }
+    if (mode == SelectionMode.affected && packages.isEmpty) {
+      throw const FormatException('Affected manifest has no packages');
+    }
+    return SelectionResult(
+      mode: mode,
+      packages: packages,
+      reason: reasonValue as String? ?? '',
+    );
+  }
 
   final SelectionMode mode;
   final Map<String, List<String>> packages;
@@ -250,16 +297,367 @@ Future<int> runSelectedTests(
   SelectionResult selection, {
   required String rootPath,
   ProcessLauncher? launcher,
+  bool dryRun = false,
 }) async {
-  if (selection.mode == SelectionMode.none) {
-    return 0;
+  if (selection.mode == SelectionMode.none) return 0;
+  try {
+    final packages = await _loadPackages(rootPath);
+    final groups = <_TestGroup>[];
+    if (selection.mode == SelectionMode.full) {
+      for (final package in packages) {
+        final paths = await _testFiles(package);
+        if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+      }
+    } else {
+      for (final entry in selection.packages.entries) {
+        final package = packages.firstWhere(
+          (candidate) => candidate.relativeRoot == _normalizePath(entry.key),
+          orElse: () => throw FormatException('Unknown package: ${entry.key}'),
+        );
+        final paths = <String>[];
+        for (final path in entry.value) {
+          paths.add(await _validateTestPath(package, path));
+        }
+        if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+      }
+    }
+    final launch = launcher ?? _launchProcess;
+    var firstFailure = 0;
+    for (var index = 0; index < groups.length; index += 2) {
+      final batch = groups.skip(index).take(2);
+      final results = await Future.wait(
+        batch.map((group) async {
+          final command = _command(group);
+          if (dryRun) {
+            stdout.writeln(
+              [command.executable, ...command.arguments].join(' '),
+            );
+            return 0;
+          }
+          try {
+            return await launch(
+              executable: command.executable,
+              arguments: command.arguments,
+              workingDirectory: group.package.absoluteRoot,
+            );
+          } catch (_) {
+            return 1;
+          }
+        }),
+      );
+      for (final result in results) {
+        if (result != 0 && firstFailure == 0) firstFailure = result;
+      }
+    }
+    return firstFailure;
+  } catch (error) {
+    stderr.writeln('changed-test-selector: $error');
+    return 2;
   }
+}
 
-  // ponytail: execution is Task 3; fail closed rather than silently skipping.
-  final launcherState = launcher == null ? 'default' : 'injected';
-  throw UnsupportedError(
-    'Selected-test execution is not implemented yet in $rootPath ($launcherState).',
+Future<SelectionResult> selectRepository({
+  required String rootPath,
+  required String base,
+  required String head,
+}) async {
+  try {
+    _validateRevision(base);
+    _validateRevision(head);
+    final packages = await _loadPackages(rootPath);
+    final headSources = await _workspaceSources(packages);
+    final basePaths = await _git(
+      rootPath,
+      ['ls-tree', '-r', '--name-only', base],
+    );
+    final baseSources = <String, String>{};
+    for (final path
+        in basePaths.split('\n').where((path) => path.endsWith('.dart'))) {
+      final normalized = _normalizePath(path);
+      baseSources[normalized] = await _git(rootPath, [
+        'show',
+        '$base:$normalized',
+      ]);
+    }
+    final diff = await _git(
+      rootPath,
+      ['diff', '--name-status', '--find-renames', '-z', '$base...$head'],
+    );
+    return selectChangedTests(
+      changes: parseNameStatus(diff),
+      headSources: headSources,
+      baseSources: baseSources,
+      packageRoots: {
+        for (final package in packages) package.name: package.relativeRoot,
+      },
+    );
+  } catch (error) {
+    return _full('Repository snapshot failed: $error');
+  }
+}
+
+Future<void> main(List<String> args) async {
+  try {
+    if (args.isEmpty) throw const FormatException('Command is required');
+    final options = _options(args.skip(1));
+    switch (args.first) {
+      case 'select':
+        _checkOptions(options, const {'base', 'head', 'output'});
+        final result = await selectRepository(
+          rootPath: Directory.current.path,
+          base: _requiredOption(options, 'base'),
+          head: _requiredOption(options, 'head'),
+        );
+        await File(
+          _requiredOption(options, 'output'),
+        ).writeAsString(jsonEncode(result.toJson()));
+        stderr.writeln('${result.mode.name}: ${result.reason}');
+      case 'run':
+        _checkOptions(options, const {'manifest', 'dry-run'});
+        final result = SelectionResult.fromJson(
+          jsonDecode(
+            await File(_requiredOption(options, 'manifest')).readAsString(),
+          ),
+        );
+        exitCode = await runSelectedTests(
+          result,
+          rootPath: Directory.current.path,
+          dryRun: options.containsKey('dry-run'),
+        );
+      default:
+        throw FormatException('Unknown command: ${args.first}');
+    }
+  } catch (error) {
+    stderr.writeln('changed-test-selector: $error');
+    exitCode = 2;
+  }
+}
+
+class _Package {
+  _Package(
+    this.relativeRoot,
+    this.name,
+    this.flutter,
+    this.serverpod,
+    this.absoluteRoot,
   );
+  final String relativeRoot;
+  final String name;
+  final bool flutter;
+  final bool serverpod;
+  final String absoluteRoot;
+}
+
+class _TestGroup {
+  _TestGroup(this.package, this.paths);
+  final _Package package;
+  final List<String> paths;
+}
+
+class _Command {
+  _Command(this.executable, this.arguments);
+  final String executable;
+  final List<String> arguments;
+}
+
+Future<List<_Package>> _loadPackages(String rootPath) async {
+  final root = Directory(rootPath).absolute;
+  final lines = await File('${root.path}/pubspec.yaml').readAsLines();
+  final members = <String>[];
+  var inWorkspace = false;
+  for (final line in lines) {
+    if (line == 'workspace:') {
+      inWorkspace = true;
+      continue;
+    }
+    if (!inWorkspace) continue;
+    final match = RegExp(r'^  - (.+)$').firstMatch(line);
+    if (match != null) {
+      members.add(_normalizePath(match.group(1)!.trim()));
+    } else if (line.trim().isNotEmpty && !line.startsWith(' ')) {
+      break;
+    }
+  }
+  if (members.isEmpty) throw const FormatException('Workspace list is empty');
+  final packages = <_Package>[];
+  for (final member in members) {
+    final packageRoot = Directory('${root.path}/$member');
+    final packageLines = await File(
+      '${packageRoot.path}/pubspec.yaml',
+    ).readAsLines();
+    final nameLine = packageLines.firstWhere(
+      (line) => RegExp(r'^name:\s*\S+').hasMatch(line),
+      orElse: () => throw FormatException('Package name missing: $member'),
+    );
+    final name = RegExp(r'^name:\s*(\S+)').firstMatch(nameLine)!.group(1)!;
+    packages.add(
+      _Package(
+        member,
+        name,
+        packageLines.any(
+          (line) => RegExp(r'^  flutter:\s*(#.*)?$').hasMatch(line),
+        ),
+        File(
+          '${packageRoot.path}/test/integration/test_tools/serverpod_test_tools.dart',
+        ).existsSync(),
+        packageRoot.absolute.path,
+      ),
+    );
+  }
+  return packages;
+}
+
+Future<Map<String, String>> _workspaceSources(List<_Package> packages) async {
+  final sources = <String, String>{};
+  for (final package in packages) {
+    final root = Directory(package.absoluteRoot);
+    if (!root.existsSync()) {
+      throw FormatException(
+        'Package directory missing: ${package.relativeRoot}',
+      );
+    }
+    await for (final entity in root.list(recursive: true, followLinks: false)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      sources['${package.relativeRoot}/${_relativePath(package.absoluteRoot, entity.path)}'] =
+          await entity.readAsString();
+    }
+  }
+  return sources;
+}
+
+Future<List<String>> _testFiles(_Package package) async {
+  final directory = Directory('${package.absoluteRoot}/test');
+  if (!directory.existsSync()) return const [];
+  final paths = <String>[];
+  await for (final entity in directory.list(
+    recursive: true,
+    followLinks: false,
+  )) {
+    if (entity is! File || !entity.path.endsWith('.dart')) continue;
+    final relative = _relativePath(package.absoluteRoot, entity.path);
+    if (_allowedTestPath(relative, package.serverpod)) paths.add(relative);
+  }
+  return paths..sort();
+}
+
+Future<String> _validateTestPath(_Package package, String path) async {
+  if (path.isEmpty ||
+      path.startsWith('/') ||
+      path.startsWith('file:') ||
+      path.contains(r'\')) {
+    throw FormatException('Invalid selected test path: $path');
+  }
+  final relative = _normalizePath(path);
+  if (!relative.endsWith('.dart') ||
+      !_allowedTestPath(relative, package.serverpod)) {
+    throw FormatException('Invalid selected test path: $path');
+  }
+  final file = File('${package.absoluteRoot}/$relative');
+  if (!file.existsSync() || FileSystemEntity.isDirectorySync(file.path)) {
+    throw FormatException('Selected test file is missing: $path');
+  }
+  final resolved = await file.resolveSymbolicLinks();
+  final packageResolved = await Directory(
+    package.absoluteRoot,
+  ).resolveSymbolicLinks();
+  final root = packageResolved.endsWith(Platform.pathSeparator)
+      ? packageResolved
+      : '$packageResolved${Platform.pathSeparator}';
+  if (!resolved.startsWith(root)) {
+    throw FormatException('Selected test path escapes package: $path');
+  }
+  return relative;
+}
+
+bool _allowedTestPath(String path, bool serverpod) =>
+    path.startsWith('test/') &&
+    (!serverpod ||
+        path.startsWith('test/features/') ||
+        path.startsWith('test/migrations/'));
+
+_Command _command(_TestGroup group) => _Command('fvm', [
+  if (group.package.flutter) 'flutter' else 'dart',
+  'test',
+  '--exclude-tags=integration',
+  '--concurrency=2',
+  '--timeout=30s',
+  '--reporter=compact',
+  ...group.paths,
+]);
+
+Future<int> _launchProcess({
+  required String executable,
+  required List<String> arguments,
+  required String workingDirectory,
+}) async {
+  final result = await Process.run(
+    executable,
+    arguments,
+    workingDirectory: workingDirectory,
+  );
+  if (result.stdout.toString().isNotEmpty) stdout.write(result.stdout);
+  if (result.stderr.toString().isNotEmpty) stderr.write(result.stderr);
+  return result.exitCode;
+}
+
+Future<String> _git(String rootPath, List<String> arguments) async {
+  final result = await Process.run(
+    'git',
+    arguments,
+    workingDirectory: rootPath,
+  );
+  if (result.exitCode != 0) {
+    throw FormatException(result.stderr.toString().trim());
+  }
+  return result.stdout.toString();
+}
+
+void _validateRevision(String revision) {
+  if (revision.isEmpty ||
+      revision.startsWith('-') ||
+      revision.contains('\u0000')) {
+    throw const FormatException('Invalid Git revision');
+  }
+}
+
+Map<String, String> _options(Iterable<String> arguments) {
+  final options = <String, String>{};
+  final values = arguments.toList();
+  for (var index = 0; index < values.length; index++) {
+    final argument = values[index];
+    if (argument == '--dry-run') {
+      options['dry-run'] = '';
+    } else if (argument.startsWith('--') && index + 1 < values.length) {
+      options[argument.substring(2)] = values[++index];
+    } else {
+      throw FormatException('Invalid argument: $argument');
+    }
+  }
+  return options;
+}
+
+void _checkOptions(Map<String, String> options, Set<String> allowed) {
+  final unknown = options.keys.where((key) => !allowed.contains(key));
+  if (unknown.isNotEmpty) {
+    throw FormatException('Invalid option: --${unknown.first}');
+  }
+}
+
+String _requiredOption(Map<String, String> options, String key) {
+  final value = options[key];
+  if (value == null || value.isEmpty) {
+    throw FormatException('--$key is required');
+  }
+  return value;
+}
+
+String _relativePath(String root, String path) {
+  final prefix = root.endsWith(Platform.pathSeparator)
+      ? root
+      : '$root${Platform.pathSeparator}';
+  return path.startsWith(prefix)
+      ? path.substring(prefix.length).replaceAll(Platform.pathSeparator, '/')
+      : path.replaceAll(Platform.pathSeparator, '/');
 }
 
 SelectionResult _full(String reason) => SelectionResult(

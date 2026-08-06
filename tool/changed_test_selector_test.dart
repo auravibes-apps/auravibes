@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:test/test.dart';
 
 import 'changed_test_selector.dart';
@@ -341,6 +343,140 @@ void main() {
     );
     expect(result.mode, SelectionMode.none);
   });
+  test('manifest round trips and rejects malformed modes', () {
+    final result = SelectionResult(
+      mode: SelectionMode.affected,
+      packages: {
+        'packages/core': ['test/behavior_test.dart'],
+      },
+      reason: 'reverse import impact',
+    );
+    expect(SelectionResult.fromJson(result.toJson()).packages, result.packages);
+    expect(
+      () => SelectionResult.fromJson({'mode': 'wat', 'reason': 'bad'}),
+      throwsFormatException,
+    );
+  });
+
+  test('runner validates paths before launching', () async {
+    final root = await _runnerFixture();
+    addTearDown(() => root.delete(recursive: true));
+    final selection = SelectionResult(
+      mode: SelectionMode.affected,
+      packages: {
+        'packages/core': ['../outside.dart'],
+      },
+      reason: 'test',
+    );
+    var launches = 0;
+    final code = await runSelectedTests(
+      selection,
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            launches++;
+            return 0;
+          },
+    );
+    expect(code, isNonZero);
+    expect(launches, 0);
+  });
+
+  test('runner selects Flutter command and propagates failure', () async {
+    final root = await _runnerFixture(flutter: true);
+    addTearDown(() => root.delete(recursive: true));
+    final selection = SelectionResult(
+      mode: SelectionMode.affected,
+      packages: {
+        'packages/core': ['test/behavior_test.dart'],
+      },
+      reason: 'test',
+    );
+    late List<String> capturedArguments;
+    final code = await runSelectedTests(
+      selection,
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            capturedArguments = arguments;
+            expect(executable, 'fvm');
+            return 7;
+          },
+    );
+    expect(code, 7);
+    expect(
+      capturedArguments,
+      containsAllInOrder(['flutter', 'test', '--exclude-tags=integration']),
+    );
+  });
+
+  test('Serverpod runner limits paths to supported subtrees', () async {
+    final root = await _runnerFixture(serverpod: true);
+    addTearDown(() => root.delete(recursive: true));
+    final selection = SelectionResult(
+      mode: SelectionMode.affected,
+      packages: {
+        'packages/core': ['test/features/example_test.dart'],
+      },
+      reason: 'test',
+    );
+    late List<String> capturedArguments;
+    final code = await runSelectedTests(
+      selection,
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            capturedArguments = arguments;
+            return 0;
+          },
+    );
+    expect(code, 0);
+    expect(capturedArguments, contains('test/features/example_test.dart'));
+    expect(capturedArguments.skip(2), isNot(contains('test')));
+  });
+}
+
+Future<Directory> _runnerFixture({
+  bool flutter = false,
+  bool serverpod = false,
+}) async {
+  final root = await Directory.systemTemp.createTemp('changed-selector-');
+  final package = Directory('${root.path}/packages/core');
+  await Directory('${package.path}/test/features').create(recursive: true);
+  await File('${root.path}/pubspec.yaml').writeAsString('''
+name: fixture
+workspace:
+  - packages/core
+''');
+  await File('${package.path}/pubspec.yaml').writeAsString('''
+name: core
+dependencies:
+${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
+''');
+  await File(
+    '${package.path}/test/behavior_test.dart',
+  ).writeAsString('void main() {}');
+  await File(
+    '${package.path}/test/features/example_test.dart',
+  ).writeAsString('void main() {}');
+  if (serverpod) {
+    await File(
+      '${package.path}/test/integration/test_tools/serverpod_test_tools.dart',
+    ).create(recursive: true);
+  }
+  return root;
 }
 
 const _roots = <String, String>{
