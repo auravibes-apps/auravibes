@@ -23,9 +23,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     permissions:
-      actions: write
       contents: write
-      pull-requests: read
+    outputs:
+      changed: ${{ steps.lockfile.outputs.changed }}
 
     steps:
       - name: 📚 Git Checkout
@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: 🔧 Setup FVM
         uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
@@ -74,9 +74,15 @@ jobs:
           git commit -m 'chore: refresh pubspec.lock'
           git push origin "HEAD:$PR_HEAD_REF"
 
+  dispatch-ci:
+    needs: repair
+    if: ${{ needs.repair.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
       - name: ✅ Re-run CI for repaired commit
-        if: steps.lockfile.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$PR_HEAD_REF"
+        run: gh workflow run .github/workflows/ci.yml --repo "$GITHUB_REPOSITORY" --ref "$PR_HEAD_REF"
