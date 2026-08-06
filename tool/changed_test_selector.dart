@@ -405,9 +405,21 @@ Future<SelectionResult> selectRepository({
     _validateRevision(head);
     final packages = await _loadPackages(rootPath);
     final headSources = await _workspaceSources(packages);
+    // ponytail: graph inputs are limited to package lib/test roots; skip
+    // unrelated repository Dart files before loading base contents.
     final basePaths = await _git(
       rootPath,
-      ['ls-tree', '-r', '--name-only', base],
+      [
+        'ls-tree',
+        '-r',
+        '--name-only',
+        base,
+        '--',
+        for (final package in packages) ...[
+          '${package.relativeRoot}/lib',
+          '${package.relativeRoot}/test',
+        ],
+      ],
     );
     final baseSources = <String, String>{};
     for (final path
@@ -953,8 +965,9 @@ void _addReverseClosure(
 ) {
   final visited = <String>{};
   final queue = <String>[changed];
-  while (queue.isNotEmpty) {
-    final path = queue.removeAt(0);
+  var queueIndex = 0;
+  while (queueIndex < queue.length) {
+    final path = queue[queueIndex++];
     if (!visited.add(path)) continue;
     if (candidates.contains(path)) {
       final _ = selected.add(path);
