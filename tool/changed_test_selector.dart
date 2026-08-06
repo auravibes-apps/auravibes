@@ -250,20 +250,17 @@ SelectionResult selectChangedTests({
       }
     }
 
-    final resolutionSources = <String, String>{
-      ...baseSources,
-      ...headSources,
-    };
-    final headGraph = _buildReverseGraph(
-      headSources,
+    if (_hasOpaqueRuntimeChange(
+      changes,
       roots,
-      resolutionSources: resolutionSources,
-    );
-    final baseGraph = _buildReverseGraph(
-      baseSources,
-      roots,
-      resolutionSources: resolutionSources,
-    );
+      headSources: headSources,
+      baseSources: baseSources,
+    )) {
+      return _full('Known opaque runtime behavior in changed package.');
+    }
+
+    final headGraph = _buildReverseGraph(headSources, roots);
+    final baseGraph = _buildReverseGraph(baseSources, roots);
     final reverse = _mergeGraphs(headGraph, baseGraph);
     final serverpodRoots = {
       for (final root in serverpodPackageRoots) _normalizePath(root),
@@ -728,6 +725,52 @@ SelectionResult _full(String reason) => SelectionResult(
   reason: reason,
 );
 
+bool _hasOpaqueRuntimeChange(
+  List<ChangedFile> changes,
+  Map<String, String> packageRoots, {
+  required Map<String, String> headSources,
+  required Map<String, String> baseSources,
+}) {
+  final productionRoots = <String>{};
+  for (final change in changes) {
+    for (final path in [change.oldPath, change.newPath]) {
+      if (path == null) continue;
+      final normalized = _normalizePath(path);
+      for (final root in packageRoots.values) {
+        if (normalized.startsWith('$root/lib/')) {
+          final _ = productionRoots.add(root);
+        }
+      }
+    }
+  }
+  if (productionRoots.isEmpty) return false;
+
+  for (final sources in [headSources, baseSources]) {
+    for (final entry in sources.entries) {
+      final path = _normalizePath(entry.key);
+      if (productionRoots.any((root) => path.startsWith('$root/')) &&
+          _containsOpaqueRuntimeMarker(entry.value)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+bool _containsOpaqueRuntimeMarker(String source) =>
+    // ponytail: this finite marker list bounds known opaque runtimes; unknown
+    // dynamic/reflection behavior remains residual risk until explicit marker
+    // coverage is added.
+    RegExp(
+      '''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''',
+    ).hasMatch(source) ||
+    RegExp(r'\bDynamicLibrary\b').hasMatch(source) ||
+    RegExp(r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b').hasMatch(
+      source,
+    ) ||
+    RegExp(r'''@pragma\s*\(\s*['"]vm:entry-point['"]''').hasMatch(source);
+
 Map<String, String> _normalizeSources(Map<String, String> sources) {
   final normalized = <String, String>{};
   for (final entry in sources.entries) {
@@ -743,11 +786,10 @@ Map<String, String> _normalizeSources(Map<String, String> sources) {
 
 Map<String, Set<String>> _buildReverseGraph(
   Map<String, String> sources,
-  Map<String, String> packageRoots, {
-  Map<String, String>? resolutionSources,
-}) {
+  Map<String, String> packageRoots,
+) {
   final normalizedSources = _normalizeSources(sources);
-  final availableSources = _normalizeSources(resolutionSources ?? sources);
+  final availableSources = normalizedSources;
   final roots = <String, String>{
     for (final entry in packageRoots.entries)
       entry.key: _normalizePath(entry.value),

@@ -281,10 +281,7 @@ void main() {
       baseSources: _sources,
       packageRoots: _roots,
     );
-    expect(
-      deleted.packages['packages/core'],
-      contains('test/behavior_test.dart'),
-    );
+    expect(deleted.mode, SelectionMode.full);
 
     final renamedHead = Map<String, String>.from(_sources)
       ..remove('packages/core/lib/leaf.dart')
@@ -300,14 +297,52 @@ void main() {
       baseSources: _sources,
       packageRoots: _roots,
     );
-    expect(
-      renamed.packages['packages/core'],
-      contains('test/behavior_test.dart'),
+    expect(renamed.mode, SelectionMode.full);
+  });
+
+  test('known opaque runtime marker forces full for production change', () {
+    final result = selectChangedTests(
+      changes: [const ChangedFile.modified('packages/core/lib/leaf.dart')],
+      headSources: {
+        ..._sources,
+        'packages/core/lib/runtime.dart': '''import 'dart:ffi';''',
+      },
+      baseSources: _sources,
+      packageRoots: _roots,
     );
-    expect(
-      renamed.packages.values.expand((paths) => paths),
-      isNot(contains('packages/core/lib/leaf.dart')),
+
+    expect(result.mode, SelectionMode.full);
+  });
+
+  test('base-only opaque marker covers deleted production change', () {
+    final headSources = Map<String, String>.from(_sources)
+      ..remove('packages/core/lib/leaf.dart');
+    final baseSources = {
+      ..._sources,
+      'packages/core/lib/runtime.dart': '''import 'dart:mirrors';''',
+    };
+    final result = selectChangedTests(
+      changes: [const ChangedFile.deleted('packages/core/lib/leaf.dart')],
+      headSources: headSources,
+      baseSources: baseSources,
+      packageRoots: _roots,
     );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
+  test('head graph does not resolve against base-only files', () {
+    final headSources = Map<String, String>.from(_sources)
+      ..remove('packages/core/lib/leaf.dart')
+      ..['packages/core/lib/changed.dart'] = 'class Changed {}';
+    final result = selectChangedTests(
+      changes: [const ChangedFile.modified('packages/core/lib/changed.dart')],
+      headSources: headSources,
+      baseSources: _sources,
+      packageRoots: _roots,
+    );
+
+    expect(result.mode, SelectionMode.full);
   });
 
   test('graph failures and global paths fail closed', () {
