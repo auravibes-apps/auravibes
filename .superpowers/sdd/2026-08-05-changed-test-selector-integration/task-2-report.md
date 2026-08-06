@@ -38,4 +38,23 @@ Implemented Git diff classification and analyzer-backed reverse import selection
 
 - `buildReverseImportGraph` retains required `Map<String, String>` API and serializes each dependency's sorted dependent paths as a comma-separated value; selection uses lossless internal adjacency sets.
 - Static graph scope intentionally excludes dynamic loading, reflection, native behavior, and runtime asset use; global input changes remain full-suite fallbacks.
+
+## Fix Round 1
+
+### Findings fixed
+
+- Global classification now precedes documentation classification, so `.github/README.md`, `tool/README.md`, and `assets/LICENSE` select `full`.
+- Invalid `ChangedFile` status/path combinations fail closed to `full`.
+- Workspace `package:` URI targets must remain under `<packageRoot>/lib`; `..` escapes fail closed to `full` instead of creating cross-package edges.
+
+### Regression tests
+
+- `global classification precedes documentation classification`
+- `malformed changed file records return full`
+- `graph failures and global paths fail closed` (package URI escape)
+
+### Commands and output
+
+- `fvm dart format tool/changed_test_selector.dart tool/changed_test_selector_test.dart` — passed; `Formatted 2 files (0 changed)`.
+- `fvm dart test tool/changed_test_selector_test.dart` — passed; `All tests passed!`, 16 tests.
 - Test execution and repository snapshot loading remain deferred to Task 3; CI workflow integration remains deferred to Task 4.

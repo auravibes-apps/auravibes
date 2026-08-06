@@ -26,6 +26,41 @@ void main() {
     expect(result.mode, SelectionMode.full);
   });
 
+  test('global classification precedes documentation classification', () {
+    for (final path in [
+      '.github/README.md',
+      'tool/README.md',
+      'assets/LICENSE',
+    ]) {
+      final result = selectChangedTests(
+        changes: [ChangedFile.modified(path)],
+        headSources: {},
+        baseSources: {},
+        packageRoots: {},
+      );
+      expect(result.mode, SelectionMode.full, reason: path);
+    }
+  });
+
+  test('malformed changed file records return full', () {
+    final malformed = [
+      ChangedFile(status: 'modified'),
+      ChangedFile(status: 'added', oldPath: 'old.dart'),
+      ChangedFile(status: 'deleted', newPath: 'new.dart'),
+      ChangedFile(status: 'renamed', newPath: 'new.dart'),
+    ];
+
+    for (final change in malformed) {
+      final result = selectChangedTests(
+        changes: [change],
+        headSources: {},
+        baseSources: {},
+        packageRoots: {},
+      );
+      expect(result.mode, SelectionMode.full, reason: change.status);
+    }
+  });
+
   test('result serializes mode and omits empty packages for none/full', () {
     final none = SelectionResult(
       mode: SelectionMode.none,
@@ -270,6 +305,18 @@ void main() {
       packageRoots: _roots,
     );
     expect(parseFailure.mode, SelectionMode.full);
+
+    final packageEscape = selectChangedTests(
+      changes: [const ChangedFile.modified('packages/core/lib/escape.dart')],
+      headSources: {
+        ..._sources,
+        'packages/core/lib/escape.dart':
+            "import 'package:core/../../ui/lib/widget.dart';",
+      },
+      baseSources: _sources,
+      packageRoots: _roots,
+    );
+    expect(packageEscape.mode, SelectionMode.full);
 
     final generated = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/lib/value.g.dart')],

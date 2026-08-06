@@ -141,6 +141,9 @@ SelectionResult selectChangedTests({
   final paths = <String>{};
   try {
     for (final change in changes) {
+      if (!_isValidChangedFile(change)) {
+        return _full('Malformed changed file record.');
+      }
       for (final path in [change.oldPath, change.newPath]) {
         if (path != null) paths.add(_normalizePath(path));
       }
@@ -149,7 +152,7 @@ SelectionResult selectChangedTests({
     return _full('Malformed changed path.');
   }
 
-  if (paths.isEmpty || paths.every(_isDocumentation)) {
+  if (paths.isEmpty) {
     return SelectionResult(
       mode: SelectionMode.none,
       packages: const {},
@@ -159,6 +162,13 @@ SelectionResult selectChangedTests({
 
   if (paths.any(_isGlobal)) {
     return _full('Global or ambiguous test input.');
+  }
+  if (paths.every(_isDocumentation)) {
+    return SelectionResult(
+      mode: SelectionMode.none,
+      packages: const {},
+      reason: 'No executable test input.',
+    );
   }
 
   final roots = <String, String>{};
@@ -355,6 +365,10 @@ String? _resolveUri(
       '$root/lib/${remainder.substring(slash + 1)}',
       allowParent: true,
     );
+    final libRoot = '$root/lib';
+    if (target != libRoot && !target.startsWith('$libRoot/')) {
+      throw FormatException('Package URI escapes lib root: $uri');
+    }
     if (!sources.containsKey(target)) {
       throw FormatException('Unresolved workspace URI: $uri');
     }
@@ -513,3 +527,14 @@ bool _isGlobal(String path) {
       normalized.startsWith('linux/') ||
       normalized.startsWith('web/');
 }
+
+bool _isValidChangedFile(ChangedFile change) => switch (change.status) {
+  'added' => change.oldPath == null && change.newPath != null,
+  'modified' =>
+    change.oldPath != null &&
+        change.newPath != null &&
+        change.oldPath == change.newPath,
+  'deleted' => change.oldPath != null && change.newPath == null,
+  'renamed' => change.oldPath != null && change.newPath != null,
+  _ => false,
+};
