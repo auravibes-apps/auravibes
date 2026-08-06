@@ -36,3 +36,14 @@ Implemented repository snapshot selection, manifest JSON CLI, explicit bounded t
 
 - Analyzer validation remains to rerun outside the 30-second RTK timeout.
 - Static import selection remains intentionally fail-closed for unsupported runtime/dynamic behavior, per Task 1-2 contract.
+
+## Fix round 1
+
+- Changed Serverpod candidate scope to use marker-derived package roots from `_loadPackages`; removed directory-name classification. Runner continues using same marker.
+- Added regression coverage for nonstandard Serverpod package root/name; ordinary `test/` files are excluded while `test/features/**` remains selected.
+- `fvm dart format tool/changed_test_selector.dart tool/changed_test_selector_test.dart`
+  - Passed: `Formatted 2 files (0 changed) in 0.02 seconds.`
+- `fvm dart test tool/changed_test_selector_test.dart`
+  - Passed: `00:00 +20: All tests passed!`
+- `fvm dart analyze tool/changed_test_selector.dart tool/changed_test_selector_test.dart --format=machine`
+  - Not completed: RTK command wrapper timed out after 30 seconds (`exit=124`).

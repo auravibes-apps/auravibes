@@ -201,6 +201,31 @@ void main() {
     });
   });
 
+  test('uses marker scope for Serverpod package with nonstandard root/name', () {
+    const sources = <String, String>{
+      'services/custom-root/lib/leaf.dart': 'class Leaf {}',
+      'services/custom-root/test/features/feature_test.dart':
+          "import 'package:odd_name/leaf.dart';\nvoid main() {}",
+      'services/custom-root/test/unit_test.dart':
+          "import 'package:odd_name/leaf.dart';\nvoid main() {}",
+      'services/custom-root/test/integration/test_tools/serverpod_test_tools.dart':
+          'class ServerpodMarker {}',
+    };
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('services/custom-root/lib/leaf.dart'),
+      ],
+      headSources: sources,
+      baseSources: sources,
+      packageRoots: const {'odd_name': 'services/custom-root'},
+      serverpodPackageRoots: const {'services/custom-root'},
+    );
+
+    expect(result.packages, {
+      'services/custom-root': ['test/features/feature_test.dart'],
+    });
+  });
+
   test('docs-only and multiple changes are empty or sorted unions', () {
     final docs = selectChangedTests(
       changes: [const ChangedFile.modified('README.md')],

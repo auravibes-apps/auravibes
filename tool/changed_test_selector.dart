@@ -184,6 +184,7 @@ SelectionResult selectChangedTests({
   required Map<String, String> headSources,
   required Map<String, String> baseSources,
   required Map<String, String> packageRoots,
+  Set<String> serverpodPackageRoots = const {},
 }) {
   final paths = <String>{};
   try {
@@ -244,7 +245,14 @@ SelectionResult selectChangedTests({
       resolutionSources: resolutionSources,
     );
     final reverse = _mergeGraphs(headGraph, baseGraph);
-    final candidates = _currentTestCandidates(headSources, roots);
+    final serverpodRoots = {
+      for (final root in serverpodPackageRoots) _normalizePath(root),
+    };
+    final candidates = _currentTestCandidates(
+      headSources,
+      roots,
+      serverpodPackageRoots: serverpodRoots,
+    );
     final selected = <String>{};
 
     for (final change in changes) {
@@ -389,6 +397,10 @@ Future<SelectionResult> selectRepository({
       baseSources: baseSources,
       packageRoots: {
         for (final package in packages) package.name: package.relativeRoot,
+      },
+      serverpodPackageRoots: {
+        for (final package in packages.where((package) => package.serverpod))
+          package.relativeRoot,
       },
     );
   } catch (error) {
@@ -800,25 +812,34 @@ Map<String, Set<String>> _mergeGraphs(
 
 Set<String> _currentTestCandidates(
   Map<String, String> sources,
-  Map<String, String> packageRoots,
-) {
+  Map<String, String> packageRoots, {
+  required Set<String> serverpodPackageRoots,
+}) {
   final candidates = <String>{};
   for (final path in sources.keys.map(_normalizePath)) {
     final root = _packageRootFor(path, packageRoots.values);
-    if (root != null && _isCandidateTest(path, root)) {
+    if (root != null &&
+        _isCandidateTest(
+          path,
+          root,
+          serverpod: serverpodPackageRoots.contains(root),
+        )) {
       candidates.add(path);
     }
   }
   return candidates;
 }
 
-bool _isCandidateTest(String path, String root) {
+bool _isCandidateTest(
+  String path,
+  String root, {
+  required bool serverpod,
+}) {
   final prefix = '$root/test/';
   if (!path.startsWith(prefix) || !path.endsWith('.dart')) return false;
   final relative = path.substring(root.length + 1);
   if (relative.startsWith('test/integration/')) return false;
-  final rootName = root.split('/').last;
-  if (rootName == 'auravibes_server' || rootName.contains('serverpod')) {
+  if (serverpod) {
     return relative.startsWith('test/features/') ||
         relative.startsWith('test/migrations/');
   }
