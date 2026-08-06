@@ -1,41 +1,46 @@
-name: Update Lockfiles
+name: Repair Dependency Bot Lockfile
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - pubspec.yaml
-      - pubspec.lock
-      - apps/**/pubspec.yaml
-      - packages/**/pubspec.yaml
-      - widgetbook/pubspec.yaml
-      - .fvmrc
-      - .github/workflows/lockfiles.yml
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main, dev, stage]
 
 concurrency:
-  group: update-lockfiles
+  group: repair-lockfile-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  update-lockfiles:
+  repair:
+    # Keep write access limited to same-repository dependency bot branches.
+    # Add trusted bot logins and branch prefixes here when adopting another service.
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (
+        (github.event.pull_request.user.login == 'renovate[bot]' &&
+          startsWith(github.event.pull_request.head.ref, 'renovate/')) ||
+        (github.event.pull_request.user.login == 'dependabot[bot]' &&
+          startsWith(github.event.pull_request.head.ref, 'dependabot/'))
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
+    outputs:
+      changed: ${{ steps.lockfile.outputs.changed }}
 
     steps:
       - name: 📚 Git Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@v3
+        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
         id: fvm-config-action
 
       - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
           channel: ${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}
@@ -47,44 +52,37 @@ jobs:
           ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
 
       - name: 🏗️ Melos Bootstrap
-        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a5
+        uses: bluefireteam/melos-action@2982f8e4fc92440a219490009d6d05195cb1a6a6
         with:
           run-bootstrap: true
 
-      - name: 📦 Check for lockfile changes
-        id: changes
+      - name: 💾 Commit lockfile repair
+        id: lockfile
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          if ! git diff --quiet -- pubspec.lock; then
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Changed file: pubspec.lock"
-          else
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No lockfile changes"
+          if git diff --quiet -- pubspec.lock; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            echo 'No pubspec.lock changes.'
+            exit 0
           fi
 
-      - name: 🔧 Configure Git
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
-      - name: 🌿 Create branch and commit
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          git checkout -b update/lockfiles
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
           git add pubspec.lock
-          git diff --staged --quiet || git commit -m "chore: update lockfiles"
+          git commit -m 'chore: refresh pubspec.lock'
+          git push origin "HEAD:$PR_HEAD_REF"
 
-      - name: 📤 Push and Create PR
-        if: steps.changes.outputs.changed == 'true'
-        run: |
-          git push --force-with-lease -u origin update/lockfiles || true
-          pr_url=$(gh pr create --title "chore: update lockfiles" --body "Automated lockfile update after merge" --base main 2>/dev/null || echo "")
-          
-          if [ -n "$pr_url" ]; then
-            gh pr comment "$pr_url" --body "🔄 This PR updates the lockfiles after the recent merge. Please review and merge to keep dependencies up to date."
-          else
-            echo "PR already exists or no changes"
-          fi
+  dispatch-ci:
+    needs: repair
+    if: ${{ needs.repair.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: ✅ Re-run CI for repaired commit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: gh workflow run .github/workflows/ci.yml --repo "$GITHUB_REPOSITORY" --ref "$PR_HEAD_REF"
