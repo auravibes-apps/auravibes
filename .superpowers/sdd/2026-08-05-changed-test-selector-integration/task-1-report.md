@@ -39,3 +39,10 @@ Implemented approved Task 1 only:
 - Reverse import graph selection is intentionally absent and must be implemented in Task 2 before ordinary source changes can run affected tests.
 - Full/affected test execution is intentionally absent and must be implemented in Task 3.
 - Focused analyzer validation remains outstanding due to analyzer startup timeout; rerun the focused analyzer command when the workspace analyzer lock is available.
+
+## Fix Round 1
+
+- Changed files: `tool/changed_test_selector.dart`, `tool/changed_test_selector_test.dart`, `.superpowers/sdd/2026-08-05-changed-test-selector-integration/task-1-report.md`.
+- Fix: `ChangedFile` now rejects unsupported statuses at runtime instead of relying on `assert`; result input/output immutability coverage added.
+- Test command: `fvm dart format --output=none --set-exit-if-changed tool/changed_test_selector.dart tool/changed_test_selector_test.dart && fvm dart test tool/changed_test_selector_test.dart`.
+- Output: format passed (`Formatted 2 files (0 changed)`); focused tests passed (`All tests passed!`, 6 tests).

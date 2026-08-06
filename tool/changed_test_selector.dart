@@ -3,17 +3,18 @@ enum SelectionMode { full, affected, none }
 
 /// One file row from a Git change range.
 class ChangedFile {
-  const ChangedFile({
+  ChangedFile({
     required this.status,
     this.oldPath,
     this.newPath,
-  }) : assert(
-         status == 'added' ||
-             status == 'modified' ||
-             status == 'deleted' ||
-             status == 'renamed',
-         'Unsupported change status',
-       );
+  }) {
+    if (status != 'added' &&
+        status != 'modified' &&
+        status != 'deleted' &&
+        status != 'renamed') {
+      throw ArgumentError.value(status, 'status', 'Unsupported change status');
+    }
+  }
 
   const ChangedFile.added(String path)
     : status = 'added',

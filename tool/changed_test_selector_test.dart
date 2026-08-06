@@ -65,4 +65,36 @@ void main() {
       'reason': 'reverse import impact',
     });
   });
+
+  test('rejects unsupported status at runtime', () {
+    expect(
+      () => ChangedFile(status: 'unsupported'),
+      throwsArgumentError,
+    );
+  });
+
+  test('freezes result package inputs and outputs', () {
+    final paths = ['test/core_test.dart'];
+    final packages = <String, List<String>>{'packages/core': paths};
+    final result = SelectionResult(
+      mode: SelectionMode.affected,
+      packages: packages,
+      reason: 'reverse import impact',
+    );
+
+    paths.add('test/other_test.dart');
+    packages['packages/other'] = ['test/other_test.dart'];
+
+    expect(result.packages, {
+      'packages/core': ['test/core_test.dart'],
+    });
+    expect(
+      () => result.packages['packages/core']!.add('test/other_test.dart'),
+      throwsUnsupportedError,
+    );
+    expect(
+      () => result.packages['packages/other'] = ['test/other_test.dart'],
+      throwsUnsupportedError,
+    );
+  });
 }
