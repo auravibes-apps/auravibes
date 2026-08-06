@@ -36,3 +36,23 @@ Focused fatal analyzer was re-run after edits, but Dart analyzer remained blocke
 
 - Combined fatal analyzer still includes 71 out-of-scope infos in `tool/changed_test_selector.dart`; no behavior or production-file changes were authorized.
 - Final fatal-analyzer process could not complete because shared SDK analyzer execution was blocked externally.
+
+## Fix round 2 — review blocker resolution
+
+- Changed both `tool/changed_test_selector.dart` and `tool/changed_test_selector_test.dart` scope only; no lint suppression, analysis config, workflow, or behavior changes.
+- Removed all 71 production fatal analyzer infos: enum parsing, return-value handling, catch clauses, substring lint, null assertions, boolean constructor params, first-or-null usage, line length, and return formatting.
+- Exact combined analyzer passed with zero output and exit code 0:
+
+```text
+fvm dart analyze tool/changed_test_selector.dart tool/changed_test_selector_test.dart --fatal-infos --fatal-warnings --format=machine
+```
+
+- Focused selector test passed all 20 tests:
+
+```text
+fvm dart test tool/changed_test_selector_test.dart
+```
+
+- Analyzer initially blocked by stale own `fvm dart fix --apply` process (PIDs 52506, 52507, 52533, 52553); stopped only those processes, then analyzer completed.
+- `fvm dart format tool/changed_test_selector.dart` passed.
+

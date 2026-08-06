@@ -4,6 +4,13 @@ import 'dart:io';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
+// ponytail: retain UTF-16 slicing without adding characters dependency;
+// upgrade to package:characters if these paths become user-facing text.
+extension on String {
+  String _slice(int start, [int? end]) =>
+      String.fromCharCodes(codeUnits.getRange(start, end ?? length));
+}
+
 /// Selection mode for changed-test execution.
 enum SelectionMode { full, affected, none }
 
@@ -65,10 +72,12 @@ class SelectionResult {
         (reasonValue != null && reasonValue is! String)) {
       throw const FormatException('Manifest mode is required');
     }
-    final mode = SelectionMode.values.firstWhere(
-      (candidate) => candidate.name == modeValue,
-      orElse: () => throw const FormatException('Invalid manifest mode'),
-    );
+    final mode = switch (modeValue) {
+      'full' => SelectionMode.full,
+      'affected' => SelectionMode.affected,
+      'none' => SelectionMode.none,
+      _ => throw const FormatException('Invalid manifest mode'),
+    };
     final rawPackages = value['packages'];
     final packages = <String, List<String>>{};
     if (rawPackages != null) {
@@ -92,6 +101,7 @@ class SelectionResult {
     if (mode == SelectionMode.affected && packages.isEmpty) {
       throw const FormatException('Affected manifest has no packages');
     }
+
     return SelectionResult(
       mode: mode,
       packages: packages,
@@ -112,6 +122,7 @@ class SelectionResult {
     if (packages.isNotEmpty || mode == SelectionMode.affected) {
       json['packages'] = packages;
     }
+
     return json;
   }
 
@@ -123,15 +134,20 @@ class SelectionResult {
       final paths = entry.value.toSet().toList()..sort();
       frozen[entry.key] = List.unmodifiable(paths);
     }
+
     return Map.unmodifiable(frozen);
   }
 }
 
 /// Parses NUL-delimited `git diff --name-status --find-renames -z` output.
 List<ChangedFile> parseNameStatus(String output) {
-  if (output.isEmpty) return const [];
+  if (output.isEmpty) {
+    return const [];
+  }
   final fields = output.split('\u0000');
-  if (fields.last.isEmpty) fields.removeLast();
+  if (fields.last.isEmpty) {
+    final _ = fields.removeLast();
+  }
   final changes = <ChangedFile>[];
   var index = 0;
   while (index < fields.length) {
@@ -159,10 +175,11 @@ List<ChangedFile> parseNameStatus(String output) {
     }
     throw FormatException('Unsupported or malformed status: $status');
   }
+
   return List.unmodifiable(changes);
 }
 
-/// Builds a stable, serialized reverse graph for callers that need to inspect it.
+/// Builds stable, serialized reverse graph for callers that need to inspect it.
 /// Values contain comma-separated, sorted dependent paths; selection uses the
 /// lossless internal set representation instead.
 Map<String, String> buildReverseImportGraph(
@@ -175,6 +192,7 @@ Map<String, String> buildReverseImportGraph(
     final dependents = reverse[path]!.toList()..sort();
     result[path] = dependents.join(',');
   }
+
   return result;
 }
 
@@ -193,7 +211,9 @@ SelectionResult selectChangedTests({
         return _full('Malformed changed file record.');
       }
       for (final path in [change.oldPath, change.newPath]) {
-        if (path != null) paths.add(_normalizePath(path));
+        if (path != null) {
+          final _ = paths.add(_normalizePath(path));
+        }
       }
     }
   } on FormatException {
@@ -259,7 +279,9 @@ SelectionResult selectChangedTests({
       for (final path in [change.oldPath, change.newPath]) {
         if (path == null) continue;
         final normalized = _normalizePath(path);
-        if (candidates.contains(normalized)) selected.add(normalized);
+        if (candidates.contains(normalized)) {
+          final _ = selected.add(normalized);
+        }
         if (!normalized.endsWith('.dart')) continue;
         _addReverseClosure(normalized, reverse, selected, candidates);
       }
@@ -269,7 +291,11 @@ SelectionResult selectChangedTests({
     for (final path in selected.toList()..sort()) {
       final root = _packageRootFor(path, roots.values);
       if (root == null) continue;
-      packages.putIfAbsent(root, () => []).add(path.substring(root.length + 1));
+      packages
+          .putIfAbsent(root, () => [])
+          .add(
+            path._slice(root.length + 1),
+          );
     }
     for (final packagePaths in packages.values) {
       packagePaths.sort();
@@ -281,12 +307,13 @@ SelectionResult selectChangedTests({
         reason: 'No affected current test files.',
       );
     }
+
     return SelectionResult(
       mode: SelectionMode.affected,
       packages: packages,
       reason: 'reverse import impact',
     );
-  } catch (_) {
+  } on Object catch (_) {
     // ponytail: any incomplete static graph runs full suite; dynamic/runtime
     // loading is outside this deliberately bounded analyzer graph.
     return _full('Unable to build import graph.');
@@ -314,7 +341,9 @@ Future<int> runSelectedTests(
     if (selection.mode == SelectionMode.full) {
       for (final package in packages) {
         final paths = await _testFiles(package);
-        if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+        if (paths.isNotEmpty) {
+          final _ = groups.add(_TestGroup(package, paths));
+        }
       }
     } else {
       for (final entry in selection.packages.entries) {
@@ -324,9 +353,11 @@ Future<int> runSelectedTests(
         );
         final paths = <String>[];
         for (final path in entry.value) {
-          paths.add(await _validateTestPath(package, path));
+          final _ = paths.add(await _validateTestPath(package, path));
         }
-        if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+        if (paths.isNotEmpty) {
+          final _ = groups.add(_TestGroup(package, paths));
+        }
       }
     }
     final launch = launcher ?? _launchProcess;
@@ -340,6 +371,7 @@ Future<int> runSelectedTests(
             stdout.writeln(
               [command.executable, ...command.arguments].join(' '),
             );
+
             return 0;
           }
           try {
@@ -348,7 +380,7 @@ Future<int> runSelectedTests(
               arguments: command.arguments,
               workingDirectory: group.package.absoluteRoot,
             );
-          } catch (_) {
+          } on Object catch (_) {
             return 1;
           }
         }),
@@ -357,9 +389,11 @@ Future<int> runSelectedTests(
         if (result != 0 && firstFailure == 0) firstFailure = result;
       }
     }
+
     return firstFailure;
-  } catch (error) {
+  } on Object catch (error) {
     stderr.writeln('changed-test-selector: $error');
+
     return 2;
   }
 }
@@ -391,6 +425,7 @@ Future<SelectionResult> selectRepository({
       rootPath,
       ['diff', '--name-status', '--find-renames', '-z', '$base...$head'],
     );
+
     return selectChangedTests(
       changes: parseNameStatus(diff),
       headSources: headSources,
@@ -403,7 +438,7 @@ Future<SelectionResult> selectRepository({
           package.relativeRoot,
       },
     );
-  } catch (error) {
+  } on Object catch (error) {
     return _full('Repository snapshot failed: $error');
   }
 }
@@ -412,7 +447,7 @@ Future<void> main(List<String> args) async {
   try {
     if (args.isEmpty) throw const FormatException('Command is required');
     final options = _options(args.skip(1));
-    switch (args.first) {
+    switch (args.firstOrNull) {
       case 'select':
         _checkOptions(options, const {'base', 'head', 'output'});
         final result = await selectRepository(
@@ -420,7 +455,7 @@ Future<void> main(List<String> args) async {
           base: _requiredOption(options, 'base'),
           head: _requiredOption(options, 'head'),
         );
-        await File(
+        final _ = await File(
           _requiredOption(options, 'output'),
         ).writeAsString(jsonEncode(result.toJson()));
         stderr.writeln('${result.mode.name}: ${result.reason}');
@@ -437,22 +472,22 @@ Future<void> main(List<String> args) async {
           dryRun: options.containsKey('dry-run'),
         );
       default:
-        throw FormatException('Unknown command: ${args.first}');
+        throw FormatException('Unknown command: ${args.firstOrNull}');
     }
-  } catch (error) {
+  } on Object catch (error) {
     stderr.writeln('changed-test-selector: $error');
     exitCode = 2;
   }
 }
 
 class _Package {
-  _Package(
-    this.relativeRoot,
-    this.name,
-    this.flutter,
-    this.serverpod,
-    this.absoluteRoot,
-  );
+  _Package({
+    required this.relativeRoot,
+    required this.name,
+    required this.flutter,
+    required this.serverpod,
+    required this.absoluteRoot,
+  });
   final String relativeRoot;
   final String name;
   final bool flutter;
@@ -485,7 +520,10 @@ Future<List<_Package>> _loadPackages(String rootPath) async {
     if (!inWorkspace) continue;
     final match = RegExp(r'^  - (.+)$').firstMatch(line);
     if (match != null) {
-      members.add(_normalizePath(match.group(1)!.trim()));
+      final memberPath = match.group(1);
+      if (memberPath != null) {
+        final _ = members.add(_normalizePath(memberPath.trim()));
+      }
     } else if (line.trim().isNotEmpty && !line.startsWith(' ')) {
       break;
     }
@@ -501,21 +539,25 @@ Future<List<_Package>> _loadPackages(String rootPath) async {
       (line) => RegExp(r'^name:\s*\S+').hasMatch(line),
       orElse: () => throw FormatException('Package name missing: $member'),
     );
-    final name = RegExp(r'^name:\s*(\S+)').firstMatch(nameLine)!.group(1)!;
+    final name = RegExp(r'^name:\s*(\S+)').firstMatch(nameLine)?.group(1);
+    if (name == null) {
+      throw FormatException('Package name missing: $member');
+    }
     packages.add(
       _Package(
-        member,
-        name,
-        packageLines.any(
+        relativeRoot: member,
+        name: name,
+        flutter: packageLines.any(
           (line) => RegExp(r'^  flutter:\s*(#.*)?$').hasMatch(line),
         ),
-        File(
+        serverpod: File(
           '${packageRoot.path}/test/integration/test_tools/serverpod_test_tools.dart',
         ).existsSync(),
-        packageRoot.absolute.path,
+        absoluteRoot: packageRoot.absolute.path,
       ),
     );
   }
+
   return packages;
 }
 
@@ -534,6 +576,7 @@ Future<Map<String, String>> _workspaceSources(List<_Package> packages) async {
           await entity.readAsString();
     }
   }
+
   return sources;
 }
 
@@ -549,6 +592,7 @@ Future<List<String>> _testFiles(_Package package) async {
     final relative = _relativePath(package.absoluteRoot, entity.path);
     if (_allowedTestPath(relative, package.serverpod)) paths.add(relative);
   }
+
   return paths..sort();
 }
 
@@ -578,6 +622,7 @@ Future<String> _validateTestPath(_Package package, String path) async {
   if (!resolved.startsWith(root)) {
     throw FormatException('Selected test path escapes package: $path');
   }
+
   return relative;
 }
 
@@ -609,6 +654,7 @@ Future<int> _launchProcess({
   );
   if (result.stdout.toString().isNotEmpty) stdout.write(result.stdout);
   if (result.stderr.toString().isNotEmpty) stderr.write(result.stderr);
+
   return result.exitCode;
 }
 
@@ -621,6 +667,7 @@ Future<String> _git(String rootPath, List<String> arguments) async {
   if (result.exitCode != 0) {
     throw FormatException(result.stderr.toString().trim());
   }
+
   return result.stdout.toString();
 }
 
@@ -640,18 +687,19 @@ Map<String, String> _options(Iterable<String> arguments) {
     if (argument == '--dry-run') {
       options['dry-run'] = '';
     } else if (argument.startsWith('--') && index + 1 < values.length) {
-      options[argument.substring(2)] = values[++index];
+      options[argument._slice(2)] = values[++index];
     } else {
       throw FormatException('Invalid argument: $argument');
     }
   }
+
   return options;
 }
 
 void _checkOptions(Map<String, String> options, Set<String> allowed) {
   final unknown = options.keys.where((key) => !allowed.contains(key));
   if (unknown.isNotEmpty) {
-    throw FormatException('Invalid option: --${unknown.first}');
+    throw FormatException('Invalid option: --${unknown.firstOrNull}');
   }
 }
 
@@ -660,6 +708,7 @@ String _requiredOption(Map<String, String> options, String key) {
   if (value == null || value.isEmpty) {
     throw FormatException('--$key is required');
   }
+
   return value;
 }
 
@@ -667,8 +716,9 @@ String _relativePath(String root, String path) {
   final prefix = root.endsWith(Platform.pathSeparator)
       ? root
       : '$root${Platform.pathSeparator}';
+
   return path.startsWith(prefix)
-      ? path.substring(prefix.length).replaceAll(Platform.pathSeparator, '/')
+      ? path._slice(prefix.length).replaceAll(Platform.pathSeparator, '/')
       : path.replaceAll(Platform.pathSeparator, '/');
 }
 
@@ -687,6 +737,7 @@ Map<String, String> _normalizeSources(Map<String, String> sources) {
     }
     normalized[path] = entry.value;
   }
+
   return normalized;
 }
 
@@ -728,10 +779,11 @@ Map<String, Set<String>> _buildReverseGraph(
         if (!availableSources.containsKey(target)) {
           throw FormatException('Unresolved workspace URI: $uri');
         }
-        reverse[target]!.add(entry.key);
+        final _ = reverse[target]!.add(entry.key);
       }
     }
   }
+
   return reverse;
 }
 
@@ -765,14 +817,14 @@ String? _resolveUri(
 ) {
   if (uri.startsWith('dart:')) return null;
   if (uri.startsWith('package:')) {
-    final remainder = uri.substring('package:'.length);
+    final remainder = uri._slice('package:'.length);
     final slash = remainder.indexOf('/');
     if (slash <= 0) throw const FormatException('Malformed package URI');
-    final package = remainder.substring(0, slash);
+    final package = remainder._slice(0, slash);
     final root = packageRoots[package];
     if (root == null) return null;
     final target = _normalizePath(
-      '$root/lib/${remainder.substring(slash + 1)}',
+      '$root/lib/${remainder._slice(slash + 1)}',
       allowParent: true,
     );
     final libRoot = '$root/lib';
@@ -782,11 +834,12 @@ String? _resolveUri(
     if (!sources.containsKey(target)) {
       throw FormatException('Unresolved workspace URI: $uri');
     }
+
     return target;
   }
   if (uri.contains(':')) return null;
   final slash = importer.lastIndexOf('/');
-  final directory = slash < 0 ? '' : importer.substring(0, slash);
+  final directory = slash < 0 ? '' : importer._slice(0, slash);
   final target = _normalizePath(
     directory.isEmpty ? uri : '$directory/$uri',
     allowParent: true,
@@ -794,6 +847,7 @@ String? _resolveUri(
   if (!sources.containsKey(target)) {
     throw FormatException('Unresolved relative URI: $uri');
   }
+
   return target;
 }
 
@@ -807,6 +861,7 @@ Map<String, Set<String>> _mergeGraphs(
       merged.putIfAbsent(entry.key, () => <String>{}).addAll(entry.value);
     }
   }
+
   return merged;
 }
 
@@ -824,9 +879,10 @@ Set<String> _currentTestCandidates(
           root,
           serverpod: serverpodPackageRoots.contains(root),
         )) {
-      candidates.add(path);
+      final _ = candidates.add(path);
     }
   }
+
   return candidates;
 }
 
@@ -837,12 +893,13 @@ bool _isCandidateTest(
 }) {
   final prefix = '$root/test/';
   if (!path.startsWith(prefix) || !path.endsWith('.dart')) return false;
-  final relative = path.substring(root.length + 1);
+  final relative = path._slice(root.length + 1);
   if (relative.startsWith('test/integration/')) return false;
   if (serverpod) {
     return relative.startsWith('test/features/') ||
         relative.startsWith('test/migrations/');
   }
+
   return true;
 }
 
@@ -857,7 +914,9 @@ void _addReverseClosure(
   while (queue.isNotEmpty) {
     final path = queue.removeAt(0);
     if (!visited.add(path)) continue;
-    if (candidates.contains(path)) selected.add(path);
+    if (candidates.contains(path)) {
+      final _ = selected.add(path);
+    }
     for (final dependent in reverse[path] ?? const <String>{}) {
       if (!visited.contains(dependent)) queue.add(dependent);
     }
@@ -866,6 +925,7 @@ void _addReverseClosure(
 
 bool _isSupportedDartPath(String path, Iterable<String> roots) {
   if (!path.endsWith('.dart')) return false;
+
   return roots.any(
     (root) => path.startsWith('$root/lib/') || path.startsWith('$root/test/'),
   );
@@ -879,11 +939,12 @@ String? _packageRootFor(String path, Iterable<String> roots) {
           )
           .toList()
         ..sort((a, b) => b.length.compareTo(a.length));
-  return matches.isEmpty ? null : matches.first;
+
+  return matches.firstOrNull;
 }
 
 String _normalizePath(String path, {bool allowParent = false}) {
-  var normalized = path.replaceAll(r'\', '/');
+  final normalized = path.replaceAll(r'\', '/');
   if (normalized.startsWith('/') ||
       RegExp('^[A-Za-z]:/').hasMatch(normalized)) {
     throw const FormatException('Absolute path is not repository-relative');
@@ -895,18 +956,19 @@ String _normalizePath(String path, {bool allowParent = false}) {
       if (!allowParent || parts.isEmpty) {
         throw const FormatException('Path escapes repository root');
       }
-      parts.removeLast();
+      final _ = parts.removeLast();
       continue;
     }
     parts.add(part);
   }
   if (parts.isEmpty) throw const FormatException('Empty repository path');
-  normalized = parts.join('/');
-  return normalized;
+
+  return parts.join('/');
 }
 
 bool _isDocumentation(String path) {
   final file = path.split('/').last.toLowerCase();
+
   return file.endsWith('.md') ||
       file.endsWith('.mdx') ||
       file == 'readme' ||
@@ -919,6 +981,7 @@ bool _isDocumentation(String path) {
 bool _isGlobal(String path) {
   final normalized = path.replaceAll(r'\', '/');
   final file = normalized.split('/').last;
+
   return normalized.startsWith('.github/') ||
       normalized.startsWith('.fvm/') ||
       normalized == '.fvmrc' ||
