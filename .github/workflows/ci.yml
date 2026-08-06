@@ -5,6 +5,7 @@ on:
     branches: [main, dev, stage]
   pull_request:
     branches: [main, dev, stage]
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
