@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'mcp_transport_type.dart';
@@ -9,6 +9,7 @@ part of 'mcp_transport_type.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -62,7 +63,7 @@ class _$OAuthTokenModelCopyWithImpl<$Res>
 /// Create a copy of OAuthTokenModel
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? accessToken = null,Object? refreshToken = freezed,Object? idToken = freezed,Object? expiresIn = freezed,Object? tokenType = freezed,Object? scope = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(OAuthTokenModel(
 accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
 as String,refreshToken: freezed == refreshToken ? _self.refreshToken : refreshToken // ignore: cast_nullable_to_non_nullable
 as String?,idToken: freezed == idToken ? _self.idToken : idToken // ignore: cast_nullable_to_non_nullable
@@ -332,7 +333,7 @@ class _$OAuthTokenEntityCopyWithImpl<$Res>
 /// Create a copy of OAuthTokenEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? accessToken = null,Object? issuedAt = null,Object? refreshToken = freezed,Object? idToken = freezed,Object? expiresIn = freezed,Object? tokenType = freezed,Object? scopes = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(OAuthTokenEntity(
 accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
 as String,issuedAt: null == issuedAt ? _self.issuedAt : issuedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,refreshToken: freezed == refreshToken ? _self.refreshToken : refreshToken // ignore: cast_nullable_to_non_nullable
@@ -481,7 +482,7 @@ return $default(_that.accessToken,_that.issuedAt,_that.refreshToken,_that.idToke
 @JsonSerializable()
 
 class _OAuthTokenEntity extends OAuthTokenEntity {
-  const _OAuthTokenEntity({required this.accessToken, required this.issuedAt, this.refreshToken, this.idToken, this.expiresIn, this.tokenType, final  List<String>? scopes}): _scopes = scopes,super._();
+  const _OAuthTokenEntity({required this.accessToken, required this.issuedAt, this.refreshToken, this.idToken, this.expiresIn, this.tokenType,  List<String>? scopes}): _scopes = scopes,super._();
   factory _OAuthTokenEntity.fromJson(Map<String, dynamic> json) => _$OAuthTokenEntityFromJson(json);
 
 @override final  String accessToken;
@@ -758,7 +759,7 @@ return bearerToken(_that.bearerToken);case _:
 @JsonSerializable()
 
 class McpAuthenticationTypeNone extends McpAuthenticationType {
-  const McpAuthenticationTypeNone({final  String? $type}): $type = $type ?? 'none',super._();
+  const McpAuthenticationTypeNone({ String? $type}): $type = $type ?? 'none',super._();
   factory McpAuthenticationTypeNone.fromJson(Map<String, dynamic> json) => _$McpAuthenticationTypeNoneFromJson(json);
 
 
@@ -793,7 +794,7 @@ int get hashCode => runtimeType.hashCode;
 @JsonSerializable()
 
 class McpAuthenticationTypeOAuth extends McpAuthenticationType {
-  const McpAuthenticationTypeOAuth({required this.token, required this.clientId, required this.authorizationEndpoint, required this.tokenEndpoint, final  String? $type}): $type = $type ?? 'oauth',super._();
+  const McpAuthenticationTypeOAuth({required this.token, required this.clientId, required this.authorizationEndpoint, required this.tokenEndpoint,  String? $type}): $type = $type ?? 'oauth',super._();
   factory McpAuthenticationTypeOAuth.fromJson(Map<String, dynamic> json) => _$McpAuthenticationTypeOAuthFromJson(json);
 
  final  OAuthTokenEntity token;
@@ -877,7 +878,7 @@ $OAuthTokenEntityCopyWith<$Res> get token {
 @JsonSerializable()
 
 class McpAuthenticationTypeBearerToken extends McpAuthenticationType {
-  const McpAuthenticationTypeBearerToken({required this.bearerToken, final  String? $type}): $type = $type ?? 'bearerToken',super._();
+  const McpAuthenticationTypeBearerToken({required this.bearerToken,  String? $type}): $type = $type ?? 'bearerToken',super._();
   factory McpAuthenticationTypeBearerToken.fromJson(Map<String, dynamic> json) => _$McpAuthenticationTypeBearerTokenFromJson(json);
 
  final  String bearerToken;
@@ -1000,7 +1001,7 @@ class _$McpServerToCreateCopyWithImpl<$Res>
 /// Create a copy of McpServerToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? serviceConnectionId = freezed,Object? description = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(McpServerToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,transport: null == transport ? _self.transport : transport // ignore: cast_nullable_to_non_nullable
@@ -1307,7 +1308,7 @@ class _$McpServerEntityCopyWithImpl<$Res>
 /// Create a copy of McpServerEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? createdAt = null,Object? updatedAt = null,Object? serviceConnectionId = freezed,Object? description = freezed,Object? isEnabled = null,}) {
-  return _then(_self.copyWith(
+  return _then(McpServerEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -1619,7 +1620,7 @@ class _$McpServerFormToCreateCopyWithImpl<$Res>
 /// Create a copy of McpServerFormToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = freezed,Object? description = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(McpServerFormToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
 as String,transport: null == transport ? _self.transport : transport // ignore: cast_nullable_to_non_nullable

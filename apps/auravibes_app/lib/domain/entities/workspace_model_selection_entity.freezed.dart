@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'workspace_model_selection_entity.dart';
@@ -9,6 +9,7 @@ part of 'workspace_model_selection_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -63,7 +64,7 @@ class _$WorkspaceModelSelectionEntityCopyWithImpl<$Res>
 /// Create a copy of WorkspaceModelSelectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? modelConnectionId = null,Object? modelName = freezed,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? supportsReasoning = null,Object? supportsToolCalls = null,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceModelSelectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
@@ -215,7 +216,7 @@ return $default(_that.id,_that.modelId,_that.createdAt,_that.updatedAt,_that.mod
 
 
 class _WorkspaceModelSelectionEntity implements WorkspaceModelSelectionEntity {
-  const _WorkspaceModelSelectionEntity({required this.id, required this.modelId, required this.createdAt, required this.updatedAt, required this.modelConnectionId, this.modelName, final  List<String> modalitiesInput = const [], final  List<String> modalitiesOutput = const [], this.supportsReasoning = false, this.supportsToolCalls = true}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput;
+  const _WorkspaceModelSelectionEntity({required this.id, required this.modelId, required this.createdAt, required this.updatedAt, required this.modelConnectionId, this.modelName,  List<String> modalitiesInput = const [],  List<String> modalitiesOutput = const [], this.supportsReasoning = false, this.supportsToolCalls = true}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput;
   
 
 @override final  String id;
@@ -359,7 +360,7 @@ class _$WorkspaceModelSelectionWithConnectionEntityCopyWithImpl<$Res>
 /// Create a copy of WorkspaceModelSelectionWithConnectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? workspaceModelSelection = null,Object? modelConnection = null,Object? modelsProvider = null,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceModelSelectionWithConnectionEntity(
 workspaceModelSelection: null == workspaceModelSelection ? _self.workspaceModelSelection : workspaceModelSelection // ignore: cast_nullable_to_non_nullable
 as WorkspaceModelSelectionEntity,modelConnection: null == modelConnection ? _self.modelConnection : modelConnection // ignore: cast_nullable_to_non_nullable
 as ModelConnectionEntity,modelsProvider: null == modelsProvider ? _self.modelsProvider : modelsProvider // ignore: cast_nullable_to_non_nullable
@@ -676,7 +677,7 @@ class _$WorkspaceModelSelectionFilterCopyWithImpl<$Res>
 /// Create a copy of WorkspaceModelSelectionFilter
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? workspaces = null,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceModelSelectionFilter(
 workspaces: null == workspaces ? _self.workspaces : workspaces // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -819,7 +820,7 @@ return $default(_that.workspaces);case _:
 
 
 class _WorkspaceModelSelectionFilter implements WorkspaceModelSelectionFilter {
-  const _WorkspaceModelSelectionFilter({final  List<String> workspaces = const []}): _workspaces = workspaces;
+  const _WorkspaceModelSelectionFilter({ List<String> workspaces = const []}): _workspaces = workspaces;
   
 
  final  List<String> _workspaces;
@@ -939,7 +940,7 @@ class _$WorkspaceModelSelectionToCreateCopyWithImpl<$Res>
 /// Create a copy of WorkspaceModelSelectionToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? modelId = null,Object? modelConnectionId = null,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceModelSelectionToCreate(
 modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String,modelConnectionId: null == modelConnectionId ? _self.modelConnectionId : modelConnectionId // ignore: cast_nullable_to_non_nullable
 as String,
