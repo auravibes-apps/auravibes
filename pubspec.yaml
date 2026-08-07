@@ -27,6 +27,8 @@ dependency_overrides:
   # melos 8 needs cli_util ^0.5.0; flutter_launcher_icons 0.14.4 pins ^0.4.1 (no newer release).
   # 0.5.0 only deprecates applicationConfigHome (still present), safe override.
   cli_util: ^0.5.0
+  # ponytail: pin analyzer-13.0-compatible formatter until Flutter lifts meta 1.18.0.
+  dart_style: 3.1.9
   # ponytail: Flutter SDK pins test_api 0.7.11; test 1.31.1 expects 0.7.12.
   test_api: 0.7.11
   # flutter_web_auth_2 6.0.0-alpha.4 still constrains window_to_front to ^0.1.0.
