@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'api_model_entity.dart';
@@ -9,6 +9,7 @@ part of 'api_model_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -77,7 +78,7 @@ class _$ApiModelEntityCopyWithImpl<$Res>
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
-  return _then(_self.copyWith(
+  return _then(ApiModelEntity(
 modelProvider: null == modelProvider ? _self.modelProvider : modelProvider // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -235,7 +236,7 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 
 
 class _ApiModelEntity extends ApiModelEntity {
-  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required final  List<String> modalitiesInput, required final  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false, this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,super._();
+  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required  List<String> modalitiesInput, required  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false, this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,super._();
   
 
 /// ID of the provider that offers this model.

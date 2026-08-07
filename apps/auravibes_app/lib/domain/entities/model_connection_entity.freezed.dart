@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'model_connection_entity.dart';
@@ -9,6 +9,7 @@ part of 'model_connection_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -63,7 +64,7 @@ class _$ModelConnectionEntityCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,Object? oauthMetadata = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -350,7 +351,7 @@ class _$ModelConnectionToCreateCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? workspaceId = null,Object? modelId = null,Object? authMode = null,Object? key = null,Object? url = freezed,Object? oauthToken = freezed,Object? oauthMetadata = freezed,Object? modelIds = null,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -513,7 +514,7 @@ return $default(_that.name,_that.workspaceId,_that.modelId,_that.authMode,_that.
 
 
 class _ModelConnectionToCreate implements ModelConnectionToCreate {
-  const _ModelConnectionToCreate({required this.name, required this.workspaceId, required this.modelId, this.authMode = ModelProviderAuthMode.apiKey, this.key = '', this.url, this.oauthToken, this.oauthMetadata, final  List<String> modelIds = const []}): assert(authMode == ModelProviderAuthMode.oauth2 || key != "", 'API-key connections require a non-empty key.'),_modelIds = modelIds;
+  const _ModelConnectionToCreate({required this.name, required this.workspaceId, required this.modelId, this.authMode = ModelProviderAuthMode.apiKey, this.key = '', this.url, this.oauthToken, this.oauthMetadata,  List<String> modelIds = const []}): assert(authMode == ModelProviderAuthMode.oauth2 || key != "", 'API-key connections require a non-empty key.'),_modelIds = modelIds;
   
 
 @override final  String name;
@@ -661,7 +662,7 @@ class _$ModelConnectionForEditCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionForEdit
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionForEdit(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -939,7 +940,7 @@ class _$ModelConnectionToUpdateCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? key = freezed,Object? url = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionToUpdate(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1202,7 +1203,7 @@ class _$ModelConnectionFilterCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionFilter
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? workspaces = null,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionFilter(
 workspaces: null == workspaces ? _self.workspaces : workspaces // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -1345,7 +1346,7 @@ return $default(_that.workspaces);case _:
 
 
 class _ModelConnectionFilter implements ModelConnectionFilter {
-  const _ModelConnectionFilter({final  List<String> workspaces = const []}): _workspaces = workspaces;
+  const _ModelConnectionFilter({ List<String> workspaces = const []}): _workspaces = workspaces;
   
 
  final  List<String> _workspaces;
