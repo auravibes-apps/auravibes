@@ -27,7 +27,6 @@ void main() {
   test(
     'does not fall back to local candidates when cloud loading fails',
     () async {
-      final repository = _ServiceConnectionRepository();
       const session = WorkspaceSession(
         CloudWorkspaceRef(
           localWorkspaceId: 'cloud-workspace',
@@ -38,7 +37,9 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
-          serviceConnectionRepositoryProvider.overrideWithValue(repository),
+          serviceConnectionRepositoryProvider.overrideWith(
+            (_) => throw StateError('local repository touched'),
+          ),
           workspaceSessionForRouteProvider('cloud-workspace').overrideWith(
             (_) async => session,
           ),
@@ -54,14 +55,11 @@ void main() {
 
       await expectLater(
         usecase.call(workspaceId: 'cloud-workspace', skill: skill),
-        throwsA(isA<StateError>()),
-      );
-      final _ = verifyNever(
-        () => repository.listAppSkillCredentialCandidates(
-          workspaceId: any(named: 'workspaceId'),
-          appSkillServiceId: any(named: 'appSkillServiceId'),
-          compatibleModelProviderIds: any(
-            named: 'compatibleModelProviderIds',
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message.toString(),
+            'message',
+            contains('cloud unavailable'),
           ),
         ),
       );
@@ -78,7 +76,7 @@ void main() {
       ),
     ).thenAnswer((_) async => []);
     final usecase = ListAppSkillCredentialCandidatesUsecase(
-      repository,
+      () => repository,
       cloudServiceConnectionsReader: (_) async => const [
         CloudServiceConnection(
           id: 'matching',
@@ -146,7 +144,9 @@ void main() {
     'cloud eligibility excludes local callbacks and keeps server tools',
     () async {
       final repository = _ServiceConnectionRepository();
-      final usecase = ListAppSkillCredentialCandidatesUsecase(repository);
+      final usecase = ListAppSkillCredentialCandidatesUsecase(
+        () => repository,
+      );
       const registry = AppSkillRegistry();
       final skillsManager =
           registry.getByIdentifier('skills_manager') ??
