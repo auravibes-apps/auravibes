@@ -10,6 +10,12 @@ import 'package:riverpod/riverpod.dart';
 
 typedef CloudServiceConnectionsReader =
     Future<List<CloudServiceConnection>?> Function(String workspaceId);
+typedef ServiceConnectionCandidatesReader =
+    Future<List<ServiceConnectionCandidate>> Function({
+      required String workspaceId,
+      required String appSkillServiceId,
+      required List<String> compatibleModelProviderIds,
+    });
 
 class AppSkillCredentialCandidate {
   const AppSkillCredentialCandidate({
@@ -25,10 +31,12 @@ class ListAppSkillCredentialCandidatesUsecase {
   const ListAppSkillCredentialCandidatesUsecase(
     this._serviceConnectionRepository, {
     this._cloudServiceConnectionsReader,
+    this._serviceConnectionCandidatesReader,
   });
 
-  final ServiceConnectionRepository _serviceConnectionRepository;
+  final ServiceConnectionRepository? _serviceConnectionRepository;
   final CloudServiceConnectionsReader? _cloudServiceConnectionsReader;
+  final ServiceConnectionCandidatesReader? _serviceConnectionCandidatesReader;
 
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,
@@ -51,12 +59,17 @@ class ListAppSkillCredentialCandidatesUsecase {
       ];
     }
 
-    final candidates = await _serviceConnectionRepository
-        .listAppSkillCredentialCandidates(
-          workspaceId: workspaceId,
-          appSkillServiceId: skill.identifier,
-          compatibleModelProviderIds: skill.compatibleModelProviderIds,
-        );
+    final candidates =
+        await (_serviceConnectionCandidatesReader?.call(
+              workspaceId: workspaceId,
+              appSkillServiceId: skill.identifier,
+              compatibleModelProviderIds: skill.compatibleModelProviderIds,
+            ) ??
+            _serviceConnectionRepository!.listAppSkillCredentialCandidates(
+              workspaceId: workspaceId,
+              appSkillServiceId: skill.identifier,
+              compatibleModelProviderIds: skill.compatibleModelProviderIds,
+            ));
 
     return [
       for (final candidate in candidates)
@@ -102,7 +115,19 @@ class ListAppSkillCredentialCandidatesUsecase {
 final listAppSkillCredentialCandidatesUsecaseProvider =
     Provider<ListAppSkillCredentialCandidatesUsecase>((ref) {
       return ListAppSkillCredentialCandidatesUsecase(
-        ref.watch(serviceConnectionRepositoryProvider),
+        null,
+        serviceConnectionCandidatesReader:
+            ({
+              required workspaceId,
+              required appSkillServiceId,
+              required compatibleModelProviderIds,
+            }) => ref
+                .read(serviceConnectionRepositoryProvider)
+                .listAppSkillCredentialCandidates(
+                  workspaceId: workspaceId,
+                  appSkillServiceId: appSkillServiceId,
+                  compatibleModelProviderIds: compatibleModelProviderIds,
+                ),
         cloudServiceConnectionsReader: (workspaceId) async {
           final session = await ref.read(
             workspaceSessionForRouteProvider(workspaceId).future,
