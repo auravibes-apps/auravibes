@@ -1,6 +1,6 @@
 # Dependabot configuration file - enable regular dependency checks.
 version: 2
-# ponytail: zero release delay; CI gates updates, PR volume is ceiling.
+# Exclude every dependency from cooldown; 1 day is schema minimum and has no effect here.
 
 updates:
   - package-ecosystem: github-actions
