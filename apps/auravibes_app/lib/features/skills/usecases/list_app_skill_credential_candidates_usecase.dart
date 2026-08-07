@@ -27,7 +27,7 @@ class ListAppSkillCredentialCandidatesUsecase {
     this._cloudServiceConnectionsReader,
   });
 
-  final ServiceConnectionRepository _serviceConnectionRepository;
+  final ServiceConnectionRepository Function() _serviceConnectionRepository;
   final CloudServiceConnectionsReader? _cloudServiceConnectionsReader;
 
   Future<List<AppSkillCredentialCandidate>> call({
@@ -51,7 +51,7 @@ class ListAppSkillCredentialCandidatesUsecase {
       ];
     }
 
-    final candidates = await _serviceConnectionRepository
+    final candidates = await _serviceConnectionRepository()
         .listAppSkillCredentialCandidates(
           workspaceId: workspaceId,
           appSkillServiceId: skill.identifier,
@@ -102,7 +102,7 @@ class ListAppSkillCredentialCandidatesUsecase {
 final listAppSkillCredentialCandidatesUsecaseProvider =
     Provider<ListAppSkillCredentialCandidatesUsecase>((ref) {
       return ListAppSkillCredentialCandidatesUsecase(
-        ref.watch(serviceConnectionRepositoryProvider),
+        () => ref.read(serviceConnectionRepositoryProvider),
         cloudServiceConnectionsReader: (workspaceId) async {
           final session = await ref.read(
             workspaceSessionForRouteProvider(workspaceId).future,

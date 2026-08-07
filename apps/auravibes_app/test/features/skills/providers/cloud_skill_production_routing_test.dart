@@ -5,6 +5,7 @@ import 'package:auravibes_app/domain/entities/skill_credential_definition_entity
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
+import 'package:auravibes_app/features/service_connections/providers/service_connection_repository_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_definitions_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_credential_operations_provider.dart';
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
@@ -181,6 +182,7 @@ void main() {
           workspaceSkillsProvider(workspaceId).overrideWith(
             (_) => CloudSkillSettingsAdapter(gateway).watchSkills().first,
           ),
+          serviceConnectionRepositoryProvider.overrideWith((_) => local()),
           skillsRepositoryProvider.overrideWith((_) => local()),
           skillTemplateToolsRepositoryProvider.overrideWith((_) => local()),
           skillCredentialDefinitionsRepositoryProvider.overrideWith(

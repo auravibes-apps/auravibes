@@ -452,7 +452,9 @@ void main() {
       final buildSpecsUsecase = BuildDynamicSkillToolSpecsUsecase(
         (_) => listAvailableSkillsUsecase,
         const AppSkillRegistry(),
-        ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
+        ListAppSkillCredentialCandidatesUsecase(
+          () => serviceConnectionRepository,
+        ),
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -596,7 +598,9 @@ void main() {
         appSkillSettingsRepository,
         const AppSkillRegistry(),
         CheckSkillCredentialReadinessUsecase(skillCredentialsRepository),
-        ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
+        ListAppSkillCredentialCandidatesUsecase(
+          () => serviceConnectionRepository,
+        ),
       );
 
       final loadableSkills = await listAvailableSkillsUsecase(
@@ -1471,7 +1475,9 @@ void main() {
       );
       final buildSpecsUsecase = BuildAppSkillNativeToolSpecsUsecase(
         (_) => listAvailableSkillsUsecase,
-        ListAppSkillCredentialCandidatesUsecase(serviceConnectionRepository),
+        ListAppSkillCredentialCandidatesUsecase(
+          () => serviceConnectionRepository,
+        ),
       );
       final runUsecase = runSkillsManagerToolUsecase();
 
