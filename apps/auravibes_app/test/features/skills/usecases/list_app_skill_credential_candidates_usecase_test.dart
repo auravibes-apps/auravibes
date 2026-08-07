@@ -57,7 +57,7 @@ void main() {
         usecase.call(workspaceId: 'cloud-workspace', skill: skill),
         throwsA(
           isA<StateError>().having(
-            (error) => error.message.toString(),
+            (error) => error.message,
             'message',
             contains('cloud unavailable'),
           ),
