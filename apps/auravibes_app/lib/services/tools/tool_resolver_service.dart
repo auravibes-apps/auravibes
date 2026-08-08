@@ -7,9 +7,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 class ToolResolverService {
   const ToolResolverService([this._resolver = _defaultResolver]);
 
-  static const _defaultResolver = AgentToolNameResolver(
-    skillControlToolNames: skillCommandToolNames,
-  );
+  static const _defaultResolver = AgentToolNameResolver();
 
   final AgentToolNameResolver _resolver;
 

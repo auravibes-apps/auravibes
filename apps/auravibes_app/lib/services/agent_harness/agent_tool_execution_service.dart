@@ -3,16 +3,17 @@
 // Required: Existing helpers remain top-level for local feature use.
 
 import 'dart:convert';
+
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart'
     hide ToolToCall;
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
-import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_call_loader.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_decision_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
@@ -24,11 +25,12 @@ import 'package:riverpod/riverpod.dart';
 
 final _logger = Logger('agent_tool_execution_service');
 
-typedef ResolveSkillCommandTarget = Future<agent.AgentResolvedToolName?> Function({
-  required String conversationId,
-  required String workspaceId,
-  required agent.SkillCommandTarget command,
-});
+typedef ResolveSkillCommandTarget =
+    Future<agent.AgentResolvedToolName?> Function({
+      required String conversationId,
+      required String workspaceId,
+      required agent.SkillCommandTarget command,
+    });
 
 class AgentToolExecutionService
     extends agent.AgentToolExecutionRunner<ResolvedTool> {
@@ -282,48 +284,51 @@ final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
         resolveToolApprovalDecisionForWorkspace: (workspaceId) => ref.read(
           resolveToolApprovalDecisionUsecaseProvider(workspaceId),
         ),
-        resolveSkillCommandTarget: ({
-          required conversationId,
-          required workspaceId,
-          required command,
-        }) async {
-          final manifests = await ref
-              .read(buildLoadedSkillManifestsUsecaseProvider)
-              .call(
-                conversationId: conversationId,
-                workspaceId: workspaceId,
-              );
-          final manifest = manifests
-              .where((candidate) => candidate.slug == command.skill)
-              .firstOrNull;
-          if (manifest == null || manifest.revision != command.revision) {
-            return null;
-          }
-          final specs = [
-            ...await ref
-                .read(buildSkillTemplateToolSpecsUsecaseProvider)
-                .call(
-                  conversationId: conversationId,
-                  workspaceId: workspaceId,
-                ),
-            ...await ref
-                .read(buildAppSkillNativeToolSpecsUsecaseProvider)
-                .call(
-                  conversationId: conversationId,
-                  workspaceId: workspaceId,
-                ),
-          ];
-          final resolver = const agent.AgentToolNameResolver();
-          final matches = <agent.AgentResolvedToolName>[];
-          for (final spec in specs) {
-            final candidate = resolver.resolve(spec.name);
-            if (candidate?.skillSlug == command.skill &&
-                candidate?.toolIdentifier == command.tool) {
-              matches.add(candidate!);
-            }
-          }
-          return matches.length == 1 ? matches.single : null;
-        },
+        resolveSkillCommandTarget:
+            ({
+              required conversationId,
+              required workspaceId,
+              required command,
+            }) async {
+              final manifests = await ref
+                  .read(buildLoadedSkillManifestsUsecaseProvider)
+                  .call(
+                    conversationId: conversationId,
+                    workspaceId: workspaceId,
+                  );
+              final manifest = manifests
+                  .where((candidate) => candidate.slug == command.skill)
+                  .firstOrNull;
+              if (manifest == null || manifest.revision != command.revision) {
+                return null;
+              }
+              final specs = [
+                ...await ref
+                    .read(buildSkillTemplateToolSpecsUsecaseProvider)
+                    .call(
+                      conversationId: conversationId,
+                      workspaceId: workspaceId,
+                    ),
+                ...await ref
+                    .read(buildAppSkillNativeToolSpecsUsecaseProvider)
+                    .call(
+                      conversationId: conversationId,
+                      workspaceId: workspaceId,
+                    ),
+              ];
+              const resolver = agent.AgentToolNameResolver();
+              final matches = <agent.AgentResolvedToolName>[];
+              for (final spec in specs) {
+                final candidate = resolver.resolve(spec.name);
+                if (candidate != null &&
+                    candidate.skillSlug == command.skill &&
+                    candidate.toolIdentifier == command.tool) {
+                  matches.add(candidate);
+                }
+              }
+
+              return matches.length == 1 ? matches.single : null;
+            },
         runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
         getAgentIterationDecisionUsecase: ref.watch(
           agentToolDecisionServiceProvider,

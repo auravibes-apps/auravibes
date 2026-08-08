@@ -9,11 +9,12 @@ import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_u
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
-  required String conversationId,
-  required String workspaceId,
-  required Map<String, dynamic> arguments,
-});
+typedef ListSkillCredentials =
+    Future<Map<String, Object?>> Function({
+      required String conversationId,
+      required String workspaceId,
+      required Map<String, dynamic> arguments,
+    });
 
 class RunSkillCommandUsecase {
   const RunSkillCommandUsecase({
@@ -71,6 +72,7 @@ class RunSkillCommandUsecase {
         workspaceId: workspaceId,
         filter: filter,
       );
+
       return [for (final skill in skills) _summary(skill)]
         ..sort((left, right) => left['slug']!.compareTo(right['slug']!));
     }
@@ -92,10 +94,12 @@ class RunSkillCommandUsecase {
       workspaceId: workspaceId,
       slug: slug,
     );
-    final manifest = (await _manifests(conversationId, workspaceId))
-        .where((candidate) => candidate.slug == slug)
-        .firstOrNull;
+    final manifest = (await _manifests(
+      conversationId,
+      workspaceId,
+    )).where((candidate) => candidate.slug == slug).firstOrNull;
     if (manifest == null) throw StateError('Loaded skill not found: $slug');
+
     return {'loaded': slug, 'manifest': manifest.toJson()};
   }
 
@@ -110,6 +114,7 @@ class RunSkillCommandUsecase {
       workspaceId: workspaceId,
       slug: slug,
     );
+
     return {'unloaded': slug};
   }
 
@@ -119,20 +124,26 @@ class RunSkillCommandUsecase {
     Map<String, dynamic> arguments,
   ) async {
     final command = SkillCommandTarget.fromArguments(arguments);
-    final manifest = (await _manifests(conversationId, workspaceId))
-        .where((candidate) => candidate.slug == command.skill)
-        .firstOrNull;
-    if (manifest == null) throw StateError('Skill is not loaded: ${command.skill}');
+    final manifest = (await _manifests(
+      conversationId,
+      workspaceId,
+    )).where((candidate) => candidate.slug == command.skill).firstOrNull;
+    if (manifest == null) {
+      throw StateError('Skill is not loaded: ${command.skill}');
+    }
     if (manifest.revision != command.revision) {
       throw FormatException(
-        'Skill manifest changed; call load_skill or list_skills to refresh: ${command.skill}',
+        'Skill manifest changed; call load_skill or list_skills to refresh: '
+        '${command.skill}',
       );
     }
     final manifestTool = manifest.tools
         .where((candidate) => candidate.name == command.tool)
         .firstOrNull;
     if (manifestTool == null) {
-      throw StateError('Skill tool is not configured: ${command.skill}/${command.tool}');
+      throw StateError(
+        'Skill tool is not configured: ${command.skill}/${command.tool}',
+      );
     }
     validateToolArguments(manifestTool.inputJsonSchema, command.args);
 
@@ -157,7 +168,10 @@ class RunSkillCommandUsecase {
         )
         .toList();
     if (targets.length != 1) {
-      throw StateError('Skill tool target is ambiguous or missing: ${command.skill}/${command.tool}');
+      throw StateError(
+        'Skill tool target is ambiguous or missing: '
+        '${command.skill}/${command.tool}',
+      );
     }
     final target = targets.single;
     final result = switch (target.kind) {
@@ -173,8 +187,11 @@ class RunSkillCommandUsecase {
         toolSlug: command.tool,
         arguments: Map<String, dynamic>.from(command.args),
       ),
-      _ => throw StateError('Unsupported skill tool target: ${target.fullName}'),
+      _ => throw StateError(
+        'Unsupported skill tool target: ${target.fullName}',
+      ),
     };
+
     return {'result': await result};
   }
 
@@ -191,6 +208,7 @@ class RunSkillCommandUsecase {
     if (slug is! String || slug.isEmpty) {
       throw const FormatException('Skill command requires a slug.');
     }
+
     return slug;
   }
 

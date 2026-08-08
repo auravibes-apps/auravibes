@@ -30,7 +30,6 @@ void main() {
     );
   });
 
-
   test('validates nested schemas with narrower runtime map types', () {
     final nestedProperties = <String, Object>{
       'count': <String, Object>{'type': 'integer'},

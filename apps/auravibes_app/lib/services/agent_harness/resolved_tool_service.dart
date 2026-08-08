@@ -20,11 +20,11 @@ import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_to
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_skills_manager_tool_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
@@ -151,7 +151,8 @@ class AppResolvedToolProvider
   final RunAppSkillToolUsecase? runAppSkillToolUsecase;
   final BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase;
   final BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase;
-  final BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase;
+  final BuildAppSkillNativeToolSpecsUsecase?
+  buildAppSkillNativeToolSpecsUsecase;
   final RunSkillsManagerToolUsecase Function(String workspaceId)?
   runSkillsManagerToolUsecase;
   final ListAvailableSkillsUsecase Function(String workspaceId)?
@@ -253,23 +254,25 @@ class AppResolvedToolProvider
         buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
         runSkillTemplateToolUsecase: templateRunner,
         runAppSkillToolUsecase: nativeRunner,
-        listSkillCredentials: ({
-          required conversationId,
-          required workspaceId,
-          required arguments,
-        }) async {
-          final result = await _listSkillCredentials(
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-            arguments: arguments,
-            listAvailableSkillsUsecase: listAvailableSkillsUsecase,
-            listAppSkillCredentialCandidatesUsecase:
-                listAppSkillCredentialCandidatesUsecase,
-            appSkillRegistry: appSkillRegistry,
-            skillCredentialsRepository: skillCredentialsRepository,
-          );
-          return Map<String, Object?>.from(result as Map);
-        },
+        listSkillCredentials:
+            ({
+              required conversationId,
+              required workspaceId,
+              required arguments,
+            }) async {
+              final result = await _listSkillCredentials(
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                arguments: arguments,
+                listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+                listAppSkillCredentialCandidatesUsecase:
+                    listAppSkillCredentialCandidatesUsecase,
+                appSkillRegistry: appSkillRegistry,
+                skillCredentialsRepository: skillCredentialsRepository,
+              );
+
+              return Map<String, Object?>.from(result as Map);
+            },
       ).call(
         conversationId: conversationId,
         workspaceId: workspaceId,

@@ -1,7 +1,7 @@
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
-import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/run_app_skill_tool_usecase.dart';
@@ -24,11 +24,12 @@ void main() {
       buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
       runSkillTemplateToolUsecase: templateRunner,
       runAppSkillToolUsecase: nativeRunner,
-      listSkillCredentials: ({
-        required conversationId,
-        required workspaceId,
-        required arguments,
-      }) async => const {},
+      listSkillCredentials:
+          ({
+            required conversationId,
+            required workspaceId,
+            required arguments,
+          }) async => const {},
     );
 
     await expectLater(
@@ -91,6 +92,7 @@ class _TemplateRunner implements RunSkillTemplateToolUsecase {
     required Map<String, dynamic> arguments,
   }) async {
     calls++;
+
     return null;
   }
 }
@@ -106,34 +108,35 @@ class _NativeRunner implements RunAppSkillToolUsecase {
     required Map<String, dynamic> arguments,
   }) async {
     calls++;
+
     return null;
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _UnusedListSkills implements ListAvailableSkillsUsecase {
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _UnusedLoad implements LoadConversationSkillUsecase {
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _UnusedUnload implements UnloadConversationSkillUsecase {
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _UnusedTemplateSpecs implements BuildSkillTemplateToolSpecsUsecase {
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
 class _UnusedNativeSpecs implements BuildAppSkillNativeToolSpecsUsecase {
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

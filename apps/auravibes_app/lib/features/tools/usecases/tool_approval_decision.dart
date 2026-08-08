@@ -93,6 +93,7 @@ class ResolveToolApprovalDecisionUsecase {
           resolvedTool.target == null) {
         return null;
       }
+
       return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
         conversationId: conversationId,
         workspaceId: workspaceId,

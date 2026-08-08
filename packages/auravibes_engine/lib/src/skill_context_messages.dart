@@ -58,9 +58,14 @@ class BuildSkillContextMessages {
 
   String _skillXml(AgentSkill skill) {
     final manifest = skill.manifest;
+    final manifestXml = manifest == null
+        ? ''
+        : '<skill_manifest>'
+              '${_xmlEscape.convert(jsonEncode(manifest.toJson()))}'
+              '</skill_manifest>';
+
     return '<skill><name>${_xmlEscape.convert(skill.title)}</name>'
         '<content>${_xmlEscape.convert(skill.content)}</content>'
-        '${manifest == null ? '' : '<skill_manifest>${_xmlEscape.convert(jsonEncode(manifest.toJson()))}</skill_manifest>'}'
-        '</skill>';
+        '$manifestXml</skill>';
   }
 }

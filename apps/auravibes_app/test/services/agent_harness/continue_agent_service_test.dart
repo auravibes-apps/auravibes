@@ -379,6 +379,7 @@ void main() {
           sentTools.add(
             List<ToolSpec>.from(invocation.namedArguments[#tools] as List),
           );
+
           return Stream.value(
             ChatResult<ChatMessage>(
               output: ChatMessage.model('Done'),
@@ -388,8 +389,8 @@ void main() {
           );
         });
 
-        await usecase.call(conversationId: 'conversation-1');
-        await usecase.call(
+        final _ = await usecase.call(conversationId: 'conversation-1');
+        final _ = await usecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.toolResume,
@@ -397,7 +398,11 @@ void main() {
         );
 
         expect(sentTools, hasLength(2));
-        expect(sentTools.first, orderedEquals(sentTools.last));
+        final firstTools = sentTools.firstOrNull;
+        final lastTools = sentTools.lastOrNull;
+        expect(firstTools, isNotNull);
+        expect(lastTools, isNotNull);
+        expect(firstTools, orderedEquals(lastTools ?? const <ToolSpec>[]));
         expect(
           sentTools.last.any((tool) => tool.name.startsWith('skill__')),
           isFalse,
