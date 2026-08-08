@@ -18,7 +18,7 @@ dev_dependencies:
   import_sorter: ^5.0.0-releasecandidate.1
   melos: ^8.1.0
   riverpod_lint: 3.1.8
-  test: 1.31.1
+  test: 1.31.2
   very_good_analysis: ^10.3.0
 
 dependency_overrides:
@@ -31,8 +31,8 @@ dependency_overrides:
   dart_style: 3.1.9
   # ponytail: pin analyzer-13-compatible Mockito until Flutter lifts meta 1.18.0.
   mockito: 5.7.0
-  # ponytail: Flutter SDK pins test_api 0.7.11; test 1.31.1 expects 0.7.12.
-  test_api: 0.7.11
+  # ponytail: Flutter 3.44.9 pins test_api 0.7.11; test 1.31.2 needs 0.7.13.
+  test_api: 0.7.13
   # flutter_web_auth_2 6.0.0-alpha.4 still constrains window_to_front to ^0.1.0.
   window_to_front: 1.0.0
 
