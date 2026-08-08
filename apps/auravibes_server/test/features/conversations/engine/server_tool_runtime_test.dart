@@ -264,7 +264,10 @@ void main() {
     );
 
     expect(
-      controls.single.spec.inputJsonSchema['properties'],
+      controls
+          .firstWhere((tool) => tool.spec.name == loadSkillToolName)
+          .spec
+          .inputJsonSchema['properties'],
       isNot(
         containsPair(
           'slug',
@@ -597,6 +600,75 @@ void main() {
         serverToolReplayAction('running'),
         ServerToolReplayAction.recover,
       );
+    },
+  );
+
+  test('cloud exposes only fixed skill command schemas', () {
+    final before = fixedCloudSkillCommandTools();
+    final after = fixedCloudSkillCommandTools();
+
+    expect(
+      before.map((tool) => tool.spec),
+      orderedEquals(after.map((tool) => tool.spec)),
+    );
+    expect(
+      before.map((tool) => tool.spec.name),
+      orderedEquals(skillCommandToolNames),
+    );
+    expect(before.any((tool) => tool.spec.name.startsWith('skill__')), isFalse);
+    expect(
+      before.every((tool) => serverToolIsExecutable(tool.descriptor)),
+      isTrue,
+    );
+  });
+
+  test(
+    'builds deterministic cloud manifest from authoritative target specs',
+    () async {
+      final descriptor = AgentResolvedToolName.skillTemplate(
+        tableId: 'tool-1',
+        skillSlug: 'research',
+        toolIdentifier: 'search',
+      );
+      final targets = [
+        ServerResolvedTool(
+          descriptor: descriptor,
+          spec: ToolSpec(
+            name: descriptor.fullName,
+            description: 'Search sources.',
+            inputJsonSchema: const {
+              'type': 'object',
+              'properties': {
+                'query': {'type': 'string'},
+              },
+            },
+          ),
+        ),
+      ];
+      const skills = [
+        {
+          'id': 'skill-1',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Use primary sources.',
+          'isEnabled': true,
+        },
+      ];
+
+      final first = await buildCloudSkillManifest(
+        slug: 'research',
+        userSkills: skills,
+        tools: targets,
+      );
+      final second = await buildCloudSkillManifest(
+        slug: 'research',
+        userSkills: skills,
+        tools: targets,
+      );
+
+      expect(first?.revision, second?.revision);
+      expect(first?.tools.single.name, 'search');
+      expect(first?.tools.single.inputJsonSchema['properties'], isNotNull);
     },
   );
 }

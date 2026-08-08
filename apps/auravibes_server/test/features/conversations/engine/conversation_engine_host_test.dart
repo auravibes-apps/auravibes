@@ -106,6 +106,42 @@ void main() {
     );
   });
 
+  test('cloud skill context includes manifest revision and schema', () {
+    final messages = buildCloudSkillContextMessages(
+      conversationSkills: [
+        AgentSkill(
+          title: 'Research',
+          content: 'Use primary sources.',
+          manifest: SkillManifest(
+            slug: 'research',
+            title: 'Research',
+            instructions: 'Use primary sources.',
+            revision: 'revision-1',
+            tools: [
+              SkillManifestTool(
+                name: 'search',
+                description: 'Search sources.',
+                inputJsonSchema: const {
+                  'type': 'object',
+                  'properties': {
+                    'query': {'type': 'string'},
+                  },
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+      agentSkills: const [],
+    );
+
+    final content = messages.single['content']! as String;
+    expect(content, contains('<skill_manifest>'));
+    expect(content, contains('&quot;slug&quot;:&quot;research&quot;'));
+    expect(content, contains('&quot;name&quot;:&quot;search&quot;'));
+    expect(content, contains('&quot;revision&quot;:&quot;revision-1&quot;'));
+  });
+
   test('refresh retains all completed tool exchanges in order', () {
     final firstExchange = <Map<String, dynamic>>[
       {

@@ -147,6 +147,15 @@ class ServerToolExecutorService {
     ServerResolvedTool tool,
     ServerToolRequest request,
   ) async {
+    if (tool.descriptor.toolIdentifier == listSkillsToolName) {
+      return _listSkills(session, turn);
+    }
+    if (tool.descriptor.toolIdentifier == listSkillCredentialsToolName) {
+      return _listSkillCredentials(session, turn, request.arguments);
+    }
+    if (tool.descriptor.toolIdentifier == callSkillToolName) {
+      return _runDispatchedSkill(session, turn, request.arguments);
+    }
     final slug = request.arguments['slug'];
     if (slug is! String || slug.isEmpty) {
       throw const ServerToolNotConfiguredException();
@@ -201,10 +210,15 @@ class ServerToolExecutorService {
         controlName: controlName,
         isSelected: selection != null,
       )) {
-        return {
-          'skillId': existingSkillId,
-          'selected': controlName == loadSkillToolName,
-        };
+        if (controlName == unloadSkillToolName) return {'unloaded': slug};
+        final state = await _skillCommandState(session, turn);
+        final manifest = await buildCloudSkillManifest(
+          slug: slug,
+          userSkills: state.userSkills,
+          tools: _materializeStateTools(state),
+        );
+        if (manifest == null) throw const ServerToolNotConfiguredException();
+        return {'loaded': slug, 'manifest': manifest.toJson()};
       }
     }
     final controls = materializeCloudSkillControlTools(
@@ -303,11 +317,233 @@ class ServerToolExecutorService {
         transaction,
       ),
     );
-    return {
-      'skillId': skillId,
-      'selected': patchRequest.operations.single.operation.name == 'create',
+    if (controlName == unloadSkillToolName) return {'unloaded': slug};
+    final state = await _skillCommandState(session, turn);
+    final manifest = await buildCloudSkillManifest(
+      slug: slug,
+      userSkills: state.userSkills,
+      tools: _materializeStateTools(state),
+    );
+    if (manifest == null) throw const ServerToolNotConfiguredException();
+    return {'loaded': slug, 'manifest': manifest.toJson()};
+  }
+
+  Future<Object?> _runDispatchedSkill(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final target = SkillCommandTarget.fromArguments(arguments);
+    final state = await _skillCommandState(session, turn);
+    final tools = _materializeStateTools(state);
+    final resolved = await resolveCloudSkillCommandTarget(
+      command: target,
+      userSkills: state.userSkills,
+      tools: tools,
+    );
+    final normalized = Map<String, dynamic>.from(target.args);
+    return switch (resolved.descriptor.kind) {
+      AgentResolvedToolKind.skillTemplate => _runSkill(
+        session,
+        turn,
+        resolved,
+        normalized,
+      ),
+      AgentResolvedToolKind.skillNative
+          when resolved.descriptor.skillSlug == agentsSkillSlug =>
+        _runSubAgentTool(session, turn, resolved, normalized),
+      AgentResolvedToolKind.skillNative => _runNativeSkill(
+        session,
+        turn,
+        resolved,
+        normalized,
+      ),
+      _ => throw const ServerToolNotConfiguredException(),
     };
   }
+
+  Future<Object?> _listSkills(Session session, ConversationTurn turn) async {
+    final state = await _skillCommandState(session, turn);
+    final controls = materializeCloudSkillControlTools(
+      selectedSkillIds: state.selectedSkillIds,
+      userSkills: state.userSkills,
+      templateTools: state.templateTools,
+      appSkillSettings: state.appSkillSettings,
+      serviceConnections: state.serviceConnections,
+      isChildConversation:
+          state.conversation.parentConversationStableId != null,
+    );
+    List<Map<String, String>> summaries(String controlName) {
+      final control = controls
+          .where((candidate) => candidate.spec.name == controlName)
+          .firstOrNull;
+      final slugs =
+          ((control?.spec.inputJsonSchema['properties'] as Map?)?['slug']
+                  as Map?)?['enum']
+              as List? ??
+          const [];
+      return slugs.whereType<String>().map((slug) {
+          final user = state.userSkills
+              .where((skill) => skill['slug'] == slug)
+              .firstOrNull;
+          final app = serviceSkillDefinitions
+              .where((skill) => skill.identifier == slug || skill.slug == slug)
+              .firstOrNull;
+          return {
+            'slug': slug,
+            'title': user?['title'] is String
+                ? user!['title']! as String
+                : app?.title ??
+                      (slug == agentsSkillSlug ? agentsSkillTitle : slug),
+          };
+        }).toList()
+        ..sort((left, right) => left['slug']!.compareTo(right['slug']!));
+    }
+
+    return {
+      'loadable': summaries(loadSkillToolName),
+      'loaded': summaries(unloadSkillToolName),
+    };
+  }
+
+  Future<Object?> _listSkillCredentials(
+    Session session,
+    ConversationTurn turn,
+    Map<String, dynamic> arguments,
+  ) async {
+    final slug = arguments['slug'];
+    if (slug is! String || slug.isEmpty) {
+      throw const FormatException('slug required');
+    }
+    final state = await _skillCommandState(session, turn);
+    final user = state.userSkills
+        .where((skill) => skill['slug'] == slug)
+        .firstOrNull;
+    final app = serviceSkillDefinitions
+        .where((skill) => skill.slug == slug || skill.identifier == slug)
+        .firstOrNull;
+    final selectedId = user?['id'] ?? app?.identifier ?? slug;
+    if (!state.selectedSkillIds.contains(selectedId)) {
+      throw const ServerToolNotConfiguredException();
+    }
+    final credentials = state.serviceConnections.where((connection) {
+      if (connection['isEnabled'] == false || connection['hasSecret'] != true) {
+        return false;
+      }
+      if (user != null) {
+        return connection['kind'] == 'skillCredential' &&
+            connection['credentialDefinitionId'] ==
+                user['credentialDefinitionId'];
+      }
+      return app != null &&
+          connection['kind'] == 'appSkillCredential' &&
+          connection['serviceId'] == app.identifier;
+    });
+    return {
+      'skillSlug': slug,
+      'credentials': [
+        for (final credential in credentials)
+          {
+            'id': credential['id'],
+            'name': credential['name'] ?? credential['id'],
+          },
+      ],
+    };
+  }
+
+  Future<
+    ({
+      Conversation conversation,
+      Set<String> selectedSkillIds,
+      List<Map<String, dynamic>> userSkills,
+      List<Map<String, dynamic>> templateTools,
+      List<Map<String, dynamic>> appSkillSettings,
+      List<Map<String, dynamic>> serviceConnections,
+    })
+  >
+  _skillCommandState(Session session, ConversationTurn turn) async {
+    final conversation = await Conversation.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(turn.conversationId) &
+          table.workspaceId.equals(turn.workspaceId),
+    );
+    if (conversation == null) throw const ServerToolNotConfiguredException();
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(turn.workspaceId) &
+          table.deletedAt.equals(null),
+    );
+    Map<String, dynamic> withId(WorkspaceResource resource) => {
+      'id': resource.resourceId,
+      ..._jsonMap(resource.data),
+    };
+    return (
+      conversation: conversation,
+      selectedSkillIds: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.conversationSkillSelection,
+          )
+          .map(withId)
+          .where((data) => data['conversationId'] == conversation.stableId)
+          .map((data) => data['skillId'])
+          .whereType<String>()
+          .toSet(),
+      userSkills: resources
+          .where(
+            (resource) =>
+                resource.resourceKind == WorkspaceResourceKind.skill &&
+                _jsonMap(resource.data)['source'] != 'app',
+          )
+          .map(withId)
+          .toList(),
+      templateTools: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.skillTemplateTool,
+          )
+          .map(withId)
+          .toList(),
+      appSkillSettings: resources
+          .where(
+            (resource) =>
+                resource.resourceKind == WorkspaceResourceKind.skillSetting,
+          )
+          .map(withId)
+          .toList(),
+      serviceConnections: resources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.serviceConnection,
+          )
+          .map(withId)
+          .toList(),
+    );
+  }
+
+  List<ServerResolvedTool> _materializeStateTools(
+    ({
+      Conversation conversation,
+      Set<String> selectedSkillIds,
+      List<Map<String, dynamic>> userSkills,
+      List<Map<String, dynamic>> templateTools,
+      List<Map<String, dynamic>> appSkillSettings,
+      List<Map<String, dynamic>> serviceConnections,
+    })
+    state,
+  ) => materializeCloudSkillTools(
+    selectedSkillIds: state.selectedSkillIds,
+    userSkills: state.userSkills,
+    templateTools: state.templateTools,
+    appSkillSettings: state.appSkillSettings,
+    serviceConnections: state.serviceConnections,
+    isChildConversation: state.conversation.parentConversationStableId != null,
+  );
 
   String? _cloudSkillId(
     String slug, {
