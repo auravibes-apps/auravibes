@@ -3,22 +3,26 @@
 
 import 'dart:convert';
 
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod/riverpod.dart';
 
 class SecretKeyManager {
-  SecretKeyManager({FlutterSecureStorage? secureStorage})
-    : _secureStorage =
-          secureStorage ??
-          const FlutterSecureStorage(
-            iOptions: IOSOptions(
-              accessibility: KeychainAccessibility.first_unlock_this_device,
-            ),
-          );
+  SecretKeyManager({
+    FlutterSecureStorage? secureStorage,
+    this.storageNamespace = 'auravibes_app',
+  }) : _secureStorage =
+           secureStorage ??
+           const FlutterSecureStorage(
+             iOptions: IOSOptions(
+               accessibility: KeychainAccessibility.first_unlock_this_device,
+             ),
+           );
   static const _keyStorageKey = 'app_encryption_secret_key';
 
   final FlutterSecureStorage _secureStorage;
+  final String storageNamespace;
   SecretKey? _cachedKey;
   Future<SecretKey>? _pendingKey;
 
@@ -60,7 +64,7 @@ class SecretKeyManager {
   }
 
   Future<SecretKey?> _loadKey() async {
-    final keyBase64 = await _secureStorage.read(key: _keyStorageKey);
+    final keyBase64 = await _secureStorage.read(key: _storageKey);
     if (keyBase64 == null) return null;
 
     final keyBytes = base64Decode(keyBase64);
@@ -71,8 +75,12 @@ class SecretKeyManager {
   Future<void> _saveKey(SecretKey key) async {
     final keyBytes = await key.extractBytes();
     final keyBase64 = base64Encode(keyBytes);
-    await _secureStorage.write(key: _keyStorageKey, value: keyBase64);
+    await _secureStorage.write(key: _storageKey, value: keyBase64);
   }
+
+  String get _storageKey => storageNamespace == 'auravibes_app'
+      ? _keyStorageKey
+      : '$storageNamespace.$_keyStorageKey';
 
   /// Clears the cached key (useful for logout).
   void clearCache() {
@@ -83,5 +91,7 @@ class SecretKeyManager {
 
 final Provider<SecretKeyManager> secretKeyManagerProvider =
     Provider<SecretKeyManager>((ref) {
-      return SecretKeyManager();
+      return SecretKeyManager(
+        storageNamespace: ref.watch(appStorageNamespaceProvider),
+      );
     });

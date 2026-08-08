@@ -16,8 +16,8 @@ const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 class ConversationRepository {
   ConversationRepository(
     this._database, {
-    AttachmentFileStore? attachmentFileStore,
-  }) : _attachmentFileStore = attachmentFileStore ?? AttachmentFileStore();
+    this._attachmentFileStore = const AttachmentFileStore(),
+  });
 
   final AppDatabase _database;
   final AttachmentFileStore _attachmentFileStore;

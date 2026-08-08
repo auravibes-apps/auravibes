@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
@@ -18,10 +19,13 @@ const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 
 class LocalChatAttachmentService {
-  LocalChatAttachmentService({AudioRecorder? recorder})
-    : _recorder = recorder ?? AudioRecorder();
+  LocalChatAttachmentService({
+    AudioRecorder? recorder,
+    this.storageNamespace = 'auravibes_app',
+  }) : _recorder = recorder ?? AudioRecorder();
 
   final AudioRecorder _recorder;
+  final String storageNamespace;
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;
@@ -44,21 +48,19 @@ class LocalChatAttachmentService {
     final mimeType =
         lookupMimeType(sourcePath, headerBytes: headerBytes) ??
         'application/octet-stream';
-    final directory = await getTemporaryDirectory();
-
-    final attachmentDirectory = Directory(
-      p.join(directory.path, 'chat_attachments_draft'),
+    final attachmentDirectory = await _draftDirectory();
+    final createdAttachmentDirectory = await attachmentDirectory.create(
+      recursive: true,
     );
-    final _ = await attachmentDirectory.create(recursive: true);
 
     final localPath = p.join(
-      attachmentDirectory.path,
+      createdAttachmentDirectory.path,
       '${const UuidV7().generate()}-$fileName',
     );
-    final _ = await source.copy(localPath);
+    final copied = await source.copy(localPath);
 
     return MessageAttachmentToCreate(
-      localPath: localPath,
+      localPath: copied.path,
       fileName: fileName,
       displayName: displayName ?? fileName,
       mimeType: mimeType,
@@ -89,8 +91,12 @@ class LocalChatAttachmentService {
     }
     _logger.fine('Voice recording input devices: $devices');
 
-    final directory = await getTemporaryDirectory();
-    final path = p.join(directory.path, '${const UuidV7().generate()}.wav');
+    final directory = await _temporaryRoot();
+    final createdDirectory = await directory.create(recursive: true);
+    final path = p.join(
+      createdDirectory.path,
+      '${const UuidV7().generate()}.wav',
+    );
     _recordingPath = path;
     if (Platform.isMacOS) {
       await _startMacVoiceRecording(path, device);
@@ -145,17 +151,26 @@ class LocalChatAttachmentService {
   }
 
   Future<void> deleteAttachment(String localPath) async {
-    final tempDirectory = await getTemporaryDirectory();
-    final draftDirectory = p.join(
-      tempDirectory.path,
-      'chat_attachments_draft',
-    );
+    final draftDirectory = (await _draftDirectory()).path;
     if (!p.isWithin(draftDirectory, p.normalize(localPath))) return;
 
     final file = File(localPath);
     if (file.existsSync()) {
       final _ = await file.delete();
     }
+  }
+
+  Future<Directory> _temporaryRoot() async {
+    final directory = await getTemporaryDirectory();
+    if (storageNamespace == 'auravibes_app') return directory;
+
+    return Directory(p.join(directory.path, storageNamespace));
+  }
+
+  Future<Directory> _draftDirectory() async {
+    final root = await _temporaryRoot();
+
+    return Directory(p.join(root.path, 'chat_attachments_draft'));
   }
 
   Future<void> _startMacVoiceRecording(String path, InputDevice? device) async {
@@ -227,7 +242,9 @@ class LocalChatAttachmentService {
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
 final localChatAttachmentServiceProvider = Provider<LocalChatAttachmentService>(
-  (_) => LocalChatAttachmentService(),
+  (ref) => LocalChatAttachmentService(
+    storageNamespace: ref.watch(appStorageNamespaceProvider),
+  ),
 );
 
 @visibleForTesting

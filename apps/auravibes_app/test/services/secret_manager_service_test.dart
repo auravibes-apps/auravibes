@@ -41,6 +41,54 @@ void main() {
       );
     });
 
+    test(
+      'keeps default encryption key invisible to namespaced storage',
+      () async {
+        final values = <String, String>{};
+        when(
+          () => mockStorage.read(key: any(named: 'key')),
+        ).thenAnswer(
+          (call) => Future.value(values[call.namedArguments[#key] as String]),
+        );
+        when(
+          () => mockStorage.write(
+            key: any(named: 'key'),
+            value: any(named: 'value'),
+          ),
+        ).thenAnswer((call) {
+          values[call.namedArguments[#key] as String] =
+              call.namedArguments[#value] as String;
+
+          return Future<void>.value();
+        });
+
+        final defaultKey = await manager.getOrCreateSecretKey();
+        final namespacedManager = SecretKeyManager(
+          secureStorage: mockStorage,
+          storageNamespace: 'auravibes_app_0123456789abcdef',
+        );
+        final namespacedKey = await namespacedManager.getOrCreateSecretKey();
+        final reloadedNamespacedKey = await SecretKeyManager(
+          secureStorage: mockStorage,
+          storageNamespace: 'auravibes_app_0123456789abcdef',
+        ).getOrCreateSecretKey();
+
+        expect(values, contains('app_encryption_secret_key'));
+        expect(
+          values,
+          contains('auravibes_app_0123456789abcdef.app_encryption_secret_key'),
+        );
+        expect(
+          await defaultKey.extractBytes(),
+          isNot(await namespacedKey.extractBytes()),
+        );
+        expect(
+          await reloadedNamespacedKey.extractBytes(),
+          await namespacedKey.extractBytes(),
+        );
+      },
+    );
+
     test('getOrCreateSecretKey returns cached key on second call', () async {
       when(
         () => mockStorage.read(key: any(named: 'key')),

@@ -3,13 +3,16 @@
 
 import 'package:auravibes_app/app_env_config.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/src/providers/future_provider.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
 final serverpodAuthStoreProvider = Provider<ServerpodAuthStore>((ref) {
-  return ServerpodAuthStore();
+  return ServerpodAuthStore(
+    storageNamespace: ref.watch(appStorageNamespaceProvider),
+  );
 });
 
 final cloudAccountsProvider = FutureProvider<List<CloudAccountSession>>((ref) {
