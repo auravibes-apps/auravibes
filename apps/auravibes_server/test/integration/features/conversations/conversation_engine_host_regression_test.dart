@@ -454,6 +454,161 @@ void main() {
     );
 
     test(
+      'unloaded dispatched skill is rejected before executor side effects',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        var executions = 0;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            executions++;
+            return {'unexpected': true};
+          },
+        );
+
+        expect(
+          await runtime.handle(
+            fixture.database,
+            turn: fixture.turn,
+            messageId: assistant.id!,
+            request: const ServerToolRequest(
+              id: 'call-unloaded-skill',
+              name: callSkillToolName,
+              arguments: {
+                'skill': 'research',
+                'tool': 'search',
+                'args': <String, Object?>{},
+                'revision': 'stale',
+              },
+            ),
+          ),
+          ServerToolDisposition.completed,
+        );
+
+        final call = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('call-unloaded-skill'),
+        );
+        expect(executions, 0);
+        expect(call?.status, 'executionError');
+        expect(call?.resultJson, contains('not loaded'));
+      },
+    );
+
+    test(
+      'dispatched skill uses underlying denied permission before execution',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final now = DateTime.now().toUtc();
+        const skill = {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        };
+        const template = {
+          'id': 'research-search',
+          'skillId': 'research',
+          'skillSlug': 'research',
+          'toolSlug': 'search',
+          'description': 'Search.',
+          'isEnabled': true,
+          'requiresCredential': false,
+          'inputsJson': '[]',
+          'templateJson': '{}',
+        };
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+        await insert(WorkspaceResourceKind.skill, 'research', skill);
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          template,
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysDeny',
+            'isEnabled': true,
+          },
+        );
+        final tools = materializeCloudSkillTools(
+          selectedSkillIds: const {'research'},
+          userSkills: const [skill],
+          templateTools: const [template],
+          appSkillSettings: const [],
+          isChildConversation: false,
+        );
+        final manifest = await buildCloudSkillManifest(
+          slug: 'research',
+          userSkills: const [skill],
+          tools: tools,
+        );
+        var executions = 0;
+
+        await ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            executions++;
+            return {'unexpected': true};
+          },
+        ).handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'call-denied-skill',
+            name: callSkillToolName,
+            arguments: {
+              'skill': 'research',
+              'tool': 'search',
+              'args': <String, Object?>{},
+              'revision': manifest!.revision,
+            },
+          ),
+        );
+
+        final call = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('call-denied-skill'),
+        );
+        expect(executions, 0);
+        expect(
+          call?.status,
+          AgentToolPermissionResult.disabledInWorkspace.name,
+        );
+      },
+    );
+
+    test(
       'durable cancellation before executor invocation prevents side effects',
       () async {
         final fixture = await prepare();

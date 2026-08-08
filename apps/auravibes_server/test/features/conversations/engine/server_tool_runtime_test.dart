@@ -1,9 +1,71 @@
+import 'dart:convert';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('authorizes active agent-associated skills for execution', () {
+    final now = DateTime.utc(2026);
+    WorkspaceResource resource(
+      WorkspaceResourceKind kind,
+      String id,
+      Map<String, Object?> data,
+    ) => WorkspaceResource(
+      workspaceId: 1,
+      resourceKind: kind,
+      resourceId: id,
+      data: jsonEncode(data),
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final conversation = Conversation(
+      workspaceId: 1,
+      stableId: 'conversation-1',
+      title: 'Conversation',
+      agentId: 'agent-1',
+      isPinned: false,
+      revision: 1,
+      projectionRevision: 1,
+      eventSequence: 0,
+      executionState: 'idle',
+      createdAt: now,
+      updatedAt: now,
+    );
+    final resources = [
+      resource(WorkspaceResourceKind.agent, 'agent-1', {
+        'isEnabled': true,
+        'visibility': 'both',
+      }),
+      resource(WorkspaceResourceKind.agentAssociation, 'association-1', {
+        'agentId': 'agent-1',
+        'skillId': 'research',
+      }),
+    ];
+
+    expect(
+      cloudAuthorizedSkillIds(
+        conversation: conversation,
+        resources: resources,
+      ),
+      {'research'},
+    );
+    resources[0] = resource(WorkspaceResourceKind.agent, 'agent-1', {
+      'isEnabled': false,
+      'visibility': 'both',
+    });
+    expect(
+      cloudAuthorizedSkillIds(
+        conversation: conversation,
+        resources: resources,
+      ),
+      isEmpty,
+    );
+  });
+
   test('sanitizes server tool failure codes for logs', () {
     expect(
       serverToolExecutionFailureCode(const FormatException('input details')),

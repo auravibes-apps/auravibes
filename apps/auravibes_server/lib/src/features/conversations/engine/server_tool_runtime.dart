@@ -39,6 +39,53 @@ bool isCloudToolEnabled({
   Map<String, dynamic>? toolGroupData,
 }) => toolData['isEnabled'] != false && toolGroupData?['isEnabled'] != false;
 
+Set<String> cloudAuthorizedSkillIds({
+  required Conversation conversation,
+  required Iterable<WorkspaceResource> resources,
+}) {
+  final ids = resources
+      .where(
+        (resource) =>
+            resource.resourceKind ==
+            WorkspaceResourceKind.conversationSkillSelection,
+      )
+      .map((resource) => jsonDecode(resource.data) as Map<String, dynamic>)
+      .where((data) => data['conversationId'] == conversation.stableId)
+      .map((data) => data['skillId'])
+      .whereType<String>()
+      .toSet();
+  final agentId = conversation.agentId;
+  if (agentId == null) return ids;
+  final agent = resources
+      .where(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.agent &&
+            resource.resourceId == agentId,
+      )
+      .lastOrNull;
+  if (agent == null) return ids;
+  final agentData = jsonDecode(agent.data) as Map<String, dynamic>;
+  final isChild = conversation.parentConversationStableId != null;
+  final visibility = agentData['visibility'];
+  if (agentData['isEnabled'] == false ||
+      (isChild && visibility == 'chatSelector') ||
+      (!isChild && visibility == 'subAgentList')) {
+    return ids;
+  }
+  ids.addAll(
+    resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.agentAssociation,
+        )
+        .map((resource) => jsonDecode(resource.data) as Map<String, dynamic>)
+        .where((data) => data['agentId'] == agentId)
+        .map((data) => data['skillId'])
+        .whereType<String>(),
+  );
+  return ids;
+}
+
 List<ServerResolvedTool> materializeCloudSkillControlTools({
   required Set<String> selectedSkillIds,
   required Iterable<Map<String, dynamic>> userSkills,
@@ -601,17 +648,12 @@ class ServerToolRuntime {
           table.workspaceId.equals(workspaceId) &
           table.stableId.equals(conversationStableId),
     );
-    final selectedSkillIds = resources
-        .where(
-          (resource) =>
-              resource.resourceKind ==
-              WorkspaceResourceKind.conversationSkillSelection,
-        )
-        .map(_data)
-        .where((data) => data['conversationId'] == conversationStableId)
-        .map((data) => data['skillId'])
-        .whereType<String>()
-        .toSet();
+    final selectedSkillIds = conversation == null
+        ? <String>{}
+        : cloudAuthorizedSkillIds(
+            conversation: conversation,
+            resources: resources,
+          );
     final userSkills = resources
         .where(
           (resource) =>
@@ -667,7 +709,7 @@ class ServerToolRuntime {
             workspaceId: turn.workspaceId,
             conversationStableId: conversation.stableId,
           );
-    final tool = currentTools
+    var tool = currentTools
         .where((candidate) => candidate.spec.name == request.name)
         .firstOrNull;
     final argumentsJson = jsonEncode(request.arguments);
@@ -706,6 +748,35 @@ class ServerToolRuntime {
         name: request.name,
         arguments: _jsonMap(existing.argumentsJson),
       );
+    }
+
+    final legacyDescriptor = _resolver.resolve(request.name);
+    if (tool == null &&
+        existing != null &&
+        (legacyDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
+            legacyDescriptor?.kind == AgentResolvedToolKind.skillNative)) {
+      try {
+        final state = await _skillTargets(
+          session,
+          workspaceId: turn.workspaceId,
+          conversationStableId: conversation!.stableId,
+        );
+        tool = state.tools
+            .where((candidate) => candidate.spec.name == request.name)
+            .singleOrNull;
+        if (tool == null) {
+          throw const FormatException('Tool is no longer available.');
+        }
+        validateToolArguments(tool.spec.inputJsonSchema, request.arguments);
+      } on Object catch (error) {
+        await _finish(
+          session,
+          existing,
+          'executionError',
+          _boundedJson({'error': '$error'}),
+        );
+        return ServerToolDisposition.completed;
+      }
     }
 
     if (tool == null) {

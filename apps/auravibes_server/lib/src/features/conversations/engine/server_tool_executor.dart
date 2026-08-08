@@ -342,7 +342,7 @@ class ServerToolExecutorService {
       tools: tools,
     );
     final normalized = Map<String, dynamic>.from(target.args);
-    return switch (resolved.descriptor.kind) {
+    final result = await switch (resolved.descriptor.kind) {
       AgentResolvedToolKind.skillTemplate => _runSkill(
         session,
         turn,
@@ -360,6 +360,7 @@ class ServerToolExecutorService {
       ),
       _ => throw const ServerToolNotConfiguredException(),
     };
+    return {'result': result};
   }
 
   Future<Object?> _listSkills(Session session, ConversationTurn turn) async {
@@ -423,7 +424,7 @@ class ServerToolExecutorService {
         .where((skill) => skill.slug == slug || skill.identifier == slug)
         .firstOrNull;
     final selectedId = user?['id'] ?? app?.identifier ?? slug;
-    if (!state.selectedSkillIds.contains(selectedId)) {
+    if (!state.authorizedSkillIds.contains(selectedId)) {
       throw const ServerToolNotConfiguredException();
     }
     final credentials = state.serviceConnections.where((connection) {
@@ -455,6 +456,7 @@ class ServerToolExecutorService {
     ({
       Conversation conversation,
       Set<String> selectedSkillIds,
+      Set<String> authorizedSkillIds,
       List<Map<String, dynamic>> userSkills,
       List<Map<String, dynamic>> templateTools,
       List<Map<String, dynamic>> appSkillSettings,
@@ -479,19 +481,24 @@ class ServerToolExecutorService {
       'id': resource.resourceId,
       ..._jsonMap(resource.data),
     };
+    final selectedSkillIds = resources
+        .where(
+          (resource) =>
+              resource.resourceKind ==
+              WorkspaceResourceKind.conversationSkillSelection,
+        )
+        .map(withId)
+        .where((data) => data['conversationId'] == conversation.stableId)
+        .map((data) => data['skillId'])
+        .whereType<String>()
+        .toSet();
     return (
       conversation: conversation,
-      selectedSkillIds: resources
-          .where(
-            (resource) =>
-                resource.resourceKind ==
-                WorkspaceResourceKind.conversationSkillSelection,
-          )
-          .map(withId)
-          .where((data) => data['conversationId'] == conversation.stableId)
-          .map((data) => data['skillId'])
-          .whereType<String>()
-          .toSet(),
+      selectedSkillIds: selectedSkillIds,
+      authorizedSkillIds: cloudAuthorizedSkillIds(
+        conversation: conversation,
+        resources: resources,
+      ),
       userSkills: resources
           .where(
             (resource) =>
@@ -530,6 +537,7 @@ class ServerToolExecutorService {
     ({
       Conversation conversation,
       Set<String> selectedSkillIds,
+      Set<String> authorizedSkillIds,
       List<Map<String, dynamic>> userSkills,
       List<Map<String, dynamic>> templateTools,
       List<Map<String, dynamic>> appSkillSettings,
@@ -537,7 +545,7 @@ class ServerToolExecutorService {
     })
     state,
   ) => materializeCloudSkillTools(
-    selectedSkillIds: state.selectedSkillIds,
+    selectedSkillIds: state.authorizedSkillIds,
     userSkills: state.userSkills,
     templateTools: state.templateTools,
     appSkillSettings: state.appSkillSettings,
