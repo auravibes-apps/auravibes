@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:mime/mime.dart';
@@ -90,7 +90,7 @@ class LocalChatAttachmentService {
     _logger.fine('Voice recording input devices: $devices');
 
     final directory = await _temporaryRoot();
-    await directory.create(recursive: true);
+    final _ = await directory.create(recursive: true);
     final path = p.join(directory.path, '${const UuidV7().generate()}.wav');
     _recordingPath = path;
     if (Platform.isMacOS) {

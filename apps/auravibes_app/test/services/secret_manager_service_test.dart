@@ -55,9 +55,11 @@ void main() {
             key: any(named: 'key'),
             value: any(named: 'value'),
           ),
-        ).thenAnswer((call) async {
+        ).thenAnswer((call) {
           values[call.namedArguments[#key] as String] =
               call.namedArguments[#value] as String;
+
+          return Future<void>.value();
         });
 
         final defaultKey = await manager.getOrCreateSecretKey();
