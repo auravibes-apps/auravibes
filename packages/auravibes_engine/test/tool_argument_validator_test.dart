@@ -30,6 +30,32 @@ void main() {
     );
   });
 
+
+  test('validates nested schemas with narrower runtime map types', () {
+    final nestedProperties = <String, Object>{
+      'count': <String, Object>{'type': 'integer'},
+      'tags': <String, Object>{
+        'type': 'array',
+        'items': <String, Object>{'type': 'string'},
+      },
+    };
+    final runtimeSchema = <String, Object?>{
+      'type': 'object',
+      'properties': nestedProperties,
+    };
+
+    expect(
+      () => validateToolArguments(runtimeSchema, {'count': 'wrong'}),
+      throwsFormatException,
+    );
+    expect(
+      () => validateToolArguments(runtimeSchema, {
+        'tags': [1],
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('rejects missing required argument', () {
     expect(
       () => validateToolArguments(schema, const {}),

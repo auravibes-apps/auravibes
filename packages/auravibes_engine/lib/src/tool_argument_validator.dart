@@ -72,9 +72,9 @@ void _validateObject(
   if (properties is Map) {
     for (final entry in value.entries) {
       final propertySchema = properties[entry.key];
-      if (propertySchema is Map<String, Object?>) {
+      if (propertySchema is Map) {
         _validateValue(
-          propertySchema,
+          Map<String, Object?>.from(propertySchema),
           entry.value,
           _propertyPath(path, entry.key),
         );
@@ -102,9 +102,10 @@ void _validateArray(
   }
 
   final itemSchema = schema['items'];
-  if (itemSchema is Map<String, Object?>) {
+  if (itemSchema is Map) {
+    final normalizedItemSchema = Map<String, Object?>.from(itemSchema);
     for (var index = 0; index < value.length; index++) {
-      _validateValue(itemSchema, value[index], '$path[$index]');
+      _validateValue(normalizedItemSchema, value[index], '$path[$index]');
     }
   }
 }

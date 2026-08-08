@@ -18,6 +18,9 @@ import 'package:auravibes_app/features/skills/providers/skill_template_tools_pro
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/run_skill_command_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/load_conversation_skill_usecase.dart';
@@ -56,6 +59,9 @@ class ResolvedToolService {
     unloadConversationSkillUsecase,
     RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
     RunAppSkillToolUsecase? runAppSkillToolUsecase,
+    BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase,
+    BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
+    BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase,
     RunSkillsManagerToolUsecase Function(String workspaceId)?
     runSkillsManagerToolUsecase,
     ListAvailableSkillsUsecase Function(String workspaceId)?
@@ -75,6 +81,11 @@ class ResolvedToolService {
            unloadConversationSkillUsecase: unloadConversationSkillUsecase,
            runSkillTemplateToolUsecase: runSkillTemplateToolUsecase,
            runAppSkillToolUsecase: runAppSkillToolUsecase,
+           buildLoadedSkillManifestsUsecase: buildLoadedSkillManifestsUsecase,
+           buildSkillTemplateToolSpecsUsecase:
+               buildSkillTemplateToolSpecsUsecase,
+           buildAppSkillNativeToolSpecsUsecase:
+               buildAppSkillNativeToolSpecsUsecase,
            runSkillsManagerToolUsecase: runSkillsManagerToolUsecase,
            listAvailableSkillsUsecase: listAvailableSkillsUsecase,
            listAppSkillCredentialCandidatesUsecase:
@@ -117,6 +128,9 @@ class AppResolvedToolProvider
     this.unloadConversationSkillUsecase,
     this.runSkillTemplateToolUsecase,
     this.runAppSkillToolUsecase,
+    this.buildLoadedSkillManifestsUsecase,
+    this.buildSkillTemplateToolSpecsUsecase,
+    this.buildAppSkillNativeToolSpecsUsecase,
     this.runSkillsManagerToolUsecase,
     this.listAvailableSkillsUsecase,
     this.listAppSkillCredentialCandidatesUsecase,
@@ -135,6 +149,9 @@ class AppResolvedToolProvider
   unloadConversationSkillUsecase;
   final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase;
   final RunAppSkillToolUsecase? runAppSkillToolUsecase;
+  final BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase;
+  final BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase;
+  final BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase;
   final RunSkillsManagerToolUsecase Function(String workspaceId)?
   runSkillsManagerToolUsecase;
   final ListAvailableSkillsUsecase Function(String workspaceId)?
@@ -211,6 +228,56 @@ class AppResolvedToolProvider
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
   }) {
+    final manifests = buildLoadedSkillManifestsUsecase;
+    final templateSpecs = buildSkillTemplateToolSpecsUsecase;
+    final nativeSpecs = buildAppSkillNativeToolSpecsUsecase;
+    final templateRunner = runSkillTemplateToolUsecase;
+    final nativeRunner = runAppSkillToolUsecase;
+    final listSkills = listAvailableSkillsUsecase;
+    final loadSkill = loadConversationSkillUsecase;
+    final unloadSkill = unloadConversationSkillUsecase;
+    if (manifests != null &&
+        templateSpecs != null &&
+        nativeSpecs != null &&
+        templateRunner != null &&
+        nativeRunner != null &&
+        listSkills != null &&
+        loadSkill != null &&
+        unloadSkill != null) {
+      return RunSkillCommandUsecase(
+        listAvailableSkillsUsecase: listSkills,
+        loadConversationSkillUsecase: loadSkill,
+        unloadConversationSkillUsecase: unloadSkill,
+        buildLoadedSkillManifestsUsecase: manifests,
+        buildSkillTemplateToolSpecsUsecase: templateSpecs,
+        buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
+        runSkillTemplateToolUsecase: templateRunner,
+        runAppSkillToolUsecase: nativeRunner,
+        listSkillCredentials: ({
+          required conversationId,
+          required workspaceId,
+          required arguments,
+        }) async {
+          final result = await _listSkillCredentials(
+            workspaceId: workspaceId,
+            conversationId: conversationId,
+            arguments: arguments,
+            listAvailableSkillsUsecase: listAvailableSkillsUsecase,
+            listAppSkillCredentialCandidatesUsecase:
+                listAppSkillCredentialCandidatesUsecase,
+            appSkillRegistry: appSkillRegistry,
+            skillCredentialsRepository: skillCredentialsRepository,
+          );
+          return Map<String, Object?>.from(result as Map);
+        },
+      ).call(
+        conversationId: conversationId,
+        workspaceId: workspaceId,
+        commandName: toolIdentifier,
+        arguments: arguments,
+      );
+    }
+
     return _runSkillControlTool(
       conversationId: conversationId,
       workspaceId: workspaceId,
@@ -626,6 +693,15 @@ resolvedToolServiceProvider = Provider<ResolvedToolService>(
       ),
       runAppSkillToolUsecase: ref.watch(
         runAppSkillToolUsecaseProvider,
+      ),
+      buildLoadedSkillManifestsUsecase: ref.watch(
+        buildLoadedSkillManifestsUsecaseProvider,
+      ),
+      buildSkillTemplateToolSpecsUsecase: ref.watch(
+        buildSkillTemplateToolSpecsUsecaseProvider,
+      ),
+      buildAppSkillNativeToolSpecsUsecase: ref.watch(
+        buildAppSkillNativeToolSpecsUsecaseProvider,
       ),
       runSkillsManagerToolUsecase: (workspaceId) => ref.read(
         runSkillsManagerToolUsecaseProvider(workspaceId),
