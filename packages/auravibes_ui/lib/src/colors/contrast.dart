@@ -44,8 +44,8 @@ double apcaLc({required Color foreground, required Color background}) {
   var yB = _relativeLuminance(background);
 
   // ponytail: soft clamp near black avoids singularity; standard APCA 0.0.98G.
-  if (yT < _blkThrs) yT += (_blkThrs - yT) * _blkClmp;
-  if (yB < _blkThrs) yB += (_blkThrs - yB) * _blkClmp;
+  if (yT < _blkThrs) yT += math.pow(_blkThrs - yT, _blkClmp).toDouble();
+  if (yB < _blkThrs) yB += math.pow(_blkThrs - yB, _blkClmp).toDouble();
 
   if ((yB - yT).abs() < _deltaYMin) return 0;
 
