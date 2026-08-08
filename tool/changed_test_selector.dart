@@ -244,10 +244,12 @@ SelectionResult selectChangedTests({
     for (final entry in packageRoots.entries) {
       roots[entry.key] = _normalizePath(entry.value);
     }
-    for (final path in paths.where((path) => !_isDocumentation(path))) {
-      if (!_isSupportedDartPath(path, roots.values)) {
-        return _full('Global or ambiguous test input.');
-      }
+    if (paths.every((path) => !_isSupportedDartPath(path, roots.values))) {
+      return SelectionResult(
+        mode: SelectionMode.none,
+        packages: const {},
+        reason: 'No executable test input.',
+      );
     }
 
     if (_hasOpaqueRuntimeChange(
