@@ -48,7 +48,7 @@ void main() {
         when(
           () => mockStorage.read(key: any(named: 'key')),
         ).thenAnswer(
-          (call) async => values[call.namedArguments[#key] as String],
+          (call) => Future.value(values[call.namedArguments[#key] as String]),
         );
         when(
           () => mockStorage.write(

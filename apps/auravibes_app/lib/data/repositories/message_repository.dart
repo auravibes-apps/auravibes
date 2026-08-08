@@ -18,8 +18,10 @@ const _messageContentCannotBeEmpty = 'Message content cannot be empty';
 /// using Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
 class MessageRepository {
-  MessageRepository(this._database, {AttachmentFileStore? attachmentFileStore})
-    : _attachmentFileStore = attachmentFileStore ?? AttachmentFileStore();
+  MessageRepository(
+    this._database, {
+    this._attachmentFileStore = const AttachmentFileStore(),
+  });
 
   /// The database instance for message operations.
   final AppDatabase _database;

@@ -74,11 +74,11 @@ void main() {
       };
       final reads = <String>[];
       final storage = _MockSecureStorage();
-      when(() => storage.read(key: any(named: 'key'))).thenAnswer((call) async {
+      when(() => storage.read(key: any(named: 'key'))).thenAnswer((call) {
         final key = call.namedArguments[#key] as String;
         reads.add(key);
 
-        return values[key];
+        return Future.value(values[key]);
       });
       when(
         () => storage.write(

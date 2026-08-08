@@ -73,8 +73,7 @@ void main() {
 
   test('copies drafts into namespaced temporary storage', () async {
     const namespace = 'auravibes_app_0123456789abcdef';
-    final source = File('${tempDirectory.path}/image.png');
-    final _ = await source.writeAsBytes([
+    final source = await File('${tempDirectory.path}/image.png').writeAsBytes([
       0x89,
       0x50,
       0x4E,
@@ -93,11 +92,12 @@ void main() {
   });
 
   test('does not delete legacy draft from namespaced storage', () async {
-    final legacyFile = File(
-      '${tempDirectory.path}/chat_attachments_draft/legacy.png',
-    );
-    final _ = await legacyFile.parent.create(recursive: true);
-    final _ = await legacyFile.writeAsBytes([1]);
+    final draftDirectory = await Directory(
+      '${tempDirectory.path}/chat_attachments_draft',
+    ).create(recursive: true);
+    final legacyFile = await File(
+      '${draftDirectory.path}/legacy.png',
+    ).writeAsBytes([1]);
 
     await LocalChatAttachmentService(
       storageNamespace: 'auravibes_app_0123456789abcdef',

@@ -49,16 +49,18 @@ class LocalChatAttachmentService {
         lookupMimeType(sourcePath, headerBytes: headerBytes) ??
         'application/octet-stream';
     final attachmentDirectory = await _draftDirectory();
-    final _ = await attachmentDirectory.create(recursive: true);
+    final createdAttachmentDirectory = await attachmentDirectory.create(
+      recursive: true,
+    );
 
     final localPath = p.join(
-      attachmentDirectory.path,
+      createdAttachmentDirectory.path,
       '${const UuidV7().generate()}-$fileName',
     );
-    final _ = await source.copy(localPath);
+    final copied = await source.copy(localPath);
 
     return MessageAttachmentToCreate(
-      localPath: localPath,
+      localPath: copied.path,
       fileName: fileName,
       displayName: displayName ?? fileName,
       mimeType: mimeType,
@@ -90,8 +92,11 @@ class LocalChatAttachmentService {
     _logger.fine('Voice recording input devices: $devices');
 
     final directory = await _temporaryRoot();
-    final _ = await directory.create(recursive: true);
-    final path = p.join(directory.path, '${const UuidV7().generate()}.wav');
+    final createdDirectory = await directory.create(recursive: true);
+    final path = p.join(
+      createdDirectory.path,
+      '${const UuidV7().generate()}.wav',
+    );
     _recordingPath = path;
     if (Platform.isMacOS) {
       await _startMacVoiceRecording(path, device);

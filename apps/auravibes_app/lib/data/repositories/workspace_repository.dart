@@ -15,8 +15,8 @@ import 'package:drift/drift.dart';
 class WorkspaceRepository {
   WorkspaceRepository(
     this._database, {
-    AttachmentFileStore? attachmentFileStore,
-  }) : _attachmentFileStore = attachmentFileStore ?? AttachmentFileStore();
+    this._attachmentFileStore = const AttachmentFileStore(),
+  });
 
   /// The database instance for workspace operations.
   final AppDatabase _database;

@@ -1,9 +1,7 @@
 class AttachmentFileStore {
-  AttachmentFileStore({String storageNamespace = 'auravibes_app'}) {
-    if (storageNamespace.isEmpty) {
-      throw ArgumentError.value(storageNamespace, 'storageNamespace');
-    }
-  }
+  const AttachmentFileStore({this.storageNamespace = 'auravibes_app'});
+
+  final String storageNamespace;
 
   Future<String> persistDraftFile(String localPath) => Future.value(localPath);
 

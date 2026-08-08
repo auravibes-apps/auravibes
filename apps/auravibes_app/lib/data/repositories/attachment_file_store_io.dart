@@ -6,7 +6,7 @@ import 'package:uuid/v7.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
 class AttachmentFileStore {
-  AttachmentFileStore({this.storageNamespace = 'auravibes_app'});
+  const AttachmentFileStore({this.storageNamespace = 'auravibes_app'});
 
   final String storageNamespace;
 
