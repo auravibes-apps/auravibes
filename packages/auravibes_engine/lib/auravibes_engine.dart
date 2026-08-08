@@ -57,6 +57,7 @@ export 'src/skills/models/url_request_method.dart';
 export 'src/skills/models/url_response.dart';
 export 'src/skills/models/url_response_format.dart';
 export 'src/skills/service_skills/service_skill_definitions.dart';
+export 'src/skills/skill_command.dart';
 export 'src/skills/skill_control_tools.dart';
 export 'src/skills/skill_eligibility.dart';
 export 'src/skills/skill_tool_materialization.dart';

@@ -2,27 +2,19 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('builds load and unload specs from portable skill state', () {
+  test('compatibility builder returns fixed skill command specs', () {
+    // Intentional coverage of deprecated compatibility API.
+    // ignore: deprecated_member_use_from_same_package
     final specs = buildSkillControlToolSpecs(
       loadableSkillSlugs: ['research', 'agents'],
       loadedSkillSlugs: ['writing'],
     );
 
-    expect(specs.map((spec) => spec.name), [
-      loadSkillToolName,
-      unloadSkillToolName,
-    ]);
-    expect(specs.first.inputJsonSchema['properties'], {
-      'slug': {
-        'type': 'string',
-        'enum': ['research', 'agents'],
-      },
-    });
-    expect(specs.last.inputJsonSchema['properties'], {
-      'slug': {
-        'type': 'string',
-        'enum': ['writing'],
-      },
-    });
+    expect(specs, buildSkillCommandToolSpecs());
+    expect(specs.map((spec) => spec.name), skillCommandToolNames);
+    expect(
+      specs.any((spec) => spec.inputJsonSchema.toString().contains('enum')),
+      isFalse,
+    );
   });
 }
