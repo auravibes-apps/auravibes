@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service_io.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:record/record.dart';
+import 'package:riverpod/riverpod.dart';
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +84,9 @@ void main() {
   });
 
   test('does not delete legacy draft from namespaced storage', () async {
-    final legacyFile = File('${tempDirectory.path}/chat_attachments_draft/legacy.png');
+    final legacyFile = File(
+      '${tempDirectory.path}/chat_attachments_draft/legacy.png',
+    );
     await legacyFile.parent.create(recursive: true);
     await legacyFile.writeAsBytes([1]);
 
@@ -109,6 +113,27 @@ void main() {
 
     expect(draftFile.existsSync(), isFalse);
     expect(outsideFile.existsSync(), isTrue);
+  });
+
+  test('provider records into namespaced temporary storage', () async {
+    const namespace = 'auravibes_app_0123456789abcdef';
+    final platform = _FakeRecordPlatform();
+    RecordPlatform.instance = platform;
+    final container = ProviderContainer(
+      overrides: [appStorageNamespaceProvider.overrideWithValue(namespace)],
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(localChatAttachmentServiceProvider)
+        .startVoiceRecording();
+
+    if (!Platform.isMacOS) {
+      expect(
+        platform.startPath,
+        startsWith('${tempDirectory.path}/$namespace/'),
+      );
+    }
   });
 
   test('startVoiceRecording returns when recorder is already active', () async {
