@@ -1,11 +1,17 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/app_env_config.dart';
+import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:riverpod/riverpod.dart' show Provider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'app_providers.g.dart';
+
+final appStorageNamespaceProvider = Provider<String>((_) {
+  return appStorageNamespaceFor(AppEnvConfig.dbHashSource);
+});
 
 @Riverpod(keepAlive: true)
 Future<SharedPreferences> sharedPreferences(Ref _) =>

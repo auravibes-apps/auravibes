@@ -41,6 +41,31 @@ void main() {
       );
     });
 
+    test('uses namespaced encryption key', () async {
+      final manager = SecretKeyManager(
+        secureStorage: mockStorage,
+        storageNamespace: 'auravibes_app_0123456789abcdef',
+      );
+      when(
+        () => mockStorage.read(key: any(named: 'key')),
+      ).thenAnswer((_) async => null);
+      when(
+        () => mockStorage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((_) async {});
+
+      await manager.getOrCreateSecretKey();
+
+      verify(
+        () => mockStorage.write(
+          key: 'auravibes_app_0123456789abcdef.app_encryption_secret_key',
+          value: any(named: 'value'),
+        ),
+      ).called(1);
+    });
+
     test('getOrCreateSecretKey returns cached key on second call', () async {
       when(
         () => mockStorage.read(key: any(named: 'key')),

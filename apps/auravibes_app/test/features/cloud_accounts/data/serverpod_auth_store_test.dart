@@ -61,4 +61,42 @@ void main() {
       );
     },
   );
+
+  test('stores account index under namespace', () async {
+    final values = <String, String>{};
+    final storage = _MockSecureStorage();
+    when(() => storage.read(key: any(named: 'key'))).thenAnswer(
+      (call) async => values[call.namedArguments[#key] as String],
+    );
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((call) async {
+      values[call.namedArguments[#key] as String] =
+          call.namedArguments[#value] as String;
+    });
+    when(() => storage.delete(key: any(named: 'key'))).thenAnswer(
+      (call) async => values.remove(call.namedArguments[#key] as String),
+    );
+    final store = ServerpodAuthStore(
+      secureStorage: storage,
+      storageNamespace: 'auravibes_app_0123456789abcdef',
+    );
+
+    await store.saveAccount(
+      const CloudAccountSession(
+        serverUrl: 'https://one.example',
+        userId: 'user',
+        email: 'one@example.com',
+      ),
+    );
+
+    expect(
+      values,
+      contains('auravibes_app_0123456789abcdef.serverpod_cloud_accounts_v2'),
+    );
+    expect(values, isNot(contains('serverpod_cloud_accounts_v2')));
+  });
 }
