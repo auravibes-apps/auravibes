@@ -121,7 +121,7 @@ void main() {
     },
   );
   test(
-    'default namespace migrates v1 account, preferred, and auth keys',
+    'default namespace migrates v1 account and preferred keys',
     () async {
       final values = <String, String>{
         'serverpod_cloud_accounts_v1': jsonEncode([
@@ -148,7 +148,7 @@ void main() {
       });
       when(() => storage.delete(key: any(named: 'key'))).thenAnswer(
         (call) {
-          values.remove(call.namedArguments[#key] as String);
+          final _ = values.remove(call.namedArguments[#key] as String);
 
           return Future<void>.value();
         },
@@ -187,7 +187,7 @@ void main() {
     });
     when(() => storage.delete(key: any(named: 'key'))).thenAnswer(
       (call) {
-        values.remove(call.namedArguments[#key] as String);
+        final _ = values.remove(call.namedArguments[#key] as String);
 
         return Future<void>.value();
       },
