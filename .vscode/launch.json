@@ -10,7 +10,8 @@
       "toolArgs": [
         "--flavor",
         "dev",
-        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/"
+        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/",
+        "--dart-define=ENABLE_FLUTTER_DRIVER=true"
       ],
       "program": "lib/main.dart"
     },
@@ -24,7 +25,8 @@
         "--flavor",
         "dev",
         "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/",
-        "--dart-define=DB_HASH_SOURCE=${workspaceFolder}"
+        "--dart-define=DB_HASH_SOURCE=${workspaceFolder}",
+        "--dart-define=ENABLE_FLUTTER_DRIVER=true"
       ],
       "program": "lib/main.dart"
     },

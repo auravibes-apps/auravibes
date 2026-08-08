@@ -8,14 +8,21 @@ import 'package:auravibes_app/main/main_locale.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/app_logging.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show SystemChrome, SystemUiMode, SystemUiOverlayStyle, appFlavor;
+import 'package:flutter_driver/driver_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
   AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
-  final _ = WidgetsFlutterBinding.ensureInitialized();
+  // ponytail: Debug-only bridge; enable only for MCP driver screenshots.
+  if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
+    final _ = enableFlutterDriverExtension();
+  } else {
+    final _ = WidgetsFlutterBinding.ensureInitialized();
+  }
   AppLogging.configure(enabled: AppFlavorConfig.appFlavor != Flavor.prod);
   await MainLocale.ensureInitialized();
 
