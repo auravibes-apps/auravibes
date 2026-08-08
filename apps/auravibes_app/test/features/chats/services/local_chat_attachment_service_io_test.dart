@@ -69,6 +69,30 @@ void main() {
     expect(attachment.localPath, contains('chat_attachments_draft'));
   });
 
+  test('copies drafts into namespaced temporary storage', () async {
+    const namespace = 'auravibes_app_0123456789abcdef';
+    final source = File('${tempDirectory.path}/image.png');
+    await source.writeAsBytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+    final attachment = await LocalChatAttachmentService(
+      storageNamespace: namespace,
+    ).copyIntoAppStorage(source.path);
+
+    expect(attachment.localPath, contains('$namespace/chat_attachments_draft'));
+  });
+
+  test('does not delete legacy draft from namespaced storage', () async {
+    final legacyFile = File('${tempDirectory.path}/chat_attachments_draft/legacy.png');
+    await legacyFile.parent.create(recursive: true);
+    await legacyFile.writeAsBytes([1]);
+
+    await LocalChatAttachmentService(
+      storageNamespace: 'auravibes_app_0123456789abcdef',
+    ).deleteAttachment(legacyFile.path);
+
+    expect(legacyFile.existsSync(), isTrue);
+  });
+
   test('deleteAttachment removes only draft attachment files', () async {
     final service = LocalChatAttachmentService();
     final draftDirectory = Directory(
