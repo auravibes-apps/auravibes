@@ -51,7 +51,9 @@ void _validateObject(
   if (required is List) {
     for (final name in required.whereType<String>()) {
       if (!value.containsKey(name)) {
-        throw FormatException('Missing required argument at $path.$name');
+        throw FormatException(
+          'Missing required argument at ${_propertyPath(path, name)}',
+        );
       }
     }
   }
@@ -60,7 +62,9 @@ void _validateObject(
   if (schema['additionalProperties'] == false) {
     for (final name in value.keys) {
       if (properties is! Map || !properties.containsKey(name)) {
-        throw FormatException('Unexpected argument at $path.$name');
+        throw FormatException(
+          'Unexpected argument at ${_propertyPath(path, name)}',
+        );
       }
     }
   }
@@ -69,10 +73,23 @@ void _validateObject(
     for (final entry in value.entries) {
       final propertySchema = properties[entry.key];
       if (propertySchema is Map<String, Object?>) {
-        _validateValue(propertySchema, entry.value, '$path.${entry.key}');
+        _validateValue(
+          propertySchema,
+          entry.value,
+          _propertyPath(path, entry.key),
+        );
       }
     }
   }
+}
+
+String _propertyPath(String path, Object? name) {
+  final segment = name.toString();
+  if (RegExp(r'^[A-Za-z_][A-Za-z0-9_]*$').hasMatch(segment)) {
+    return '$path.$segment';
+  }
+  final escaped = segment.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
+  return "$path['$escaped']";
 }
 
 void _validateArray(

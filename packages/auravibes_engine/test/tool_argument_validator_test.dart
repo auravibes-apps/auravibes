@@ -43,6 +43,24 @@ void main() {
     );
   });
 
+  test('formats punctuation in missing argument paths', () {
+    const punctuationSchema = <String, Object?>{
+      'type': 'object',
+      'required': ['query.text'],
+    };
+
+    expect(
+      () => validateToolArguments(punctuationSchema, const {}),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          r"Missing required argument at $['query.text']",
+        ),
+      ),
+    );
+  });
+
   test('rejects extra argument when additional properties are false', () {
     expect(
       () => validateToolArguments(schema, {
@@ -54,6 +72,24 @@ void main() {
           (error) => error.message,
           'message',
           r'Unexpected argument at $.secret',
+        ),
+      ),
+    );
+  });
+
+  test('formats punctuation in unexpected argument paths', () {
+    const closedSchema = <String, Object?>{
+      'type': 'object',
+      'additionalProperties': false,
+    };
+
+    expect(
+      () => validateToolArguments(closedSchema, const {'items[0]': true}),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          r"Unexpected argument at $['items[0]']",
         ),
       ),
     );
@@ -116,6 +152,33 @@ void main() {
           (error) => error.message,
           'message',
           r'Expected string at $.tags[1]',
+        ),
+      ),
+    );
+  });
+
+  test('formats and escapes punctuation in nested value paths', () {
+    const punctuationSchema = <String, Object?>{
+      'type': 'object',
+      'properties': {
+        'config.data': {
+          'type': 'object',
+          'properties': {
+            "owner's": {'type': 'string'},
+          },
+        },
+      },
+    };
+
+    expect(
+      () => validateToolArguments(punctuationSchema, {
+        'config.data': {"owner's": 7},
+      }),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          r"Expected string at $['config.data']['owner\'s']",
         ),
       ),
     );
