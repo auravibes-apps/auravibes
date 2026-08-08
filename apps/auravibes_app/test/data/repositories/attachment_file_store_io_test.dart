@@ -44,7 +44,7 @@ void main() {
   });
 
   test('persistDraftFile copies draft file into support storage', () async {
-    final store = AttachmentFileStore();
+    const store = AttachmentFileStore();
     final draftDirectory = Directory(
       p.join(tempDirectory.path, 'chat_attachments_draft'),
     );
@@ -62,7 +62,7 @@ void main() {
 
   test('persists namespaced drafts into namespaced support storage', () async {
     const namespace = 'auravibes_app_0123456789abcdef';
-    final store = AttachmentFileStore(storageNamespace: namespace);
+    const store = AttachmentFileStore(storageNamespace: namespace);
     final draftDirectory = Directory(
       p.join(tempDirectory.path, namespace, 'chat_attachments_draft'),
     );
@@ -80,7 +80,7 @@ void main() {
 
   test('does not delete legacy files from namespaced storage', () async {
     const namespace = 'auravibes_app_0123456789abcdef';
-    final store = AttachmentFileStore(storageNamespace: namespace);
+    const store = AttachmentFileStore(storageNamespace: namespace);
     final legacyDraft = File(
       p.join(tempDirectory.path, 'chat_attachments_draft', 'legacy.png'),
     );
@@ -93,7 +93,7 @@ void main() {
   });
 
   test('persistDraftFile ignores files outside draft storage', () async {
-    final store = AttachmentFileStore();
+    const store = AttachmentFileStore();
     final outsideFile = File(p.join(tempDirectory.path, 'outside.png'));
     final _ = await outsideFile.writeAsBytes([1, 2, 3]);
 
@@ -107,7 +107,7 @@ void main() {
   });
 
   test('deleteFile removes only draft and support attachments', () async {
-    final store = AttachmentFileStore();
+    const store = AttachmentFileStore();
     final draftDirectory = Directory(
       p.join(tempDirectory.path, 'chat_attachments_draft'),
     );
