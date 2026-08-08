@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'tool_permission_mode.dart';
@@ -9,6 +9,7 @@ part of 'tool_permission_mode.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -74,7 +75,7 @@ class _$WorkspaceToolEntityCopyWithImpl<$Res>
 /// Create a copy of WorkspaceToolEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? toolId = null,Object? isEnabled = null,Object? permissionMode = null,Object? createdAt = null,Object? updatedAt = null,Object? config = freezed,Object? description = freezed,Object? inputSchema = freezed,Object? workspaceToolsGroupId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceToolEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
@@ -378,7 +379,7 @@ class _$WorkspaceToolToCreateCopyWithImpl<$Res>
 /// Create a copy of WorkspaceToolToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? toolId = null,Object? config = freezed,Object? isEnabled = freezed,Object? description = freezed,Object? inputSchema = freezed,Object? workspaceToolsGroupId = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(WorkspaceToolToCreate(
 toolId: null == toolId ? _self.toolId : toolId // ignore: cast_nullable_to_non_nullable
 as String,config: freezed == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as String?,isEnabled: freezed == isEnabled ? _self.isEnabled : isEnabled // ignore: cast_nullable_to_non_nullable
