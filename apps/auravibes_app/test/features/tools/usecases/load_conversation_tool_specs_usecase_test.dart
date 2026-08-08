@@ -6,7 +6,10 @@ import 'package:auravibes_app/data/repositories/conversation_tools_repository.da
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
+import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
+import 'package:auravibes_app/features/skills/usecases/build_skill_template_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential_candidates_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
@@ -65,6 +68,30 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
     required String conversationId,
     required String workspaceId,
   }) async => _result;
+}
+
+class _FakeBuildSkillTemplateToolSpecsUsecase
+    implements BuildSkillTemplateToolSpecsUsecase {
+  List<ToolSpec> result = const [];
+
+  @override
+  Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
+  }) async => result;
+}
+
+class _FakeBuildAppSkillNativeToolSpecsUsecase
+    implements BuildAppSkillNativeToolSpecsUsecase {
+  List<ToolSpec> result = const [];
+
+  @override
+  Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
+  }) async => result;
 }
 
 class _NeverSkillsRepository implements SkillsRepository {
@@ -370,6 +397,71 @@ void main() {
         unloadSkillToolName,
         runSubAgentToolName,
       ]);
+    });
+
+    test('skill load state does not change provider tool schemas', () async {
+      final dynamicSkillSpecs = _FakeBuildDynamicSkillToolSpecsUsecase(
+        buildSkillCommandToolSpecs(),
+      );
+      final templateSkillSpecs = _FakeBuildSkillTemplateToolSpecsUsecase();
+      final nativeSkillSpecs = _FakeBuildAppSkillNativeToolSpecsUsecase();
+      final researchSearchSpec = ToolSpec(
+        name: 'skill__user__research__search',
+        description: 'Search primary sources.',
+        inputJsonSchema: const {'type': 'object'},
+      );
+      final researchFetchSpec = ToolSpec(
+        name: 'skill__user__research__fetch',
+        description: 'Fetch a primary source.',
+        inputJsonSchema: const {'type': 'object'},
+      );
+      final braveSearchSpec = ToolSpec(
+        name: 'skill__app__brave__search',
+        description: 'Search with Brave.',
+        inputJsonSchema: const {'type': 'object'},
+      );
+      templateSkillSpecs.result = [researchSearchSpec];
+      nativeSkillSpecs.result = [braveSearchSpec];
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([
+          for (final name in [
+            researchSearchSpec.name,
+            researchFetchSpec.name,
+            braveSearchSpec.name,
+          ])
+            WorkspaceToolEntity(
+              id: name,
+              workspaceId: 'workspace-1',
+              toolId: name,
+              isEnabled: true,
+              permissionMode: ToolPermissionMode.alwaysAsk,
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+        ]),
+        buildCombinedToolSpecsUseCase: _FakeBuildCombinedToolSpecsUseCase([]),
+        buildDynamicSkillToolSpecsUsecase: dynamicSkillSpecs,
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
+        buildSkillTemplateToolSpecsUsecase: templateSkillSpecs,
+        buildAppSkillNativeToolSpecsUsecase: nativeSkillSpecs,
+      );
+
+      final first = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      templateSkillSpecs.result = [researchSearchSpec, researchFetchSpec];
+      nativeSkillSpecs.result = const [];
+
+      final second = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(first, second);
+      expect(first.map((spec) => spec.name), contains(callSkillToolName));
+      expect(first.any((spec) => spec.name.startsWith('skill__')), isFalse);
     });
 
     test('keeps dynamic skill control specs available for the agent', () async {
