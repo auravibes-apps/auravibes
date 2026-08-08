@@ -34,6 +34,7 @@
 
 - Run the smallest focused check that proves the change.
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
+- When focused validation passes and a wider gate reports only unrelated diagnostics, report those diagnostics; do not escalate to broader local suites.
 - Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
 - Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
 - If verification cannot run, say why and name the next command to run.
