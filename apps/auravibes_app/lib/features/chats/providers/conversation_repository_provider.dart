@@ -9,13 +9,21 @@ part 'conversation_repository_provider.g.dart';
 @Riverpod(keepAlive: true)
 ConversationRepository conversationRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+  final attachmentFileStore = ref.watch(attachmentFileStoreProvider);
 
-  return ConversationRepository(appDatabase);
+  return ConversationRepository(
+    appDatabase,
+    attachmentFileStore: attachmentFileStore,
+  );
 }
 
 @Riverpod(keepAlive: true)
 MessageRepository messageRepository(Ref ref) {
   final appDatabase = ref.watch(appDatabaseProvider);
+  final attachmentFileStore = ref.watch(attachmentFileStoreProvider);
 
-  return MessageRepository(appDatabase);
+  return MessageRepository(
+    appDatabase,
+    attachmentFileStore: attachmentFileStore,
+  );
 }
