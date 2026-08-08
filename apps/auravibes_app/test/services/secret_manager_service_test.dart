@@ -41,30 +41,51 @@ void main() {
       );
     });
 
-    test('uses namespaced encryption key', () async {
-      final manager = SecretKeyManager(
-        secureStorage: mockStorage,
-        storageNamespace: 'auravibes_app_0123456789abcdef',
-      );
-      when(
-        () => mockStorage.read(key: any(named: 'key')),
-      ).thenAnswer((_) async => null);
-      when(
-        () => mockStorage.write(
-          key: any(named: 'key'),
-          value: any(named: 'value'),
-        ),
-      ).thenAnswer((_) async {});
+    test(
+      'keeps default encryption key invisible to namespaced storage',
+      () async {
+        final values = <String, String>{};
+        when(
+          () => mockStorage.read(key: any(named: 'key')),
+        ).thenAnswer(
+          (call) async => values[call.namedArguments[#key] as String],
+        );
+        when(
+          () => mockStorage.write(
+            key: any(named: 'key'),
+            value: any(named: 'value'),
+          ),
+        ).thenAnswer((call) async {
+          values[call.namedArguments[#key] as String] =
+              call.namedArguments[#value] as String;
+        });
 
-      await manager.getOrCreateSecretKey();
+        final defaultKey = await manager.getOrCreateSecretKey();
+        final namespacedManager = SecretKeyManager(
+          secureStorage: mockStorage,
+          storageNamespace: 'auravibes_app_0123456789abcdef',
+        );
+        final namespacedKey = await namespacedManager.getOrCreateSecretKey();
+        final reloadedNamespacedKey = await SecretKeyManager(
+          secureStorage: mockStorage,
+          storageNamespace: 'auravibes_app_0123456789abcdef',
+        ).getOrCreateSecretKey();
 
-      verify(
-        () => mockStorage.write(
-          key: 'auravibes_app_0123456789abcdef.app_encryption_secret_key',
-          value: any(named: 'value'),
-        ),
-      ).called(1);
-    });
+        expect(values, contains('app_encryption_secret_key'));
+        expect(
+          values,
+          contains('auravibes_app_0123456789abcdef.app_encryption_secret_key'),
+        );
+        expect(
+          await defaultKey.extractBytes(),
+          isNot(await namespacedKey.extractBytes()),
+        );
+        expect(
+          await reloadedNamespacedKey.extractBytes(),
+          await namespacedKey.extractBytes(),
+        );
+      },
+    );
 
     test('getOrCreateSecretKey returns cached key on second call', () async {
       when(

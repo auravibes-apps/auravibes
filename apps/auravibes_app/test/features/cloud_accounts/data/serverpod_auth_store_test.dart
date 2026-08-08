@@ -62,6 +62,64 @@ void main() {
     },
   );
 
+  test(
+    'hashed namespace ignores unprefixed account and auth storage',
+    () async {
+      final values = <String, String>{
+        'serverpod_cloud_accounts_v2': '[]',
+        'serverpod_cloud_accounts_v1': '[]',
+        'serverpod_preferred_account_v2': 'legacy-user',
+        'serverpod_preferred_account_v1': 'legacy-user',
+        'serverpod_auth_success_v1_user.serverpod_auth_success_key': 'legacy',
+      };
+      final reads = <String>[];
+      final storage = _MockSecureStorage();
+      when(() => storage.read(key: any(named: 'key'))).thenAnswer((call) async {
+        final key = call.namedArguments[#key] as String;
+        reads.add(key);
+        return values[key];
+      });
+      when(
+        () => storage.write(
+          key: any(named: 'key'),
+          value: any(named: 'value'),
+        ),
+      ).thenAnswer((_) async {});
+      when(
+        () => storage.delete(key: any(named: 'key')),
+      ).thenAnswer((_) async {});
+      final store = ServerpodAuthStore(
+        secureStorage: storage,
+        storageNamespace: 'auravibes_app_0123456789abcdef',
+      );
+
+      expect(
+        await store.listAccounts(legacyServerUrl: 'https://legacy.example'),
+        isEmpty,
+      );
+      expect(await store.preferredAccountIdentity(), isNull);
+      expect(
+        await store
+            .authSuccessStorage(
+              serverUrl: 'https://legacy.example',
+              userId: 'user',
+            )
+            .get(),
+        isNull,
+      );
+
+      for (final legacyKey in [
+        'serverpod_cloud_accounts_v2',
+        'serverpod_cloud_accounts_v1',
+        'serverpod_preferred_account_v2',
+        'serverpod_preferred_account_v1',
+        'serverpod_auth_success_v1_user.serverpod_auth_success_key',
+      ]) {
+        expect(reads, isNot(contains(legacyKey)));
+      }
+    },
+  );
+
   test('stores account index under namespace', () async {
     final values = <String, String>{};
     final storage = _MockSecureStorage();
