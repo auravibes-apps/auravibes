@@ -85,9 +85,14 @@ class ResolveToolApprovalDecisionUsecase {
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (resolvedTool.isSkillControl ||
+    if (resolvedTool.isSkillCommand ||
+        resolvedTool.isSkillControl ||
         resolvedTool.isSkillTemplate ||
         resolvedTool.isSkillNative) {
+      if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
+          resolvedTool.target == null) {
+        return null;
+      }
       return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
         conversationId: conversationId,
         workspaceId: workspaceId,

@@ -166,6 +166,7 @@ class _FakeToolProvider
     required String workspaceId,
     required String toolCallId,
     required String resolvedTool,
+    required String argumentsRaw,
   }) async {
     return const AgentToolApprovalDecision(
       permissionResult: AgentToolPermissionResult.granted,

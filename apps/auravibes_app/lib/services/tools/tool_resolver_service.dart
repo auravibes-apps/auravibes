@@ -8,11 +8,7 @@ class ToolResolverService {
   const ToolResolverService([this._resolver = _defaultResolver]);
 
   static const _defaultResolver = AgentToolNameResolver(
-    skillControlToolNames: {
-      loadSkillToolName,
-      unloadSkillToolName,
-      listSkillCredentialsToolName,
-    },
+    skillControlToolNames: skillCommandToolNames,
   );
 
   final AgentToolNameResolver _resolver;
@@ -38,8 +34,8 @@ class ToolResolverService {
     if (resolved == null) return null;
 
     return switch (resolved.kind) {
-      AgentResolvedToolKind.skillControl => ResolvedTool.skillControl(
-        toolIdentifier: resolved.toolIdentifier,
+      AgentResolvedToolKind.skillControl => ResolvedTool.skillCommand(
+        commandName: resolved.toolIdentifier,
       ),
       AgentResolvedToolKind.skillNative => ResolvedTool.skillNative(
         tableId: resolved.tableId,

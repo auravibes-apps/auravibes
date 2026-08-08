@@ -166,7 +166,7 @@ void main() {
       );
 
       test(
-        'returns granted for conversation-allowed skill template tool',
+        'dispatcher approval uses underlying skill tool permission',
         () async {
           final conversationToolsRepository =
               fixture.conversationToolsRepository;
@@ -198,10 +198,13 @@ void main() {
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
             toolCallId: 'tc-1',
-            resolvedTool: ResolvedTool.skillTemplate(
-              tableId: 'search_web',
-              skillSlug: 'research',
-              toolIdentifier: 'search_web',
+            resolvedTool: ResolvedTool.skillCommand(
+              commandName: agent.callSkillToolName,
+              target: agent.AgentResolvedToolName.skillTemplate(
+                tableId: 'search_web',
+                skillSlug: 'research',
+                toolIdentifier: 'search_web',
+              ),
             ),
           );
 

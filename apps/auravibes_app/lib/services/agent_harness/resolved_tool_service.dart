@@ -346,6 +346,11 @@ agent.AgentResolvedToolName _toAgentDescriptor(ResolvedTool tool) {
     ResolvedToolType.skillControl => agent.AgentResolvedToolName.skillControl(
       toolIdentifier: tool.toolIdentifier,
     ),
+    ResolvedToolType.skillCommand =>
+      tool.target ??
+          agent.AgentResolvedToolName.skillControl(
+            toolIdentifier: tool.toolIdentifier,
+          ),
     ResolvedToolType.skillNative => agent.AgentResolvedToolName.skillNative(
       tableId: tool.tableId,
       skillSlug: tool.skillSlug ?? '',

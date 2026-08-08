@@ -188,6 +188,33 @@ void main() {
       AgentToolResultStatus.executionError,
     );
   });
+
+  test('passes original arguments to approval before execution', () async {
+    const argumentsRaw =
+        '{"skill":"research","tool":"search","args":{},"revision":"r1"}';
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(
+            tool: callSkillToolName,
+            id: 'tool-1',
+            argumentsRaw: argumentsRaw,
+          ),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+    );
+
+    await AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    expect(provider.approvalArgumentsRaw['tool-1'], argumentsRaw);
+  });
 }
 
 Future<void> _flushMicrotasks() async {
@@ -226,6 +253,7 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
   final updateBatches = <List<AgentToolResultUpdate>>[];
   final updates = <AgentToolResultUpdate>[];
   final loggedErrors = <String>[];
+  final approvalArgumentsRaw = <String, String>{};
 
   @override
   Future<LoadLatestMessageToolCallsResult<String>> loadLatestToolCalls({
@@ -240,7 +268,9 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     required String workspaceId,
     required String toolCallId,
     required String resolvedTool,
+    required String argumentsRaw,
   }) async {
+    approvalArgumentsRaw[toolCallId] = argumentsRaw;
     return AgentToolApprovalDecision(
       permissionResult:
           decisions[toolCallId] ?? AgentToolPermissionResult.needsConfirmation,
