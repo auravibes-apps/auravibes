@@ -292,7 +292,7 @@ void main() {
     );
 
     test(
-      'loads a ready credential-free user template skill and exposes its tool',
+      'skill load state does not change provider tool schemas',
       () async {
         final fixture = await prepare();
         final now = DateTime.now().toUtc();
@@ -338,6 +338,7 @@ void main() {
           (tool) => tool.spec.name == loadSkillToolName,
         );
 
+        final beforeSpecs = [for (final tool in controls) tool.spec];
         final result = await const ServerToolExecutorService().call(
           fixture.database,
           fixture.turn,
@@ -367,10 +368,135 @@ void main() {
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
         );
+        expect([for (final tool in selectedTools) tool.spec], beforeSpecs);
         expect(
           selectedTools.map((tool) => tool.spec.name),
-          contains('skill__user__research__search'),
+          containsAll(skillCommandToolNames),
         );
+        expect(
+          selectedTools.any((tool) => tool.spec.name.startsWith('skill__')),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'historical direct skill call replays without exposing its schema',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+        await insert(WorkspaceResourceKind.skill, 'research', const {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        });
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          const {
+            'id': 'research-search',
+            'skillId': 'research',
+            'skillSlug': 'research',
+            'toolSlug': 'search',
+            'description': 'Search.',
+            'isEnabled': true,
+            'requiresCredential': false,
+            'inputsJson': '[]',
+            'templateJson': '{}',
+          },
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          },
+        );
+        await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: assistant.id!,
+            stableId: 'historical-direct-call',
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'historical',
+            status: 'approved',
+            decision: 'approve',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        var executions = 0;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, tool, request) async {
+            executions++;
+            expect(tool.descriptor.toolIdentifier, 'search');
+            expect(request.id, 'historical-direct-call');
+            return {'ok': true};
+          },
+        );
+
+        final advertised = await runtime.loadTools(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          conversationStableId: 'conversation-1',
+        );
+        expect(
+          advertised.any((tool) => tool.spec.name.startsWith('skill__')),
+          isFalse,
+        );
+        await runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: const ServerToolRequest(
+            id: 'historical-direct-call',
+            name: 'skill__user__research__search',
+            arguments: {},
+          ),
+        );
+
+        final persisted = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('historical-direct-call'),
+        );
+        expect(executions, 1);
+        expect(persisted?.status, 'success');
+        expect(persisted?.resultJson, contains('ok'));
       },
     );
 

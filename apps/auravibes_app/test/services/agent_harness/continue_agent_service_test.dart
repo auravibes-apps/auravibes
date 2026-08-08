@@ -312,6 +312,103 @@ void main() {
       },
     );
 
+    test(
+      'keeps fixed skill tools while refreshed context adds manifest',
+      () async {
+        final tools = buildSkillCommandToolSpecs();
+        final contexts = _QueuedBuildSkillContextMessagesService([
+          const [],
+          const [
+            ChatMessage(
+              role: ChatMessageRole.user,
+              content:
+                  '<skill><name>Research</name><skill_manifest>{&quot;revision&quot;:&quot;r1&quot;}</skill_manifest></skill>',
+              metadata: {'kind': skillContextMetadataKind},
+            ),
+          ],
+        ]);
+        usecase = ContinueAgentService(
+          chatbotService: chatbotService,
+          messageRepository: messageRepository,
+          agentContinuationProvider: _appAgentContinuationAdapter(
+            conversationRepository: conversationRepository,
+            workspaceModelSelectionsRepository:
+                workspaceModelSelectionsRepository,
+            apiModelRepository: apiModelRepository,
+            selectPromptMessagesUsecase: selectPromptMessagesUsecase,
+            loadConversationToolSpecsUsecase: loadConversationToolSpecsUsecase,
+            buildSkillContextMessagesUsecase: contexts,
+          ),
+          messagesStreamingRuntime: MessagesStreamingRuntime(
+            startSubscription: (_, messageId) {
+              startedSubscriptionMessageIds.add(messageId);
+            },
+            updateResult: (result, messageId) {
+              updatedResults.add(result);
+              updatedMessageIds.add(messageId);
+            },
+            remove: (messageId) async => removedMessageIds.add(messageId),
+          ),
+          conversationStreamingRuntime: ConversationStreamingRuntime(
+            start: startedConversationIds.add,
+            isStreaming: (_) => false,
+            remove: removedConversationIds.add,
+          ),
+          agentCancellationRuntime: agentCancellationRuntime,
+          monitoringService: monitoringService,
+        );
+        when(
+          () => loadConversationToolSpecsUsecase.call(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+          ),
+        ).thenAnswer((_) async => tools);
+        final sentTools = <List<ToolSpec>>[];
+        final sentMessages = <List<ChatMessage>>[];
+        when(
+          () => chatbotService.sendMessage(
+            _model,
+            any(),
+            tools: tools,
+            sessionId: any(named: 'sessionId'),
+          ),
+        ).thenAnswer((invocation) {
+          sentMessages.add(
+            List<ChatMessage>.from(invocation.positionalArguments[1] as List),
+          );
+          sentTools.add(
+            List<ToolSpec>.from(invocation.namedArguments[#tools] as List),
+          );
+          return Stream.value(
+            ChatResult<ChatMessage>(
+              output: ChatMessage.model('Done'),
+              finishReason: ChatFinishReason.stop,
+              usage: const LanguageModelUsage(),
+            ),
+          );
+        });
+
+        await usecase.call(conversationId: 'conversation-1');
+        await usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.toolResume,
+          ),
+        );
+
+        expect(sentTools, hasLength(2));
+        expect(sentTools.first, orderedEquals(sentTools.last));
+        expect(
+          sentTools.last.any((tool) => tool.name.startsWith('skill__')),
+          isFalse,
+        );
+        expect(
+          sentMessages.last.map((message) => message.text).join(),
+          contains('<skill_manifest>'),
+        );
+      },
+    );
+
     test('ignores empty chunks until text is available', () async {
       when(
         () => chatbotService.sendMessage(
@@ -1511,6 +1608,20 @@ final _model = WorkspaceModelSelectionWithConnectionEntity(
     type: ModelProvidersType.openai,
   ),
 );
+
+class _QueuedBuildSkillContextMessagesService
+    implements BuildSkillContextMessagesService {
+  _QueuedBuildSkillContextMessagesService(this.responses);
+
+  final List<List<ChatMessage>> responses;
+  int calls = 0;
+
+  @override
+  Future<List<ChatMessage>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async => responses[calls++];
+}
 
 class _FakeBuildSkillContextMessagesService
     implements BuildSkillContextMessagesService {
