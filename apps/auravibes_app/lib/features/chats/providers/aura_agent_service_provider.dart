@@ -1,4 +1,3 @@
-// ignore_for_file: dead_code
 
 import 'package:auravibes_app/features/chats/agent_adapters/app_agent_service.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
@@ -38,8 +37,6 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       approvals: AppApproveToolCallDataProvider(
         messageRepository: ref.watch(messageRepositoryProvider),
         conversationRepository: ref.watch(conversationRepositoryProvider),
-        conversationToolsRepository: throw UnimplementedError(),
-        resolveToolApprovalDecisionUsecase: throw UnimplementedError(),
         conversationToolsRepositoryForWorkspace: (workspaceId) => ref.read(
           conversationToolsRepositoryProvider(workspaceId),
         ),
@@ -64,4 +61,5 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       ),
     );
   },
+  dependencies: [agentToolResumeServiceProvider],
 );

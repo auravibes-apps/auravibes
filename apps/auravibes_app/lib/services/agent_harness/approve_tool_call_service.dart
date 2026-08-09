@@ -25,8 +25,8 @@ class AppApproveToolCallDataProvider
   const AppApproveToolCallDataProvider({
     required this.messageRepository,
     required this.conversationRepository,
-    required this.conversationToolsRepository,
-    required this.resolveToolApprovalDecisionUsecase,
+    this.conversationToolsRepository,
+    this.resolveToolApprovalDecisionUsecase,
     this.conversationToolsRepositoryForWorkspace,
     this.resolveToolApprovalDecisionUsecaseForWorkspace,
     required this.toolResolverService,
@@ -34,12 +34,21 @@ class AppApproveToolCallDataProvider
     required this.runResolvedToolUsecase,
     required this.agentCancellationRuntime,
     required this.onToolCallChanged,
-  });
+  }) : assert(
+         conversationToolsRepository != null ||
+             conversationToolsRepositoryForWorkspace != null,
+         'A conversation tools repository is required.',
+       ),
+       assert(
+         resolveToolApprovalDecisionUsecase != null ||
+             resolveToolApprovalDecisionUsecaseForWorkspace != null,
+         'A tool approval usecase is required.',
+       );
 
   final MessageRepository messageRepository;
   final ConversationRepository conversationRepository;
-  final ConversationToolsRepository conversationToolsRepository;
-  final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecisionUsecase;
+  final ConversationToolsRepository? conversationToolsRepository;
+  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase;
   final ConversationToolsRepository Function(String workspaceId)?
   conversationToolsRepositoryForWorkspace;
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
@@ -84,28 +93,34 @@ class AppApproveToolCallDataProvider
       conversationId,
     );
     if (conversation == null) return;
-    final permissionTableId =
-        await (resolveToolApprovalDecisionUsecaseForWorkspace?.call(
-                  conversation.workspaceId,
-                ) ??
-                resolveToolApprovalDecisionUsecase)
-            .resolvePermissionTableId(
-              conversationId: conversationId,
-              workspaceId: conversation.workspaceId,
-              resolvedTool: tool,
-            );
+    final approvalUsecase =
+        resolveToolApprovalDecisionUsecaseForWorkspace?.call(
+          conversation.workspaceId,
+        ) ??
+        resolveToolApprovalDecisionUsecase;
+    if (approvalUsecase == null) {
+      throw StateError('Tool approval usecase is unavailable.');
+    }
+    final permissionTableId = await approvalUsecase.resolvePermissionTableId(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+      resolvedTool: tool,
+    );
     if (permissionTableId == null) return;
 
-    final _ =
-        await (conversationToolsRepositoryForWorkspace?.call(
-                  conversation.workspaceId,
-                ) ??
-                conversationToolsRepository)
-            .setConversationToolPermission(
-              conversationId,
-              permissionTableId,
-              permissionMode: ToolPermissionMode.alwaysAllow,
-            );
+    final toolsRepository =
+        conversationToolsRepositoryForWorkspace?.call(
+          conversation.workspaceId,
+        ) ??
+        conversationToolsRepository;
+    if (toolsRepository == null) {
+      throw StateError('Conversation tools repository is unavailable.');
+    }
+    final _ = await toolsRepository.setConversationToolPermission(
+      conversationId,
+      permissionTableId,
+      permissionMode: ToolPermissionMode.alwaysAllow,
+    );
   }
 
   @override

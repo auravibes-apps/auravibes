@@ -145,4 +145,5 @@ sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>(
           : null,
     );
   },
+  dependencies: [sendMessageUsecaseProvider],
 );

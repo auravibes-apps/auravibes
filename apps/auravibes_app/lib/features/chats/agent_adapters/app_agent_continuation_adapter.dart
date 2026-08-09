@@ -1,4 +1,3 @@
-// ignore_for_file: dead_code
 
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
@@ -32,9 +31,13 @@ class AppAgentContinuationAdapter
     required this.apiModelRepository,
     required this.selectPromptMessagesUsecase,
     required this.buildSkillContextMessagesUsecase,
-    required this.loadConversationToolSpecsUsecase,
+    this.loadConversationToolSpecsUsecase,
     this.loadConversationToolSpecsUsecaseForWorkspace,
-  });
+  }) : assert(
+         loadConversationToolSpecsUsecase != null ||
+             loadConversationToolSpecsUsecaseForWorkspace != null,
+         'A tool spec usecase is required.',
+       );
 
   final ConversationRepository conversationRepository;
   final Future<ModelSelectionStore> Function(String workspaceId)
@@ -43,7 +46,7 @@ class AppAgentContinuationAdapter
   final ApiModelRepository apiModelRepository;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
   final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
-  final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
+  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase;
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace;
 
@@ -126,12 +129,15 @@ class AppAgentContinuationAdapter
     required String conversationId,
     required String workspaceId,
   }) {
-    return (loadConversationToolSpecsUsecaseForWorkspace?.call(workspaceId) ??
-            loadConversationToolSpecsUsecase)
-        .call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-        );
+    final usecase =
+        loadConversationToolSpecsUsecaseForWorkspace?.call(workspaceId) ??
+        loadConversationToolSpecsUsecase;
+    if (usecase == null) throw StateError('Tool spec usecase is unavailable.');
+
+    return usecase.call(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
   }
 
   @override
@@ -184,7 +190,6 @@ final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>(
       buildSkillContextMessagesUsecase: ref.watch(
         buildSkillContextMessagesServiceProvider,
       ),
-      loadConversationToolSpecsUsecase: throw UnimplementedError(),
       loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) => ref.read(
         loadConversationToolSpecsUsecaseProvider(workspaceId),
       ),

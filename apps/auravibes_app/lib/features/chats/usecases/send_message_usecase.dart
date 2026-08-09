@@ -281,4 +281,5 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
       sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
     );
   },
+  dependencies: [auraAgentServiceProvider],
 );
