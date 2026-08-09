@@ -29,6 +29,8 @@ dependencies:
   file_picker: ^12.0.0-beta.7
   flutter:
     sdk: flutter
+  flutter_driver:
+    sdk: flutter
   flutter_hooks: ^0.21.3+1
   flutter_secure_storage: ^10.3.1
   flutter_svg: ^2.3.0
