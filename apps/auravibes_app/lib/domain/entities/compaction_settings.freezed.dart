@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'compaction_settings.dart';
@@ -9,6 +9,7 @@ part of 'compaction_settings.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$CompactionSettingsCopyWithImpl<$Res>
 /// Create a copy of CompactionSettings
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? autoCompactionEnabled = null,Object? usagePercentageThreshold = null,Object? remainingTokenThreshold = null,Object? updatedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionSettings(
 autoCompactionEnabled: null == autoCompactionEnabled ? _self.autoCompactionEnabled : autoCompactionEnabled // ignore: cast_nullable_to_non_nullable
 as bool,usagePercentageThreshold: null == usagePercentageThreshold ? _self.usagePercentageThreshold : usagePercentageThreshold // ignore: cast_nullable_to_non_nullable
 as int,remainingTokenThreshold: null == remainingTokenThreshold ? _self.remainingTokenThreshold : remainingTokenThreshold // ignore: cast_nullable_to_non_nullable
@@ -338,7 +339,7 @@ class _$ConversationPromptEstimateCopyWithImpl<$Res>
 /// Create a copy of ConversationPromptEstimate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? selectedModelId = null,Object? selectedProviderId = null,Object? estimatedPromptTokens = null,Object? maxOutputTokens = null,Object? contextLimit = freezed,Object? remainingTokens = freezed,Object? usagePercentage = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationPromptEstimate(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,selectedModelId: null == selectedModelId ? _self.selectedModelId : selectedModelId // ignore: cast_nullable_to_non_nullable
 as String,selectedProviderId: null == selectedProviderId ? _self.selectedProviderId : selectedProviderId // ignore: cast_nullable_to_non_nullable
@@ -622,7 +623,7 @@ class _$CompactionDecisionCopyWithImpl<$Res>
 /// Create a copy of CompactionDecision
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? shouldCompact = null,Object? reason = null,Object? trigger = null,Object? estimate = freezed,Object? settings = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionDecision(
 shouldCompact: null == shouldCompact ? _self.shouldCompact : shouldCompact // ignore: cast_nullable_to_non_nullable
 as bool,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as CompactionDecisionReason,trigger: null == trigger ? _self.trigger : trigger // ignore: cast_nullable_to_non_nullable
@@ -945,7 +946,7 @@ class _$CompactionRangeCopyWithImpl<$Res>
 /// Create a copy of CompactionRange
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? fromMessageId = null,Object? throughMessageId = null,Object? messageIds = null,Object? keptTailMessageIds = null,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionRange(
 fromMessageId: null == fromMessageId ? _self.fromMessageId : fromMessageId // ignore: cast_nullable_to_non_nullable
 as String,throughMessageId: null == throughMessageId ? _self.throughMessageId : throughMessageId // ignore: cast_nullable_to_non_nullable
 as String,messageIds: null == messageIds ? _self.messageIds : messageIds // ignore: cast_nullable_to_non_nullable
@@ -1091,7 +1092,7 @@ return $default(_that.fromMessageId,_that.throughMessageId,_that.messageIds,_tha
 @JsonSerializable()
 
 class _CompactionRange extends CompactionRange {
-  const _CompactionRange({required this.fromMessageId, required this.throughMessageId, required final  List<String> messageIds, required final  List<String> keptTailMessageIds}): _messageIds = messageIds,_keptTailMessageIds = keptTailMessageIds,super._();
+  const _CompactionRange({required this.fromMessageId, required this.throughMessageId, required  List<String> messageIds, required  List<String> keptTailMessageIds}): _messageIds = messageIds,_keptTailMessageIds = keptTailMessageIds,super._();
   factory _CompactionRange.fromJson(Map<String, dynamic> json) => _$CompactionRangeFromJson(json);
 
 @override final  String fromMessageId;
@@ -1229,7 +1230,7 @@ class _$CompactionExecutionStateCopyWithImpl<$Res>
 /// Create a copy of CompactionExecutionState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? trigger = null,Object? startedAt = null,Object? status = null,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionExecutionState(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,trigger: null == trigger ? _self.trigger : trigger // ignore: cast_nullable_to_non_nullable
 as CompactionTrigger,startedAt: null == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
@@ -1501,7 +1502,7 @@ class _$ContextOverflowRetryStateCopyWithImpl<$Res>
 /// Create a copy of ContextOverflowRetryState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? assistantRequestId = null,Object? hasRetriedAfterCompaction = null,}) {
-  return _then(_self.copyWith(
+  return _then(ContextOverflowRetryState(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,assistantRequestId: null == assistantRequestId ? _self.assistantRequestId : assistantRequestId // ignore: cast_nullable_to_non_nullable
 as String,hasRetriedAfterCompaction: null == hasRetriedAfterCompaction ? _self.hasRetriedAfterCompaction : hasRetriedAfterCompaction // ignore: cast_nullable_to_non_nullable

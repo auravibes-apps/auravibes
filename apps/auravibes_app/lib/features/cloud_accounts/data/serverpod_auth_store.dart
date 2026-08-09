@@ -28,8 +28,10 @@ class CloudAccountSession {
 }
 
 class ServerpodAuthStore {
-  ServerpodAuthStore({FlutterSecureStorage? secureStorage})
-    : _secureStorage = secureStorage ?? _defaultStorage;
+  ServerpodAuthStore({
+    FlutterSecureStorage? secureStorage,
+    this.storageNamespace = 'auravibes_app',
+  }) : _secureStorage = secureStorage ?? _defaultStorage;
 
   static const _accountIndexKey = 'serverpod_cloud_accounts_v2';
   static const _legacyAccountIndexKey = 'serverpod_cloud_accounts_v1';
@@ -44,13 +46,19 @@ class ServerpodAuthStore {
   );
 
   final FlutterSecureStorage _secureStorage;
+  final String storageNamespace;
   Future<void> _indexMutation = Future.value();
+
+  bool get _usesLegacyKeys => storageNamespace == 'auravibes_app';
+  String _key(String key) => _usesLegacyKeys ? key : '$storageNamespace.$key';
 
   Future<List<CloudAccountSession>> listAccounts({
     String? legacyServerUrl,
   }) async {
-    var raw = await _secureStorage.read(key: _accountIndexKey);
-    if ((raw == null || raw.isEmpty) && legacyServerUrl != null) {
+    var raw = await _secureStorage.read(key: _key(_accountIndexKey));
+    if (_usesLegacyKeys &&
+        (raw == null || raw.isEmpty) &&
+        legacyServerUrl != null) {
       final legacy = await _secureStorage.read(key: _legacyAccountIndexKey);
       if (legacy != null && legacy.isNotEmpty) {
         final decoded = jsonDecode(legacy) as List<dynamic>;
@@ -102,7 +110,7 @@ class ServerpodAuthStore {
         ),
       ];
       await _secureStorage.write(
-        key: _accountIndexKey,
+        key: _key(_accountIndexKey),
         value: jsonEncode([for (final item in next) item.toJson()]),
       );
     });
@@ -117,7 +125,7 @@ class ServerpodAuthStore {
     await _mutateIndex(() async {
       final accounts = await listAccounts();
       await _secureStorage.write(
-        key: _accountIndexKey,
+        key: _key(_accountIndexKey),
         value: jsonEncode([
           for (final account in accounts)
             if (account.userId != userId || account.serverUrl != origin)
@@ -126,12 +134,12 @@ class ServerpodAuthStore {
       );
     });
     if (await preferredAccountIdentity() == accountIdentity(origin, userId)) {
-      await _secureStorage.delete(key: _preferredAccountKey);
+      await _secureStorage.delete(key: _key(_preferredAccountKey));
     }
   }
 
   Future<String?> preferredAccountIdentity() {
-    return _secureStorage.read(key: _preferredAccountKey);
+    return _secureStorage.read(key: _key(_preferredAccountKey));
   }
 
   Future<void> setPreferredAccountIdentity({
@@ -139,7 +147,7 @@ class ServerpodAuthStore {
     required String userId,
   }) {
     return _secureStorage.write(
-      key: _preferredAccountKey,
+      key: _key(_preferredAccountKey),
       value: accountIdentity(serverUrl, userId),
     );
   }
@@ -151,8 +159,8 @@ class ServerpodAuthStore {
     return KeyValueClientAuthSuccessStorage(
       keyValueStorage: _SecureKeyValueStorage(
         secureStorage: _secureStorage,
-        keyPrefix: _authKey(serverUrl, userId),
-        legacyKeyPrefix: '$_legacyAuthPrefix$userId',
+        keyPrefix: _key(_authKey(serverUrl, userId)),
+        legacyKeyPrefix: _usesLegacyKeys ? '$_legacyAuthPrefix$userId' : null,
       ),
     );
   }

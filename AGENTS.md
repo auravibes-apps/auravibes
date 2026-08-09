@@ -34,7 +34,20 @@
 
 - Run the smallest focused check that proves the change.
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
-- Use `validate:quick` before claiming done for shared behavior, app logic, or broad refactors.
+
+| Scope | Required validation |
+| --- | --- |
+| Focused file/bug | Focused test or analyzer |
+| Shared app logic/broad refactor | `validate:quick` |
+| PR update/merge prep | `validate`, dependency, and import gates |
+| CI reproduction/explicit request | `test:ci` |
+| Workflow/config-only | Diff, YAML, and action validation; no Dart suites unless Dart behavior changes |
+
+- When focused validation passes and a wider gate reports only unrelated diagnostics, report those diagnostics; do not escalate to broader local suites.
+- A timeout or background job is incomplete: wait for its exit status; do not duplicate or retry it.
+- Do not rerun a suite already included in `validate`.
+- Distinguish known baseline test failures from failures caused by the change.
+- Before interpreting slow CI scope selection, verify CI head, base, and run attempt.
 - Use `git diff --check` only for docs/patch-heavy edits, generated-code reviews, or final whitespace checks when relevant; do not run it in every code-edit loop.
 - If verification cannot run, say why and name the next command to run.
 - Generated-code changes require generator output review.

@@ -12,19 +12,27 @@ workspace:
   - widgetbook
 
 dev_dependencies:
-  analyzer: ^12.1.0
+  analyzer: ^14.0.0
   dart_code_linter: ^4.1.6
-  dependency_validator: ^5.0.4
+  dependency_validator: ^5.0.5
   import_sorter: ^5.0.0-releasecandidate.1
   melos: ^8.1.0
-  riverpod_lint: 3.1.4
-  test: ^1.31.0
+  riverpod_lint: 3.1.8
+  test: 1.31.2
   very_good_analysis: ^10.3.0
 
 dependency_overrides:
+  # ponytail: analyzer 13 required by riverpod_lint; older tool metadata still caps it.
+  analyzer: ^13.0.0
   # melos 8 needs cli_util ^0.5.0; flutter_launcher_icons 0.14.4 pins ^0.4.1 (no newer release).
   # 0.5.0 only deprecates applicationConfigHome (still present), safe override.
   cli_util: ^0.5.0
+  # ponytail: pin analyzer-13.0-compatible formatter until Flutter lifts meta 1.18.0.
+  dart_style: 3.1.9
+  # ponytail: pin analyzer-13-compatible Mockito until Flutter lifts meta 1.18.0.
+  mockito: 5.7.0
+  # ponytail: Flutter 3.44.9 pins test_api 0.7.11; test 1.31.2 needs 0.7.13.
+  test_api: 0.7.13
   # flutter_web_auth_2 6.0.0-alpha.4 still constrains window_to_front to ^0.1.0.
   window_to_front: 1.0.0
 

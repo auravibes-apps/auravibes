@@ -1,6 +1,5 @@
 // Required: Existing thresholds and limits use numeric values.
-import 'dart:convert';
-
+import 'package:auravibes_app/app_storage_namespace.dart';
 import 'package:auravibes_app/data/database/drift/daos/agent_tools_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/agents_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.dart';
@@ -44,7 +43,6 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_model_selecti
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
-import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:uuid/v7.dart';
@@ -207,17 +205,8 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Builds the Drift database name for a hash source.
-  static String databaseNameForHashSource(String? dbHashSource) {
-    if (dbHashSource == null || dbHashSource.isEmpty) return 'auravibes_app';
-
-    final digest = sha256.convert(utf8.encode(dbHashSource));
-    final hashPrefix = digest.bytes
-        .take(8)
-        .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-        .join();
-
-    return 'auravibes_app_$hashPrefix';
-  }
+  static String databaseNameForHashSource(String? dbHashSource) =>
+      appStorageNamespaceFor(dbHashSource);
 
   Future<bool> _tableExists(String tableName) async {
     final rows = await customSelect(

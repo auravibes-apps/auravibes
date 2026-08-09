@@ -28,4 +28,42 @@ void main() {
       ProviderRuntime.openAiReasoning,
     );
   });
+
+  test('builds provider authorization headers', () {
+    expect(
+      providerAuthorizationHeaders('anthropic', 'key'),
+      {'x-api-key': 'key', 'anthropic-version': '2023-06-01'},
+    );
+    expect(
+      providerAuthorizationHeaders('openai-codex', 'token'),
+      {
+        'authorization': 'Bearer token',
+        'originator': 'auravibes',
+        'user-agent': 'AuraVibes',
+      },
+    );
+    expect(
+      providerAuthorizationHeaders('openai', 'token'),
+      {'authorization': 'Bearer token'},
+    );
+  });
+
+  test('builds provider model catalog URIs', () {
+    expect(
+      providerModelCatalogUri(
+        'anthropic',
+        Uri.parse('https://api.anthropic.com/v1/'),
+        maxModels: 5,
+      ),
+      Uri.parse('https://api.anthropic.com/v1/models?limit=5'),
+    );
+    expect(
+      providerModelCatalogUri(
+        'openai',
+        Uri.parse('https://api.openai.com/v1'),
+        maxModels: 5,
+      ),
+      Uri.parse('https://api.openai.com/v1/models'),
+    );
+  });
 }

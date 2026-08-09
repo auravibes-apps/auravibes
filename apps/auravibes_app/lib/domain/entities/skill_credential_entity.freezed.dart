@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'skill_credential_entity.dart';
@@ -9,6 +9,7 @@ part of 'skill_credential_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -63,7 +64,7 @@ class _$SkillCredentialEntityCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? credentialDefinitionId = null,Object? name = null,Object? attributes = null,Object? isEnabled = null,Object? createdAt = null,Object? updatedAt = null,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,credentialDefinitionId: null == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
@@ -214,7 +215,7 @@ return $default(_that.id,_that.workspaceId,_that.credentialDefinitionId,_that.na
 
 
 class _SkillCredentialEntity extends SkillCredentialEntity {
-  const _SkillCredentialEntity({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required final  Map<String, String> attributes, required this.isEnabled, required this.createdAt, required this.updatedAt, this.keySuffix}): _attributes = attributes,super._();
+  const _SkillCredentialEntity({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required  Map<String, String> attributes, required this.isEnabled, required this.createdAt, required this.updatedAt, this.keySuffix}): _attributes = attributes,super._();
   
 
 @override final  String id;
@@ -350,7 +351,7 @@ class _$SkillCredentialToCreateCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? credentialDefinitionId = null,Object? name = null,Object? attributes = null,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialToCreate(
 credentialDefinitionId: null == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,attributes: null == attributes ? _self.attributes : attributes // ignore: cast_nullable_to_non_nullable
@@ -495,7 +496,7 @@ return $default(_that.credentialDefinitionId,_that.name,_that.attributes);case _
 
 
 class _SkillCredentialToCreate extends SkillCredentialToCreate {
-  const _SkillCredentialToCreate({required this.credentialDefinitionId, required this.name, required final  Map<String, String> attributes}): _attributes = attributes,super._();
+  const _SkillCredentialToCreate({required this.credentialDefinitionId, required this.name, required  Map<String, String> attributes}): _attributes = attributes,super._();
   
 
 @override final  String credentialDefinitionId;
@@ -619,7 +620,7 @@ class _$SkillCredentialSecretStateCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialSecretState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? hasValue = null,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialSecretState(
 hasValue: null == hasValue ? _self.hasValue : hasValue // ignore: cast_nullable_to_non_nullable
 as bool,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -879,7 +880,7 @@ class _$SkillCredentialForEditCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialForEdit
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? credentialDefinitionId = null,Object? name = null,Object? nonSecretAttributes = null,Object? secretAttributes = null,Object? isEnabled = null,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialForEdit(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,credentialDefinitionId: null == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
@@ -1029,7 +1030,7 @@ return $default(_that.id,_that.workspaceId,_that.credentialDefinitionId,_that.na
 
 
 class _SkillCredentialForEdit extends SkillCredentialForEdit {
-  const _SkillCredentialForEdit({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required final  Map<String, String> nonSecretAttributes, required final  Map<String, SkillCredentialSecretState> secretAttributes, required this.isEnabled, this.keySuffix}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,super._();
+  const _SkillCredentialForEdit({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required  Map<String, String> nonSecretAttributes, required  Map<String, SkillCredentialSecretState> secretAttributes, required this.isEnabled, this.keySuffix}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,super._();
   
 
 @override final  String id;
@@ -1169,7 +1170,7 @@ class _$SkillCredentialToUpdateCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? nonSecretAttributes = null,Object? secretAttributes = null,Object? clearSecretAttributeNames = null,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialToUpdate(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,nonSecretAttributes: null == nonSecretAttributes ? _self.nonSecretAttributes : nonSecretAttributes // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,secretAttributes: null == secretAttributes ? _self.secretAttributes : secretAttributes // ignore: cast_nullable_to_non_nullable
@@ -1315,7 +1316,7 @@ return $default(_that.name,_that.nonSecretAttributes,_that.secretAttributes,_tha
 
 
 class _SkillCredentialToUpdate extends SkillCredentialToUpdate {
-  const _SkillCredentialToUpdate({this.name, final  Map<String, String> nonSecretAttributes = const {}, final  Map<String, String> secretAttributes = const {}, final  Set<String> clearSecretAttributeNames = const {}}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,_clearSecretAttributeNames = clearSecretAttributeNames,super._();
+  const _SkillCredentialToUpdate({this.name,  Map<String, String> nonSecretAttributes = const {},  Map<String, String> secretAttributes = const {},  Set<String> clearSecretAttributeNames = const {}}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,_clearSecretAttributeNames = clearSecretAttributeNames,super._();
   
 
 @override final  String? name;
