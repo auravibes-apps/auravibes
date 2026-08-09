@@ -200,6 +200,30 @@ melos:
       run: flutter pub outdated
       description: Check for outdated dependencies
 
+    start:
+      exec: fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/ "--dart-define=DB_HASH_SOURCE=$MELOS_ROOT_PATH"
+      packageFilters:
+        scope: auravibes_app
+      description: Run AuraVibes app with workspace data
+
+    start:shared:
+      exec: fvm flutter run --flavor dev --dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/
+      packageFilters:
+        scope: auravibes_app
+      description: Run AuraVibes app with shared data
+
+    start:server:
+      exec: fvm dart run bin/main.dart --mode development --apply-migrations
+      packageFilters:
+        scope: auravibes_server
+      description: Run AuraVibes Server in development mode
+
+    start:widgetbook:
+      exec: fvm flutter run
+      packageFilters:
+        scope: widgetbook_workspace
+      description: Run Widgetbook
+
     upgrade:
       run: flutter pub upgrade
       description: Upgrade dependencies
