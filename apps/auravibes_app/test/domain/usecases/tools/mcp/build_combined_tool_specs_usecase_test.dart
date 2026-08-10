@@ -3,7 +3,13 @@ import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/usecases/tools/mcp/build_combined_tool_specs_use_case.dart';
-import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    show
+        AgentResolvedToolName,
+        ToolSpec,
+        buildToolCatalog,
+        stableToolNameSuffix;
 import 'package:flutter_test/flutter_test.dart';
 
 WorkspaceToolEntity _tool({
@@ -51,7 +57,9 @@ void main() {
     ]);
 
     expect(result, hasLength(1));
-    expect(result.single.name, 'mcp_tool');
+    expect(result.single.spec.name, 'mcp_custom_tool');
+    expect(result.single.target.tableId, 't1');
+    expect(result.single.target.mcpServerId, 'mcp-1');
   });
 
   test('includes built-in tool specs for calculator tool', () async {
@@ -65,7 +73,8 @@ void main() {
     ]);
 
     expect(result, hasLength(1));
-    expect(result.single.name, startsWith('built_in_'));
+    expect(result.single.spec.name, 'calculator');
+    expect(result.single.target.tableId, 't1');
   });
 
   test('skips built-in tool when tool type is unknown', () async {
@@ -92,7 +101,8 @@ void main() {
     ]);
 
     expect(result, hasLength(1));
-    expect(result.single.name, startsWith('native_'));
+    expect(result.single.spec.name, 'url');
+    expect(result.single.target.tableId, 't2');
   });
 
   test('skips tool not belonging to a group', () async {
@@ -175,6 +185,85 @@ void main() {
     expect(result, isEmpty);
   });
 
+  test('binds duplicate built-in and MCP specs to distinct targets', () async {
+    final groups = {
+      'github-group': 'github-server',
+      'linear-group': 'linear-server',
+    };
+    final usecase = BuildCombinedToolSpecsUseCase(
+      getToolsGroupById: (groupId) async => ToolsGroupEntity(
+        id: groupId,
+        workspaceId: 'w1',
+        name: groupId,
+        isEnabled: true,
+        permissions: PermissionAccess.ask,
+        createdAt: DateTime(2025),
+        updatedAt: DateTime(2025),
+        mcpServerId: groups[groupId],
+      ),
+      getMcpToolSpec: ({required mcpServerId, required toolName}) => ToolSpec(
+        name: AgentResolvedToolName.mcp(
+          tableId: mcpServerId,
+          toolIdentifier: toolName,
+          mcpServerId: mcpServerId,
+          mcpSlug: '$mcpServerId-slug',
+        ).fullName,
+        description: toolName,
+        inputJsonSchema: const {},
+      ),
+    );
+
+    final result = await usecase.call([
+      _tool(id: 'calculator-row-1', toolId: 'calculator'),
+      _tool(id: 'calculator-row-2', toolId: 'calculator'),
+      _tool(
+        id: 'github-search-row',
+        toolId: 'search',
+        groupId: 'github-group',
+      ),
+      _tool(
+        id: 'linear-search-row',
+        toolId: 'search',
+        groupId: 'linear-group',
+      ),
+    ]);
+
+    expect(result, hasLength(4));
+    expect(result.map((value) => value.target.tableId).toSet(), hasLength(4));
+    expect(
+      result.where((value) => value.target.toolIdentifier == 'calculator'),
+      hasLength(2),
+    );
+    expect(
+      result.map((value) => value.spec.name),
+      ['calculator', 'calculator', 'mcp_search', 'mcp_search'],
+    );
+    expect(
+      result.map((value) => value.target),
+      everyElement(isA<ResolvedTool>()),
+    );
+    expect(
+      result
+          .where((value) => value.target.isMcp)
+          .map(
+            (value) => value.target.mcpServerId,
+          ),
+      ['github-server', 'linear-server'],
+    );
+
+    final catalog = buildToolCatalog(result);
+    expect(catalog.specs.map((value) => value.name), [
+      'calculator_${stableToolNameSuffix('user:calculator-row-1')}',
+      'calculator_${stableToolNameSuffix('user:calculator-row-2')}',
+      'mcp_search_${stableToolNameSuffix(
+        'mcp:github-server:github-search-row:search',
+      )}',
+      'mcp_search_${stableToolNameSuffix(
+        'mcp:linear-server:linear-search-row:search',
+      )}',
+    ]);
+  });
+
   test('mixes built-in, native, and mcp tools', () async {
     final usecase = BuildCombinedToolSpecsUseCase(
       getToolsGroupById: (groupId) async => ToolsGroupEntity(
@@ -203,8 +292,8 @@ void main() {
     ]);
 
     expect(result, hasLength(3));
-    expect(result.firstOrNull?.name, startsWith('built_in_'));
-    expect(result[1].name, startsWith('native_'));
-    expect(result[2].name, 'mcp_tool');
+    expect(result.firstOrNull?.spec.name, 'calculator');
+    expect(result[1].spec.name, 'url');
+    expect(result[2].spec.name, 'mcp_remote_tool');
   });
 }
