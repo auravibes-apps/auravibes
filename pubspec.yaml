@@ -170,29 +170,29 @@ melos:
 
     # Validation Pipeline (for CI)
     validate:
-      run: |
-        melos analyze &&
-        melos run unused:files &&
-        melos run unused:code &&
-        melos run unnecessary:nullable &&
-        melos run format:check &&
-        melos run test:local
+      steps:
+        - melos analyze
+        - melos run unused:files
+        - melos run unused:code
+        - melos run unnecessary:nullable
+        - melos run format:check
+        - melos run test:local
       description: Full validation pipeline (no coverage, fast)
 
     validate:ci:
-      run: |
-        melos analyze &&
-        melos run unused:files &&
-        melos run unused:code &&
-        melos run unnecessary:nullable &&
-        melos run format:check &&
-        melos run test:ci
+      steps:
+        - melos analyze
+        - melos run unused:files
+        - melos run unused:code
+        - melos run unnecessary:nullable
+        - melos run format:check
+        - melos run test:ci
       description: Validation pipeline with coverage (CI mode)
 
     validate:quick:
-      run: |
-        dart analyze --fatal-infos --fatal-warnings &&
-        dart format --line-length 80 -o none --set-exit-if-changed .
+      steps:
+        - dart analyze --fatal-infos --fatal-warnings
+        - dart format --line-length 80 -o none --set-exit-if-changed .
       description: Quick validation for development (analyze + format)
 
     # Development Scripts
