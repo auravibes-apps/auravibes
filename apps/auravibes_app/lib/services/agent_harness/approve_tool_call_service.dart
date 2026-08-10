@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
@@ -29,6 +30,8 @@ class AppApproveToolCallDataProvider
     this.resolveToolApprovalDecisionUsecase,
     this.conversationToolsRepositoryForWorkspace,
     this.resolveToolApprovalDecisionUsecaseForWorkspace,
+    this.loadConversationToolSpecsUsecase,
+    this.loadConversationToolSpecsUsecaseForWorkspace,
     required this.toolResolverService,
     required this.agentToolResumeService,
     required this.runResolvedToolUsecase,
@@ -43,6 +46,11 @@ class AppApproveToolCallDataProvider
          resolveToolApprovalDecisionUsecase != null ||
              resolveToolApprovalDecisionUsecaseForWorkspace != null,
          'A tool approval usecase is required.',
+       ),
+       assert(
+         loadConversationToolSpecsUsecase != null ||
+             loadConversationToolSpecsUsecaseForWorkspace != null,
+         'A conversation tool specs usecase is required.',
        );
 
   final MessageRepository messageRepository;
@@ -53,6 +61,9 @@ class AppApproveToolCallDataProvider
   conversationToolsRepositoryForWorkspace;
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionUsecaseForWorkspace;
+  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase;
+  final LoadConversationToolSpecsUsecase Function(String workspaceId)?
+  loadConversationToolSpecsUsecaseForWorkspace;
   final ToolResolverService toolResolverService;
   final AgentToolResumeService agentToolResumeService;
   final ResolvedToolService runResolvedToolUsecase;
@@ -80,8 +91,33 @@ class AppApproveToolCallDataProvider
   }
 
   @override
-  ResolvedTool? resolveTool(String toolName) {
-    return toolResolverService.resolveTool(toolName);
+  Future<ResolvedTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async {
+    final conversation = await conversationRepository.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      return toolResolverService.resolveTool(
+        toolName,
+        agent.buildToolCatalog<ResolvedTool>([]),
+      );
+    }
+    final loadToolSpecs =
+        loadConversationToolSpecsUsecaseForWorkspace?.call(
+          conversation.workspaceId,
+        ) ??
+        loadConversationToolSpecsUsecase;
+    if (loadToolSpecs == null) {
+      throw StateError('Conversation tool specs usecase is unavailable.');
+    }
+    final catalog = await loadToolSpecs.buildCatalog(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+    );
+
+    return toolResolverService.resolveTool(toolName, catalog);
   }
 
   @override

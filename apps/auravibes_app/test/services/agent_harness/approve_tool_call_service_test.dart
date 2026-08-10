@@ -23,12 +23,14 @@ void main() {
     var conversationRepository = MockConversationRepository();
     var conversationToolsRepository = MockConversationToolsRepository();
     var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var loadToolSpecs = MockLoadConversationToolSpecsUsecase();
     var agentToolResumeService = MockAgentToolResumeService();
     var provider = AppApproveToolCallDataProvider(
       messageRepository: messageRepository,
       conversationRepository: conversationRepository,
       conversationToolsRepository: conversationToolsRepository,
       resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+      loadConversationToolSpecsUsecase: loadToolSpecs,
       toolResolverService: const ToolResolverService(),
       agentToolResumeService: agentToolResumeService,
       runResolvedToolUsecase: ResolvedToolService(
@@ -52,6 +54,14 @@ void main() {
       tableId: 'calculator',
       toolIdentifier: 'calculator',
       tooltype: UserToolType.calculator,
+    );
+    final conversation = ConversationEntity(
+      id: conversationId,
+      title: 'Conversation',
+      workspaceId: workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
     );
     final message = MessageEntity(
       id: messageId,
@@ -78,12 +88,14 @@ void main() {
       conversationRepository = MockConversationRepository();
       conversationToolsRepository = MockConversationToolsRepository();
       resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+      loadToolSpecs = MockLoadConversationToolSpecsUsecase();
       agentToolResumeService = MockAgentToolResumeService();
       provider = AppApproveToolCallDataProvider(
         messageRepository: messageRepository,
         conversationRepository: conversationRepository,
         conversationToolsRepository: conversationToolsRepository,
         resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+        loadConversationToolSpecsUsecase: loadToolSpecs,
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: ResolvedToolService(
@@ -113,6 +125,64 @@ void main() {
       expect(result?.conversationId, conversationId);
       expect(result?.name, 'calculator');
       expect(result?.argumentsRaw, '{"input":"1+1"}');
+    });
+
+    test('resolves approval through catalog model name', () async {
+      final target = ResolvedTool.mcp(
+        tableId: 'github-row',
+        toolIdentifier: 'search',
+        mcpServerId: 'github-server',
+        mcpSlug: 'github',
+      );
+      final catalog = agent.buildToolCatalog<ResolvedTool>([
+        agent.ToolCatalogCandidate.external(
+          spec: agent.ToolSpec(
+            name: 'search',
+            description: '',
+            inputJsonSchema: {},
+          ),
+          target: target,
+          sourceId: 'github-server',
+        ),
+      ]);
+      final generatedName = catalog.specs.single.name;
+      final generatedMessage = message.copyWith(
+        metadata: MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: generatedName,
+              argumentsRaw: '{}',
+            ),
+          ],
+        ),
+      );
+      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
+        (_) async => generatedMessage,
+      );
+      when(
+        () => conversationRepository.getConversationById(conversationId),
+      ).thenAnswer((_) async => conversation);
+      when(
+        () => loadToolSpecs.buildCatalog(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        ),
+      ).thenAnswer((_) async => catalog);
+
+      final loaded = await provider.loadToolCall(
+        messageId: messageId,
+        toolCallId: 'tool-1',
+      );
+
+      expect(loaded?.name, generatedName);
+      expect(
+        (await provider.resolveTool(
+          conversationId: conversationId,
+          toolName: generatedName,
+        ))?.mcpServerId,
+        'github-server',
+      );
     });
 
     test('returns null when message or tool call is missing', () async {

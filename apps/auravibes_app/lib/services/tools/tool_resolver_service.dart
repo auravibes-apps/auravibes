@@ -11,7 +11,14 @@ class ToolResolverService {
 
   final AgentToolNameResolver _resolver;
 
-  ResolvedTool? resolveTool(String compositeToolName) {
+  ResolvedTool? resolveTool(
+    String modelToolName,
+    ToolCatalog<ResolvedTool> catalog,
+  ) {
+    return catalog.resolve(modelToolName) ?? _resolveLegacyName(modelToolName);
+  }
+
+  ResolvedTool? _resolveLegacyName(String compositeToolName) {
     if (compositeToolName == listAgentsToolName) {
       return ResolvedTool.skillNative(
         tableId: compositeToolName,

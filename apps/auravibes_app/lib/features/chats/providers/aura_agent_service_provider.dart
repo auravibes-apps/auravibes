@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_send_queue_r
 import 'package:auravibes_app/features/chats/providers/conversation_streaming_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_execution_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
@@ -44,6 +45,9 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
             ref.read(
               resolveToolApprovalDecisionUsecaseProvider(workspaceId),
             ),
+        loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) => ref.read(
+          loadConversationToolSpecsUsecaseProvider(workspaceId),
+        ),
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),

@@ -159,7 +159,10 @@ class _FakeToolProvider
   }
 
   @override
-  String? resolveTool(String toolName) => 'tool';
+  Future<String?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async => 'tool';
 
   Future<AgentToolApprovalDecision> resolveToolApprovalDecision({
     required String conversationId,

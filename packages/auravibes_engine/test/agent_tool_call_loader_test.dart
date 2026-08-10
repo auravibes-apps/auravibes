@@ -111,7 +111,12 @@ class _FakeAgentToolCallProvider implements AgentToolCallProvider<String> {
   }
 
   @override
-  String? resolveTool(String toolName) {
-    return toolName == 'known_tool' ? 'resolved' : null;
+  Future<String?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async {
+    return conversationId == 'conversation-1' && toolName == 'known_tool'
+        ? 'resolved'
+        : null;
   }
 }

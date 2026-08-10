@@ -17,6 +17,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/conversation_busy_state.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
@@ -589,11 +590,17 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
   final decisionUsecase = ref.watch(
     resolveToolApprovalDecisionUsecaseProvider(resolvedWorkspaceId),
   );
+  final catalog = await ref
+      .watch(loadConversationToolSpecsUsecaseProvider(resolvedWorkspaceId))
+      .buildCatalog(
+        conversationId: conversationId,
+        workspaceId: resolvedWorkspaceId,
+      );
   const resolver = ToolResolverService();
 
   final entries = await Future.wait(
     pendingCalls.map((toolCall) async {
-      final resolvedTool = resolver.resolveTool(toolCall.name);
+      final resolvedTool = resolver.resolveTool(toolCall.name, catalog);
       if (resolvedTool == null) {
         return (toolCall: toolCall, needsConfirmation: true);
       }

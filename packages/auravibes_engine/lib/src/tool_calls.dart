@@ -85,7 +85,10 @@ class LoadLatestMessageToolCallsResult<TTool extends Object> {
 abstract interface class AgentToolCallProvider<TTool extends Object> {
   Future<List<AgentToolMessage>> loadMessages(String conversationId);
 
-  TTool? resolveTool(String toolName);
+  Future<TTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  });
 }
 
 class AgentToolCallLoader<TTool extends Object> {
@@ -130,7 +133,10 @@ class AgentToolCallLoader<TTool extends Object> {
         continue;
       }
 
-      final resolvedTool = provider.resolveTool(toolCall.name);
+      final resolvedTool = await provider.resolveTool(
+        conversationId: conversationId,
+        toolName: toolCall.name,
+      );
       if (resolvedTool == null) {
         notFoundToolCallIds.add(toolCall.id);
         continue;
