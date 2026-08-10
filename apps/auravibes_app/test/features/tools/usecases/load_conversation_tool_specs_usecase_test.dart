@@ -281,14 +281,20 @@ void main() {
           mcpServerId: 'linear-server',
           mcpSlug: 'linear',
         );
-        final loadedSkillSpecs = _FakeBuildSkillTemplateToolSpecsUsecase()
-          ..result = [
-            ToolSpec(
-              name: 'skill__user__github__create_issue',
+        final loadedGithub = SkillManifest(
+          slug: 'github',
+          title: 'GitHub',
+          instructions: 'Manage GitHub issues.',
+          revision: 'github-revision',
+          tools: [
+            SkillManifestTool(
+              name: 'create_issue',
               description: 'Create a GitHub issue.',
               inputJsonSchema: const {'type': 'object'},
             ),
-          ];
+          ],
+        );
+        final dynamicSkillSpecs = buildSkillCommandToolSpecs();
         final usecase = LoadConversationToolSpecsUsecase(
           conversationToolsRepository: _FakeConversationToolsRepository([]),
           buildCombinedToolSpecsUseCase:
@@ -307,12 +313,9 @@ void main() {
                 ),
               ]),
           buildDynamicSkillToolSpecsUsecase:
-              _FakeBuildDynamicSkillToolSpecsUsecase(
-                buildSkillCommandToolSpecs(),
-              ),
+              _FakeBuildDynamicSkillToolSpecsUsecase(dynamicSkillSpecs),
           syncSkillToolPermissionsUsecase:
               NoopSyncSkillToolPermissionsUsecase(),
-          buildSkillTemplateToolSpecsUsecase: loadedSkillSpecs,
         );
 
         final catalog = await usecase.buildCatalog(
@@ -341,24 +344,50 @@ void main() {
         );
         expect(names, containsAll(externalTargets.keys));
         expect(names.toSet(), hasLength(catalog.specs.length));
+        final providerToolName = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+        for (final name in names) {
+          expect(providerToolName.hasMatch(name), isTrue, reason: name);
+          expect(name.length, lessThanOrEqualTo(64), reason: name);
+        }
         for (final entry in externalTargets.entries) {
           expect(catalog.resolve(entry.key), same(entry.value));
         }
+
+        final callSkillSpec = catalog.specs.singleWhere(
+          (spec) => spec.name == callSkillToolName,
+        );
         expect(
-          catalog.specs
-              .singleWhere((spec) => spec.name == callSkillToolName)
-              .inputJsonSchema,
-          buildSkillCommandToolSpecs()
+          callSkillSpec.inputJsonSchema,
+          dynamicSkillSpecs
               .singleWhere((spec) => spec.name == callSkillToolName)
               .inputJsonSchema,
         );
-        expect(names, isNot(contains(loadedSkillSpecs.result.single.name)));
-        final skillCall = SkillCommandTarget.fromArguments(const {
+        const githubCreateIssueArgs = <String, Object?>{
           'skill': 'github',
           'tool': 'create_issue',
           'args': <String, Object?>{},
           'revision': 'github-revision',
-        });
+        };
+        expect(
+          () => validateToolArguments(
+            callSkillSpec.inputJsonSchema,
+            githubCreateIssueArgs,
+          ),
+          returnsNormally,
+        );
+        expect(githubCreateIssueArgs['skill'], loadedGithub.slug);
+        expect(
+          githubCreateIssueArgs['tool'],
+          loadedGithub.tools.single.name,
+        );
+        expect(
+          githubCreateIssueArgs['revision'],
+          loadedGithub.revision,
+        );
+        expect(names.any((name) => name.startsWith('skill__')), isFalse);
+        final skillCall = SkillCommandTarget.fromArguments(
+          githubCreateIssueArgs,
+        );
         expect(
           (skill: skillCall.skill, tool: skillCall.tool),
           (skill: 'github', tool: 'create_issue'),
