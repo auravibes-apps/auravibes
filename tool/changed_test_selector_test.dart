@@ -17,7 +17,57 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
-  test('global change returns full', () {
+  test('non-Dart non-global diff returns none', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.pi/pi-lsp.json'),
+        const ChangedFile.modified('.pi/settings.json'),
+        const ChangedFile.modified('sonar-project.properties'),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.none);
+    expect(result.packages, isEmpty);
+  });
+
+  test('non-scoped changes do not force full beside package Dart', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.pi/new-config.json'),
+        const ChangedFile.modified('sonar-project.properties'),
+        const ChangedFile.modified('packages/core/lib/leaf.dart'),
+      ],
+      headSources: _sources,
+      baseSources: _sources,
+      packageRoots: _roots,
+    );
+
+    expect(result.mode, SelectionMode.affected);
+    expect(result.packages['packages/core'], [
+      'test/behavior_test.dart',
+      'test/transitive_behavior_test.dart',
+    ]);
+  });
+
+  test('global change remains full beside non-scoped paths', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.github/workflows/ci.yml'),
+        const ChangedFile.modified('.pi/pi-lsp.json'),
+        const ChangedFile.modified('sonar-project.properties'),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
+  test('package runtime config change returns full', () {
     final result = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/pubspec.yaml')],
       headSources: {},
