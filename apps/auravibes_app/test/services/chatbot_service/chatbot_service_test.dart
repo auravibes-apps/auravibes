@@ -127,78 +127,90 @@ void main() {
       expect(capturedRequest?.messages[2].text, 'model part');
     });
 
-    test('encodes unsafe tool refs before sending provider messages', () async {
-      genkit.ModelRequest? capturedRequest;
-      final providerFactory = _FakeProviderFactory(
-        onRequest: (request) => capturedRequest = request,
-      );
-      final service = _createService(providerFactory: providerFactory);
+    test(
+      'preserves native refs and bounds unsafe refs before provider replay',
+      () async {
+        const nativeId = '019fe8fe-bea6-739f-b5d7-79077b42c3d1';
+        genkit.ModelRequest? capturedRequest;
+        final providerFactory = _FakeProviderFactory(
+          onRequest: (request) => capturedRequest = request,
+        );
+        final service = _createService(providerFactory: providerFactory);
 
-      final _ = await service.sendMessage(
-        _makeConfig(type: ModelProvidersType.anthropic),
-        [
-          ChatMessage(
-            role: ChatMessageRole.tool,
-            parts: [
-              genkit.ToolResponsePart(
-                toolResponse: genkit.ToolResponse(
-                  ref: 'skill_context:example',
-                  name: 'skill_context',
-                  output: '<skill />',
+        final _ = await service.sendMessage(
+          _makeConfig(type: ModelProvidersType.anthropic),
+          [
+            ChatMessage(
+              role: ChatMessageRole.tool,
+              parts: [
+                genkit.ToolResponsePart(
+                  toolResponse: genkit.ToolResponse(
+                    ref: 'skill_context:example',
+                    name: 'skill_context',
+                    output: '<skill />',
+                  ),
                 ),
-              ),
-            ],
-          ),
-          ChatMessage.model(
-            '',
-            parts: [
-              genkit.ToolRequestPart(
-                toolRequest: genkit.ToolRequest(
-                  ref: 'tool:1',
-                  name: 'lookup_weather',
-                  input: const {'city': 'Medellin'},
+              ],
+            ),
+            ChatMessage.model(
+              '',
+              parts: [
+                genkit.ToolRequestPart(
+                  toolRequest: genkit.ToolRequest(
+                    ref: nativeId,
+                    name: 'lookup_weather',
+                    input: const {'city': 'Medellin'},
+                  ),
                 ),
-              ),
-            ],
-          ),
-          ChatMessage(
-            role: ChatMessageRole.tool,
-            parts: [
-              genkit.ToolResponsePart(
-                toolResponse: genkit.ToolResponse(
-                  ref: 'tool:1',
-                  name: 'lookup_weather',
-                  output: 'sunny',
+              ],
+            ),
+            ChatMessage(
+              role: ChatMessageRole.tool,
+              parts: [
+                genkit.ToolResponsePart(
+                  toolResponse: genkit.ToolResponse(
+                    ref: nativeId,
+                    name: 'lookup_weather',
+                    output: 'sunny',
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ).toList();
+              ],
+            ),
+          ],
+        ).toList();
 
-      final skillContextResult =
-          capturedRequest?.messages.firstOrNull?.content.single
-                  .toJson()['toolResponse']
-              as Map<String, Object?>?;
-      final replayedRequest =
-          capturedRequest?.messages[1].content.single.toJson()['toolRequest']
-              as Map<String, Object?>?;
-      final replayedResult =
-          capturedRequest?.messages[2].content.single.toJson()['toolResponse']
-              as Map<String, Object?>?;
-      final refs = [
-        skillContextResult?['ref'],
-        replayedRequest?['ref'],
-        replayedResult?['ref'],
-      ];
+        final skillContextResult =
+            capturedRequest?.messages.firstOrNull?.content.single
+                    .toJson()['toolResponse']
+                as Map<String, Object?>?;
+        final replayedRequest =
+            capturedRequest?.messages[1].content.single.toJson()['toolRequest']
+                as Map<String, Object?>?;
+        final replayedResult =
+            capturedRequest?.messages[2].content.single.toJson()['toolResponse']
+                as Map<String, Object?>?;
+        final refs = [
+          skillContextResult?['ref'],
+          replayedRequest?['ref'],
+          replayedResult?['ref'],
+        ];
 
-      expect(refs, [
-        'tool_73_6b_69_6c_6c_5f_63_6f_6e_74_65_78_74_3a_65_78_61_6d_70_6c_65',
-        'tool_74_6f_6f_6c_3a_31',
-        'tool_74_6f_6f_6c_3a_31',
-      ]);
-      expect(refs, everyElement(matches(RegExp(r'^[a-zA-Z0-9_-]+$'))));
-    });
+        expect(
+          skillContextResult?['ref'],
+          providerSafeToolCallId('skill_context:example'),
+        );
+        expect(replayedRequest?['ref'], nativeId);
+        expect(replayedResult?['ref'], nativeId);
+        expect(
+          refs,
+          everyElement(matches(RegExp(r'^[A-Za-z0-9_-]{1,64}$'))),
+        );
+        expect(
+          refs.cast<String>().map((ref) => ref.length),
+          everyElement(lessThanOrEqualTo(64)),
+        );
+      },
+    );
 
     test(
       'passes thinking config for reasoning-capable anthropic chats',
