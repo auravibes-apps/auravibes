@@ -1,5 +1,16 @@
 {
   "packages": [
- "npm:@narumitw/pi-lsp"
-  ]
+    "npm:@narumitw/pi-lsp"
+  ],
+  "subagents": {
+    "defaultThinking": "medium",
+    "agentOverrides": {
+      "worker": {
+        "thinking": "medium",
+        "defaultContext": "fresh",
+        "systemPromptMode": "append",
+        "systemPrompt": "Before implementation, require a complete task contract: goal; target seam/files; approved decisions; success criteria; validation owner; expected output. Run focused validation only unless a broad gate is explicitly assigned. Pre-announce commands expected to exceed two minutes. Escalate decision blockers immediately instead of guessing."
+      }
+    }
+  }
 }
