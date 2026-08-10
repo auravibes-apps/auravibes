@@ -1,3 +1,4 @@
+import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/skills/usecases/build_app_skill_native_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
@@ -49,6 +50,88 @@ void main() {
     expect(templateRunner.calls, 0);
     expect(nativeRunner.calls, 0);
   });
+
+  test(
+    'dispatches loaded github create_issue through call_skill_tool',
+    () async {
+      const issueSchema = <String, Object?>{
+        'type': 'object',
+        'properties': {
+          'title': {'type': 'string'},
+        },
+        'required': ['title'],
+        'additionalProperties': false,
+      };
+      final loadedSkills = _LoadedSkills();
+      final templateSpecs = _SkillSpecs([
+        ToolSpec(
+          name: 'skill__user__github__create_issue',
+          description: 'Create a GitHub issue.',
+          inputJsonSchema: issueSchema,
+        ),
+      ]);
+      final nativeSpecs = _SkillSpecs([]);
+      final manifests = BuildLoadedSkillManifestsUsecase(
+        (_) => loadedSkills,
+        templateSpecs,
+        nativeSpecs,
+      );
+      final loadedManifest = (await manifests.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      )).single;
+      final templateRunner = _TemplateRunner(
+        result: const {'issueNumber': 42},
+      );
+      final nativeRunner = _NativeRunner();
+      final usecase = RunSkillCommandUsecase(
+        listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
+        loadConversationSkillUsecase: (_) => _UnusedLoad(),
+        unloadConversationSkillUsecase: (_) => _UnusedUnload(),
+        buildLoadedSkillManifestsUsecase: manifests,
+        buildSkillTemplateToolSpecsUsecase: templateSpecs,
+        buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
+        runSkillTemplateToolUsecase: templateRunner,
+        runAppSkillToolUsecase: nativeRunner,
+        listSkillCredentials:
+            ({
+              required conversationId,
+              required workspaceId,
+              required arguments,
+            }) async => const {},
+      );
+
+      final result = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        commandName: callSkillToolName,
+        arguments: {
+          'skill': 'github',
+          'tool': 'create_issue',
+          'args': {'title': 'Collision regression'},
+          'revision': loadedManifest.revision,
+        },
+      );
+
+      expect(result, {
+        'result': {'issueNumber': 42},
+      });
+      expect(loadedManifest.slug, 'github');
+      expect(loadedManifest.tools.single.name, 'create_issue');
+      expect(loadedSkills.calls, 2);
+      expect(loadedSkills.lastConversationId, 'conversation-1');
+      expect(loadedSkills.lastWorkspaceId, 'workspace-1');
+      expect(loadedSkills.filters, everyElement(SkillLoadFilter.loaded));
+      expect(templateRunner.calls, 1);
+      expect(templateRunner.lastWorkspaceId, 'workspace-1');
+      expect(templateRunner.lastSkillSlug, 'github');
+      expect(templateRunner.lastToolSlug, 'create_issue');
+      expect(templateRunner.lastArguments, {
+        'title': 'Collision regression',
+      });
+      expect(nativeRunner.calls, 0);
+    },
+  );
 }
 
 class _Manifests implements BuildLoadedSkillManifestsUsecase {
@@ -81,8 +164,49 @@ class _Manifests implements BuildLoadedSkillManifestsUsecase {
   ];
 }
 
-class _TemplateRunner implements RunSkillTemplateToolUsecase {
+class _LoadedSkills implements ListAvailableSkillsUsecase {
   int calls = 0;
+  String? lastConversationId;
+  String? lastWorkspaceId;
+  final filters = <SkillLoadFilter>[];
+
+  @override
+  Future<List<AvailableSkill>> call({
+    required String conversationId,
+    required String workspaceId,
+    required SkillLoadFilter filter,
+  }) async {
+    calls++;
+    lastConversationId = conversationId;
+    lastWorkspaceId = workspaceId;
+    filters.add(filter);
+
+    return const [
+      AvailableSkill(
+        id: 'github-skill-row',
+        slug: 'github',
+        title: 'GitHub',
+        description: 'Manage GitHub issues.',
+        content: 'Create issues when requested.',
+        source: SkillSource.user,
+        kind: SkillKind.template,
+      ),
+    ];
+  }
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _TemplateRunner implements RunSkillTemplateToolUsecase {
+  _TemplateRunner({this.result});
+
+  final Object? result;
+  int calls = 0;
+  String? lastWorkspaceId;
+  String? lastSkillSlug;
+  String? lastToolSlug;
+  Map<String, dynamic>? lastArguments;
 
   @override
   Future<Object?> call({
@@ -92,8 +216,12 @@ class _TemplateRunner implements RunSkillTemplateToolUsecase {
     required Map<String, dynamic> arguments,
   }) async {
     calls++;
+    lastWorkspaceId = workspaceId;
+    lastSkillSlug = skillSlug;
+    lastToolSlug = toolSlug;
+    lastArguments = arguments;
 
-    return null;
+    return result;
   }
 }
 
@@ -129,6 +257,22 @@ class _UnusedLoad implements LoadConversationSkillUsecase {
 class _UnusedUnload implements UnloadConversationSkillUsecase {
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+class _SkillSpecs
+    implements
+        BuildSkillTemplateToolSpecsUsecase,
+        BuildAppSkillNativeToolSpecsUsecase {
+  const _SkillSpecs(this.specs);
+
+  final List<ToolSpec> specs;
+
+  @override
+  Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+    List<AvailableSkill> extraSkills = const [],
+  }) async => specs;
 }
 
 class _UnusedTemplateSpecs implements BuildSkillTemplateToolSpecsUsecase {
