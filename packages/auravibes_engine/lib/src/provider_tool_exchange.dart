@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/chat_result.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
+import 'package:crypto/crypto.dart';
 
 class CompletionRequest {
   const CompletionRequest({
@@ -60,11 +61,15 @@ class ProviderToolCallRecord {
   final Map<String, Object?> arguments;
 }
 
+final _providerToolCallIdPattern = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
+
 String providerSafeToolCallId(String? value) {
   final raw = value ?? '';
-  if (raw.isEmpty) return 'tool_empty';
-  final encoded = raw.codeUnits.map((unit) => unit.toRadixString(16)).join('_');
-  return 'tool_$encoded';
+  if (_providerToolCallIdPattern.hasMatch(raw)) return raw;
+
+  final digest = sha256.convert(utf8.encode(raw)).bytes.take(16).toList();
+  final alias = base64Url.encode(digest).replaceAll('=', '');
+  return 'tool_$alias';
 }
 
 List<Map<String, Object?>> providerToolExchangeMessages(
