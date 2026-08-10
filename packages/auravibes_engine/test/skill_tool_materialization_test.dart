@@ -2,7 +2,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('adds credential options and keeps first duplicate tool', () {
+  test('adds credential options and rejects duplicate tools', () {
     final schema = materializeSkillToolSchema(
       {'type': 'object', 'properties': {}},
       requiresCredential: true,
@@ -12,7 +12,10 @@ void main() {
     expect(schema['required']! as List, contains('credentialId'));
     final first = ToolSpec(name: 'x', description: 'one', inputJsonSchema: {});
     final second = ToolSpec(name: 'x', description: 'two', inputJsonSchema: {});
-    expect(uniqueToolSpecs([first, second]).single.description, 'one');
+    expect(
+      () => uniqueToolSpecs([first, second]),
+      throwsStateError,
+    );
   });
 
   test('keeps optional template inputs out of required fields', () {

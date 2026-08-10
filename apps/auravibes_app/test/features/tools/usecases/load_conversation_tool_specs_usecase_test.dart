@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/skills/usecases/list_app_skill_credential
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -35,16 +36,27 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
 }
 
 class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
-  _FakeBuildCombinedToolSpecsUseCase(this._result)
+  _FakeBuildCombinedToolSpecsUseCase(List<ToolSpec> specs)
+    : this.candidates([
+        for (final spec in specs)
+          ToolCatalogCandidate.reserved(
+            spec: spec,
+            target: ResolvedTool.skillControl(toolIdentifier: spec.name),
+          ),
+      ]);
+
+  _FakeBuildCombinedToolSpecsUseCase.candidates(this._result)
     : super(
         getToolsGroupById: (_) async => null,
         getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
       );
-  final List<ToolSpec> _result;
+
+  final List<ToolCatalogCandidate<ResolvedTool>> _result;
 
   @override
-  Future<List<ToolSpec>> call(List<WorkspaceToolEntity> enabledTools) async =>
-      _result;
+  Future<List<ToolCatalogCandidate<ResolvedTool>>> call(
+    List<WorkspaceToolEntity> enabledTools,
+  ) async => _result;
 }
 
 class _FakeBuildDynamicSkillToolSpecsUsecase
@@ -227,6 +239,81 @@ void main() {
       );
       expect(result, hasLength(2));
       expect(result.firstOrNull?.name, 'tool-1');
+    });
+
+    test('builds one catalog without silently deduplicating tools', () async {
+      final firstTarget = ResolvedTool.skillControl(
+        toolIdentifier: 'calculator-1',
+      );
+      final secondTarget = ResolvedTool.skillControl(
+        toolIdentifier: 'calculator-2',
+      );
+      final usecase = LoadConversationToolSpecsUsecase(
+        conversationToolsRepository: _FakeConversationToolsRepository([]),
+        buildCombinedToolSpecsUseCase:
+            _FakeBuildCombinedToolSpecsUseCase.candidates([
+              ToolCatalogCandidate.external(
+                spec: ToolSpec(
+                  name: 'calculator',
+                  description: 'first calculator',
+                  inputJsonSchema: const {},
+                ),
+                target: firstTarget,
+                sourceId: 'calculator-1',
+              ),
+              ToolCatalogCandidate.external(
+                spec: ToolSpec(
+                  name: 'calculator',
+                  description: 'second calculator',
+                  inputJsonSchema: const {},
+                ),
+                target: secondTarget,
+                sourceId: 'calculator-2',
+              ),
+            ]),
+        buildDynamicSkillToolSpecsUsecase:
+            _FakeBuildDynamicSkillToolSpecsUsecase(
+              buildSkillCommandToolSpecs(),
+            ),
+        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
+      );
+
+      final catalog = await usecase.buildCatalog(
+        conversationId: 'conv-1',
+        workspaceId: 'ws-1',
+      );
+      final names = catalog.specs.map((spec) => spec.name);
+      final calculatorNames = names
+          .where((name) => name.startsWith('calculator_'))
+          .toList();
+
+      expect(names, contains(callSkillToolName));
+      expect(names, contains(runSubAgentToolName));
+      expect(calculatorNames, hasLength(2));
+      expect(names.toSet(), hasLength(catalog.specs.length));
+      expect(catalog.resolve(calculatorNames[0]), same(firstTarget));
+      expect(catalog.resolve(calculatorNames[1]), same(secondTarget));
+      expect(
+        catalog.specs
+            .singleWhere((spec) => spec.name == callSkillToolName)
+            .inputJsonSchema,
+        buildSkillCommandToolSpecs()
+            .singleWhere((spec) => spec.name == callSkillToolName)
+            .inputJsonSchema,
+      );
+      expect(
+        names.where(skillCommandToolNames.contains).toSet(),
+        skillCommandToolNames,
+      );
+      for (final name in skillCommandToolNames) {
+        final target = catalog.resolve(name);
+        expect(target?.isSkillCommand, isTrue);
+        expect(target?.toolIdentifier, name);
+      }
+      final subAgentTarget = catalog.resolve(runSubAgentToolName);
+      expect(subAgentTarget?.isSkillNative, isTrue);
+      expect(subAgentTarget?.skillSlug, agentsSkillSlug);
+      expect(subAgentTarget?.toolIdentifier, runSubAgentToolName);
     });
 
     test('passes correct conversationId and workspaceId', () async {
@@ -513,8 +600,13 @@ class _CapturingBuildCombined extends BuildCombinedToolSpecsUseCase {
         getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
       );
 
-  final Future<List<ToolSpec>> Function(List<WorkspaceToolEntity>) onCall;
+  final Future<List<ToolCatalogCandidate<ResolvedTool>>> Function(
+    List<WorkspaceToolEntity>,
+  )
+  onCall;
 
   @override
-  Future<List<ToolSpec>> call(List<WorkspaceToolEntity> tools) => onCall(tools);
+  Future<List<ToolCatalogCandidate<ResolvedTool>>> call(
+    List<WorkspaceToolEntity> tools,
+  ) => onCall(tools);
 }

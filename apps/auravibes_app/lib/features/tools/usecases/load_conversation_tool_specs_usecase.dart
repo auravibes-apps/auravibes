@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.d
 import 'package:auravibes_app/features/tools/notifiers/grouped_tools_notifier.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_tool_spec_lookup.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:riverpod/src/providers/provider.dart';
@@ -32,7 +33,16 @@ class LoadConversationToolSpecsUsecase {
   final BuildCombinedToolSpecsUseCase _buildCombinedToolSpecsUseCase;
   final BuildDynamicSkillToolSpecsUsecase _buildDynamicSkillToolSpecsUsecase;
   final SyncSkillToolPermissionsUsecase _syncSkillToolPermissionsUsecase;
+
   Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async => (await buildCatalog(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+  )).specs;
+
+  Future<agent.ToolCatalog<ResolvedTool>> buildCatalog({
     required String conversationId,
     required String workspaceId,
   }) async {
@@ -45,16 +55,29 @@ class LoadConversationToolSpecsUsecase {
           conversationId,
           workspaceId,
         );
-    final toolSpecs = await _buildCombinedToolSpecsUseCase.call(enabledTools);
-    final skillToolSpecs = await _buildDynamicSkillToolSpecsUsecase.call(
+    final toolCandidates = await _buildCombinedToolSpecsUseCase.call(
+      enabledTools,
+    );
+    final skillCommandSpecs = await _buildDynamicSkillToolSpecsUsecase.call(
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
 
-    return agent.uniqueToolSpecs([
-      ...toolSpecs,
-      ...skillToolSpecs,
-      agent.runSubAgentToolSpec,
+    return agent.buildToolCatalog([
+      ...toolCandidates,
+      for (final spec in skillCommandSpecs)
+        agent.ToolCatalogCandidate.reserved(
+          spec: spec,
+          target: ResolvedTool.skillCommand(commandName: spec.name),
+        ),
+      agent.ToolCatalogCandidate.reserved(
+        spec: agent.runSubAgentToolSpec,
+        target: ResolvedTool.skillNative(
+          tableId: agent.runSubAgentToolName,
+          skillSlug: agent.agentsSkillSlug,
+          toolIdentifier: agent.runSubAgentToolName,
+        ),
+      ),
     ]);
   }
 }
