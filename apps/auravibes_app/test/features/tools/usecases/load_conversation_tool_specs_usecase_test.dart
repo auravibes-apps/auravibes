@@ -15,6 +15,7 @@ import 'package:auravibes_app/features/skills/usecases/list_available_skills_use
 import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -241,80 +242,142 @@ void main() {
       expect(result.firstOrNull?.name, 'tool-1');
     });
 
-    test('builds one catalog without silently deduplicating tools', () async {
-      final firstTarget = ResolvedTool.skillControl(
-        toolIdentifier: 'calculator-1',
-      );
-      final secondTarget = ResolvedTool.skillControl(
-        toolIdentifier: 'calculator-2',
-      );
-      final usecase = LoadConversationToolSpecsUsecase(
-        conversationToolsRepository: _FakeConversationToolsRepository([]),
-        buildCombinedToolSpecsUseCase:
-            _FakeBuildCombinedToolSpecsUseCase.candidates([
-              ToolCatalogCandidate.external(
-                spec: ToolSpec(
-                  name: 'calculator',
-                  description: 'first calculator',
-                  inputJsonSchema: const {},
-                ),
-                target: firstTarget,
-                sourceId: 'calculator-1',
-              ),
-              ToolCatalogCandidate.external(
-                spec: ToolSpec(
-                  name: 'calculator',
-                  description: 'second calculator',
-                  inputJsonSchema: const {},
-                ),
-                target: secondTarget,
-                sourceId: 'calculator-2',
-              ),
-            ]),
-        buildDynamicSkillToolSpecsUsecase:
-            _FakeBuildDynamicSkillToolSpecsUsecase(
-              buildSkillCommandToolSpecs(),
+    test(
+      'keeps colliding tools from every source exactly addressable',
+      () async {
+        ToolCatalogCandidate<ResolvedTool> external(
+          String name,
+          String sourceId,
+          ResolvedTool target,
+        ) => ToolCatalogCandidate.external(
+          spec: ToolSpec(
+            name: name,
+            description: name,
+            inputJsonSchema: const {},
+          ),
+          target: target,
+          sourceId: sourceId,
+        );
+
+        final calculatorA = ResolvedTool.builtIn(
+          tableId: 'calculator-row-a',
+          toolIdentifier: 'calculator',
+          tooltype: UserToolType.calculator,
+        );
+        final calculatorB = ResolvedTool.builtIn(
+          tableId: 'calculator-row-b',
+          toolIdentifier: 'calculator',
+          tooltype: UserToolType.calculator,
+        );
+        final githubSearch = ResolvedTool.mcp(
+          tableId: 'github-search-row',
+          toolIdentifier: 'search',
+          mcpServerId: 'github-server',
+          mcpSlug: 'github',
+        );
+        final linearSearch = ResolvedTool.mcp(
+          tableId: 'linear-search-row',
+          toolIdentifier: 'search',
+          mcpServerId: 'linear-server',
+          mcpSlug: 'linear',
+        );
+        final loadedSkillSpecs = _FakeBuildSkillTemplateToolSpecsUsecase()
+          ..result = [
+            ToolSpec(
+              name: 'skill__user__github__create_issue',
+              description: 'Create a GitHub issue.',
+              inputJsonSchema: const {'type': 'object'},
             ),
-        syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
-      );
+          ];
+        final usecase = LoadConversationToolSpecsUsecase(
+          conversationToolsRepository: _FakeConversationToolsRepository([]),
+          buildCombinedToolSpecsUseCase:
+              _FakeBuildCombinedToolSpecsUseCase.candidates([
+                external('calculator', 'user:calculator-row-a', calculatorA),
+                external('calculator', 'user:calculator-row-b', calculatorB),
+                external(
+                  'mcp_search',
+                  'mcp:github-server:github-search-row:search',
+                  githubSearch,
+                ),
+                external(
+                  'mcp_search',
+                  'mcp:linear-server:linear-search-row:search',
+                  linearSearch,
+                ),
+              ]),
+          buildDynamicSkillToolSpecsUsecase:
+              _FakeBuildDynamicSkillToolSpecsUsecase(
+                buildSkillCommandToolSpecs(),
+              ),
+          syncSkillToolPermissionsUsecase:
+              NoopSyncSkillToolPermissionsUsecase(),
+          buildSkillTemplateToolSpecsUsecase: loadedSkillSpecs,
+        );
 
-      final catalog = await usecase.buildCatalog(
-        conversationId: 'conv-1',
-        workspaceId: 'ws-1',
-      );
-      final names = catalog.specs.map((spec) => spec.name);
-      final calculatorNames = names
-          .where((name) => name.startsWith('calculator_'))
-          .toList();
+        final catalog = await usecase.buildCatalog(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+        );
+        final names = catalog.specs.map((spec) => spec.name).toList();
+        final externalTargets = {
+          'calculator_${stableToolNameSuffix('user:calculator-row-a')}':
+              calculatorA,
+          'calculator_${stableToolNameSuffix('user:calculator-row-b')}':
+              calculatorB,
+          'mcp_search_${stableToolNameSuffix(
+                'mcp:github-server:github-search-row:search',
+              )}':
+              githubSearch,
+          'mcp_search_${stableToolNameSuffix(
+                'mcp:linear-server:linear-search-row:search',
+              )}':
+              linearSearch,
+        };
 
-      expect(names, contains(callSkillToolName));
-      expect(names, contains(runSubAgentToolName));
-      expect(calculatorNames, hasLength(2));
-      expect(names.toSet(), hasLength(catalog.specs.length));
-      expect(catalog.resolve(calculatorNames[0]), same(firstTarget));
-      expect(catalog.resolve(calculatorNames[1]), same(secondTarget));
-      expect(
-        catalog.specs
-            .singleWhere((spec) => spec.name == callSkillToolName)
-            .inputJsonSchema,
-        buildSkillCommandToolSpecs()
-            .singleWhere((spec) => spec.name == callSkillToolName)
-            .inputJsonSchema,
-      );
-      expect(
-        names.where(skillCommandToolNames.contains).toSet(),
-        skillCommandToolNames,
-      );
-      for (final name in skillCommandToolNames) {
-        final target = catalog.resolve(name);
-        expect(target?.isSkillCommand, isTrue);
-        expect(target?.toolIdentifier, name);
-      }
-      final subAgentTarget = catalog.resolve(runSubAgentToolName);
-      expect(subAgentTarget?.isSkillNative, isTrue);
-      expect(subAgentTarget?.skillSlug, agentsSkillSlug);
-      expect(subAgentTarget?.toolIdentifier, runSubAgentToolName);
-    });
+        expect(
+          names,
+          containsAll({...skillCommandToolNames, runSubAgentToolName}),
+        );
+        expect(names, containsAll(externalTargets.keys));
+        expect(names.toSet(), hasLength(catalog.specs.length));
+        for (final entry in externalTargets.entries) {
+          expect(catalog.resolve(entry.key), same(entry.value));
+        }
+        expect(
+          catalog.specs
+              .singleWhere((spec) => spec.name == callSkillToolName)
+              .inputJsonSchema,
+          buildSkillCommandToolSpecs()
+              .singleWhere((spec) => spec.name == callSkillToolName)
+              .inputJsonSchema,
+        );
+        expect(names, isNot(contains(loadedSkillSpecs.result.single.name)));
+        final skillCall = SkillCommandTarget.fromArguments(const {
+          'skill': 'github',
+          'tool': 'create_issue',
+          'args': <String, Object?>{},
+          'revision': 'github-revision',
+        });
+        expect(
+          (skill: skillCall.skill, tool: skillCall.tool),
+          (skill: 'github', tool: 'create_issue'),
+        );
+        expect(
+          names.where(skillCommandToolNames.contains).toSet(),
+          skillCommandToolNames,
+        );
+        for (final name in skillCommandToolNames) {
+          final target = catalog.resolve(name);
+          expect(target?.isSkillCommand, isTrue);
+          expect(target?.toolIdentifier, name);
+        }
+        final subAgentTarget = catalog.resolve(runSubAgentToolName);
+        expect(subAgentTarget?.isSkillNative, isTrue);
+        expect(subAgentTarget?.skillSlug, agentsSkillSlug);
+        expect(subAgentTarget?.toolIdentifier, runSubAgentToolName);
+      },
+    );
 
     test('passes correct conversationId and workspaceId', () async {
       String? capturedConvId;
