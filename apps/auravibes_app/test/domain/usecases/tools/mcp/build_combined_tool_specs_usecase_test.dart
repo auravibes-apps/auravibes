@@ -105,6 +105,63 @@ void main() {
     expect(result.single.target.tableId, 't2');
   });
 
+  test(
+    'keeps grouped calculator and url as MCP alongside local tools',
+    () async {
+      final usecase = BuildCombinedToolSpecsUseCase(
+        getToolsGroupById: (groupId) async => ToolsGroupEntity(
+          id: groupId,
+          workspaceId: 'w1',
+          name: 'group',
+          isEnabled: true,
+          permissions: PermissionAccess.ask,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+          mcpServerId: 'mcp-1',
+        ),
+        getMcpToolSpec: ({required mcpServerId, required toolName}) => ToolSpec(
+          name: AgentResolvedToolName.mcp(
+            tableId: 'mcp-row',
+            toolIdentifier: toolName,
+            mcpServerId: mcpServerId,
+            mcpSlug: 'mcp-slug',
+          ).fullName,
+          description: toolName,
+          inputJsonSchema: const {},
+        ),
+      );
+
+      final result = await usecase.call([
+        _tool(id: 'local-calculator', toolId: 'calculator'),
+        _tool(id: 'mcp-calculator', toolId: 'calculator', groupId: 'g1'),
+        _tool(id: 'local-url', toolId: 'url'),
+        _tool(id: 'mcp-url', toolId: 'url', groupId: 'g1'),
+      ]);
+
+      expect(result, hasLength(4));
+      expect(result[0].target.isBuiltIn, isTrue);
+      expect(result[1].target.isMcp, isTrue);
+      expect(result[2].target.isNative, isTrue);
+      expect(result[3].target.isMcp, isTrue);
+      expect(
+        result
+            .where((candidate) => candidate.target.isMcp)
+            .map(
+              (candidate) => candidate.target.mcpServerId,
+            ),
+        ['mcp-1', 'mcp-1'],
+      );
+
+      final catalog = buildToolCatalog(result);
+      expect(catalog.specs.map((spec) => spec.name), [
+        'calculator_${stableToolNameSuffix('user:local-calculator')}',
+        'mcp_calculator_${stableToolNameSuffix('mcp:mcp-1:mcp-calculator:calculator')}',
+        'url',
+        'mcp_url_${stableToolNameSuffix('mcp:mcp-1:mcp-url:url')}',
+      ]);
+    },
+  );
+
   test('skips tool not belonging to a group', () async {
     final usecase = BuildCombinedToolSpecsUseCase(
       getToolsGroupById: (_) async => null,

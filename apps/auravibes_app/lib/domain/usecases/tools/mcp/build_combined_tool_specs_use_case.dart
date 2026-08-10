@@ -36,13 +36,14 @@ class BuildCombinedToolSpecsUseCase {
   Future<ToolCatalogCandidate<ResolvedTool>?> _buildCandidate(
     WorkspaceToolEntity workspaceTool,
   ) async {
+    if (workspaceTool.belongsToGroup) {
+      return _buildMcpCandidate(workspaceTool);
+    }
+
     final builtInCandidate = _buildBuiltInCandidate(workspaceTool);
     if (builtInCandidate != null) return builtInCandidate;
 
-    final nativeCandidate = _buildNativeCandidate(workspaceTool);
-    if (nativeCandidate != null) return nativeCandidate;
-
-    return _buildMcpCandidate(workspaceTool);
+    return _buildNativeCandidate(workspaceTool);
   }
 
   ToolCatalogCandidate<ResolvedTool>? _buildBuiltInCandidate(
