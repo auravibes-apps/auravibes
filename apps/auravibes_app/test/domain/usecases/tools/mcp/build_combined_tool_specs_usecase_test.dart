@@ -139,7 +139,7 @@ void main() {
       ]);
 
       expect(result, hasLength(4));
-      expect(result[0].target.isBuiltIn, isTrue);
+      expect(result.first.target.isBuiltIn, isTrue);
       expect(result[1].target.isMcp, isTrue);
       expect(result[2].target.isNative, isTrue);
       expect(result[3].target.isMcp, isTrue);
@@ -155,7 +155,9 @@ void main() {
       final catalog = buildToolCatalog(result);
       expect(catalog.specs.map((spec) => spec.name), [
         'calculator_${stableToolNameSuffix('user:local-calculator')}',
-        'mcp_calculator_${stableToolNameSuffix('mcp:mcp-1:mcp-calculator:calculator')}',
+        'mcp_calculator_${stableToolNameSuffix(
+          'mcp:mcp-1:mcp-calculator:calculator',
+        )}',
         'url',
         'mcp_url_${stableToolNameSuffix('mcp:mcp-1:mcp-url:url')}',
       ]);

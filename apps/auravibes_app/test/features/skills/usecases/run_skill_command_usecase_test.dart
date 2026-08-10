@@ -70,7 +70,7 @@ void main() {
           inputJsonSchema: issueSchema,
         ),
       ]);
-      final nativeSpecs = _SkillSpecs([]);
+      const nativeSpecs = _SkillSpecs([]);
       final manifests = BuildLoadedSkillManifestsUsecase(
         (_) => loadedSkills,
         templateSpecs,
@@ -201,7 +201,7 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
 class _TemplateRunner implements RunSkillTemplateToolUsecase {
   _TemplateRunner({this.result});
 
-  final Object? result;
+  final dynamic result;
   int calls = 0;
   String? lastWorkspaceId;
   String? lastSkillSlug;
