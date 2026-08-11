@@ -76,12 +76,21 @@ Cloud server adapter:
 - persists pending approval state before returning control;
 - resumes the cloud turn only after an accepted server-side decision;
 - never trusts a client assertion that a tool was approved.
+- executes callback-backed tools only for built-in registered service skills;
+- routes callback HTTP through the same public-URL, DNS/IP, redirect, response-size, timeout, and cancellation controls as URL-template tools;
+- never executes user-provided or dynamically persisted Dart callbacks.
 
 Cloud client:
 
 - renders server pending state;
 - submits `allowOnce`, `allowConversation`, or `deny`;
 - does not independently mark cloud calls executable.
+
+### Server callback execution boundary
+
+Built-in service definitions are trusted application code and may expose either `urlTemplate` or `callback`. Cloud execution supports both through `AppSkillExecutor`, but injects a server-owned `SkillHttpClient`. Every callback-created request is validated at request time: public HTTP(S) syntax, DNS resolution, private-address rejection, redirects disabled, bounded response reads, cancellation checks, and existing server timeouts. Credential-bearing requests require HTTPS.
+
+This does not introduce plugin code execution. User skills remain declarative URL templates; only callbacks compiled into `serviceSkillDefinitions` can run.
 
 ## Effective Target Identity
 
@@ -231,6 +240,10 @@ Existing exact-target grants remain valid. Missing exact-target records receive 
 - stale/mismatched approval is rejected;
 - server restart preserves pending state and grants;
 - no server executor runs before authoritative allow.
+- built-in DuckDuckGo callback executes only after authoritative approval;
+- callback HTTP rejects private/loopback destinations and redirects;
+- callback response reads remain bounded and cancellation closes the client;
+- user/dynamic skills cannot register executable callbacks.
 
 ### Parity tests
 
@@ -253,3 +266,5 @@ Excluded:
 - permanent account-wide grants;
 - redesigning unrelated MCP approval storage;
 - migrating broad wrapper grants into exact grants.
+
+Built-in registered service callbacks are included because cloud execution support was explicitly selected.
