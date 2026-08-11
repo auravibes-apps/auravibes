@@ -18,7 +18,7 @@ import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
-    show AgentToolGrantLevel;
+    show AgentResolvedToolName, AgentToolGrantLevel, callSkillToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -111,14 +111,19 @@ class _ApprovalCardContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auraColors = context.auraColors;
     final toolCall = current.toolCall;
+    final effectiveTarget = _effectiveDisplayTarget(
+      toolCall.name,
+      toolCall.argumentsRaw,
+    );
+    final presentationToolName = effectiveTarget?.fullName ?? toolCall.name;
 
     final displayNameAsync = ref.watch(
-      toolDisplayNameProvider(workspaceId, toolCall.name),
+      toolDisplayNameProvider(workspaceId, presentationToolName),
     );
     final displayName = displayNameAsync.maybeWhen(
       data: (name) => name,
       orElse: () => ToolNameFormatter.formatDisplayName(
-        ToolNameFormatter.parse(toolCall.name),
+        effectiveTarget ?? ToolNameFormatter.parse(toolCall.name),
         rawName: toolCall.name,
       ),
     );
@@ -167,6 +172,29 @@ class _ApprovalCardContent extends ConsumerWidget {
         spacing: .sm,
       ),
     );
+  }
+
+  agent.AgentResolvedToolName? _effectiveDisplayTarget(
+    String toolName,
+    String argumentsRaw,
+  ) {
+    if (toolName != agent.callSkillToolName) return null;
+
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(argumentsRaw);
+    } on FormatException {
+      return null;
+    }
+    if (decoded is! Map) return null;
+
+    final Object? skill = decoded['skill'];
+    final Object? tool = decoded['tool'];
+    if (skill is! String || skill.isEmpty || tool is! String || tool.isEmpty) {
+      return null;
+    }
+
+    return ToolNameFormatter.parse(['skill', 'app', skill, tool].join('__'));
   }
 }
 

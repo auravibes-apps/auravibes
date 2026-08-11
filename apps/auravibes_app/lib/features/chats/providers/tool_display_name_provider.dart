@@ -10,6 +10,8 @@ part 'tool_display_name_provider.g.dart';
 ///
 /// For MCP tools, fetches the original server name from the database.
 /// For built-in tools, formats the tool identifier.
+/// Callers may pass a presentation-only effective target while retaining the
+/// original tool-call identity for approval actions.
 /// Uses Riverpod's family caching to avoid repeated lookups.
 @riverpod
 Future<String> toolDisplayName(
@@ -17,11 +19,11 @@ Future<String> toolDisplayName(
   String workspaceId,
   String compositeToolId,
 ) async {
-  final parsed = ToolNameFormatter.parse(compositeToolId);
+  final presentationTarget = ToolNameFormatter.parse(compositeToolId);
 
   // For MCP tools, try to get the original server name.
   String? mcpServerName;
-  final mcpServerId = parsed?.mcpServerId;
+  final mcpServerId = presentationTarget?.mcpServerId;
   if (mcpServerId != null) {
     mcpServerName = await ref.watch(
       mcpServerNameProvider(workspaceId, mcpServerId).future,
@@ -29,7 +31,7 @@ Future<String> toolDisplayName(
   }
 
   return ToolNameFormatter.formatDisplayName(
-    parsed,
+    presentationTarget,
     rawName: compositeToolId,
     mcpServerName: mcpServerName,
   );
