@@ -47,7 +47,8 @@ class ResolveToolApprovalDecisionUsecase {
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (_isRunSubAgentTool(resolvedTool)) {
+    if (resolvedTool.isSkillControl &&
+        resolvedTool.toolIdentifier == agent.listSkillsToolName) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
         permissionResult: ToolPermissionResult.granted,
@@ -119,14 +120,6 @@ class ResolveToolApprovalDecisionUsecase {
 
     return workspaceTool?.id;
   }
-}
-
-bool _isRunSubAgentTool(ResolvedTool resolvedTool) {
-  if (resolvedTool.fullName == agent.runSubAgentToolName) return true;
-
-  return resolvedTool.isSkillNative &&
-      resolvedTool.skillSlug == agent.agentsSkillSlug &&
-      resolvedTool.toolIdentifier == agent.runSubAgentToolName;
 }
 
 final ProviderFamily<ResolveToolApprovalDecisionUsecase, String>

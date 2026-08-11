@@ -166,7 +166,7 @@ void main() {
       );
 
       test(
-        'dispatcher approval uses underlying skill tool permission',
+        'nested grants stay isolated to exact effective target',
         () async {
           final conversationToolsRepository =
               fixture.conversationToolsRepository;
@@ -176,9 +176,32 @@ void main() {
             () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolName: 'skill__user__research__search_web',
+              toolName: 'skill__app__duckduckgo__search',
             ),
-          ).thenAnswer((_) async => 'skill-tool-2');
+          ).thenAnswer((_) async => 'duckduckgo-search');
+          when(
+            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolName: 'skill__app__weather__search',
+            ),
+          ).thenAnswer((_) async => 'weather-search');
+          when(
+            () => conversationToolsRepository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: 'duckduckgo-search',
+            ),
+          ).thenAnswer((_) async => ToolPermissionResult.granted);
+          when(
+            () => conversationToolsRepository.checkToolPermission(
+              conversationId: 'conv-1',
+              workspaceId: 'ws-1',
+              toolId: 'weather-search',
+            ),
+          ).thenAnswer(
+            (_) async => ToolPermissionResult.needsConfirmation,
+          );
           final usecase = ResolveToolApprovalDecisionUsecase(
             conversationToolsRepository: conversationToolsRepository,
             toolsGroupsRepository: fixture.toolsGroupsRepository,
@@ -186,34 +209,108 @@ void main() {
             syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
           );
 
-          when(
-            () => conversationToolsRepository.checkToolPermission(
+          Future<ToolApprovalDecision> resolve(
+            String skill,
+            String toolCallId,
+          ) {
+            return usecase(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolId: 'skill-tool-2',
-            ),
-          ).thenAnswer((_) async => ToolPermissionResult.granted);
-
-          final decision = await usecase(
-            conversationId: 'conv-1',
-            workspaceId: 'ws-1',
-            toolCallId: 'tc-1',
-            resolvedTool: ResolvedTool.skillCommand(
-              commandName: agent.callSkillToolName,
-              target: agent.AgentResolvedToolName.skillTemplate(
-                tableId: 'search_web',
-                skillSlug: 'research',
-                toolIdentifier: 'search_web',
+              toolCallId: toolCallId,
+              resolvedTool: ResolvedTool.skillCommand(
+                commandName: agent.callSkillToolName,
+                target: agent.AgentResolvedToolName.skillNative(
+                  tableId: 'search',
+                  skillSlug: skill,
+                  toolIdentifier: 'search',
+                ),
               ),
-            ),
-          );
+            );
+          }
 
-          expect(decision.permissionResult, ToolPermissionResult.granted);
-          expect(decision.permissionTableId, 'skill-tool-2');
+          final granted = await resolve('duckduckgo', 'tc-1');
+          final other = await resolve('weather', 'tc-2');
+
+          expect(granted.permissionResult, ToolPermissionResult.granted);
+          expect(granted.permissionTableId, 'duckduckgo-search');
+          expect(
+            other.permissionResult,
+            ToolPermissionResult.needsConfirmation,
+          );
+          expect(other.permissionTableId, 'weather-search');
         },
       );
 
-      test('grants run_sub_agent without permission lookup', () async {
+      test('ignores legacy call_skill_tool grant for nested target', () async {
+        final syncSkillToolPermissionsUsecase =
+            MockSyncSkillToolPermissionsUsecase();
+        when(
+          () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolName: 'skill__app__duckduckgo__search',
+          ),
+        ).thenAnswer((_) async => null);
+        when(
+          () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolName: agent.callSkillToolName,
+          ),
+        ).thenAnswer((_) async => 'legacy-wrapper-grant');
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: fixture.conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
+        );
+
+        final decision = await usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'tc-1',
+          resolvedTool: ResolvedTool.skillCommand(
+            commandName: agent.callSkillToolName,
+            target: agent.AgentResolvedToolName.skillNative(
+              tableId: 'search',
+              skillSlug: 'duckduckgo',
+              toolIdentifier: 'search',
+            ),
+          ),
+        );
+
+        expect(decision.permissionResult, ToolPermissionResult.notConfigured);
+        verifyNever(
+          () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolName: agent.callSkillToolName,
+          ),
+        );
+      });
+
+      test('grants list_skills without permission lookup', () async {
+        final decision = await fixture.usecase(
+          conversationId: 'conv-1',
+          workspaceId: 'ws-1',
+          toolCallId: 'tc-1',
+          resolvedTool: ResolvedTool.skillControl(
+            toolIdentifier: agent.listSkillsToolName,
+          ),
+        );
+
+        expect(decision.permissionResult, ToolPermissionResult.granted);
+        expect(decision.permissionTableId, isNull);
+        verifyNever(
+          () => fixture.conversationToolsRepository.checkToolPermission(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolId: any(named: 'toolId'),
+          ),
+        );
+      });
+
+      test('does not auto-grant run_sub_agent', () async {
         final decision = await fixture.usecase(
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
@@ -225,15 +322,7 @@ void main() {
           ),
         );
 
-        expect(decision.permissionResult, ToolPermissionResult.granted);
-        expect(decision.permissionTableId, isNull);
-        final _ = verifyNever(
-          () => fixture.conversationToolsRepository.checkToolPermission(
-            conversationId: any(named: 'conversationId'),
-            workspaceId: any(named: 'workspaceId'),
-            toolId: any(named: 'toolId'),
-          ),
-        );
+        expect(decision.permissionResult, ToolPermissionResult.notConfigured);
       });
     });
 

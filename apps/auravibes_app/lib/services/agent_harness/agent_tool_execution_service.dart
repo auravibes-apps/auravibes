@@ -108,33 +108,47 @@ class AppAllowedToolsDataProvider
     var approvalTool = resolvedTool;
     if (resolvedTool.isSkillCommand &&
         resolvedTool.toolIdentifier == agent.callSkillToolName) {
+      final Object? decoded;
       try {
-        final decoded = jsonDecode(argumentsRaw);
-        if (decoded is! Map<String, Object?>) {
-          return const agent.AgentToolApprovalDecision(
-            permissionResult: agent.AgentToolPermissionResult.notConfigured,
-          );
-        }
-        final command = agent.SkillCommandTarget.fromArguments(decoded);
-        final target = await resolveSkillCommandTarget?.call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-          command: command,
-        );
-        if (target == null) {
-          return const agent.AgentToolApprovalDecision(
-            permissionResult: agent.AgentToolPermissionResult.notConfigured,
-          );
-        }
-        approvalTool = ResolvedTool.skillCommand(
-          commandName: resolvedTool.toolIdentifier,
-          target: target,
-        );
+        decoded = jsonDecode(argumentsRaw);
       } on FormatException {
         return const agent.AgentToolApprovalDecision(
           permissionResult: agent.AgentToolPermissionResult.notConfigured,
         );
       }
+      if (decoded is! Map<String, Object?>) {
+        return const agent.AgentToolApprovalDecision(
+          permissionResult: agent.AgentToolPermissionResult.notConfigured,
+        );
+      }
+
+      final effective = await agent.resolveEffectiveToolApprovalTarget(
+        requestedTarget: agent.AgentResolvedToolName.skillControl(
+          toolIdentifier: resolvedTool.toolIdentifier,
+        ),
+        arguments: decoded,
+        resolveSkillTarget: (command) {
+          final resolveTarget = resolveSkillCommandTarget;
+          if (resolveTarget == null) {
+            return Future<agent.AgentResolvedToolName?>.value();
+          }
+
+          return resolveTarget(
+            conversationId: conversationId,
+            workspaceId: workspaceId,
+            command: command,
+          );
+        },
+      );
+      if (effective == null) {
+        return const agent.AgentToolApprovalDecision(
+          permissionResult: agent.AgentToolPermissionResult.notConfigured,
+        );
+      }
+      approvalTool = ResolvedTool.skillCommand(
+        commandName: resolvedTool.toolIdentifier,
+        target: effective,
+      );
     }
 
     final decision = await resolver.call(
