@@ -118,19 +118,12 @@ void main() {
 
     group('skill tools', () {
       test(
-        'returns needsConfirmation by default for skill control tool',
+        'load and unload use stored permissions as skill commands',
         () async {
           final conversationToolsRepository =
               fixture.conversationToolsRepository;
           final syncSkillToolPermissionsUsecase =
               MockSyncSkillToolPermissionsUsecase();
-          when(
-            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolName: agent.loadSkillToolName,
-            ),
-          ).thenAnswer((_) async => 'skill-tool-1');
           final usecase = ResolveToolApprovalDecisionUsecase(
             conversationToolsRepository: conversationToolsRepository,
             toolsGroupsRepository: fixture.toolsGroupsRepository,
@@ -138,30 +131,41 @@ void main() {
             syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
           );
 
-          when(
-            () => conversationToolsRepository.checkToolPermission(
+          for (final toolName in [
+            agent.loadSkillToolName,
+            agent.unloadSkillToolName,
+          ]) {
+            final permissionId = '$toolName-permission';
+            when(
+              () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+                conversationId: 'conv-1',
+                workspaceId: 'ws-1',
+                toolName: toolName,
+              ),
+            ).thenAnswer((_) async => permissionId);
+            when(
+              () => conversationToolsRepository.checkToolPermission(
+                conversationId: 'conv-1',
+                workspaceId: 'ws-1',
+                toolId: permissionId,
+              ),
+            ).thenAnswer(
+              (_) async => ToolPermissionResult.needsConfirmation,
+            );
+
+            final decision = await usecase(
               conversationId: 'conv-1',
               workspaceId: 'ws-1',
-              toolId: 'skill-tool-1',
-            ),
-          ).thenAnswer(
-            (_) async => ToolPermissionResult.needsConfirmation,
-          );
+              toolCallId: 'tc-1',
+              resolvedTool: ResolvedTool.skillCommand(commandName: toolName),
+            );
 
-          final decision = await usecase(
-            conversationId: 'conv-1',
-            workspaceId: 'ws-1',
-            toolCallId: 'tc-1',
-            resolvedTool: ResolvedTool.skillControl(
-              toolIdentifier: agent.loadSkillToolName,
-            ),
-          );
-
-          expect(
-            decision.permissionResult,
-            ToolPermissionResult.needsConfirmation,
-          );
-          expect(decision.permissionTableId, 'skill-tool-1');
+            expect(
+              decision.permissionResult,
+              ToolPermissionResult.needsConfirmation,
+            );
+            expect(decision.permissionTableId, permissionId);
+          }
         },
       );
 
@@ -280,7 +284,7 @@ void main() {
         );
 
         expect(decision.permissionResult, ToolPermissionResult.notConfigured);
-        verifyNever(
+        final _ = verifyNever(
           () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
             conversationId: 'conv-1',
             workspaceId: 'ws-1',
@@ -294,14 +298,14 @@ void main() {
           conversationId: 'conv-1',
           workspaceId: 'ws-1',
           toolCallId: 'tc-1',
-          resolvedTool: ResolvedTool.skillControl(
-            toolIdentifier: agent.listSkillsToolName,
+          resolvedTool: ResolvedTool.skillCommand(
+            commandName: agent.listSkillsToolName,
           ),
         );
 
         expect(decision.permissionResult, ToolPermissionResult.granted);
         expect(decision.permissionTableId, isNull);
-        verifyNever(
+        final _ = verifyNever(
           () => fixture.conversationToolsRepository.checkToolPermission(
             conversationId: any(named: 'conversationId'),
             workspaceId: any(named: 'workspaceId'),

@@ -47,7 +47,7 @@ class ResolveToolApprovalDecisionUsecase {
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (resolvedTool.isSkillControl &&
+    if ((resolvedTool.isSkillControl || resolvedTool.isSkillCommand) &&
         resolvedTool.toolIdentifier == agent.listSkillsToolName) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
