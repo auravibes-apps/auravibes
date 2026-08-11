@@ -65,6 +65,7 @@ export 'src/skills/skills_manager.dart';
 export 'src/sub_agents/sub_agent_runner.dart';
 export 'src/sub_agents/sub_agent_tool_specs.dart';
 export 'src/tool_argument_validator.dart';
+export 'src/tool_approval_target.dart';
 export 'src/tool_call_actions.dart'
     hide ApproveToolCallService, SkipToolCallService;
 export 'src/tool_calls.dart';
