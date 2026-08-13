@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -90,6 +91,95 @@ PatchWorkspaceStateRequest cloudSkillSelectionPatchRequest({
 }
 
 typedef ServerToolExecutorInterlock = Future<void> Function();
+
+Future<Object?> runCompiledServiceSkillTool({
+  required String skillSlug,
+  required String toolSlug,
+  required Map<String, dynamic> input,
+  Map<String, String> credentials = const {},
+  required SkillHttpClient httpClient,
+}) {
+  final skill = serviceSkillDefinitions
+      .where((candidate) => candidate.slug == skillSlug)
+      .firstOrNull;
+  final nativeTool = skill?.nativeTools
+      .where((candidate) => candidate.slug == toolSlug)
+      .firstOrNull;
+  if (skill == null ||
+      nativeTool == null ||
+      (nativeTool.urlTemplate == null && nativeTool.callback == null)) {
+    throw const ServerToolNotConfiguredException();
+  }
+  return AppSkillExecutor(
+        RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient),
+        httpClient,
+      )
+      .run(
+        skill: skill,
+        toolSlug: toolSlug,
+        input: input,
+        credentials: credentials,
+      )
+      .value;
+}
+
+Future<({Uri uri, List<InternetAddress> addresses})>
+validateServerSkillRequestTarget(
+  UrlRequest request, {
+  required bool requireHttps,
+  Future<List<InternetAddress>> Function(String host) lookup =
+      InternetAddress.lookup,
+}) async {
+  final uri = requirePublicUriSyntax(request.url, requireHttps: requireHttps);
+  final addresses = await lookup(uri.host);
+  if (addresses.isEmpty ||
+      addresses.any(
+        (address) => isPrivateIpAddress(
+          address.rawAddress,
+          isIpv6: address.type == InternetAddressType.IPv6,
+        ),
+      )) {
+    throw const FormatException(publicUrlError);
+  }
+  return (uri: uri, addresses: addresses);
+}
+
+void rejectServerSkillRedirect(bool isRedirect) {
+  if (isRedirect) throw const HttpException('Redirect rejected.');
+}
+
+Future<String> readBoundedServerSkillResponse(
+  Stream<List<int>> response, {
+  int maxBytes = McpServerPolicy.maxResponseBytes,
+}) async {
+  final bytes = <int>[];
+  await for (final chunk in response) {
+    bytes.addAll(chunk);
+    if (bytes.length > maxBytes) {
+      throw const FormatException('Tool response is too large.');
+    }
+  }
+  return utf8.decode(bytes);
+}
+
+Future<void> closeOnServerSkillCancellation({
+  required Future<bool> Function() isCancelled,
+  required void Function() close,
+  required Future<void> done,
+  Duration pollInterval = const Duration(milliseconds: 100),
+}) async {
+  while (true) {
+    if (await isCancelled()) {
+      close();
+      return;
+    }
+    final completed = await Future.any([
+      done.then((_) => true),
+      Future<void>.delayed(pollInterval).then((_) => false),
+    ]);
+    if (completed) return;
+  }
+}
 
 class ServerToolExecutorService {
   const ServerToolExecutorService({
@@ -612,17 +702,17 @@ class ServerToolExecutorService {
     final nativeTool = skill?.nativeTools
         .where((candidate) => candidate.slug == tool.descriptor.toolIdentifier)
         .firstOrNull;
-    final template = nativeTool?.urlTemplate;
     final credentialId = arguments['credentialId'];
-    if (skill == null || nativeTool == null || template == null) {
+    if (skill == null ||
+        nativeTool == null ||
+        (nativeTool.urlTemplate == null && nativeTool.callback == null)) {
       throw const ServerToolNotConfiguredException();
     }
     var credentials = const <String, String>{};
     if (nativeTool.requiresCredential) {
-      if (credentialId is! String || credentialId.isEmpty) {
-        throw const ServerToolNotConfiguredException();
-      }
-      if (!cloudToolAllowsCredential(tool, credentialId)) {
+      if (credentialId is! String ||
+          credentialId.isEmpty ||
+          !cloudToolAllowsCredential(tool, credentialId)) {
         throw const ServerToolNotConfiguredException();
       }
       final connectionId = cloudServiceConnectionId(credentialId);
@@ -648,30 +738,18 @@ class ServerToolExecutorService {
         _jsonMap(await const WorkspaceSecretCipher().decrypt(session, secret)),
       );
     }
-    final request = const ResolveSkillUrlTemplate()(
-      template: template.template,
-      inputs: arguments,
-      credentials: credentials,
-      inputDefinitions: template.inputs,
-    );
-    final uri = requirePublicUriSyntax(
-      request.url,
+    final httpClient = _skillHttpClient(
+      session,
+      turn,
       requireHttps: credentials.isNotEmpty,
     );
-    final addresses = await InternetAddress.lookup(uri.host);
-    if (addresses.any(
-      (address) => isPrivateIpAddress(
-        address.rawAddress,
-        isIpv6: address.type == InternetAddressType.IPv6,
-      ),
-    )) {
-      throw const FormatException(publicUrlError);
-    }
-    await _throwIfCancelled(session, turn);
-    final response = await _request(session, turn, uri, addresses, request);
-    return const UrlContentTransformer()
-        .transform(response, requestedFormat: request.format)
-        .body;
+    return runCompiledServiceSkillTool(
+      skillSlug: skill.slug,
+      toolSlug: nativeTool.slug,
+      input: arguments,
+      credentials: credentials,
+      httpClient: httpClient,
+    );
   }
 
   Future<Object?> _runSubAgentTool(
@@ -1260,6 +1338,34 @@ class ServerToolExecutorService {
     }
   }
 
+  SkillHttpClient _skillHttpClient(
+    Session session,
+    ConversationTurn turn, {
+    required bool requireHttps,
+  }) => (input) {
+    final operation = CancelableOperation<UrlResponse>.fromFuture(
+      _validatedRequest(session, turn, input, requireHttps: requireHttps),
+    );
+    return CancelableOperation<UrlResponse>.fromFuture(
+      operation.value.timeout(input.timeout),
+      onCancel: operation.cancel,
+    );
+  };
+
+  Future<UrlResponse> _validatedRequest(
+    Session session,
+    ConversationTurn turn,
+    UrlRequest input, {
+    required bool requireHttps,
+  }) async {
+    final target = await validateServerSkillRequestTarget(
+      input,
+      requireHttps: requireHttps,
+    );
+    await _throwIfCancelled(session, turn);
+    return _request(session, turn, target.uri, target.addresses, input);
+  }
+
   Future<UrlResponse> _request(
     Session session,
     ConversationTurn turn,
@@ -1277,7 +1383,7 @@ class ServerToolExecutorService {
       input.headers.forEach(request.headers.set);
       if (input.body != null) request.write(input.body);
       final response = await request.close();
-      if (response.isRedirect) throw const HttpException('Redirect rejected.');
+      rejectServerSkillRedirect(response.isRedirect);
       final headers = <String, List<String>>{};
       response.headers.forEach((name, values) => headers[name] = values);
       return UrlResponse(
@@ -1335,37 +1441,25 @@ class ServerToolExecutorService {
     Session session,
     ConversationTurn turn,
     Completer<void> requestDone,
-  ) async {
-    while (!requestDone.isCompleted) {
-      if (await const DatabaseConversationCancellationProbe().isCancelled(
-        session,
-        turn.id!,
-      )) {
-        if (!requestDone.isCompleted) client.close(force: true);
-        return;
-      }
-      await Future.any([
-        Future<void>.delayed(const Duration(milliseconds: 100)),
-        requestDone.future,
-      ]);
-    }
-  }
+  ) => closeOnServerSkillCancellation(
+    isCancelled: () =>
+        const DatabaseConversationCancellationProbe().isCancelled(
+          session,
+          turn.id!,
+        ),
+    close: () {
+      if (!requestDone.isCompleted) client.close(force: true);
+    },
+    done: requestDone.future,
+  );
 
   HttpClient _client(List<InternetAddress> addresses) => HttpClient()
     ..connectionTimeout = const Duration(seconds: 10)
     ..connectionFactory = (target, proxyHost, proxyPort) =>
         Socket.startConnect(addresses.first, target.port);
 
-  Future<String> _readResponse(HttpClientResponse response) async {
-    final bytes = <int>[];
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-      if (bytes.length > McpServerPolicy.maxResponseBytes) {
-        throw const FormatException('Tool response is too large.');
-      }
-    }
-    return utf8.decode(bytes);
-  }
+  Future<String> _readResponse(HttpClientResponse response) =>
+      readBoundedServerSkillResponse(response);
 
   Future<WorkspaceResource> _resource(
     Session session,

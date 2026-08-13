@@ -30,7 +30,7 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
                   skill.nativeTools.any(
                     (tool) =>
                         tool.slug == descriptor.toolIdentifier &&
-                        tool.urlTemplate != null,
+                        (tool.urlTemplate != null || tool.callback != null),
                   ),
             )));
 
@@ -363,7 +363,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
     }
     final credentialIds = _serviceCredentialIds(skill, serviceConnections);
     for (final tool in skill.nativeTools) {
-      if (tool.urlTemplate == null ||
+      if ((tool.urlTemplate == null && tool.callback == null) ||
           (tool.requiresCredential && credentialIds.isEmpty)) {
         continue;
       }
@@ -486,7 +486,7 @@ bool cloudServiceSkillReady(
   Iterable<Map<String, dynamic>> serviceConnections,
 ) => skill.nativeTools.any(
   (tool) =>
-      tool.urlTemplate != null &&
+      (tool.urlTemplate != null || tool.callback != null) &&
       (!tool.requiresCredential ||
           serviceConnections.any(
             (connection) =>
@@ -515,12 +515,18 @@ AgentToolPermissionResult resolveCloudToolPermission({
 
 AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
-) =>
-    (descriptor.isSkill ||
-            descriptor.kind == AgentResolvedToolKind.skillControl) &&
-        serverToolIsExecutable(descriptor)
-    ? AgentToolPermissionResult.needsConfirmation
-    : AgentToolPermissionResult.notConfigured;
+) {
+  if (descriptor.kind == AgentResolvedToolKind.skillControl &&
+      descriptor.toolIdentifier == listSkillsToolName) {
+    return AgentToolPermissionResult.granted;
+  }
+  if ((descriptor.isSkill ||
+          descriptor.kind == AgentResolvedToolKind.skillControl) &&
+      serverToolIsExecutable(descriptor)) {
+    return AgentToolPermissionResult.needsConfirmation;
+  }
+  return AgentToolPermissionResult.notConfigured;
+}
 
 ServerToolReplayAction serverToolReplayAction(String status) =>
     switch (status) {
@@ -721,7 +727,12 @@ class ServerToolRuntime {
           table.stableId.equals(request.id),
     );
     if (existing != null) {
-      if (existing.name != request.name ||
+      final persistedDescriptor = _resolver.resolve(existing.name);
+      final isNestedSkillCall =
+          request.name == callSkillToolName &&
+          (persistedDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
+              persistedDescriptor?.kind == AgentResolvedToolKind.skillNative);
+      if ((!isNestedSkillCall && existing.name != request.name) ||
           (existing.decision == null && existing.argumentsDigest != digest)) {
         throw const FormatException('Tool call identity changed.');
       }
@@ -803,18 +814,38 @@ class ServerToolRuntime {
     var permissionDescriptor = tool.descriptor;
     if (request.name == callSkillToolName) {
       try {
-        final target = SkillCommandTarget.fromArguments(request.arguments);
         final state = await _skillTargets(
           session,
           workspaceId: turn.workspaceId,
           conversationStableId: conversation!.stableId,
         );
-        final resolvedTarget = await resolveCloudSkillCommandTarget(
-          command: target,
-          userSkills: state.userSkills,
-          tools: state.tools,
+        final resolvedTarget = await resolveEffectiveToolApprovalTarget(
+          requestedTarget: tool.descriptor,
+          arguments: request.arguments,
+          resolveSkillTarget: (command) async =>
+              (await resolveCloudSkillCommandTarget(
+                command: command,
+                userSkills: state.userSkills,
+                tools: state.tools,
+              )).descriptor,
         );
-        permissionDescriptor = resolvedTarget.descriptor;
+        if (resolvedTarget == null) {
+          await _insertResolved(
+            session,
+            turn: turn,
+            messageId: messageId,
+            request: request,
+            argumentsJson: argumentsJson,
+            digest: digest,
+            status: AgentToolPermissionResult.notConfigured.name,
+          );
+          return ServerToolDisposition.completed;
+        }
+        permissionDescriptor = resolvedTarget;
+        if (existing != null &&
+            existing.name != permissionDescriptor.fullName) {
+          throw const FormatException('Tool call identity changed.');
+        }
       } on Object catch (error) {
         final call =
             existing ??
@@ -836,7 +867,7 @@ class ServerToolRuntime {
         return ServerToolDisposition.completed;
       }
     }
-    if (!serverToolIsExecutable(tool.descriptor)) {
+    if (!serverToolIsExecutable(permissionDescriptor)) {
       if (existing != null) {
         await _finish(
           session,
@@ -863,13 +894,20 @@ class ServerToolRuntime {
       descriptor: permissionDescriptor,
       agentId: conversation?.agentId,
     );
+    final persistedRequest = request.name == callSkillToolName
+        ? ServerToolRequest(
+            id: request.id,
+            name: permissionDescriptor.fullName,
+            arguments: request.arguments,
+          )
+        : request;
     if (existing == null &&
         permission == AgentToolPermissionResult.needsConfirmation) {
       await _insertResolved(
         session,
         turn: turn,
         messageId: messageId,
-        request: request,
+        request: persistedRequest,
         argumentsJson: argumentsJson,
         digest: digest,
         status: 'pending',
@@ -881,7 +919,7 @@ class ServerToolRuntime {
         session,
         turn: turn,
         messageId: messageId,
-        request: request,
+        request: persistedRequest,
         argumentsJson: argumentsJson,
         digest: digest,
         status: permission.name,
@@ -904,7 +942,7 @@ class ServerToolRuntime {
           session,
           turn: turn,
           messageId: messageId,
-          request: request,
+          request: persistedRequest,
           argumentsJson: argumentsJson,
           digest: digest,
           status: 'running',

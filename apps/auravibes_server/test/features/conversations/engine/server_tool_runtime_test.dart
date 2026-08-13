@@ -525,7 +525,7 @@ void main() {
     );
   });
 
-  test('does not advertise callback-backed service native tools to cloud', () {
+  test('advertises compiled callback-backed service tools to cloud', () {
     final skill = serviceSkillDefinitions.singleWhere(
       (candidate) => candidate.identifier == 'anthropic',
     );
@@ -548,7 +548,7 @@ void main() {
       isChildConversation: false,
     );
 
-    expect(tools, isEmpty);
+    expect(tools, hasLength(skill.nativeTools.length));
     for (final nativeTool in skill.nativeTools) {
       expect(
         serverToolIsExecutable(
@@ -558,7 +558,7 @@ void main() {
             toolIdentifier: nativeTool.slug,
           ),
         ),
-        isFalse,
+        isTrue,
       );
     }
   });
