@@ -808,10 +808,16 @@ void main() {
           'revision': manifest!.revision,
         };
         Map<String, dynamic>? executedArguments;
+        var executorInvocations = 0;
+        final executorEntered = Completer<void>();
+        final releaseExecutor = Completer<void>();
         final runtime = ServerToolRuntime(
           executor: (_, _, tool, request) async {
+            executorInvocations++;
             expect(tool.descriptor.fullName, 'skill__user__research__search');
             executedArguments = request.arguments;
+            if (!executorEntered.isCompleted) executorEntered.complete();
+            await releaseExecutor.future;
             return {'ok': true};
           },
         );
@@ -844,7 +850,7 @@ void main() {
           ),
         );
 
-        await runtime.handle(
+        final firstResume = runtime.handle(
           fixture.database,
           turn: fixture.turn,
           messageId: assistant.id!,
@@ -854,7 +860,8 @@ void main() {
             arguments: wrapperArguments,
           ),
         );
-        await runtime.handle(
+        await executorEntered.future;
+        final losingResume = await runtime.handle(
           fixture.database,
           turn: fixture.turn,
           messageId: assistant.id!,
@@ -864,8 +871,14 @@ void main() {
             arguments: wrapperArguments,
           ),
         );
+        expect(losingResume, ServerToolDisposition.completed);
+        expect(executorInvocations, 1);
+        releaseExecutor.complete();
+        await firstResume;
 
         expect(executedArguments, {'query': 'nested query'});
+
+        expect(executorInvocations, 1);
         final completed = await ConversationToolCall.db.findFirstRow(
           fixture.database,
           where: (table) => table.stableId.equals('approved-nested-args'),

@@ -694,6 +694,23 @@ void main() {
     );
   });
 
+  test('approved execution claim has one concurrent winner', () async {
+    var persistedStatus = 'approved';
+
+    Future<bool> claim() async {
+      await Future<void>.delayed(Duration.zero);
+      if (!serverToolStatusCanBeClaimed(persistedStatus)) return false;
+      persistedStatus = 'running';
+      return true;
+    }
+
+    final claims = await Future.wait([claim(), claim()]);
+
+    expect(claims.where((claimed) => claimed), hasLength(1));
+    expect(persistedStatus, 'running');
+    expect(serverToolStatusCanBeClaimed('running'), isFalse);
+  });
+
   test('cloud exposes only fixed skill command schemas', () {
     final before = fixedCloudSkillCommandTools();
     final after = fixedCloudSkillCommandTools();

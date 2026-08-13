@@ -536,6 +536,8 @@ ServerToolReplayAction serverToolReplayAction(String status) =>
       _ => ServerToolReplayAction.skip,
     };
 
+bool serverToolStatusCanBeClaimed(String status) => status == 'approved';
+
 bool serverToolPermissionAllowsExecution({
   required AgentToolPermissionResult permission,
   required String? persistedStatus,
@@ -976,23 +978,18 @@ class ServerToolRuntime {
       return ServerToolDisposition.completed;
     }
 
-    final call =
-        existing ??
-        await _insertResolved(
-          session,
-          turn: turn,
-          messageId: messageId,
-          request: persistedRequest,
-          argumentsJson: argumentsJson,
-          digest: digest,
-          status: 'running',
-        );
-    if (existing != null) {
-      await ConversationToolCall.db.updateRow(
-        session,
-        existing.copyWith(status: 'running', updatedAt: DateTime.now().toUtc()),
-      );
-    }
+    final call = existing == null
+        ? await _insertResolved(
+            session,
+            turn: turn,
+            messageId: messageId,
+            request: persistedRequest,
+            argumentsJson: argumentsJson,
+            digest: digest,
+            status: 'running',
+          )
+        : await _claimApproved(session, existing);
+    if (call == null) return ServerToolDisposition.completed;
     final executor = _executor;
     if (executor == null) {
       throw StateError('Server tool executor is not configured.');
@@ -1119,6 +1116,31 @@ class ServerToolRuntime {
       ),
     );
   }
+
+  Future<ConversationToolCall?> _claimApproved(
+    Session session,
+    ConversationToolCall call,
+  ) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(call.id) & table.status.equals('approved'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null || !serverToolStatusCanBeClaimed(current.status)) {
+      return null;
+    }
+    return ConversationToolCall.db.updateRow(
+      session,
+      current.copyWith(
+        status: 'running',
+        revision: current.revision + 1,
+        updatedAt: DateTime.now().toUtc(),
+      ),
+      transaction: transaction,
+    );
+  });
 
   Future<void> _finish(
     Session session,

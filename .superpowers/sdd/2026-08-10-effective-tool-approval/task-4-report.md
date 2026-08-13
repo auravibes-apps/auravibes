@@ -84,3 +84,18 @@ Evidence:
 - executor focused suite: 12 passed.
 - runtime focused suite: 23 passed.
 - fatal analyzer: no issues.
+
+
+## Fix Round 3
+
+- Approved durable calls now claim `approved -> running` inside a row-lock transaction before executor invocation. Concurrent losers find no approved row and return completed without side effects.
+- Running/interrupted and terminal replay behavior remains unchanged; successful claimant increments durable revision.
+- Runtime pure concurrency check proves one status-transition winner. DB integration regression now overlaps two resumes and asserts executor invocation count stays exactly one.
+
+Evidence:
+
+- runtime focused suite: 24 passed.
+- fatal analyzer for runtime and changed tests: no issues.
+- focused integration regression still stopped while loading the Serverpod harness; initial filter typo and corrected bounded attempt both failed before test body start. No integration pass claimed.
+
+Residual blocker: local Serverpod integration harness still cannot finish suite loading. Atomic behavior is implemented with existing `ConversationToolCall` row lock/transaction APIs; DB-backed regression remains committed for CI.
