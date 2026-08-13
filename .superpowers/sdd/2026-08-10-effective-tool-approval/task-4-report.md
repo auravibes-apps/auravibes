@@ -71,3 +71,16 @@ Evidence:
 - Execution-state suite bounded to 20 seconds: stopped at `loading ...conversation_execution_state_test.dart`; test body never started.
 
 Residual blocker: local Serverpod integration harness cannot finish suite loading, consistent with unavailable external DB/test infrastructure. No integration pass claimed.
+
+## Fix Round 2
+
+- Persisted `approved` decision now satisfies only current `needsConfirmation` check. Disabled/not-configured policy still blocks. Successful status preserves duplicate suppression, so second resume does not execute again.
+- Added local runtime policy/replay regression proving one execution for `approved` and no execution for terminal replay.
+- Refactored production callback HTTP adapter registration into `runBoundedServerSkillHttpRequest`; test registers real `HttpClient` and proves timeout sends same client through force-close boundary.
+- DB integration approval regression remains committed but unverified because Serverpod harness still cannot finish loading. No integration pass claimed; no rerun because blocker unchanged.
+
+Evidence:
+
+- executor focused suite: 12 passed.
+- runtime focused suite: 23 passed.
+- fatal analyzer: no issues.

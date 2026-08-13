@@ -854,8 +854,23 @@ void main() {
             arguments: wrapperArguments,
           ),
         );
+        await runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'approved-nested-args',
+            name: callSkillToolName,
+            arguments: wrapperArguments,
+          ),
+        );
 
         expect(executedArguments, {'query': 'nested query'});
+        final completed = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('approved-nested-args'),
+        );
+        expect(completed?.status, 'success');
       },
     );
 

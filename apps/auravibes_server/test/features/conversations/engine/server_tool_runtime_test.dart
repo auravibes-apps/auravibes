@@ -665,6 +665,35 @@ void main() {
     },
   );
 
+  test('one-time approval executes once while policy still asks', () {
+    var executions = 0;
+    for (final status in ['approved', 'success']) {
+      if (serverToolReplayAction(status) == ServerToolReplayAction.execute &&
+          serverToolPermissionAllowsExecution(
+            permission: AgentToolPermissionResult.needsConfirmation,
+            persistedStatus: status,
+          )) {
+        executions++;
+      }
+    }
+
+    expect(executions, 1);
+    expect(
+      serverToolPermissionAllowsExecution(
+        permission: AgentToolPermissionResult.needsConfirmation,
+        persistedStatus: null,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolPermissionAllowsExecution(
+        permission: AgentToolPermissionResult.disabledInWorkspace,
+        persistedStatus: 'approved',
+      ),
+      isFalse,
+    );
+  });
+
   test('cloud exposes only fixed skill command schemas', () {
     final before = fixedCloudSkillCommandTools();
     final after = fixedCloudSkillCommandTools();

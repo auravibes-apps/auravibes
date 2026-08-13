@@ -234,18 +234,26 @@ void main() {
     expect(closed, isTrue);
   });
 
-  test('server callback timeout closes active request immediately', () async {
-    var closed = false;
-    final never = Completer<void>();
+  test(
+    'production HTTP adapter timeout force-closes registered client',
+    () async {
+      final client = HttpClient();
+      final never = Completer<void>();
+      HttpClient? closedClient;
 
-    await expectLater(
-      runBoundedServerSkillRequest<void>(
-        timeout: Duration.zero,
-        run: () => never.future,
-        close: () => closed = true,
-      ),
-      throwsA(isA<TimeoutException>()),
-    );
-    expect(closed, isTrue);
-  });
+      await expectLater(
+        runBoundedServerSkillHttpRequest<void>(
+          timeout: Duration.zero,
+          run: (registerClient) {
+            registerClient(client);
+            return never.future;
+          },
+          closeClient: (client) => closedClient = client,
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(closedClient, same(client));
+      client.close(force: true);
+    },
+  );
 }

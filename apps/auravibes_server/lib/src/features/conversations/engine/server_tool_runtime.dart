@@ -536,6 +536,14 @@ ServerToolReplayAction serverToolReplayAction(String status) =>
       _ => ServerToolReplayAction.skip,
     };
 
+bool serverToolPermissionAllowsExecution({
+  required AgentToolPermissionResult permission,
+  required String? persistedStatus,
+}) =>
+    permission == AgentToolPermissionResult.granted ||
+    (persistedStatus == 'approved' &&
+        permission == AgentToolPermissionResult.needsConfirmation);
+
 class ServerResolvedTool {
   const ServerResolvedTool({required this.descriptor, required this.spec});
 
@@ -953,13 +961,18 @@ class ServerToolRuntime {
       );
       return ServerToolDisposition.completed;
     }
-    if (existing != null && permission != AgentToolPermissionResult.granted) {
-      await _finish(
-        session,
-        existing,
-        permission.name,
-        _boundedJson({'error': 'Tool permission is no longer granted.'}),
-      );
+    if (!serverToolPermissionAllowsExecution(
+      permission: permission,
+      persistedStatus: existing?.status,
+    )) {
+      if (existing != null) {
+        await _finish(
+          session,
+          existing,
+          permission.name,
+          _boundedJson({'error': 'Tool permission is no longer granted.'}),
+        );
+      }
       return ServerToolDisposition.completed;
     }
 
