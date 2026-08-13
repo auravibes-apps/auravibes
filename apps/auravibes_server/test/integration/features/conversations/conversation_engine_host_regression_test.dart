@@ -735,6 +735,131 @@ void main() {
     );
 
     test(
+      'approved dispatched skill resumes with authoritative nested arguments',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+        const skill = {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        };
+        const template = {
+          'id': 'research-search',
+          'skillId': 'research',
+          'skillSlug': 'research',
+          'toolSlug': 'search',
+          'description': 'Search.',
+          'isEnabled': true,
+          'requiresCredential': false,
+          'inputsJson': '[{"name":"query","type":"string","required":true}]',
+          'templateJson': '{"url":"https://example.com?q={{query}}"}',
+        };
+        await insert(WorkspaceResourceKind.skill, 'research', skill);
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          template,
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        final tools = materializeCloudSkillTools(
+          selectedSkillIds: const {'research'},
+          userSkills: const [skill],
+          templateTools: const [template],
+          appSkillSettings: const [],
+          isChildConversation: false,
+        );
+        final manifest = await buildCloudSkillManifest(
+          slug: 'research',
+          userSkills: const [skill],
+          tools: tools,
+        );
+        final wrapperArguments = {
+          'skill': 'research',
+          'tool': 'search',
+          'args': <String, Object?>{'query': 'nested query'},
+          'revision': manifest!.revision,
+        };
+        Map<String, dynamic>? executedArguments;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, tool, request) async {
+            expect(tool.descriptor.fullName, 'skill__user__research__search');
+            executedArguments = request.arguments;
+            return {'ok': true};
+          },
+        );
+
+        expect(
+          await runtime.handle(
+            fixture.database,
+            turn: fixture.turn,
+            messageId: assistant.id!,
+            request: ServerToolRequest(
+              id: 'approved-nested-args',
+              name: callSkillToolName,
+              arguments: wrapperArguments,
+            ),
+          ),
+          ServerToolDisposition.awaitingApproval,
+        );
+        final pending = (await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('approved-nested-args'),
+        ))!;
+        expect(pending.name, 'skill__user__research__search');
+        expect(jsonDecode(pending.argumentsJson), wrapperArguments);
+        await ConversationToolCall.db.updateRow(
+          fixture.database,
+          pending.copyWith(
+            status: 'approved',
+            decision: 'approve',
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+
+        await runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'approved-nested-args',
+            name: callSkillToolName,
+            arguments: wrapperArguments,
+          ),
+        );
+
+        expect(executedArguments, {'query': 'nested query'});
+      },
+    );
+
+    test(
       'durable cancellation before executor invocation prevents side effects',
       () async {
         final fixture = await prepare();

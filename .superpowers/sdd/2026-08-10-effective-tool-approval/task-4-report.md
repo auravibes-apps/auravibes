@@ -53,3 +53,21 @@ Implemented shared effective target approval resolution, exact nested target per
 
 - Two required DB-backed integration suites did not produce terminal results in available runner despite long timeouts. Focused pure tests and fatal analyzer pass.
 - Existing response limit uses shared `McpServerPolicy.maxResponseBytes`; callback-specific tuning can split later if requirements diverge.
+
+## Fix Round 1
+
+Reviewer findings fixed:
+
+- Exact nested approval rows retain authoritative wrapper arguments for replay, re-resolve target against current server state, then invoke executor with only nested `args` and authoritative target tool.
+- Callback HTTP timeout now force-closes active `HttpClient` before surfacing `TimeoutException`; cancellation uses same immediate close boundary.
+- Added actual runtime/DB regression for approval pause → persisted exact target → approved replay with nested args, plus bounded timeout lifecycle test.
+
+Evidence:
+
+- `fvm dart test test/features/conversations/engine/server_tool_executor_test.dart` — 12 passed.
+- `fvm dart test test/features/conversations/engine/server_tool_runtime_test.dart` — 22 passed.
+- fatal analyzer for runtime/executor — passed, no issues.
+- DB regression suite bounded to 45 seconds: stopped at `loading ...conversation_engine_host_regression_test.dart`; test body never started.
+- Execution-state suite bounded to 20 seconds: stopped at `loading ...conversation_execution_state_test.dart`; test body never started.
+
+Residual blocker: local Serverpod integration harness cannot finish suite loading, consistent with unavailable external DB/test infrastructure. No integration pass claimed.

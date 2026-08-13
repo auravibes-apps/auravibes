@@ -728,11 +728,16 @@ class ServerToolRuntime {
     );
     if (existing != null) {
       final persistedDescriptor = _resolver.resolve(existing.name);
+      final storedArguments = _jsonMap(existing.argumentsJson);
+      final storedCommand = _skillCommandOrNull(storedArguments);
       final isNestedSkillCall =
-          request.name == callSkillToolName &&
           (persistedDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
-              persistedDescriptor?.kind == AgentResolvedToolKind.skillNative);
+              persistedDescriptor?.kind == AgentResolvedToolKind.skillNative) &&
+          storedCommand != null;
       if ((!isNestedSkillCall && existing.name != request.name) ||
+          (isNestedSkillCall &&
+              request.name != callSkillToolName &&
+              request.name != existing.name) ||
           (existing.decision == null && existing.argumentsDigest != digest)) {
         throw const FormatException('Tool call identity changed.');
       }
@@ -756,9 +761,14 @@ class ServerToolRuntime {
       }
       request = ServerToolRequest(
         id: request.id,
-        name: request.name,
-        arguments: _jsonMap(existing.argumentsJson),
+        name: isNestedSkillCall ? callSkillToolName : request.name,
+        arguments: storedArguments,
       );
+      if (isNestedSkillCall) {
+        tool = currentTools
+            .where((candidate) => candidate.spec.name == callSkillToolName)
+            .singleOrNull;
+      }
     }
 
     final legacyDescriptor = _resolver.resolve(request.name);
@@ -811,6 +821,7 @@ class ServerToolRuntime {
       );
       return ServerToolDisposition.completed;
     }
+    var executionRequest = request;
     var permissionDescriptor = tool.descriptor;
     if (request.name == callSkillToolName) {
       try {
@@ -819,6 +830,7 @@ class ServerToolRuntime {
           workspaceId: turn.workspaceId,
           conversationStableId: conversation!.stableId,
         );
+        final command = _skillCommandOrNull(request.arguments);
         final resolvedTarget = await resolveEffectiveToolApprovalTarget(
           requestedTarget: tool.descriptor,
           arguments: request.arguments,
@@ -829,7 +841,7 @@ class ServerToolRuntime {
                 tools: state.tools,
               )).descriptor,
         );
-        if (resolvedTarget == null) {
+        if (resolvedTarget == null || command == null) {
           await _insertResolved(
             session,
             turn: turn,
@@ -846,6 +858,21 @@ class ServerToolRuntime {
             existing.name != permissionDescriptor.fullName) {
           throw const FormatException('Tool call identity changed.');
         }
+        tool = state.tools
+            .where(
+              (candidate) =>
+                  candidate.descriptor.fullName ==
+                  permissionDescriptor.fullName,
+            )
+            .singleOrNull;
+        if (tool == null) {
+          throw const FormatException('Tool is no longer available.');
+        }
+        executionRequest = ServerToolRequest(
+          id: request.id,
+          name: permissionDescriptor.fullName,
+          arguments: Map<String, dynamic>.from(command.args),
+        );
       } on Object catch (error) {
         final call =
             existing ??
@@ -961,7 +988,7 @@ class ServerToolRuntime {
       throw const ConversationCancelledException();
     }
     try {
-      final result = await executor(session, turn, tool, request);
+      final result = await executor(session, turn, tool, executionRequest);
       await _finish(session, call, 'success', _boundedJson(result));
     } on Object catch (error) {
       await _finish(session, call, 'executionError', null);
@@ -1112,6 +1139,14 @@ class ServerToolRuntime {
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) throw const FormatException();
     return decoded;
+  }
+
+  SkillCommandTarget? _skillCommandOrNull(Map<String, dynamic> arguments) {
+    try {
+      return SkillCommandTarget.fromArguments(arguments);
+    } on FormatException {
+      return null;
+    }
   }
 
   String _boundedJson(Object? value) {

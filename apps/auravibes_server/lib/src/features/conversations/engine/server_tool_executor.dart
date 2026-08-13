@@ -181,6 +181,25 @@ Future<void> closeOnServerSkillCancellation({
   }
 }
 
+Future<T> runBoundedServerSkillRequest<T>({
+  required Duration timeout,
+  required Future<T> Function() run,
+  required void Function() close,
+}) async {
+  final timedOut = Completer<T>();
+  final timer = Timer(timeout, () {
+    close();
+    timedOut.completeError(
+      TimeoutException('Tool request timed out.', timeout),
+    );
+  });
+  try {
+    return await Future.any([run(), timedOut.future]);
+  } finally {
+    timer.cancel();
+  }
+}
+
 class ServerToolExecutorService {
   const ServerToolExecutorService({
     this.beforeChildLaunch,
@@ -1343,37 +1362,50 @@ class ServerToolExecutorService {
     ConversationTurn turn, {
     required bool requireHttps,
   }) => (input) {
-    final operation = CancelableOperation<UrlResponse>.fromFuture(
-      _validatedRequest(session, turn, input, requireHttps: requireHttps),
-    );
+    HttpClient? activeClient;
+    var closed = false;
+    void close() {
+      closed = true;
+      activeClient?.close(force: true);
+    }
+
     return CancelableOperation<UrlResponse>.fromFuture(
-      operation.value.timeout(input.timeout),
-      onCancel: operation.cancel,
+      runBoundedServerSkillRequest(
+        timeout: input.timeout,
+        close: close,
+        run: () async {
+          final target = await validateServerSkillRequestTarget(
+            input,
+            requireHttps: requireHttps,
+          );
+          await _throwIfCancelled(session, turn);
+          return _request(
+            session,
+            turn,
+            target.uri,
+            target.addresses,
+            input,
+            onClient: (client) {
+              activeClient = client;
+              if (closed) client.close(force: true);
+            },
+          );
+        },
+      ),
+      onCancel: close,
     );
   };
-
-  Future<UrlResponse> _validatedRequest(
-    Session session,
-    ConversationTurn turn,
-    UrlRequest input, {
-    required bool requireHttps,
-  }) async {
-    final target = await validateServerSkillRequestTarget(
-      input,
-      requireHttps: requireHttps,
-    );
-    await _throwIfCancelled(session, turn);
-    return _request(session, turn, target.uri, target.addresses, input);
-  }
 
   Future<UrlResponse> _request(
     Session session,
     ConversationTurn turn,
     Uri uri,
     List<InternetAddress> addresses,
-    UrlRequest input,
-  ) async {
+    UrlRequest input, {
+    void Function(HttpClient client)? onClient,
+  }) async {
     final client = _client(addresses);
+    onClient?.call(client);
     final requestDone = Completer<void>();
     unawaited(_closeClientOnCancellation(client, session, turn, requestDone));
     final stopwatch = Stopwatch()..start();

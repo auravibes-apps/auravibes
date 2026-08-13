@@ -233,4 +233,19 @@ void main() {
 
     expect(closed, isTrue);
   });
+
+  test('server callback timeout closes active request immediately', () async {
+    var closed = false;
+    final never = Completer<void>();
+
+    await expectLater(
+      runBoundedServerSkillRequest<void>(
+        timeout: Duration.zero,
+        run: () => never.future,
+        close: () => closed = true,
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
+    expect(closed, isTrue);
+  });
 }
