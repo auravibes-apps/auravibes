@@ -808,16 +808,20 @@ void main() {
           'revision': manifest!.revision,
         };
         Map<String, dynamic>? executedArguments;
+        final claimsReached = Completer<void>();
+        final releaseClaims = Completer<void>();
+        var claimWaiters = 0;
         var executorInvocations = 0;
-        final executorEntered = Completer<void>();
-        final releaseExecutor = Completer<void>();
         final runtime = ServerToolRuntime(
+          beforeApprovedClaim: () async {
+            claimWaiters++;
+            if (claimWaiters == 2) claimsReached.complete();
+            await releaseClaims.future;
+          },
           executor: (_, _, tool, request) async {
             executorInvocations++;
             expect(tool.descriptor.fullName, 'skill__user__research__search');
             executedArguments = request.arguments;
-            if (!executorEntered.isCompleted) executorEntered.complete();
-            await releaseExecutor.future;
             return {'ok': true};
           },
         );
@@ -850,7 +854,7 @@ void main() {
           ),
         );
 
-        final firstResume = runtime.handle(
+        Future<ServerToolDisposition> resume() => runtime.handle(
           fixture.database,
           turn: fixture.turn,
           messageId: assistant.id!,
@@ -860,21 +864,15 @@ void main() {
             arguments: wrapperArguments,
           ),
         );
-        await executorEntered.future;
-        final losingResume = await runtime.handle(
-          fixture.database,
-          turn: fixture.turn,
-          messageId: assistant.id!,
-          request: ServerToolRequest(
-            id: 'approved-nested-args',
-            name: callSkillToolName,
-            arguments: wrapperArguments,
-          ),
+        final firstResume = resume();
+        final secondResume = resume();
+        await claimsReached.future;
+        releaseClaims.complete();
+        final dispositions = await Future.wait([firstResume, secondResume]);
+        expect(
+          dispositions,
+          everyElement(ServerToolDisposition.completed),
         );
-        expect(losingResume, ServerToolDisposition.completed);
-        expect(executorInvocations, 1);
-        releaseExecutor.complete();
-        await firstResume;
 
         expect(executedArguments, {'query': 'nested query'});
 

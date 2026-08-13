@@ -99,3 +99,18 @@ Evidence:
 - focused integration regression still stopped while loading the Serverpod harness; initial filter typo and corrected bounded attempt both failed before test body start. No integration pass claimed.
 
 Residual blocker: local Serverpod integration harness still cannot finish suite loading. Atomic behavior is implemented with existing `ConversationToolCall` row lock/transaction APIs; DB-backed regression remains committed for CI.
+
+
+## Fix Round 4
+
+- A replay that observes `running` now returns completed without mutating durable state; no crash recovery is inferred without lease/owner evidence.
+- Finalization now locks and compare-checks persisted status/revision, so only execution owning the claimed row revision can write success/error.
+- DB regression uses a deterministic pre-claim barrier, starts both claim transactions together, and asserts one executor invocation plus final success. Pure runtime regression covers loser no-op while winner completes.
+
+Evidence:
+
+- runtime focused suite: 24 passed.
+- fatal analyzer for runtime and changed tests: no issues.
+- focused integration regression bounded to 45 seconds and stopped while loading the Serverpod harness; test body did not start.
+
+Residual blocker: local Serverpod integration harness remains unavailable. DB concurrency regression is committed for CI.

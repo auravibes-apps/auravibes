@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -658,10 +659,7 @@ void main() {
 
       expect(sideEffects, 1);
       expect(serverToolReplayAction('pending'), ServerToolReplayAction.pause);
-      expect(
-        serverToolReplayAction('running'),
-        ServerToolReplayAction.recover,
-      );
+      expect(serverToolReplayAction('running'), ServerToolReplayAction.skip);
     },
   );
 
@@ -694,21 +692,39 @@ void main() {
     );
   });
 
-  test('approved execution claim has one concurrent winner', () async {
-    var persistedStatus = 'approved';
+  test('running replay cannot overwrite owner success', () async {
+    var status = 'running';
+    var revision = 2;
+    var executorInvocations = 1;
+    final releaseWinner = Completer<void>();
+    final winner = () async {
+      await releaseWinner.future;
+      if (serverToolCallCanTransition(
+        currentStatus: status,
+        currentRevision: revision,
+        expectedStatus: 'running',
+        expectedRevision: 2,
+      )) {
+        status = 'success';
+        revision++;
+      }
+    }();
 
-    Future<bool> claim() async {
-      await Future<void>.delayed(Duration.zero);
-      if (!serverToolStatusCanBeClaimed(persistedStatus)) return false;
-      persistedStatus = 'running';
-      return true;
-    }
+    expect(serverToolReplayAction(status), ServerToolReplayAction.skip);
+    releaseWinner.complete();
+    await winner;
 
-    final claims = await Future.wait([claim(), claim()]);
-
-    expect(claims.where((claimed) => claimed), hasLength(1));
-    expect(persistedStatus, 'running');
-    expect(serverToolStatusCanBeClaimed('running'), isFalse);
+    expect(executorInvocations, 1);
+    expect(status, 'success');
+    expect(
+      serverToolCallCanTransition(
+        currentStatus: status,
+        currentRevision: revision,
+        expectedStatus: 'running',
+        expectedRevision: 2,
+      ),
+      isFalse,
+    );
   });
 
   test('cloud exposes only fixed skill command schemas', () {

@@ -9,7 +9,7 @@ import 'conversation_host_effects.dart';
 
 enum ServerToolDisposition { completed, awaitingApproval }
 
-enum ServerToolReplayAction { execute, pause, recover, skip }
+enum ServerToolReplayAction { execute, pause, skip }
 
 String serverToolExecutionFailureCode(Object error) => switch (error) {
   FormatException() => 'invalid_request',
@@ -532,11 +532,18 @@ ServerToolReplayAction serverToolReplayAction(String status) =>
     switch (status) {
       'approved' => ServerToolReplayAction.execute,
       'pending' => ServerToolReplayAction.pause,
-      'running' => ServerToolReplayAction.recover,
+      'running' => ServerToolReplayAction.skip,
       _ => ServerToolReplayAction.skip,
     };
 
 bool serverToolStatusCanBeClaimed(String status) => status == 'approved';
+
+bool serverToolCallCanTransition({
+  required String currentStatus,
+  required int currentRevision,
+  required String expectedStatus,
+  required int expectedRevision,
+}) => currentStatus == expectedStatus && currentRevision == expectedRevision;
 
 bool serverToolPermissionAllowsExecution({
   required AgentToolPermissionResult permission,
@@ -580,6 +587,7 @@ class ServerToolRuntime {
       skillControlToolNames: skillCommandToolNames,
     ),
     this._executor,
+    this.beforeApprovedClaim,
     this.cancellationProbe = const DatabaseConversationCancellationProbe(),
   });
 
@@ -587,6 +595,7 @@ class ServerToolRuntime {
 
   final AgentToolNameResolver _resolver;
   final ServerToolExecutor? _executor;
+  final Future<void> Function()? beforeApprovedClaim;
   final ConversationCancellationProbe cancellationProbe;
 
   Future<List<ServerResolvedTool>> loadTools(
@@ -756,17 +765,6 @@ class ServerToolRuntime {
         return ServerToolDisposition.awaitingApproval;
       }
       if (replay == ServerToolReplayAction.skip) {
-        return ServerToolDisposition.completed;
-      }
-      if (replay == ServerToolReplayAction.recover) {
-        await _finish(
-          session,
-          existing,
-          'executionError',
-          _boundedJson({
-            'error': 'Tool execution was interrupted before completion.',
-          }),
-        );
         return ServerToolDisposition.completed;
       }
       request = ServerToolRequest(
@@ -978,17 +976,21 @@ class ServerToolRuntime {
       return ServerToolDisposition.completed;
     }
 
-    final call = existing == null
-        ? await _insertResolved(
-            session,
-            turn: turn,
-            messageId: messageId,
-            request: persistedRequest,
-            argumentsJson: argumentsJson,
-            digest: digest,
-            status: 'running',
-          )
-        : await _claimApproved(session, existing);
+    ConversationToolCall? call;
+    if (existing == null) {
+      call = await _insertResolved(
+        session,
+        turn: turn,
+        messageId: messageId,
+        request: persistedRequest,
+        argumentsJson: argumentsJson,
+        digest: digest,
+        status: 'running',
+      );
+    } else {
+      await beforeApprovedClaim?.call();
+      call = await _claimApproved(session, existing);
+    }
     if (call == null) return ServerToolDisposition.completed;
     final executor = _executor;
     if (executor == null) {
@@ -1147,17 +1149,33 @@ class ServerToolRuntime {
     ConversationToolCall call,
     String status,
     String? result,
-  ) async {
+  ) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findById(
+      session,
+      call.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        !serverToolCallCanTransition(
+          currentStatus: current.status,
+          currentRevision: current.revision,
+          expectedStatus: call.status,
+          expectedRevision: call.revision,
+        )) {
+      return;
+    }
     await ConversationToolCall.db.updateRow(
       session,
-      call.copyWith(
+      current.copyWith(
         status: status,
         resultJson: result,
-        revision: call.revision + 1,
+        revision: current.revision + 1,
         updatedAt: DateTime.now().toUtc(),
       ),
+      transaction: transaction,
     );
-  }
+  });
 
   Map<String, dynamic> _data(WorkspaceResource resource) {
     final value = jsonDecode(resource.data);
