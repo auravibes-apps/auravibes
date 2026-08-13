@@ -642,7 +642,7 @@ void main() {
   });
 
   test(
-    'approval pause resumes once and completed replay skips side effect',
+    'approval pause resumes once and running waits for its owner',
     () {
       var sideEffects = 0;
       for (final status in [
@@ -662,6 +662,27 @@ void main() {
       expect(serverToolReplayAction('running'), ServerToolReplayAction.skip);
     },
   );
+
+  test('running recovery waits for configured stale threshold', () {
+    final claimedAt = DateTime.utc(2026);
+
+    expect(
+      serverToolRunningIsStale(
+        updatedAt: claimedAt,
+        now: claimedAt.add(serverToolRunningRecoveryTimeout),
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolRunningIsStale(
+        updatedAt: claimedAt,
+        now: claimedAt
+            .add(serverToolRunningRecoveryTimeout)
+            .subtract(const Duration(microseconds: 1)),
+      ),
+      isFalse,
+    );
+  });
 
   test('one-time approval executes once while policy still asks', () {
     var executions = 0;

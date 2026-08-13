@@ -122,7 +122,10 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
   required Iterable<ConversationMessage> messages,
   required Iterable<ConversationToolCall> calls,
 }) {
-  final callsById = {for (final call in calls) call.stableId: call};
+  final callsById = {
+    for (final call in calls.where((call) => call.status != 'running'))
+      call.stableId: call,
+  };
   final replayedCallIds = <String>{};
   final exchanges = <Map<String, dynamic>>[];
   for (final message in messages) {
@@ -164,7 +167,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
     }
   }
   final unbatchedCalls = calls
-      .where((call) => !replayedCallIds.contains(call.stableId))
+      .where(
+        (call) =>
+            call.status != 'running' &&
+            !replayedCallIds.contains(call.stableId),
+      )
       .toList(growable: false);
   if (unbatchedCalls.isNotEmpty) {
     exchanges.addAll(
@@ -344,8 +351,14 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
           awaitingApproval: true,
         );
       }
+
+      if (completedCalls.any((call) => call.status == 'running')) {
+        throw const ConversationEngineConfigurationException(
+          'tool_execution_in_progress',
+        );
+      }
       final resolvedCalls = completedCalls
-          .where((call) => call.status != 'pending')
+          .where((call) => call.status != 'pending' && call.status != 'running')
           .toList(growable: false);
       final persistedMessages = await ConversationMessage.db.find(
         session,

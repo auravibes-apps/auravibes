@@ -279,6 +279,47 @@ void main() {
     },
   );
 
+  test('running calls are not provider-resolved results', () {
+    final now = DateTime(2026);
+    final assistant = ConversationMessage(
+      id: 1,
+      workspaceId: 1,
+      conversationId: 1,
+      turnId: 1,
+      stableId: 'assistant-1',
+      role: 'assistant',
+      kind: 'text',
+      status: 'running',
+      content: '',
+      metadataJson: null,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final running = ConversationToolCall(
+      workspaceId: 1,
+      conversationId: 1,
+      turnId: 1,
+      messageId: 1,
+      stableId: 'call-running',
+      name: 'tool',
+      argumentsJson: '{}',
+      argumentsDigest: 'digest',
+      status: 'running',
+      revision: 2,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    expect(
+      persistedProviderToolExchanges(
+        messages: [assistant],
+        calls: [running],
+      ),
+      isEmpty,
+    );
+  });
+
   test(
     'all-denied continuation includes the original tool call and denial',
     () {

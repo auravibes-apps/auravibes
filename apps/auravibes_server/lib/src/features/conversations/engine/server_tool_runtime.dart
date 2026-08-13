@@ -11,6 +11,16 @@ enum ServerToolDisposition { completed, awaitingApproval }
 
 enum ServerToolReplayAction { execute, pause, skip }
 
+// Exceeds current 90s provider and 30s skill I/O bounds; tolerates clock drift.
+// ponytail: timestamp lease; add owner tokens if tool runtimes exceed this bound.
+const serverToolRunningRecoveryTimeout = Duration(minutes: 2);
+
+bool serverToolRunningIsStale({
+  required DateTime updatedAt,
+  required DateTime now,
+  Duration timeout = serverToolRunningRecoveryTimeout,
+}) => !updatedAt.add(timeout).isAfter(now);
+
 String serverToolExecutionFailureCode(Object error) => switch (error) {
   FormatException() => 'invalid_request',
   CloudWorkspaceException(:final code) => 'workspace_${code.name}',
@@ -545,6 +555,21 @@ bool serverToolCallCanTransition({
   required int expectedRevision,
 }) => currentStatus == expectedStatus && currentRevision == expectedRevision;
 
+bool serverToolRunningCanRecover({
+  required String currentStatus,
+  required int currentRevision,
+  required DateTime updatedAt,
+  required DateTime now,
+  required int expectedRevision,
+}) =>
+    serverToolCallCanTransition(
+      currentStatus: currentStatus,
+      currentRevision: currentRevision,
+      expectedStatus: 'running',
+      expectedRevision: expectedRevision,
+    ) &&
+    serverToolRunningIsStale(updatedAt: updatedAt, now: now);
+
 bool serverToolPermissionAllowsExecution({
   required AgentToolPermissionResult permission,
   required String? persistedStatus,
@@ -765,6 +790,9 @@ class ServerToolRuntime {
         return ServerToolDisposition.awaitingApproval;
       }
       if (replay == ServerToolReplayAction.skip) {
+        if (existing.status == 'running') {
+          await _recoverStaleRunning(session, existing);
+        }
         return ServerToolDisposition.completed;
       }
       request = ServerToolRequest(
@@ -1172,6 +1200,41 @@ class ServerToolRuntime {
         resultJson: result,
         revision: current.revision + 1,
         updatedAt: DateTime.now().toUtc(),
+      ),
+      transaction: transaction,
+    );
+  });
+
+  Future<void> _recoverStaleRunning(
+    Session session,
+    ConversationToolCall call,
+  ) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findById(
+      session,
+      call.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final now = DateTime.now().toUtc();
+    if (current == null ||
+        !serverToolRunningCanRecover(
+          currentStatus: current.status,
+          currentRevision: current.revision,
+          updatedAt: current.updatedAt,
+          now: now,
+          expectedRevision: call.revision,
+        )) {
+      return;
+    }
+    await ConversationToolCall.db.updateRow(
+      session,
+      current.copyWith(
+        status: 'executionError',
+        resultJson: _boundedJson({
+          'error': 'Tool execution was interrupted before completion.',
+        }),
+        revision: current.revision + 1,
+        updatedAt: now,
       ),
       transaction: transaction,
     );

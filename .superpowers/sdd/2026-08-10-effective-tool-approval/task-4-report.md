@@ -114,3 +114,19 @@ Evidence:
 - focused integration regression bounded to 45 seconds and stopped while loading the Serverpod harness; test body did not start.
 
 Residual blocker: local Serverpod integration harness remains unavailable. DB concurrency regression is committed for CI.
+
+
+## Fix Round 5
+
+- Running calls remain unresolved provider-side and force job retry while active.
+- Stale running recovery uses `updatedAt` plus unchanged revision under row lock; two-minute `serverToolRunningRecoveryTimeout` exceeds current 90-second provider and 30-second skill I/O bounds while allowing clock drift.
+- Active concurrent running losers remain no-op, and finalization ownership checks still prevent stale recovery from overwriting a winner.
+
+Evidence:
+
+- runtime focused suite: 25 passed.
+- host running-result regression: passed.
+- fatal analyzer for runtime, host, and changed tests: no issues.
+- focused execution-state integration filter reached suite loading but local Serverpod harness did not start test bodies before runner timeout.
+
+Residual risk: timestamp/revision is a calibrated lease proxy, not an explicit owner token. If supported tool runtimes exceed two minutes, raise the knob or add durable owner leases in Task 5 recovery work.
