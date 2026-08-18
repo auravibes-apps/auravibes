@@ -63,6 +63,7 @@ yarn-error.log*
 # Pi local runtime state (keep .pi/settings.json, agents, prompts, and .pi-lens config tracked)
 .pi/agent-memory/
 .pi/cache/
+.pi/fabric/mesh/
 .pi/git/
 .pi/logs/
 .pi/npm/
