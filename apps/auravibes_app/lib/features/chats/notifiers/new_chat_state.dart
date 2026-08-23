@@ -54,7 +54,7 @@ class NewChatNotifier extends _$NewChatNotifier {
 
     state = state.copyWith(isLoading: true);
     try {
-      return sendNewMessageUsecase.call(
+      return await sendNewMessageUsecase.call(
         draft: draft,
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,

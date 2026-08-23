@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Component callbacks stay colocated with UI state.
 
-import 'dart:async';
 import 'dart:math' as math show pi, sin;
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -101,7 +100,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
         AnimationController(duration: widget.duration, vsync: this);
     _controller = controller;
 
-    unawaited(controller.repeat());
+    final _ = controller.repeat();
   }
 
   @override

@@ -63,7 +63,7 @@ class CodexOAuthService {
         const Duration(minutes: 5),
       );
 
-      return exchangeCodeForToken(
+      return await exchangeCodeForToken(
         code: code,
         redirectUri: redirectUri,
         codeVerifier: pkce.verifier,

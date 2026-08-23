@@ -193,7 +193,7 @@ class MessageRepository {
 
       await _deleteDraftAttachmentFiles(message.attachments);
 
-      return _mapToMessageWithAttachments(createdMessage);
+      return await _mapToMessageWithAttachments(createdMessage);
     } on Exception {
       await _deleteDraftAttachmentFiles(promotedAttachments);
 
