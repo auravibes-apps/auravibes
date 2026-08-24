@@ -31,6 +31,8 @@ class ProviderFactory {
     final baseUrl = connectionUrl ?? _blankToNull(config.modelsProvider.url);
     final runtime = _runtimeSelection(config, connectionUrl);
 
+    final modelId = config.workspaceModelSelection.modelId;
+
     return Genkit(
       plugins: [
         if (runtime.runtime == ProviderRuntime.anthropic)
@@ -43,7 +45,7 @@ class ProviderFactory {
             codec: _openRouterCodec(),
             models: [
               ChatCompletionsModelDefinition(
-                name: config.workspaceModelSelection.modelId,
+                name: modelId,
               ),
             ],
           )
@@ -52,7 +54,7 @@ class ProviderFactory {
             accessToken: apiKey,
             accountId: config.modelConnection.oauthMetadata?.accountId,
             sessionId: sessionId,
-            models: [config.workspaceModelSelection.modelId],
+            models: [modelId],
           )
         else if (runtime.runtime == ProviderRuntime.openAiReasoning &&
             baseUrl != null)
@@ -63,7 +65,7 @@ class ProviderFactory {
             codec: _openAICompatReasoningCodec(),
             models: [
               ChatCompletionsModelDefinition(
-                name: config.workspaceModelSelection.modelId,
+                name: modelId,
               ),
             ],
           )

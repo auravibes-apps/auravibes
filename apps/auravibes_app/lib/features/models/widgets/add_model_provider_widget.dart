@@ -329,15 +329,16 @@ class _ErrorBanner extends ConsumerWidget {
     if (error == null) {
       return const SizedBox.shrink();
     }
+    final errorColor = context.auraColors.error;
 
     return Container(
       padding: EdgeInsets.all(
         context.auraTheme.fromSpacing(.md),
       ),
       decoration: BoxDecoration(
-        color: context.auraColors.error.withValues(alpha: 0.1),
+        color: errorColor.withValues(alpha: 0.1),
         border: Border.all(
-          color: context.auraColors.error,
+          color: errorColor,
         ),
         borderRadius: BorderRadius.all(
           Radius.circular(
@@ -350,14 +351,14 @@ class _ErrorBanner extends ConsumerWidget {
           Icon(
             Icons.error_outline,
             size: 20,
-            color: context.auraColors.error,
+            color: errorColor,
           ),
           const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
               error,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: context.auraColors.error,
+                color: errorColor,
               ),
             ),
           ),

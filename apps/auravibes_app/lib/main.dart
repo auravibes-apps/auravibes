@@ -221,6 +221,11 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
       ? Typography.material2021().white
       : Typography.material2021().black;
 
+  final typography = auraTheme.typography;
+  final mediumWeight = typography.fontWeightMedium;
+  final smallSize = typography.fontSizeSm;
+  final extraSmallSize = typography.fontSizeXs;
+
   return baseTheme
       .apply(
         bodyColor: colors.onSurface,
@@ -264,26 +269,26 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
         ),
         titleSmall: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeSm,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          smallSize,
+          fontWeight: mediumWeight,
         ),
         bodyLarge: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeBase),
-        bodyMedium: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeSm),
-        bodySmall: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeXs),
+        bodyMedium: _auraTextStyle(auraTheme, smallSize),
+        bodySmall: _auraTextStyle(auraTheme, extraSmallSize),
         labelLarge: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeSm,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          smallSize,
+          fontWeight: mediumWeight,
         ),
         labelMedium: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeXs,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          extraSmallSize,
+          fontWeight: mediumWeight,
         ),
         labelSmall: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeXs,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          extraSmallSize,
+          fontWeight: mediumWeight,
         ),
       );
 }

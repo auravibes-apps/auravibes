@@ -190,6 +190,7 @@ class _NavigationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
 
     return Row(
       children: [
@@ -206,7 +207,7 @@ class _NavigationHeader extends StatelessWidget {
             ),
             style: TextStyle(
               color: auraColors.onSurface,
-              fontSize: context.auraTheme.typography.fontSizeSm,
+              fontSize: typography.fontSizeSm,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -261,6 +262,7 @@ class _ToolCallInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
     final decodedArgs = _approvalArgumentsPreview(
       toolName: toolName,
       argumentsRaw: argumentsRaw,
@@ -295,7 +297,7 @@ class _ToolCallInfo extends StatelessWidget {
               sourceLabel,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: context.auraTheme.typography.fontSizeXs,
+                fontSize: typography.fontSizeXs,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -305,7 +307,7 @@ class _ToolCallInfo extends StatelessWidget {
               decodedArgs,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: context.auraTheme.typography.fontSizeXs,
+                fontSize: typography.fontSizeXs,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 3,

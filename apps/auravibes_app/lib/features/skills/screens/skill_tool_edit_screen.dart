@@ -384,14 +384,13 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       }
       query[key] = value;
     }
+    final body = _bodyController.text.trim();
     final template = <String, Object>{
       'url': url,
       'method': _method.value,
       if (query.isNotEmpty) 'query': query,
-      if (_bodyController.text.trim().isNotEmpty)
-        'body': _bodyController.text.trim(),
-      if (_bodyController.text.trim().isNotEmpty)
-        'bodyFormat': _bodyFormat.value,
+      if (body.isNotEmpty) 'body': body,
+      if (body.isNotEmpty) 'bodyFormat': _bodyFormat.value,
     };
 
     return jsonEncode(template);

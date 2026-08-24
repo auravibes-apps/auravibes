@@ -70,6 +70,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
     final trackColor = _getTrackColor(auraColors);
     final thumbColor = _getThumbColor(auraColors);
     final loadingTint = _getLoadingTint();
+    final normalAnimation = auraTheme.animation.normal;
 
     void handleToggle() => onChanged?.call(!widget.value);
 
@@ -128,17 +129,17 @@ class _AuraSwitchState extends State<AuraSwitch> {
                                 size: thumbSize * 0.6,
                               )
                             : null,
-                        duration: auraTheme.animation.normal,
+                        duration: normalAnimation,
                       ),
                       left: thumbOffset,
                       top: 0,
                       bottom: 0,
                       curve: Curves.easeInOut,
-                      duration: auraTheme.animation.normal,
+                      duration: normalAnimation,
                     ),
                   ],
                 ),
-                duration: auraTheme.animation.normal,
+                duration: normalAnimation,
               ),
             ),
           ),

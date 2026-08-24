@@ -136,6 +136,8 @@ class _AuraDialogShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final auraTheme = context.auraTheme;
+    final mediumSpacing = auraTheme.fromSpacing(.md);
 
     return Center(
       child: Material(
@@ -145,7 +147,7 @@ class _AuraDialogShell extends StatelessWidget {
             color: auraColors.surface,
             borderRadius: BorderRadius.all(
               Radius.circular(
-                context.auraTheme.fromBorderRadius(.lg),
+                auraTheme.fromBorderRadius(.lg),
               ),
             ),
             boxShadow: const [DesignShadows.lg],
@@ -159,15 +161,15 @@ class _AuraDialogShell extends StatelessWidget {
               // Title.
               Padding(
                 padding: EdgeInsets.only(
-                  left: context.auraTheme.fromSpacing(.md),
-                  top: context.auraTheme.fromSpacing(.lg),
-                  right: context.auraTheme.fromSpacing(.md),
+                  left: mediumSpacing,
+                  top: auraTheme.fromSpacing(.lg),
+                  right: mediumSpacing,
                 ),
                 child: DefaultTextStyle(
                   style: TextStyle(
                     color: auraColors.onSurface,
-                    fontSize: context.auraTheme.typography.fontSizeLg,
-                    fontWeight: context.auraTheme.typography.fontWeightSemibold,
+                    fontSize: auraTheme.typography.fontSizeLg,
+                    fontWeight: auraTheme.typography.fontWeightSemibold,
                   ),
                   child: title,
                 ),
@@ -176,16 +178,15 @@ class _AuraDialogShell extends StatelessWidget {
               Flexible(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(
-                    vertical: context.auraTheme.fromSpacing(.sm),
-                    horizontal: context.auraTheme.fromSpacing(.md),
+                    vertical: auraTheme.fromSpacing(.sm),
+                    horizontal: mediumSpacing,
                   ),
                   child: DefaultTextStyle(
                     style: TextStyle(
                       color: auraColors.onSurfaceVariant,
-                      fontSize: context.auraTheme.typography.fontSizeBase,
-                      fontWeight:
-                          context.auraTheme.typography.fontWeightRegular,
-                      height: context.auraTheme.typography.lineHeightBase,
+                      fontSize: auraTheme.typography.fontSizeBase,
+                      fontWeight: auraTheme.typography.fontWeightRegular,
+                      height: auraTheme.typography.lineHeightBase,
                     ),
                     child: message,
                   ),
@@ -193,7 +194,7 @@ class _AuraDialogShell extends StatelessWidget {
               ),
               Padding(
                 padding: EdgeInsets.all(
-                  context.auraTheme.fromSpacing(.md),
+                  mediumSpacing,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,

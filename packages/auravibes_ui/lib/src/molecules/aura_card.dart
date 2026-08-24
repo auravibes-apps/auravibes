@@ -83,6 +83,7 @@ class AuraCard extends StatelessWidget {
       child: child,
       padding: padding,
     );
+    final cardRadius = context.auraTheme.fromBorderRadius(.xl);
 
     // Glass style implementation based on best practices.
     // Reference: https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3.
@@ -90,7 +91,7 @@ class AuraCard extends StatelessWidget {
         ? ClipRRect(
             borderRadius: BorderRadius.all(
               Radius.circular(
-                context.auraTheme.fromBorderRadius(.xl),
+                cardRadius,
               ),
             ),
             // ClipBehavior: Clip.hardEdge,.
@@ -109,9 +110,7 @@ class AuraCard extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.all(
                     Radius.circular(
-                      context.auraTheme.fromBorderRadius(
-                        .xl,
-                      ),
+                      cardRadius,
                     ),
                   ),
                   gradient: LinearGradient(
@@ -135,7 +134,7 @@ class AuraCard extends StatelessWidget {
               border: border,
               borderRadius: BorderRadius.all(
                 Radius.circular(
-                  context.auraTheme.fromBorderRadius(.xl),
+                  cardRadius,
                 ),
               ),
               boxShadow: shadows,

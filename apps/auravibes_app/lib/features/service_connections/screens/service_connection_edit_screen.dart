@@ -211,20 +211,30 @@ class _ServiceConnectionEditScreenState
   Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
+      final nonSecretAttributes = Map.fromEntries(
+        _nonSecretControllers.entries.map((entry) {
+          final value = entry.value.text;
+
+          return MapEntry(entry.key, value);
+        }),
+      );
+      final secretAttributes = Map.fromEntries(
+        _secretControllers.entries
+            .map((entry) {
+              final value = entry.value.text;
+
+              return MapEntry(entry.key, value);
+            })
+            .where((entry) => entry.value.isNotEmpty),
+      );
       final _ = await ref
           .read(skillCredentialOperationsProvider(widget.workspaceId))
           .update(
             widget.connectionId,
             SkillCredentialToUpdate(
               name: _nameController.text.trim(),
-              nonSecretAttributes: {
-                for (final entry in _nonSecretControllers.entries)
-                  entry.key: entry.value.text,
-              },
-              secretAttributes: {
-                for (final entry in _secretControllers.entries)
-                  if (entry.value.text.isNotEmpty) entry.key: entry.value.text,
-              },
+              nonSecretAttributes: nonSecretAttributes,
+              secretAttributes: secretAttributes,
               clearSecretAttributeNames: _clearedSecrets,
             ),
           );

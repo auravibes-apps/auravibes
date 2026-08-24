@@ -90,22 +90,23 @@ String _tooltip(ContextUsageData data) {
         .chats_screens_chat_conversation_context_usage_limit_unavailable
         .tr();
   }
+  final tooltipArgs = data.tooltipArgs();
 
   return switch (data.level) {
     ContextUsageLevel.normal =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_normal
-          .tr(namedArgs: data.tooltipArgs()),
+          .tr(namedArgs: tooltipArgs),
     ContextUsageLevel.elevated =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_elevated
-          .tr(namedArgs: data.tooltipArgs()),
+          .tr(namedArgs: tooltipArgs),
     ContextUsageLevel.warning =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_warning
-          .tr(namedArgs: data.tooltipArgs()),
+          .tr(namedArgs: tooltipArgs),
     ContextUsageLevel.overflow =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_overflow
           .tr(
             namedArgs: {
-              ...data.tooltipArgs(),
+              ...tooltipArgs,
               'overflow': '${data.overflowTokens}',
             },
           ),

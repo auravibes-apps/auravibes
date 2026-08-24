@@ -346,6 +346,7 @@ class _ReasoningSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
 
     return AuraContainer(
       child: Column(
@@ -364,9 +365,9 @@ class _ReasoningSummary extends StatelessWidget {
                 LocaleKeys.chats_screens_chat_conversation_reasoning_summary,
                 style: TextStyle(
                   color: auraColors.onSurfaceVariant,
-                  fontSize: context.auraTheme.typography.fontSizeSm,
+                  fontSize: typography.fontSizeSm,
                   fontWeight: FontWeight.w600,
-                  fontFamily: context.auraTheme.typography.bodyFontFamily,
+                  fontFamily: typography.bodyFontFamily,
                 ),
               ),
             ],
@@ -376,9 +377,9 @@ class _ReasoningSummary extends StatelessWidget {
             content,
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
-              fontSize: context.auraTheme.typography.fontSizeSm,
-              height: context.auraTheme.typography.lineHeightBase,
-              fontFamily: context.auraTheme.typography.bodyFontFamily,
+              fontSize: typography.fontSizeSm,
+              height: typography.lineHeightBase,
+              fontFamily: typography.bodyFontFamily,
             ),
           ),
         ],
@@ -406,6 +407,7 @@ class _AiMessageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,9 +416,9 @@ class _AiMessageContent extends StatelessWidget {
           content,
           style: TextStyle(
             color: auraColors.onSurface,
-            fontSize: context.auraTheme.typography.fontSizeBase,
-            height: context.auraTheme.typography.lineHeightBase,
-            fontFamily: context.auraTheme.typography.bodyFontFamily,
+            fontSize: typography.fontSizeBase,
+            height: typography.lineHeightBase,
+            fontFamily: typography.bodyFontFamily,
           ),
         ),
         const AuraSizedBox(height: .xs),
@@ -424,8 +426,8 @@ class _AiMessageContent extends StatelessWidget {
           RelativeTimeFormatter.format(timestamp),
           style: TextStyle(
             color: auraColors.onSurfaceVariant,
-            fontSize: context.auraTheme.typography.fontSizeXs,
-            fontFamily: context.auraTheme.typography.bodyFontFamily,
+            fontSize: typography.fontSizeXs,
+            fontFamily: typography.bodyFontFamily,
           ),
         ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
@@ -588,23 +590,22 @@ class _ToolCallWidget extends ConsumerWidget {
 
   Color _getStatusColor(BuildContext context) {
     final status = toolCall.resultStatus;
+    final colors = context.auraColors;
     if (status == null) {
-      return isAwaitingApproval
-          ? context.auraColors.warning
-          : context.auraColors.primary;
+      return isAwaitingApproval ? colors.warning : colors.primary;
     }
 
     return switch (status) {
-      ToolCallResultStatus.running => context.auraColors.primary,
-      ToolCallResultStatus.success => context.auraColors.success,
-      ToolCallResultStatus.skippedByUser => context.auraColors.onSurfaceVariant,
-      ToolCallResultStatus.stoppedByUser => context.auraColors.onSurfaceVariant,
-      ToolCallResultStatus.toolNotFound => context.auraColors.error,
-      ToolCallResultStatus.disabledInWorkspace => context.auraColors.warning,
-      ToolCallResultStatus.disabledInConversation => context.auraColors.warning,
-      ToolCallResultStatus.disabledByAgent => context.auraColors.warning,
-      ToolCallResultStatus.notConfigured => context.auraColors.warning,
-      ToolCallResultStatus.executionError => context.auraColors.error,
+      ToolCallResultStatus.running => colors.primary,
+      ToolCallResultStatus.success => colors.success,
+      ToolCallResultStatus.skippedByUser => colors.onSurfaceVariant,
+      ToolCallResultStatus.stoppedByUser => colors.onSurfaceVariant,
+      ToolCallResultStatus.toolNotFound => colors.error,
+      ToolCallResultStatus.disabledInWorkspace => colors.warning,
+      ToolCallResultStatus.disabledInConversation => colors.warning,
+      ToolCallResultStatus.disabledByAgent => colors.warning,
+      ToolCallResultStatus.notConfigured => colors.warning,
+      ToolCallResultStatus.executionError => colors.error,
     };
   }
 }
