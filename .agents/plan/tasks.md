@@ -49,7 +49,7 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 | 7 | type/file naming | complete | `181d7c0c` | 69 -> 0; DCL total 532 -> 463; analyzer attempt hung in existing Riverpod plugin; diff formatted and checked |
 | 8 | `prefer-extracting-callbacks` | complete | `4f05689c` | 38 -> 0; DCL total 463 -> 430; format and diff checks pass |
 | 9 | `format-comment` | complete | `e81c14e7` | 69 -> 0; DCL total 430 -> 363; format and diff checks pass |
-| 10 | `member-ordering` | complete | `5b6a5071` | 363 -> 0 in `/tmp/auravibes-dcl-wave10-final2.json`; app CI 2,818 passed; UI CI 559 passed; dependency/import/format gates passed; native analyzer crashed in Riverpod plugin |
+| 10 | `member-ordering` | complete | `5c1d5d5a` | 363 -> 0 in `/tmp/auravibes-dcl-wave10-final2.json`; app CI 2,818 passed; UI CI 559 passed; dependency/import/format gates passed; native analyzer crashed in Riverpod plugin |
 
 ## Validation evidence
 
