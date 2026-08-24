@@ -17,6 +17,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new tools to the workspace.
 class AddToolModal extends HookConsumerWidget {
+  static const _iconSize = 40.0;
   const AddToolModal({required this.workspaceId, super.key});
 
   final String workspaceId;
@@ -241,8 +242,8 @@ class _AvailableToolTile extends ConsumerWidget {
             ),
           ),
         ),
-        width: 40,
-        height: 40,
+        width: AddToolModal._iconSize,
+        height: AddToolModal._iconSize,
         child: toolType.getIconWidget(),
       ),
       trailing: const AuraIcon(

@@ -101,6 +101,12 @@ part 'app_database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
+  static const _agentsSchemaVersion = 2;
+  static const _agentToolsSchemaVersion = 3;
+  static const _splitSchemaVersion = 4;
+  static const _cloudWorkspaceSchemaVersion = 5;
+  static const _currentSchemaVersion = 6;
+
   /// Creates a new [AppDatabase] instance.
   ///
   /// If [connection] is provided, uses that connection.
@@ -113,7 +119,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Database schema version.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => _currentSchemaVersion;
 
   /// Database creation strategy.
   @override
@@ -123,30 +129,31 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (m, from, to) async {
-        if (from < 2) {
+        if (from < _agentsSchemaVersion) {
           await m.createTable(agents);
           await m.createTable(agentSkills);
           await m.addColumn(conversations, conversations.agentId);
         }
-        if (from < 3) {
+        if (from < _agentToolsSchemaVersion) {
           await m.createTable(agentTools);
         }
-        if (from < 4) {
+        if (from < _splitSchemaVersion) {
           await _upgradeToSchema4(m);
         }
-        if (from == 4) {
+        if (from == _splitSchemaVersion) {
           await _upgradeSplitSchema4(m);
         }
-        if (from >= 2 && from < 5) {
+        if (from >= _agentsSchemaVersion &&
+            from < _cloudWorkspaceSchemaVersion) {
           await _upgradeAgentsToSchema5(m);
         }
-        if (from < 5) {
+        if (from < _cloudWorkspaceSchemaVersion) {
           await customStatement(
             'UPDATE agents SET description = substr(trim(content), 1, 512) '
             'WHERE length(description) = 0',
           );
         }
-        if (from < 6) {
+        if (from < _currentSchemaVersion) {
           await m.addColumn(workspaces, workspaces.cloudWorkspaceId);
           await m.addColumn(workspaces, workspaces.cloudAccountId);
         }

@@ -232,7 +232,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   void _openDrawer() {
-    if (_requiredController.value >= 1.0 - 0.001) {
+    const settledThreshold = 0.001;
+    if (_requiredController.value >= 1.0 - settledThreshold) {
       _isOpen = true;
 
       return;
@@ -245,7 +246,8 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   void _closeDrawer() {
-    if (_requiredController.value <= 0.0 + 0.001) {
+    const settledThreshold = 0.001;
+    if (settledThreshold >= _requiredController.value) {
       _isOpen = false;
 
       return;
@@ -413,8 +415,9 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   Widget _buildDesktopDragArea(double drawerWidth) {
+    const midpoint = 0.5;
     return Positioned(
-      left: _requiredController.value < 0.5 ? 0 : drawerWidth,
+      left: _requiredController.value < midpoint ? 0 : drawerWidth,
       top: 0,
       bottom: 0,
       width: _desktopDragAreaWidth,
@@ -641,13 +644,15 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   }
 
   List<Color> get _scrimGradientColors {
+    const middleGradientOpacity = 0.5;
+    const trailingGradientOpacity = 0.2;
     final color = widget.isDarkMode ? Colors.black : _scrimColor;
     final opacity = _gradientStartOpacity * _requiredController.value;
 
     return [
       color.withValues(alpha: opacity),
-      color.withValues(alpha: opacity * 0.5),
-      color.withValues(alpha: opacity * 0.2),
+      color.withValues(alpha: opacity * middleGradientOpacity),
+      color.withValues(alpha: opacity * trailingGradientOpacity),
       color.withValues(alpha: 0),
     ];
   }

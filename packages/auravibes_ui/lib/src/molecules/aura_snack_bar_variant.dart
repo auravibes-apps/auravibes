@@ -230,6 +230,13 @@ class _AuraSnackBarOverlayEntry extends StatefulWidget {
 
 class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     with SingleTickerProviderStateMixin {
+  static const _horizontalInset = 16.0;
+  static const _contentFontSize = 14.0;
+  static const _actionGap = 8.0;
+  static const _actionVerticalPadding = 4.0;
+  static const _actionHorizontalPadding = 8.0;
+  static const _contentVerticalPadding = 14.0;
+  static const _bottomInset = 16.0;
   AnimationController? _animationController;
   Animation<Offset>? _slideAnimation;
   Animation<double>? _fadeAnimation;
@@ -327,9 +334,9 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     }
 
     return Positioned(
-      left: 16,
-      right: 16,
-      bottom: MediaQuery.paddingOf(context).bottom + 16,
+      left: _horizontalInset,
+      right: _horizontalInset,
+      bottom: MediaQuery.paddingOf(context).bottom + _bottomInset,
       child: SlideTransition(
         position: slideAnimation,
         child: FadeTransition(
@@ -353,7 +360,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                   top: false,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      vertical: 14,
+                      vertical: _contentVerticalPadding,
                       horizontal: 16,
                     ),
                     child: Row(
@@ -363,7 +370,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                           child: DefaultTextStyle(
                             style: TextStyle(
                               color: widget.foregroundColor,
-                              fontSize: 14,
+                              fontSize: _contentFontSize,
                               fontWeight: FontWeight.w500,
                             ),
                             child: widget.content,
@@ -371,18 +378,18 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
                         ),
                         // Action button.
                         if (actionLabel != null) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: _actionGap),
                           GestureDetector(
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                vertical: 4,
-                                horizontal: 8,
+                                vertical: _actionVerticalPadding,
+                                horizontal: _actionHorizontalPadding,
                               ),
                               child: Text(
                                 actionLabel,
                                 style: TextStyle(
                                   color: widget.foregroundColor,
-                                  fontSize: 14,
+                                  fontSize: _contentFontSize,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

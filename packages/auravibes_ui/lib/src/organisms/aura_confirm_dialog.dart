@@ -229,6 +229,8 @@ class AuraConfirmDialogActions {
 /// Returns `true` if confirmed, `false` if cancelled,
 /// `null` if dismissed (e.g., by tapping outside).
 abstract final class AuraDialogs {
+  static const _transitionScale = 0.95;
+
   /// Shows a confirmation dialog and returns the user's selection.
   static Future<bool?> confirm({
     required BuildContext context,
@@ -260,7 +262,7 @@ abstract final class AuraDialogs {
           child: ScaleTransition(
             scale:
                 Tween<double>(
-                  begin: 0.95,
+                  begin: _transitionScale,
                   end: 1,
                 ).animate(
                   CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -298,7 +300,7 @@ abstract final class AuraDialogs {
         return FadeTransition(
           opacity: animation,
           child: ScaleTransition(
-            scale: Tween<double>(begin: 0.95, end: 1).animate(
+            scale: Tween<double>(begin: _transitionScale, end: 1).animate(
               CurvedAnimation(
                 parent: animation,
                 curve: Curves.easeOut,

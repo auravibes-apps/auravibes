@@ -47,6 +47,17 @@ class AuraSwitch extends StatefulWidget {
 }
 
 class _AuraSwitchState extends State<AuraSwitch> {
+  static const _loadingScale = 0.6;
+  static const _half = 2.0;
+  static const _smallTrackWidth = 36.0;
+  static const _baseTrackWidth = 44.0;
+  static const _largeTrackWidth = 52.0;
+  static const _smallTrackHeight = 20.0;
+  static const _baseTrackHeight = 24.0;
+  static const _largeTrackHeight = 28.0;
+  static const _smallThumbSize = 16.0;
+  static const _baseThumbSize = 20.0;
+  static const _largeThumbSize = 24.0;
   bool _isFocused = false;
 
   @override
@@ -98,7 +109,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
                 padding: EdgeInsets.all(thumbPadding),
                 decoration: BoxDecoration(
                   color: trackColor,
-                  borderRadius: BorderRadius.circular(trackHeight / 2),
+                  borderRadius: BorderRadius.circular(trackHeight / _half),
                   boxShadow: _isFocused
                       ? [
                           BoxShadow(
@@ -126,7 +137,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
                         child: widget.isLoading
                             ? AuraLoadingCircle(
                                 tint: loadingTint,
-                                size: thumbSize * 0.6,
+                                size: thumbSize * _loadingScale,
                               )
                             : null,
                         duration: normalAnimation,
@@ -154,25 +165,25 @@ class _AuraSwitchState extends State<AuraSwitch> {
 
   double _getTrackWidth() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => 36.0,
-      AuraSwitchSize.base => 44.0,
-      AuraSwitchSize.lg => 52.0,
+      AuraSwitchSize.sm => _smallTrackWidth,
+      AuraSwitchSize.base => _baseTrackWidth,
+      AuraSwitchSize.lg => _largeTrackWidth,
     };
   }
 
   double _getTrackHeight() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => 20.0,
-      AuraSwitchSize.base => 24.0,
-      AuraSwitchSize.lg => 28.0,
+      AuraSwitchSize.sm => _smallTrackHeight,
+      AuraSwitchSize.base => _baseTrackHeight,
+      AuraSwitchSize.lg => _largeTrackHeight,
     };
   }
 
   double _getThumbSize() {
     return switch (widget.size) {
-      AuraSwitchSize.sm => 16.0,
-      AuraSwitchSize.base => 20.0,
-      AuraSwitchSize.lg => 24.0,
+      AuraSwitchSize.sm => _smallThumbSize,
+      AuraSwitchSize.base => _baseThumbSize,
+      AuraSwitchSize.lg => _largeThumbSize,
     };
   }
 

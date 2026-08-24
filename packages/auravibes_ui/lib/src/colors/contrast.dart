@@ -84,7 +84,9 @@ abstract final class ColorContrast {
 
     contrastValue *= 100;
 
-    return contrastValue.clamp(-108.0, 108.0);
+    const maxContrast = 108.0;
+
+    return contrastValue.clamp(-maxContrast, maxContrast);
   }
 
   /// Computes the WCAG 2.x contrast ratio, range [1.0, 21.0].
@@ -100,7 +102,10 @@ abstract final class ColorContrast {
     final higherLuminance = luminanceA > luminanceB ? luminanceA : luminanceB;
     final lowerLuminance = luminanceA > luminanceB ? luminanceB : luminanceA;
 
-    return (higherLuminance + 0.05) / (lowerLuminance + 0.05);
+    const luminanceOffset = 0.05;
+
+    return (higherLuminance + luminanceOffset) /
+        (lowerLuminance + luminanceOffset);
   }
 }
 // Public contrast helpers intentionally remain top-level.

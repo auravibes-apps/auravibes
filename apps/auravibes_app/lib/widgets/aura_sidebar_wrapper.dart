@@ -66,10 +66,13 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
     }
   }
 
+  const newChatIndex = 0;
+  const appSettingsIndex = 1;
+  const footerSettingsIndex = 2;
   return switch (shellIndex) {
-    0 => 0, // New Chat.
-    1 => 1, // App Settings.
-    2 => 2, // Settings (footer).
+    newChatIndex => newChatIndex, // New Chat.
+    appSettingsIndex => appSettingsIndex, // App Settings.
+    footerSettingsIndex => footerSettingsIndex, // Settings (footer).
     _ => -1,
   };
 }

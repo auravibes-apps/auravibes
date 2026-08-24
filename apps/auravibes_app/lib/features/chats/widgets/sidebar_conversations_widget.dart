@@ -91,7 +91,8 @@ class SidebarConversationsWidget extends ConsumerWidget {
 
   String? _currentChatId(List<String>? pathSegments) {
     if (pathSegments == null) return null;
-    if (pathSegments.length < 4) return null;
+    const minimumRouteSegments = 4;
+    if (pathSegments.length < minimumRouteSegments) return null;
     final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
     if (firstSegment != 'workspaces') return null;
     if (thirdSegment != 'chats') return null;

@@ -38,6 +38,7 @@ class AgentDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
+  static const _compactLayoutWidth = 640.0;
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
@@ -665,7 +666,8 @@ class _SaveBar extends StatelessWidget {
               ),
             );
 
-            return constraints.maxWidth < 640
+            return constraints.maxWidth <
+                    _AgentDetailScreenState._compactLayoutWidth
                 ? button
                 : Align(alignment: Alignment.centerRight, child: button);
           },

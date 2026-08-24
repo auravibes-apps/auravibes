@@ -140,6 +140,7 @@ class _ToolIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const iconSize = 40.0;
     return Container(
       decoration: BoxDecoration(
         color: isEnabled && isWorkspaceEnabled
@@ -151,8 +152,8 @@ class _ToolIcon extends StatelessWidget {
           ),
         ),
       ),
-      width: 40,
-      height: 40,
+      width: iconSize,
+      height: iconSize,
       child: toolState.tool.getIconWidget(),
     );
   }

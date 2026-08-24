@@ -229,6 +229,7 @@ class _SkillTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const tagSpacing = 8.0;
     return AuraCard(
       child: AuraRow(
         children: [
@@ -255,7 +256,7 @@ class _SkillTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 Wrap(
-                  spacing: 8,
+                  spacing: tagSpacing,
                   runSpacing: 4,
                   children: [
                     _SkillChip(label: _sourceLabel(context)),

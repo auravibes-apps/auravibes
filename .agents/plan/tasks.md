@@ -15,7 +15,7 @@
 | avoid-returning-widgets | 68 | 30 | Wave 1 config, Wave 5 |
 | format-comment | 69 | 69 | Wave 9 |
 | member-ordering | 354 | 354 | Wave 10 |
-| no-magic-number | 282 | 282 | Wave 4 |
+| no-magic-number | 282 | 0 | Wave 4 |
 | prefer-correct-identifier-length | 317 | 0 | Wave 2 |
 | prefer-correct-type-name | 4 | 4 | Wave 7 |
 | prefer-extracting-callbacks | 38 | 38 | Wave 8 |
@@ -41,7 +41,7 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 | 1 | Widgetbook `avoid-returning-widgets` annotation config | complete | `4a0401c9` | 68 -> 30; Widgetbook 38 -> 0; anti-patterns 0; fatal analyzer passed |
 | 2 | `prefer-correct-identifier-length` | complete | `26de7e08` | 317 -> 0; fatal analyzer passed; UI color tests 24 passed; anti-patterns 0 |
 | 3 | `prefer-moving-to-variable` | complete | `5a6160f3` | 82 -> 0; fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed; anti-patterns 0 |
-| 4 | `no-magic-number` | pending | — | Baseline 282 |
+| 4 | `no-magic-number` | complete | pending | 282 -> 0; anti-patterns 0; changed-file fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed |
 | 5 | remaining `avoid-returning-widgets` | pending | — | Depends on Wave 1 |
 | 6 | `prefer-single-widget-per-file` | pending | — | Baseline 12 |
 | 7 | type/file naming | pending | — | Baseline 4 + 65 |
@@ -63,6 +63,9 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
   name represents Dart `_` discards in DCL 4.2.0; `xs`, `sm`, `md`, `lg`, and
   `xl` are established design-token vocabulary. Real short names were renamed
   contextually.
+- Wave 4 added a narrow analyzer `sort_constructors_first: ignore` because the
+  configured DCL `member-ordering` rule intentionally requires static constants
+  before constructors; no DCL rule is disabled.
 
 ## Recovery protocol
 

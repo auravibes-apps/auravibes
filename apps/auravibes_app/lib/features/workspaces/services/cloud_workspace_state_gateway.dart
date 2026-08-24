@@ -92,7 +92,7 @@ class CloudWorkspaceStateGateway {
   Future<ReadWorkspaceStateResponse> read({
     required List<WorkspaceResourcePageRequest> pages,
     int? afterSequence,
-    int eventLimit = 100,
+    int eventLimit = _pageSize,
   }) {
     final request = ReadWorkspaceStateRequest(
       workspaceId: _workspace.cloudWorkspaceId,

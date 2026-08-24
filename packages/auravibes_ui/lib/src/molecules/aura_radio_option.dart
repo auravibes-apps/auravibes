@@ -143,6 +143,7 @@ class AuraRadio<T> extends StatefulWidget {
 }
 
 class _AuraRadioState<T> extends State<AuraRadio<T>> {
+  static const _radioSize = 24.0;
   bool _isFocused = false;
   bool _isHovered = false;
 
@@ -200,8 +201,8 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
           child: Opacity(
             opacity: isDisabled ? 0.6 : 1.0,
             child: SizedBox(
-              width: 24,
-              height: 24,
+              width: _radioSize,
+              height: _radioSize,
               child: CustomPaint(
                 painter: _RadioPainter(
                   isSelected: isSelected,

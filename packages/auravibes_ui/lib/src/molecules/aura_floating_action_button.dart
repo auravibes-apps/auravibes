@@ -10,6 +10,13 @@ import 'package:flutter/material.dart';
 /// This FAB supports different sizes, icons, extended variants with text,
 /// and proper elevation and shadows.
 class AuraFloatingActionButton extends StatelessWidget {
+  static const _miniSize = 40.0;
+  static const _largeSize = 72.0;
+  static const _miniIconSize = 16.0;
+  static const _regularIconSize = 20.0;
+  static const _largeIconSize = 24.0;
+  static const _regularSize = 56.0;
+
   /// Creates a Aura floating action button.
   const AuraFloatingActionButton({
     required this.onPressed,
@@ -144,19 +151,19 @@ class AuraFloatingActionButton extends StatelessWidget {
 
   double _getFABSize() {
     return switch (size) {
-      AuraFABSize.mini => 40.0,
-      AuraFABSize.regular => 56.0,
-      AuraFABSize.large => 72.0,
-      AuraFABSize.extended => 56.0, // Height for extended.
+      AuraFABSize.mini => _miniSize,
+      AuraFABSize.regular => _regularSize,
+      AuraFABSize.large => _largeSize,
+      AuraFABSize.extended => _regularSize, // Height for extended.
     };
   }
 
   double _getIconPixels() {
     return switch (size) {
-      AuraFABSize.mini => 16,
-      AuraFABSize.regular => 20,
-      AuraFABSize.large => 24,
-      AuraFABSize.extended => 20,
+      AuraFABSize.mini => _miniIconSize,
+      AuraFABSize.regular => _regularIconSize,
+      AuraFABSize.large => _largeIconSize,
+      AuraFABSize.extended => _regularIconSize,
     };
   }
 

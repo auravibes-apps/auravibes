@@ -17,6 +17,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
 class AddMcpModal extends ConsumerWidget {
+  static const _dividerOpacity = 0.2;
   const AddMcpModal({required this.workspaceId, super.key});
 
   final String workspaceId;
@@ -122,7 +123,9 @@ class _AddMcpModalHeader extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: context.auraColors.outline.withValues(alpha: 0.2),
+            color: context.auraColors.outline.withValues(
+              alpha: AddMcpModal._dividerOpacity,
+            ),
           ),
         ),
       ),
@@ -239,7 +242,9 @@ class _Footer extends ConsumerWidget {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: context.auraColors.outline.withValues(alpha: 0.2),
+            color: context.auraColors.outline.withValues(
+              alpha: AddMcpModal._dividerOpacity,
+            ),
           ),
         ),
       ),

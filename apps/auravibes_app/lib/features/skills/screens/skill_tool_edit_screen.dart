@@ -26,6 +26,7 @@ import 'package:textf/textf.dart';
 const _skillToolDescriptionMaxCharacters = 1024;
 
 class SkillToolEditScreen extends ConsumerStatefulWidget {
+  static const _maxToolBodyLines = 12;
   const SkillToolEditScreen({
     required this.workspaceId,
     required this.skillId,
@@ -566,7 +567,7 @@ class _SkillToolForm extends StatelessWidget {
                   LocaleKeys.skills_tool_body_label.tr(context: context),
                 ),
                 minLines: 5,
-                maxLines: 12,
+                maxLines: SkillToolEditScreen._maxToolBodyLines,
               ),
               _InputFieldsSection(
                 fields: inputFields,

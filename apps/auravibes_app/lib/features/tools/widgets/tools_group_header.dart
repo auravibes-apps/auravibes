@@ -141,6 +141,7 @@ class _GroupIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const iconSize = 40.0;
     final isEnabled = groupWithTools.isEnabled;
     final isMcp = groupWithTools.isMcpGroup;
 
@@ -155,8 +156,8 @@ class _GroupIcon extends StatelessWidget {
           ),
         ),
       ),
-      width: 40,
-      height: 40,
+      width: iconSize,
+      height: iconSize,
       child: Center(
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,

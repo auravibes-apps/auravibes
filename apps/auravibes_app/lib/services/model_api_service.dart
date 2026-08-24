@@ -1,6 +1,8 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'dart:io';
+
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
@@ -64,7 +66,7 @@ class ModelApiService {
     Set<String> canonicalModelIds,
   ) {
     final jsonData = response.data;
-    if (response.statusCode != 200 || jsonData == null) {
+    if (response.statusCode != HttpStatus.ok || jsonData == null) {
       throw Exception(
         'API request failed with status ${response.statusCode}',
       );
@@ -130,7 +132,7 @@ ModelApiResponse _fromCatalog(ModelsDevCatalogValue catalog) {
 
 Set<String> _canonicalModelIds(Response<Map<String, dynamic>> response) {
   final jsonData = response.data;
-  if (response.statusCode != 200 || jsonData == null) return {};
+  if (response.statusCode != HttpStatus.ok || jsonData == null) return {};
 
   return jsonData.keys.toSet();
 }

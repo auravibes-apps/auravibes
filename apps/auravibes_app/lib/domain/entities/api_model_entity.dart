@@ -59,6 +59,12 @@ abstract class ApiModelEntity with _$ApiModelEntity {
   }) = _ApiModelEntity;
   const ApiModelEntity._();
 
+  static const _largeContextLimit = 100000;
+  static const _veryLargeContextLimit = 1000000;
+  static const _smallContextLimit = 4000;
+  static const _mediumContextLimit = 32000;
+  static const _largeCategoryLimit = 128000;
+
   factory ApiModelEntity.fromJson(
     String modelProvider,
     Map<String, dynamic> json, [
@@ -94,10 +100,10 @@ abstract class ApiModelEntity with _$ApiModelEntity {
   bool get isOpenSource => openWeights ?? false;
 
   /// Returns true if the model has a large context window (> 100k).
-  bool get hasLargeContext => limitContext > 100000;
+  bool get hasLargeContext => limitContext > _largeContextLimit;
 
   /// Returns true if the model has a very large context window (> 1M).
-  bool get hasVeryLargeContext => limitContext > 1000000;
+  bool get hasVeryLargeContext => limitContext > _veryLargeContextLimit;
 
   bool get isTextGenerationModel =>
       isCanonical &&
@@ -113,10 +119,10 @@ abstract class ApiModelEntity with _$ApiModelEntity {
 
   /// Returns a context size category for the model.
   String get contextCategory {
-    if (limitContext < 4000) return 'Small';
-    if (limitContext < 32000) return 'Medium';
-    if (limitContext < 128000) return 'Large';
-    if (limitContext < 1000000) return 'Very Large';
+    if (limitContext < _smallContextLimit) return 'Small';
+    if (limitContext < _mediumContextLimit) return 'Medium';
+    if (limitContext < _largeCategoryLimit) return 'Large';
+    if (limitContext < _veryLargeContextLimit) return 'Very Large';
 
     return 'Massive';
   }

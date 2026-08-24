@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -100,7 +101,7 @@ class OAuthDiscoveryService {
           )
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authorizationEndpoint =
@@ -240,7 +241,7 @@ class OAuthDiscoveryService {
           )
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authUrl = metadata['authorization_url'] as String?;
@@ -296,7 +297,8 @@ class OAuthDiscoveryService {
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == HttpStatus.ok ||
+          response.statusCode == HttpStatus.created) {
         final registrationResponse =
             json.decode(response.body) as Map<String, dynamic>;
         final clientId = registrationResponse['client_id'] as String?;

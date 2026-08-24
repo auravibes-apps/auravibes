@@ -48,6 +48,7 @@ class AuraPressable extends StatefulWidget {
 
 /// AuraPressableState.
 class AuraPressableState extends State<AuraPressable> {
+  static const _pressedAlphaDivisor = 2.0;
   // Our state.
   bool _hovering = false;
   bool _focused = false;
@@ -85,7 +86,7 @@ class AuraPressableState extends State<AuraPressable> {
     if (pressed) {
       alpha = selectedColor.a;
     } else if (highlighted) {
-      alpha = selectedColor.a / 2;
+      alpha = selectedColor.a / _pressedAlphaDivisor;
     }
     if (widget.onPressed == null) {
       return Container(

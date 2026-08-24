@@ -174,6 +174,7 @@ class AuraMessageBubble extends StatelessWidget {
 }
 
 class _AuraMessageBubbleContent extends StatelessWidget {
+  static const _attachmentIconSize = 20.0;
   const _AuraMessageBubbleContent({
     required this.content,
     required this.contentType,
@@ -216,7 +217,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
               children: [
                 Icon(
                   Icons.broken_image,
-                  size: 20,
+                  size: _attachmentIconSize,
                   color: textColor,
                 ),
                 const AuraSizedBox(width: .sm),
@@ -235,7 +236,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
         children: [
           Icon(
             Icons.attach_file,
-            size: 20,
+            size: _attachmentIconSize,
             color: textColor,
           ),
           const AuraSizedBox(width: .sm),

@@ -3,6 +3,9 @@ import 'dart:math';
 
 /// Represents a 3D vector for color space transformations.
 class Vector {
+  static const double _cubeRootExponent = 1 / 3;
+  static const int _cubeExponent = 3;
+
   /// Creates a 3D vector with the given [x], [y], and [z] components.
   const Vector(this.x, this.y, this.z);
 
@@ -24,10 +27,18 @@ class Vector {
       Vector(x - other.x, y - other.y, z - other.z);
 
   /// Returns the cube root of each component.
-  Vector cbrt() => Vector(pow(x, 1 / 3), pow(y, 1 / 3), pow(z, 1 / 3));
+  Vector cbrt() => Vector(
+    pow(x, _cubeRootExponent),
+    pow(y, _cubeRootExponent),
+    pow(z, _cubeRootExponent),
+  );
 
   /// Returns each component cubed.
-  Vector cubed() => Vector(pow(x, 3), pow(y, 3), pow(z, 3));
+  Vector cubed() => Vector(
+    pow(x, _cubeExponent),
+    pow(y, _cubeExponent),
+    pow(z, _cubeExponent),
+  );
 
   /// Transforms this vector using the matrix [m].
   Vector transform(MatrixTransformation m) => m.transform(this);

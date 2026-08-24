@@ -421,7 +421,8 @@ class ModelConnectionRepository implements ModelConnectionStore {
   }
 
   String _keySuffix(String key) {
-    return key.lastCharacters(6);
+    const keySuffixLength = 6;
+    return key.lastCharacters(keySuffixLength);
   }
 
   String _decodeApiKey(String decrypted) {

@@ -270,22 +270,31 @@ abstract final class LocalChatAttachmentRecording {
     required int channels,
   }) {
     const bitsPerSample = 16;
-    final blockAlign = channels * bitsPerSample ~/ 8;
+    const wavHeaderSize = 44;
+    const fmtChunkSize = 16;
+    const pcmFormat = 1;
+    const bytesPerSample = 8;
+    const dataChunkOffset = 36;
+    final blockAlign = channels * bitsPerSample ~/ bytesPerSample;
     final byteRate = sampleRate * blockAlign;
     final dataLength = pcmBytes.length;
-    final bytes = Uint8List(dataLength + 44);
+    final bytes = Uint8List(dataLength + wavHeaderSize);
     final data = ByteData.sublistView(bytes);
+    const waveOffset = 8;
+    const formatOffset = 12;
+    const dataOffset = 36;
+    const fmtChunkSizeOffset = 16;
 
     bytes
       ..setAll(0, 'RIFF'.codeUnits)
-      ..setAll(8, 'WAVE'.codeUnits)
-      ..setAll(12, 'fmt '.codeUnits)
-      ..setAll(36, 'data'.codeUnits)
-      ..setAll(44, pcmBytes);
+      ..setAll(waveOffset, 'WAVE'.codeUnits)
+      ..setAll(formatOffset, 'fmt '.codeUnits)
+      ..setAll(dataOffset, 'data'.codeUnits)
+      ..setAll(wavHeaderSize, pcmBytes);
     data
-      ..setUint32(4, dataLength + 36, Endian.little)
-      ..setUint32(16, 16, Endian.little)
-      ..setUint16(20, 1, Endian.little)
+      ..setUint32(4, dataLength + dataChunkOffset, Endian.little)
+      ..setUint32(fmtChunkSizeOffset, fmtChunkSize, Endian.little)
+      ..setUint16(20, pcmFormat, Endian.little)
       ..setUint16(22, channels, Endian.little)
       ..setUint32(24, sampleRate, Endian.little)
       ..setUint32(28, byteRate, Endian.little)

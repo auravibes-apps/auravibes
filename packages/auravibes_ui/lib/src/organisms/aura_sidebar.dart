@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 /// customizable header, navigation items, and footer sections. It is designed
 /// to be a pure UI component that receives all necessary data and callbacks.
 class AuraSidebar extends StatelessWidget {
+  static const _shadowAlpha = 0.1;
+
   /// Creates a Aura sidebar organism.
   const AuraSidebar({
     required this.navigationItems,
@@ -99,7 +101,7 @@ class AuraSidebar extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: context.auraColors.shadow.withValues(alpha: 0.1),
+            color: context.auraColors.shadow.withValues(alpha: _shadowAlpha),
             offset: const Offset(2, 0),
             blurRadius: 8,
           ),
@@ -159,6 +161,7 @@ class AuraNavigationData {
 }
 
 class _AuraSidebarItem extends StatelessWidget {
+  static const _selectedAlpha = 0.1;
   const _AuraSidebarItem({
     required this.label,
     required this.icon,
@@ -188,7 +191,9 @@ class _AuraSidebarItem extends StatelessWidget {
       ),
       color: colors.primary.withValues(alpha: 0.8),
       decoration: BoxDecoration(
-        color: selected ? colors.primary.withValues(alpha: 0.1) : null,
+        color: selected
+            ? colors.primary.withValues(alpha: _selectedAlpha)
+            : null,
         borderRadius: BorderRadius.all(
           Radius.circular(
             context.auraTheme.fromBorderRadius(.xl),

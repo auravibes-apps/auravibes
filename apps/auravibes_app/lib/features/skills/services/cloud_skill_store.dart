@@ -667,8 +667,11 @@ class CloudSkillStore {
     final value = values.where((item) => item.isNotEmpty).firstOrNull;
     if (value == null) return null;
 
-    return value.characters.length <= 6
+    const suffixLength = 6;
+    return value.characters.length <= suffixLength
         ? value
-        : value.characters.getRange(value.characters.length - 6).toString();
+        : value.characters
+              .getRange(value.characters.length - suffixLength)
+              .toString();
   }
 }

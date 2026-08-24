@@ -265,7 +265,9 @@ class CodexOAuthService {
         ),
       );
       final status = response.statusCode ?? 0;
-      if (status >= 200 && status < 300) return _mapResponse(response.data);
+      if (status >= HttpStatus.ok && status < HttpStatus.multipleChoices) {
+        return _mapResponse(response.data);
+      }
       if (status != HttpStatus.forbidden && status != HttpStatus.notFound) {
         throw Exception('Device auth failed with status $status');
       }
@@ -317,7 +319,10 @@ class CodexOAuthService {
   Duration _interval(Object? value) {
     if (value is int) return Duration(seconds: max(value, 1));
     if (value is String) {
-      return Duration(seconds: max(int.tryParse(value) ?? 5, 1));
+      const defaultPollSeconds = 5;
+      return Duration(
+        seconds: max(int.tryParse(value) ?? defaultPollSeconds, 1),
+      );
     }
 
     return const Duration(seconds: 5);

@@ -83,6 +83,8 @@ Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
     fallback: 'https://openrouter.ai/api/v1',
   );
   try {
+    const successStatusLowerBound = 200;
+    const successStatusUpperBound = 300;
     final request = await http
         .get(
           Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/key'),
@@ -93,7 +95,8 @@ Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
         )
         .timeout(const Duration(seconds: 10));
 
-    return request.statusCode >= 200 && request.statusCode < 300;
+    return request.statusCode >= successStatusLowerBound &&
+        request.statusCode < successStatusUpperBound;
   } on Exception {
     return false;
   }
@@ -105,6 +108,8 @@ Future<List<String>?> _openRouterModels(ModelProvider provider) async {
     fallback: 'https://openrouter.ai/api/v1',
   );
   try {
+    const successStatusLowerBound = 200;
+    const successStatusUpperBound = 300;
     final request = await http
         .get(
           Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/models'),
@@ -114,7 +119,10 @@ Future<List<String>?> _openRouterModels(ModelProvider provider) async {
           },
         )
         .timeout(const Duration(seconds: 10));
-    if (request.statusCode < 200 || request.statusCode >= 300) return null;
+    if (request.statusCode < successStatusLowerBound ||
+        request.statusCode >= successStatusUpperBound) {
+      return null;
+    }
 
     final json = jsonDecode(request.body);
     if (json is! Map<String, dynamic>) return null;

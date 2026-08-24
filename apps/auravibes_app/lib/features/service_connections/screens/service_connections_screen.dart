@@ -19,6 +19,7 @@ const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 
 class ServiceConnectionsScreen extends ConsumerWidget {
+  static const _tagSpacing = 6.0;
   const ServiceConnectionsScreen({required this.workspaceId, super.key});
 
   final String workspaceId;
@@ -465,8 +466,8 @@ class _ConnectionMetadata extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: ServiceConnectionsScreen._tagSpacing,
+      runSpacing: ServiceConnectionsScreen._tagSpacing,
       children: values.map((value) {
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),

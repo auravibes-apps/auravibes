@@ -8,6 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
+const _defaultShowDurationMs = 2000.0;
+const _minShowDurationMs = 500.0;
+const _maxShowDurationMs = 5000.0;
+const _maxWaitDurationMs = 2000.0;
+
 @widgetbook.UseCase(name: 'Default Tooltip', type: AuraTooltip)
 Widget defaultTooltipUseCase(BuildContext context) {
   return Center(
@@ -32,9 +37,9 @@ Widget defaultTooltipUseCase(BuildContext context) {
         milliseconds: context.knobs.double
             .slider(
               label: 'showDuration (ms)',
-              initialValue: 2000,
-              min: 500,
-              max: 5000,
+              initialValue: _defaultShowDurationMs,
+              min: _minShowDurationMs,
+              max: _maxShowDurationMs,
             )
             .toInt(),
       ),
@@ -44,7 +49,7 @@ Widget defaultTooltipUseCase(BuildContext context) {
               label: 'waitDuration (ms)',
               initialValue: 0,
               min: 0,
-              max: 2000,
+              max: _maxWaitDurationMs,
             )
             .toInt(),
       ),

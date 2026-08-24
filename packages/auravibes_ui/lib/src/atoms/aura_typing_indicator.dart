@@ -35,6 +35,13 @@ class AuraTypingIndicator extends StatefulWidget {
 
 class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     with TickerProviderStateMixin {
+  static const _dotCount = 3;
+  static const _stagger = 0.2;
+  static const _animationSpan = 0.4;
+  static const _initialScale = 0.4;
+  static const _smallDot = 4.0;
+  static const _mediumDot = 6.0;
+  static const _largeDot = 8.0;
   AnimationController? _animationController;
   List<Animation<double>> _dotAnimations = const [];
 
@@ -48,12 +55,12 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     _animationController = animationController;
 
     // Create staggered animations for each dot.
-    _dotAnimations = List.generate(3, (index) {
-      final begin = index * 0.2; // Stagger by 20% of the animation.
-      final end = begin + 0.4; // Each dot animates for 40% of the cycle.
+    _dotAnimations = List.generate(_dotCount, (index) {
+      final begin = index * _stagger;
+      final end = begin + _animationSpan;
 
       return Tween<double>(
-        begin: 0.4,
+        begin: _initialScale,
         end: 1,
       ).animate(
         CurvedAnimation(
@@ -146,17 +153,17 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
 
   double _getDotSize() {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => 4.0,
-      AuraTypingIndicatorSize.medium => 6.0,
-      AuraTypingIndicatorSize.large => 8.0,
+      AuraTypingIndicatorSize.small => _smallDot,
+      AuraTypingIndicatorSize.medium => _mediumDot,
+      AuraTypingIndicatorSize.large => _largeDot,
     };
   }
 
   double _getDotSpacing() {
     return switch (widget.size) {
-      AuraTypingIndicatorSize.small => 4.0,
-      AuraTypingIndicatorSize.medium => 6.0,
-      AuraTypingIndicatorSize.large => 8.0,
+      AuraTypingIndicatorSize.small => _smallDot,
+      AuraTypingIndicatorSize.medium => _mediumDot,
+      AuraTypingIndicatorSize.large => _largeDot,
     };
   }
 

@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 /// - Reconnect button (for MCP error/disconnected states)
 /// - Expand/collapse chevron
 class ConversationGroupHeader extends StatelessWidget {
+  static const _iconSize = 40.0;
   const ConversationGroupHeader({
     required this.groupWithTools,
     required this.isExpanded,
@@ -142,8 +143,8 @@ class _GroupIcon extends StatelessWidget {
           ),
         ),
       ),
-      width: 40,
-      height: 40,
+      width: ConversationGroupHeader._iconSize,
+      height: ConversationGroupHeader._iconSize,
       child: Center(
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,

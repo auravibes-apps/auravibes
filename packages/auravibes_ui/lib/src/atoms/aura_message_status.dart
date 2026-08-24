@@ -35,6 +35,10 @@ class AuraMessageStatus extends StatefulWidget {
 
 class _AuraMessageStatusState extends State<AuraMessageStatus>
     with TickerProviderStateMixin {
+  static const double _fullTurnRadians = 2 * 3.14159;
+  static const _smallPadding = 2.0;
+  static const _mediumPadding = 4.0;
+  static const _largePadding = 6.0;
   AnimationController? _rotationController;
   AnimationController? _scaleController;
   Animation<double>? _rotationAnimation;
@@ -136,7 +140,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
           animation: rotationAnimation,
           builder: (context, child) {
             return Transform.rotate(
-              angle: rotationAnimation.value * 2 * 3.14159,
+              angle: rotationAnimation.value * _fullTurnRadians,
               child: child,
             );
           },
@@ -198,9 +202,9 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
 
   double _getPadding() {
     return switch (widget.size) {
-      AuraMessageStatusSize.small => 2.0,
-      AuraMessageStatusSize.medium => 4.0,
-      AuraMessageStatusSize.large => 6.0,
+      AuraMessageStatusSize.small => _smallPadding,
+      AuraMessageStatusSize.medium => _mediumPadding,
+      AuraMessageStatusSize.large => _largePadding,
     };
   }
 

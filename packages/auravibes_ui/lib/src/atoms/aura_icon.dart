@@ -10,6 +10,13 @@ import 'package:flutter/material.dart';
 /// This icon widget provides consistent sizing, theming, and accessibility
 /// features across the application.
 class AuraIcon extends StatelessWidget {
+  static const _extraSmallSize = 12.0;
+  static const _smallSize = 16.0;
+  static const _mediumSize = 20.0;
+  static const _largeSize = 24.0;
+  static const _extraLargeSize = 32.0;
+  static const _hugeSize = 48.0;
+
   /// Creates a Aura icon.
   const AuraIcon(
     this.icon, {
@@ -53,12 +60,12 @@ class AuraIcon extends StatelessWidget {
 
   double _getIconSize() {
     return switch (size) {
-      AuraIconSize.extraSmall => 12.0,
-      AuraIconSize.small => 16.0,
-      AuraIconSize.medium => 20.0,
-      AuraIconSize.large => 24.0,
-      AuraIconSize.extraLarge => 32.0,
-      AuraIconSize.huge => 48.0,
+      AuraIconSize.extraSmall => _extraSmallSize,
+      AuraIconSize.small => _smallSize,
+      AuraIconSize.medium => _mediumSize,
+      AuraIconSize.large => _largeSize,
+      AuraIconSize.extraLarge => _extraLargeSize,
+      AuraIconSize.huge => _hugeSize,
     };
   }
 
@@ -72,6 +79,13 @@ class AuraIcon extends StatelessWidget {
 /// This provides a consistent way to create interactive icons with proper
 /// touch targets and accessibility features.
 class AuraIconButton extends StatelessWidget {
+  static const _extraSmallButtonSize = 24.0;
+  static const _smallButtonSize = 32.0;
+  static const _mediumButtonSize = 40.0;
+  static const _largeButtonSize = 48.0;
+  static const _extraLargeButtonSize = 56.0;
+  static const _hugeButtonSize = 72.0;
+
   /// Creates a Aura icon button.
   // Null follows Flutter button semantics and disables the interaction.
   // ignore: unnecessary-nullable
@@ -187,23 +201,23 @@ class AuraIconButton extends StatelessWidget {
 
   double _getButtonSize() {
     return switch (size) {
-      AuraIconSize.extraSmall => 24.0,
-      AuraIconSize.small => 32.0,
-      AuraIconSize.medium => 40.0,
-      AuraIconSize.large => 48.0,
-      AuraIconSize.extraLarge => 56.0,
-      AuraIconSize.huge => 72.0,
+      AuraIconSize.extraSmall => _extraSmallButtonSize,
+      AuraIconSize.small => _smallButtonSize,
+      AuraIconSize.medium => _mediumButtonSize,
+      AuraIconSize.large => _largeButtonSize,
+      AuraIconSize.extraLarge => _extraLargeButtonSize,
+      AuraIconSize.huge => _hugeButtonSize,
     };
   }
 
   double _getIconSize() {
     return switch (size) {
-      AuraIconSize.extraSmall => 12.0,
-      AuraIconSize.small => 16.0,
-      AuraIconSize.medium => 20.0,
-      AuraIconSize.large => 24.0,
-      AuraIconSize.extraLarge => 32.0,
-      AuraIconSize.huge => 48.0,
+      AuraIconSize.extraSmall => AuraIcon._extraSmallSize,
+      AuraIconSize.small => AuraIcon._smallSize,
+      AuraIconSize.medium => AuraIcon._mediumSize,
+      AuraIconSize.large => AuraIcon._largeSize,
+      AuraIconSize.extraLarge => AuraIcon._extraLargeSize,
+      AuraIconSize.huge => AuraIcon._hugeSize,
     };
   }
 

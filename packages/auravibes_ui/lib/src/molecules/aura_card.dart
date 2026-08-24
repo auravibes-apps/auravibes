@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 /// corners,
 /// and padding variants for content organization.
 class AuraCard extends StatelessWidget {
+  static const _borderWidth = 1.5;
+
   /// Creates a Aura card.
   const AuraCard({
     required this.child,
@@ -52,7 +54,7 @@ class AuraCard extends StatelessWidget {
       backgroundColor = auraColors.surface.withValues(alpha: 0.1);
       border = Border.all(
         color: auraColors.surfaceVariant.withValues(alpha: 0.2),
-        width: 1.5,
+        width: _borderWidth,
       );
       shadows = [DesignShadows.glass];
     } else if (isBorder) {
@@ -106,7 +108,7 @@ class AuraCard extends StatelessWidget {
                   // Color: auraColors.inverseSurface.withValues(alpha: 0.3),.
                   border: Border.all(
                     color: auraColors.background.withValues(alpha: 0.05),
-                    width: 1.5,
+                    width: _borderWidth,
                   ),
                   borderRadius: BorderRadius.all(
                     Radius.circular(

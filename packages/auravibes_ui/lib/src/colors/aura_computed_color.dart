@@ -44,18 +44,20 @@ enum AuraBrightness {
 /// final text = surface.onColor(); // meets APCA Lc >= 60
 /// ```
 class AuraComputedColor extends OKLCHColor {
+  static const _defaultChroma = 0.15;
+
   /// Creates a computed Aura color from a hue and a brightness preset.
   AuraComputedColor({
     required super.hue,
     AuraBrightness brightness = AuraBrightness.light,
-    super.chroma = 0.15,
+    super.chroma = _defaultChroma,
   }) : super(lightness: brightness.lightness);
 
   /// Creates a computed Aura color from a hue and an explicit OKLCH lightness.
   AuraComputedColor.withLightness({
     required super.hue,
     required super.lightness,
-    super.chroma = 0.15,
+    super.chroma = _defaultChroma,
   });
 
   /// Foreground color that meets APCA [targetLc] against this surface.

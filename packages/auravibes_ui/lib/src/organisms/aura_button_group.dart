@@ -231,6 +231,9 @@ class _AuraButtonGroupItem<T> extends StatefulWidget {
 }
 
 class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
+  static const _hoverAlpha = 0.1;
+  static const _activeAlpha = 0.2;
+  static const _selectedAlpha = 0.6;
   bool _isHovering = false;
   bool _isPressed = false;
 
@@ -342,7 +345,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     if (isActive) return colors.primary;
     if (isHovered) return colors.primary.withValues(alpha: 0.8);
 
-    return colors.primary.withValues(alpha: 0.6);
+    return colors.primary.withValues(alpha: _selectedAlpha);
   }
 
   Color _getOutlinedBackgroundColor(
@@ -351,7 +354,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     required bool isHovered,
   }) {
     if (isActive) return colors.primary;
-    if (isHovered) return colors.primary.withValues(alpha: 0.1);
+    if (isHovered) return colors.primary.withValues(alpha: _hoverAlpha);
 
     return DesignColors.transparent;
   }
@@ -361,8 +364,8 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
     required bool isActive,
     required bool isHovered,
   }) {
-    if (isActive) return colors.primary.withValues(alpha: 0.2);
-    if (isHovered) return colors.primary.withValues(alpha: 0.1);
+    if (isActive) return colors.primary.withValues(alpha: _activeAlpha);
+    if (isHovered) return colors.primary.withValues(alpha: _hoverAlpha);
 
     return DesignColors.transparent;
   }

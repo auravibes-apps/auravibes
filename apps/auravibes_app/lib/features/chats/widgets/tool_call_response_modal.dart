@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 /// rendering. Used when tool call responses exceed the preview limit
 /// in the chat view.
 class ToolCallResponseModal extends StatelessWidget {
+  static const _dividerOpacity = 0.2;
   const ToolCallResponseModal({
     required this.toolName,
     required this.content,
@@ -100,7 +101,9 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: context.auraColors.outline.withValues(alpha: 0.2),
+            color: context.auraColors.outline.withValues(
+              alpha: ToolCallResponseModal._dividerOpacity,
+            ),
           ),
         ),
       ),
@@ -139,7 +142,9 @@ class _ToolCallResponseModalFooter extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: context.auraColors.outline.withValues(alpha: 0.2),
+            color: context.auraColors.outline.withValues(
+              alpha: ToolCallResponseModal._dividerOpacity,
+            ),
           ),
         ),
       ),

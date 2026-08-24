@@ -138,6 +138,14 @@ enum AuraScreenVariation {
 }
 
 class _AuroraBackground extends StatelessWidget {
+  static const _outerOffset = -100.0;
+  static const _bottomOffset = -50.0;
+  static const _topBlobSize = 400.0;
+  static const _rightBlobSize = 300.0;
+  static const _bottomBlobSize = 350.0;
+  static const _blurRadius = 60.0;
+  static const _primaryAlpha = 102;
+  static const _accentAlpha = 76;
   const _AuroraBackground();
 
   @override
@@ -150,34 +158,34 @@ class _AuroraBackground extends StatelessWidget {
         Container(color: colors.background),
         // Blob 1 (Top Left - Primary).
         Positioned(
-          left: -100,
-          top: -100,
+          left: _outerOffset,
+          top: _outerOffset,
           child: _Blob(
-            color: colors.primary.withAlpha(102),
-            size: 400,
+            color: colors.primary.withAlpha(_primaryAlpha),
+            size: _topBlobSize,
           ),
         ),
         // Blob 2 (Center Right - Secondary).
         Positioned(
           top: 200,
-          right: -100,
+          right: _outerOffset,
           child: _Blob(
-            color: colors.secondary.withAlpha(102),
-            size: 300,
+            color: colors.secondary.withAlpha(_primaryAlpha),
+            size: _rightBlobSize,
           ),
         ),
         // Blob 3 (Bottom Left - Primary/Accent).
         Positioned(
-          left: -50,
-          bottom: -50,
+          left: _bottomOffset,
+          bottom: _bottomOffset,
           child: _Blob(
-            color: colors.primary.withAlpha(76),
-            size: 350,
+            color: colors.primary.withAlpha(_accentAlpha),
+            size: _bottomBlobSize,
           ),
         ),
         // Blur Mesh.
         BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+          filter: ImageFilter.blur(sigmaX: _blurRadius, sigmaY: _blurRadius),
           child: Container(color: DesignColors.transparent),
         ),
       ],

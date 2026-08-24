@@ -88,13 +88,21 @@ class AuraComputedColorScheme extends AuraColorScheme {
       l(lightL, darkL),
       0,
     );
-    final surface = neutral(0.98, 0.18);
+    const surfaceLightness = 0.98;
+    final surface = neutral(surfaceLightness, 0.18);
     final surfaceVariant = neutral(0.96, 0.22);
     final background = neutral(0.94, 0.15);
     final outline = neutral(0.65, 0.45);
-    final outlineVariant = neutral(0.8, 0.3);
+    const outlineVariantLightness = 0.8;
+    const outlineVariantChroma = 0.3;
+    final outlineVariant = neutral(
+      outlineVariantLightness,
+      outlineVariantChroma,
+    );
 
-    AuraComputedColor semantic(double hue) => color(hue, l(0.3, 0.82), 0.2);
+    const semanticLightness = 0.3;
+    AuraComputedColor semantic(double hue) =>
+        color(hue, l(semanticLightness, 0.82), 0.2);
     final error = semantic(HueColorValues.error);
     final warning = semantic(HueColorValues.warning);
     final success = semantic(HueColorValues.success);

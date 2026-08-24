@@ -8,6 +8,7 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 class _DelayTween extends Tween<double> {
+  static const _fullTurn = 2.0;
   _DelayTween({
     required this.delay,
     required double begin,
@@ -18,7 +19,9 @@ class _DelayTween extends Tween<double> {
 
   @override
   double lerp(double t) {
-    return super.lerp((math.sin((t - delay) * 2 * math.pi) + 1) / 2);
+    return super.lerp(
+      (math.sin((t - delay) * _fullTurn * math.pi) + 1) / _fullTurn,
+    );
   }
 
   @override

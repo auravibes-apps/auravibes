@@ -19,6 +19,7 @@ class IntroScreen extends ConsumerStatefulWidget {
 }
 
 class _IntroScreenState extends ConsumerState<IntroScreen> {
+  static const _slideButtonSpacing = 8.0;
   _IntroSlide _slide = _IntroSlide.welcome;
   WorkspaceEntity? _createdWorkspace;
 
@@ -149,7 +150,9 @@ class _ProgressIndicator extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                right: index == _IntroSlide.values.length - 1 ? 0 : 8,
+                right: index == _IntroSlide.values.length - 1
+                    ? 0
+                    : _IntroScreenState._slideButtonSpacing,
               ),
               child: DecoratedBox(
                 key: ValueKey('intro_progress_step_$index'),

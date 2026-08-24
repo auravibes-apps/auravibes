@@ -347,6 +347,7 @@ class _ReasoningSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final typography = context.auraTheme.typography;
+    const containerBorderRadius = 10.0;
 
     return AuraContainer(
       child: Column(
@@ -387,7 +388,7 @@ class _ReasoningSummary extends StatelessWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
     );
   }
 }
@@ -460,6 +461,7 @@ class _ToolCallWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const containerBorderRadius = 10.0;
     final currentWorkspaceId = workspaceId;
     final displayNameAsync = currentWorkspaceId == null
         ? null
@@ -555,7 +557,7 @@ class _ToolCallWidget extends ConsumerWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
     );
   }
 
@@ -702,6 +704,9 @@ class _CompactedMessageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    const iconSize = 16.0;
+    const infoIconSize = 14.0;
+    const containerBorderRadius = 10.0;
     final kind = message.metadata?.compactionKind;
     final originLabel = switch (kind) {
       CompactionKind.manual =>
@@ -719,7 +724,7 @@ class _CompactedMessageWidget extends StatelessWidget {
               children: [
                 Icon(
                   Icons.compress_outlined,
-                  size: 16,
+                  size: iconSize,
                   color: auraColors.onSurfaceVariant,
                 ),
                 const AuraSizedBox(width: .xs),
@@ -734,7 +739,7 @@ class _CompactedMessageWidget extends StatelessWidget {
                 const Spacer(),
                 Icon(
                   Icons.info_outline,
-                  size: 14,
+                  size: infoIconSize,
                   color: auraColors.onSurfaceVariant,
                 ),
               ],
@@ -754,7 +759,7 @@ class _CompactedMessageWidget extends StatelessWidget {
         padding: .medium,
         margin: .small,
         variant: AuraContainerVariant.surfaceVariant,
-        borderRadius: 10,
+        borderRadius: containerBorderRadius,
       ),
       onTap: () => _showCompactionDetails(context, message),
     );
@@ -769,13 +774,15 @@ class _ErrorMessageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    const iconSize = 16.0;
+    const containerBorderRadius = 10.0;
 
     return AuraContainer(
       child: Row(
         children: [
           Icon(
             Icons.error_outline,
-            size: 16,
+            size: iconSize,
             color: auraColors.onError,
           ),
           const AuraSizedBox(width: .xs),
@@ -787,7 +794,7 @@ class _ErrorMessageWidget extends StatelessWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
       border: Border.fromBorderSide(BorderSide(color: auraColors.error)),
     );
   }
@@ -807,6 +814,8 @@ class _ToolCallStatusIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const iconSize = 14.0;
+    const textSize = 12.0;
     return Padding(
       padding: EdgeInsets.only(
         top: context.auraTheme.fromSpacing(.xs),
@@ -814,12 +823,12 @@ class _ToolCallStatusIndicator extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
+          Icon(icon, size: iconSize, color: color),
           const AuraSizedBox(width: .xs),
           DefaultTextStyle(
             style: TextStyle(
               color: color,
-              fontSize: 12,
+              fontSize: textSize,
             ),
             child: statusText,
           ),
@@ -835,6 +844,7 @@ class _CompactingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    const containerBorderRadius = 10.0;
 
     return AuraContainer(
       child: Row(
@@ -860,7 +870,7 @@ class _CompactingIndicator extends StatelessWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
     );
   }
 }

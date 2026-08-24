@@ -34,6 +34,7 @@ class ToolItemRow extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const iconSize = 36.0;
     final isExpanded = useState(false);
     final isEnabled = tool.isEnabled;
     final permissionMode = tool.permissionMode;
@@ -57,8 +58,8 @@ class ToolItemRow extends HookConsumerWidget {
                     ),
                   ),
                 ),
-                width: 36,
-                height: 36,
+                width: iconSize,
+                height: iconSize,
                 child: Center(
                   child: AuraText(
                     child: tool.getIconWidget(),
@@ -110,7 +111,7 @@ class ToolItemRow extends HookConsumerWidget {
           if (isExpanded.value)
             Padding(
               padding: EdgeInsets.only(
-                left: 36 + context.auraTheme.fromSpacing(.sm),
+                left: iconSize + context.auraTheme.fromSpacing(.sm),
                 top: context.auraTheme.fromSpacing(.sm),
               ),
               child: _ToolOptions(

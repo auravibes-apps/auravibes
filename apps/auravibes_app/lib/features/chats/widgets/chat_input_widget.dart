@@ -44,6 +44,7 @@ const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
 
 class ChatInputWidget extends HookConsumerWidget {
+  static const _maxInputLines = 2;
   const ChatInputWidget({
     required this.workspaceId,
     required this.onSendMessage,
@@ -162,7 +163,7 @@ class ChatInputWidget extends HookConsumerWidget {
               placeholder: const TextLocale(messagePlaceholderKey),
               textInputAction: TextInputAction.send,
               readOnly: isRecording.value,
-              maxLines: 2,
+              maxLines: _maxInputLines,
               onSubmitted: (value) {
                 unawaited(actions.sendMessage());
               },

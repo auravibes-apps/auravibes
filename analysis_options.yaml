@@ -253,6 +253,9 @@ analyzer:
     unused_import: error
     require_trailing_commas: info
     sort_child_properties_last: ignore
+    # DCL member-ordering intentionally places static constants before
+    # constructors.
+    sort_constructors_first: ignore
     no_leading_underscores_for_local_identifiers: info
     use_string_in_part_of_directives: ignore
 

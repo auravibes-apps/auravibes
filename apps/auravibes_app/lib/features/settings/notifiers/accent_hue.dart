@@ -19,16 +19,18 @@ class AccentHueNotifier extends _$AccentHueNotifier {
 
   @override
   Future<double> build() async {
+    const maxHue = 360.0;
     final prefs = await ref.watch(sharedPreferencesProvider.future);
     final hue = prefs.getDouble(_key);
     if (hue == null || !hue.isFinite) return AccentHue.defaultValue;
 
-    return hue.clamp(0.0, 360.0);
+    return hue.clamp(0.0, maxHue);
   }
 
   Future<void> setHue(double hue) async {
+    const maxHue = 360.0;
     final clamped = hue.isFinite
-        ? hue.clamp(0.0, 360.0)
+        ? hue.clamp(0.0, maxHue)
         : AccentHue.defaultValue;
     final _ = await future;
     state = AsyncData(clamped);

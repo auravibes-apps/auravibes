@@ -260,6 +260,8 @@ class _CheckboxFocusState extends InheritedWidget {
 }
 
 class _CheckboxVisual extends StatelessWidget {
+  static const _boxSize = 24.0;
+  static const _checkIconSize = 12.0;
   const _CheckboxVisual({
     required this.value,
     required this.tint,
@@ -285,12 +287,12 @@ class _CheckboxVisual extends StatelessWidget {
         border: Border.all(color: borderColor, width: isFocused ? 3 : 2),
         borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
-      width: 24,
-      height: 24,
+      width: _boxSize,
+      height: _boxSize,
       child: value
           ? Icon(
               _checkIcon,
-              size: 12,
+              size: _checkIconSize,
               color: auraColors.onTint(tint ?? AuraTint.primary),
             )
           : null,

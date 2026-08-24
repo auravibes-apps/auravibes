@@ -66,12 +66,13 @@ extension StringExtensions on String {
 
   /// Removes one user-perceived character from both ends.
   String withoutEdgeCharacters() {
+    const edgeCharacterCount = 2;
     final stringCharacters = characters;
-    if (stringCharacters.length <= 2) return '';
+    if (stringCharacters.length <= edgeCharacterCount) return '';
 
     return stringCharacters
         .skip(1)
-        .take(stringCharacters.length - 2)
+        .take(stringCharacters.length - edgeCharacterCount)
         .toString();
   }
 }

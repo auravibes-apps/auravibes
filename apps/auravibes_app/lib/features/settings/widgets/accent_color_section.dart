@@ -133,6 +133,7 @@ class _HueSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const maxHue = 360.0;
     final colors = _stops.map((h) => _primaryColorFor(context, h)).toList();
 
     return Stack(
@@ -156,9 +157,9 @@ class _HueSlider extends StatelessWidget {
             overlayColor: context.auraColors.primary.withValues(alpha: 0.12),
           ),
           child: Slider(
-            value: hue.clamp(0, 360),
+            value: hue.clamp(0, maxHue),
             onChanged: onChanged,
-            max: 360,
+            max: maxHue,
           ),
         ),
       ],

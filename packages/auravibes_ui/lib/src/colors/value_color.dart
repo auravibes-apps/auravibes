@@ -33,6 +33,11 @@ abstract class ValueColor {
 
 /// Represents a color in linear RGB color space.
 class LinearSrgbColor extends ValueColor {
+  static const _srgbOffset = 0.055;
+  static const _srgbScale = 1.055;
+  static const _srgbGamma = 2.4;
+  static const _srgbLinearScale = 12.92;
+
   /// Creates a linear RGB color from component values.
   LinearSrgbColor({
     required this.red,
@@ -64,10 +69,11 @@ class LinearSrgbColor extends ValueColor {
     final abs = val.abs();
 
     if (val >= 0.0031308) {
-      return sign * (1.055 * math.pow(abs, 1.0 / 2.4)) - 0.055;
+      return sign * (_srgbScale * math.pow(abs, 1.0 / _srgbGamma)) -
+          _srgbOffset;
     }
 
-    return val * 12.92;
+    return val * _srgbLinearScale;
   }
 
   /// Converts to sRGB color space.
@@ -98,6 +104,8 @@ class LinearSrgbColor extends ValueColor {
 
 /// Represents a color in sRGB color space.
 class RgbColor {
+  static const _srgbThreshold = 0.04045;
+
   /// Creates an sRGB color from component values.
   RgbColor({
     required this.red,
@@ -147,8 +155,14 @@ class RgbColor {
     alpha: alpha,
   );
 
-  double _rgbToLinear(double c) =>
-      c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
+  double _rgbToLinear(double c) => c <= _srgbThreshold
+      ? c / LinearSrgbColor._srgbLinearScale
+      : math
+            .pow(
+              (c + LinearSrgbColor._srgbOffset) / LinearSrgbColor._srgbScale,
+              LinearSrgbColor._srgbGamma,
+            )
+            .toDouble();
 
   /// Converts to Oklab color space.
   OklabColor toOklab() => toLrgb().toOkLab();
@@ -156,6 +170,9 @@ class RgbColor {
 
 /// Represents a color in Oklab color space.
 class OklabColor extends ValueColor {
+  static const _componentLimit = 0.4;
+  static const _squaredExponent = 2;
+
   /// Creates an Oklab color from component values.
   OklabColor({
     required this.lightness,
@@ -167,8 +184,8 @@ class OklabColor extends ValueColor {
   /// Creates an Oklab color from a vector.
   OklabColor.fromVector(Vector vector, {this.alpha = 1})
     : lightness = vector.x.fit(0, 1).toDouble(),
-      a = vector.y.fit(-0.4, 0.4).toDouble(),
-      b = vector.z.fit(-0.4, 0.4).toDouble();
+      a = vector.y.fit(-_componentLimit, _componentLimit).toDouble(),
+      b = vector.z.fit(-_componentLimit, _componentLimit).toDouble();
 
   /// The lightness component in range [0, 1].
   double lightness;
@@ -189,7 +206,9 @@ class OklabColor extends ValueColor {
     return OKLCHColor(
       hue: hue >= 0 ? hue : hue + 360,
       lightness: lightness,
-      chroma: math.sqrt(math.pow(a, 2) + math.pow(b, 2)),
+      chroma: math.sqrt(
+        math.pow(a, _squaredExponent) + math.pow(b, _squaredExponent),
+      ),
       alpha: alpha,
     );
   }
@@ -275,11 +294,13 @@ enum OKLCHShades {
   /// Use for text or the most prominent dark elements.
   s900;
 
+  static const _lowValue = 0.12;
+
   /// The chroma value for this shade.
   double get chroma => switch (this) {
     OKLCHShades.s100 || OKLCHShades.s900 => 0.02,
     OKLCHShades.s200 || OKLCHShades.s800 => 0.05,
-    OKLCHShades.s300 || OKLCHShades.s700 => 0.12,
+    OKLCHShades.s300 || OKLCHShades.s700 => _lowValue,
     OKLCHShades.s400 || OKLCHShades.s600 => 0.19,
     OKLCHShades.s500 => 0.27,
   };
@@ -294,7 +315,7 @@ enum OKLCHShades {
     OKLCHShades.s600 => 0.49,
     OKLCHShades.s700 => 0.38,
     OKLCHShades.s800 => 0.25,
-    OKLCHShades.s900 => 0.12,
+    OKLCHShades.s900 => _lowValue,
   };
 }
 
@@ -302,6 +323,8 @@ enum OKLCHShades {
 /// OKLCH is a perceptually uniform color space, which can be useful for
 /// various color processing tasks in Flutter applications.
 class OKLCHColor {
+  static const _descriptionPrecision = 2;
+
   /// Main constructor for creating an OKLCHColor object.
   OKLCHColor({
     required this.hue,
@@ -343,8 +366,9 @@ class OKLCHColor {
   /// Gives a textual representation of the OKLCH color,
   /// displaying lightness, chroma, and hue values.
   String get textDescription =>
-      'OKLCH(${lightness.toStringAsFixed(2)}, '
-      '${chroma.toStringAsFixed(2)}, ${hue.toStringAsFixed(2)})';
+      'OKLCH(${lightness.toStringAsFixed(_descriptionPrecision)}, '
+      '${chroma.toStringAsFixed(_descriptionPrecision)}, '
+      '${hue.toStringAsFixed(_descriptionPrecision)})';
 
   // Null keeps the current channel value.
   // ignore: unnecessary-nullable
