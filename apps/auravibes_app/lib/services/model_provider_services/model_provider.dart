@@ -169,13 +169,13 @@ Future<AntropicResponseModels> _anthopicModels(
     provider.url,
     fallback: 'https://api.anthropic.com/v1',
   );
-  final qp = <String, dynamic>{'limit': '1000'};
+  final queryParameters = <String, dynamic>{'limit': '1000'};
 
   if (afterId != null) {
-    qp.addAll({'after_id': afterId});
+    queryParameters.addAll({'after_id': afterId});
   }
   final request = await http.get(
-    Uri.parse('$url/models').replace(queryParameters: qp),
+    Uri.parse('$url/models').replace(queryParameters: queryParameters),
     headers: <String, String>{
       'x-api-key': provider.key,
       'anthropic-version': '2023-06-01',

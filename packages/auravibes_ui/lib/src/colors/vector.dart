@@ -36,32 +36,32 @@ class Vector {
 /// Represents a 3x3 matrix for color space transformations.
 class MatrixTransformation {
   /// Creates a matrix transformation from three row vectors.
-  const MatrixTransformation(this.v1, this.v2, this.v3);
+  const MatrixTransformation(this.first, this.second, this.third);
 
   /// Creates a matrix by multiplying [a] and [b].
   factory MatrixTransformation.multiply(
     MatrixTransformation a,
     MatrixTransformation b,
   ) => MatrixTransformation(
-    a.transform(b.v1),
-    a.transform(b.v2),
-    a.transform(b.v3),
+    a.transform(b.first),
+    a.transform(b.second),
+    a.transform(b.third),
   );
 
   /// First row vector of the matrix.
-  final Vector v1;
+  final Vector first;
 
   /// Second row vector of the matrix.
-  final Vector v2;
+  final Vector second;
 
   /// Third row vector of the matrix.
-  final Vector v3;
+  final Vector third;
 
   /// Transforms vector [v] using this matrix.
   Vector transform(Vector v) => Vector(
-    v1.x * v.x + v1.y * v.y + v1.z * v.z,
-    v2.x * v.x + v2.y * v.y + v2.z * v.z,
-    v3.x * v.x + v3.y * v.y + v3.z * v.z,
+    first.x * v.x + first.y * v.y + first.z * v.z,
+    second.x * v.x + second.y * v.y + second.z * v.z,
+    third.x * v.x + third.y * v.y + third.z * v.z,
   );
 
   /// Multiplies this matrix with [other] and returns the result.

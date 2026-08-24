@@ -161,6 +161,13 @@ dart_code_linter:
         - x
         - y
         - z
+        # Dart discard and established design-token size vocabulary.
+        - ''
+        - xs
+        - sm
+        - md
+        - lg
+        - xl
     prefer-correct-test-file-name:
       include:
         - test/**

@@ -78,9 +78,9 @@ void main() {
         Vector(4, 5, 6),
         Vector(7, 8, 9),
       );
-      expect(m.v1.x, 1);
-      expect(m.v2.y, 5);
-      expect(m.v3.z, 9);
+      expect(m.first.x, 1);
+      expect(m.second.y, 5);
+      expect(m.third.z, 9);
     });
 
     test('transforms vector correctly', () {
@@ -108,9 +108,9 @@ void main() {
         Vector(0, 0, 4),
       );
       final result = MatrixTransformation.multiply(a, b);
-      expect(result.v1.x, 2);
-      expect(result.v2.y, 3);
-      expect(result.v3.z, 4);
+      expect(result.first.x, 2);
+      expect(result.second.y, 3);
+      expect(result.third.z, 4);
     });
 
     test('operator * multiplies matrices', () {
@@ -125,9 +125,9 @@ void main() {
         Vector(0, 0, 4),
       );
       final result = a * b;
-      expect(result.v1.x, 2);
-      expect(result.v2.y, 3);
-      expect(result.v3.z, 4);
+      expect(result.first.x, 2);
+      expect(result.second.y, 3);
+      expect(result.third.z, 4);
     });
   });
 

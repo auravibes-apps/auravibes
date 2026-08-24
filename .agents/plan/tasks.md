@@ -16,7 +16,7 @@
 | format-comment | 69 | 69 | Wave 9 |
 | member-ordering | 354 | 354 | Wave 10 |
 | no-magic-number | 282 | 282 | Wave 4 |
-| prefer-correct-identifier-length | 317 | 317 | Wave 2 |
+| prefer-correct-identifier-length | 317 | 0 | Wave 2 |
 | prefer-correct-type-name | 4 | 4 | Wave 7 |
 | prefer-extracting-callbacks | 38 | 38 | Wave 8 |
 | prefer-match-file-name | 65 | 65 | Wave 7 |
@@ -38,7 +38,7 @@ Completed rule commits: none (Wave 1 ready to commit).
 | Wave | Rule set | Status | Commit | Evidence |
 | ---: | --- | --- | --- | --- |
 | 1 | Widgetbook `avoid-returning-widgets` annotation config | complete | pending commit | 68 -> 30; Widgetbook 38 -> 0; anti-patterns 0; fatal analyzer passed |
-| 2 | `prefer-correct-identifier-length` | pending | — | Baseline 317 |
+| 2 | `prefer-correct-identifier-length` | complete | pending commit | 317 -> 0; analyzer pending; anti-patterns 0 |
 | 3 | `prefer-moving-to-variable` | pending | — | Baseline 82 |
 | 4 | `no-magic-number` | pending | — | Baseline 282 |
 | 5 | remaining `avoid-returning-widgets` | pending | — | Depends on Wave 1 |
@@ -57,6 +57,11 @@ Completed rule commits: none (Wave 1 ready to commit).
 - Automated fix attempts are complete and must not be retried unless DCL
   version changes (`dcl metrics` has no fix command; `dart fix --dry-run` had
   no fixes).
+- Wave 1 config exception: qualified `widgetbook.UseCase` matches Widgetbook's
+  required top-level factories. Wave 2 identifier exceptions: empty stripped
+  name represents Dart `_` discards in DCL 4.2.0; `xs`, `sm`, `md`, `lg`, and
+  `xl` are established design-token vocabulary. Real short names were renamed
+  contextually.
 
 ## Recovery protocol
 
