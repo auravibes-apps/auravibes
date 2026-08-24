@@ -632,11 +632,120 @@ class _ChatInputFooter extends StatelessWidget {
           ],
           Row(
             children: [
-              if (!isRecording) ..._idleControls(context),
-              if (isRecording)
-                ..._recordingControls()
-              else if (supportsAudio)
-                ..._audioControls(),
+              if (!isRecording) ...[
+                AuraPopupMenuButton(
+                  items: [
+                    _attachmentMenuItem(
+                      titleKey: _attachFileKey,
+                      icon: Icons.attach_file,
+                      enabled: supportsFile,
+                      onTap: actions.pickFiles,
+                    ),
+                    if (!isMacOS)
+                      _attachmentMenuItem(
+                        titleKey: _attachPhotoKey,
+                        icon: Icons.photo_outlined,
+                        enabled: supportsLocalAttachments && supportsImage,
+                        onTap: () => actions.pickImage(ImageSource.gallery),
+                      ),
+                    if (defaultTargetPlatform == TargetPlatform.android ||
+                        defaultTargetPlatform == TargetPlatform.iOS)
+                      _attachmentMenuItem(
+                        titleKey: _attachCameraKey,
+                        icon: Icons.photo_camera_outlined,
+                        enabled: supportsLocalAttachments && supportsImage,
+                        onTap: () => actions.pickImage(ImageSource.camera),
+                      ),
+                    AuraPopupMenuItem(
+                      title: const TextLocale(LocaleKeys.menu_tools),
+                      onTap: onToolsPress,
+                      leading: const AuraIcon(Icons.build_circle_outlined),
+                    ),
+                    if (onSkillsPress case final onSkillsPress?)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.skills_selector_title,
+                        ),
+                        onTap: onSkillsPress,
+                        leading: const AuraIcon(Icons.psychology_alt_outlined),
+                      ),
+                    if (onContinueAgent != null)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys
+                              .chats_screens_chat_conversation_continue_agent,
+                        ),
+                        onTap: onContinueAgent,
+                        leading: const AuraIcon(Icons.play_circle_outline),
+                      ),
+                    if (onCompact != null &&
+                        !disabled &&
+                        !isBusy &&
+                        !isCompacting)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.compaction_manual_button_tooltip,
+                        ),
+                        onTap: onCompact,
+                        leading: const AuraIcon(Icons.compress_outlined),
+                      ),
+                  ],
+                  icon: Icons.tune_rounded,
+                  tooltip: LocaleKeys
+                      .chats_screens_chat_conversation_options_tooltip
+                      .tr(),
+                ),
+                const AuraSizedBox(width: .xs),
+                Expanded(
+                  child: GestureDetector(
+                    child: modelCompactControl,
+                    onTap: () => _showSelectorSheet(
+                      context: context,
+                      title: const TextLocale(
+                        LocaleKeys.models_screens_select_model,
+                      ),
+                      child: modelSheetControl,
+                    ),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ],
+              if (isRecording) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.close_rounded,
+                    onPressed: actions.cancelRecording,
+                    disabled: isStartingRecording,
+                    tooltip: _cancelRecordingKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+                Expanded(child: _RecordingIndicator(elapsed: recordingElapsed)),
+                const AuraSizedBox(width: .xs),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.stop_rounded,
+                    onPressed: actions.stopRecording,
+                    disabled: isStartingRecording,
+                    tint: AuraTint.error,
+                    tooltip: _stopRecordingKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ] else if (supportsAudio) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.mic_none_outlined,
+                    onPressed: actions.startRecording,
+                    disabled: disabled,
+                    tooltip: _recordVoiceKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ],
               if (onStop case final onStop?) ...[
                 Visibility(
                   child: AuraTooltip(
@@ -669,121 +778,6 @@ class _ChatInputFooter extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  List<Widget> _idleControls(BuildContext context) {
-    return [
-      AuraPopupMenuButton(
-        items: [
-          _attachmentMenuItem(
-            titleKey: _attachFileKey,
-            icon: Icons.attach_file,
-            enabled: supportsFile,
-            onTap: actions.pickFiles,
-          ),
-          if (!isMacOS)
-            _attachmentMenuItem(
-              titleKey: _attachPhotoKey,
-              icon: Icons.photo_outlined,
-              enabled: supportsLocalAttachments && supportsImage,
-              onTap: () => actions.pickImage(ImageSource.gallery),
-            ),
-          if (defaultTargetPlatform == TargetPlatform.android ||
-              defaultTargetPlatform == TargetPlatform.iOS)
-            _attachmentMenuItem(
-              titleKey: _attachCameraKey,
-              icon: Icons.photo_camera_outlined,
-              enabled: supportsLocalAttachments && supportsImage,
-              onTap: () => actions.pickImage(ImageSource.camera),
-            ),
-          AuraPopupMenuItem(
-            title: const TextLocale(LocaleKeys.menu_tools),
-            onTap: onToolsPress,
-            leading: const AuraIcon(Icons.build_circle_outlined),
-          ),
-          if (onSkillsPress case final onSkillsPress?)
-            AuraPopupMenuItem(
-              title: const TextLocale(LocaleKeys.skills_selector_title),
-              onTap: onSkillsPress,
-              leading: const AuraIcon(Icons.psychology_alt_outlined),
-            ),
-          if (onContinueAgent != null)
-            AuraPopupMenuItem(
-              title: const TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_continue_agent,
-              ),
-              onTap: onContinueAgent,
-              leading: const AuraIcon(Icons.play_circle_outline),
-            ),
-          if (onCompact != null && !disabled && !isBusy && !isCompacting)
-            AuraPopupMenuItem(
-              title: const TextLocale(
-                LocaleKeys.compaction_manual_button_tooltip,
-              ),
-              onTap: onCompact,
-              leading: const AuraIcon(Icons.compress_outlined),
-            ),
-        ],
-        icon: Icons.tune_rounded,
-        tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
-            .tr(),
-      ),
-      const AuraSizedBox(width: .xs),
-      Expanded(
-        child: GestureDetector(
-          child: modelCompactControl,
-          onTap: () => _showSelectorSheet(
-            context: context,
-            title: const TextLocale(LocaleKeys.models_screens_select_model),
-            child: modelSheetControl,
-          ),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
-  List<Widget> _recordingControls() {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.close_rounded,
-          onPressed: actions.cancelRecording,
-          disabled: isStartingRecording,
-          tooltip: _cancelRecordingKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-      Expanded(child: _RecordingIndicator(elapsed: recordingElapsed)),
-      const AuraSizedBox(width: .xs),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.stop_rounded,
-          onPressed: actions.stopRecording,
-          disabled: isStartingRecording,
-          tint: AuraTint.error,
-          tooltip: _stopRecordingKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
-  List<Widget> _audioControls() {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.mic_none_outlined,
-          onPressed: actions.startRecording,
-          disabled: disabled,
-          tooltip: _recordVoiceKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
   }
 
   void _removeAttachment(MessageAttachmentToCreate attachment) {

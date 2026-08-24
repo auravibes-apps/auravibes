@@ -230,13 +230,27 @@ class _WorkspaceSessionGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(workspaceSessionForRouteProvider(workspaceId))) {
-      AsyncData() => _workspaceShell(),
+      AsyncData() => _WorkspaceShell(
+        workspaceId: workspaceId,
+        navigationShell: navigationShell,
+      ),
       AsyncError(:final error) => ErrorWidget(error),
       _ => const SizedBox.shrink(),
     };
   }
+}
 
-  Widget _workspaceShell() => PopScope(
+class _WorkspaceShell extends StatelessWidget {
+  const _WorkspaceShell({
+    required this.workspaceId,
+    required this.navigationShell,
+  });
+
+  final String workspaceId;
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
     child: AuraSidebarWrapper(
       navigationShell: navigationShell,
       workspaceId: workspaceId,

@@ -117,7 +117,12 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int i = 0; i < options.length; i++) ...[
-            _buildVerticalOption(context, options[i]),
+            _AuraRadioOption<T>(
+              option: options[i],
+              groupValue: value,
+              onChanged: onChanged,
+              tint: tint,
+            ),
             if (i < options.length - 1) const AuraSizedBox(height: .sm),
           ],
         ],
@@ -127,54 +132,46 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         runSpacing: context.auraTheme.fromSpacing(.sm),
         children: [
           for (int i = 0; i < options.length; i++)
-            _buildHorizontalOption(options[i]),
+            _AuraRadioOption<T>(
+              option: options[i],
+              groupValue: value,
+              onChanged: onChanged,
+              tint: tint,
+              shrinkWrap: true,
+            ),
         ],
       ),
     };
   }
+}
 
-  Widget _buildVerticalOption(
-    BuildContext context,
-    AuraRadioOption<T> option,
-  ) {
-    final subtitle = option.subtitle;
+class _AuraRadioOption<T> extends StatelessWidget {
+  const _AuraRadioOption({
+    required this.option,
+    required this.groupValue,
+    required this.onChanged,
+    required this.tint,
+    this.shrinkWrap = false,
+  });
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          child: _buildOptionRow(option),
-          onTap: _buildOptionTap(option),
-          behavior: HitTestBehavior.opaque,
-        ),
-        if (subtitle != null)
-          Padding(
-            padding: EdgeInsets.only(
-              left:
-                  AuraRadioGroup._kRadioVisualSize +
-                  context.auraTheme.fromSpacing(.sm),
-            ),
-            child: subtitle,
-          ),
-      ],
-    );
-  }
+  final AuraRadioOption<T> option;
+  final T? groupValue;
+  final ValueChanged<T?>? onChanged;
+  final AuraTint? tint;
+  final bool shrinkWrap;
 
-  Widget _buildHorizontalOption(AuraRadioOption<T> option) {
-    return GestureDetector(
-      child: _buildOptionRow(option, shrinkWrap: true),
-      onTap: _buildOptionTap(option),
-      behavior: HitTestBehavior.opaque,
-    );
-  }
-
-  Widget _buildOptionRow(AuraRadioOption<T> option, {bool shrinkWrap = false}) {
-    return Row(
+  @override
+  Widget build(BuildContext context) {
+    final onChanged = this.onChanged;
+    final onTap = onChanged == null || option.disabled
+        ? null
+        : () => onChanged(option.value);
+    final row = Row(
       mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
       children: [
         AuraRadio<T>(
           value: option.value,
-          groupValue: value,
+          groupValue: groupValue,
           onChanged: onChanged,
           tint: tint,
           disabled: option.disabled,
@@ -183,13 +180,34 @@ class _AuraRadioOptions<T> extends StatelessWidget {
         Flexible(child: option.label),
       ],
     );
-  }
 
-  VoidCallback? _buildOptionTap(AuraRadioOption<T> option) {
-    final onChanged = this.onChanged;
-    if (onChanged == null || option.disabled) return null;
+    if (shrinkWrap) {
+      return GestureDetector(
+        child: row,
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+      );
+    }
 
-    return () => onChanged(option.value);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          child: row,
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+        ),
+        if (option.subtitle != null)
+          Padding(
+            padding: EdgeInsets.only(
+              left:
+                  AuraRadioGroup._kRadioVisualSize +
+                  context.auraTheme.fromSpacing(.sm),
+            ),
+            child: option.subtitle,
+          ),
+      ],
+    );
   }
 }
 

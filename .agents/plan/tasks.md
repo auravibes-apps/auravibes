@@ -12,7 +12,7 @@
 
 | Rule | Baseline | Remaining | Owner/wave |
 | --- | ---: | ---: | --- |
-| avoid-returning-widgets | 68 | 30 | Wave 1 config, Wave 5 |
+| avoid-returning-widgets | 68 | 0 | Wave 1 config, Wave 5 |
 | format-comment | 69 | 69 | Wave 9 |
 | member-ordering | 354 | 354 | Wave 10 |
 | no-magic-number | 282 | 0 | Wave 4 |
@@ -41,8 +41,8 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 | 1 | Widgetbook `avoid-returning-widgets` annotation config | complete | `4a0401c9` | 68 -> 30; Widgetbook 38 -> 0; anti-patterns 0; fatal analyzer passed |
 | 2 | `prefer-correct-identifier-length` | complete | `26de7e08` | 317 -> 0; fatal analyzer passed; UI color tests 24 passed; anti-patterns 0 |
 | 3 | `prefer-moving-to-variable` | complete | `5a6160f3` | 82 -> 0; fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed; anti-patterns 0 |
-| 4 | `no-magic-number` | complete | pending | 282 -> 0; anti-patterns 0; changed-file fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed |
-| 5 | remaining `avoid-returning-widgets` | pending | — | Depends on Wave 1 |
+| 4 | `no-magic-number` | complete | `be46bcb2` | 282 -> 0; anti-patterns 0; changed-file fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed |
+| 5 | remaining `avoid-returning-widgets` | complete | pending | 30 -> 0; no-magic 0; changed-file fatal analyzer passed; app focused tests 40 passed; UI radio tests 31 passed |
 | 6 | `prefer-single-widget-per-file` | pending | — | Baseline 12 |
 | 7 | type/file naming | pending | — | Baseline 4 + 65 |
 | 8 | `prefer-extracting-callbacks` | pending | — | Baseline 38 |

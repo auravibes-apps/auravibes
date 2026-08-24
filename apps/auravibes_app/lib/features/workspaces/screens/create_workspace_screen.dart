@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
-import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
@@ -90,77 +89,77 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
   Widget build(BuildContext context) {
     final accounts = ref.watch(cloudAccountsProvider);
 
+    if (accounts case AsyncData(:final value)) {
+      final errorText = _errorText;
+
+      return AuraColumn(
+        children: [
+          AuraInput(
+            controller: _name,
+            placeholder: Text(
+              LocaleKeys.workspace_management_name_placeholder.tr(),
+            ),
+            label: Text(LocaleKeys.workspace_management_name_label.tr()),
+            error: errorText == null ? null : Text(errorText),
+            state: errorText == null
+                ? AuraInputState.normal
+                : AuraInputState.error,
+            textInputAction: TextInputAction.done,
+            enabled: !_isCreating,
+            onSubmitted: (_) => unawaited(_create()),
+          ),
+          AuraDropdownSelector<String>(
+            options: [
+              const AuraDropdownOption(
+                value: _localTarget,
+                child: TextLocale('workspace_management.local_target'),
+              ),
+              for (final account in value)
+                AuraDropdownOption(
+                  value: account.userId,
+                  child: Text(account.email),
+                ),
+            ],
+            value: _targetAccountId,
+            onChanged: (accountId) {
+              if (accountId != null) {
+                setState(() => _targetAccountId = accountId);
+              }
+            },
+            label: const TextLocale('workspace_management.target_label'),
+            isEnabled: !_isCreating,
+          ),
+          if (value.isEmpty)
+            if (widget.onAddCloudAccount case final onAddCloudAccount?)
+              AuraButton(
+                onPressed: onAddCloudAccount,
+                child: const TextLocale(LocaleKeys.cloud_accounts_add),
+                variant: AuraButtonVariant.outlined,
+              )
+            else
+              const TextLocale('workspace_management.cloud_add_hint'),
+          AuraButton(
+            onPressed: () => unawaited(_create()),
+            child: const TextLocale(
+              LocaleKeys.workspace_management_create_button,
+            ),
+            key: const Key('intro_create_workspace_button'),
+            isLoading: _isCreating,
+            disabled: _isCreating,
+          ),
+        ],
+        spacing: .md,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+      );
+    }
+
     return switch (accounts) {
-      AsyncData(:final value) => _buildForm(value),
       AsyncLoading() => const Center(child: AuraSpinner()),
       AsyncError() => const Center(
         child: TextLocale(LocaleKeys.cloud_accounts_load_error),
       ),
+      _ => const SizedBox.shrink(),
     };
-  }
-
-  Widget _buildForm(List<CloudAccountSession> accounts) {
-    final errorText = _errorText;
-
-    return AuraColumn(
-      children: [
-        AuraInput(
-          controller: _name,
-          placeholder: Text(
-            LocaleKeys.workspace_management_name_placeholder.tr(),
-          ),
-          label: Text(LocaleKeys.workspace_management_name_label.tr()),
-          error: errorText == null ? null : Text(errorText),
-          state: errorText == null
-              ? AuraInputState.normal
-              : AuraInputState.error,
-          textInputAction: TextInputAction.done,
-          enabled: !_isCreating,
-          onSubmitted: (_) => unawaited(_create()),
-        ),
-        AuraDropdownSelector<String>(
-          options: [
-            const AuraDropdownOption(
-              value: _localTarget,
-              child: TextLocale('workspace_management.local_target'),
-            ),
-            for (final account in accounts)
-              AuraDropdownOption(
-                value: account.userId,
-                child: Text(account.email),
-              ),
-          ],
-          value: _targetAccountId,
-          onChanged: (accountId) {
-            if (accountId != null) {
-              setState(() => _targetAccountId = accountId);
-            }
-          },
-          label: const TextLocale('workspace_management.target_label'),
-          isEnabled: !_isCreating,
-        ),
-        if (accounts.isEmpty)
-          if (widget.onAddCloudAccount case final onAddCloudAccount?)
-            AuraButton(
-              onPressed: onAddCloudAccount,
-              child: const TextLocale(LocaleKeys.cloud_accounts_add),
-              variant: AuraButtonVariant.outlined,
-            )
-          else
-            const TextLocale('workspace_management.cloud_add_hint'),
-        AuraButton(
-          onPressed: () => unawaited(_create()),
-          child: const TextLocale(
-            LocaleKeys.workspace_management_create_button,
-          ),
-          key: const Key('intro_create_workspace_button'),
-          isLoading: _isCreating,
-          disabled: _isCreating,
-        ),
-      ],
-      spacing: .md,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-    );
   }
 
   Future<void> _create() async {
