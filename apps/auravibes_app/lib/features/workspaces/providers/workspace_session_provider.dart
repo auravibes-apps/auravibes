@@ -2,32 +2,20 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_availability.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+export 'workspace_availability.dart';
 part 'workspace_session_provider.g.dart';
-
-sealed class WorkspaceAvailability {
-  const WorkspaceAvailability(this.session);
-
-  final WorkspaceSession session;
-}
-
-final class WorkspaceAvailable extends WorkspaceAvailability {
-  const WorkspaceAvailable(super.session);
-}
-
-final class WorkspaceAuthenticationRequired extends WorkspaceAvailability {
-  const WorkspaceAuthenticationRequired(super.session);
-}
 
 @riverpod
 WorkspaceSession workspaceSession(Ref _, WorkspaceSession session) => session;
 
 /// Supports legacy test fixtures while every production read stays keyed.
-extension WorkspaceSessionFamilyTestOverride on WorkspaceSessionFamily {
+extension on WorkspaceSessionFamily {
   Override overrideWithValue(WorkspaceSession value) {
     return overrideWith((_, _) => value);
   }

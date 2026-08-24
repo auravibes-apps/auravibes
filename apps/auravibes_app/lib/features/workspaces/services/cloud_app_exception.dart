@@ -2,19 +2,11 @@ import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
+import 'cloud_operation_context.dart';
+
+export 'cloud_operation_context.dart';
 
 final _logger = Logger('cloud_app_exception');
-
-enum CloudOperationContext {
-  workspace,
-  state,
-  conversation,
-  object,
-  mcp,
-  model,
-  oauth,
-  resource,
-}
 
 final class CloudAppException implements Exception {
   const CloudAppException({

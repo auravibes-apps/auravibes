@@ -1,8 +1,9 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'workspace_mcp_transport.dart';
 
-enum WorkspaceMcpTransport { streamableHttp, sse }
+export 'workspace_mcp_transport.dart';
 
-enum WorkspaceMcpAuthentication { none, bearerToken, oauth }
+export 'workspace_mcp_authentication.dart';
 
 final class WorkspaceCapabilities {
   const WorkspaceCapabilities({

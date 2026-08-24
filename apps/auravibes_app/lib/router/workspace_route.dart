@@ -33,6 +33,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 part 'workspace_route.g.dart';
+part 'intro_route.dart';
 
 // Required: framework declaration must remain top-level.
 // ignore: prefer-static-class
@@ -47,16 +48,6 @@ final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 // Required: GoRouter navigator key must remain top-level.
 // ignore: prefer-static-class
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
-
-@TypedGoRoute<IntroRoute>(path: introPath)
-class IntroRoute extends GoRouteData with $IntroRoute {
-  const IntroRoute();
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const IntroScreen();
-  }
-}
 
 @TypedGoRoute<WorkspaceRoute>(
   path: '$workspacePathPrefix/:workspaceId',

@@ -1,22 +1,13 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/daos/popular_api_providers.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
-part 'api_model_providers_dao.g.dart';
+export 'popular_api_providers.dart';
 
-// Define popular providers in priority order (top 10).
-abstract final class PopularApiProviders {
-  static const values = [
-    'openai',
-    'anthropic',
-    'groq',
-    'xai',
-    'togetherai',
-    'deepseek',
-  ];
-}
+part 'api_model_providers_dao.g.dart';
 
 int _sortProviders(ApiModelProvidersTable a, ApiModelProvidersTable b) {
   final aIndex = PopularApiProviders.values.indexOf(a.id);

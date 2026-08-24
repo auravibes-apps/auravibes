@@ -14,8 +14,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'conversation_tool_state.freezed.dart';
 part 'conversation_tool_state.g.dart';
 
-extension ConversationToolsRepositoryFamilyTestOverride
-    on ConversationToolsRepositoryFamily {
+extension on ConversationToolsRepositoryFamily {
   Override overrideWithValue(ConversationToolsRepository value) =>
       overrideWith((_, _) => value);
 }

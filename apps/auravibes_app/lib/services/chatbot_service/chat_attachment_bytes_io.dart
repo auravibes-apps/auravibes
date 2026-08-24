@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 
-abstract final class ChatAttachmentBytes {
+abstract final class ChatAttachmentBytesIo {
   static Future<List<int>?> read(String localPath) async {
     final file = File(localPath);
     if (!file.existsSync()) return null;
@@ -13,3 +13,5 @@ abstract final class ChatAttachmentBytes {
     return file.readAsBytes();
   }
 }
+
+typedef ChatAttachmentBytes = ChatAttachmentBytesIo;

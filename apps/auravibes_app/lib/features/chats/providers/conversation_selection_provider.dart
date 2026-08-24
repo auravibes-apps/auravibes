@@ -3,7 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_selection_provider.g.dart';
 
-extension ConversationSelectedFamilyTestOverride on ConversationSelectedFamily {
+extension on ConversationSelectedFamily {
   Override overrideWithValue(String value) => overrideWith((_, _) => value);
 }
 

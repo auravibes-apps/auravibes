@@ -3,29 +3,9 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
-class CloudAccountSession {
-  const CloudAccountSession({
-    required this.serverUrl,
-    required this.userId,
-    required this.email,
-  });
+import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 
-  factory CloudAccountSession.fromJson(Map<String, Object?> json) {
-    return CloudAccountSession(
-      serverUrl: json['serverUrl']! as String,
-      userId: json['userId']! as String,
-      email: json['email']! as String,
-    );
-  }
-
-  final String serverUrl;
-  final String userId;
-  final String email;
-
-  Map<String, Object?> toJson() {
-    return {'serverUrl': serverUrl, 'userId': userId, 'email': email};
-  }
-}
+export 'cloud_account_session.dart';
 
 class ServerpodAuthStore {
   ServerpodAuthStore({

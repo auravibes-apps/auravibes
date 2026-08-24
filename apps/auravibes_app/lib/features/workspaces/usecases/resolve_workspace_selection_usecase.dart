@@ -4,18 +4,11 @@ import 'package:auravibes_app/features/workspaces/providers/last_workspace_selec
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'workspace_selection.dart';
+
+export 'workspace_selection.dart';
 
 part 'resolve_workspace_selection_usecase.g.dart';
-
-class WorkspaceSelection {
-  const WorkspaceSelection({
-    required this.workspaces,
-    required this.savedWorkspaceId,
-  });
-
-  final List<WorkspaceEntity> workspaces;
-  final String? savedWorkspaceId;
-}
 
 class ResolveWorkspaceSelectionUsecase {
   ResolveWorkspaceSelectionUsecase({

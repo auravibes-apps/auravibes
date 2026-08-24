@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/models/usecases/cloud_model_connection_us
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+part 'local_model_selection_store.dart';
 part 'model_store_providers.g.dart';
 
 @riverpod
@@ -59,20 +60,4 @@ Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
   return CloudModelCatalogStore(CloudModelGateway(gateway));
 }
 
-class _LocalModelSelectionStore implements ModelSelectionStore {
-  const _LocalModelSelectionStore(this._repository);
-
-  final WorkspaceModelSelectionRepository _repository;
-
-  @override
-  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
-      _repository.getWorkspaceModelSelectionById(id);
-
-  @override
-  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
-    String workspaceId,
-  ) => _repository.watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-  );
-}
 // Top-level API/provider declarations are required by their consumers.

@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
-class ChatAttachmentImage extends StatelessWidget {
-  const ChatAttachmentImage({required this.localPath, super.key});
+class ChatAttachmentImageIo extends StatelessWidget {
+  const ChatAttachmentImageIo({required this.localPath, super.key});
 
   final String localPath;
 
@@ -24,3 +24,5 @@ class ChatAttachmentImage extends StatelessWidget {
     );
   }
 }
+
+typedef ChatAttachmentImage = ChatAttachmentImageIo;

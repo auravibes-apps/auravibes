@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ChatAttachmentImage extends StatelessWidget {
-  const ChatAttachmentImage({required this.localPath, super.key});
+class ChatAttachmentImageWeb extends StatelessWidget {
+  const ChatAttachmentImageWeb({required this.localPath, super.key});
 
   final String localPath;
 
@@ -10,3 +10,5 @@ class ChatAttachmentImage extends StatelessWidget {
     return const SizedBox(width: 180, height: 140);
   }
 }
+
+typedef ChatAttachmentImage = ChatAttachmentImageWeb;

@@ -1,0 +1,90 @@
+// Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/data/repositories/message_repository.dart';
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
+import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart' as agent;
+
+class AppToolCallActionsDataProvider
+    implements agent.SkipToolCallProvider, agent.StopPendingToolCallsProvider {
+  const AppToolCallActionsDataProvider({
+    required this.messageRepository,
+    required this.agentToolResumeService,
+    required this.onToolCallChanged,
+    this.activeSubAgents,
+  });
+
+  final MessageRepository messageRepository;
+  final AgentToolResumeService agentToolResumeService;
+  final ActiveSubAgentRuntime? activeSubAgents;
+  final void Function() onToolCallChanged;
+
+  @override
+  Future<bool> skipToolCall({
+    required String messageId,
+    required String toolCallId,
+  }) async {
+    final message = await messageRepository.getMessageById(messageId);
+    if (message == null) return false;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
+      if (toolCall.id != toolCallId) return toolCall;
+
+      return toolCall.copyWith(
+        resultStatus: ToolCallResultStatus.skippedByUser,
+      );
+    }).toList();
+
+    final _ = await messageRepository.patchMessage(
+      messageId,
+      MessagePatch(
+        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
+      ),
+    );
+    onToolCallChanged();
+
+    return true;
+  }
+
+  @override
+  Future<void> resumeConversationIfReady({required String messageId}) {
+    return agentToolResumeService.call(messageId: messageId);
+  }
+
+  @override
+  Future<void> stopPendingToolCalls({required String messageId}) async {
+    final message = await messageRepository.getMessageById(messageId);
+    if (message == null) return;
+
+    final metadata = message.metadata ?? const MessageMetadataEntity();
+    var didUpdate = false;
+    final updatedToolCalls = metadata.toolCalls.map((toolCall) {
+      if (!toolCall.isPending) return toolCall;
+
+      didUpdate = true;
+
+      return toolCall.copyWith(
+        resultStatus: ToolCallResultStatus.stoppedByUser,
+      );
+    }).toList();
+    if (!didUpdate) return;
+
+    final _ = await messageRepository.patchMessage(
+      messageId,
+      MessagePatch(
+        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
+      ),
+    );
+    onToolCallChanged();
+    final parentId = activeSubAgents?.parentOf(message.conversationId);
+    if (parentId != null) {
+      activeSubAgents?.finish(
+        parentId: parentId,
+        childId: message.conversationId,
+        status: agent.SubAgentCompletionStatus.stopped,
+      );
+    }
+  }
+}

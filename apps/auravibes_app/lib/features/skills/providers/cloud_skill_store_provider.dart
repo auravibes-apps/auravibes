@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cloud_skill_store_provider.g.dart';
 
-extension CloudSkillStoreFamilyTestOverride on CloudSkillStoreFamily {
+extension on CloudSkillStoreFamily {
   Override overrideWithValue(CloudSkillStore? value) =>
       overrideWith((_, _) => value);
 }

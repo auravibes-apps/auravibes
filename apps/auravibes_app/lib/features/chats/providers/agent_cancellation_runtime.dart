@@ -4,7 +4,7 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-extension AgentCancellationRuntimeSubscriptions on AgentCancellationRuntime {
+extension on AgentCancellationRuntime {
   void registerStreamSubscription<T>(
     String conversationId,
     StreamSubscription<T> subscription,

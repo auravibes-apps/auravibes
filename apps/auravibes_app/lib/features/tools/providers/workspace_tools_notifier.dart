@@ -13,8 +13,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_notifier.g.dart';
 
-extension WorkspaceToolsRepositoryFamilyTestOverride
-    on WorkspaceToolsRepositoryFamily {
+extension on WorkspaceToolsRepositoryFamily {
   Override overrideWithValue(WorkspaceToolsRepositoryContract value) =>
       overrideWith((_, _) => value);
 }

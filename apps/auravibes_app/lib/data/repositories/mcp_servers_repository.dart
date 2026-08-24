@@ -14,24 +14,9 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:drift/drift.dart';
 
-/// Implementation of the McpServersRepository.
-abstract interface class McpServersRepositoryContract {
-  Future<McpServerEntity> addMcpServerWithTools({
-    required String workspaceId,
-    required McpServerToCreate serverToCreate,
-    required List<McpToolInfo> tools,
-  });
-  Future<bool> deleteMcpServer(String serverId);
-  Future<void> syncMcpTools({
-    required String mcpServerId,
-    required List<McpToolInfo> currentTools,
-  });
-  Future<List<McpServerEntity>> getMcpServersForWorkspace(String workspaceId);
-  Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
-    String workspaceId,
-  );
-  Future<McpServerEntity?> getMcpServerById(String serverId);
-}
+import 'package:auravibes_app/data/repositories/mcp_servers_repository_contract.dart';
+
+export 'mcp_servers_repository_contract.dart';
 
 class McpServersRepository implements McpServersRepositoryContract {
   /// Creates a new [McpServersRepository] instance.

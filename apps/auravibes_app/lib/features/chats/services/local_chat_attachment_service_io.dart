@@ -18,8 +18,8 @@ final _logger = Logger('local_chat_attachment_service');
 const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 
-class LocalChatAttachmentService {
-  LocalChatAttachmentService({
+class LocalChatAttachmentServiceIo {
+  LocalChatAttachmentServiceIo({
     AudioRecorder? recorder,
     this.storageNamespace = 'auravibes_app',
   }) : _recorder = recorder ?? AudioRecorder();
@@ -241,8 +241,10 @@ class LocalChatAttachmentService {
 }
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
+typedef LocalChatAttachmentService = LocalChatAttachmentServiceIo;
+
 final localChatAttachmentServiceProvider = Provider<LocalChatAttachmentService>(
-  (ref) => LocalChatAttachmentService(
+  (ref) => LocalChatAttachmentServiceIo(
     storageNamespace: ref.watch(appStorageNamespaceProvider),
   ),
 );

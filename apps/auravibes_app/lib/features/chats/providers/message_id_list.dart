@@ -28,55 +28,18 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 export 'conversation_selection_provider.dart';
 
 part 'message_id_list.g.dart';
+part 'cloud_message_tools.dart';
+part 'streaming_message_metadata.dart';
+part 'pending_tool_call.dart';
 
-extension ChatMessagesFamilyTestOverride on ChatMessagesFamily {
+extension on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>
       overrideWith((_, _) => value);
 }
 
-extension ConversationCompactionExecutionStateFamilyTestOverride
-    on ConversationCompactionExecutionStateFamily {
+extension on ConversationCompactionExecutionStateFamily {
   Override overrideWithValue(CompactionExecutionState? value) =>
       overrideWith((_, _) => value);
-}
-
-abstract final class CloudMessageTools {
-  static ToolCallResultStatus? resultStatus(String status) => switch (status) {
-    'pending' || 'needsConfirmation' => null,
-    'approved' || 'running' || 'granted' => ToolCallResultStatus.running,
-    'success' => ToolCallResultStatus.success,
-    'denied' => ToolCallResultStatus.skippedByUser,
-    'toolNotFound' => ToolCallResultStatus.toolNotFound,
-    'disabledInWorkspace' => ToolCallResultStatus.disabledInWorkspace,
-    'disabledInConversation' => ToolCallResultStatus.disabledInConversation,
-    'disabledByAgent' => ToolCallResultStatus.disabledByAgent,
-    'notConfigured' => ToolCallResultStatus.notConfigured,
-    'executionError' => ToolCallResultStatus.executionError,
-    _ => ToolCallResultStatus.executionError,
-  };
-
-  static List<PendingToolCall> pendingToolCalls(
-    CloudConversationState? state,
-  ) => [
-    if (state case final cloudState?)
-      for (final call in cloudState.toolCalls)
-        if (call.status == 'pending')
-          for (final message in cloudState.messages)
-            if (message.id == call.messageId && message.turnRevision != null)
-              PendingToolCall(
-                toolCall: MessageToolCallEntity(
-                  id: call.id,
-                  name: call.name,
-                  argumentsRaw: call.argumentsJson,
-                  argumentsDigest: call.argumentsDigest,
-                  turnId: message.turnId ?? call.turnId,
-                  turnRevision: message.turnRevision,
-                  responseRaw: call.resultJson,
-                ),
-                messageId: call.messageId,
-                sourceConversationId: cloudState.conversation.id,
-              ),
-  ];
 }
 
 @riverpod
@@ -290,32 +253,6 @@ MessageEntity? messageConversationById(
   );
 }
 
-abstract final class StreamingMessageMetadata {
-  static MessageMetadataEntity? merge(
-    MessageMetadataEntity? current,
-    MessageMetadataEntity? streaming,
-  ) {
-    if (streaming == null) return current;
-
-    var toolCalls = streaming.toolCalls;
-    if (toolCalls.isEmpty) {
-      toolCalls = current?.toolCalls ?? const <MessageToolCallEntity>[];
-    }
-
-    return (current ?? const MessageMetadataEntity()).copyWith(
-      toolCalls: toolCalls,
-      promptTokens: streaming.promptTokens ?? current?.promptTokens,
-      completionTokens: streaming.completionTokens ?? current?.completionTokens,
-      totalTokens: streaming.totalTokens ?? current?.totalTokens,
-      thinking: streaming.thinking ?? current?.thinking,
-      modelMetadata: {
-        ...?current?.modelMetadata,
-        ...streaming.modelMetadata,
-      },
-    );
-  }
-}
-
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
 bool isMessageStreaming(Ref ref, String messageId) {
@@ -398,20 +335,6 @@ CompactionExecutionState? conversationCompactionExecutionState(
   final _ = _workspaceId;
 
   return ref.watch(compactionExecutionStateProvider(conversationId));
-}
-
-class PendingToolCall {
-  const PendingToolCall({
-    required this.toolCall,
-    required this.messageId,
-    this.sourceConversationId = '',
-    this.sourceLabel,
-  });
-
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-  final String sourceConversationId;
-  final String? sourceLabel;
 }
 
 @riverpod
