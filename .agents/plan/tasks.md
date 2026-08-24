@@ -23,8 +23,8 @@
 | prefer-moving-to-variable | 82 | 0 | Wave 3 |
 | prefer-single-widget-per-file | 12 | 12 | Wave 6 |
 
-Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2; hash before
-ledger-only metadata update).
+Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
+`5a6160f3` (Wave 3).
 
 ## Persistent owners
 
@@ -40,7 +40,7 @@ ledger-only metadata update).
 | ---: | --- | --- | --- | --- |
 | 1 | Widgetbook `avoid-returning-widgets` annotation config | complete | `4a0401c9` | 68 -> 30; Widgetbook 38 -> 0; anti-patterns 0; fatal analyzer passed |
 | 2 | `prefer-correct-identifier-length` | complete | `26de7e08` | 317 -> 0; fatal analyzer passed; UI color tests 24 passed; anti-patterns 0 |
-| 3 | `prefer-moving-to-variable` | complete | pending commit | 82 -> 0; anti-patterns 0 |
+| 3 | `prefer-moving-to-variable` | complete | `5a6160f3` | 82 -> 0; fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed; anti-patterns 0 |
 | 4 | `no-magic-number` | pending | — | Baseline 282 |
 | 5 | remaining `avoid-returning-widgets` | pending | — | Depends on Wave 1 |
 | 6 | `prefer-single-widget-per-file` | pending | — | Baseline 12 |
