@@ -98,7 +98,7 @@ dart_code_linter:
     avoid-returning-widgets:
       ignored-annotations:
         # Widgetbook generator requires annotated top-level widget factories.
-        - UseCase
+        - widgetbook.UseCase
     avoid-top-level-members-in-tests:
       include:
         - test/**
