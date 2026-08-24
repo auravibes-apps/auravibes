@@ -509,11 +509,7 @@ class _SecretAttributeInput extends StatelessWidget {
       suffixIcon: definition.optional
           ? AuraIconButton(
               icon: Icons.clear,
-              onPressed: () {
-                controller.clear();
-                final _ = clearedSecrets.add(name);
-                onChanged();
-              },
+              onPressed: _clearSecret,
               tooltip: LocaleKeys.skill_credentials_clear_secret.tr(
                 context: context,
               ),
@@ -526,6 +522,12 @@ class _SecretAttributeInput extends StatelessWidget {
         onChanged();
       },
     );
+  }
+
+  void _clearSecret() {
+    controller.clear();
+    final _ = clearedSecrets.add(name);
+    onChanged();
   }
 }
 

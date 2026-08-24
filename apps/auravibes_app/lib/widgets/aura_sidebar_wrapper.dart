@@ -104,17 +104,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     return AppWithResponsiveDrawer(
       child: navigationShell,
       navigationItems: _navigationItems,
-      onNavigationTap: (index) {
-        if (workspaceId.isEmpty) {
-          _logger.fine(
-            '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
-          );
-
-          return;
-        }
-
-        _goBranch(index);
-      },
+      onNavigationTap: _handleNavigationTap,
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,
     );
@@ -122,5 +112,17 @@ class AuraSidebarWrapper extends HookConsumerWidget {
 
   void _goBranch(int index) {
     navigationShell.goBranch(index, initialLocation: true);
+  }
+
+  void _handleNavigationTap(int index) {
+    if (workspaceId.isEmpty) {
+      _logger.fine(
+        '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
+      );
+
+      return;
+    }
+
+    _goBranch(index);
   }
 }

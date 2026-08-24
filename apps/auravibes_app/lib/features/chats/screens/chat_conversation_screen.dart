@@ -293,68 +293,46 @@ class _LoadedChatConversation extends HookConsumerWidget {
                 modelSheetControl: CompactWorkspaceModelSelector(
                   workspaceId: workspaceId,
                   workspaceModelSelectionId: conversation.modelId,
-                  onChanged: (modelId) {
-                    unawaited(
-                      _setModelWithAttachmentWarning(
-                        context: context,
-                        ref: ref,
-                        workspaceId: workspaceId,
-                        conversationId: conversation.id,
-                        modelId: modelId,
-                      ),
-                    );
-                  },
+                  onChanged: (modelId) => _onModelChanged(
+                    context,
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    modelId,
+                  ),
                   sheetMode: true,
                 ),
                 agentSheetControl: CompactAgentSelector(
                   workspaceId: workspaceId,
                   agentId: conversation.agentId,
-                  onChanged: (agentId) {
-                    unawaited(
-                      ref
-                          .read(
-                            conversationChatProvider(
-                              workspaceId,
-                              conversation.id,
-                            ).notifier,
-                          )
-                          .setAgent(agentId),
-                    );
-                  },
+                  onChanged: (agentId) => _onAgentChanged(
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    agentId,
+                  ),
                   sheetMode: true,
                 ),
                 modelCompactControl: CompactWorkspaceModelSelector(
                   workspaceId: workspaceId,
                   workspaceModelSelectionId: conversation.modelId,
-                  onChanged: (modelId) {
-                    unawaited(
-                      ref
-                          .read(
-                            conversationChatProvider(
-                              workspaceId,
-                              conversation.id,
-                            ).notifier,
-                          )
-                          .setModel(modelId),
-                    );
-                  },
+                  onChanged: (modelId) => _onModelSelectionChanged(
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    modelId,
+                  ),
                   compactMode: true,
                 ),
                 agentCompactControl: CompactAgentSelector(
                   workspaceId: workspaceId,
                   agentId: conversation.agentId,
-                  onChanged: (agentId) {
-                    unawaited(
-                      ref
-                          .read(
-                            conversationChatProvider(
-                              workspaceId,
-                              conversation.id,
-                            ).notifier,
-                          )
-                          .setAgent(agentId),
-                    );
-                  },
+                  onChanged: (agentId) => _onAgentChanged(
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    agentId,
+                  ),
                   compactMode: true,
                 ),
                 modalitiesInput: modalitiesInput,
@@ -386,6 +364,50 @@ class _LoadedChatConversation extends HookConsumerWidget {
         title: Text(conversation.title),
         leading: _leading(context),
       ),
+    );
+  }
+
+  void _onModelChanged(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    String? modelId,
+  ) {
+    unawaited(
+      _setModelWithAttachmentWarning(
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        modelId: modelId,
+      ),
+    );
+  }
+
+  void _onModelSelectionChanged(
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    String? modelId,
+  ) {
+    unawaited(
+      ref
+          .read(conversationChatProvider(workspaceId, conversationId).notifier)
+          .setModel(modelId),
+    );
+  }
+
+  void _onAgentChanged(
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    String? agentId,
+  ) {
+    unawaited(
+      ref
+          .read(conversationChatProvider(workspaceId, conversationId).notifier)
+          .setAgent(agentId),
     );
   }
 
@@ -503,11 +525,13 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() {
-        final _ = Object();
-      });
+    _timer = Timer.periodic(const Duration(seconds: 1), _onTimerTick);
+  }
+
+  void _onTimerTick(Timer timer) {
+    if (!mounted) return;
+    setState(() {
+      final _ = Object();
     });
   }
 

@@ -774,11 +774,7 @@ class _InputFieldsSection extends StatelessWidget {
                     ),
                   ],
                   value: field.type,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    field.type = value;
-                    onChanged();
-                  },
+                  onChanged: (value) => _setFieldType(field, value),
                   label: Text(
                     LocaleKeys.skills_tool_input_type_label.tr(
                       context: context,
@@ -844,6 +840,12 @@ class _InputFieldsSection extends StatelessWidget {
       spacing: AuraSpacing.sm,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
+  }
+
+  void _setFieldType(_InputField field, String? value) {
+    if (value == null) return;
+    field.type = value;
+    onChanged();
   }
 }
 

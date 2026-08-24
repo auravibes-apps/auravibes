@@ -80,15 +80,7 @@ class _ServiceConnectionCreateScreenState
             padding: const EdgeInsets.all(12),
             child: _TypeSelector(
               value: _type,
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() {
-                  _type = value;
-                  _definitionId = null;
-                  _appSkillId = null;
-                  _resetAttributeControllers();
-                });
-              },
+              onChanged: _onTypeChanged,
             ),
           ),
           Expanded(
@@ -110,12 +102,7 @@ class _ServiceConnectionCreateScreenState
                 onNameChanged: (_) => setState(() {
                   final _ = Object();
                 }),
-                onDefinitionChanged: (value) {
-                  setState(() {
-                    _definitionId = value;
-                    _resetAttributeControllers();
-                  });
-                },
+                onDefinitionChanged: _onDefinitionChanged,
                 onSave: () => unawaited(_saveSkillCredential()),
               ),
               ServiceConnectionCreateType.appSkillCredential =>
@@ -284,6 +271,23 @@ class _ServiceConnectionCreateScreenState
     }
     if (!mounted) return;
     context.go('/workspaces/${widget.workspaceId}/more/service-connections');
+  }
+
+  void _onTypeChanged(ServiceConnectionCreateType? value) {
+    if (value == null) return;
+    setState(() {
+      _type = value;
+      _definitionId = null;
+      _appSkillId = null;
+      _resetAttributeControllers();
+    });
+  }
+
+  void _onDefinitionChanged(String? value) {
+    setState(() {
+      _definitionId = value;
+      _resetAttributeControllers();
+    });
   }
 
   void _resetAttributeControllers() {

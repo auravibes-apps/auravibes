@@ -100,13 +100,7 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
       child: Actions(
         actions: <Type, Action<Intent>>{
           ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              if (isInteractive) {
-                widget.onChanged?.call(!widget.value);
-              }
-
-              return null;
-            },
+            onInvoke: _handleActivate,
           ),
         },
         child: FocusableActionDetector(
@@ -134,6 +128,13 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
         ),
       ),
     );
+  }
+
+  Object? _handleActivate(ActivateIntent intent) {
+    if (!widget.isDisabled && widget.onChanged != null) {
+      widget.onChanged?.call(!widget.value);
+    }
+    return null;
   }
 }
 

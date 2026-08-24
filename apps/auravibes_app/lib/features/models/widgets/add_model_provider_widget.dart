@@ -168,35 +168,18 @@ class AddModelProviderWidget extends HookConsumerWidget {
                     isDesktop: isDesktop,
                     supportsBrowserOAuth: capabilities.modelBrowserOAuth,
                     supportsDeviceOAuth: capabilities.modelDeviceOAuth,
-                    onCodexBrowserSubmit: () {
-                      codexDeviceCodeCancelled.value = false;
-                      codexDeviceCode.value = null;
-                      unawaited(
-                        _submitForm(
-                          context,
-                          ref,
-                          codexOAuthMethod: CodexOAuthMethod.browser,
-                        ),
-                      );
-                    },
-                    onCodexDeviceSubmit: () {
-                      codexDeviceCodeCancelled.value = false;
-                      codexDeviceCode.value = null;
-                      unawaited(
-                        _submitForm(
-                          context,
-                          ref,
-                          codexOAuthMethod: CodexOAuthMethod.deviceCode,
-                          onCodexDeviceCode: (deviceCode) {
-                            if (context.mounted) {
-                              codexDeviceCode.value = deviceCode;
-                            }
-                          },
-                          isCodexDeviceCodeCancelled: () =>
-                              codexDeviceCodeCancelled.value,
-                        ),
-                      );
-                    },
+                    onCodexBrowserSubmit: () => _submitCodexBrowser(
+                      context,
+                      ref,
+                      codexDeviceCode,
+                      codexDeviceCodeCancelled,
+                    ),
+                    onCodexDeviceSubmit: () => _submitCodexDevice(
+                      context,
+                      ref,
+                      codexDeviceCode,
+                      codexDeviceCodeCancelled,
+                    ),
                   ),
                 ],
               ),
@@ -205,6 +188,54 @@ class AddModelProviderWidget extends HookConsumerWidget {
         ),
       ],
     );
+  }
+
+  void _submitCodexBrowser(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<CodexDeviceCode?> deviceCode,
+    ObjectRef<bool> cancelled,
+  ) {
+    cancelled.value = false;
+    deviceCode.value = null;
+    unawaited(
+      _submitForm(
+        context,
+        ref,
+        codexOAuthMethod: CodexOAuthMethod.browser,
+      ),
+    );
+  }
+
+  void _submitCodexDevice(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<CodexDeviceCode?> deviceCode,
+    ObjectRef<bool> cancelled,
+  ) {
+    cancelled.value = false;
+    deviceCode.value = null;
+    unawaited(
+      _submitForm(
+        context,
+        ref,
+        codexOAuthMethod: CodexOAuthMethod.deviceCode,
+        onCodexDeviceCode: (value) => _setCodexDeviceCode(
+          context,
+          deviceCode,
+          value,
+        ),
+        isCodexDeviceCodeCancelled: () => cancelled.value,
+      ),
+    );
+  }
+
+  void _setCodexDeviceCode(
+    BuildContext context,
+    ValueNotifier<CodexDeviceCode?> deviceCode,
+    CodexDeviceCode value,
+  ) {
+    if (context.mounted) deviceCode.value = value;
   }
 }
 

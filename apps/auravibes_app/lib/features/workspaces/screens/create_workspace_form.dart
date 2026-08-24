@@ -85,11 +85,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
                 ),
             ],
             value: _targetAccountId,
-            onChanged: (accountId) {
-              if (accountId != null) {
-                setState(() => _targetAccountId = accountId);
-              }
-            },
+            onChanged: _setTargetAccount,
             label: const TextLocale('workspace_management.target_label'),
             isEnabled: !_isCreating,
           ),
@@ -124,6 +120,11 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
       ),
       _ => const SizedBox.shrink(),
     };
+  }
+
+  void _setTargetAccount(String? accountId) {
+    if (accountId == null) return;
+    setState(() => _targetAccountId = accountId);
   }
 
   Future<void> _create() async {

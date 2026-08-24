@@ -240,13 +240,7 @@ class _WorkspaceSelector extends ConsumerWidget {
           ],
           key: const Key('new_chat_workspace_selector'),
           value: workspaceId,
-          onChanged: (value) {
-            if (value != null && value != workspaceId) {
-              ref
-                  .read(workspaceSwitcherProvider.notifier)
-                  .switchToWorkspace(value);
-            }
-          },
+          onChanged: (value) => _switchWorkspace(ref, value),
           semanticLabel: LocaleKeys.workspace_management_title.tr(),
         ),
         AsyncLoading() => const AuraDropdownSelector<String>(
@@ -263,6 +257,11 @@ class _WorkspaceSelector extends ConsumerWidget {
         ),
       },
     );
+  }
+
+  void _switchWorkspace(WidgetRef ref, String? value) {
+    if (value == null || value == workspaceId) return;
+    ref.read(workspaceSwitcherProvider.notifier).switchToWorkspace(value);
   }
 }
 

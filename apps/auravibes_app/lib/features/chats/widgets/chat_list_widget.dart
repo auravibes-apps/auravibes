@@ -220,13 +220,15 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
           ),
         ],
       ),
-      onTap: () {
-        ConversationRoute(
-          workspaceId: widget.workspaceId,
-          chatId: widget.chat.id,
-        ).go(context);
-      },
+      onTap: () => _openConversation(context),
       style: AuraCardStyle.border,
     );
+  }
+
+  void _openConversation(BuildContext context) {
+    ConversationRoute(
+      workspaceId: widget.workspaceId,
+      chatId: widget.chat.id,
+    ).go(context);
   }
 }

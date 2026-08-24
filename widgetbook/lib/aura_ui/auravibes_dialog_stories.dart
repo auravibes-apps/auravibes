@@ -87,21 +87,21 @@ class _AlertDialogDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () {
-            unawaited(
-              AuraDialogs.alert(
-                context: context,
-                title: const Text('Update Available'),
-                message: const Text(
-                  'A new version of the app is available. Please update to the latest version.',
-                ),
-                tint: tint,
-              ),
-            );
-          },
+          onPressed: () => unawaited(_showAlertDialog(context)),
           child: const Text('Show Alert Dialog'),
         ),
       ),
+    );
+  }
+
+  Future<void> _showAlertDialog(BuildContext context) {
+    return AuraDialogs.alert(
+      context: context,
+      title: const Text('Update Available'),
+      message: const Text(
+        'A new version of the app is available. Please update to the latest version.',
+      ),
+      tint: tint,
     );
   }
 }

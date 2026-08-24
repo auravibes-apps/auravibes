@@ -123,39 +123,50 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     return Center(
       child: SizedBox.fromSize(
         child: Stack(
-          children: List.generate(itemCount, (i) {
-            final position = widget.size * 0.5;
-
-            return Positioned.fill(
-              left: position,
-              top: position,
-              child: Transform(
-                transform: Matrix4.rotationZ((360 / itemCount) * i * 0.0174533),
-                child: Align(
-                  child: FadeTransition(
-                    opacity: _DelayTween(
-                      delay: i / itemCount,
-                      begin: 0,
-                      end: 1,
-                    ).animate(_requiredController),
-                    child: SizedBox.fromSize(
-                      child:
-                          itemBuilder?.call(context, i) ??
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: context.auraColors.colorFor(widget.tint),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                      size: Size.square(itemSize),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          children: List.generate(
+            itemCount,
+            (i) => _buildItem(context, i, itemCount, itemSize, itemBuilder),
+          ),
         ),
         size: Size.square(widget.size),
+      ),
+    );
+  }
+
+  Widget _buildItem(
+    BuildContext context,
+    int index,
+    int itemCount,
+    double itemSize,
+    Widget Function(BuildContext, int)? itemBuilder,
+  ) {
+    final position = widget.size * 0.5;
+
+    return Positioned.fill(
+      left: position,
+      top: position,
+      child: Transform(
+        transform: Matrix4.rotationZ((360 / itemCount) * index * 0.0174533),
+        child: Align(
+          child: FadeTransition(
+            opacity: _DelayTween(
+              delay: index / itemCount,
+              begin: 0,
+              end: 1,
+            ).animate(_requiredController),
+            child: SizedBox.fromSize(
+              child:
+                  itemBuilder?.call(context, index) ??
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: context.auraColors.colorFor(widget.tint),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              size: Size.square(itemSize),
+            ),
+          ),
+        ),
       ),
     );
   }

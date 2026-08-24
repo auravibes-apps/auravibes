@@ -55,26 +55,34 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     _animationController = animationController;
 
     // Create staggered animations for each dot.
-    _dotAnimations = List.generate(_dotCount, (index) {
-      final begin = index * _stagger;
-      final end = begin + _animationSpan;
-
-      return Tween<double>(
-        begin: _initialScale,
-        end: 1,
-      ).animate(
-        CurvedAnimation(
-          parent: animationController,
-          curve: Interval(
-            begin,
-            end,
-            curve: Curves.easeInOut,
-          ),
-        ),
-      );
-    });
+    _dotAnimations = List.generate(
+      _dotCount,
+      (index) => _buildDotAnimation(index, animationController),
+    );
 
     final _ = animationController.repeat();
+  }
+
+  Animation<double> _buildDotAnimation(
+    int index,
+    AnimationController animationController,
+  ) {
+    final begin = index * _stagger;
+    final end = begin + _animationSpan;
+
+    return Tween<double>(
+      begin: _initialScale,
+      end: 1,
+    ).animate(
+      CurvedAnimation(
+        parent: animationController,
+        curve: Interval(
+          begin,
+          end,
+          curve: Curves.easeInOut,
+        ),
+      ),
+    );
   }
 
   @override
@@ -90,27 +98,24 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
 
     final content = Row(
       mainAxisSize: MainAxisSize.min,
-      children: List.generate(3, (index) {
-        return AnimatedBuilder(
+      children: List.generate(
+        3,
+        (index) => AnimatedBuilder(
           animation: _dotAnimations[index],
-          builder: (context, child) {
-            return Opacity(
-              opacity: _dotAnimations[index].value,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: dotColor,
-                  shape: BoxShape.circle,
-                ),
-                width: _getDotSize(),
-                height: _getDotSize(),
-                margin: EdgeInsets.symmetric(
-                  horizontal: _getDotSpacing() / 2,
-                ),
+          builder: (context, child) => Opacity(
+            opacity: _dotAnimations[index].value,
+            child: Container(
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
               ),
-            );
-          },
-        );
-      }),
+              width: _getDotSize(),
+              height: _getDotSize(),
+              margin: EdgeInsets.symmetric(horizontal: _getDotSpacing() / 2),
+            ),
+          ),
+        ),
+      ),
     );
 
     if (!widget.showContainer) {

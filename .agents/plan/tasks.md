@@ -18,7 +18,7 @@
 | no-magic-number | 282 | 0 | Wave 4 |
 | prefer-correct-identifier-length | 317 | 0 | Wave 2 |
 | prefer-correct-type-name | 4 | 0 | Wave 7 |
-| prefer-extracting-callbacks | 38 | 38 | Wave 8 |
+| prefer-extracting-callbacks | 38 | 0 | Wave 8 |
 | prefer-match-file-name | 65 | 0 | Wave 7 |
 | prefer-moving-to-variable | 82 | 0 | Wave 3 |
 | prefer-single-widget-per-file | 12 | 0 | Wave 6 |
@@ -45,7 +45,7 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 | 5 | remaining `avoid-returning-widgets` | complete | 8c5a973c | 30 -> 0; no-magic 0; changed-file fatal analyzer passed; app focused tests 40 passed; UI radio tests 31 passed |
 | 6 | `prefer-single-widget-per-file` | complete | `4b1fbe5b` | 12 -> 0; changed-file fatal analyzer passed; UI moved-widget tests 111 passed; app drawer tests 23 passed and tool tile tests 13 passed; anti-patterns 0 |
 | 7 | type/file naming | complete | pending | 69 -> 0; DCL total 532 -> 463; analyzer attempt hung in existing Riverpod plugin; diff formatted and checked |
-| 8 | `prefer-extracting-callbacks` | pending | — | Baseline 38 |
+| 8 | `prefer-extracting-callbacks` | complete | pending | 38 -> 0; DCL total 463 -> 430; format and diff checks pass |
 | 9 | `format-comment` | pending | — | Baseline 69 |
 | 10 | `member-ordering` | pending | — | Baseline 354 |
 

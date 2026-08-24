@@ -112,17 +112,19 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraDropdownSelector menu',
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape) {
-          _closeDropdown();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleMenuKeyEvent,
     );
+  }
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
+      _closeDropdown();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -277,11 +279,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
               isEnabled: widget.isEnabled,
               isFocused: _isDropdownOpen || _isTriggerFocused,
               onTap: _toggleDropdown,
-              onFocusChange: (value) {
-                setState(() {
-                  _isTriggerFocused = value;
-                });
-              },
+              onFocusChange: _handleTriggerFocusChange,
               semanticLabel: widget.semanticLabel,
             ),
             groupId: this,
@@ -289,20 +287,28 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
         ),
       ),
       focusNode: _requiredFocusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _isDropdownOpen) {
-          _closeDropdown();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleTriggerKeyEvent,
       skipTraversal: true,
       descendantsAreFocusable: true,
     );
+  }
+
+  KeyEventResult _handleTriggerKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        _isDropdownOpen) {
+      _closeDropdown();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _handleTriggerFocusChange(bool value) {
+    setState(() {
+      _isTriggerFocused = value;
+    });
   }
 }
 

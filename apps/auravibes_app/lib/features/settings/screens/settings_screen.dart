@@ -108,17 +108,18 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppTheme currentTheme,
   ) {
+    void onThemeChanged(AppTheme? value) {
+      if (value == null) return;
+      Navigator.of(context, rootNavigator: true).pop();
+      ref.read(themeProvider.notifier).setTheme(value);
+    }
+
     AuraDialogs.alert(
       context: context,
       title: const TextLocale(LocaleKeys.settings_screen_theme_title),
       message: AuraRadioGroup<AppTheme>(
         value: currentTheme,
-        onChanged: (value) {
-          if (value != null) {
-            Navigator.of(context, rootNavigator: true).pop();
-            ref.read(themeProvider.notifier).setTheme(value);
-          }
-        },
+        onChanged: onThemeChanged,
         options: const [
           AuraRadioOption(
             value: AppTheme.system,

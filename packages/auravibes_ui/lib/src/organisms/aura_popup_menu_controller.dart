@@ -90,19 +90,21 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraPopupMenu menu',
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _visible) {
-          close();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleMenuKeyEvent,
     );
     widget.controller._state = this;
+  }
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        _visible) {
+      close();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
   }
 
   @override
@@ -217,17 +219,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
         ),
       ),
       focusNode: _requiredFocusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _visible) {
-          close();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleMenuKeyEvent,
       skipTraversal: true,
       descendantsAreFocusable: true,
     );

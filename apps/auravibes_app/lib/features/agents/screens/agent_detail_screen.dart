@@ -176,11 +176,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
         onEnable: (skill) async {
           await _confirmEnableSkill(skill);
         },
-        onRemoveUnavailable: (ref) {
-          setState(() {
-            final _ = _selectedSkills.remove(ref);
-          });
-        },
+        onRemoveUnavailable: _removeUnavailableSkill,
       ),
     );
   }
@@ -213,11 +209,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
         selectedSkills: _selectedSkills,
         tools: tools,
         values: _toolPermissionModes,
-        onChanged: (toolId, value) {
-          setState(() {
-            _toolPermissionModes[toolId] = value;
-          });
-        },
+        onChanged: _setToolPermissionMode,
       ),
     );
   }
@@ -232,6 +224,18 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     _selectedSkills
       ..clear()
       ..addAll(agent.skills);
+  }
+
+  void _removeUnavailableSkill(AgentSkillRef skill) {
+    setState(() {
+      final _ = _selectedSkills.remove(skill);
+    });
+  }
+
+  void _setToolPermissionMode(String toolId, AgentToolPermissionMode value) {
+    setState(() {
+      _toolPermissionModes[toolId] = value;
+    });
   }
 
   void _initializeToolOverrides(List<AgentToolOverrideEntity> overrides) {
