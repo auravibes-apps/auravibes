@@ -279,7 +279,7 @@ class AppResolvedToolProvider
       return operation.valueOrCancellation();
     }
 
-    if (skillSlug != skillsManagerSlug) {
+    if (skillSlug != SkillToolSlugs.skillsManager) {
       final usecase = runAppSkillToolUsecase;
       if (usecase == null) {
         throw StateError('RunAppSkillToolUsecase is not configured.');
@@ -429,7 +429,7 @@ Future<Object?> _runSkillControlTool({
   required Map<String, dynamic> arguments,
   required _SkillControlToolDependencies dependencies,
 }) async {
-  if (toolIdentifier == listSkillCredentialsToolName) {
+  if (toolIdentifier == SkillToolNames.listCredentials) {
     return _listSkillCredentials(
       workspaceId: workspaceId,
       conversationId: conversationId,
@@ -693,16 +693,16 @@ void _invalidateSkillsManagerToolState(
   final definitionId = resultMap['definitionId'];
 
   switch (toolSlug) {
-    case createUserSkillToolSlug:
-    case updateUserSkillToolSlug:
-    case deleteUserSkillToolSlug:
+    case SkillToolSlugs.createUserSkill:
+    case SkillToolSlugs.updateUserSkill:
+    case SkillToolSlugs.deleteUserSkill:
       ref.invalidate(workspaceSkillsProvider(workspaceId));
       if (skillId is String && skillId.isNotEmpty) {
         ref.invalidate(skillDetailProvider(workspaceId, skillId));
       }
-    case createSkillCredentialDefinitionToolSlug:
-    case updateSkillCredentialDefinitionToolSlug:
-    case deleteSkillCredentialDefinitionToolSlug:
+    case SkillToolSlugs.createSkillCredentialDefinition:
+    case SkillToolSlugs.updateSkillCredentialDefinition:
+    case SkillToolSlugs.deleteSkillCredentialDefinition:
       ref
         ..invalidate(skillCredentialDefinitionsProvider(workspaceId))
         ..invalidate(serviceConnectionsProvider(workspaceId));
@@ -715,9 +715,9 @@ void _invalidateSkillsManagerToolState(
             skillCredentialsForDefinitionProvider(workspaceId, definitionId),
           );
       }
-    case createSkillTemplateToolSlug:
-    case updateSkillTemplateToolSlug:
-    case deleteSkillTemplateToolSlug:
+    case SkillToolSlugs.createSkillTemplateTool:
+    case SkillToolSlugs.updateSkillTemplateTool:
+    case SkillToolSlugs.deleteSkillTemplateTool:
       if (skillId is String && skillId.isNotEmpty) {
         ref.invalidate(skillTemplateToolsProvider(workspaceId, skillId));
       }

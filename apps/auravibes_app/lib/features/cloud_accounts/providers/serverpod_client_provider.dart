@@ -29,7 +29,9 @@ serverpodClientForAccountProvider =
       ref,
       key,
     ) async {
-      final serverUrl = canonicalServerOrigin(key.serverUrl);
+      final serverUrl = CloudAccountIdentity.canonicalServerOrigin(
+        key.serverUrl,
+      );
       if (serverUrl.isEmpty) return null;
 
       final store = ref.watch(serverpodAuthStoreProvider);
@@ -52,7 +54,9 @@ serverpodClientForWorkspaceProvider =
     FutureProvider.family<Client, ({String serverUrl, String accountId})>(
       (ref, key) async {
         final store = ref.watch(serverpodAuthStoreProvider);
-        final serverUrl = canonicalServerOrigin(key.serverUrl);
+        final serverUrl = CloudAccountIdentity.canonicalServerOrigin(
+          key.serverUrl,
+        );
         final client = Client(serverUrl);
         final _ = ref.onDispose(client.close);
         final sessionManager = ClientAuthSessionManager(

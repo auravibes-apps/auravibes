@@ -2,17 +2,19 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('matchWorkspaceId additional', () {
+  group('WorkspaceRouteResolver.matchWorkspaceId additional', () {
     test('handles URI with only workspaces segment', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces')),
+        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/workspaces')),
         isNull,
       );
     });
 
     test('handles URI with encoded characters', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws%20space/chats')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws%20space/chats'),
+        ),
         'ws space',
       );
     });

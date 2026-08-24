@@ -72,7 +72,7 @@ void main() {
       );
       final config = makeConfig(
         type: ModelProvidersType.openai,
-        connectionModelId: openAICodexProviderId,
+        connectionModelId: ModelProviderOAuthProfiles.providerId,
         authMode: ModelProviderAuthMode.oauth2,
       );
 
@@ -84,7 +84,7 @@ void main() {
     test('resolves Codex OAuth model reference with Codex namespace', () {
       final config = makeConfig(
         type: ModelProvidersType.openai,
-        connectionModelId: openAICodexProviderId,
+        connectionModelId: ModelProviderOAuthProfiles.providerId,
         authMode: ModelProviderAuthMode.oauth2,
       );
 

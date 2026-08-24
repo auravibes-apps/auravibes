@@ -8,26 +8,28 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-const skillsManagerSlug = 'skills_manager';
-const listUserSkillsToolSlug = 'list_user_skills';
-const getUserSkillToolSlug = 'get_user_skill';
-const createUserSkillToolSlug = 'create_user_skill';
-const updateUserSkillToolSlug = 'update_user_skill';
-const deleteUserSkillToolSlug = 'delete_user_skill';
-const listSkillTemplateToolsToolSlug = 'list_skill_template_tools';
-const getSkillTemplateToolToolSlug = 'get_skill_template_tool';
-const createSkillTemplateToolSlug = 'create_skill_template_tool';
-const updateSkillTemplateToolSlug = 'update_skill_template_tool';
-const deleteSkillTemplateToolSlug = 'delete_skill_template_tool';
-const listSkillCredentialDefinitionsToolSlug =
-    'list_skill_credential_definitions';
-const getSkillCredentialDefinitionToolSlug = 'get_skill_credential_definition';
-const createSkillCredentialDefinitionToolSlug =
-    'create_skill_credential_definition';
-const updateSkillCredentialDefinitionToolSlug =
-    'update_skill_credential_definition';
-const deleteSkillCredentialDefinitionToolSlug =
-    'delete_skill_credential_definition';
+abstract final class SkillToolSlugs {
+  static const skillsManager = 'skills_manager';
+  static const listUserSkills = 'list_user_skills';
+  static const getUserSkill = 'get_user_skill';
+  static const createUserSkill = 'create_user_skill';
+  static const updateUserSkill = 'update_user_skill';
+  static const deleteUserSkill = 'delete_user_skill';
+  static const listSkillTemplateTools = 'list_skill_template_tools';
+  static const getSkillTemplateTool = 'get_skill_template_tool';
+  static const createSkillTemplateTool = 'create_skill_template_tool';
+  static const updateSkillTemplateTool = 'update_skill_template_tool';
+  static const deleteSkillTemplateTool = 'delete_skill_template_tool';
+  static const listSkillCredentialDefinitions =
+      'list_skill_credential_definitions';
+  static const getSkillCredentialDefinition = 'get_skill_credential_definition';
+  static const createSkillCredentialDefinition =
+      'create_skill_credential_definition';
+  static const updateSkillCredentialDefinition =
+      'update_skill_credential_definition';
+  static const deleteSkillCredentialDefinition =
+      'delete_skill_credential_definition';
+}
 
 class BuildAppSkillNativeToolSpecsUsecase {
   const BuildAppSkillNativeToolSpecsUsecase(
@@ -68,7 +70,8 @@ class BuildAppSkillNativeToolSpecsUsecase {
             .toList();
     final hasSkillsManager = runtimeSkills.any(
       (skill) =>
-          skill.source == SkillSource.app && skill.slug == skillsManagerSlug,
+          skill.source == SkillSource.app &&
+          skill.slug == SkillToolSlugs.skillsManager,
     );
     final specs = <ToolSpec>[
       if (hasSkillsManager) ...skillsManagerToolSpecs,

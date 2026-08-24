@@ -7,75 +7,93 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  group('matchWorkspaceId', () {
+  group('WorkspaceRouteResolver.matchWorkspaceId', () {
     test('returns null for root path', () {
-      expect(matchWorkspaceId(Uri.parse('/')), isNull);
+      expect(WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/')), isNull);
     });
 
     test('returns null for non-workspace path', () {
-      expect(matchWorkspaceId(Uri.parse('/chat/new')), isNull);
+      expect(
+        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/chat/new')),
+        isNull,
+      );
     });
 
     test('returns null for single segment', () {
-      expect(matchWorkspaceId(Uri.parse('/workspaces')), isNull);
+      expect(
+        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/workspaces')),
+        isNull,
+      );
     });
 
     test('returns workspace ID for valid workspace URL', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws-123/chats')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws-123/chats'),
+        ),
         'ws-123',
       );
     });
 
     test('returns workspace ID for deeply nested paths', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws-456/chats/chat-789')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws-456/chats/chat-789'),
+        ),
         'ws-456',
       );
     });
 
     test('handles workspace ID with special characters', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws_abc-123/tools')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws_abc-123/tools'),
+        ),
         'ws_abc-123',
       );
     });
 
     test('returns null for empty path segments', () {
-      expect(matchWorkspaceId(Uri.parse('')), isNull);
+      expect(WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('')), isNull);
     });
 
     test('returns null when first segment is not workspaces', () {
       expect(
-        matchWorkspaceId(Uri.parse('/chats/ws-123')),
+        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/chats/ws-123')),
         isNull,
       );
     });
 
     test('returns workspace ID with only two segments', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws-abc')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws-abc'),
+        ),
         'ws-abc',
       );
     });
 
     test('handles URI with query parameters', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws-1/chats?tab=open')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws-1/chats?tab=open'),
+        ),
         'ws-1',
       );
     });
 
     test('handles URI with fragment', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws-1/tools#section')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/workspaces/ws-1/tools#section'),
+        ),
         'ws-1',
       );
     });
 
     test('returns first workspace ID segment even with many segments', () {
       expect(
-        matchWorkspaceId(
+        WorkspaceRouteResolver.matchWorkspaceId(
           Uri.parse('/workspaces/ws-first/a/b/c/d/e'),
         ),
         'ws-first',
@@ -83,27 +101,36 @@ void main() {
     });
   });
 
-  group('resolveWorkspaceRedirect', () {
+  group('WorkspaceRouteResolver.resolveWorkspaceRedirect', () {
     test('redirects root to intro when no workspace exists', () {
-      final result = resolveWorkspaceRedirect(Uri.parse('/'), const []);
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+        Uri.parse('/'),
+        const [],
+      );
 
       expect(result, '/intro');
     });
 
     test('keeps intro when no workspace exists', () {
-      final result = resolveWorkspaceRedirect(Uri.parse('/intro'), const []);
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+        Uri.parse('/intro'),
+        const [],
+      );
 
       expect(result, isNull);
     });
 
     test('redirects legacy path to intro when no workspace exists', () {
-      final result = resolveWorkspaceRedirect(Uri.parse('/chats'), const []);
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
+        Uri.parse('/chats'),
+        const [],
+      );
 
       expect(result, '/intro');
     });
 
     test('uses saved workspace for a workspace-less route', () {
-      final result = resolveWorkspaceRedirect(
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         Uri.parse('/'),
         [_workspace('ws-1'), _workspace('ws-2')],
         savedWorkspaceId: 'ws-2',
@@ -113,7 +140,7 @@ void main() {
     });
 
     test('uses the saved workspace for intro when workspace exists', () {
-      final result = resolveWorkspaceRedirect(
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         Uri.parse('/intro'),
         [_workspace('ws-1'), _workspace('ws-2')],
         savedWorkspaceId: 'ws-2',
@@ -123,7 +150,7 @@ void main() {
     });
 
     test('keeps an explicit workspace deep link over saved selection', () {
-      final result = resolveWorkspaceRedirect(
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         Uri.parse('/workspaces/ws-1/chat/new'),
         [_workspace('ws-1'), _workspace('ws-2')],
         savedWorkspaceId: 'ws-2',
@@ -133,7 +160,7 @@ void main() {
     });
 
     test('falls back to first workspace for stale saved selection', () {
-      final result = resolveWorkspaceRedirect(
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         Uri.parse('/'),
         [_workspace('ws-1')],
         savedWorkspaceId: 'missing',
@@ -143,7 +170,7 @@ void main() {
     });
 
     test('preserves query and fragment for legacy routes', () {
-      final result = resolveWorkspaceRedirect(
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         Uri.parse('/chats?filter=recent#messages'),
         [_workspace('ws-1')],
       );
@@ -152,7 +179,7 @@ void main() {
     });
 
     test('redirects invalid workspace to first workspace when one exists', () {
-      final result = resolveWorkspaceRedirect(
+      final result = WorkspaceRouteResolver.resolveWorkspaceRedirect(
         Uri.parse('/workspaces/missing/chat/new'),
         [_workspace('ws-1')],
       );
@@ -338,24 +365,26 @@ void main() {
     });
   });
 
-  group('matchWorkspaceId additional edge cases', () {
+  group('WorkspaceRouteResolver.matchWorkspaceId additional edge cases', () {
     test('returns workspace ID for minimal valid URI', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/abc')),
+        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/workspaces/abc')),
         'abc',
       );
     });
 
     test('returns null for deeply nested non-workspace path', () {
       expect(
-        matchWorkspaceId(Uri.parse('/other/ws-1/deep/path')),
+        WorkspaceRouteResolver.matchWorkspaceId(
+          Uri.parse('/other/ws-1/deep/path'),
+        ),
         isNull,
       );
     });
 
     test('returns workspace ID when trailing slash present', () {
       expect(
-        matchWorkspaceId(Uri.parse('/workspaces/ws-1/')),
+        WorkspaceRouteResolver.matchWorkspaceId(Uri.parse('/workspaces/ws-1/')),
         'ws-1',
       );
     });

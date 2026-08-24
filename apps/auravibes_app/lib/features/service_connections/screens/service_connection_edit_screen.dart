@@ -232,7 +232,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.skill_credentials_save_error),
         variant: AuraSnackBarVariant.error,
@@ -262,7 +262,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_save_error,
@@ -308,7 +308,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.service_connections_save_error),
         variant: AuraSnackBarVariant.error,

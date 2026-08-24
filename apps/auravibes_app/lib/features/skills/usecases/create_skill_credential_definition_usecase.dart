@@ -22,7 +22,7 @@ class CreateSkillCredentialDefinitionUsecase {
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,
   ) async {
-    validateSkillTitle(definition.title);
+    ValidateSkillTitleUsecase.call(definition.title);
     final _ = SkillCredentialAttributeDefinition.parseMap(
       definition.attributesJson,
     );

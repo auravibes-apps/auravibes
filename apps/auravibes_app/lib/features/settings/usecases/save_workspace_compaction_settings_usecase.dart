@@ -92,3 +92,4 @@ saveWorkspaceCompactionSettingsUsecase(Ref ref, String workspaceId) async {
     repository: ref.watch(workspaceCompactionSettingsRepositoryProvider),
   );
 }
+// Top-level API/provider declarations are required by their consumers.

@@ -8,7 +8,9 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     show ToolSpec, buildSkillControlToolSpecs;
 import 'package:riverpod/riverpod.dart';
 
-const listSkillCredentialsToolName = 'list_skill_credentials';
+abstract final class SkillToolNames {
+  static const listCredentials = 'list_skill_credentials';
+}
 
 class BuildDynamicSkillToolSpecsUsecase {
   const BuildDynamicSkillToolSpecsUsecase(
@@ -51,7 +53,7 @@ class BuildDynamicSkillToolSpecsUsecase {
 
   ToolSpec _buildListCredentialsSpec(List<AvailableSkill> skills) {
     return ToolSpec(
-      name: listSkillCredentialsToolName,
+      name: SkillToolNames.listCredentials,
       description:
           'List available saved credentials for a loaded skill. Returns '
           'credential id and name only, never secret values.',

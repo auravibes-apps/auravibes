@@ -273,7 +273,7 @@ Future<void> _runCloudAction(
   } on Object catch (error) {
     if (!context.mounted) return;
     debugPrint('Cloud workspace action failed: $error');
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: const TextLocale(LocaleKeys.workspace_management_cloud_error),
       variant: AuraSnackBarVariant.error,

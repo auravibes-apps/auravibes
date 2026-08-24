@@ -84,7 +84,9 @@ class OAuthAuthenticate {
   Future<OAuthTokenModel> authenticate(
     OAuthDiscoveryResult oAuthResult,
   ) async {
-    final _ = await requirePublicHttpsUri(oAuthResult.authorizationUrl);
+    final _ = await PublicUrlGuard.requireHttpsUri(
+      oAuthResult.authorizationUrl,
+    );
     final codeVerifier = _generateRandomString(128);
     final codeChallenge = generateCodeChallenge(codeVerifier);
     final stateParam = _generateRandomString(32);
@@ -184,7 +186,7 @@ class OAuthAuthenticate {
     required String codeVerifier,
     required String redirectUrl,
   }) async {
-    final tokenUri = await requirePublicHttpsUri(oAuthResult.tokenUrl);
+    final tokenUri = await PublicUrlGuard.requireHttpsUri(oAuthResult.tokenUrl);
     final response = await _dio.post<Object?>(
       tokenUri.toString(),
       data: {

@@ -34,6 +34,7 @@ Future<CloudSkillStore?> _cloudSkillStore(Ref ref, String workspaceId) async {
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<SkillCredentialDefinitionEntity?> skillCredentialDefinition(
   Ref ref,
   String workspaceId,

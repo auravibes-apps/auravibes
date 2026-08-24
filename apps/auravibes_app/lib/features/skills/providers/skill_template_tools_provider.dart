@@ -18,6 +18,7 @@ Future<List<SkillTemplateToolEntity>> skillTemplateTools(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<SkillTemplateToolEntity?> skillTemplateTool(
   Ref ref,
   String workspaceId,

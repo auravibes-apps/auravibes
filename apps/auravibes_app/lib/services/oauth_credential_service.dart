@@ -158,7 +158,7 @@ class OAuthCredentialService {
     }
 
     try {
-      final tokenUri = await requirePublicHttpsUri(tokenEndpoint);
+      final tokenUri = await PublicUrlGuard.requireHttpsUri(tokenEndpoint);
       final response = await _dio.post<Object?>(
         tokenUri.toString(),
         data: {

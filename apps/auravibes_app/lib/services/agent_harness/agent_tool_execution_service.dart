@@ -94,7 +94,7 @@ class AppAllowedToolsDataProvider
     );
 
     return agent.AgentToolApprovalDecision(
-      permissionResult: toAgentToolPermissionResult(
+      permissionResult: AgentToolStatusMapper.toPermissionResult(
         decision.permissionResult,
       ),
     );
@@ -189,7 +189,7 @@ class AppAllowedToolsDataProvider
       if (update == null) return toolCall;
 
       return toolCall.copyWith(
-        resultStatus: toAppToolCallResultStatus(update.resultStatus),
+        resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
         responseRaw: update.responseRaw,
       );
     }).toList();

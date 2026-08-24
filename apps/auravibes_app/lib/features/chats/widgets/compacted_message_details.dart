@@ -54,7 +54,7 @@ class CompactedMessageDetails extends StatelessWidget {
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_created.tr(),
             value: switch (metadata?.compactionCreatedAt) {
-              final createdAt? => formatRelativeTime(createdAt),
+              final createdAt? => RelativeTimeFormatter.format(createdAt),
               _ => '',
             },
           ),

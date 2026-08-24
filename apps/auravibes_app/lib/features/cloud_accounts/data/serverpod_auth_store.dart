@@ -65,7 +65,9 @@ class ServerpodAuthStore {
         final migrated = [
           for (final item in decoded)
             CloudAccountSession(
-              serverUrl: canonicalServerOrigin(legacyServerUrl),
+              serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+                legacyServerUrl,
+              ),
               userId: (item as Map)['userId'] as String,
               email: item['email'] as String,
             ),
@@ -104,7 +106,9 @@ class ServerpodAuthStore {
               existing.serverUrl != account.serverUrl)
             existing,
         CloudAccountSession(
-          serverUrl: canonicalServerOrigin(account.serverUrl),
+          serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+            account.serverUrl,
+          ),
           userId: account.userId,
           email: account.email,
         ),
@@ -120,7 +124,7 @@ class ServerpodAuthStore {
     required String serverUrl,
     required String userId,
   }) async {
-    final origin = canonicalServerOrigin(serverUrl);
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
     await authSuccessStorage(serverUrl: origin, userId: userId).set(null);
     await _mutateIndex(() async {
       final accounts = await listAccounts();
@@ -133,7 +137,8 @@ class ServerpodAuthStore {
         ]),
       );
     });
-    if (await preferredAccountIdentity() == accountIdentity(origin, userId)) {
+    if (await preferredAccountIdentity() ==
+        CloudAccountIdentity.accountIdentity(origin, userId)) {
       await _secureStorage.delete(key: _key(_preferredAccountKey));
     }
   }
@@ -148,7 +153,7 @@ class ServerpodAuthStore {
   }) {
     return _secureStorage.write(
       key: _key(_preferredAccountKey),
-      value: accountIdentity(serverUrl, userId),
+      value: CloudAccountIdentity.accountIdentity(serverUrl, userId),
     );
   }
 
@@ -166,7 +171,7 @@ class ServerpodAuthStore {
   }
 
   static String _authKey(String serverUrl, String userId) =>
-      '$_authPrefix${accountIdentity(serverUrl, userId)}';
+      '$_authPrefix${CloudAccountIdentity.accountIdentity(serverUrl, userId)}';
 
   Future<void> _mutateIndex(Future<void> Function() mutation) async {
     final previousMutation = _indexMutation;
@@ -228,14 +233,17 @@ class _SecureKeyValueStorage implements KeyValueStorage {
   }
 }
 
-String canonicalServerOrigin(String serverUrl) {
-  final uri = Uri.parse(serverUrl);
-  if (!uri.hasScheme || uri.host.isEmpty) {
-    throw FormatException('Invalid server URL', serverUrl);
+abstract final class CloudAccountIdentity {
+  static String canonicalServerOrigin(String serverUrl) {
+    final uri = Uri.parse(serverUrl);
+    if (!uri.hasScheme || uri.host.isEmpty) {
+      throw FormatException('Invalid server URL', serverUrl);
+    }
+
+    return uri.replace(path: '').toString();
   }
 
-  return uri.replace(path: '').toString();
+  static String accountIdentity(String serverUrl, String userId) =>
+      '${Uri.encodeComponent(canonicalServerOrigin(serverUrl))}:$userId';
 }
-
-String accountIdentity(String serverUrl, String userId) =>
-    '${Uri.encodeComponent(canonicalServerOrigin(serverUrl))}:$userId';
+// Top-level API/provider declarations are required by their consumers.

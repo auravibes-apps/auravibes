@@ -175,7 +175,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   }
 
   Future<void> _editDescription(BuildContext context) async {
-    final result = await showMarkdownEditor(
+    final result = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _descriptionController.text,
       maxCharacters: _skillDescriptionMaxCharacters,
@@ -186,7 +186,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   }
 
   Future<void> _editContent(BuildContext context) async {
-    final result = await showMarkdownEditor(
+    final result = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _contentController.text,
     );
@@ -226,7 +226,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       didSave = true;
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skills_screen_save_error.tr(context: context),
@@ -301,7 +301,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skills_screen_save_error.tr(context: context),

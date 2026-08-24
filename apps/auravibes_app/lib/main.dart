@@ -64,7 +64,8 @@ class MyApp extends ConsumerWidget {
     final themeAsync = ref.watch(themeProvider);
     final routerConfig = ref.watch(routerProvider);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
-    final hue = ref.watch(accentHueProvider).asData?.value ?? defaultAccentHue;
+    final hue =
+        ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
     final lightTheme = AuraTheme.light.copyWith(
       colors: AuraComputedColorScheme(
         primaryHue: hue,

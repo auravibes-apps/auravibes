@@ -218,7 +218,7 @@ void main() {
     });
 
     final file = File('${dir.path}/voice.wav');
-    final wait = waitForRecordedFile(
+    final wait = LocalChatAttachmentRecording.waitForRecordedFile(
       file,
       timeout: const Duration(milliseconds: 200),
       pollInterval: const Duration(milliseconds: 10),
@@ -230,7 +230,7 @@ void main() {
   });
 
   test('pcm16ToWav writes a playable wav header', () {
-    final wav = pcm16ToWav(
+    final wav = LocalChatAttachmentRecording.pcm16ToWav(
       Uint8List.fromList([1, 2, 3, 4]),
       sampleRate: 44100,
       channels: 1,

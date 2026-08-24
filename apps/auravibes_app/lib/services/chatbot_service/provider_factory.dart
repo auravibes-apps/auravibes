@@ -169,7 +169,9 @@ class ProviderFactory {
             _blankToNull(config.modelsProvider.url) != null),
     supportsReasoning: config.workspaceModelSelection.supportsReasoning,
     usesOAuth: config.modelConnection.authMode == ModelProviderAuthMode.oauth2,
-    isCodexOAuth: isOpenAICodexProvider(config.modelConnection.modelId),
+    isCodexOAuth: ModelProviderOAuthProfiles.isCodexProvider(
+      config.modelConnection.modelId,
+    ),
     modelId: config.workspaceModelSelection.modelId,
   );
 

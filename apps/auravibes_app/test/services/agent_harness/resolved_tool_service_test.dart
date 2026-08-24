@@ -427,7 +427,7 @@ void main() {
     final result = await provider.runSkillControlTool(
       conversationId: 'conversation-1',
       workspaceId: 'workspace-1',
-      toolIdentifier: listSkillCredentialsToolName,
+      toolIdentifier: SkillToolNames.listCredentials,
       arguments: {'skillSlug': 'openai'},
     );
 

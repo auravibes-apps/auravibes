@@ -80,7 +80,7 @@ class CloudModelGateway {
 
   Future<ModelSyncResult> testAndSyncModelConnection({
     required String connectionId,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .model,
     () =>
         _testAndSync?.call(connectionId) ??
@@ -96,7 +96,7 @@ class CloudModelGateway {
     required String name,
     required String providerId,
     String? url,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .model,
     () {
       final request = CreateModelConnectionRequest(
@@ -114,7 +114,7 @@ class CloudModelGateway {
   Future<List<ModelConnectionView>> listModelConnections() {
     final request = ListModelConnectionsRequest(workspaceId: _workspaceId);
 
-    return guardCloudCall(
+    return CloudAppErrors.guardCall(
       .model,
       () => _list?.call(request) ?? _client.modelConnection.list(request),
     );
@@ -137,7 +137,7 @@ class CloudModelGateway {
     required int expectedRevision,
     required String name,
     required String? url,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .model,
     () {
       final request = UpdateModelConnectionRequest(
@@ -155,7 +155,7 @@ class CloudModelGateway {
   Future<void> deleteModelConnection({
     required String connectionId,
     required int expectedRevision,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .model,
     () {
       final request = DeleteModelConnectionRequest(
@@ -169,7 +169,7 @@ class CloudModelGateway {
     },
   );
   Future<List<WorkspaceModelSelectionView>> listModelSelections() =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .model,
         () {
           final request = ListWorkspaceModelSelectionsRequest(
@@ -192,14 +192,15 @@ class CloudModelGateway {
           );
         },
       );
-  Future<List<ApiModelProvider>> listModelCatalogProviders() => guardCloudCall(
-    .model,
-    () =>
-        _listCatalogProviders?.call() ??
-        _client.modelConnection.listCatalogProviders(),
-  );
+  Future<List<ApiModelProvider>> listModelCatalogProviders() =>
+      CloudAppErrors.guardCall(
+        .model,
+        () =>
+            _listCatalogProviders?.call() ??
+            _client.modelConnection.listCatalogProviders(),
+      );
   Future<List<ApiModel>> listModelCatalogModels({String? providerId}) =>
-      guardCloudCall(
+      CloudAppErrors.guardCall(
         .model,
         () =>
             _listCatalogModels?.call(providerId: providerId) ??
@@ -207,7 +208,7 @@ class CloudModelGateway {
       );
   Future<StartCodexOAuthResult> startCodexOAuth({
     required String connectionId,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .oauth,
     () =>
         _startCodexOAuth?.call(connectionId) ??
@@ -222,7 +223,7 @@ class CloudModelGateway {
     required String transactionId,
     required String state,
     required String code,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .oauth,
     () =>
         _completeCodexOAuth?.call(

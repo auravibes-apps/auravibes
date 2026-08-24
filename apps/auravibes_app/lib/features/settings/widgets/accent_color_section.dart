@@ -15,7 +15,8 @@ class AccentColorSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hue = ref.watch(accentHueProvider).asData?.value ?? defaultAccentHue;
+    final hue =
+        ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
 
     return AuraCard(
       child: AuraColumn(
@@ -70,7 +71,7 @@ class AccentColorSection extends ConsumerWidget {
   ) async {
     // ponytail: persist once on Save; live preview stays local to the dialog.
     var working = current;
-    final shouldSave = await showAuraConfirmDialog(
+    final shouldSave = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(
         LocaleKeys.settings_screen_accent_color_dialog_title,

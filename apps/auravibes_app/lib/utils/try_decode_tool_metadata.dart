@@ -1,31 +1,32 @@
-// Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
 
-const JsonEncoder _toolMetadataEncoder = JsonEncoder.withIndent('  ');
+abstract final class ToolMetadataDecoder {
+  static const _encoder = JsonEncoder.withIndent('  ');
 
-String? tryDecodeToolMetadata(Object? metadata) {
-  if (metadata == null) return null;
+  static String? decode(Object? metadata) {
+    if (metadata == null) return null;
 
-  Object? decoded;
-  try {
-    decoded = metadata is String ? jsonDecode(metadata) : metadata;
-  } on Exception catch (_) {
-    return metadata.toString();
-  }
-
-  if (decoded == null) return null;
-
-  if (decoded is Map && decoded.length == 1) {
-    return tryDecodeToolMetadata(decoded.values.first);
-  }
-
-  if (decoded is Map || decoded is List) {
+    Object? decoded;
     try {
-      return _toolMetadataEncoder.convert(decoded);
-    } on Object {
-      return decoded.toString();
+      decoded = metadata is String ? jsonDecode(metadata) : metadata;
+    } on Exception catch (_) {
+      return metadata.toString();
     }
-  }
 
-  return decoded.toString();
+    if (decoded == null) return null;
+
+    if (decoded is Map && decoded.length == 1) {
+      return decode(decoded.values.first);
+    }
+
+    if (decoded is Map || decoded is List) {
+      try {
+        return _encoder.convert(decoded);
+      } on Object {
+        return decoded.toString();
+      }
+    }
+
+    return decoded.toString();
+  }
 }

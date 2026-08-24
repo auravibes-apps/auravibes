@@ -1,1 +1,3 @@
-Future<List<int>?> readChatAttachmentBytes(String _) async => null;
+abstract final class ChatAttachmentBytes {
+  static Future<List<int>?> read(String _) async => null;
+}

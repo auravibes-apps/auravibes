@@ -90,7 +90,10 @@ class AuraComputedColor extends OKLCHColor {
     var minNeg = double.infinity;
 
     void check(Color candidate) {
-      final lc = apcaLc(foreground: candidate, background: background);
+      final lc = ColorContrast.apcaLc(
+        foreground: candidate,
+        background: background,
+      );
       if (lc > maxPos) {
         maxPos = lc;
         bestDark = candidate;
@@ -99,7 +102,10 @@ class AuraComputedColor extends OKLCHColor {
         minNeg = lc;
         bestLight = candidate;
       }
-      if (wcagContrastRatio(candidate, background) < targetWcagRatio) return;
+      if (ColorContrast.wcagContrastRatio(candidate, background) <
+          targetWcagRatio) {
+        return;
+      }
       if (lc >= targetLc) passingDark = candidate;
       if (lc <= -targetLc) passingLight = candidate;
     }

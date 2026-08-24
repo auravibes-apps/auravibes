@@ -1,5 +1,4 @@
 // Required: Existing test and UI helpers keep compact return flow.
-// Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/message_transcript_snapshot_mapper.dart';
@@ -20,7 +19,7 @@ class SelectPromptMessagesUsecase {
     );
 
     final selectedIds = selectAgentPromptHistory(
-      toAgentContextSnapshot(messages),
+      MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),
     ).messageIds;
     final messagesById = {for (final message in messages) message.id: message};
 

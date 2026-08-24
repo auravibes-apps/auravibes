@@ -53,41 +53,52 @@ class RunSkillsManagerToolUsecase {
     required Map<String, dynamic> arguments,
   }) {
     return switch (toolSlug) {
-      listUserSkillsToolSlug => _listUserSkills(workspaceId),
-      getUserSkillToolSlug => _getUserSkillResult(workspaceId, arguments),
-      createUserSkillToolSlug => _createUserSkill(workspaceId, arguments),
-      updateUserSkillToolSlug => _updateUserSkill(workspaceId, arguments),
-      deleteUserSkillToolSlug => _deleteUserSkill(workspaceId, arguments),
-      listSkillTemplateToolsToolSlug => _listSkillTemplateTools(
+      SkillToolSlugs.listUserSkills => _listUserSkills(workspaceId),
+      SkillToolSlugs.getUserSkill => _getUserSkillResult(
         workspaceId,
         arguments,
       ),
-      getSkillTemplateToolToolSlug => _getSkillTemplateToolResult(
+      SkillToolSlugs.createUserSkill => _createUserSkill(
         workspaceId,
         arguments,
       ),
-      createSkillTemplateToolSlug => _createSkillTemplateTool(
+      SkillToolSlugs.updateUserSkill => _updateUserSkill(
         workspaceId,
         arguments,
       ),
-      updateSkillTemplateToolSlug => _updateSkillTemplateTool(
+      SkillToolSlugs.deleteUserSkill => _deleteUserSkill(
         workspaceId,
         arguments,
       ),
-      deleteSkillTemplateToolSlug => _deleteSkillTemplateTool(
+      SkillToolSlugs.listSkillTemplateTools => _listSkillTemplateTools(
         workspaceId,
         arguments,
       ),
-      listSkillCredentialDefinitionsToolSlug => _listSkillCredentialDefinitions(
+      SkillToolSlugs.getSkillTemplateTool => _getSkillTemplateToolResult(
         workspaceId,
+        arguments,
       ),
-      getSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.createSkillTemplateTool => _createSkillTemplateTool(
+        workspaceId,
+        arguments,
+      ),
+      SkillToolSlugs.updateSkillTemplateTool => _updateSkillTemplateTool(
+        workspaceId,
+        arguments,
+      ),
+      SkillToolSlugs.deleteSkillTemplateTool => _deleteSkillTemplateTool(
+        workspaceId,
+        arguments,
+      ),
+      SkillToolSlugs.listSkillCredentialDefinitions =>
+        _listSkillCredentialDefinitions(workspaceId),
+      SkillToolSlugs.getSkillCredentialDefinition =>
         _getSkillCredentialDefinitionResult(workspaceId, arguments),
-      createSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.createSkillCredentialDefinition =>
         _createSkillCredentialDefinition(workspaceId, arguments),
-      updateSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.updateSkillCredentialDefinition =>
         _updateSkillCredentialDefinition(workspaceId, arguments),
-      deleteSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.deleteSkillCredentialDefinition =>
         _deleteSkillCredentialDefinition(workspaceId, arguments),
       _ => throw UnsupportedError('Unsupported skills manager tool: $toolSlug'),
     };

@@ -1,6 +1,4 @@
 // Required: Component callbacks stay colocated with UI state.
-import 'dart:async';
-
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -69,7 +67,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
       );
     });
 
-    unawaited(animationController.repeat());
+    final _ = animationController.repeat();
   }
 
   @override

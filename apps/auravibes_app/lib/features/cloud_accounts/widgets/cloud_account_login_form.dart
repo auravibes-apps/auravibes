@@ -79,7 +79,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
     });
 
     try {
-      await cloudAccountMutation.run(ref, (_) async {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
         final account = await ref
             .read(cloudAccountUseCasesProvider)
             .login(

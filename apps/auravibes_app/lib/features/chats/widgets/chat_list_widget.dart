@@ -122,7 +122,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
   }
 
   Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDeleteConversationConfirmDialog(context);
+    final confirmed = await DeleteConversationConfirmDialog.show(context);
     if (!confirmed) return;
 
     final cloud = await ref.read(
@@ -183,7 +183,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 const SizedBox(height: 4),
                 AuraText(
                   child: Text(
-                    formatRelativeTime(widget.chat.updatedAt),
+                    RelativeTimeFormatter.format(widget.chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,

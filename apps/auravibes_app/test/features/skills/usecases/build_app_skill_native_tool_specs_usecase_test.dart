@@ -89,7 +89,7 @@ void main() {
         ),
       ).thenAnswer(
         (_) async => [
-          _appSkill(skillsManagerSlug),
+          _appSkill(SkillToolSlugs.skillsManager),
           _appSkill('brave'),
         ],
       );

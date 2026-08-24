@@ -41,7 +41,7 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
       _$MessageToolCallEntityFromJson(json);
 
   Map<String, dynamic> get arguments {
-    return safeJsonDecode(argumentsRaw) ?? {};
+    return JsonCodec.decode(argumentsRaw) ?? {};
   }
 
   /// Whether this tool call has been resolved (success or failure).
@@ -235,7 +235,7 @@ abstract class MessageToCreate with _$MessageToCreate {
     if (status == MessageStatus.unfinished && !isUser) {
       return metadata == null ||
           metadata.trim().isEmpty ||
-          safeJsonDecode(metadata) != null;
+          JsonCodec.decode(metadata) != null;
     }
 
     if (status == MessageStatus.sent) {
@@ -245,7 +245,7 @@ abstract class MessageToCreate with _$MessageToCreate {
     return !isUser &&
         metadata != null &&
         metadata.trim().isNotEmpty &&
-        safeJsonDecode(metadata) != null;
+        JsonCodec.decode(metadata) != null;
   }
 
   /// Returns true if the message is in a valid state.

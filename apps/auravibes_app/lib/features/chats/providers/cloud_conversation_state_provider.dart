@@ -26,7 +26,7 @@ Stream<CloudConversationState> _watchCloudConversation(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway == null) return;
-  yield* watchCloudConversation(
+  yield* CloudConversationStream.watch(
     CloudChatGateway(gateway),
     key,
   );
@@ -34,71 +34,75 @@ Stream<CloudConversationState> _watchCloudConversation(
 
 /// Reconciles the local view from the authoritative snapshot after a stream
 /// gap, stream error, or every durable semantic event.
-Stream<CloudConversationState> watchCloudConversation(
-  CloudChatGateway chat,
-  CloudConversationKey key, {
-  Future<void> Function(Duration duration)? delay,
-}) async* {
-  final wait = delay ?? Future<void>.delayed;
-  var retryCount = 0;
-  var state = CloudConversationState.fromSnapshot(
-    await chat.getConversationSnapshot(key.conversationId),
-  );
-  _logger.info(
-    'Cloud conversation snapshot: workspaceId=${key.workspaceId}, '
-    'conversationId=${key.conversationId}, sequence=${state.sequence}, '
-    'executionState=${state.conversation.executionState}, '
-    'activeExecutionId=${state.activeExecution?.id}.',
-  );
-  yield state;
-
-  while (true) {
-    try {
-      await for (final event in chat.subscribeConversation(
-        key.conversationId,
-        afterSequence: state.sequence,
-      )) {
-        _logger.info(
-          'Cloud conversation event: workspaceId=${key.workspaceId}, '
-          'conversationId=${key.conversationId}, sequence=${event.sequence}, '
-          'kind=${event.kind.name}, '
-          'transientDelta=${event.transientTextDelta != null}.',
-        );
-        final next = state.apply(event);
-        final needsSnapshot = next == null || event.transientTextDelta == null;
-        if (needsSnapshot) {
-          _logger.info(
-            'Cloud conversation snapshot recovery: '
-            'conversationId=${key.conversationId}, '
-            'eventSequence=${event.sequence}, stateSequence=${state.sequence}.',
-          );
-        }
-        state = needsSnapshot
-            ? CloudConversationState.fromSnapshot(
-                await chat.getConversationSnapshot(key.conversationId),
-              )
-            : next;
-        retryCount = 0;
-        yield state;
-      }
-      _logger.warning(
-        'Cloud conversation stream closed: workspaceId=${key.workspaceId}, '
-        'conversationId=${key.conversationId}, sequence=${state.sequence}.',
-      );
-    } on Object catch (error, stackTrace) {
-      _logger.warning(
-        'Cloud conversation stream failed: workspaceId=${key.workspaceId}, '
-        'conversationId=${key.conversationId}, sequence=${state.sequence}.',
-        error,
-        stackTrace,
-      );
-    }
-
-    retryCount++;
-    state = CloudConversationState.fromSnapshot(
+abstract final class CloudConversationStream {
+  static Stream<CloudConversationState> watch(
+    CloudChatGateway chat,
+    CloudConversationKey key, {
+    Future<void> Function(Duration duration)? delay,
+  }) async* {
+    final wait = delay ?? Future<void>.delayed;
+    var retryCount = 0;
+    var state = CloudConversationState.fromSnapshot(
       await chat.getConversationSnapshot(key.conversationId),
     );
+    _logger.info(
+      'Cloud conversation snapshot: workspaceId=${key.workspaceId}, '
+      'conversationId=${key.conversationId}, sequence=${state.sequence}, '
+      'executionState=${state.conversation.executionState}, '
+      'activeExecutionId=${state.activeExecution?.id}.',
+    );
     yield state;
-    await wait(Duration(seconds: retryCount.clamp(1, 8)));
+
+    while (true) {
+      try {
+        await for (final event in chat.subscribeConversation(
+          key.conversationId,
+          afterSequence: state.sequence,
+        )) {
+          _logger.info(
+            'Cloud conversation event: workspaceId=${key.workspaceId}, '
+            'conversationId=${key.conversationId}, sequence=${event.sequence}, '
+            'kind=${event.kind.name}, '
+            'transientDelta=${event.transientTextDelta != null}.',
+          );
+          final next = state.apply(event);
+          final needsSnapshot =
+              next == null || event.transientTextDelta == null;
+          if (needsSnapshot) {
+            _logger.info(
+              'Cloud conversation snapshot recovery: '
+              'conversationId=${key.conversationId}, '
+              'eventSequence=${event.sequence}, '
+              'stateSequence=${state.sequence}.',
+            );
+          }
+          state = needsSnapshot
+              ? CloudConversationState.fromSnapshot(
+                  await chat.getConversationSnapshot(key.conversationId),
+                )
+              : next;
+          retryCount = 0;
+          yield state;
+        }
+        _logger.warning(
+          'Cloud conversation stream closed: workspaceId=${key.workspaceId}, '
+          'conversationId=${key.conversationId}, sequence=${state.sequence}.',
+        );
+      } on Object catch (error, stackTrace) {
+        _logger.warning(
+          'Cloud conversation stream failed: workspaceId=${key.workspaceId}, '
+          'conversationId=${key.conversationId}, sequence=${state.sequence}.',
+          error,
+          stackTrace,
+        );
+      }
+
+      retryCount++;
+      state = CloudConversationState.fromSnapshot(
+        await chat.getConversationSnapshot(key.conversationId),
+      );
+      yield state;
+      await wait(Duration(seconds: retryCount.clamp(1, 8)));
+    }
   }
 }

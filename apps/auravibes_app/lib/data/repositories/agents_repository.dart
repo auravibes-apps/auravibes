@@ -95,7 +95,7 @@ class AgentsRepository implements AgentRepository {
   String _agentCreateValidationMessage(AgentToCreate agent) {
     if (agent.name.trim().isEmpty) return _agentNameEmpty;
     if (agent.description.trim().isEmpty) return _agentDescriptionEmpty;
-    if (agent.description.trim().length > agentDescriptionMaxLength) {
+    if (agent.description.trim().length > AgentLimits.descriptionMaxLength) {
       return _agentDescriptionTooLong;
     }
     if (agent.content.trim().isEmpty) return _agentContentEmpty;
@@ -112,7 +112,7 @@ class AgentsRepository implements AgentRepository {
   String _agentUpdateValidationMessage(AgentToUpdate agent) {
     if (agent.name.trim().isEmpty) return _agentNameEmpty;
     if (agent.description.trim().isEmpty) return _agentDescriptionEmpty;
-    if (agent.description.trim().length > agentDescriptionMaxLength) {
+    if (agent.description.trim().length > AgentLimits.descriptionMaxLength) {
       return _agentDescriptionTooLong;
     }
 

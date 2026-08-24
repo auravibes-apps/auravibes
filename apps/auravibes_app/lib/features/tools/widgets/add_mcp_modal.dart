@@ -275,7 +275,7 @@ class _Footer extends ConsumerWidget {
         .submit();
     if (!success || !context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.mcp_modal_save_success.tr()),
       variant: AuraSnackBarVariant.success,

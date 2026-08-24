@@ -83,7 +83,7 @@ class CloudAccountUseCases {
     required String serverUrl,
     required String userId,
   }) async {
-    final origin = canonicalServerOrigin(serverUrl);
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
     final _ = await _workspaceRepository.deleteCloudWorkspaceMirrorsForAccount(
       userId,
       serverUrl: origin,
@@ -117,7 +117,9 @@ class CloudAccountUseCases {
     await client.auth.updateSignedInUser(auth);
     final account = await client.account.currentUser();
     final session = CloudAccountSession(
-      serverUrl: canonicalServerOrigin(AppEnvConfig.auravibesServerUrl),
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+        AppEnvConfig.auravibesServerUrl,
+      ),
       userId: account.userId,
       email: account.email,
     );

@@ -34,10 +34,18 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 part 'workspace_route.g.dart';
 
+// Required: framework declaration must remain top-level.
+// ignore: prefer-static-class
 const introPath = '/intro';
+// Required: GoRouter route global must remain top-level.
+// ignore: prefer-static-class
 const workspacePathPrefix = '/workspaces';
 
+// Required: GoRouter navigator key must remain top-level.
+// ignore: prefer-static-class
 final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
+// Required: GoRouter navigator key must remain top-level.
+// ignore: prefer-static-class
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 @TypedGoRoute<IntroRoute>(path: introPath)
@@ -684,3 +692,4 @@ class WorkspaceCreateRoute extends GoRouteData with $WorkspaceCreateRoute {
     return CreateWorkspaceScreen(workspaceId: workspaceId);
   }
 }
+// Top-level API/provider declarations are required by their consumers.

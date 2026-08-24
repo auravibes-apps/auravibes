@@ -63,7 +63,7 @@ void main() {
     final error = StateError('request failed');
 
     await expectLater(
-      guardCloudCall<void>(.state, () => Future<void>.error(error)),
+      CloudAppErrors.guardCall<void>(.state, () => Future<void>.error(error)),
       throwsA(isA<CloudAppException>()),
     );
     await subscription.cancel();
@@ -82,7 +82,7 @@ void main() {
 
 CloudAppException _translate(Object error, CloudOperationContext context) {
   try {
-    translateCloudException(error, context);
+    CloudAppErrors.translateException(error, context);
   } on CloudAppException catch (translated) {
     return translated;
   }

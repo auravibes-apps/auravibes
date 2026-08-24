@@ -281,7 +281,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _editPrompt() async {
-    final markdown = await showMarkdownEditor(
+    final markdown = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _contentController.text,
     );
@@ -291,10 +291,10 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _editDescription() async {
-    final markdown = await showMarkdownEditor(
+    final markdown = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _descriptionController.text,
-      maxCharacters: agentDescriptionMaxLength,
+      maxCharacters: AgentLimits.descriptionMaxLength,
     );
     if (markdown == null) return;
 
@@ -302,7 +302,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _confirmEnableSkill(WorkspaceSkill skill) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.agents_enable_skill_title),
       message: const TextLocale(LocaleKeys.agents_enable_skill_message),
@@ -338,7 +338,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       skills: _selectedSkills.toList(),
     );
     if (!draft.isValid) {
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.cloud_errors_validation),
         variant: AuraSnackBarVariant.error,

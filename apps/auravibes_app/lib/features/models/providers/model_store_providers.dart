@@ -28,6 +28,7 @@ Future<ModelConnectionStore> modelConnectionStore(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ModelSelectionStore> modelSelectionStore(
   Ref ref,
   String workspaceId,
@@ -48,6 +49,7 @@ Future<ModelSelectionStore> modelSelectionStore(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
@@ -73,3 +75,4 @@ class _LocalModelSelectionStore implements ModelSelectionStore {
     WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
   );
 }
+// Top-level API/provider declarations are required by their consumers.

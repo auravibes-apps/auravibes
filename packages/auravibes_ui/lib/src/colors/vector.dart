@@ -69,42 +69,46 @@ class MatrixTransformation {
       MatrixTransformation.multiply(this, other);
 }
 
-/// Matrix transformation from LMS to Oklab color space.
-const lmsToOklab = MatrixTransformation(
-  Vector(0.2104542553, 0.793617785, -0.0040720468),
-  Vector(1.9779984951, -2.428592205, 0.4505937099),
-  Vector(0.0259040371, 0.7827717662, -0.808675766),
-);
+/// Matrix transformations used by the color conversion pipeline.
+abstract final class ColorSpaceMatrices {
+  /// Matrix transformation from LMS to Oklab color space.
+  static const lmsToOklab = MatrixTransformation(
+    Vector(0.2104542553, 0.793617785, -0.0040720468),
+    Vector(1.9779984951, -2.428592205, 0.4505937099),
+    Vector(0.0259040371, 0.7827717662, -0.808675766),
+  );
 
-/// Matrix transformation from Oklab to LMS color space.
-const oklabToLms = MatrixTransformation(
-  Vector(
-    0.99999999845051981432,
-    0.39633779217376785678,
-    0.21580375806075880339,
-  ),
-  Vector(
-    1.0000000088817607767,
-    -0.1055613423236563494,
-    -0.063854174771705903402,
-  ),
-  Vector(
-    1.0000000546724109177,
-    -0.089484182094965759684,
-    -1.2914855378640917399,
-  ),
-);
+  /// Matrix transformation from Oklab to LMS color space.
+  static const oklabToLms = MatrixTransformation(
+    Vector(
+      0.99999999845051981432,
+      0.39633779217376785678,
+      0.21580375806075880339,
+    ),
+    Vector(
+      1.0000000088817607767,
+      -0.1055613423236563494,
+      -0.063854174771705903402,
+    ),
+    Vector(
+      1.0000000546724109177,
+      -0.089484182094965759684,
+      -1.2914855378640917399,
+    ),
+  );
 
-/// Matrix transformation from linear RGB to LMS color space.
-const lrgbToLms = MatrixTransformation(
-  Vector(0.41222147079999993, 0.5363325363, 0.0514459929),
-  Vector(0.2119034981999999, 0.6806995450999999, 0.1073969566),
-  Vector(0.08830246189999998, 0.2817188376, 0.6299787005000002),
-);
+  /// Matrix transformation from linear RGB to LMS color space.
+  static const lrgbToLms = MatrixTransformation(
+    Vector(0.41222147079999993, 0.5363325363, 0.0514459929),
+    Vector(0.2119034981999999, 0.6806995450999999, 0.1073969566),
+    Vector(0.08830246189999998, 0.2817188376, 0.6299787005000002),
+  );
 
-/// Matrix transformation from LMS to linear RGB color space.
-const lmsTolrgb = MatrixTransformation(
-  Vector(4.076741661347994, -3.307711590408193, 0.230969928729428),
-  Vector(-1.2684380040921763, 2.6097574006633715, -0.3413193963102197),
-  Vector(-0.004196086541837188, -0.7034186144594493, 1.7076147009309444),
-);
+  /// Matrix transformation from LMS to linear RGB color space.
+  static const lmsTolrgb = MatrixTransformation(
+    Vector(4.076741661347994, -3.307711590408193, 0.230969928729428),
+    Vector(-1.2684380040921763, 2.6097574006633715, -0.3413193963102197),
+    Vector(-0.004196086541837188, -0.7034186144594493, 1.7076147009309444),
+  );
+}
+// Matrix constants are public implementation data used by color conversion.

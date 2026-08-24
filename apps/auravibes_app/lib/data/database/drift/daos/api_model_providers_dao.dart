@@ -7,18 +7,20 @@ import 'package:drift/drift.dart';
 part 'api_model_providers_dao.g.dart';
 
 // Define popular providers in priority order (top 10).
-const List<String> popularProviders = [
-  'openai',
-  'anthropic',
-  'groq',
-  'xai',
-  'togetherai',
-  'deepseek',
-];
+abstract final class PopularApiProviders {
+  static const values = [
+    'openai',
+    'anthropic',
+    'groq',
+    'xai',
+    'togetherai',
+    'deepseek',
+  ];
+}
 
 int _sortProviders(ApiModelProvidersTable a, ApiModelProvidersTable b) {
-  final aIndex = popularProviders.indexOf(a.id);
-  final bIndex = popularProviders.indexOf(b.id);
+  final aIndex = PopularApiProviders.values.indexOf(a.id);
+  final bIndex = PopularApiProviders.values.indexOf(b.id);
 
   // If both are popular, sort by their position in the popular list.
   if (aIndex != -1 && bIndex != -1) {

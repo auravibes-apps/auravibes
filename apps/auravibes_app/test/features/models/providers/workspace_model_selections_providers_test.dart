@@ -344,7 +344,7 @@ void main() {
           providerId: 'openai',
           providerName: 'OpenAI',
           modelId: 'gpt-5.5',
-          connectionProviderId: openAICodexProviderId,
+          connectionProviderId: ModelProviderOAuthProfiles.providerId,
         ),
         _makeSelection(
           selectionId: 'sel-codex-old',
@@ -353,7 +353,7 @@ void main() {
           providerId: 'openai',
           providerName: 'OpenAI',
           modelId: 'gpt-3.5-turbo',
-          connectionProviderId: openAICodexProviderId,
+          connectionProviderId: ModelProviderOAuthProfiles.providerId,
         ),
       ];
       const openAIProvider = ApiModelProviderEntity(
@@ -436,7 +436,7 @@ void main() {
             providerId: 'openai',
             providerName: 'OpenAI',
             modelId: 'gpt-5-spark',
-            connectionProviderId: openAICodexProviderId,
+            connectionProviderId: ModelProviderOAuthProfiles.providerId,
           ),
         ];
         const openAIProvider = ApiModelProviderEntity(

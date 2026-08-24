@@ -87,3 +87,4 @@ ServiceConnectionListItem _cloudServiceConnectionItem(
   canRefresh: false,
   canReconnect: false,
 );
+// Top-level API/provider declarations are required by their consumers.

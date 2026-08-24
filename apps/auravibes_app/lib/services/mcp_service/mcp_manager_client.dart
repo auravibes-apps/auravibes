@@ -38,7 +38,7 @@ class McpManagerService {
   }) async {
     final result = await client._client.callTool(toolIdentifier, arguments);
 
-    return mcpToolResultFromSdk(result).toModelText();
+    return McpSdkAdapter.toolResult(result).toModelText();
   }
 
   Future<McpManagerClient> connectMcp(

@@ -234,7 +234,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   }
 
   Future<void> _editDescription(BuildContext context) async {
-    final result = await showMarkdownEditor(
+    final result = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _descriptionController.text,
       maxCharacters: _skillToolDescriptionMaxCharacters,
@@ -356,7 +356,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(LocaleKeys.skills_tool_save_error.tr(context: context)),
         variant: AuraSnackBarVariant.error,

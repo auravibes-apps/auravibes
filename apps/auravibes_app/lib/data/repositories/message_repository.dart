@@ -465,7 +465,9 @@ class MessageRepository {
       status: Value.absentIfNull(
         _messageStatusToTableStatus(message.status),
       ),
-      metadata: Value.absentIfNull(safeJsonEncode(message.metadata?.toJson())),
+      metadata: Value.absentIfNull(
+        JsonCodec.encode(message.metadata?.toJson()),
+      ),
     );
   }
 

@@ -2,7 +2,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'agent_entity.freezed.dart';
 
-const agentDescriptionMaxLength = 512;
+abstract final class AgentLimits {
+  static const descriptionMaxLength = 512;
+}
 
 enum AgentVisibility { chatSelector, subAgentList, both }
 
@@ -56,7 +58,7 @@ abstract class AgentToCreate with _$AgentToCreate {
 
     return name.trim().isNotEmpty &&
         normalizedDescription.isNotEmpty &&
-        normalizedDescription.length <= agentDescriptionMaxLength &&
+        normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
 }
@@ -78,7 +80,7 @@ abstract class AgentToUpdate with _$AgentToUpdate {
 
     return name.trim().isNotEmpty &&
         normalizedDescription.isNotEmpty &&
-        normalizedDescription.length <= agentDescriptionMaxLength &&
+        normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
 }

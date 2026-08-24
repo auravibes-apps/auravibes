@@ -221,7 +221,7 @@ class _ChatMessageRow extends HookConsumerWidget {
 
     return message.copyWith(
       content: streamingResult.output.text,
-      metadata: mergeStreamingMessageMetadata(
+      metadata: StreamingMessageMetadata.merge(
         message.metadata,
         streamingResult.entityMetadata,
       ),
@@ -421,7 +421,7 @@ class _AiMessageContent extends StatelessWidget {
         ),
         const AuraSizedBox(height: .xs),
         Text(
-          formatRelativeTime(timestamp),
+          RelativeTimeFormatter.format(timestamp),
           style: TextStyle(
             color: auraColors.onSurfaceVariant,
             fontSize: context.auraTheme.typography.fontSizeXs,
@@ -477,8 +477,8 @@ class _ToolCallWidget extends ConsumerWidget {
           rawName: toolCall.name,
         );
 
-    final decodedArgs = tryDecodeToolMetadata(toolCall.argumentsRaw);
-    final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);
+    final decodedArgs = ToolMetadataDecoder.decode(toolCall.argumentsRaw);
+    final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
     final subAgentConversationId =
         _subAgentConversationId(toolCall) ??
         _activeSubAgentConversationId(ref, parentConversationId, toolCall) ??

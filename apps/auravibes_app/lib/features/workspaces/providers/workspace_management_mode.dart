@@ -8,9 +8,11 @@ part 'workspace_management_mode.g.dart';
 
 // ─── Mutation providers ───.
 
-final editWorkspaceMutation = Mutation<WorkspaceEntity>();
-final deleteWorkspaceMutation = Mutation<void>();
-final cloudAccountMutation = Mutation<void>();
+abstract final class WorkspaceManagementMutations {
+  static final edit = Mutation<WorkspaceEntity>();
+  static final delete = Mutation<void>();
+  static final cloudAccount = Mutation<void>();
+}
 
 // ─── UI mode notifier ───.
 

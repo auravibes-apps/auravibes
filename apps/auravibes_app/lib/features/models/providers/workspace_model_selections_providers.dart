@@ -101,7 +101,8 @@ List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
   List<ApiModelEntity> openAIModels,
 ) {
   final hasCodexSelections = models.any(
-    (model) => model.modelConnection.modelId == openAICodexProviderId,
+    (model) =>
+        model.modelConnection.modelId == ModelProviderOAuthProfiles.providerId,
   );
   if (!hasCodexSelections) return models;
 
@@ -111,7 +112,9 @@ List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
   if (openAIProvider == null) {
     return models
         .where(
-          (model) => model.modelConnection.modelId != openAICodexProviderId,
+          (model) =>
+              model.modelConnection.modelId !=
+              ModelProviderOAuthProfiles.providerId,
         )
         .toList();
   }
@@ -123,7 +126,8 @@ List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
 
   return [
     for (final model in models)
-      if (model.modelConnection.modelId != openAICodexProviderId)
+      if (model.modelConnection.modelId !=
+          ModelProviderOAuthProfiles.providerId)
         model
       else if (openAIModelsById[model.workspaceModelSelection.modelId]
           case final openAIModel?)
@@ -139,14 +143,14 @@ WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(
   return model.copyWith(
     workspaceModelSelection: model.workspaceModelSelection.copyWith(
       modelName: openAIModel.name,
-      modalitiesInput: codexInputModalities(openAIModel),
+      modalitiesInput: CodexInputModalities.forModel(openAIModel),
       modalitiesOutput: openAIModel.modalitiesOutput,
       supportsReasoning: openAIModel.supportsReasoning,
       supportsToolCalls: openAIModel.supportsToolCalls,
     ),
     modelsProvider: ApiModelProviderEntity(
-      id: openAICodexProviderId,
-      name: openAICodexDisplayName,
+      id: ModelProviderOAuthProfiles.providerId,
+      name: ModelProviderOAuthProfiles.displayName,
       type: openAIProvider.type,
       url: openAIProvider.url,
       doc: openAIProvider.doc,
@@ -224,3 +228,4 @@ int _compareProviderGroups(
 
   return left.compareTo(right);
 }
+// Top-level API/provider declarations are required by their consumers.

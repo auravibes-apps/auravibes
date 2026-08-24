@@ -106,7 +106,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppTheme currentTheme,
   ) {
-    showAuraAlertDialog(
+    AuraDialogs.alert(
       context: context,
       title: const TextLocale(LocaleKeys.settings_screen_theme_title),
       message: AuraRadioGroup<AppTheme>(

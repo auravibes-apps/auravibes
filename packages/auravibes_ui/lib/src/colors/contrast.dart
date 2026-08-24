@@ -39,44 +39,56 @@ double _relativeLuminance(Color c) =>
 ///   - Lc 75: large body text / spot color.
 ///   - Lc 60: body text minimum recommended.
 ///   - Lc 45: large text (>= 18pt) minimum.
-double apcaLc({required Color foreground, required Color background}) {
-  var yT = _relativeLuminance(foreground);
-  var yB = _relativeLuminance(background);
+abstract final class ColorContrast {
+  /// Computes the APCA perceived contrast score.
+  static double apcaLc({
+    required Color foreground,
+    required Color background,
+  }) {
+    var yT = _relativeLuminance(foreground);
+    var yB = _relativeLuminance(background);
 
-  // ponytail: soft clamp near black avoids singularity; standard APCA 0.0.98G.
-  if (yT < _blkThrs) yT += math.pow(_blkThrs - yT, _blkClmp).toDouble();
-  if (yB < _blkThrs) yB += math.pow(_blkThrs - yB, _blkClmp).toDouble();
+    // ponytail: soft clamp near black avoids singularity;
+    // standard APCA 0.0.98G.
+    if (yT < _blkThrs) {
+      yT += math.pow(_blkThrs - yT, _blkClmp).toDouble();
+    }
+    if (yB < _blkThrs) {
+      yB += math.pow(_blkThrs - yB, _blkClmp).toDouble();
+    }
 
-  if ((yB - yT).abs() < _deltaYMin) return 0;
+    if ((yB - yT).abs() < _deltaYMin) return 0;
 
-  double lc;
-  if (yB > yT) {
-    // Dark text on light background -> positive Lc.
-    lc = (math.pow(yB, _normBgExp) - math.pow(yT, _normTxtExp)) * _scale;
-    lc = lc < _loConThreshold ? lc * _loConScale : lc - _loConOffset;
-  } else {
-    // Light text on dark background -> negative Lc.
-    lc = (math.pow(yB, _revBgExp) - math.pow(yT, _revTxtExp)) * _scale;
-    lc = lc > -_loConThreshold ? lc * _loConScale : lc + _loConOffset;
+    double lc;
+    if (yB > yT) {
+      // Dark text on light background -> positive Lc.
+      lc = (math.pow(yB, _normBgExp) - math.pow(yT, _normTxtExp)) * _scale;
+      lc = lc < _loConThreshold ? lc * _loConScale : lc - _loConOffset;
+    } else {
+      // Light text on dark background -> negative Lc.
+      lc = (math.pow(yB, _revBgExp) - math.pow(yT, _revTxtExp)) * _scale;
+      lc = lc > -_loConThreshold ? lc * _loConScale : lc + _loConOffset;
+    }
+
+    lc *= 100;
+
+    return lc.clamp(-108.0, 108.0);
   }
 
-  lc *= 100;
+  /// Computes the WCAG 2.x contrast ratio, range [1.0, 21.0].
+  ///
+  /// Reference thresholds:
+  ///   - 4.5: text AA (1.4.3).
+  ///   - 3.0: large text AA / non-text UI (1.4.11).
+  ///   - 7.0: text AAA (1.4.6).
+  ///   - 4.5: large text AAA (1.4.6).
+  static double wcagContrastRatio(Color a, Color b) {
+    final la = _relativeLuminance(a);
+    final lb = _relativeLuminance(b);
+    final hi = la > lb ? la : lb;
+    final lo = la > lb ? lb : la;
 
-  return lc.clamp(-108.0, 108.0);
+    return (hi + 0.05) / (lo + 0.05);
+  }
 }
-
-/// WCAG 2.x contrast ratio, range [1.0, 21.0].
-///
-/// Reference thresholds:
-///   - 4.5: text AA (1.4.3).
-///   - 3.0: large text AA / non-text UI (1.4.11).
-///   - 7.0: text AAA (1.4.6).
-///   - 4.5: large text AAA (1.4.6).
-double wcagContrastRatio(Color a, Color b) {
-  final la = _relativeLuminance(a);
-  final lb = _relativeLuminance(b);
-  final hi = la > lb ? la : lb;
-  final lo = la > lb ? lb : la;
-
-  return (hi + 0.05) / (lo + 0.05);
-}
+// Public contrast helpers intentionally remain top-level.

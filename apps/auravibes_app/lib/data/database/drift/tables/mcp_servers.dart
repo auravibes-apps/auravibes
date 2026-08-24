@@ -9,6 +9,8 @@ import 'package:drift/drift.dart';
 
 export 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 
+// Required: framework declaration must remain top-level.
+// ignore: prefer-static-class
 final JsonTypeConverter2<McpTransportType, String, Object?>
 transportTypeConverter = TypeConverter.json2(
   fromJson: _transportTypeFromJson,

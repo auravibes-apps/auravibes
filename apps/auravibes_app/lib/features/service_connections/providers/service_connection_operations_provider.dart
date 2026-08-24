@@ -138,3 +138,4 @@ Future<ServiceConnectionOperations> serviceConnectionOperations(
     },
   );
 }
+// Top-level API/provider declarations are required by their consumers.

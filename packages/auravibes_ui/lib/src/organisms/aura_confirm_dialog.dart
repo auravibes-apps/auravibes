@@ -208,50 +208,7 @@ class _AuraDialogShell extends StatelessWidget {
   }
 }
 
-/// Shows a confirmation dialog and returns user selection.
-///
-/// Returns `true` if confirmed, `false` if cancelled,
-/// `null` if dismissed (e.g., by tapping outside).
-Future<bool?> showAuraConfirmDialog({
-  required BuildContext context,
-  required Widget title,
-  required Widget message,
-  AuraConfirmDialogActions actions = const AuraConfirmDialogActions(),
-  bool isDestructive = false,
-  bool barrierDismissible = true,
-  AuraTint? tint,
-}) {
-  return showGeneralDialog<bool>(
-    context: context,
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return AuraConfirmDialog(
-        title: title,
-        message: message,
-        confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
-        cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
-        isDestructive: isDestructive,
-        tint: tint,
-      );
-    },
-    barrierDismissible: barrierDismissible,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: context.auraColors.scrim,
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(
-        opacity: animation,
-        child: ScaleTransition(
-          scale: Tween<double>(
-            begin: 0.95,
-            end: 1,
-          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-          child: child,
-        ),
-      );
-    },
-  );
-}
-
-/// Labels used by [showAuraConfirmDialog].
+/// Labels used by [AuraDialogs.confirm].
 class AuraConfirmDialogActions {
   /// Creates labels for confirmation dialog actions.
   const AuraConfirmDialogActions({
@@ -266,43 +223,90 @@ class AuraConfirmDialogActions {
   final Widget? cancelLabel;
 }
 
-/// Shows an alert dialog and dismisses on button tap.
+/// Shows a confirmation dialog and returns user selection.
 ///
-/// Returns a Future that can be awaited.
-Future<void> showAuraAlertDialog({
-  required BuildContext context,
-  required Widget title,
-  required Widget message,
-  Widget? dismissLabel,
-  AuraTint? tint,
-  bool barrierDismissible = true,
-}) async {
-  await showGeneralDialog<void>(
-    context: context,
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return AuraAlertDialog(
-        title: title,
-        message: message,
-        dismissLabel: dismissLabel ?? const Text('OK'),
-        tint: tint,
-      );
-    },
-    barrierDismissible: barrierDismissible,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: context.auraColors.scrim,
-    transitionBuilder: (context, animation, secondaryAnimation, child) {
-      return FadeTransition(
-        opacity: animation,
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.95, end: 1).animate(
-            CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOut,
-            ),
+/// Returns `true` if confirmed, `false` if cancelled,
+/// `null` if dismissed (e.g., by tapping outside).
+abstract final class AuraDialogs {
+  /// Shows a confirmation dialog and returns the user's selection.
+  static Future<bool?> confirm({
+    required BuildContext context,
+    required Widget title,
+    required Widget message,
+    AuraConfirmDialogActions actions = const AuraConfirmDialogActions(),
+    bool isDestructive = false,
+    bool barrierDismissible = true,
+    AuraTint? tint,
+  }) {
+    return showGeneralDialog<bool>(
+      context: context,
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return AuraConfirmDialog(
+          title: title,
+          message: message,
+          confirmLabel: actions.confirmLabel ?? const Text('Confirm'),
+          cancelLabel: actions.cancelLabel ?? const Text('Cancel'),
+          isDestructive: isDestructive,
+          tint: tint,
+        );
+      },
+      barrierDismissible: barrierDismissible,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: context.auraColors.scrim,
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale:
+                Tween<double>(
+                  begin: 0.95,
+                  end: 1,
+                ).animate(
+                  CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                ),
+            child: child,
           ),
-          child: child,
-        ),
-      );
-    },
-  );
+        );
+      },
+    );
+  }
+
+  /// Shows an alert dialog and dismisses on button tap.
+  static Future<void> alert({
+    required BuildContext context,
+    required Widget title,
+    required Widget message,
+    Widget? dismissLabel,
+    AuraTint? tint,
+    bool barrierDismissible = true,
+  }) async {
+    await showGeneralDialog<void>(
+      context: context,
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return AuraAlertDialog(
+          title: title,
+          message: message,
+          dismissLabel: dismissLabel ?? const Text('OK'),
+          tint: tint,
+        );
+      },
+      barrierDismissible: barrierDismissible,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: context.auraColors.scrim,
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.95, end: 1).animate(
+              CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOut,
+              ),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }

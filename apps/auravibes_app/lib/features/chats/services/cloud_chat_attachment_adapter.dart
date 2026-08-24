@@ -25,7 +25,7 @@ class CloudChatAttachmentAdapter {
   );
 
   Future<Uint8List> _readBytes(String localPath) async {
-    final bytes = await readChatAttachmentBytes(localPath);
+    final bytes = await ChatAttachmentBytes.read(localPath);
     if (bytes == null) throw StateError('Attachment file is unavailable.');
 
     return Uint8List.fromList(bytes);

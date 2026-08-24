@@ -46,15 +46,15 @@ class AppLogging {
     final timestamp = record.time.toIso8601String();
     final line =
         '[$timestamp] [${record.level.name}] ${record.loggerName}: '
-        '${redactLogValue(record.message)}';
+        '${LogRedaction.redact(record.message)}';
     debugPrint(line);
 
     if (record.error != null) {
-      debugPrint('Error: ${redactLogValue(record.error)}');
+      debugPrint('Error: ${LogRedaction.redact(record.error)}');
     }
 
     if (record.stackTrace != null) {
-      debugPrint('StackTrace: ${redactLogValue(record.stackTrace)}');
+      debugPrint('StackTrace: ${LogRedaction.redact(record.stackTrace)}');
     }
   }
 

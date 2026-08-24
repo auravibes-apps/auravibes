@@ -72,7 +72,7 @@ void main() {
 
       expect(
         AppDatabase.databaseNameForHashSource(source),
-        appStorageNamespaceFor(source),
+        AppStorageNamespace.forHashSource(source),
       );
     });
 

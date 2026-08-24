@@ -28,7 +28,7 @@ final codexOAuthServiceProvider = Provider<CodexOAuthService>(
   (_) => CodexOAuthService(),
 );
 final openCodexAuthorizationProvider = Provider<Future<void> Function(Uri)>(
-  (_) => openSystemBrowser,
+  (_) => OpenSystemBrowser.call,
 );
 
 @riverpod
@@ -65,7 +65,7 @@ class AddModelProviderState extends _$AddModelProviderState {
         return element.id == newValue;
       },
     );
-    final nextAuthMode = isOpenAICodexProvider(newValue)
+    final nextAuthMode = ModelProviderOAuthProfiles.isCodexProvider(newValue)
         ? ModelProviderAuthMode.oauth2
         : ModelProviderAuthMode.apiKey;
     final authModeChanged = state.authMode != nextAuthMode;
@@ -73,7 +73,9 @@ class AddModelProviderState extends _$AddModelProviderState {
       modelId: newValue,
       name:
           model?.name ??
-          (isOpenAICodexProvider(newValue) ? openAICodexDisplayName : null),
+          (ModelProviderOAuthProfiles.isCodexProvider(newValue)
+              ? ModelProviderOAuthProfiles.displayName
+              : null),
       authMode: nextAuthMode,
       key: authModeChanged ? null : state.key,
     );
@@ -184,16 +186,16 @@ class AddModelProviderState extends _$AddModelProviderState {
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
     bool Function()? isCodexDeviceCodeCancelled,
   ) async {
-    if (!isOpenAICodexProvider(modelId)) {
+    if (!ModelProviderOAuthProfiles.isCodexProvider(modelId)) {
       throw ModelConnectionException(
         LocaleKeys.models_screens_add_provider_errors_oauth_profile_not_found
             .tr(args: [modelId]),
       );
     }
-    if (openAICodexClientId.isEmpty) {
+    if (ModelProviderOAuthProfiles.clientId.isEmpty) {
       throw ModelConnectionException(
         LocaleKeys.models_screens_add_provider_errors_oauth_client_id_missing
-            .tr(args: [openAICodexDisplayName]),
+            .tr(args: [ModelProviderOAuthProfiles.displayName]),
       );
     }
     final modelIds = await _codexRuntimeModelIds();
@@ -216,13 +218,14 @@ class AddModelProviderState extends _$AddModelProviderState {
         url: state.url,
         oauthToken: token,
         oauthMetadata: ServiceConnectionMetadata(
-          clientId: openAICodexClientId,
-          issuer: openAICodexIssuer,
-          authorizationEndpoint: openAICodexAuthorizationEndpoint,
-          tokenEndpoint: openAICodexTokenEndpoint,
-          scopes: openAICodexScopes,
+          clientId: ModelProviderOAuthProfiles.clientId,
+          issuer: ModelProviderOAuthProfiles.issuer,
+          authorizationEndpoint:
+              ModelProviderOAuthProfiles.authorizationEndpoint,
+          tokenEndpoint: ModelProviderOAuthProfiles.tokenEndpoint,
+          scopes: ModelProviderOAuthProfiles.scopes,
           accountId: CodexOAuthService.accountIdFromToken(token),
-          provider: openAICodexProviderId,
+          provider: ModelProviderOAuthProfiles.providerId,
         ),
         modelIds: modelIds,
       ),

@@ -33,7 +33,7 @@ class AuraText extends StatelessWidget {
   Widget build(BuildContext context) {
     final tint = this.tint;
     final textStyle =
-        auraResolveTextStyle(
+        AuraTextStyles.resolve(
           style: style,
           colors: context.auraColors,
           typography: context.auraTheme.typography,
@@ -54,120 +54,123 @@ class AuraText extends StatelessWidget {
   }
 }
 
-/// Resolves [AuraTextStyle] to a concrete [TextStyle] using [colors] and
-/// [typography].
-TextStyle auraResolveTextStyle({
-  required AuraTextStyle style,
-  required AuraColorScheme colors,
-  required AuraTypographyScale typography,
-}) {
-  final fontFamily = typography.bodyFontFamily;
+/// Static text-style resolvers.
+abstract final class AuraTextStyles {
+  /// Resolves [style] to a concrete [TextStyle] using [colors] and
+  /// [typography].
+  static TextStyle resolve({
+    required AuraTextStyle style,
+    required AuraColorScheme colors,
+    required AuraTypographyScale typography,
+  }) {
+    final fontFamily = typography.bodyFontFamily;
 
-  return switch (style) {
-    AuraTextStyle.heading1 => TextStyle(
-      color: colors.foreground,
-      fontSize: typography.fontSize5Xl,
-      fontWeight: typography.fontWeightBold,
-      letterSpacing: typography.letterSpacingTight,
-      height: typography.lineHeight5Xl,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.heading2 => TextStyle(
-      color: colors.foreground,
-      fontSize: typography.fontSize4Xl,
-      fontWeight: typography.fontWeightBold,
-      letterSpacing: typography.letterSpacingTight,
-      height: typography.lineHeight4Xl,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.heading3 => TextStyle(
-      color: colors.foreground,
-      fontSize: typography.fontSize3Xl,
-      fontWeight: typography.fontWeightSemibold,
-      letterSpacing: typography.letterSpacingTight,
-      height: typography.lineHeight3Xl,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.heading4 => TextStyle(
-      color: colors.foreground,
-      fontSize: typography.fontSize2Xl,
-      fontWeight: typography.fontWeightSemibold,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeight2Xl,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.heading5 => TextStyle(
-      color: colors.foreground,
-      fontSize: typography.fontSizeXl,
-      fontWeight: typography.fontWeightSemibold,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeightXl,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.heading6 => TextStyle(
-      color: colors.foreground,
-      fontSize: typography.fontSizeLg,
-      fontWeight: typography.fontWeightSemibold,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeightLg,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.bodyLarge => TextStyle(
-      color: colors.foregroundOnSurface,
-      fontSize: typography.fontSizeLg,
-      fontWeight: typography.fontWeightRegular,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeightLg,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.body => TextStyle(
-      color: colors.foregroundOnSurface,
-      fontSize: typography.fontSizeBase,
-      fontWeight: typography.fontWeightRegular,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeightBase,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.bodySmall => TextStyle(
-      color: colors.mutedForeground,
-      fontSize: typography.fontSizeSm,
-      fontWeight: typography.fontWeightRegular,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeightSm,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.caption => TextStyle(
-      color: colors.mutedForeground,
-      fontSize: typography.fontSizeXs,
-      fontWeight: typography.fontWeightRegular,
-      letterSpacing: typography.letterSpacingWide,
-      height: typography.lineHeightXs,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.overline => TextStyle(
-      color: colors.mutedForeground,
-      fontSize: typography.fontSizeXs,
-      fontWeight: typography.fontWeightMedium,
-      letterSpacing: typography.letterSpacingWide,
-      height: typography.lineHeightXs,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.button => TextStyle(
-      fontSize: typography.fontSizeBase,
-      fontWeight: typography.fontWeightMedium,
-      letterSpacing: typography.letterSpacingWide,
-      height: typography.lineHeightBase,
-      fontFamily: fontFamily,
-    ),
-    AuraTextStyle.code => TextStyle(
-      color: colors.foregroundOnSurface,
-      fontSize: typography.fontSizeSm,
-      fontWeight: typography.fontWeightRegular,
-      letterSpacing: typography.letterSpacingNormal,
-      height: typography.lineHeightSm,
-      fontFamily: typography.monoFontFamily,
-    ),
-  };
+    return switch (style) {
+      AuraTextStyle.heading1 => TextStyle(
+        color: colors.foreground,
+        fontSize: typography.fontSize5Xl,
+        fontWeight: typography.fontWeightBold,
+        letterSpacing: typography.letterSpacingTight,
+        height: typography.lineHeight5Xl,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.heading2 => TextStyle(
+        color: colors.foreground,
+        fontSize: typography.fontSize4Xl,
+        fontWeight: typography.fontWeightBold,
+        letterSpacing: typography.letterSpacingTight,
+        height: typography.lineHeight4Xl,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.heading3 => TextStyle(
+        color: colors.foreground,
+        fontSize: typography.fontSize3Xl,
+        fontWeight: typography.fontWeightSemibold,
+        letterSpacing: typography.letterSpacingTight,
+        height: typography.lineHeight3Xl,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.heading4 => TextStyle(
+        color: colors.foreground,
+        fontSize: typography.fontSize2Xl,
+        fontWeight: typography.fontWeightSemibold,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeight2Xl,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.heading5 => TextStyle(
+        color: colors.foreground,
+        fontSize: typography.fontSizeXl,
+        fontWeight: typography.fontWeightSemibold,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeightXl,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.heading6 => TextStyle(
+        color: colors.foreground,
+        fontSize: typography.fontSizeLg,
+        fontWeight: typography.fontWeightSemibold,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeightLg,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.bodyLarge => TextStyle(
+        color: colors.foregroundOnSurface,
+        fontSize: typography.fontSizeLg,
+        fontWeight: typography.fontWeightRegular,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeightLg,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.body => TextStyle(
+        color: colors.foregroundOnSurface,
+        fontSize: typography.fontSizeBase,
+        fontWeight: typography.fontWeightRegular,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeightBase,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.bodySmall => TextStyle(
+        color: colors.mutedForeground,
+        fontSize: typography.fontSizeSm,
+        fontWeight: typography.fontWeightRegular,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeightSm,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.caption => TextStyle(
+        color: colors.mutedForeground,
+        fontSize: typography.fontSizeXs,
+        fontWeight: typography.fontWeightRegular,
+        letterSpacing: typography.letterSpacingWide,
+        height: typography.lineHeightXs,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.overline => TextStyle(
+        color: colors.mutedForeground,
+        fontSize: typography.fontSizeXs,
+        fontWeight: typography.fontWeightMedium,
+        letterSpacing: typography.letterSpacingWide,
+        height: typography.lineHeightXs,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.button => TextStyle(
+        fontSize: typography.fontSizeBase,
+        fontWeight: typography.fontWeightMedium,
+        letterSpacing: typography.letterSpacingWide,
+        height: typography.lineHeightBase,
+        fontFamily: fontFamily,
+      ),
+      AuraTextStyle.code => TextStyle(
+        color: colors.foregroundOnSurface,
+        fontSize: typography.fontSizeSm,
+        fontWeight: typography.fontWeightRegular,
+        letterSpacing: typography.letterSpacingNormal,
+        height: typography.lineHeightSm,
+        fontFamily: typography.monoFontFamily,
+      ),
+    };
+  }
 }
 
 /// The style variant for [AuraText].
@@ -211,3 +214,4 @@ enum AuraTextStyle {
   /// Code text (14px, monospace).
   code,
 }
+// Public style resolver intentionally remains top-level.

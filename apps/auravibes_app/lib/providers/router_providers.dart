@@ -35,7 +35,7 @@ GoRouter router(Ref ref) {
 
       if (selection == null) return null;
 
-      return resolveWorkspaceRedirect(
+      return WorkspaceRouteResolver.resolveWorkspaceRedirect(
         state.uri,
         selection.workspaces,
         savedWorkspaceId: selection.savedWorkspaceId,
@@ -62,98 +62,108 @@ final currentRouteWorkspaceIdProvider = Provider<String?>(
     final _ = ref.watch(routerProvider);
     final routeInformationProvider = ref.watch(routerInformationProvider);
 
-    return matchWorkspaceId(routeInformationProvider.value.uri);
+    return WorkspaceRouteResolver.matchWorkspaceId(
+      routeInformationProvider.value.uri,
+    );
   },
 );
 
-String? matchWorkspaceId(Uri uri) {
-  final pathSegments = uri.pathSegments;
+abstract final class WorkspaceRouteResolver {
+  static String? matchWorkspaceId(Uri uri) {
+    final pathSegments = uri.pathSegments;
 
-  if (pathSegments.length < 2) {
-    return null;
-  }
-
-  if (pathSegments.firstOrNull != 'workspaces') {
-    return null;
-  }
-
-  return pathSegments[1];
-}
-
-@visibleForTesting
-String? resolveWorkspaceRedirect(
-  Uri currentUri,
-  List<WorkspaceEntity> workspaces, {
-  String? savedWorkspaceId,
-}) {
-  final workspaceMatch = matchWorkspaceId(currentUri);
-  final firstWorkspaceId = workspaces.firstOrNull?.id;
-  final savedWorkspace = workspaces.firstWhereOrNull(
-    (workspace) => workspace.id == savedWorkspaceId,
-  );
-  if (firstWorkspaceId == null) {
-    if (currentUri.path == introPath) {
+    if (pathSegments.length < 2) {
       return null;
     }
 
-    return introPath;
+    if (pathSegments.firstOrNull != 'workspaces') {
+      return null;
+    }
+
+    return pathSegments[1];
   }
 
-  final fallbackWorkspaceId = savedWorkspace?.id ?? firstWorkspaceId;
+  @visibleForTesting
+  static String? resolveWorkspaceRedirect(
+    Uri currentUri,
+    List<WorkspaceEntity> workspaces, {
+    String? savedWorkspaceId,
+  }) {
+    final workspaceMatch = matchWorkspaceId(currentUri);
+    final firstWorkspaceId = workspaces.firstOrNull?.id;
+    final savedWorkspace = workspaces.firstWhereOrNull(
+      (workspace) => workspace.id == savedWorkspaceId,
+    );
+    if (firstWorkspaceId == null) {
+      if (currentUri.path == introPath) {
+        return null;
+      }
 
-  if (currentUri.path == introPath) {
-    return NewChatRoute(workspaceId: fallbackWorkspaceId).location;
+      return introPath;
+    }
+
+    final fallbackWorkspaceId = savedWorkspace?.id ?? firstWorkspaceId;
+
+    if (currentUri.path == introPath) {
+      return NewChatRoute(workspaceId: fallbackWorkspaceId).location;
+    }
+
+    if (workspaceMatch == null) {
+      return _mapLegacyRoute(
+            currentUri,
+            fallbackWorkspaceId: fallbackWorkspaceId,
+          ) ??
+          NewChatRoute(workspaceId: fallbackWorkspaceId).location;
+    }
+
+    if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {
+      return null;
+    }
+
+    return NewChatRoute(workspaceId: firstWorkspaceId).location;
   }
 
-  if (workspaceMatch == null) {
-    return _mapLegacyRoute(
-          currentUri,
-          fallbackWorkspaceId: fallbackWorkspaceId,
-        ) ??
-        NewChatRoute(workspaceId: fallbackWorkspaceId).location;
-  }
+  static String? _mapLegacyRoute(
+    Uri uri, {
+    required String fallbackWorkspaceId,
+  }) {
+    final pathSegments = uri.pathSegments;
 
-  if (workspaces.any((workspace) => workspace.id == workspaceMatch)) {
-    return null;
-  }
+    if (pathSegments.isEmpty) {
+      return null;
+    }
 
-  return NewChatRoute(workspaceId: firstWorkspaceId).location;
+    final location = switch (pathSegments) {
+      ['chat', 'new'] => NewChatRoute(
+        workspaceId: fallbackWorkspaceId,
+      ).location,
+      ['chats'] => ChatsRoute(workspaceId: fallbackWorkspaceId).location,
+      ['chats', final chatId] => ConversationRoute(
+        workspaceId: fallbackWorkspaceId,
+        chatId: chatId,
+      ).location,
+      ['tools'] => ToolsRoute(workspaceId: fallbackWorkspaceId).location,
+      ['models'] => ServiceConnectionsRoute(
+        workspaceId: fallbackWorkspaceId,
+      ).location,
+      ['service-connections'] => ServiceConnectionsRoute(
+        workspaceId: fallbackWorkspaceId,
+      ).location,
+      ['settings'] => SettingsRoute(workspaceId: fallbackWorkspaceId).location,
+      _ => null,
+    };
+
+    if (location == null) {
+      return null;
+    }
+
+    if (!uri.hasQuery && uri.fragment.isEmpty) {
+      return location;
+    }
+
+    return Uri.parse(
+      location,
+    ).replace(query: uri.query, fragment: uri.fragment).toString();
+  }
 }
-
-String? _mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {
-  final pathSegments = uri.pathSegments;
-
-  if (pathSegments.isEmpty) {
-    return null;
-  }
-
-  final location = switch (pathSegments) {
-    ['chat', 'new'] => NewChatRoute(workspaceId: fallbackWorkspaceId).location,
-    ['chats'] => ChatsRoute(workspaceId: fallbackWorkspaceId).location,
-    ['chats', final chatId] => ConversationRoute(
-      workspaceId: fallbackWorkspaceId,
-      chatId: chatId,
-    ).location,
-    ['tools'] => ToolsRoute(workspaceId: fallbackWorkspaceId).location,
-    ['models'] => ServiceConnectionsRoute(
-      workspaceId: fallbackWorkspaceId,
-    ).location,
-    ['service-connections'] => ServiceConnectionsRoute(
-      workspaceId: fallbackWorkspaceId,
-    ).location,
-    ['settings'] => SettingsRoute(workspaceId: fallbackWorkspaceId).location,
-    _ => null,
-  };
-
-  if (location == null) {
-    return null;
-  }
-
-  if (!uri.hasQuery && uri.fragment.isEmpty) {
-    return location;
-  }
-
-  return Uri.parse(
-    location,
-  ).replace(query: uri.query, fragment: uri.fragment).toString();
-}
+// Top-level API/provider declarations are required by their consumers.

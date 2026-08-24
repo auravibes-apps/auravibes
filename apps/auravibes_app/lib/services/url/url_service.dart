@@ -109,13 +109,13 @@ class UrlService {
 
     final destination = Uri.parse(request.url).resolve(location);
     if (request.headers.isNotEmpty) {
-      final _ = await requirePublicHttpsUri(destination.toString());
+      final _ = await PublicUrlGuard.requireHttpsUri(destination.toString());
     } else {
       final uri = requirePublicUriSyntax(
         destination.toString(),
         requireHttps: false,
       );
-      await ensurePublicHost(uri.host);
+      await PublicUrlGuard.ensureHost(uri.host);
     }
   }
 

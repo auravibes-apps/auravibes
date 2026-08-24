@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -64,7 +62,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
       ).animate(rotationController);
       _rotationAnimation = rotationAnimation;
 
-      unawaited(rotationController.repeat());
+      final _ = rotationController.repeat();
     } else {
       final scaleController = AnimationController(
         duration: DesignDuration.normal,
@@ -84,7 +82,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
           );
       _scaleAnimation = scaleAnimation;
 
-      unawaited(scaleController.forward());
+      final _ = scaleController.forward();
     }
   }
 

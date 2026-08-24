@@ -16,27 +16,27 @@ import 'package:riverpod/riverpod.dart';
 import '../../../helpers/test_provider_scope.dart';
 
 void main() {
-  test('uniqueAttachmentDisplayName keeps first label unchanged', () {
+  test('AttachmentDisplayNames.unique keeps first label unchanged', () {
     expect(
-      uniqueAttachmentDisplayName('Voice Record', const []),
+      AttachmentDisplayNames.unique('Voice Record', const []),
       'Voice Record',
     );
   });
 
-  test('uniqueAttachmentDisplayName numbers repeated labels', () {
+  test('AttachmentDisplayNames.unique numbers repeated labels', () {
     expect(
-      uniqueAttachmentDisplayName('Voice Record', const ['Voice Record']),
+      AttachmentDisplayNames.unique('Voice Record', const ['Voice Record']),
       'Voice Record (1)',
     );
     expect(
-      uniqueAttachmentDisplayName('Image', const ['Image', 'Image (1)']),
+      AttachmentDisplayNames.unique('Image', const ['Image', 'Image (1)']),
       'Image (2)',
     );
   });
 
-  test('uniqueAttachmentDisplayName preserves file extensions', () {
+  test('AttachmentDisplayNames.unique preserves file extensions', () {
     expect(
-      uniqueAttachmentDisplayName('blueprint.pdf', const ['blueprint.pdf']),
+      AttachmentDisplayNames.unique('blueprint.pdf', const ['blueprint.pdf']),
       'blueprint (1).pdf',
     );
   });

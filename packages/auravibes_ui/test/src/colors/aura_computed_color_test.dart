@@ -41,7 +41,10 @@ void main() {
           hue: 210,
         );
         final on = surface.onColor();
-        final lc = apcaLc(foreground: on, background: surface.toColor());
+        final lc = ColorContrast.apcaLc(
+          foreground: on,
+          background: surface.toColor(),
+        );
         expect(
           lc,
           greaterThanOrEqualTo(60 - 1),
@@ -58,7 +61,10 @@ void main() {
           brightness: AuraBrightness.dark,
         );
         final on = surface.onColor();
-        final lc = apcaLc(foreground: on, background: surface.toColor());
+        final lc = ColorContrast.apcaLc(
+          foreground: on,
+          background: surface.toColor(),
+        );
         expect(
           lc,
           lessThanOrEqualTo(-60 + 1),
@@ -74,11 +80,11 @@ void main() {
       );
       final on60 = surface.onColor();
       final on90 = surface.onColor(targetLc: 90);
-      final lc60 = apcaLc(
+      final lc60 = ColorContrast.apcaLc(
         foreground: on60,
         background: surface.toColor(),
       ).abs();
-      final lc90 = apcaLc(
+      final lc90 = ColorContrast.apcaLc(
         foreground: on90,
         background: surface.toColor(),
       ).abs();

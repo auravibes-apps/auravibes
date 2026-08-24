@@ -12,7 +12,7 @@ class ToolResolverService {
     skillControlToolNames: {
       loadSkillToolName,
       unloadSkillToolName,
-      listSkillCredentialsToolName,
+      SkillToolNames.listCredentials,
     },
   );
 

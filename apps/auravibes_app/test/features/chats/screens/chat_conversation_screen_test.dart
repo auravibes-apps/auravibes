@@ -82,60 +82,60 @@ void main() {
   });
 
   test('maps the cloud tool-call status vocabulary intentionally', () {
-    expect(cloudToolCallResultStatus('pending'), isNull);
+    expect(CloudMessageTools.resultStatus('pending'), isNull);
     expect(
-      cloudToolCallResultStatus('needsConfirmation'),
+      CloudMessageTools.resultStatus('needsConfirmation'),
       isNull,
     );
     expect(
-      cloudToolCallResultStatus('approved'),
+      CloudMessageTools.resultStatus('approved'),
       ToolCallResultStatus.running,
     );
     expect(
-      cloudToolCallResultStatus('running'),
+      CloudMessageTools.resultStatus('running'),
       ToolCallResultStatus.running,
     );
     expect(
-      cloudToolCallResultStatus('success'),
+      CloudMessageTools.resultStatus('success'),
       ToolCallResultStatus.success,
     );
     expect(
-      cloudToolCallResultStatus('denied'),
+      CloudMessageTools.resultStatus('denied'),
       ToolCallResultStatus.skippedByUser,
     );
     expect(
-      cloudToolCallResultStatus('toolNotFound'),
+      CloudMessageTools.resultStatus('toolNotFound'),
       ToolCallResultStatus.toolNotFound,
     );
     expect(
-      cloudToolCallResultStatus('disabledInWorkspace'),
+      CloudMessageTools.resultStatus('disabledInWorkspace'),
       ToolCallResultStatus.disabledInWorkspace,
     );
     expect(
-      cloudToolCallResultStatus('disabledInConversation'),
+      CloudMessageTools.resultStatus('disabledInConversation'),
       ToolCallResultStatus.disabledInConversation,
     );
     expect(
-      cloudToolCallResultStatus('disabledByAgent'),
+      CloudMessageTools.resultStatus('disabledByAgent'),
       ToolCallResultStatus.disabledByAgent,
     );
     expect(
-      cloudToolCallResultStatus('notConfigured'),
+      CloudMessageTools.resultStatus('notConfigured'),
       ToolCallResultStatus.notConfigured,
     );
     expect(
-      cloudToolCallResultStatus('executionError'),
+      CloudMessageTools.resultStatus('executionError'),
       ToolCallResultStatus.executionError,
     );
     expect(
-      cloudToolCallResultStatus('unknown'),
+      CloudMessageTools.resultStatus('unknown'),
       ToolCallResultStatus.executionError,
     );
   });
 
   test('cloud pending tool calls become approval inputs', () {
     final now = DateTime.utc(2026);
-    final pendingCalls = cloudPendingToolCalls(
+    final pendingCalls = CloudMessageTools.pendingToolCalls(
       _cloudState(
         projectionRevision: 7,
         messages: [

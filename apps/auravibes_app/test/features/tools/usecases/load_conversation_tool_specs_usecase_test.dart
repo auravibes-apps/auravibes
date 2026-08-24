@@ -385,7 +385,7 @@ void main() {
           inputJsonSchema: {},
         ),
         ToolSpec(
-          name: listSkillCredentialsToolName,
+          name: SkillToolNames.listCredentials,
           description: 'list credentials',
           inputJsonSchema: {},
         ),
@@ -407,7 +407,7 @@ void main() {
       expect(result.map((spec) => spec.name), [
         loadSkillToolName,
         unloadSkillToolName,
-        listSkillCredentialsToolName,
+        SkillToolNames.listCredentials,
         runSubAgentToolName,
       ]);
     });

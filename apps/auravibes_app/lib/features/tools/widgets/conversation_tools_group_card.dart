@@ -123,7 +123,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
   }
 
   void _showErrorDetails(BuildContext context) {
-    showAuraAlertDialog(
+    AuraDialogs.alert(
       context: context,
       title: Text(_kMcpErrorTitle.tr()),
       message: AuraSelectableText(

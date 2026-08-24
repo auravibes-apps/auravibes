@@ -46,7 +46,7 @@ class _SnackBarDemo extends StatelessWidget {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            final _ = showAuraSnackBar(
+            final _ = AuraSnackBars.show(
               context: context,
               content: Text(_getMessage()),
               variant: variant,

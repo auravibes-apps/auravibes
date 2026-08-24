@@ -188,7 +188,7 @@ Future<AntropicResponseModels> _anthopicModels(
 }
 
 Future<String> _providerBaseUrl(String? url, {required String fallback}) async {
-  final uri = await requirePublicHttpsUri(url ?? fallback);
+  final uri = await PublicUrlGuard.requireHttpsUri(url ?? fallback);
 
   return uri.toString().replaceFirst(RegExp(r'/$'), '');
 }

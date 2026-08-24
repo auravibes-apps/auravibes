@@ -144,7 +144,7 @@ enum AuraSnackBarVariant {
 
 /// Controller for managing custom Aura snackbar lifecycle.
 ///
-/// This controller is returned from [showAuraSnackBar] to provide
+/// This controller is returned from [AuraSnackBars.show] to provide
 /// control over the snackbar after it's been shown.
 class AuraSnackBarController {
   /// Creates a controller with the dismiss callback.
@@ -160,49 +160,47 @@ class AuraSnackBarController {
   }
 }
 
-/// Shows an Aura-styled snackbar notification in the nearest
-/// [AuraSnackBarHost].
-///
-/// Displays a custom snackbar overlay with Aura theming based on the provided
-/// [variant]. The snackbar auto-dismisses after [duration] and can include
-/// an optional action button.
-///
-/// This implementation avoids Material's [SnackBar] visual styling while
-/// keeping notification behavior scoped to the nearest host surface.
-AuraSnackBarController showAuraSnackBar({
-  required BuildContext context,
-  required Widget content,
-  AuraSnackBarVariant variant = AuraSnackBarVariant.default_,
-  Duration duration = const Duration(seconds: 4),
-  String? actionLabel,
-  VoidCallback? onAction,
-}) {
-  final host = AuraSnackBarHost._maybeOf(context);
-  if (host == null) {
-    throw FlutterError(
-      'showAuraSnackBar requires an AuraSnackBarHost ancestor.\n'
-      'Wrap the app, window, navigator, or pane that owns snackbar behavior '
-      'with AuraSnackBarHost.',
+/// Provides a static API for showing an Aura-styled snackbar notification.
+abstract final class AuraSnackBars {
+  /// Shows a snackbar in the nearest [AuraSnackBarHost].
+  ///
+  /// Displays a custom snackbar overlay with Aura theming based on [variant].
+  /// It auto-dismisses after [duration] and can include an optional action.
+  static AuraSnackBarController show({
+    required BuildContext context,
+    required Widget content,
+    AuraSnackBarVariant variant = AuraSnackBarVariant.default_,
+    Duration duration = const Duration(seconds: 4),
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
+    final host = AuraSnackBarHost._maybeOf(context);
+    if (host == null) {
+      throw FlutterError(
+        'showAuraSnackBar requires an AuraSnackBarHost ancestor.\n'
+        'Wrap the app, window, navigator, or pane that owns snackbar behavior '
+        'with AuraSnackBarHost.',
+      );
+    }
+
+    final colors = context.auraColors;
+    final backgroundColor = _getBackgroundColor(variant, colors);
+    final foregroundColor = _getForegroundColor(variant, colors);
+
+    // Validate duration is within bounds (1-60 seconds).
+    final validatedDuration = Duration(
+      seconds: duration.inSeconds.clamp(1, 60),
+    );
+
+    return host.show(
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      content: content,
+      duration: validatedDuration,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
-
-  final colors = context.auraColors;
-  final backgroundColor = _getBackgroundColor(variant, colors);
-  final foregroundColor = _getForegroundColor(variant, colors);
-
-  // Validate duration is within bounds (1-60 seconds).
-  final validatedDuration = Duration(
-    seconds: duration.inSeconds.clamp(1, 60),
-  );
-
-  return host.show(
-    backgroundColor: backgroundColor,
-    foregroundColor: foregroundColor,
-    content: content,
-    duration: validatedDuration,
-    actionLabel: actionLabel,
-    onAction: onAction,
-  );
 }
 
 /// Internal widget that manages its own animation state.
@@ -275,7 +273,7 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
         );
 
     // Start entry animation.
-    unawaited(animationController.forward());
+    final _ = animationController.forward();
 
     // Set up auto-dismiss timer.
     _dismissTimer = Timer(widget.duration, dismiss);
@@ -431,3 +429,4 @@ Color _getForegroundColor(AuraSnackBarVariant variant, AuraColorScheme colors) {
     AuraSnackBarVariant.info => colors.onInfo,
   };
 }
+// Public convenience API intentionally remains top-level.

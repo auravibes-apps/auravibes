@@ -338,7 +338,7 @@ String? _approvalArgumentsPreview({
   try {
     decoded = jsonDecode(argumentsRaw);
   } on Exception catch (_) {
-    return tryDecodeToolMetadata(argumentsRaw);
+    return ToolMetadataDecoder.decode(argumentsRaw);
   }
 
   final urlSummary = _urlRequestSummary(decoded);
@@ -666,7 +666,7 @@ class _ConfirmationButtons extends ConsumerWidget {
     } on Exception catch (error) {
       debugPrint('Tool approval action failed: $error');
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: TextLocale(errorMessageKey),
         variant: AuraSnackBarVariant.error,

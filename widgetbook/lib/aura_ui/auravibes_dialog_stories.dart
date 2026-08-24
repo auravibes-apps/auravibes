@@ -48,7 +48,7 @@ class _ConfirmDialogDemo extends StatelessWidget {
   }
 
   Future<void> _showConfirmDialog(BuildContext context) async {
-    final result = await showAuraConfirmDialog(
+    final result = await AuraDialogs.confirm(
       context: context,
       title: const Text('Delete Item'),
       message: const Text(
@@ -89,7 +89,7 @@ class _AlertDialogDemo extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () {
             unawaited(
-              showAuraAlertDialog(
+              AuraDialogs.alert(
                 context: context,
                 title: const Text('Update Available'),
                 message: const Text(

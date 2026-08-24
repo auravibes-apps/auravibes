@@ -29,7 +29,7 @@ class MonitoringService {
   }
 
   String _sanitize(Object value) {
-    final normalized = redactLogValue(
+    final normalized = LogRedaction.redact(
       value,
     ).replaceAll(RegExp(r'\s+'), ' ').trim();
 

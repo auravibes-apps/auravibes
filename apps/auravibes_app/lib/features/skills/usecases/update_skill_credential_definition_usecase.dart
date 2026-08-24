@@ -32,7 +32,7 @@ class UpdateSkillCredentialDefinitionUsecase {
     }
     final title = definition.title;
     if (title != null) {
-      validateSkillTitle(title);
+      ValidateSkillTitleUsecase.call(title);
       final slug = generateSkillSlug(title);
       final cloud = cloudStore;
       final repository = _skillCredentialDefinitionsRepository;

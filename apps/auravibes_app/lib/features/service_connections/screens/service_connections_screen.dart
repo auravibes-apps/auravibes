@@ -276,7 +276,7 @@ class _ConnectionTile extends ConsumerWidget {
       'kind=${connection.kind.name} connectionNameLength='
       '${connection.name.length}',
     );
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: TextLocale(titleKey),
       message: Text(
@@ -336,7 +336,7 @@ class _ConnectionTile extends ConsumerWidget {
         ServiceConnectionListItemKind.mcpServer =>
           LocaleKeys.service_connections_action_reconnect_error,
       };
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: TextLocale(errorKey),
         variant: AuraSnackBarVariant.error,
@@ -357,7 +357,7 @@ class _ConnectionTile extends ConsumerWidget {
       );
       await usecase.reconnectMcpServer(serverId);
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_reconnect_success,
@@ -372,7 +372,7 @@ class _ConnectionTile extends ConsumerWidget {
         stackTrace,
       );
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_reconnect_error,
@@ -395,7 +395,7 @@ class _ConnectionTile extends ConsumerWidget {
         mcpServerId: serverId,
       );
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_refresh_success,
@@ -410,7 +410,7 @@ class _ConnectionTile extends ConsumerWidget {
         stackTrace,
       );
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_refresh_error,

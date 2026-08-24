@@ -102,7 +102,7 @@ class CloudWorkspaceStateGateway {
     );
     final read = _enqueueRead(request);
 
-    return guardCloudCall(.state, () => read.timeout(readTimeout));
+    return CloudAppErrors.guardCall(.state, () => read.timeout(readTimeout));
   }
 
   Future<ReadWorkspaceStateResponse> _enqueueRead(
@@ -122,7 +122,7 @@ class CloudWorkspaceStateGateway {
   Future<PatchWorkspaceStateResponse> patch({
     required String requestId,
     required List<WorkspacePatchOperation> operations,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .state,
     () => _requiredClient.workspaceState.patch(
       PatchWorkspaceStateRequest(
@@ -152,7 +152,7 @@ class CloudWorkspaceStateGateway {
     );
     final putSecret = _putSecret;
 
-    return guardCloudCall(
+    return CloudAppErrors.guardCall(
       .state,
       () =>
           putSecret?.call(request) ??
@@ -181,7 +181,7 @@ class CloudWorkspaceStateGateway {
     );
     final mutateCredential = _mutateCredential;
 
-    return guardCloudCall(
+    return CloudAppErrors.guardCall(
       .state,
       () =>
           mutateCredential?.call(request) ??
@@ -246,7 +246,7 @@ class CloudWorkspaceStateGateway {
         }
       } on CloudWorkspaceException catch (error) {
         if (_isTerminal(error.code)) {
-          translateCloudException(error, CloudOperationContext.state);
+          CloudAppErrors.translateException(error, CloudOperationContext.state);
         }
       } on CloudAppException catch (error) {
         if (_isTerminalCode(error.code)) {

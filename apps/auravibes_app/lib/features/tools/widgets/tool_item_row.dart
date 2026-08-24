@@ -219,7 +219,7 @@ class _ToolOptions extends HookConsumerWidget {
     WidgetRef ref,
     WorkspaceToolEntity workspaceTool,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
       message: const TextLocale(LocaleKeys.tools_screen_remove_tool_confirm),

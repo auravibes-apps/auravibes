@@ -205,7 +205,7 @@ class ContinueAgentService
     final metadata = currentResult.entityMetadata;
     final metadataJson = metadata == null
         ? null
-        : safeJsonEncode(metadata.toJson());
+        : JsonCodec.encode(metadata.toJson());
     final firstMessage = await messageRepository.createMessage(
       .new(
         conversationId: conversationId,
@@ -392,7 +392,7 @@ class ContinueAgentService
     final metadata = result.entityMetadata;
     if (metadata == null) return false;
 
-    return safeJsonEncode(metadata.toJson()) != null;
+    return JsonCodec.encode(metadata.toJson()) != null;
   }
 
   MessageMetadataEntity? _markPendingToolsStopped(

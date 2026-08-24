@@ -47,7 +47,7 @@ class SkillsScreen extends ConsumerWidget {
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError(:final error) => Center(
           child: AuraText(
-            child: TextLocale(cloudErrorLocalizationKey(error)),
+            child: TextLocale(CloudAppErrors.localizationKey(error)),
           ),
         ),
       },

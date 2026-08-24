@@ -121,7 +121,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
       throw const ModelConnectionException('OAuth token is required');
     }
 
-    if (!isOpenAICodexProvider(modelConnection.modelId)) {
+    if (!ModelProviderOAuthProfiles.isCodexProvider(modelConnection.modelId)) {
       throw ModelConnectionException(
         'OAuth profile not found: ${modelConnection.modelId}',
       );

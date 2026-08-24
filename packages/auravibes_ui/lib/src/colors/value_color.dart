@@ -80,8 +80,8 @@ class LinearSrgbColor extends ValueColor {
 
   /// Converts to Oklab color space.
   OklabColor toOkLab() {
-    final lms = vector.transform(lrgbToLms).cbrt();
-    final oklab = lms.transform(lmsToOklab);
+    final lms = vector.transform(ColorSpaceMatrices.lrgbToLms).cbrt();
+    final oklab = lms.transform(ColorSpaceMatrices.lmsToOklab);
 
     return OklabColor.fromVector(oklab, alpha: alpha);
   }
@@ -199,8 +199,8 @@ class OklabColor extends ValueColor {
 
   /// Converts to linear RGB color space.
   LinearSrgbColor toLrgb() {
-    final lms = vector.transform(oklabToLms).cubed();
-    final lrgb = lms.transform(lmsTolrgb);
+    final lms = vector.transform(ColorSpaceMatrices.oklabToLms).cubed();
+    final lrgb = lms.transform(ColorSpaceMatrices.lmsTolrgb);
 
     return LinearSrgbColor.fromVector(lrgb, alpha: alpha);
   }

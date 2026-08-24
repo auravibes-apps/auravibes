@@ -121,7 +121,7 @@ class _SidebarConversationsError<T extends Object> extends StatelessWidget {
           horizontal: context.auraTheme.fromSpacing(.sm),
         ),
         child: AuraText(
-          child: TextLocale(cloudErrorLocalizationKey(error)),
+          child: TextLocale(CloudAppErrors.localizationKey(error)),
           style: AuraTextStyle.bodySmall,
           tint: AuraTint.error,
         ),
@@ -225,7 +225,7 @@ class _SidebarConversationTileState
   }
 
   Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDeleteConversationConfirmDialog(context);
+    final confirmed = await DeleteConversationConfirmDialog.show(context);
     if (!confirmed) return;
 
     final cloud = await ref.read(

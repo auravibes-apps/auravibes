@@ -25,7 +25,7 @@ class CodexDeviceCode {
 class CodexOAuthService {
   CodexOAuthService({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
     : _dio = dio ?? Dio(),
-      _openBrowser = openBrowser ?? openSystemBrowser;
+      _openBrowser = openBrowser ?? OpenSystemBrowser.call;
 
   final Dio _dio;
   final Future<void> Function(Uri uri) _openBrowser;
@@ -78,8 +78,8 @@ class CodexOAuthService {
     bool Function()? isCancelled,
   }) async {
     final response = await _dio.post<Object?>(
-      '$openAICodexIssuer/api/accounts/deviceauth/usercode',
-      data: {'client_id': openAICodexClientId},
+      '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/usercode',
+      data: {'client_id': ModelProviderOAuthProfiles.clientId},
       options: Options(
         headers: const {'Content-Type': _jsonContentType},
         responseType: ResponseType.json,
@@ -91,7 +91,7 @@ class CodexOAuthService {
     final interval = _interval(data['interval']);
     onDeviceCode?.call(
       CodexDeviceCode(
-        verificationUrl: '$openAICodexIssuer/codex/device',
+        verificationUrl: '${ModelProviderOAuthProfiles.issuer}/codex/device',
         userCode: userCode,
       ),
     );
@@ -115,16 +115,16 @@ class CodexOAuthService {
     required String codeChallenge,
     required String state,
   }) {
-    return Uri.parse(openAICodexAuthorizationEndpoint).replace(
+    return Uri.parse(ModelProviderOAuthProfiles.authorizationEndpoint).replace(
       queryParameters: {
         'response_type': 'code',
-        'client_id': openAICodexClientId,
+        'client_id': ModelProviderOAuthProfiles.clientId,
         'redirect_uri': redirectUri,
-        'scope': openAICodexScopes.join(' '),
+        'scope': ModelProviderOAuthProfiles.scopes.join(' '),
         'code_challenge': codeChallenge,
         'code_challenge_method': 'S256',
         'state': state,
-        ...openAICodexExtraAuthorizeParameters,
+        ...ModelProviderOAuthProfiles.extraAuthorizeParameters,
       },
     );
   }
@@ -135,12 +135,12 @@ class CodexOAuthService {
     required String codeVerifier,
   }) async {
     final response = await _dio.post<Object?>(
-      openAICodexTokenEndpoint,
+      ModelProviderOAuthProfiles.tokenEndpoint,
       data: {
         'grant_type': 'authorization_code',
         'code': code,
         'redirect_uri': redirectUri,
-        'client_id': openAICodexClientId,
+        'client_id': ModelProviderOAuthProfiles.clientId,
         'code_verifier': codeVerifier,
       },
       options: Options(
@@ -151,7 +151,9 @@ class CodexOAuthService {
     );
     final token = _tokenFromResponse(_mapResponse(response.data));
 
-    return token.copyWith(scopes: token.scopes ?? openAICodexScopes);
+    return token.copyWith(
+      scopes: token.scopes ?? ModelProviderOAuthProfiles.scopes,
+    );
   }
 
   static String? accountIdFromToken(OAuthTokenEntity token) {
@@ -251,7 +253,7 @@ class CodexOAuthService {
         throw const CodexOAuthCanceledException();
       }
       final response = await _dio.post<Object?>(
-        '$openAICodexIssuer/api/accounts/deviceauth/token',
+        '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/token',
         data: {
           'device_auth_id': deviceAuthId,
           'user_code': userCode,

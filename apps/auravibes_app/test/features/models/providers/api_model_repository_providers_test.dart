@@ -158,7 +158,7 @@ void main() {
         apiModelProvidersProvider(workspaceId: 'workspace').future,
       );
       expect(result.map((provider) => provider.id), [
-        if (openAICodexClientId.isNotEmpty) 'openai-codex',
+        if (ModelProviderOAuthProfiles.clientId.isNotEmpty) 'openai-codex',
         'openai',
       ]);
     });

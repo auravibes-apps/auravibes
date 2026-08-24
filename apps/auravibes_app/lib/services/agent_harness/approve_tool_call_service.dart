@@ -143,7 +143,7 @@ class AppApproveToolCallDataProvider
     await _patchToolCall(
       messageId: messageId,
       toolCallId: toolCallId,
-      resultStatus: toAppToolCallResultStatus(resultStatus),
+      resultStatus: AgentToolStatusMapper.toResultStatus(resultStatus),
       responseRaw: responseRaw,
     );
   }

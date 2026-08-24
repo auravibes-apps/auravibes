@@ -113,7 +113,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     final group = groupWithTools.group;
     if (group == null) return;
 
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: Text(_kDeleteMcpTitle.tr()),
       message: Text(_kDeleteMcpConfirm.tr()),
@@ -134,7 +134,7 @@ class ToolsGroupCard extends HookConsumerWidget {
   }
 
   void _showErrorDetails(BuildContext context) {
-    showAuraAlertDialog(
+    AuraDialogs.alert(
       context: context,
       title: Text(_kDeleteMcpTitle.tr()),
       message: AuraSelectableText(

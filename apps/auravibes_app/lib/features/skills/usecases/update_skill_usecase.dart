@@ -16,7 +16,7 @@ class UpdateSkillUsecase {
   Future<SkillEntity> call(String skillId, SkillToUpdate skill) async {
     final title = skill.title;
     if (title != null) {
-      validateSkillTitle(title);
+      ValidateSkillTitleUsecase.call(title);
       final existingSkill =
           await cloudStore?.skill(skillId) ??
           await _skillsRepository?.getSkillById(skillId);

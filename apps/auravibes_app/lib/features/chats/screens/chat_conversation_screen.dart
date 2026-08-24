@@ -215,7 +215,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
     final pendingCalls = isCloud
-        ? cloudPendingToolCalls(cloudConversation)
+        ? CloudMessageTools.pendingToolCalls(cloudConversation)
         : ref
                   .watch(pendingToolCallsProvider(workspaceId, conversation.id))
                   .value ??
@@ -596,7 +596,7 @@ Future<void> _setModelWithAttachmentWarning({
   for (final message in messages) {
     for (final attachment in message.attachments) {
       final modality = attachment.modality.name;
-      if (!supportsAttachmentModality(
+      if (!ChatAttachmentModality.supports(
         attachment.modality,
         supported,
         mimeType: attachment.mimeType,
@@ -710,7 +710,7 @@ Future<void> _continueAgent(
     );
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(
         LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
@@ -805,7 +805,7 @@ Future<void> _stopConversation(
     );
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(
         LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
@@ -834,7 +834,7 @@ Future<void> _sendMessage(
     );
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(
         LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
@@ -860,7 +860,7 @@ Future<void> _manualCompact(
     }
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.compaction_manual_success.tr()),
       variant: AuraSnackBarVariant.success,
@@ -868,7 +868,7 @@ Future<void> _manualCompact(
   } on CompactionException {
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.compaction_manual_failure.tr()),
       variant: AuraSnackBarVariant.error,

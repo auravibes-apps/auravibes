@@ -12,8 +12,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:riverpod/riverpod.dart';
 
-export 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart'
-    show skillToolsGroupName;
+export 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 
 class SyncSkillToolPermissionsUsecase {
   const SyncSkillToolPermissionsUsecase({
@@ -130,14 +129,14 @@ class SyncSkillToolPermissionsUsecase {
   Future<ToolsGroupsTable> _ensureSkillToolsGroup(String workspaceId) async {
     final existing = await database.toolsGroupsDao.getToolsGroupByName(
       workspaceId: workspaceId,
-      name: skillToolsGroupName,
+      name: SkillToolPermissionConstants.skillToolsGroupName,
     );
     if (existing != null) return existing;
 
     return database.toolsGroupsDao.insertToolsGroup(
       ToolsGroupsCompanion.insert(
         workspaceId: workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
         permissions: PermissionAccess.ask,
       ),
     );
@@ -163,15 +162,17 @@ final syncSkillToolPermissionsUsecaseProvider =
       );
     });
 
-bool isSkillPermissionToolName(String toolName) {
-  final resolved = const AgentToolNameResolver(
-    skillControlToolNames: {
-      loadSkillToolName,
-      unloadSkillToolName,
-      listSkillCredentialsToolName,
-    },
-  ).resolve(toolName);
+abstract final class SkillPermissionTools {
+  static bool isSkillPermissionToolName(String toolName) {
+    final resolved = const AgentToolNameResolver(
+      skillControlToolNames: {
+        loadSkillToolName,
+        unloadSkillToolName,
+        SkillToolNames.listCredentials,
+      },
+    ).resolve(toolName);
 
-  return resolved?.isSkill == true ||
-      resolved?.kind == AgentResolvedToolKind.skillControl;
+    return resolved?.isSkill == true ||
+        resolved?.kind == AgentResolvedToolKind.skillControl;
+  }
 }

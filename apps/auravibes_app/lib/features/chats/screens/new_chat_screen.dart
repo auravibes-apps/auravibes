@@ -99,7 +99,7 @@ class _NewChatContent extends ConsumerWidget {
           stackTrace,
         );
         if (context.mounted) {
-          final _ = showAuraSnackBar(
+          final _ = AuraSnackBars.show(
             context: context,
             content: const TextLocale(
               LocaleKeys.chats_screens_chat_conversation_send_error,

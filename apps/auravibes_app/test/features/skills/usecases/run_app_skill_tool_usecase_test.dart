@@ -145,7 +145,7 @@ void main() {
             'searxng': [_candidate('searxng')],
           },
           urlService: urlService,
-          requirePublicUri: requirePublicHttpsUri,
+          requirePublicUri: PublicUrlGuard.requireHttpsUri,
         );
 
         await expectLater(

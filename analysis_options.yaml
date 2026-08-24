@@ -138,34 +138,6 @@ dart_code_linter:
         - public-methods
         - build-method
         - private-methods
-    no-equal-arguments:
-      ignored-parameters:
-        # Fixtures often intentionally share lifecycle timestamps.
-        - updatedAt
-        # Widget tests intentionally reuse locale ranges for basic wrappers.
-        - startLocale
-        # UI geometry and callback wiring intentionally repeat symmetric values.
-        - activeWorkspaceId
-        - borderColor
-        - bottom
-        - height
-        - isWorkspaceEnabled
-        - margin
-        - mcpServerId
-        - minHeight
-        - name
-        - native
-        - onDelete
-        - onProviderChanged
-        - onReconnect
-        - onViewError
-        - portal
-        - receiveTimeout
-        - remove
-        - right
-        - skillToolSlug
-        - toolIdentifier
-        - top
     no-magic-number:
       allow-only-once: true
     prefer-correct-identifier-length:
@@ -227,6 +199,12 @@ dart_code_linter:
       ignore-private-widgets: true
     prefer-static-class:
       ignore-private: true
+      ignore-names:
+        - .*Provider$
+      ignore-annotations:
+        - riverpod
+        - Riverpod
+        - widgetbook.UseCase
 
 formatter:
   page_width: 80

@@ -93,7 +93,9 @@ class AddModelProviderWidget extends HookConsumerWidget {
       ),
     );
     final isOAuth = selectedState.authMode == ModelProviderAuthMode.oauth2;
-    final isCodex = isOpenAICodexProvider(selectedState.modelId);
+    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(
+      selectedState.modelId,
+    );
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
     final isDesktop =
         !kIsWeb &&
@@ -459,7 +461,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
     await Clipboard.setData(ClipboardData(text: deviceCode.userCode));
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(
         LocaleKeys.models_screens_add_provider_device_code_copied.tr(),
@@ -472,7 +474,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
     await Clipboard.setData(ClipboardData(text: deviceCode.verificationUrl));
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(
         LocaleKeys.models_screens_add_provider_device_code_link_copied.tr(),
@@ -482,7 +484,7 @@ class _CodexDeviceCodePanel extends StatelessWidget {
   }
 
   void _showVerificationUrlActions(BuildContext context) {
-    showAuraAlertDialog(
+    AuraDialogs.alert(
       context: context,
       title: const TextLocale(
         LocaleKeys.models_screens_add_provider_device_code_link_actions_title,
@@ -522,11 +524,11 @@ class _CodexDeviceCodePanel extends StatelessWidget {
   Future<void> _launchVerificationUrl(BuildContext context) async {
     final uri = Uri.parse(deviceCode.verificationUrl);
     try {
-      await openSystemBrowser(uri);
+      await OpenSystemBrowser.call(uri);
     } on Exception {
       if (!context.mounted) return;
 
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.models_screens_add_provider_device_code_open_link_failed
@@ -711,7 +713,8 @@ class _SelectModelProvider extends HookConsumerWidget {
               : ListView.builder(
                   itemBuilder: (context, index) {
                     final model = filteredModels[index];
-                    final isOAuthProvider = isOpenAICodexProvider(model.id);
+                    final isOAuthProvider =
+                        ModelProviderOAuthProfiles.isCodexProvider(model.id);
 
                     return AuraCard(
                       child: Row(
@@ -779,8 +782,8 @@ class _SelectedModelHeader extends HookConsumerWidget {
     );
     final selectedModelName =
         selectedModel?.name ??
-        (isOpenAICodexProvider(selectedModelId)
-            ? openAICodexDisplayName
+        (ModelProviderOAuthProfiles.isCodexProvider(selectedModelId)
+            ? ModelProviderOAuthProfiles.displayName
             : null);
     if (selectedModelName == null) return const SizedBox.shrink();
 
@@ -797,7 +800,7 @@ class _SelectedModelHeader extends HookConsumerWidget {
         ),
         const AuraSizedBox(width: .md),
         ModelLogo(
-          modelId: selectedModel?.id ?? openAICodexProviderId,
+          modelId: selectedModel?.id ?? ModelProviderOAuthProfiles.providerId,
           height: 24,
         ),
         const AuraSizedBox(width: .md),

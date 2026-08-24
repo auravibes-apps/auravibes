@@ -109,7 +109,7 @@ class _AccountList extends ConsumerWidget {
     WidgetRef ref,
     CloudAccountSession account,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.cloud_accounts_remove_title),
       message: Column(
@@ -138,7 +138,7 @@ class _AccountList extends ConsumerWidget {
         .read(workspaceRepositoryProvider)
         .getWorkspaceById(workspaceId);
 
-    await cloudAccountMutation.run(ref, (_) async {
+    await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
       await ref
           .read(cloudAccountUseCasesProvider)
           .remove(
@@ -151,7 +151,7 @@ class _AccountList extends ConsumerWidget {
     });
     if (!context.mounted ||
         activeWorkspace?.cloudAccountId != account.userId ||
-        ref.read(cloudAccountMutation) is MutationError) {
+        ref.read(WorkspaceManagementMutations.cloudAccount) is MutationError) {
       return;
     }
 

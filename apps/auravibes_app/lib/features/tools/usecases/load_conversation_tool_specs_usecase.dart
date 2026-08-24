@@ -76,7 +76,9 @@ class LoadConversationToolSpecsUsecase {
         ) ??
         const <ToolSpec>[];
     final enabledSkillToolNames = enabledTools
-        .where((tool) => isSkillPermissionToolName(tool.toolId))
+        .where(
+          (tool) => SkillPermissionTools.isSkillPermissionToolName(tool.toolId),
+        )
         .map((tool) => tool.toolId)
         .toSet();
 
@@ -96,7 +98,7 @@ class LoadConversationToolSpecsUsecase {
   bool _isAvailableSkillControlTool(ToolSpec spec) {
     return spec.name == loadSkillToolName ||
         spec.name == unloadSkillToolName ||
-        spec.name == listSkillCredentialsToolName;
+        spec.name == SkillToolNames.listCredentials;
   }
 }
 

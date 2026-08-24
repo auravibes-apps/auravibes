@@ -34,6 +34,7 @@ extension WorkspaceSessionFamilyTestOverride on WorkspaceSessionFamily {
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<WorkspaceSession> workspaceSessionForRoute(
   Ref ref,
   String localWorkspaceId,
@@ -65,7 +66,7 @@ Future<WorkspaceSession> workspaceSessionForRoute(
   return WorkspaceSession(
     CloudWorkspaceRef(
       localWorkspaceId: localWorkspaceId,
-      serverUrl: canonicalServerOrigin(serverUrl),
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(serverUrl),
       accountId: accountId,
       cloudWorkspaceId: cloudWorkspaceId,
     ),
@@ -73,6 +74,7 @@ Future<WorkspaceSession> workspaceSessionForRoute(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<WorkspaceAvailability> workspaceAvailability(
   Ref ref,
   String localWorkspaceId,
@@ -103,6 +105,7 @@ Future<WorkspaceAvailability> workspaceAvailability(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGateway(
   Ref ref,
   WorkspaceSession session,
@@ -121,6 +124,7 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGateway(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
   Ref ref,
   String localWorkspaceId,
@@ -142,6 +146,7 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<WorkspaceResource>> cloudWorkspaceConfiguration(
   Ref ref,
   WorkspaceSession session,

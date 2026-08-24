@@ -29,7 +29,10 @@ abstract final class CloudResourceMapper {
         '$skillMetadata errorType=${error.runtimeType}.',
       );
 
-      return translateCloudException(error, CloudOperationContext.resource);
+      return CloudAppErrors.translateException(
+        error,
+        CloudOperationContext.resource,
+      );
     }
   }
 

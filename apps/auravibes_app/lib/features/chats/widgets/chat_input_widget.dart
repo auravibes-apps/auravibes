@@ -134,18 +134,19 @@ class ChatInputWidget extends HookConsumerWidget {
         (workspaceCapabilities?.attachments ?? false) && !kIsWeb;
     final supportsAudio =
         supportsLocalAttachments &&
-        supportsAttachmentModality(
+        ChatAttachmentModality.supports(
           MessageAttachmentModality.audio,
           modalitiesInput,
         );
     final supportsImage =
         (workspaceCapabilities?.attachments ?? false) &&
-        supportsAttachmentModality(
+        ChatAttachmentModality.supports(
           MessageAttachmentModality.image,
           modalitiesInput,
         );
     final supportsFile =
-        supportsLocalAttachments && supportsFileAttachments(modalitiesInput);
+        supportsLocalAttachments &&
+        ChatAttachmentModality.supportsFiles(modalitiesInput);
     final isMacOS = defaultTargetPlatform == TargetPlatform.macOS;
     const messagePlaceholderKey =
         LocaleKeys.chats_screens_chat_conversation_message_placeholder;
@@ -324,12 +325,12 @@ class _ChatInputActions {
         .read(localChatAttachmentUsecaseProvider)
         .copyIntoAppStorage(
           path,
-          displayName: uniqueAttachmentDisplayName(
+          displayName: AttachmentDisplayNames.unique(
             displayName,
             attachments.value.map((attachment) => attachment.displayName),
           ),
         );
-    if (!supportsAttachmentModality(
+    if (!ChatAttachmentModality.supports(
       attachment.modality,
       modalitiesInput,
       mimeType: attachment.mimeType,
@@ -346,9 +347,10 @@ class _ChatInputActions {
     unawaited(
       (() async {
         try {
-          final allowedExtensions = filePickerAllowedExtensions(
-            modalitiesInput,
-          );
+          final allowedExtensions =
+              ChatAttachmentModality.pickerAllowedExtensions(
+                modalitiesInput,
+              );
           final result = await fp.FilePicker.pickFiles(
             allowedExtensions: allowedExtensions,
             type: allowedExtensions == null
@@ -475,7 +477,7 @@ class _ChatInputActions {
     Iterable<MessageAttachmentToCreate> existingAttachments,
   ) {
     return attachment.copyWith(
-      displayName: uniqueAttachmentDisplayName(
+      displayName: AttachmentDisplayNames.unique(
         _voiceRecordLabelKey.tr(),
         existingAttachments.map((attachment) => attachment.displayName),
       ),
@@ -858,22 +860,24 @@ String _formatElapsed(Duration elapsed) {
   return '$minutes:$seconds';
 }
 
-@visibleForTesting
-String uniqueAttachmentDisplayName(
-  String displayName,
-  Iterable<String> existingNames,
-) {
-  if (!existingNames.contains(displayName)) return displayName;
+abstract final class AttachmentDisplayNames {
+  @visibleForTesting
+  static String unique(
+    String displayName,
+    Iterable<String> existingNames,
+  ) {
+    if (!existingNames.contains(displayName)) return displayName;
 
-  final extension = p.extension(displayName);
-  final baseName = extension.isEmpty
-      ? displayName
-      : p.basenameWithoutExtension(displayName);
-  var index = 1;
-  while (true) {
-    final candidate = '$baseName ($index)$extension';
-    if (!existingNames.contains(candidate)) return candidate;
-    index += 1;
+    final extension = p.extension(displayName);
+    final baseName = extension.isEmpty
+        ? displayName
+        : p.basenameWithoutExtension(displayName);
+    var index = 1;
+    while (true) {
+      final candidate = '$baseName ($index)$extension';
+      if (!existingNames.contains(candidate)) return candidate;
+      index += 1;
+    }
   }
 }
 

@@ -92,7 +92,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
     WorkspaceModelSelectionWithConnection withProvider,
   ) {
     final modelProvider = withProvider.modelProvider;
-    final isCodex = isOpenAICodexProvider(
+    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(
       withProvider.modelConnection.serviceId,
     );
     final providerType = _mapToTypeTable(modelProvider?.type);
@@ -130,7 +130,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
         id: modelProvider?.id ?? withProvider.modelConnection.serviceId,
         name:
             modelProvider?.name ??
-            (isCodex ? openAICodexDisplayName : null) ??
+            (isCodex ? ModelProviderOAuthProfiles.displayName : null) ??
             withProvider.modelConnection.serviceId,
         type: providerType ?? (isCodex ? ModelProvidersType.openai : null),
         url: modelProvider?.url ?? '',

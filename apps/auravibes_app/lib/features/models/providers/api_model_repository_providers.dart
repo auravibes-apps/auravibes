@@ -66,19 +66,22 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
   );
   final providers = await catalog.getAllProviders();
   final realProviders = providers
-      .where((p) => !isOpenAICodexProvider(p.id) && p.type != null)
+      .where(
+        (p) =>
+            !ModelProviderOAuthProfiles.isCodexProvider(p.id) && p.type != null,
+      )
       .toList();
   final openAIProvider = realProviders.firstWhereOrNull(
     (provider) => provider.id == 'openai',
   );
-  if (openAIProvider == null || openAICodexClientId.isEmpty) {
+  if (openAIProvider == null || ModelProviderOAuthProfiles.clientId.isEmpty) {
     return realProviders;
   }
 
   return [
     ApiModelProviderEntity(
-      id: openAICodexProviderId,
-      name: openAICodexDisplayName,
+      id: ModelProviderOAuthProfiles.providerId,
+      name: ModelProviderOAuthProfiles.displayName,
       type: .openai,
       url: openAIProvider.url,
       doc: openAIProvider.doc,
@@ -88,6 +91,7 @@ Future<List<ApiModelProviderEntity>> apiModelProviders(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<List<ApiModelEntity>> getAllModels(
   Ref ref, {
   required String workspaceId,
@@ -100,6 +104,7 @@ Future<List<ApiModelEntity>> getAllModels(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ApiModelEntity?> getModelByProviderAndModelId(
   Ref ref, {
   required String workspaceId,
@@ -125,3 +130,4 @@ Future<List<ApiModelEntity>> getModelsByProvider(
 
   return catalog.getModelsByProvider(providerId);
 }
+// Top-level API/provider declarations are required by their consumers.

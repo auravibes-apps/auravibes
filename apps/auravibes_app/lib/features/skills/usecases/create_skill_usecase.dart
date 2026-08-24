@@ -15,7 +15,7 @@ class CreateSkillUsecase {
   final CloudSkillStore? cloudStore;
 
   Future<SkillEntity> call(String workspaceId, SkillToCreate skill) async {
-    validateSkillTitle(skill.title);
+    ValidateSkillTitleUsecase.call(skill.title);
     final cloud = cloudStore;
     final cloudSkills = cloud == null ? null : await cloud.skills();
     final existingTitle =

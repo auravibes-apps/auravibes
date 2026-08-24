@@ -80,7 +80,9 @@ class AppAgentContinuationAdapter
   Future<WorkspaceModelSelectionWithConnectionEntity> projectSelectedModel(
     WorkspaceModelSelectionWithConnectionEntity model,
   ) async {
-    if (!isOpenAICodexProvider(model.modelConnection.modelId)) {
+    if (!ModelProviderOAuthProfiles.isCodexProvider(
+      model.modelConnection.modelId,
+    )) {
       return model;
     }
     final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
@@ -99,7 +101,7 @@ class AppAgentContinuationAdapter
         modelName: openAIModel.name,
         supportsReasoning: openAIModel.supportsReasoning,
         supportsToolCalls: openAIModel.supportsToolCalls,
-        modalitiesInput: codexInputModalities(openAIModel),
+        modalitiesInput: CodexInputModalities.forModel(openAIModel),
         modalitiesOutput: openAIModel.modalitiesOutput,
       ),
     );
@@ -150,7 +152,9 @@ class AppAgentContinuationAdapter
 
   @override
   bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) {
-    return isOpenAICodexProvider(model.modelConnection.modelId) &&
+    return ModelProviderOAuthProfiles.isCodexProvider(
+          model.modelConnection.modelId,
+        ) &&
         !model.workspaceModelSelection.supportsToolCalls;
   }
 

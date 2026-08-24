@@ -132,20 +132,20 @@ void main() {
   });
 
   group('Predefined matrices', () {
-    test('lmsToOklab is defined', () {
-      expect(lmsToOklab, isA<MatrixTransformation>());
+    test('ColorSpaceMatrices.lmsToOklab is defined', () {
+      expect(ColorSpaceMatrices.lmsToOklab, isA<MatrixTransformation>());
     });
 
-    test('oklabToLms is defined', () {
-      expect(oklabToLms, isA<MatrixTransformation>());
+    test('ColorSpaceMatrices.oklabToLms is defined', () {
+      expect(ColorSpaceMatrices.oklabToLms, isA<MatrixTransformation>());
     });
 
-    test('lrgbToLms is defined', () {
-      expect(lrgbToLms, isA<MatrixTransformation>());
+    test('ColorSpaceMatrices.lrgbToLms is defined', () {
+      expect(ColorSpaceMatrices.lrgbToLms, isA<MatrixTransformation>());
     });
 
-    test('lmsTolrgb is defined', () {
-      expect(lmsTolrgb, isA<MatrixTransformation>());
+    test('ColorSpaceMatrices.lmsTolrgb is defined', () {
+      expect(ColorSpaceMatrices.lmsTolrgb, isA<MatrixTransformation>());
     });
   });
 }

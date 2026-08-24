@@ -160,7 +160,7 @@ void main() {
       expect(accounts.single.serverUrl, 'https://legacy.example');
       expect(
         await store.preferredAccountIdentity(),
-        accountIdentity('https://legacy.example', 'user'),
+        CloudAccountIdentity.accountIdentity('https://legacy.example', 'user'),
       );
       expect(values, contains('serverpod_cloud_accounts_v2'));
       expect(values, isNot(contains('serverpod_cloud_accounts_v1')));

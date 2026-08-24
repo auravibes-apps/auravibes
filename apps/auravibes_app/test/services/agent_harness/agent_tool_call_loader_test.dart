@@ -17,11 +17,11 @@ import '../../test_mocks.dart';
 void main() {
   test('projects app awaiting approval and running as engine pending', () {
     expect(
-      toAgentToolCallLifecycle(null),
+      AgentToolStatusMapper.toLifecycle(null),
       agent.AgentToolCallLifecycle.pending,
     );
     expect(
-      toAgentToolCallLifecycle(ToolCallResultStatus.running),
+      AgentToolStatusMapper.toLifecycle(ToolCallResultStatus.running),
       agent.AgentToolCallLifecycle.pending,
     );
   });

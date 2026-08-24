@@ -130,7 +130,7 @@ class _CloudAccountRegisterFormState
       _isSubmitting = true;
     });
     try {
-      await cloudAccountMutation.run(ref, (_) async {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
         final useCases = ref.read(cloudAccountUseCasesProvider);
         final requestId = _registrationRequestId;
         if (requestId == null) {

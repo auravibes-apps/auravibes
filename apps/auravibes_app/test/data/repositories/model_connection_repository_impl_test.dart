@@ -236,7 +236,7 @@ void main() {
           createdAt: now,
           updatedAt: now,
           name: 'Codex',
-          serviceId: openAICodexProviderId,
+          serviceId: ModelProviderOAuthProfiles.providerId,
           kind: ServiceConnectionKindTable.modelProvider,
           authenticationType: ServiceAuthenticationTypeTable.oauth2,
           encryptedAuthValue: 'encrypted-token',
@@ -265,7 +265,7 @@ void main() {
           ModelConnectionToCreate(
             name: 'Codex',
             workspaceId: 'ws-1',
-            modelId: openAICodexProviderId,
+            modelId: ModelProviderOAuthProfiles.providerId,
             authMode: ModelProviderAuthMode.oauth2,
             oauthToken: OAuthTokenEntity(
               accessToken: 'codex-access',
@@ -295,7 +295,10 @@ void main() {
                 as List<WorkspaceModelSelectionsCompanion>;
 
         expect(result.id, 'conn-oauth');
-        expect(connection.serviceId.value, openAICodexProviderId);
+        expect(
+          connection.serviceId.value,
+          ModelProviderOAuthProfiles.providerId,
+        );
         expect(
           connection.authenticationType.value,
           ServiceAuthenticationTypeTable.oauth2,

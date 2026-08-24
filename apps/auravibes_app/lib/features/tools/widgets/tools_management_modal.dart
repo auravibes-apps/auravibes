@@ -110,7 +110,7 @@ class ToolsManagementModal extends ConsumerWidget {
                 AsyncError(:final error) => Center(
                   child: AuraText(
                     child: TextLocale(
-                      cloudErrorLocalizationKey(error),
+                      CloudAppErrors.localizationKey(error),
                     ),
                     tint: AuraTint.error,
                   ),

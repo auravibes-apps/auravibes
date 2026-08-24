@@ -58,8 +58,8 @@ void main() {
         apiModelProvidersProvider(workspaceId: 'local').overrideWith(
           (_) async => const [
             ApiModelProviderEntity(
-              id: openAICodexProviderId,
-              name: openAICodexDisplayName,
+              id: ModelProviderOAuthProfiles.providerId,
+              name: ModelProviderOAuthProfiles.displayName,
               type: ModelProvidersType.openai,
             ),
           ],
@@ -76,7 +76,7 @@ void main() {
     final _ = await container.read(
       apiModelProvidersProvider(workspaceId: 'local').future,
     );
-    notifier.setModel(openAICodexProviderId);
+    notifier.setModel(ModelProviderOAuthProfiles.providerId);
 
     await expectLater(
       notifier.addModelProvider(codexOAuthMethod: CodexOAuthMethod.deviceCode),

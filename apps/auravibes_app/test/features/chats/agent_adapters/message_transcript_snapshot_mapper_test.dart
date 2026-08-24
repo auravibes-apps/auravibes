@@ -34,7 +34,9 @@ void main() {
       ),
     );
 
-    final snapshot = toAgentContextSnapshot([message]).messages.single;
+    final snapshot = MessageTranscriptSnapshotMapper.toAgentContextSnapshot(
+      [message],
+    ).messages.single;
 
     expect(snapshot.id, 'summary-1');
     expect(snapshot.role, AgentTranscriptRole.system);
