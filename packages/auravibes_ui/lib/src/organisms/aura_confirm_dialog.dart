@@ -2,9 +2,13 @@
 // Required: UI components keep related private widgets together.
 // Required: UI package exposes top-level helpers and constants.
 import 'package:auravibes_ui/src/molecules/aura_button.dart';
+import 'package:auravibes_ui/src/organisms/aura_alert_dialog.dart';
+import 'package:auravibes_ui/src/organisms/aura_dialog_shell.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
+
+export 'aura_alert_dialog.dart';
 
 /// A custom confirmation dialog with customizable title, message, and actions.
 ///
@@ -50,7 +54,7 @@ class AuraConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _AuraDialogShell(
+    return AuraDialogShell(
       title: title,
       message: message,
       actions: [
@@ -73,138 +77,6 @@ class AuraConfirmDialog extends StatelessWidget {
           tint: isDestructive ? AuraTint.error : tint ?? AuraTint.primary,
         ),
       ],
-    );
-  }
-}
-
-/// A custom alert dialog with a single dismiss action.
-///
-/// Provides a simple alert dialog with customizable title,
-/// message and optional dismiss action.
-class AuraAlertDialog extends StatelessWidget {
-  /// Creates an alert dialog.
-  const AuraAlertDialog({
-    required this.title,
-    required this.message,
-    required this.dismissLabel,
-    super.key,
-    this.tint,
-  });
-
-  /// The dialog title widget.
-  final Widget title;
-
-  /// The dialog message/content widget.
-  final Widget message;
-
-  /// Label for the dismiss button. Defaults to "OK".
-  final Widget dismissLabel;
-
-  /// The accent color for the dialog.
-  final AuraTint? tint;
-
-  @override
-  Widget build(BuildContext context) {
-    return _AuraDialogShell(
-      title: title,
-      message: message,
-      actions: [
-        AuraButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: dismissLabel,
-          variant: AuraButtonVariant.text,
-          tint: tint,
-        ),
-      ],
-    );
-  }
-}
-
-class _AuraDialogShell extends StatelessWidget {
-  const _AuraDialogShell({
-    required this.title,
-    required this.message,
-    required this.actions,
-  });
-
-  final Widget title;
-  final Widget message;
-  final List<Widget> actions;
-
-  @override
-  Widget build(BuildContext context) {
-    final auraColors = context.auraColors;
-    final auraTheme = context.auraTheme;
-    final mediumSpacing = auraTheme.fromSpacing(.md);
-
-    return Center(
-      child: Material(
-        color: DesignColors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: auraColors.surface,
-            borderRadius: BorderRadius.all(
-              Radius.circular(
-                auraTheme.fromBorderRadius(.lg),
-              ),
-            ),
-            boxShadow: const [DesignShadows.lg],
-          ),
-          constraints: const BoxConstraints(maxWidth: 400),
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Title.
-              Padding(
-                padding: EdgeInsets.only(
-                  left: mediumSpacing,
-                  top: auraTheme.fromSpacing(.lg),
-                  right: mediumSpacing,
-                ),
-                child: DefaultTextStyle(
-                  style: TextStyle(
-                    color: auraColors.onSurface,
-                    fontSize: auraTheme.typography.fontSizeLg,
-                    fontWeight: auraTheme.typography.fontWeightSemibold,
-                  ),
-                  child: title,
-                ),
-              ),
-              // Message (scrollable if too long).
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(
-                    vertical: auraTheme.fromSpacing(.sm),
-                    horizontal: mediumSpacing,
-                  ),
-                  child: DefaultTextStyle(
-                    style: TextStyle(
-                      color: auraColors.onSurfaceVariant,
-                      fontSize: auraTheme.typography.fontSizeBase,
-                      fontWeight: auraTheme.typography.fontWeightRegular,
-                      height: auraTheme.typography.lineHeightBase,
-                    ),
-                    child: message,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.all(
-                  mediumSpacing,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: actions,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

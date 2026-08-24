@@ -1,11 +1,12 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraTint, DesignColors;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+
+export 'aura_checkbox_list_tile.dart';
 
 /// An Aura checkbox that follows the const-first design system.
 class AuraCheckbox extends StatelessWidget {
@@ -17,15 +18,7 @@ class AuraCheckbox extends StatelessWidget {
     this.tint,
     this.disabled = false,
     this.autofocus = false,
-  }) : _visualOnly = false;
-
-  const AuraCheckbox._visual({
-    required this.value,
-    required this.tint,
-    required this.disabled,
-  }) : onChanged = null,
-       autofocus = false,
-       _visualOnly = true;
+  });
 
   /// Whether the checkbox is selected.
   final bool value;
@@ -42,22 +35,9 @@ class AuraCheckbox extends StatelessWidget {
   /// Whether this checkbox should request focus when built.
   final bool autofocus;
 
-  final bool _visualOnly;
-
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
-
-    if (_visualOnly) {
-      final isFocused = _CheckboxFocusState.of(context);
-
-      return _CheckboxVisual(
-        value: value,
-        tint: tint,
-        disabled: isDisabled,
-        isFocused: isFocused,
-      );
-    }
 
     return Semantics(
       child: _CheckboxInteraction(
@@ -85,87 +65,6 @@ class AuraCheckbox extends StatelessWidget {
 }
 
 const _checkIcon = IconData(0xe5ca, fontFamily: 'MaterialIcons');
-
-/// A full-width settings row with an Aura checkbox, title, and optional
-/// subtitle.
-class AuraCheckboxListTile extends StatelessWidget {
-  /// Creates an Aura checkbox list tile.
-  const AuraCheckboxListTile({
-    required this.value,
-    required this.onChanged,
-    required this.title,
-    super.key,
-    this.subtitle,
-    this.tint,
-    this.disabled = false,
-    this.autofocus = false,
-  });
-
-  /// Whether the checkbox is selected.
-  final bool value;
-
-  /// Called when the user toggles the checkbox.
-  final ValueChanged<bool>? onChanged;
-
-  /// The title widget.
-  final Widget title;
-
-  /// Optional subtitle widget.
-  final Widget? subtitle;
-
-  /// Tint used when selected.
-  final AuraTint? tint;
-
-  /// Whether the tile is disabled.
-  final bool disabled;
-
-  /// Whether this checkbox tile should request focus when built.
-  final bool autofocus;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDisabled = disabled || onChanged == null;
-    final subtitle = this.subtitle;
-
-    return Semantics(
-      child: _CheckboxInteraction(
-        value: value,
-        isDisabled: isDisabled,
-        onChanged: onChanged,
-        autofocus: autofocus,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AuraCheckbox._visual(
-              value: value,
-              tint: tint,
-              disabled: isDisabled,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AuraText(child: title),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    AuraText(
-                      child: subtitle,
-                      style: AuraTextStyle.bodySmall,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      enabled: !isDisabled,
-      checked: value,
-    );
-  }
-}
 
 class _CheckboxInteraction extends StatefulWidget {
   const _CheckboxInteraction({

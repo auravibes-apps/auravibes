@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -11,6 +12,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+export 'tool_permission_selector.dart';
 
 /// Tile widget for a single conversation tool.
 ///
@@ -141,6 +144,7 @@ class _ToolIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const iconSize = 40.0;
+
     return Container(
       decoration: BoxDecoration(
         color: isEnabled && isWorkspaceEnabled
@@ -260,40 +264,6 @@ class _ToolPermissionSection extends StatelessWidget {
       ],
       spacing: .none,
       crossAxisAlignment: CrossAxisAlignment.start,
-    );
-  }
-}
-
-/// Permission mode selector widget.
-///
-/// Displays a button group for selecting between
-/// "Always Ask" and "Always Allow".
-class ToolPermissionSelector extends StatelessWidget {
-  const ToolPermissionSelector({
-    required this.value,
-    required this.onChanged,
-    super.key,
-  });
-
-  final ToolPermissionMode value;
-  final void Function(ToolPermissionMode?) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraButtonGroup<ToolPermissionMode>.single(
-      items: const [
-        AuraButtonGroupItem(
-          value: ToolPermissionMode.alwaysAsk,
-          child: TextLocale(LocaleKeys.tools_screen_permission_always_ask),
-        ),
-        AuraButtonGroupItem(
-          value: ToolPermissionMode.alwaysAllow,
-          child: TextLocale(LocaleKeys.tools_screen_permission_always_allow),
-        ),
-      ],
-      selectedValue: value,
-      onChanged: onChanged,
-      size: AuraButtonGroupSize.sm,
     );
   }
 }

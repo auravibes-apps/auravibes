@@ -3,12 +3,10 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-export 'aura_row.dart';
-
-/// Contextual Column management.
-class AuraColumn extends StatelessWidget {
-  /// Creates an Aura column.
-  const AuraColumn({
+/// Contextual Row management.
+class AuraRow extends StatelessWidget {
+  /// Creates an Aura row.
+  const AuraRow({
     required this.children,
     this.spacing = AuraSpacing.base,
     this.crossAxisAlignment = CrossAxisAlignment.center,
@@ -30,7 +28,7 @@ class AuraColumn extends StatelessWidget {
   /// MainAxisAlignment.
   final MainAxisAlignment mainAxisAlignment;
 
-  /// Optional tokenized padding around the column.
+  /// Optional tokenized padding around the row.
   final AuraEdgeInsetsGeometry? padding;
 
   /// Enum representing different spacing options for layout components.
@@ -39,7 +37,7 @@ class AuraColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final padding = this.padding;
-    final column = Column(
+    final row = Row(
       mainAxisAlignment: mainAxisAlignment,
       mainAxisSize: mainAxisSize,
       crossAxisAlignment: crossAxisAlignment,
@@ -47,8 +45,8 @@ class AuraColumn extends StatelessWidget {
       children: children,
     );
 
-    if (padding == null) return column;
+    if (padding == null) return row;
 
-    return AuraPadding(child: column, padding: padding);
+    return AuraPadding(child: row, padding: padding);
   }
 }

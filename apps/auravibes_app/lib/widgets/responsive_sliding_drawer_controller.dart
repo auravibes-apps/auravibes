@@ -10,6 +10,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+export 'responsive_sliding_drawer_provider.dart';
+
 enum _DrawerDragDirection { opening, closing }
 
 class ResponsiveSlidingDrawerController {
@@ -22,42 +24,6 @@ class ResponsiveSlidingDrawerController {
     if (!isDesktop) {
       _state?._closeDrawer();
     }
-  }
-}
-
-class ResponsiveSlidingDrawerProvider extends InheritedWidget {
-  const ResponsiveSlidingDrawerProvider({
-    required this.controller,
-    required super.child,
-    super.key,
-  });
-
-  final ResponsiveSlidingDrawerController controller;
-
-  static ResponsiveSlidingDrawerController of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<ResponsiveSlidingDrawerProvider>();
-    assert(
-      provider != null,
-      'No ResponsiveSlidingDrawerProvider found in context',
-    );
-    if (provider == null) {
-      throw FlutterError('No ResponsiveSlidingDrawerProvider found in context');
-    }
-
-    return provider.controller;
-  }
-
-  static ResponsiveSlidingDrawerController? maybeOf(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<ResponsiveSlidingDrawerProvider>();
-
-    return provider?.controller;
-  }
-
-  @override
-  bool updateShouldNotify(ResponsiveSlidingDrawerProvider oldWidget) {
-    return controller != oldWidget.controller;
   }
 }
 

@@ -6,6 +6,8 @@ import 'dart:ui';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
+export 'aura_app_bar.dart';
+
 /// Screen manager.
 class AuraScreen extends StatelessWidget {
   /// Screen manager.
@@ -72,60 +74,6 @@ class AuraScreen extends StatelessWidget {
       extendBodyBehindAppBar: true,
     );
   }
-}
-
-/// App Bar.
-class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
-  /// Constructor.
-  const AuraAppBar({
-    super.key,
-    this.title,
-    this.actions,
-    this.bottom,
-    this.leading,
-  });
-
-  /// Title.
-  final Widget? title;
-
-  /// Acions.
-  final List<Widget>? actions;
-
-  /// Bottom of bar.
-  final PreferredSizeWidget? bottom;
-
-  /// Optional custom leading widget that replaces the automatic back button.
-  final Widget? leading;
-
-  @override
-  Widget build(BuildContext context) {
-    final title = this.title;
-
-    return AppBar(
-      leading: leading,
-      title: title == null
-          ? null
-          : DefaultTextStyle.merge(
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-              child: AuraText(
-                child: title,
-                style: AuraTextStyle.heading5,
-              ),
-            ),
-      actions: actions,
-      bottom: bottom,
-      elevation: 0,
-      backgroundColor: DesignColors.transparent,
-      centerTitle: true,
-    );
-  }
-
-  @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (bottom?.preferredSize.height ?? 0),
-  );
 }
 
 /// Screen variation.

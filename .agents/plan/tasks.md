@@ -21,7 +21,7 @@
 | prefer-extracting-callbacks | 38 | 38 | Wave 8 |
 | prefer-match-file-name | 65 | 65 | Wave 7 |
 | prefer-moving-to-variable | 82 | 0 | Wave 3 |
-| prefer-single-widget-per-file | 12 | 12 | Wave 6 |
+| prefer-single-widget-per-file | 12 | 0 | Wave 6 |
 
 Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 `5a6160f3` (Wave 3).
@@ -42,8 +42,8 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 | 2 | `prefer-correct-identifier-length` | complete | `26de7e08` | 317 -> 0; fatal analyzer passed; UI color tests 24 passed; anti-patterns 0 |
 | 3 | `prefer-moving-to-variable` | complete | `5a6160f3` | 82 -> 0; fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed; anti-patterns 0 |
 | 4 | `no-magic-number` | complete | `be46bcb2` | 282 -> 0; anti-patterns 0; changed-file fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed |
-| 5 | remaining `avoid-returning-widgets` | complete | pending | 30 -> 0; no-magic 0; changed-file fatal analyzer passed; app focused tests 40 passed; UI radio tests 31 passed |
-| 6 | `prefer-single-widget-per-file` | pending | — | Baseline 12 |
+| 5 | remaining `avoid-returning-widgets` | complete | 8c5a973c | 30 -> 0; no-magic 0; changed-file fatal analyzer passed; app focused tests 40 passed; UI radio tests 31 passed |
+| 6 | `prefer-single-widget-per-file` | complete | 01478c50 | 12 -> 0; changed-file fatal analyzer passed; UI moved-widget tests 111 passed; app drawer tests 23 passed and tool tile tests 13 passed; anti-patterns 0 |
 | 7 | type/file naming | pending | — | Baseline 4 + 65 |
 | 8 | `prefer-extracting-callbacks` | pending | — | Baseline 38 |
 | 9 | `format-comment` | pending | — | Baseline 69 |
@@ -66,6 +66,10 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 - Wave 4 added a narrow analyzer `sort_constructors_first: ignore` because the
   configured DCL `member-ordering` rule intentionally requires static constants
   before constructors; no DCL rule is disabled.
+- Wave 6 full DCL report: 532 issues remain; `prefer-single-widget-per-file`
+  and `no-magic-number` are both 0. Remaining rules are `member-ordering` 358,
+  `format-comment` 67, `prefer-match-file-name` 65,
+  `prefer-extracting-callbacks` 38, and `prefer-correct-type-name` 4.
 
 ## Recovery protocol
 
