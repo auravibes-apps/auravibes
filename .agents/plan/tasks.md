@@ -59,6 +59,12 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 - Final tests: `melos run test:ci --scope=auravibes_app --no-select` passed 2,818 tests; UI package passed 559 tests.
 - Final dependency validator and import sorter passed; full format check passed.
 - Native analyzer and `validate:quick` remain blocked by the existing Riverpod analyzer plugin `InvalidTypeException` crash; no Dart diagnostics were emitted before interruption.
+- 2026-08-24 follow-up: aligned the native `riverpod_lint` plugin declaration
+  from 3.1.4 to 3.1.8. The analyzer still crashes in
+  `riverpod_analyzer_utils` (`_asyncValueTypeCode`); disabling only
+  `provider_dependencies` still crashes through `riverpod_syntax_error`.
+  This points to an upstream Riverpod analyzer-utils/plugin defect, not a DCL
+  rule or app build failure.
 - `prefer-static-class`: 0 at baseline.
 - `prefer-commenting-analyzer-ignores`: 0 at baseline.
 - Fatal Dart analyzer passed before this goal per task brief.
