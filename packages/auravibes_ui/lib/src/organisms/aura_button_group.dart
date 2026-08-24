@@ -7,11 +7,11 @@ import 'package:flutter/widgets.dart';
 
 /// A customizable button group component following the Aura design system.
 ///
-/// This component supports three modes:
-/// - [AuraButtonGroup.single] - Radio-like behavior where only one option
-///   can be selected
-/// - [AuraButtonGroup.multi] - Toggle behavior where multiple can be selected
-/// - [AuraButtonGroup.action] - Clickable buttons without selection state
+/// This component supports three modes. [AuraButtonGroup.single] provides
+/// radio-like behavior with one selected option. [AuraButtonGroup.multi]
+/// provides toggle behavior with multiple selected options. The
+/// [AuraButtonGroup.action] mode provides clickable buttons without selection
+/// state.
 class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates a single-selection button group (radio behavior).
   ///

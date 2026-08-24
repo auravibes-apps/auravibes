@@ -178,10 +178,8 @@ class McpFormNotifier extends _$McpFormNotifier {
 
   /// Submit the form.
   ///
-  /// Validates the form and submits to the MCP manager to:
-  /// 1. Save the MCP server to the database (TODO)
-  /// 2. Connect to the MCP server
-  /// 3. Load and register the MCP's tools
+  /// Validates the form and submits it to the MCP manager. The manager saves
+  /// the MCP server, connects to it, and loads and registers its tools.
   Future<bool> submit() async {
     final capabilities = _capabilities;
     capabilities

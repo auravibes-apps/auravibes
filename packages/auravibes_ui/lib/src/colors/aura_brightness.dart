@@ -33,8 +33,8 @@ enum AuraBrightness {
 ///
 /// Extends [OKLCHColor] with WCAG 3.0 APCA contrast search so foreground ("on")
 /// colors can be derived from a surface rather than hand-picked. Designed for
-/// the Aura theme: callers supply a hue and a brightness/lightness, the class
-/// produces a sRGB [Color] and a contrast-compliant foreground.
+/// the Aura theme. Callers supply a hue and a brightness/lightness, and the
+/// class produces a sRGB [Color] and a contrast-compliant foreground.
 ///
 /// ```dart
 /// final surface = AuraComputedColor(

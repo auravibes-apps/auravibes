@@ -35,7 +35,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 part 'workspace_route.g.dart';
 part 'intro_route.dart';
 
-// Required: framework declaration must remain top-level.
+// Required: Framework declaration must remain top-level.
 // ignore: prefer-static-class
 const introPath = '/intro';
 // Required: GoRouter route global must remain top-level.

@@ -121,8 +121,8 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     );
   }
 
-  /// Returns true if OAuth token needs refresh.
-  /// (has token but it's expired or about to expire)
+  /// Returns true if the OAuth token needs refresh (has a token but it is
+  /// expired or about to expire).
   bool get needsOAuthTokenRefresh =>
       isOAuthTokenExpired && refreshToken != null;
 

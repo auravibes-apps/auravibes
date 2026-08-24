@@ -206,10 +206,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Add a new MCP server from the form data.
   ///
-  /// This will:
-  /// 1. Save the server to the database
-  /// 2. Connect to the MCP server
-  /// 3. Persist tools to database if connection successful
+  /// This saves the server to the database, connects to it, and persists its
+  /// tools when the connection succeeds.
   Future<void> addMcpServer(
     McpServerFormToCreate serverToCreate, {
     required String workspaceId,
@@ -299,10 +297,8 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Delete an MCP server by identifier.
   ///
-  /// This will:
-  /// 1. Disconnect the client if connected
-  /// 2. Remove from state
-  /// 3. Delete from database (cascades to tools group and tools)
+  /// This disconnects the client if connected, removes it from state, and
+  /// deletes it from the database, cascading to its tools group and tools.
   Future<void> deleteMcpServer(String serverId) async {
     // Find and disconnect the client.
     final connection = state.firstWhereOrNull((c) => c.server.id == serverId);
@@ -322,9 +318,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Reconnect to a specific MCP server.
   ///
-  /// If the server is present in state, disconnects and reconnects.
-  /// If absent (e.g. after cold start), loads the server from the
-  /// repository and creates a fresh connection.
+  /// If the server is present in state, this disconnects and reconnects it. If
+  /// absent, such as after a cold start, this loads it from the repository and
+  /// creates a fresh connection.
   Future<void> reconnectMcpServer(String serverId) async {
     if (_isCloud) {
       await _discoverCloudMcp(serverId);
@@ -683,10 +679,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
   /// Sync MCP tools to the database.
   ///
-  /// Uses the repository's syncMcpTools method which:
-  /// - Adds new tools that don't exist yet
-  /// - Removes tools that no longer exist on the MCP server
-  /// - Preserves user customizations (isEnabled, permissions, etc.)
+  /// Uses the repository's syncMcpTools method to add new tools, remove tools
+  /// no longer on the MCP server, and preserve user customizations such as
+  /// isEnabled and permissions.
   Future<void> _syncMcpToolsToDatabase(
     McpServerEntity server,
     List<McpToolInfo> tools,

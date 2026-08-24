@@ -3,15 +3,11 @@ import 'package:characters/characters.dart';
 /// Extension methods for String manipulation.
 extension StringExtensions on String {
   /// Converts an identifier (snake_case, camelCase, kebab-case, or mixed).
-  /// to a human-readable format with proper capitalization.
+  /// Converts it to a human-readable format with proper capitalization.
   ///
-  /// Examples:
-  /// - `read_file` -> `Read File`
-  /// - `readFile` -> `Read File`
-  /// - `read-file` -> `Read File`
-  /// - `READ_FILE` -> `Read File`
-  /// - `my_server` -> `My Server`
-  /// - `MyServer` -> `My Server`
+  /// Examples include `read_file`, `readFile`, `read-file`, and `READ_FILE`,
+  /// which become `Read File`. The identifiers `my_server` and `MyServer` become
+  /// `My Server`.
   String toHumanReadable() {
     if (isEmpty) return this;
 

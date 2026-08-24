@@ -91,9 +91,9 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
       borderRadius.resolve(value);
 }
 
-/// Theme-owned spacing scale: one [double] per [AuraSpacing] step.
+/// Theme-owned spacing scale. It contains one [double] per [AuraSpacing] step.
 ///
-/// Values are absent from the [AuraSpacing] enum on purpose so a subtree
+/// Values are absent from the [AuraSpacing] enum on purpose. A subtree
 /// `Theme` override can rescale spacing. [AuraSpacingScale._standard] carries
 /// the design-system defaults (base unit 16px).
 @immutable
@@ -269,7 +269,7 @@ class AuraBorderRadiusScale {
   }
 }
 
-/// Theme-owned typography scale: font sizes, weights, line heights, letter
+/// Theme-owned typography scale. It contains font sizes, weights, line heights,
 /// spacings, and font families.
 ///
 /// Font families are strings and do not interpolate; [lerp] picks the source

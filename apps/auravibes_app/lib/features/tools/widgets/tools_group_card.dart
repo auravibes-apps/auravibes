@@ -21,10 +21,9 @@ const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 
 /// A collapsible card widget that displays a tools group.
 ///
-/// Shows:
-/// - Group header with icon, name, status, toggle, and expand chevron
-/// - Expandable list of tools belonging to this group
-/// - MCP status indicators and reconnect/delete actions for MCP groups
+/// Shows a group header with icon, name, status, toggle, and expand chevron;
+/// an expandable list of tools; and MCP status indicators with reconnect and
+/// delete actions for MCP groups.
 class ToolsGroupCard extends HookConsumerWidget {
   const ToolsGroupCard({
     required this.groupWithTools,

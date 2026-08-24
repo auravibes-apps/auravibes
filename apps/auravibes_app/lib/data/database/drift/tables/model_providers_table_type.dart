@@ -12,7 +12,7 @@ enum ModelProvidersTableType {
 
   /// Creates a credentials model type from a string value.
   ///
-  /// Throws [ArgumentError] if the value is not a valid chat model type
+  /// Throws [ArgumentError] if the value is not a valid chat model type.
   static ModelProvidersTableType? fromString(String value) {
     final lowerValue = value.toLowerCase();
 
@@ -36,8 +36,8 @@ class ApiModelProviders extends Table {
   /// Human-readable name of the model.
   TextColumn get name => text()();
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
   TextColumn get type => textEnum<ModelProvidersTableType>().nullable()();
 
   TextColumn get url => text().nullable()();

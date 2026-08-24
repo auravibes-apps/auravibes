@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 ///
 /// Color, motion, elevation, and layout raw tokens live here as static
 /// consts. Spacing, border radius, and typography values are intentionally
-/// absent: they are theme-owned (see AuraTheme in `aura_theme.dart`) so a
+/// absent. They are theme-owned (see AuraTheme in `aura_theme.dart`) so a
 /// subtree `Theme` override can rescale them. Call sites select them via the
 /// AuraSpacing / AuraBorderRadius enums (and AuraTextStyle for type).
 class DesignTokens {

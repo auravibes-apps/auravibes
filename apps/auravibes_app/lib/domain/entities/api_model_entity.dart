@@ -30,7 +30,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     required List<String> modalitiesInput,
     required List<String> modalitiesOutput,
 
-    /// models.dev model family identifier.
+    /// Models.dev model family identifier.
     String? family,
 
     /// Cost per 1M input tokens.

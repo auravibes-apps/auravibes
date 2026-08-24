@@ -210,8 +210,8 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   }
 }
 
-/// Provider to get context-aware tools for chat.
-/// (conversation -> workspace -> app defaults)
+/// Provider to get context-aware tools for chat (conversation, workspace, and
+/// app defaults).
 @riverpod
 class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   String? _workspaceIdValue;
@@ -254,9 +254,8 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
 
 /// Provider to get context-aware tools as full entities for chat.
 ///
-/// Returns [WorkspaceToolEntity] list with table IDs needed for
-/// generating composite tool IDs.
-/// (conversation -> workspace -> app defaults)
+/// Returns a [WorkspaceToolEntity] list with table IDs needed for generating
+/// composite tool IDs across conversation, workspace, and app defaults.
 @riverpod
 class ContextAwareToolEntitiesNotifier
     extends _$ContextAwareToolEntitiesNotifier {

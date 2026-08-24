@@ -18,10 +18,10 @@ export 'tool_permission_selector.dart';
 /// Tile widget for a single conversation tool.
 ///
 /// Shows:
-/// - Tool icon with enabled/disabled styling
-/// - Tool name and description
-/// - Toggle indicator (check circle / empty circle / blocked)
-/// - Permission selector when tool is enabled
+/// - Tool icon with enabled/disabled styling.
+/// - Tool name and description.
+/// - Toggle indicator (check circle / empty circle / blocked).
+/// - Permission selector when tool is enabled.
 class ConversationToolTile extends HookConsumerWidget {
   const ConversationToolTile({
     required this.toolState,

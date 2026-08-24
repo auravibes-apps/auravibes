@@ -17,7 +17,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
   AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
-  // ponytail: Debug-only bridge; enable only for MCP driver screenshots.
+  // Ponytail: debug-only bridge; enable only for MCP driver screenshots.
   if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
     final _ = enableFlutterDriverExtension();
   } else {

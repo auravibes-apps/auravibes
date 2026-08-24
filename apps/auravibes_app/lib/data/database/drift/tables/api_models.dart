@@ -26,8 +26,8 @@ class ApiModels extends Table {
 
   TextColumn get family => text().nullable()();
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
 
   TextColumn get modalitiesInput =>
       text().map(stringListConverter).nullable()();

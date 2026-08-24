@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 /// Header widget for a tools group card.
 ///
 /// Displays:
-/// - Group icon (extension for MCP, build_circle for default)
-/// - Group name
-/// - MCP status badge (spinner/success/error/disconnected)
-/// - Tool count: "X of Y enabled"
-/// - Master toggle (hidden for default group)
-/// - Delete button (for MCP groups only)
-/// - Expand/collapse chevron
+/// - Group icon (extension for MCP, build_circle for default).
+/// - Group name.
+/// - MCP status badge (spinner/success/error/disconnected).
+/// - Tool count: "X of Y enabled".
+/// - Master toggle (hidden for default group).
+/// - Delete button (for MCP groups only).
+/// - Expand/collapse chevron.
 class ToolsGroupHeader extends StatelessWidget {
   const ToolsGroupHeader({
     required this.groupWithTools,

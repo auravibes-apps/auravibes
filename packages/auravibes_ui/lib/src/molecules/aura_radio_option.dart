@@ -91,16 +91,11 @@ class AuraRadioOption<T> {
 /// Follows the const-first design pattern using [AuraTint] for
 /// compile-time color configuration.
 ///
-/// ## Selection Contract
+/// Selection contract. An equal value and group value is selected and has no
+/// interaction. An unequal value is unselected and tappable. A disabled item
+/// or an item with a null callback is greyed out and has no response.
 ///
-/// | Condition | Visual State | Interaction |
-/// |-----------|--------------|-------------|
-/// | value == groupValue | Selected (filled) | None |
-/// | value != groupValue | Unselected (empty) | Tappable |
-/// | disabled == true | Greyed out | No response |
-/// | onChanged == null | Greyed out | No response |
-///
-/// ## Example
+/// Example.
 ///
 /// ```dart
 /// AuraRadio<String>(

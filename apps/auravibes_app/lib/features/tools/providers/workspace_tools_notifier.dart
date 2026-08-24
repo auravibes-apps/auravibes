@@ -141,7 +141,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 }
 
 /// Provider that returns the list of available built-in tools.
-/// that can be added to the workspace
+/// That can be added to the workspace.
 @riverpod
 Future<List<UserToolType>> availableToolsToAdd(
   Ref ref,

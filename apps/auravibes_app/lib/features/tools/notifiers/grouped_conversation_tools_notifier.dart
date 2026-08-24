@@ -13,14 +13,10 @@ part 'grouped_conversation_tools_notifier.g.dart';
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all conversation tool states for the workspace/conversation
-/// - Fetches all tools groups for the workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Filters out empty groups
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches conversation tool states and tool groups for the
+/// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+/// group for ungrouped tools, enriches MCP groups with connection state,
+/// filters empty groups, and sorts default, error, and newest groups first.
 @riverpod
 class GroupedConversationToolsNotifier
     extends _$GroupedConversationToolsNotifier {
@@ -128,8 +124,8 @@ class GroupedConversationToolsNotifier
       final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
       if (priorityCompare != 0) return priorityCompare;
 
-      // Same priority: sort by createdAt desc (newest first).
-      // Default group has no createdAt, use a far-future date to keep it first.
+      // Same priority. Sort by createdAt descending, with newest first.
+      // The default group has no createdAt, so use a far-future date to keep it first.
       final aDate = a.group?.createdAt ?? DateTime(2099);
       final bDate = b.group?.createdAt ?? DateTime(2099);
 

@@ -69,7 +69,7 @@ class AccentColorSection extends ConsumerWidget {
     WidgetRef ref,
     double current,
   ) async {
-    // ponytail: persist once on Save; live preview stays local to the dialog.
+    // Ponytail: persist once on Save; live preview stays local to the dialog.
     var working = current;
     final shouldSave = await AuraDialogs.confirm(
       context: context,

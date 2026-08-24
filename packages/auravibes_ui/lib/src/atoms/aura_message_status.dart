@@ -226,8 +226,8 @@ enum AuraMessageDeliveryStatus {
   /// The message is currently being sent.
   sending,
 
-  /// The message was interrupted before completion (e.g. app crash, network.
-  /// loss). Loaded from DB with truncated content.
+  /// The message was interrupted before completion (for example, app crash or
+  /// loss). Loaded from the database with truncated content.
   unfinished,
 
   /// The message has been sent successfully.

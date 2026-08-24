@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 /// Header widget for a conversation tools group.
 ///
 /// Displays:
-/// - Group icon (extension for MCP, build_circle for default)
-/// - Group name
-/// - MCP status badge (spinner/success/error/disconnected)
-/// - Tool count: "X of Y enabled"
-/// - Group toggle (enables/disables all tools in this group)
-/// - Reconnect button (for MCP error/disconnected states)
-/// - Expand/collapse chevron
+/// - Group icon (extension for MCP, build_circle for default).
+/// - Group name.
+/// - MCP status badge (spinner/success/error/disconnected).
+/// - Tool count: "X of Y enabled".
+/// - Group toggle (enables/disables all tools in this group).
+/// - Reconnect button (for MCP error/disconnected states).
+/// - Expand/collapse chevron.
 class ConversationGroupHeader extends StatelessWidget {
   static const _iconSize = 40.0;
   const ConversationGroupHeader({

@@ -27,8 +27,8 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
 
     /// The result status of this tool call.
     ///
-    /// - null: Tool is awaiting approval
-    /// - non-null: Tool is running or completed with this result status
+    /// Null means the tool is awaiting approval. A non-null value means the
+    /// tool is running or completed with this result status.
     @JsonKey(
       fromJson: _toolCallResultStatusFromJson,
       toJson: _toolCallResultStatusToJson,

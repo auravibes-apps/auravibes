@@ -15,11 +15,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for managing conversation tools.
 ///
-/// Shows ALL workspace tools organized by group (Built-in Tools, MCP servers).
-/// Each group is collapsible (collapsed by default) with:
-/// - MCP status indicators for MCP groups
-/// - Group-level toggle to enable/disable all tools at once
-/// - Reconnect button for MCP groups with connection issues
+/// Shows all workspace tools organized by group, with each group collapsed by
+/// default. MCP groups include status indicators, group-level toggles, and a
+/// reconnect button for connection issues.
 class ToolsManagementModal extends ConsumerWidget {
   const ToolsManagementModal({
     required this.workspaceId,

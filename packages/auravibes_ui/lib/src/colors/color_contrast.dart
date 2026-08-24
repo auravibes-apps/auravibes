@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 
 // APCA 0.0.98G reference constants (Myndex). WCAG 3.0 draft contrast model.
-// https://github.com/Myndex/apca-w3
+// See https://github.com/Myndex/apca-w3.
 const double _normBgExp = 0.56;
 const double _normTxtExp = 0.57;
 const double _revBgExp = 0.65;
@@ -26,19 +26,17 @@ double _relativeLuminance(Color c) =>
 
 /// APCA perceived contrast as Lc score.
 ///
-/// Implements WCAG 3.0 draft APCA 0.0.98G (Myndex). Asymmetric by design:
-/// different exponents per polarity, addressing the light-vs-dark divergence
+/// Implements WCAG 3.0 draft APCA 0.0.98G (Myndex). Asymmetric by design.
+/// Different exponents per polarity address the light-vs-dark divergence
 /// that WCAG 2.x ratios model symmetrically.
 ///
-/// Returns a signed value:
-///   - **Positive**: dark foreground on light background.
-///   - **Negative**: light foreground on dark background.
+/// Returns a signed value. Positive values represent dark foreground on a
+/// light background. Negative values represent light foreground on a dark
+/// background.
 ///
-/// Reference Lc targets (per APCA spec):
-///   - Lc 90: maximum usable contrast.
-///   - Lc 75: large body text / spot color.
-///   - Lc 60: body text minimum recommended.
-///   - Lc 45: large text (>= 18pt) minimum.
+/// Reference Lc targets per the APCA specification are Lc 90 for maximum
+/// usable contrast, Lc 75 for large body text or spot color, Lc 60 for the
+/// body text minimum, and Lc 45 for large text at least 18pt.
 abstract final class ColorContrast {
   /// Computes the APCA perceived contrast score.
   static double apcaLc({
@@ -48,8 +46,8 @@ abstract final class ColorContrast {
     var textLuminance = _relativeLuminance(foreground);
     var backgroundLuminance = _relativeLuminance(background);
 
-    // ponytail: soft clamp near black avoids singularity;
-    // standard APCA 0.0.98G.
+    // Ponytail. Soft clamp near black avoids singularity. Standard APCA
+    // 0.0.98G.
     if (textLuminance < _blkThrs) {
       textLuminance += math.pow(_blkThrs - textLuminance, _blkClmp).toDouble();
     }
@@ -91,11 +89,9 @@ abstract final class ColorContrast {
 
   /// Computes the WCAG 2.x contrast ratio, range [1.0, 21.0].
   ///
-  /// Reference thresholds:
-  ///   - 4.5: text AA (1.4.3).
-  ///   - 3.0: large text AA / non-text UI (1.4.11).
-  ///   - 7.0: text AAA (1.4.6).
-  ///   - 4.5: large text AAA (1.4.6).
+  /// Reference thresholds are 4.5 for text AA (1.4.3), 3.0 for large text AA
+  /// or non-text UI (1.4.11), 7.0 for text AAA (1.4.6), and 4.5 for large
+  /// text AAA (1.4.6).
   static double wcagContrastRatio(Color a, Color b) {
     final luminanceA = _relativeLuminance(a);
     final luminanceB = _relativeLuminance(b);

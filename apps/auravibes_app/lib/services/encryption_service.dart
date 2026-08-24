@@ -16,7 +16,7 @@ class EncryptionService {
   static const int _minimumPayloadLength = _nonceLength + _macLength;
 
   /// Encrypts a string and returns base64-encoded ciphertext.
-  /// Format: [12-byte nonce][ciphertext][16-byte MAC]
+  /// Format: [12-byte nonce][ciphertext][16-byte MAC].
   Future<String> encrypt(String plaintext) async {
     final key = await _keyManager.getOrCreateSecretKey();
     final nonce = _algorithm.newNonce();
