@@ -53,6 +53,12 @@ abstract class McpFormState with _$McpFormState {
   /// Whether to show bearer token field.
   bool get showBearerTokenField => authenticationType == .bearerToken;
 
+  /// Check if the form is valid.
+  bool get isValid => toCreateEntity().isValid;
+
+  /// Get validation errors.
+  List<String> get validationErrors => toCreateEntity().validationErrors;
+
   /// Convert to McpServerToCreate for validation and saving.
   McpServerFormToCreate toCreateEntity() {
     return McpServerFormToCreate(
@@ -73,12 +79,6 @@ abstract class McpFormState with _$McpFormState {
         return const McpTransportTypeSSE();
     }
   }
-
-  /// Check if the form is valid.
-  bool get isValid => toCreateEntity().isValid;
-
-  /// Get validation errors.
-  List<String> get validationErrors => toCreateEntity().validationErrors;
 }
 
 /// Notifier for managing MCP form state.
@@ -86,17 +86,17 @@ abstract class McpFormState with _$McpFormState {
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
 
+  WorkspaceCapabilities get _capabilities => ref
+      .read(workspaceSessionForRouteProvider(_workspaceId))
+      .requireValue
+      .capabilities;
+
   @override
   McpFormState build(String workspaceId) {
     _workspaceId = workspaceId;
 
     return const McpFormState();
   }
-
-  WorkspaceCapabilities get _capabilities => ref
-      .read(workspaceSessionForRouteProvider(_workspaceId))
-      .requireValue
-      .capabilities;
 
   /// Update the name field.
   void setName(String value) {

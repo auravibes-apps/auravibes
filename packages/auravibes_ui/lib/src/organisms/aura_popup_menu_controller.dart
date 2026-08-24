@@ -95,16 +95,15 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     widget.controller._state = this;
   }
 
-  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape &&
-        _visible) {
-      close();
-
-      return KeyEventResult.handled;
+  @override
+  void dispose() {
+    _visible = false;
+    widget.controller._state = null;
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
     }
-
-    return KeyEventResult.ignored;
+    _requiredMenuFocusScopeNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -117,22 +116,6 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
       _initFocusNode(widget.focusNode);
     }
     widget.controller._state = this;
-  }
-
-  @override
-  void dispose() {
-    _visible = false;
-    widget.controller._state = null;
-    if (_ownsFocusNode) {
-      _requiredFocusNode.dispose();
-    }
-    _requiredMenuFocusScopeNode.dispose();
-    super.dispose();
-  }
-
-  void _initFocusNode(FocusNode? focusNode) {
-    _focusNode = focusNode ?? FocusNode();
-    _ownsFocusNode = focusNode == null;
   }
 
   void open() {
@@ -223,6 +206,23 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
       skipTraversal: true,
       descendantsAreFocusable: true,
     );
+  }
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        _visible) {
+      close();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
   }
 }
 

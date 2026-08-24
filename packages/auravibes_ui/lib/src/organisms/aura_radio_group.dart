@@ -10,6 +10,8 @@ export 'aura_radio_list_tile.dart';
 
 /// A container managing mutually exclusive radio selections.
 class AuraRadioGroup<T> extends StatelessWidget {
+  static const double _kRadioVisualSize = 24;
+
   /// Creates an AuraRadioGroup widget.
   const AuraRadioGroup({
     required this.value,
@@ -20,7 +22,6 @@ class AuraRadioGroup<T> extends StatelessWidget {
     this.direction = Axis.vertical,
     this.tint,
   });
-  static const double _kRadioVisualSize = 24;
 
   /// The currently selected value.
   final T? value;

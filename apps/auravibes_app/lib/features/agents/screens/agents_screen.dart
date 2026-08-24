@@ -64,27 +64,6 @@ class _AgentsList extends ConsumerWidget {
   final List<AgentEntity> agents;
   final String workspaceId;
 
-  void _openCreate(BuildContext context) {
-    final _ = context.push('/workspaces/$workspaceId/more/agents/new');
-  }
-
-  void _openAgent(BuildContext context, String agentId) {
-    final _ = context.push('/workspaces/$workspaceId/more/agents/$agentId');
-  }
-
-  void _handleSelection(
-    BuildContext context,
-    WidgetRef ref,
-    String value,
-    String agentId,
-  ) {
-    if (value == 'edit') {
-      _openAgent(context, agentId);
-      return;
-    }
-    unawaited(_confirmDelete(context, ref, agentId));
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (agents.isEmpty) {
@@ -166,6 +145,27 @@ class _AgentsList extends ConsumerWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemCount: agents.length,
     );
+  }
+
+  void _openCreate(BuildContext context) {
+    final _ = context.push('/workspaces/$workspaceId/more/agents/new');
+  }
+
+  void _openAgent(BuildContext context, String agentId) {
+    final _ = context.push('/workspaces/$workspaceId/more/agents/$agentId');
+  }
+
+  void _handleSelection(
+    BuildContext context,
+    WidgetRef ref,
+    String value,
+    String agentId,
+  ) {
+    if (value == 'edit') {
+      _openAgent(context, agentId);
+      return;
+    }
+    unawaited(_confirmDelete(context, ref, agentId));
   }
 
   Future<void> _confirmDelete(

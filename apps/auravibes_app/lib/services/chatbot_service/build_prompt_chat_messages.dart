@@ -12,11 +12,10 @@ import 'package:genkit/genkit.dart';
 import 'package:path/path.dart' as p;
 
 class BuildPromptChatMessages {
+  static const _agentBuilder = agent.BuildPromptChatMessages();
   const BuildPromptChatMessages({this.modalitiesInput = const []});
 
   final List<String> modalitiesInput;
-
-  static const _agentBuilder = agent.BuildPromptChatMessages();
 
   Future<List<ChatMessage>> call(List<MessageEntity> messages) async {
     final chatMessages = <ChatMessage>[];

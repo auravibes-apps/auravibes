@@ -1,19 +1,6 @@
 abstract final class LogRedaction {
   static const _redacted = '[REDACTED]';
 
-  static String redact(Object? value) {
-    var text = '$value';
-    for (final pattern in _secretPatterns) {
-      text = text.replaceAllMapped(pattern, (match) {
-        final prefix = match.group(1) ?? '';
-
-        return '$prefix$_redacted';
-      });
-    }
-
-    return text;
-  }
-
   static final _secretPatterns = <RegExp>[
     RegExp(
       r'\b(authorization\s*[:=]\s*bearer\s+)[^\s,;]+',
@@ -38,4 +25,17 @@ abstract final class LogRedaction {
       caseSensitive: false,
     ),
   ];
+
+  static String redact(Object? value) {
+    var text = '$value';
+    for (final pattern in _secretPatterns) {
+      text = text.replaceAllMapped(pattern, (match) {
+        final prefix = match.group(1) ?? '';
+
+        return '$prefix$_redacted';
+      });
+    }
+
+    return text;
+  }
 }

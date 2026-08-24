@@ -12,12 +12,14 @@ import 'package:uuid/v7.dart';
 
 class CloudSkillStore {
   CloudSkillStore(this._store, this.workspaceId);
-
-  final CloudWorkspaceResourceStore _store;
   final String workspaceId;
 
-  Future<List<SkillEntity>> skills() async =>
-      (await _active(WorkspaceResourceKind.skill)).map(_skill).toList();
+  final CloudWorkspaceResourceStore _store;
+
+  Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
+      (await _active(
+        WorkspaceResourceKind.skillDefinition,
+      )).map(_definition).toList();
 
   Future<SkillEntity?> skill(String id) async => (await _active(
     WorkspaceResourceKind.skill,
@@ -161,10 +163,8 @@ class CloudSkillStore {
   Future<void> deleteTool(String id) =>
       _delete(WorkspaceResourceKind.skillTemplateTool, id);
 
-  Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
-      (await _active(
-        WorkspaceResourceKind.skillDefinition,
-      )).map(_definition).toList();
+  Future<List<SkillEntity>> skills() async =>
+      (await _active(WorkspaceResourceKind.skill)).map(_skill).toList();
 
   Future<SkillCredentialDefinitionEntity?> definition(String id) async =>
       (await _active(
@@ -501,6 +501,14 @@ class CloudSkillStore {
     );
   }
 
+  Future<List<({String skillId})>> selectionResources(
+    String conversationId,
+  ) async => (await _active(WorkspaceResourceKind.conversationSkillSelection))
+      .map(_data)
+      .where((data) => data['conversationId'] == conversationId)
+      .map((data) => (skillId: data['skillId'] as String))
+      .toList();
+
   Future<bool> isAppSkillEnabled(String id) async {
     final setting = (await _active(
       WorkspaceResourceKind.skillSetting,
@@ -510,14 +518,6 @@ class CloudSkillStore {
         ? id == 'skills_manager' || id == agentsSkillSlug
         : _data(setting)['isEnabled'] as bool;
   }
-
-  Future<List<({String skillId})>> selectionResources(
-    String conversationId,
-  ) async => (await _active(WorkspaceResourceKind.conversationSkillSelection))
-      .map(_data)
-      .where((data) => data['conversationId'] == conversationId)
-      .map((data) => (skillId: data['skillId'] as String))
-      .toList();
 
   Future<List<WorkspaceResource>> _active(WorkspaceResourceKind kind) async =>
       (await _store.watch(kind).first)

@@ -148,6 +148,33 @@ class AppApproveToolCallDataProvider
     );
   }
 
+  @override
+  Future<void> resumeConversationIfReady({required String messageId}) {
+    return agentToolResumeService.call(messageId: messageId);
+  }
+
+  @override
+  bool isCancellationRequested(String conversationId) {
+    return agentCancellationRuntime.isCancellationRequested(conversationId);
+  }
+
+  @override
+  void logToolExecutionError({
+    required String conversationId,
+    required String toolCallId,
+    required ResolvedTool tool,
+    required Object error,
+    required StackTrace stackTrace,
+  }) {
+    _logToolExecutionError(
+      conversationId: conversationId,
+      toolCallId: toolCallId,
+      tool: tool,
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
   Future<void> _patchToolCall({
     required String messageId,
     required String toolCallId,
@@ -174,33 +201,6 @@ class AppApproveToolCallDataProvider
       ),
     );
     onToolCallChanged();
-  }
-
-  @override
-  Future<void> resumeConversationIfReady({required String messageId}) {
-    return agentToolResumeService.call(messageId: messageId);
-  }
-
-  @override
-  bool isCancellationRequested(String conversationId) {
-    return agentCancellationRuntime.isCancellationRequested(conversationId);
-  }
-
-  @override
-  void logToolExecutionError({
-    required String conversationId,
-    required String toolCallId,
-    required ResolvedTool tool,
-    required Object error,
-    required StackTrace stackTrace,
-  }) {
-    _logToolExecutionError(
-      conversationId: conversationId,
-      toolCallId: toolCallId,
-      tool: tool,
-      error: error,
-      stackTrace: stackTrace,
-    );
   }
 }
 

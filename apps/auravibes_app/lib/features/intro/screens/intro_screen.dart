@@ -23,6 +23,22 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
   _IntroSlide _slide = _IntroSlide.welcome;
   WorkspaceEntity? _createdWorkspace;
 
+  String get _titleKey => switch (_slide) {
+    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
+    _IntroSlide.workspaceContext =>
+      LocaleKeys.intro_flow_workspace_context_title,
+    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
+    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
+  };
+
+  String get _bodyKey => switch (_slide) {
+    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
+    _IntroSlide.workspaceContext =>
+      LocaleKeys.intro_flow_workspace_context_body,
+    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
+    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
+  };
+
   @override
   Widget build(BuildContext context) {
     if (_slide == _IntroSlide.workspaceChoice) {
@@ -68,22 +84,6 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       variant: AuraScreenVariation.aurora,
     );
   }
-
-  String get _titleKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_title,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
-  };
-
-  String get _bodyKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_body,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
-  };
 
   void _continue() {
     final next = _slide.next;

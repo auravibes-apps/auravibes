@@ -8,11 +8,6 @@ import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session
 export 'cloud_account_session.dart';
 
 class ServerpodAuthStore {
-  ServerpodAuthStore({
-    FlutterSecureStorage? secureStorage,
-    this.storageNamespace = 'auravibes_app',
-  }) : _secureStorage = secureStorage ?? _defaultStorage;
-
   static const _accountIndexKey = 'serverpod_cloud_accounts_v2';
   static const _legacyAccountIndexKey = 'serverpod_cloud_accounts_v1';
   static const _preferredAccountKey = 'serverpod_preferred_account_v2';
@@ -25,12 +20,16 @@ class ServerpodAuthStore {
     ),
   );
 
-  final FlutterSecureStorage _secureStorage;
+  ServerpodAuthStore({
+    FlutterSecureStorage? secureStorage,
+    this.storageNamespace = 'auravibes_app',
+  }) : _secureStorage = secureStorage ?? _defaultStorage;
   final String storageNamespace;
+
+  final FlutterSecureStorage _secureStorage;
   Future<void> _indexMutation = Future.value();
 
   bool get _usesLegacyKeys => storageNamespace == 'auravibes_app';
-  String _key(String key) => _usesLegacyKeys ? key : '$storageNamespace.$key';
 
   Future<List<CloudAccountSession>> listAccounts({
     String? legacyServerUrl,
@@ -149,6 +148,8 @@ class ServerpodAuthStore {
       ),
     );
   }
+
+  String _key(String key) => _usesLegacyKeys ? key : '$storageNamespace.$key';
 
   static String _authKey(String serverUrl, String userId) =>
       '$_authPrefix${CloudAccountIdentity.accountIdentity(serverUrl, userId)}';

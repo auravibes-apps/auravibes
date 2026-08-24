@@ -11,9 +11,9 @@ class CheckSkillCredentialReadinessUsecase {
     this._skillCredentialsRepository, {
     this.cloudStore,
   });
+  final CloudSkillStore? cloudStore;
 
   final SkillCredentialsRepository? _skillCredentialsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<bool> call({
     required String workspaceId,

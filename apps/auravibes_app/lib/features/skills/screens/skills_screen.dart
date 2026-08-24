@@ -227,6 +227,13 @@ class _SkillTile extends StatelessWidget {
   final VoidCallback onDelete;
   final ValueChanged<bool> onChanged;
 
+  IconData get _icon {
+    return switch (skill.source) {
+      SkillSource.user => Icons.psychology_alt_outlined,
+      SkillSource.app => Icons.auto_awesome_outlined,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     const tagSpacing = 8.0;
@@ -309,13 +316,6 @@ class _SkillTile extends StatelessWidget {
     if (description.trim().isEmpty) return null;
 
     return description;
-  }
-
-  IconData get _icon {
-    return switch (skill.source) {
-      SkillSource.user => Icons.psychology_alt_outlined,
-      SkillSource.app => Icons.auto_awesome_outlined,
-    };
   }
 
   String _sourceLabel(BuildContext context) {

@@ -6,8 +6,6 @@ import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 class ToolResolverService {
-  const ToolResolverService([this._resolver = _defaultResolver]);
-
   static const _defaultResolver = AgentToolNameResolver(
     skillControlToolNames: {
       loadSkillToolName,
@@ -15,6 +13,7 @@ class ToolResolverService {
       SkillToolNames.listCredentials,
     },
   );
+  const ToolResolverService([this._resolver = _defaultResolver]);
 
   final AgentToolNameResolver _resolver;
 

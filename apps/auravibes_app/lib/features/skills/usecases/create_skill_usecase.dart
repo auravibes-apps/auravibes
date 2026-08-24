@@ -10,9 +10,9 @@ import 'package:riverpod/src/providers/provider.dart';
 
 class CreateSkillUsecase {
   const CreateSkillUsecase(this._skillsRepository, {this.cloudStore});
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<SkillEntity> call(String workspaceId, SkillToCreate skill) async {
     ValidateSkillTitleUsecase.call(skill.title);

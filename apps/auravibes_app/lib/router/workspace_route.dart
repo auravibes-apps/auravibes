@@ -185,9 +185,8 @@ class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
 }
 
 class MyShellRouteData extends StatefulShellRouteData {
-  const MyShellRouteData();
-
   static final GlobalKey<NavigatorState> $navigatorKey = shellNavigatorKey;
+  const MyShellRouteData();
 
   @override
   Widget builder(

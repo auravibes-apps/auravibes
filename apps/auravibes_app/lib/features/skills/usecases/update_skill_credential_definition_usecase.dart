@@ -13,10 +13,10 @@ class UpdateSkillCredentialDefinitionUsecase {
     this._skillCredentialDefinitionsRepository, {
     this.cloudStore,
   });
+  final CloudSkillStore? cloudStore;
 
   final SkillCredentialDefinitionsRepository?
   _skillCredentialDefinitionsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<SkillCredentialDefinitionEntity> call(
     String definitionId,

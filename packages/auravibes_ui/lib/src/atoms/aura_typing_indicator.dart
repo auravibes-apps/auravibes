@@ -63,28 +63,6 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     final _ = animationController.repeat();
   }
 
-  Animation<double> _buildDotAnimation(
-    int index,
-    AnimationController animationController,
-  ) {
-    final begin = index * _stagger;
-    final end = begin + _animationSpan;
-
-    return Tween<double>(
-      begin: _initialScale,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: animationController,
-        curve: Interval(
-          begin,
-          end,
-          curve: Curves.easeInOut,
-        ),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _animationController?.dispose();
@@ -151,6 +129,28 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
         child: Semantics(
           child: content,
           label: 'AI is typing',
+        ),
+      ),
+    );
+  }
+
+  Animation<double> _buildDotAnimation(
+    int index,
+    AnimationController animationController,
+  ) {
+    final begin = index * _stagger;
+    final end = begin + _animationSpan;
+
+    return Tween<double>(
+      begin: _initialScale,
+      end: 1,
+    ).animate(
+      CurvedAnimation(
+        parent: animationController,
+        curve: Interval(
+          begin,
+          end,
+          curve: Curves.easeInOut,
         ),
       ),
     );

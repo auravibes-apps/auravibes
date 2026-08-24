@@ -24,6 +24,7 @@ class ListAvailableSkillsUsecase {
     this._listAppSkillCredentialCandidatesUsecase,
     this.cloudStore,
   ]);
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final ConversationSkillsRepository? _conversationSkillsRepository;
@@ -33,7 +34,24 @@ class ListAvailableSkillsUsecase {
   _checkSkillCredentialReadinessUsecase;
   final ListAppSkillCredentialCandidatesUsecase?
   _listAppSkillCredentialCandidatesUsecase;
-  final CloudSkillStore? cloudStore;
+
+  ConversationSkillsRepository get _requiredConversationSkillsRepository {
+    final repository = _conversationSkillsRepository;
+    if (repository == null) {
+      throw StateError('Conversation skill store is unavailable');
+    }
+
+    return repository;
+  }
+
+  AppSkillWorkspaceSettingsRepository get _requiredAppSkillSettingsRepository {
+    final repository = _appSkillSettingsRepository;
+    if (repository == null) {
+      throw StateError('App skill settings store is unavailable');
+    }
+
+    return repository;
+  }
 
   Future<List<AvailableSkill>> call({
     required String conversationId,
@@ -123,24 +141,6 @@ class ListAvailableSkillsUsecase {
     if (usecase == null) return Future.value(true);
 
     return usecase.call(workspaceId: workspaceId, skill: skill);
-  }
-
-  ConversationSkillsRepository get _requiredConversationSkillsRepository {
-    final repository = _conversationSkillsRepository;
-    if (repository == null) {
-      throw StateError('Conversation skill store is unavailable');
-    }
-
-    return repository;
-  }
-
-  AppSkillWorkspaceSettingsRepository get _requiredAppSkillSettingsRepository {
-    final repository = _appSkillSettingsRepository;
-    if (repository == null) {
-      throw StateError('App skill settings store is unavailable');
-    }
-
-    return repository;
   }
 
   Future<bool> _hasLocallyUsableAppSkillTool(

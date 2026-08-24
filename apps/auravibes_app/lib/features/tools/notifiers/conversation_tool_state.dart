@@ -14,7 +14,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'conversation_tool_state.freezed.dart';
 part 'conversation_tool_state.g.dart';
 
-extension on ConversationToolsRepositoryFamily {
+extension ConversationToolState on ConversationToolsRepositoryFamily {
   Override overrideWithValue(ConversationToolsRepository value) =>
       overrideWith((_, _) => value);
 }
@@ -168,6 +168,22 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     );
   }
 
+  /// Get the current enabled tools as a list of tool IDs.
+  List<String> getEnabledToolIds() {
+    final currentState = state.value;
+    if (currentState == null) return [];
+
+    return currentState
+        .where((tool) => tool.isEnabled)
+        .map((tool) => tool.tool.id)
+        .toList();
+  }
+
+  /// Get the current tool states list.
+  List<ConversationToolState> getToolStates() {
+    return state.value ?? [];
+  }
+
   Future<bool> _updateConversationTool({
     required String toolId,
     required Future<bool> Function(String conversationId) persist,
@@ -191,22 +207,6 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     }
 
     return success;
-  }
-
-  /// Get the current enabled tools as a list of tool IDs.
-  List<String> getEnabledToolIds() {
-    final currentState = state.value;
-    if (currentState == null) return [];
-
-    return currentState
-        .where((tool) => tool.isEnabled)
-        .map((tool) => tool.tool.id)
-        .toList();
-  }
-
-  /// Get the current tool states list.
-  List<ConversationToolState> getToolStates() {
-    return state.value ?? [];
   }
 }
 
@@ -234,13 +234,6 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     return _getContextAwareTools();
   }
 
-  Future<List<String>> _getContextAwareTools() {
-    return _repository.getAvailableToolsForConversation(
-      conversationId,
-      workspaceId,
-    );
-  }
-
   /// Refresh the context-aware tools list.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
@@ -249,6 +242,13 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
     } on Exception catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
+  }
+
+  Future<List<String>> _getContextAwareTools() {
+    return _repository.getAvailableToolsForConversation(
+      conversationId,
+      workspaceId,
+    );
   }
 }
 
@@ -279,13 +279,6 @@ class ContextAwareToolEntitiesNotifier
     return _getContextAwareToolEntities();
   }
 
-  Future<List<WorkspaceToolEntity>> _getContextAwareToolEntities() {
-    return _repository.getAvailableToolEntitiesForConversation(
-      conversationId,
-      workspaceId,
-    );
-  }
-
   /// Refresh the context-aware tools list.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
@@ -294,5 +287,12 @@ class ContextAwareToolEntitiesNotifier
     } on Exception catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
+  }
+
+  Future<List<WorkspaceToolEntity>> _getContextAwareToolEntities() {
+    return _repository.getAvailableToolEntitiesForConversation(
+      conversationId,
+      workspaceId,
+    );
   }
 }

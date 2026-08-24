@@ -4,7 +4,10 @@ import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-extension on AgentCancellationRuntime {
+class AgentCancellationRuntime implements AgentCancellationEffects {
+  final _entries = <String, AgentCancellationScope>{};
+  final _pendingStops = <String>{};
+
   void registerStreamSubscription<T>(
     String conversationId,
     StreamSubscription<T> subscription,
@@ -18,11 +21,6 @@ extension on AgentCancellationRuntime {
   ) {
     current(conversationId)?.registerCleanup(operation.cancel);
   }
-}
-
-class AgentCancellationRuntime implements AgentCancellationEffects {
-  final _entries = <String, AgentCancellationScope>{};
-  final _pendingStops = <String>{};
 
   @override
   AgentCancellationScope start(String conversationId) {

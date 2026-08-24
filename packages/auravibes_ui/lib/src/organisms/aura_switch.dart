@@ -10,6 +10,11 @@ import 'package:flutter/widgets.dart';
 /// This switch supports multiple sizes and states (on/off, disabled, loading)
 /// while maintaining consistency with the design tokens.
 class AuraSwitch extends StatefulWidget {
+  /// The padding between the track edge and the thumb.
+  /// This creates the visual gap that makes the thumb appear to float
+  /// inside the track, consistent across all sizes.
+  static const double _thumbPadding = 2;
+
   /// Creates an Aura switch.
   const AuraSwitch({
     required this.value,
@@ -19,11 +24,6 @@ class AuraSwitch extends StatefulWidget {
     this.disabled = false,
     this.isLoading = false,
   });
-
-  /// The padding between the track edge and the thumb.
-  /// This creates the visual gap that makes the thumb appear to float
-  /// inside the track, consistent across all sizes.
-  static const double _thumbPadding = 2;
 
   /// Whether the switch is on or off.
   final bool value;

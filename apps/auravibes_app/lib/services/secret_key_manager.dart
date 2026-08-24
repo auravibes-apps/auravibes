@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:riverpod/riverpod.dart';
 
 class SecretKeyManager {
+  static const _keyStorageKey = 'app_encryption_secret_key';
   SecretKeyManager({
     FlutterSecureStorage? secureStorage,
     this.storageNamespace = 'auravibes_app',
@@ -19,12 +20,15 @@ class SecretKeyManager {
                accessibility: KeychainAccessibility.first_unlock_this_device,
              ),
            );
-  static const _keyStorageKey = 'app_encryption_secret_key';
+  final String storageNamespace;
 
   final FlutterSecureStorage _secureStorage;
-  final String storageNamespace;
   SecretKey? _cachedKey;
   Future<SecretKey>? _pendingKey;
+
+  String get _storageKey => storageNamespace == 'auravibes_app'
+      ? _keyStorageKey
+      : '$storageNamespace.$_keyStorageKey';
 
   /// Loads existing key or generates a new one.
   Future<SecretKey> getOrCreateSecretKey() async {
@@ -44,6 +48,12 @@ class SecretKeyManager {
         _pendingKey = null;
       }
     }
+  }
+
+  /// Clears the cached key (useful for logout).
+  void clearCache() {
+    _cachedKey = null;
+    _pendingKey = null;
   }
 
   Future<SecretKey> _loadOrCreateSecretKey() async {
@@ -76,16 +86,6 @@ class SecretKeyManager {
     final keyBytes = await key.extractBytes();
     final keyBase64 = base64Encode(keyBytes);
     await _secureStorage.write(key: _storageKey, value: keyBase64);
-  }
-
-  String get _storageKey => storageNamespace == 'auravibes_app'
-      ? _keyStorageKey
-      : '$storageNamespace.$_keyStorageKey';
-
-  /// Clears the cached key (useful for logout).
-  void clearCache() {
-    _cachedKey = null;
-    _pendingKey = null;
   }
 }
 

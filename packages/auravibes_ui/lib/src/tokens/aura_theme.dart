@@ -13,14 +13,7 @@ import 'package:flutter/material.dart';
 /// at build time through [fromSpacing] / [fromBorderRadius] / [typography].
 @immutable
 class AuraTheme extends ThemeExtension<AuraTheme> {
-  /// Creates a Aura theme extension.
-  const AuraTheme({
-    required this.colors,
-    required this.animation,
-    this.spacing = const AuraSpacingScale._standard(),
-    this.borderRadius = const AuraBorderRadiusScale._standard(),
-    this.typography = const AuraTypographyScale._standard(),
-  });
+  static const _standardAnimation = AuraAnimationTheme._standard();
 
   /// Light theme variant.
   static final light = AuraTheme(
@@ -36,7 +29,15 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
 
   static final _lightColors = AuraColorScheme._light();
   static final _darkColors = AuraColorScheme._dark();
-  static const _standardAnimation = AuraAnimationTheme._standard();
+
+  /// Creates a Aura theme extension.
+  const AuraTheme({
+    required this.colors,
+    required this.animation,
+    this.spacing = const AuraSpacingScale._standard(),
+    this.borderRadius = const AuraBorderRadiusScale._standard(),
+    this.typography = const AuraTypographyScale._standard(),
+  });
 
   /// Color scheme for the theme.
   final AuraColorScheme colors;
@@ -276,7 +277,7 @@ class AuraBorderRadiusScale {
 /// or target family at the halfway point (mirroring [AuraAnimationTheme]).
 @immutable
 class AuraTypographyScale {
-  static const _xsFont = 12.0;
+  static const _xl5Line = 1.0;
   static const _smFont = 14.0;
   static const _baseFont = 16.0;
   static const _lgFont = 18.0;
@@ -293,7 +294,7 @@ class AuraTypographyScale {
   static const _xl2Line = 1.3;
   static const _xl3Line = 1.2;
   static const _xl4Line = 1.1;
-  static const _xl5Line = 1.0;
+  static const _xsFont = 12.0;
   static const _normalLetterSpacing = 0.0;
   static const _wideLetterSpacing = 0.025;
   static const _tightLetterSpacing = -0.025;
@@ -399,8 +400,8 @@ class AuraTypographyScale {
   /// 4X large font size (36px).
   final double fontSize4Xl;
 
-  /// 5X large font size (48px).
-  final double fontSize5Xl;
+  /// Wide letter spacing (0.025).
+  final double letterSpacingWide;
 
   // Font weights.
 
@@ -456,8 +457,8 @@ class AuraTypographyScale {
   /// Normal letter spacing (0).
   final double letterSpacingNormal;
 
-  /// Wide letter spacing (0.025).
-  final double letterSpacingWide;
+  /// 5X large font size (48px).
+  final double fontSize5Xl;
 
   /// Linearly interpolate between two typography scales.
   AuraTypographyScale lerp(AuraTypographyScale other, double t) {
@@ -668,8 +669,8 @@ class AuraColorScheme {
       shadow = const Color(0xFF000000),
       scrim = const Color(0xB3000000);
 
-  /// Primary color for main UI elements.
-  final Color primary;
+  /// Variant of the tertiary color.
+  final Color tertiaryVariant;
 
   /// Variant of the primary color for highlights.
   final Color primaryVariant;
@@ -689,8 +690,8 @@ class AuraColorScheme {
   /// Tertiary color for accents.
   final Color tertiary;
 
-  /// Variant of the tertiary color.
-  final Color tertiaryVariant;
+  /// Primary color for main UI elements.
+  final Color primary;
 
   /// Color for text/icons on tertiary color.
   final Color onTertiary;
@@ -725,8 +726,8 @@ class AuraColorScheme {
   /// Color for text/icons on warning color.
   final Color onWarning;
 
-  /// Success color.
-  final Color success;
+  /// Scrim color for overlays.
+  final Color scrim;
 
   /// Color for text/icons on success color.
   final Color onSuccess;
@@ -746,8 +747,17 @@ class AuraColorScheme {
   /// Shadow color.
   final Color shadow;
 
-  /// Scrim color for overlays.
-  final Color scrim;
+  /// Success color.
+  final Color success;
+
+  /// Default foreground color.
+  Color get foreground => onBackground;
+
+  /// Default foreground color for surface elements.
+  Color get foregroundOnSurface => onSurface;
+
+  /// Muted foreground color for secondary text and icons.
+  Color get mutedForeground => onSurfaceVariant;
 
   /// Linearly interpolate between two color schemes.
   AuraColorScheme lerp(AuraColorScheme other, double t) {
@@ -790,19 +800,6 @@ class AuraColorScheme {
     );
   }
 
-  Color _lerpColor(Color begin, Color end, double t) {
-    return Color.lerp(begin, end, t) ?? begin;
-  }
-
-  /// Default foreground color.
-  Color get foreground => onBackground;
-
-  /// Default foreground color for surface elements.
-  Color get foregroundOnSurface => onSurface;
-
-  /// Muted foreground color for secondary text and icons.
-  Color get mutedForeground => onSurfaceVariant;
-
   /// Resolve a user-selectable tint.
   Color colorFor(AuraTint tint) {
     return switch (tint) {
@@ -827,6 +824,10 @@ class AuraColorScheme {
       AuraTint.success => onSuccess,
       AuraTint.info => onInfo,
     };
+  }
+
+  Color _lerpColor(Color begin, Color end, double t) {
+    return Color.lerp(begin, end, t) ?? begin;
   }
 }
 

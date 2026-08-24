@@ -1,4 +1,5 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'workspace_mcp_authentication.dart';
 import 'workspace_mcp_transport.dart';
 
 export 'workspace_mcp_transport.dart';
@@ -6,20 +7,6 @@ export 'workspace_mcp_transport.dart';
 export 'workspace_mcp_authentication.dart';
 
 final class WorkspaceCapabilities {
-  const WorkspaceCapabilities({
-    required this.modelProviderIds,
-    required this.modelBrowserOAuth,
-    required this.modelDeviceOAuth,
-    required this.mcpTransports,
-    required this.mcpAuthentication,
-    required this.nativeTools,
-    required this.skills,
-    required this.attachments,
-    required this.conversationToolOverrides,
-    required this.offline,
-    required this.agentExecution,
-  });
-
   static const local = WorkspaceCapabilities(
     modelProviderIds: {'openai', 'openai-codex', 'openrouter', 'anthropic'},
     modelBrowserOAuth: true,
@@ -59,6 +46,19 @@ final class WorkspaceCapabilities {
     offline: false,
     agentExecution: true,
   );
+  const WorkspaceCapabilities({
+    required this.modelProviderIds,
+    required this.modelBrowserOAuth,
+    required this.modelDeviceOAuth,
+    required this.mcpTransports,
+    required this.mcpAuthentication,
+    required this.nativeTools,
+    required this.skills,
+    required this.attachments,
+    required this.conversationToolOverrides,
+    required this.offline,
+    required this.agentExecution,
+  });
 
   final Set<String> modelProviderIds;
   final bool modelBrowserOAuth;

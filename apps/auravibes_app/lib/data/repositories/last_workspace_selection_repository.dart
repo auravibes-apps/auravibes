@@ -8,9 +8,9 @@ class LastWorkspaceSelectionRepository implements WorkspaceSelectionRepository {
     this._preferences, {
     this.storageKey = 'last_selected_workspace_id',
   });
+  final String storageKey;
 
   final Future<SharedPreferences> _preferences;
-  final String storageKey;
   Future<void> _writeQueue = Future<void>.value();
 
   @override

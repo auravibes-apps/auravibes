@@ -42,6 +42,13 @@ class AppLogging {
     };
   }
 
+  @visibleForTesting
+  static void resetForTesting() {
+    _configured = false;
+    _subscription?.cancel();
+    _subscription = null;
+  }
+
   static void _handleRecord(LogRecord record) {
     final timestamp = record.time.toIso8601String();
     final line =
@@ -56,12 +63,5 @@ class AppLogging {
     if (record.stackTrace != null) {
       debugPrint('StackTrace: ${LogRedaction.redact(record.stackTrace)}');
     }
-  }
-
-  @visibleForTesting
-  static void resetForTesting() {
-    _configured = false;
-    _subscription?.cancel();
-    _subscription = null;
   }
 }

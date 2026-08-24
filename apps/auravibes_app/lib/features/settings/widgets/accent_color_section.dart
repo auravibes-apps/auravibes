@@ -124,12 +124,11 @@ class _HueSwatch extends StatelessWidget {
 }
 
 class _HueSlider extends StatelessWidget {
+  static const _stops = [0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0];
   const _HueSlider({required this.hue, required this.onChanged});
 
   final double hue;
   final ValueChanged<double> onChanged;
-
-  static const _stops = [0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0];
 
   @override
   Widget build(BuildContext context) {

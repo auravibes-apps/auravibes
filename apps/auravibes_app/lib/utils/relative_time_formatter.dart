@@ -4,9 +4,6 @@ import 'package:easy_localization/easy_localization.dart';
 typedef TranslateFunc = String Function(String key, {List<String>? args});
 
 abstract final class RelativeTimeFormatter {
-  static String _defaultTranslate(String key, {List<String>? args}) =>
-      key.tr(args: args ?? const []);
-
   static String format(
     DateTime timestamp, {
     DateTime? now,
@@ -38,4 +35,7 @@ abstract final class RelativeTimeFormatter {
       args: [diff.inDays.toString()],
     );
   }
+
+  static String _defaultTranslate(String key, {List<String>? args}) =>
+      key.tr(args: args ?? const []);
 }

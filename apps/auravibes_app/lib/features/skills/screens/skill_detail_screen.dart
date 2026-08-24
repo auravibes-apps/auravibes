@@ -740,6 +740,7 @@ class _CredentialDefinitionSelector extends ConsumerWidget {
 }
 
 class _CredentialDefinitionSelectContent extends StatelessWidget {
+  static const _noneValue = '';
   const _CredentialDefinitionSelectContent({
     required this.definitions,
     required this.value,
@@ -749,8 +750,6 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
   final List<SkillCredentialDefinitionEntity> definitions;
   final String? value;
   final ValueChanged<String?> onChanged;
-
-  static const _noneValue = '';
 
   @override
   Widget build(BuildContext context) {

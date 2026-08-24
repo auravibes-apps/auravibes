@@ -9,7 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'mcp_repository_provider.g.dart';
 
-extension on McpServersRepositoryFamily {
+extension McpRepositoryProvider on McpServersRepositoryFamily {
   Override overrideWithValue(McpServersRepositoryContract value) =>
       overrideWith((_, _) => value);
 }

@@ -11,6 +11,12 @@ part 'api_model_entity.freezed.dart';
 /// responses, such as GPT-4, Claude-3, etc.
 @freezed
 abstract class ApiModelEntity with _$ApiModelEntity {
+  static const _largeContextLimit = 100000;
+  static const _veryLargeContextLimit = 1000000;
+  static const _smallContextLimit = 4000;
+  static const _mediumContextLimit = 32000;
+  static const _largeCategoryLimit = 128000;
+
   /// Creates a new ApiModelEntity instance.
   const factory ApiModelEntity({
     /// ID of the provider that offers this model.
@@ -58,12 +64,6 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     @Default(false) bool supportsToolCalls,
   }) = _ApiModelEntity;
   const ApiModelEntity._();
-
-  static const _largeContextLimit = 100000;
-  static const _veryLargeContextLimit = 1000000;
-  static const _smallContextLimit = 4000;
-  static const _mediumContextLimit = 32000;
-  static const _largeCategoryLimit = 128000;
 
   factory ApiModelEntity.fromJson(
     String modelProvider,

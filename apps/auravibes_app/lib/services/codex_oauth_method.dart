@@ -23,17 +23,16 @@ class CodexDeviceCode {
 }
 
 class CodexOAuthService {
+  static const defaultPort = 1455;
+  static const fallbackPort = 1457;
+  static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
+  static const _jsonContentType = 'application/json';
   CodexOAuthService({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
     : _dio = dio ?? Dio(),
       _openBrowser = openBrowser ?? OpenSystemBrowser.call;
 
   final Dio _dio;
   final Future<void> Function(Uri uri) _openBrowser;
-
-  static const defaultPort = 1455;
-  static const fallbackPort = 1457;
-  static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
-  static const _jsonContentType = 'application/json';
 
   Future<OAuthTokenEntity> authenticateWithBrowser() async {
     final pkce = _generatePkce();

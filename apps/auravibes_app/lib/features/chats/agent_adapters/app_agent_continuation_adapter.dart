@@ -39,13 +39,13 @@ class AppAgentContinuationAdapter
   final ConversationRepository conversationRepository;
   final Future<ModelSelectionStore> Function(String workspaceId)
   modelSelectionStore;
-  final Map<String, String> _workspaceIdsByModelId = {};
   final ApiModelRepository apiModelRepository;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
   final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
   final LoadConversationToolSpecsUsecase loadConversationToolSpecsUsecase;
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace;
+  final Map<String, String> _workspaceIdsByModelId = {};
 
   @override
   Future<AgentConversationReference?> loadConversation(

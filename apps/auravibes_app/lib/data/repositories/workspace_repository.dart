@@ -220,34 +220,6 @@ class WorkspaceRepository {
     return deleted;
   }
 
-  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
-    final rows = await (_database.select(_database.messageAttachments).join([
-      innerJoin(
-        _database.messages,
-        _database.messages.id.equalsExp(
-          _database.messageAttachments.messageId,
-        ),
-      ),
-      innerJoin(
-        _database.conversations,
-        _database.conversations.id.equalsExp(_database.messages.conversationId),
-      ),
-    ])..where(_database.conversations.workspaceId.equals(id))).get();
-
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
-  }
-
-  Future<void> _deleteAttachmentFile(String localPath) async {
-    try {
-      await _attachmentFileStore.deleteFile(localPath);
-    } on Object {
-      return;
-    }
-  }
-
   Future<bool> workspaceExists(String id) {
     return _database.workspaceDao.workspaceExists(id);
   }
@@ -285,6 +257,34 @@ class WorkspaceRepository {
     }
 
     return _database.workspaceDao.patchWorkspaceTimestamp(id);
+  }
+
+  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
+    final rows = await (_database.select(_database.messageAttachments).join([
+      innerJoin(
+        _database.messages,
+        _database.messages.id.equalsExp(
+          _database.messageAttachments.messageId,
+        ),
+      ),
+      innerJoin(
+        _database.conversations,
+        _database.conversations.id.equalsExp(_database.messages.conversationId),
+      ),
+    ])..where(_database.conversations.workspaceId.equals(id))).get();
+
+    return [
+      for (final row in rows)
+        row.readTable(_database.messageAttachments).localPath,
+    ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   /// Maps a [workspacesTable] database record to a [WorkspaceEntity]

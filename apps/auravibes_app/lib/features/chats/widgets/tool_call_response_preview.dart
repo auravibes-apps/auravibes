@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 /// 3 lines (considering line wraps), a "Show more" button appears that
 /// opens a modal with the full markdown-rendered content.
 class ToolCallResponsePreview extends StatefulWidget {
+  /// Maximum number of lines to show in the preview.
+  static const int maxPreviewLines = 3;
+
   const ToolCallResponsePreview({
     required this.toolName,
     required this.content,
@@ -25,9 +28,6 @@ class ToolCallResponsePreview extends StatefulWidget {
   final String content;
 
   final bool showExpandButton;
-
-  /// Maximum number of lines to show in the preview.
-  static const int maxPreviewLines = 3;
 
   @override
   State<ToolCallResponsePreview> createState() =>
@@ -56,38 +56,6 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
         _measureTextOverflow();
       });
     }
-  }
-
-  void _measureTextOverflow() {
-    final context = _textKey.currentContext;
-    if (context == null) return;
-
-    final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox) return;
-
-    // Get the text painter to measure if text would overflow.
-    final textStyle = DefaultTextStyle.of(context).style;
-    final textSpan = TextSpan(text: widget.content, style: textStyle);
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-      maxLines: ToolCallResponsePreview.maxPreviewLines,
-    )..layout(maxWidth: renderObject.constraints.maxWidth);
-
-    final exceedsMaxLines = textPainter.didExceedMaxLines;
-    if (exceedsMaxLines != _exceedsMaxLines) {
-      setState(() {
-        _exceedsMaxLines = exceedsMaxLines;
-      });
-    }
-  }
-
-  void _showFullContent() {
-    ToolCallResponseModal.show(
-      context,
-      toolName: widget.toolName,
-      content: widget.content,
-    );
   }
 
   @override
@@ -133,6 +101,38 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
             ),
           ),
       ],
+    );
+  }
+
+  void _measureTextOverflow() {
+    final context = _textKey.currentContext;
+    if (context == null) return;
+
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) return;
+
+    // Get the text painter to measure if text would overflow.
+    final textStyle = DefaultTextStyle.of(context).style;
+    final textSpan = TextSpan(text: widget.content, style: textStyle);
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+      maxLines: ToolCallResponsePreview.maxPreviewLines,
+    )..layout(maxWidth: renderObject.constraints.maxWidth);
+
+    final exceedsMaxLines = textPainter.didExceedMaxLines;
+    if (exceedsMaxLines != _exceedsMaxLines) {
+      setState(() {
+        _exceedsMaxLines = exceedsMaxLines;
+      });
+    }
+  }
+
+  void _showFullContent() {
+    ToolCallResponseModal.show(
+      context,
+      toolName: widget.toolName,
+      content: widget.content,
     );
   }
 }

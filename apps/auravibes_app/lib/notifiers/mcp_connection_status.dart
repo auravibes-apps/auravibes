@@ -164,7 +164,6 @@ class McpToolIdComponents {
 /// See [McpToolIdComponents] for parsing composite IDs.
 @riverpod
 class McpConnectionNotifier extends _$McpConnectionNotifier {
-  McpManagerService? _mcpManagerService;
   String? _activeWorkspaceId;
   var _isCloud = false;
   var _isDisposed = false;
@@ -172,32 +171,173 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   final _tokenSubscriptions = <String, StreamSubscription<OAuthTokenEntity>>{};
   StreamController<List<McpConnectionState>> _stateController =
       StreamController<List<McpConnectionState>>.broadcast(sync: true);
+  McpManagerService? _mcpManagerService;
+
+  McpServersRepositoryContract get _activeRepository {
+    final workspaceId = _activeWorkspaceId;
+    if (workspaceId == null) {
+      throw StateError('No active workspace for MCP operation');
+    }
+
+    return _repositoryFor(workspaceId);
+  }
+
+  McpManagerService get _requiredMcpManager =>
+      _mcpManagerService ??
+      (throw const UnsupportedWorkspaceCapabilityException());
+
+  CloudToolsRepository get _cloudRepository {
+    final repository = _activeRepository;
+    if (repository case final CloudToolsRepository cloudRepository) {
+      return cloudRepository;
+    }
+
+    throw const UnsupportedWorkspaceCapabilityException();
+  }
 
   @override
-  List<McpConnectionState> build() {
-    _isDisposed = false;
-    _lastKnownState = const [];
-    if (_stateController.isClosed) {
-      _stateController = StreamController<List<McpConnectionState>>.broadcast(
-        sync: true,
+  set state(List<McpConnectionState> value) {
+    super.state = value;
+    if (!_stateController.isClosed) _stateController.add(value);
+  }
+
+  /// Disconnect from a specific MCP server without deleting.
+  void disconnectMcpServer(String serverId) {
+    if (_isCloud) return;
+    final index = state.indexWhere(
+      (c) => c.server.id == serverId,
+    );
+    if (index == -1) return;
+
+    final connection = state[index];
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
+    _requiredMcpManager.disconnect(connection.client);
+
+    _setState([
+      ...state.sublist(0, index),
+      connection.copyWith(
+        status: McpConnectionStatus.disconnected,
+        client: null,
+      ),
+      ...state.sublist(index + 1),
+    ]);
+  }
+
+  /// Get a connection state by server ID.
+  McpConnectionState? getConnection(String serverId) {
+    return state.where((c) => c.server.id == serverId).firstOrNull;
+  }
+
+  /// Get a ToolSpec for a specific MCP tool by server ID and tool name.
+  ///
+  /// Returns null if the server is not connected or the tool is not found.
+  ToolSpec? getToolSpec({
+    required String mcpServerId,
+    required String toolName,
+  }) {
+    final connection = getConnection(mcpServerId);
+    if (connection == null ||
+        connection.status != McpConnectionStatus.connected ||
+        (!_isCloud && connection.client == null)) {
+      return null;
+    }
+
+    final toolInfo = connection.tools.firstWhereOrNull(
+      (t) => t.toolName == toolName,
+    );
+    if (toolInfo == null) {
+      return null;
+    }
+
+    return toolInfo._spec(connection.server);
+  }
+
+  /// Returns a Future that completes when the specified MCP servers have
+  /// finished their connection attempts (status is connected, error,
+  /// or disconnected - not connecting).
+  ///
+  /// [mcpServerIds] - List of MCP server IDs to wait for.
+  ///   If empty, returns immediately.
+  /// [timeout] - Maximum time to wait. If null, uses [_mcpConnectionTimeout].
+  ///
+  /// Returns normally after all connections resolve OR timeout is reached.
+  ///
+  /// Also completes if this notifier is disposed (the state stream closes),
+  /// so callers do not hang waiting on a torn-down notifier.
+  Future<void> waitForConnectionsReady({
+    required List<String> mcpServerIds,
+    Duration? timeout,
+  }) async {
+    final effectiveTimeout = timeout ?? _mcpConnectionTimeout;
+    if (mcpServerIds.isEmpty || effectiveTimeout <= Duration.zero) {
+      return;
+    }
+
+    final ids = mcpServerIds.toSet();
+    bool ready(List<McpConnectionState> connections) => !connections
+        .where((c) => ids.contains(c.server.id))
+        .any((c) => c.status == McpConnectionStatus.connecting);
+
+    if (ready(state)) return;
+
+    final _ = await _stateController.stream
+        .firstWhere(ready, orElse: () => const [])
+        .timeout(effectiveTimeout, onTimeout: () => const []);
+  }
+
+  /// Get the list of MCP connection states that are currently connecting
+  /// from the specified server IDs.
+  List<McpConnectionState> getConnectingServers(List<String> mcpServerIds) {
+    return state
+        .where((c) => mcpServerIds.contains(c.server.id))
+        .where((c) => c.status == McpConnectionStatus.connecting)
+        .toList();
+  }
+
+  /// Call an MCP tool on a connected MCP server.
+  ///
+  /// The caller provides the resolved MCP server ID and tool identifier.
+  /// This method validates the current connection, ensures the tool exists,
+  /// and then executes it with the given arguments.
+  ///
+  /// Returns the tool result as a string.
+  /// Throws an exception if the MCP server is not connected or tool not found.
+  Future<String> callTool({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required Map<String, dynamic> arguments,
+  }) async {
+    if (_isCloud) {
+      throw const UnsupportedWorkspaceCapabilityException();
+    }
+    final connection = getConnection(mcpServerId);
+    if (connection == null) {
+      throw Exception('MCP server not found: $mcpServerId');
+    }
+
+    if (!connection.isReady) {
+      throw Exception('MCP server not connected: $mcpServerId');
+    }
+
+    final toolExists = connection.tools.any(
+      (t) => t.toolName == toolIdentifier,
+    );
+    if (!toolExists) {
+      throw Exception(
+        'Tool "$toolIdentifier" not found on MCP server: $mcpServerId',
       );
     }
-    ref
-      ..onDispose(_onDispose)
-      ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
-        if (next == null || next == previous) {
-          return;
-        }
 
-        unawaited(_loadMcpsForWorkspace(next));
-      });
-
-    final initialWorkspaceId = ref.read(currentRouteWorkspaceIdProvider);
-    if (initialWorkspaceId != null) {
-      unawaited(_loadMcpsForWorkspace(initialWorkspaceId));
+    final client = connection.client;
+    if (client == null) {
+      throw Exception('MCP server not connected: $mcpServerId');
     }
 
-    return [];
+    return _requiredMcpManager.callToolString(
+      client,
+      toolIdentifier: toolIdentifier,
+      arguments: arguments,
+    );
   }
 
   // ============================================================.
@@ -343,143 +483,31 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     }
   }
 
-  /// Disconnect from a specific MCP server without deleting.
-  void disconnectMcpServer(String serverId) {
-    if (_isCloud) return;
-    final index = state.indexWhere(
-      (c) => c.server.id == serverId,
-    );
-    if (index == -1) return;
-
-    final connection = state[index];
-    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-    _requiredMcpManager.disconnect(connection.client);
-
-    _setState([
-      ...state.sublist(0, index),
-      connection.copyWith(
-        status: McpConnectionStatus.disconnected,
-        client: null,
-      ),
-      ...state.sublist(index + 1),
-    ]);
-  }
-
-  /// Get a connection state by server ID.
-  McpConnectionState? getConnection(String serverId) {
-    return state.where((c) => c.server.id == serverId).firstOrNull;
-  }
-
-  /// Get a ToolSpec for a specific MCP tool by server ID and tool name.
-  ///
-  /// Returns null if the server is not connected or the tool is not found.
-  ToolSpec? getToolSpec({
-    required String mcpServerId,
-    required String toolName,
-  }) {
-    final connection = getConnection(mcpServerId);
-    if (connection == null ||
-        connection.status != McpConnectionStatus.connected ||
-        (!_isCloud && connection.client == null)) {
-      return null;
-    }
-
-    final toolInfo = connection.tools.firstWhereOrNull(
-      (t) => t.toolName == toolName,
-    );
-    if (toolInfo == null) {
-      return null;
-    }
-
-    return toolInfo._spec(connection.server);
-  }
-
-  /// Returns a Future that completes when the specified MCP servers have
-  /// finished their connection attempts (status is connected, error,
-  /// or disconnected - not connecting).
-  ///
-  /// [mcpServerIds] - List of MCP server IDs to wait for.
-  ///   If empty, returns immediately.
-  /// [timeout] - Maximum time to wait. If null, uses [_mcpConnectionTimeout].
-  ///
-  /// Returns normally after all connections resolve OR timeout is reached.
-  ///
-  /// Also completes if this notifier is disposed (the state stream closes),
-  /// so callers do not hang waiting on a torn-down notifier.
-  Future<void> waitForConnectionsReady({
-    required List<String> mcpServerIds,
-    Duration? timeout,
-  }) async {
-    final effectiveTimeout = timeout ?? _mcpConnectionTimeout;
-    if (mcpServerIds.isEmpty || effectiveTimeout <= Duration.zero) {
-      return;
-    }
-
-    final ids = mcpServerIds.toSet();
-    bool ready(List<McpConnectionState> connections) => !connections
-        .where((c) => ids.contains(c.server.id))
-        .any((c) => c.status == McpConnectionStatus.connecting);
-
-    if (ready(state)) return;
-
-    final _ = await _stateController.stream
-        .firstWhere(ready, orElse: () => const [])
-        .timeout(effectiveTimeout, onTimeout: () => const []);
-  }
-
-  /// Get the list of MCP connection states that are currently connecting
-  /// from the specified server IDs.
-  List<McpConnectionState> getConnectingServers(List<String> mcpServerIds) {
-    return state
-        .where((c) => mcpServerIds.contains(c.server.id))
-        .where((c) => c.status == McpConnectionStatus.connecting)
-        .toList();
-  }
-
-  /// Call an MCP tool on a connected MCP server.
-  ///
-  /// The caller provides the resolved MCP server ID and tool identifier.
-  /// This method validates the current connection, ensures the tool exists,
-  /// and then executes it with the given arguments.
-  ///
-  /// Returns the tool result as a string.
-  /// Throws an exception if the MCP server is not connected or tool not found.
-  Future<String> callTool({
-    required String mcpServerId,
-    required String toolIdentifier,
-    required Map<String, dynamic> arguments,
-  }) async {
-    if (_isCloud) {
-      throw const UnsupportedWorkspaceCapabilityException();
-    }
-    final connection = getConnection(mcpServerId);
-    if (connection == null) {
-      throw Exception('MCP server not found: $mcpServerId');
-    }
-
-    if (!connection.isReady) {
-      throw Exception('MCP server not connected: $mcpServerId');
-    }
-
-    final toolExists = connection.tools.any(
-      (t) => t.toolName == toolIdentifier,
-    );
-    if (!toolExists) {
-      throw Exception(
-        'Tool "$toolIdentifier" not found on MCP server: $mcpServerId',
+  @override
+  List<McpConnectionState> build() {
+    _isDisposed = false;
+    _lastKnownState = const [];
+    if (_stateController.isClosed) {
+      _stateController = StreamController<List<McpConnectionState>>.broadcast(
+        sync: true,
       );
     }
+    ref
+      ..onDispose(_onDispose)
+      ..listen<String?>(currentRouteWorkspaceIdProvider, (previous, next) {
+        if (next == null || next == previous) {
+          return;
+        }
 
-    final client = connection.client;
-    if (client == null) {
-      throw Exception('MCP server not connected: $mcpServerId');
+        unawaited(_loadMcpsForWorkspace(next));
+      });
+
+    final initialWorkspaceId = ref.read(currentRouteWorkspaceIdProvider);
+    if (initialWorkspaceId != null) {
+      unawaited(_loadMcpsForWorkspace(initialWorkspaceId));
     }
 
-    return _requiredMcpManager.callToolString(
-      client,
-      toolIdentifier: toolIdentifier,
-      arguments: arguments,
-    );
+    return [];
   }
 
   // ============================================================.
@@ -649,28 +677,29 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     unawaited(_stateController.close());
   }
 
-  /// Dispose all active connections.
-  void _disposeAllConnections() {
-    final manager = _mcpManagerService;
-    if (manager == null) return;
-    for (final connection in _lastKnownState) {
-      manager.disconnect(connection.client);
-    }
-    for (final subscription in _tokenSubscriptions.values) {
-      unawaited(subscription.cancel());
-    }
-    _tokenSubscriptions.clear();
+  void _listenTokenUpdates({
+    required String serverId,
+    required String? serviceConnectionId,
+    required McpManagerClient client,
+  }) {
+    final tokenUpdates = client.onTokenUpdate;
+    if (serviceConnectionId == null || tokenUpdates == null) return;
+    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
+    _tokenSubscriptions[serverId] = tokenUpdates.listen((token) {
+      unawaited(
+        ref
+            .read(oauthCredentialServiceProvider)
+            .persistOAuthTokenUpdate(
+              serviceConnectionId: serviceConnectionId,
+              token: token,
+            ),
+      );
+    });
   }
 
   void _setState(List<McpConnectionState> nextState) {
     _lastKnownState = nextState;
     state = nextState;
-  }
-
-  @override
-  set state(List<McpConnectionState> value) {
-    super.state = value;
-    if (!_stateController.isClosed) _stateController.add(value);
   }
 
   // ============================================================.
@@ -700,28 +729,6 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         stackTrace,
       );
     }
-  }
-
-  McpManagerService get _requiredMcpManager =>
-      _mcpManagerService ??
-      (throw const UnsupportedWorkspaceCapabilityException());
-
-  CloudToolsRepository get _cloudRepository {
-    final repository = _activeRepository;
-    if (repository case final CloudToolsRepository cloudRepository) {
-      return cloudRepository;
-    }
-
-    throw const UnsupportedWorkspaceCapabilityException();
-  }
-
-  McpServersRepositoryContract get _activeRepository {
-    final workspaceId = _activeWorkspaceId;
-    if (workspaceId == null) {
-      throw StateError('No active workspace for MCP operation');
-    }
-
-    return _repositoryFor(workspaceId);
   }
 
   McpServersRepositoryContract _repositoryFor(String workspaceId) {
@@ -818,24 +825,17 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     ]);
   }
 
-  void _listenTokenUpdates({
-    required String serverId,
-    required String? serviceConnectionId,
-    required McpManagerClient client,
-  }) {
-    final tokenUpdates = client.onTokenUpdate;
-    if (serviceConnectionId == null || tokenUpdates == null) return;
-    unawaited(_tokenSubscriptions.remove(serverId)?.cancel());
-    _tokenSubscriptions[serverId] = tokenUpdates.listen((token) {
-      unawaited(
-        ref
-            .read(oauthCredentialServiceProvider)
-            .persistOAuthTokenUpdate(
-              serviceConnectionId: serviceConnectionId,
-              token: token,
-            ),
-      );
-    });
+  /// Dispose all active connections.
+  void _disposeAllConnections() {
+    final manager = _mcpManagerService;
+    if (manager == null) return;
+    for (final connection in _lastKnownState) {
+      manager.disconnect(connection.client);
+    }
+    for (final subscription in _tokenSubscriptions.values) {
+      unawaited(subscription.cancel());
+    }
+    _tokenSubscriptions.clear();
   }
 }
 

@@ -64,17 +64,14 @@ class LinearSrgbColor extends ValueColor {
   /// The alpha (opacity) component in range [0, 1].
   double alpha;
 
-  double _fn(double val) {
-    final sign = val < 0 ? -1 : 1;
-    final abs = val.abs();
+  @override
+  Vector get vector => Vector(red, green, blue);
 
-    if (val >= 0.0031308) {
-      return sign * (_srgbScale * math.pow(abs, 1.0 / _srgbGamma)) -
-          _srgbOffset;
-    }
-
-    return val * _srgbLinearScale;
-  }
+  @override
+  ({Vector min, Vector max}) get validLimits => (
+    min: const Vector(0, 0, 0),
+    max: const Vector(1, 1, 1),
+  );
 
   /// Converts to sRGB color space.
   RgbColor toRgb() => RgbColor(
@@ -92,14 +89,17 @@ class LinearSrgbColor extends ValueColor {
     return OklabColor.fromVector(oklab, alpha: alpha);
   }
 
-  @override
-  Vector get vector => Vector(red, green, blue);
+  double _fn(double val) {
+    final sign = val < 0 ? -1 : 1;
+    final abs = val.abs();
 
-  @override
-  ({Vector min, Vector max}) get validLimits => (
-    min: const Vector(0, 0, 0),
-    max: const Vector(1, 1, 1),
-  );
+    if (val >= 0.0031308) {
+      return sign * (_srgbScale * math.pow(abs, 1.0 / _srgbGamma)) -
+          _srgbOffset;
+    }
+
+    return val * _srgbLinearScale;
+  }
 }
 
 /// Represents a color in sRGB color space.
@@ -133,6 +133,12 @@ class RgbColor {
   /// The alpha (opacity) component in range [0, 1].
   double alpha;
 
+  /// Whether this color is black.
+  bool get isBlack => green == 0 && red == 0 && blue == 0;
+
+  /// Whether this color is white.
+  bool get isWhite => green == 1 && red == 1 && blue == 1;
+
   /// Converts to a Flutter Color.
   Color toColor() => Color.from(
     alpha: alpha.fit(0, 1).toDouble(),
@@ -140,12 +146,6 @@ class RgbColor {
     green: green.fit(0, 1).toDouble(),
     blue: blue.fit(0, 1).toDouble(),
   );
-
-  /// Whether this color is black.
-  bool get isBlack => green == 0 && red == 0 && blue == 0;
-
-  /// Whether this color is white.
-  bool get isWhite => green == 1 && red == 1 && blue == 1;
 
   /// Converts to linear RGB color space.
   LinearSrgbColor toLrgb() => LinearSrgbColor(
@@ -155,6 +155,9 @@ class RgbColor {
     alpha: alpha,
   );
 
+  /// Converts to Oklab color space.
+  OklabColor toOklab() => toLrgb().toOkLab();
+
   double _rgbToLinear(double c) => c <= _srgbThreshold
       ? c / LinearSrgbColor._srgbLinearScale
       : math
@@ -163,9 +166,6 @@ class RgbColor {
               LinearSrgbColor._srgbGamma,
             )
             .toDouble();
-
-  /// Converts to Oklab color space.
-  OklabColor toOklab() => toLrgb().toOkLab();
 }
 
 /// Represents a color in Oklab color space.
@@ -199,33 +199,8 @@ class OklabColor extends ValueColor {
   /// The alpha (opacity) component in range [0, 1].
   double alpha;
 
-  /// Converts to OKLCH color space.
-  OKLCHColor toLch() {
-    final hue = (math.atan2(b, a) * 180) / math.pi;
-
-    return OKLCHColor(
-      hue: hue >= 0 ? hue : hue + 360,
-      lightness: lightness,
-      chroma: math.sqrt(
-        math.pow(a, _squaredExponent) + math.pow(b, _squaredExponent),
-      ),
-      alpha: alpha,
-    );
-  }
-
   @override
   Vector get vector => Vector(lightness, a, b);
-
-  /// Converts to linear RGB color space.
-  LinearSrgbColor toLrgb() {
-    final lms = vector.transform(ColorSpaceMatrices.oklabToLms).cubed();
-    final lrgb = lms.transform(ColorSpaceMatrices.lmsTolrgb);
-
-    return LinearSrgbColor.fromVector(lrgb, alpha: alpha);
-  }
-
-  /// Converts to sRGB color space.
-  RgbColor toRgb() => toLrgb().toRgb();
 
   /// Returns the valid limits for Oklab color space components.
   ///
@@ -241,6 +216,31 @@ class OklabColor extends ValueColor {
     min: const Vector(0, -0.4, -0.4),
     max: const Vector(1, 0.4, 0.4),
   );
+
+  /// Converts to OKLCH color space.
+  OKLCHColor toLch() {
+    final hue = (math.atan2(b, a) * 180) / math.pi;
+
+    return OKLCHColor(
+      hue: hue >= 0 ? hue : hue + 360,
+      lightness: lightness,
+      chroma: math.sqrt(
+        math.pow(a, _squaredExponent) + math.pow(b, _squaredExponent),
+      ),
+      alpha: alpha,
+    );
+  }
+
+  /// Converts to linear RGB color space.
+  LinearSrgbColor toLrgb() {
+    final lms = vector.transform(ColorSpaceMatrices.oklabToLms).cubed();
+    final lrgb = lms.transform(ColorSpaceMatrices.lmsTolrgb);
+
+    return LinearSrgbColor.fromVector(lrgb, alpha: alpha);
+  }
+
+  /// Converts to sRGB color space.
+  RgbColor toRgb() => toLrgb().toRgb();
 }
 
 /// Predefined shades for OKLCH colors with varying lightness and chroma.
@@ -354,6 +354,13 @@ class OKLCHColor {
   /// Alpha (opacity) value of the color. Defaults to 1.0 (fully opaque).
   double alpha;
 
+  /// Gives a textual representation of the OKLCH color,
+  /// displaying lightness, chroma, and hue values.
+  String get textDescription =>
+      'OKLCH(${lightness.toStringAsFixed(_descriptionPrecision)}, '
+      '${chroma.toStringAsFixed(_descriptionPrecision)}, '
+      '${hue.toStringAsFixed(_descriptionPrecision)})';
+
   /// Converts the OKLCH color to a Flutter Color object using RGB values.
   Color toColor() {
     final lab = toOklab();
@@ -362,13 +369,6 @@ class OKLCHColor {
 
     return rgb.toColor();
   }
-
-  /// Gives a textual representation of the OKLCH color,
-  /// displaying lightness, chroma, and hue values.
-  String get textDescription =>
-      'OKLCH(${lightness.toStringAsFixed(_descriptionPrecision)}, '
-      '${chroma.toStringAsFixed(_descriptionPrecision)}, '
-      '${hue.toStringAsFixed(_descriptionPrecision)})';
 
   // Null keeps the current channel value.
   // ignore: unnecessary-nullable

@@ -28,6 +28,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 class AddModelProviderWidget extends HookConsumerWidget {
+  // Extract long locale key to avoid line length issues.
+  static const String noModelsFoundKey =
+      LocaleKeys.models_screens_add_provider_search_no_models_found;
   const AddModelProviderWidget({
     required this.workspaceId,
     super.key,
@@ -40,41 +43,6 @@ class AddModelProviderWidget extends HookConsumerWidget {
   final VoidCallback? onCreated;
   final VoidCallback? onCancel;
   final bool showHeader;
-
-  // Extract long locale key to avoid line length issues.
-  static const String noModelsFoundKey =
-      LocaleKeys.models_screens_add_provider_search_no_models_found;
-
-  Future<void> _submitForm(
-    BuildContext context,
-    WidgetRef ref, {
-    CodexOAuthMethod? codexOAuthMethod,
-    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
-  }) async {
-    try {
-      await addCredentialsModelMutationProvider.run(ref, (transaction) async {
-        final notifier = transaction.get(
-          addModelProviderStateProvider(workspaceId).notifier,
-        );
-        final created = await notifier.addModelProvider(
-          codexOAuthMethod: codexOAuthMethod,
-          onCodexDeviceCode: onCodexDeviceCode,
-          isCodexDeviceCodeCancelled: isCodexDeviceCodeCancelled,
-        );
-        if (context.mounted && created != null) {
-          final onCreated = this.onCreated;
-          if (onCreated != null) {
-            onCreated();
-          } else {
-            Navigator.of(context).pop(created);
-          }
-        }
-      });
-    } on Object {
-      // Mutation state renders the mapped failure in _ErrorBanner.
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -188,6 +156,37 @@ class AddModelProviderWidget extends HookConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _submitForm(
+    BuildContext context,
+    WidgetRef ref, {
+    CodexOAuthMethod? codexOAuthMethod,
+    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+    bool Function()? isCodexDeviceCodeCancelled,
+  }) async {
+    try {
+      await addCredentialsModelMutationProvider.run(ref, (transaction) async {
+        final notifier = transaction.get(
+          addModelProviderStateProvider(workspaceId).notifier,
+        );
+        final created = await notifier.addModelProvider(
+          codexOAuthMethod: codexOAuthMethod,
+          onCodexDeviceCode: onCodexDeviceCode,
+          isCodexDeviceCodeCancelled: isCodexDeviceCodeCancelled,
+        );
+        if (context.mounted && created != null) {
+          final onCreated = this.onCreated;
+          if (onCreated != null) {
+            onCreated();
+          } else {
+            Navigator.of(context).pop(created);
+          }
+        }
+      });
+    } on Object {
+      // Mutation state renders the mapped failure in _ErrorBanner.
+    }
   }
 
   void _submitCodexBrowser(
@@ -489,6 +488,86 @@ class _CodexDeviceCodePanel extends StatelessWidget {
   final CodexDeviceCode deviceCode;
   final VoidCallback onCancel;
 
+  @override
+  Widget build(BuildContext context) {
+    final linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: context.auraColors.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: context.auraColors.primary,
+    );
+
+    return AuraCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_instruction,
+            ),
+            style: AuraTextStyle.bodyLarge,
+          ),
+          const AuraSizedBox(height: .sm),
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_step_code,
+            ),
+          ),
+          const AuraSizedBox(height: .sm),
+          Row(
+            children: [
+              Expanded(
+                child: AuraSelectableText(
+                  deviceCode.userCode,
+                  style: AuraTextStyle.heading5,
+                  tint: AuraTint.primary,
+                ),
+              ),
+              AuraIconButton(
+                icon: Icons.copy_outlined,
+                onPressed: () => _copyCode(context),
+                tooltip: LocaleKeys
+                    .models_screens_add_provider_device_code_copy_tooltip
+                    .tr(context: context),
+              ),
+            ],
+          ),
+          const AuraSizedBox(height: .md),
+          const AuraText(
+            child: TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_step_link,
+            ),
+          ),
+          const AuraSizedBox(height: .sm),
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText(
+                  deviceCode.verificationUrl,
+                  style: linkStyle,
+                  onTap: () => _showVerificationUrlActions(context),
+                ),
+              ),
+              AuraIconButton(
+                icon: Icons.open_in_new,
+                onPressed: () => _showVerificationUrlActions(context),
+                tint: AuraTint.primary,
+                tooltip: LocaleKeys
+                    .models_screens_add_provider_device_code_open_link_tooltip
+                    .tr(context: context),
+              ),
+            ],
+          ),
+          const AuraSizedBox(height: .lg),
+          AuraButton(
+            onPressed: onCancel,
+            child: const TextLocale(LocaleKeys.common_cancel),
+            size: AuraButtonSize.small,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _copyCode(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: deviceCode.userCode));
     if (!context.mounted) return;
@@ -569,86 +648,6 @@ class _CodexDeviceCodePanel extends StatelessWidget {
         variant: AuraSnackBarVariant.error,
       );
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      color: context.auraColors.primary,
-      decoration: TextDecoration.underline,
-      decorationColor: context.auraColors.primary,
-    );
-
-    return AuraCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_instruction,
-            ),
-            style: AuraTextStyle.bodyLarge,
-          ),
-          const AuraSizedBox(height: .sm),
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_step_code,
-            ),
-          ),
-          const AuraSizedBox(height: .sm),
-          Row(
-            children: [
-              Expanded(
-                child: AuraSelectableText(
-                  deviceCode.userCode,
-                  style: AuraTextStyle.heading5,
-                  tint: AuraTint.primary,
-                ),
-              ),
-              AuraIconButton(
-                icon: Icons.copy_outlined,
-                onPressed: () => _copyCode(context),
-                tooltip: LocaleKeys
-                    .models_screens_add_provider_device_code_copy_tooltip
-                    .tr(context: context),
-              ),
-            ],
-          ),
-          const AuraSizedBox(height: .md),
-          const AuraText(
-            child: TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_step_link,
-            ),
-          ),
-          const AuraSizedBox(height: .sm),
-          Row(
-            children: [
-              Expanded(
-                child: SelectableText(
-                  deviceCode.verificationUrl,
-                  style: linkStyle,
-                  onTap: () => _showVerificationUrlActions(context),
-                ),
-              ),
-              AuraIconButton(
-                icon: Icons.open_in_new,
-                onPressed: () => _showVerificationUrlActions(context),
-                tint: AuraTint.primary,
-                tooltip: LocaleKeys
-                    .models_screens_add_provider_device_code_open_link_tooltip
-                    .tr(context: context),
-              ),
-            ],
-          ),
-          const AuraSizedBox(height: .lg),
-          AuraButton(
-            onPressed: onCancel,
-            child: const TextLocale(LocaleKeys.common_cancel),
-            size: AuraButtonSize.small,
-          ),
-        ],
-      ),
-    );
   }
 }
 

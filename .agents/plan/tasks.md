@@ -14,7 +14,7 @@
 | --- | ---: | ---: | --- |
 | avoid-returning-widgets | 68 | 0 | Wave 1 config, Wave 5 |
 | format-comment | 69 | 0 | Wave 9 |
-| member-ordering | 354 | 354 | Wave 10 |
+| member-ordering | 363 | 0 | Wave 10 |
 | no-magic-number | 282 | 0 | Wave 4 |
 | prefer-correct-identifier-length | 317 | 0 | Wave 2 |
 | prefer-correct-type-name | 4 | 0 | Wave 7 |
@@ -24,7 +24,9 @@
 | prefer-single-widget-per-file | 12 | 0 | Wave 6 |
 
 Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
-`5a6160f3` (Wave 3).
+`5a6160f3` (Wave 3), `be46bcb2` (Wave 4), `8c5a973c` (Wave 5),
+`4b1fbe5b` (Wave 6), `181d7c0c` (Wave 7), `4f05689c` (Wave 8),
+`e81c14e7` (Wave 9).
 
 ## Persistent owners
 
@@ -44,14 +46,19 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 | 4 | `no-magic-number` | complete | `be46bcb2` | 282 -> 0; anti-patterns 0; changed-file fatal analyzer passed; app focused tests 107 passed; UI focused tests 58 passed |
 | 5 | remaining `avoid-returning-widgets` | complete | 8c5a973c | 30 -> 0; no-magic 0; changed-file fatal analyzer passed; app focused tests 40 passed; UI radio tests 31 passed |
 | 6 | `prefer-single-widget-per-file` | complete | `4b1fbe5b` | 12 -> 0; changed-file fatal analyzer passed; UI moved-widget tests 111 passed; app drawer tests 23 passed and tool tile tests 13 passed; anti-patterns 0 |
-| 7 | type/file naming | complete | pending | 69 -> 0; DCL total 532 -> 463; analyzer attempt hung in existing Riverpod plugin; diff formatted and checked |
-| 8 | `prefer-extracting-callbacks` | complete | pending | 38 -> 0; DCL total 463 -> 430; format and diff checks pass |
-| 9 | `format-comment` | complete | pending | 69 -> 0; DCL total 430 -> 363; format and diff checks pass |
-| 10 | `member-ordering` | pending | — | Baseline 354 |
+| 7 | type/file naming | complete | `181d7c0c` | 69 -> 0; DCL total 532 -> 463; analyzer attempt hung in existing Riverpod plugin; diff formatted and checked |
+| 8 | `prefer-extracting-callbacks` | complete | `4f05689c` | 38 -> 0; DCL total 463 -> 430; format and diff checks pass |
+| 9 | `format-comment` | complete | `e81c14e7` | 69 -> 0; DCL total 430 -> 363; format and diff checks pass |
+| 10 | `member-ordering` | complete | `5b6a5071` | 363 -> 0 in `/tmp/auravibes-dcl-wave10-final2.json`; app CI 2,818 passed; UI CI 559 passed; dependency/import/format gates passed; native analyzer crashed in Riverpod plugin |
 
 ## Validation evidence
 
 - Full DCL baseline completed 2026-08-24; exit 1 because 1,291 noted issues.
+- Wave 10 DCL report `/tmp/auravibes-dcl-wave10b.json`: 649 files, 0 violations, exit 0.
+- Final DCL report `/tmp/auravibes-dcl-wave10-final2.json`: 649 files, 0 rule issues and 0 anti-pattern cases, exit 0.
+- Final tests: `melos run test:ci --scope=auravibes_app --no-select` passed 2,818 tests; UI package passed 559 tests.
+- Final dependency validator and import sorter passed; full format check passed.
+- Native analyzer and `validate:quick` remain blocked by the existing Riverpod analyzer plugin `InvalidTypeException` crash; no Dart diagnostics were emitted before interruption.
 - `prefer-static-class`: 0 at baseline.
 - `prefer-commenting-analyzer-ignores`: 0 at baseline.
 - Fatal Dart analyzer passed before this goal per task brief.

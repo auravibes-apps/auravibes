@@ -76,14 +76,14 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
 }
 
 class AuraSidebarWrapper extends HookConsumerWidget {
+  static final Logger _logger = Logger('AuraSidebarWrapper');
+
   /// Creates a Aura sidebar widget.
   const AuraSidebarWrapper({
     required this.navigationShell,
     required this.workspaceId,
     super.key,
   });
-
-  static final Logger _logger = Logger('AuraSidebarWrapper');
 
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;

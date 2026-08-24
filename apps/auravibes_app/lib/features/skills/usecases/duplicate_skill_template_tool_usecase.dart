@@ -14,10 +14,10 @@ class DuplicateSkillTemplateToolUsecase {
     required this.createSkillTemplateToolUsecase,
     this.cloudStore,
   });
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
   final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase;
   final CloudSkillStore? cloudStore;
+
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
 
   Future<SkillTemplateToolEntity> call(String toolId) async {
     final cloud = cloudStore;

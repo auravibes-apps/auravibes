@@ -63,6 +63,13 @@ class _AuraTileState extends State<AuraTile> {
 
   bool get _canInteract => widget.enabled && !widget.isLoading;
 
+  double get _overlayAlpha {
+    if (_pressed) return 0.16;
+    if (_hovered || _focused) return 0.08;
+
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -195,13 +202,6 @@ class _AuraTileState extends State<AuraTile> {
     if (_focused && _canInteract) return colors.primary;
 
     return Colors.transparent;
-  }
-
-  double get _overlayAlpha {
-    if (_pressed) return 0.16;
-    if (_hovered || _focused) return 0.08;
-
-    return 0;
   }
 
   List<BoxShadow> _getBoxShadow() {

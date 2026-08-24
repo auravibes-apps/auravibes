@@ -39,6 +39,20 @@ class SyncSkillToolPermissionsUsecase {
     );
   }
 
+  Future<String?> permissionTableIdFor({
+    required String conversationId,
+    required String workspaceId,
+    required String toolName,
+  }) async {
+    final tools = await _syncTools(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+    final toolsByName = {for (final tool in tools) tool.toolId: tool};
+
+    return toolsByName[toolName]?.id;
+  }
+
   Future<List<ToolsTable>> _syncTools({
     required String conversationId,
     required String workspaceId,
@@ -110,20 +124,6 @@ class SyncSkillToolPermissionsUsecase {
 
       return existing;
     });
-  }
-
-  Future<String?> permissionTableIdFor({
-    required String conversationId,
-    required String workspaceId,
-    required String toolName,
-  }) async {
-    final tools = await _syncTools(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-    final toolsByName = {for (final tool in tools) tool.toolId: tool};
-
-    return toolsByName[toolName]?.id;
   }
 
   Future<ToolsGroupsTable> _ensureSkillToolsGroup(String workspaceId) async {

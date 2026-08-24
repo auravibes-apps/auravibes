@@ -14,6 +14,15 @@ class MarkdownEditorToolbar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
 
+  TextSelection get _safeSelection {
+    final selection = controller.selection;
+    if (selection.isValid) return selection;
+
+    final length = controller.text.length;
+
+    return TextSelection.collapsed(offset: length);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -130,15 +139,6 @@ class MarkdownEditorToolbar extends StatelessWidget {
     if (!focusNode.hasFocus) {
       focusNode.requestFocus();
     }
-  }
-
-  TextSelection get _safeSelection {
-    final selection = controller.selection;
-    if (selection.isValid) return selection;
-
-    final length = controller.text.length;
-
-    return TextSelection.collapsed(offset: length);
   }
 }
 

@@ -51,6 +51,35 @@ class ContinueAgentService
   final AgentCancellationRuntime agentCancellationRuntime;
   final MonitoringService monitoringService;
 
+  @override
+  void removeConversationStreaming(String conversationId) {
+    conversationStreamingRuntime.remove(conversationId);
+  }
+
+  @override
+  void trackCancellationStreamError(Object error, StackTrace stackTrace) {
+    monitoringService.trackError(
+      'Stream error during cancellation',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
+  @override
+  void trackResponseStreamError(Object error, StackTrace stackTrace) {
+    _logger.severe('Generation stream failed', error, stackTrace);
+    monitoringService.trackError(
+      'Error in continue agent stream',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
+  @override
+  void startConversationStreaming(String conversationId) {
+    conversationStreamingRuntime.start(conversationId);
+  }
+
   Future<ContinueAgentResult> call({
     required String conversationId,
     AgentIterationContext? context,
@@ -77,23 +106,242 @@ class ContinueAgentService
     );
   }
 
-  Future<
-    PreparedContinueAgentInput<
-      WorkspaceModelSelectionWithConnectionEntity,
-      ChatMessage,
-      ToolSpec
-    >
-  >
-  _prepareInput(String conversationId) {
-    return AgentContinuationPreparer<
-          WorkspaceModelSelectionWithConnectionEntity,
-          MessageEntity,
-          ChatMessage,
-          ToolSpec
-        >(
-          provider: agentContinuationProvider,
+  @override
+  bool hasToolCalls(ChatResult<ChatMessage> chunk) {
+    return chunk.entityTools.isNotEmpty;
+  }
+
+  @override
+  AgentChunkSink<ChatResult<ChatMessage>> createPersistenceSink(
+    CurrentAgentMessageId currentMessageId,
+  ) {
+    return _createPersistenceSink(currentMessageId);
+  }
+
+  @override
+  bool shouldCreateAssistantMessage(ChatResult<ChatMessage> chunk) {
+    return chunk.entityText.isNotEmpty || _hasEncodableMetadata(chunk);
+  }
+
+  @override
+  AgentChunkSink<ChatResult<ChatMessage>> createUiStreamingSink(
+    String messageId,
+  ) {
+    return _createUiStreamingSink(messageId);
+  }
+
+  @override
+  ChatResult<ChatMessage> concatChunks(
+    ChatResult<ChatMessage> current,
+    ChatResult<ChatMessage> delta,
+  ) {
+    return current.concat(delta);
+  }
+
+  @override
+  Future<String> createAssistantMessage({
+    required String conversationId,
+    required ChatResult<ChatMessage> chunk,
+  }) {
+    return _createAssistantMessage(conversationId, chunk);
+  }
+
+  @override
+  Future<void> startMessageStreaming(String messageId) async {
+    messagesStreamingRuntime.startSubscription(
+      CompositeSubscription(),
+      messageId,
+    );
+  }
+
+  @override
+  Future<void> removeMessageStreaming(String messageId) {
+    return messagesStreamingRuntime.remove(messageId);
+  }
+
+  @override
+  Future<void> markAssistantErrored(String messageId) {
+    return _markAssistantErrored(messageId);
+  }
+
+  @override
+  Future<void> markPendingUsersSent(List<String> messageIds) {
+    return _markPendingUsersSent(messageIds);
+  }
+
+  @override
+  Future<void> markPendingUsersErrored(List<String> messageIds) {
+    return _markPendingUsersErrored(messageIds);
+  }
+
+  @override
+  Future<void> persistStoppedAssistantMessage(
+    String? messageId,
+    ChatResult<ChatMessage>? result,
+  ) {
+    return _persistStoppedAssistantMessage(messageId, result);
+  }
+
+  @override
+  Future<void> persistCompletedAssistantMessage(
+    String messageId,
+    ChatResult<ChatMessage> result,
+  ) {
+    return _persistCompletedAssistantMessage(messageId, result);
+  }
+
+  MessageMetadataEntity? _markPendingToolsStopped(
+    MessageMetadataEntity? metadata,
+  ) {
+    if (metadata == null || metadata.toolCalls.isEmpty) {
+      return metadata;
+    }
+
+    return metadata.copyWith(
+      toolCalls: metadata.toolCalls.map((toolCall) {
+        if (!toolCall.isPending) return toolCall;
+
+        return toolCall.copyWith(
+          resultStatus: ToolCallResultStatus.stoppedByUser,
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _markPendingUsersErrored(
+    List<String> pendingUserMessageIds,
+  ) async {
+    if (pendingUserMessageIds.isEmpty) return;
+
+    try {
+      for (final pendingUserMessageId in pendingUserMessageIds) {
+        final _ = await messageRepository.patchMessage(
+          pendingUserMessageId,
+          const MessagePatch(status: MessageStatus.error),
+        );
+      }
+    } on Object catch (cleanupError, cleanupStackTrace) {
+      monitoringService.trackError(
+        'Failed to persist pending user error state',
+        error: cleanupError,
+        stackTrace: cleanupStackTrace,
+      );
+    }
+  }
+
+  Future<void> _persistStoppedAssistantMessage(
+    String? messageId,
+    ChatResult<ChatMessage>? result,
+  ) async {
+    if (messageId == null) return;
+
+    final _ = await messageRepository.patchMessage(
+      messageId,
+      MessagePatch(
+        content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
+        metadata: _markPendingToolsStopped(result?.entityMetadata),
+        status: MessageStatus.sent,
+      ),
+    );
+  }
+
+  Future<void> _markAssistantErrored(String messageId) async {
+    try {
+      final _ = await messageRepository.patchMessage(
+        messageId,
+        const .new(status: .error),
+      );
+    } on Object catch (cleanupError, cleanupStackTrace) {
+      monitoringService.trackError(
+        'Failed to persist assistant error state',
+        error: cleanupError,
+        stackTrace: cleanupStackTrace,
+      );
+    }
+  }
+
+  Future<void> _markPendingUsersSent(
+    List<String> pendingUserMessageIds,
+  ) async {
+    for (final pendingUserMessageId in pendingUserMessageIds) {
+      final _ = await messageRepository.patchMessage(
+        pendingUserMessageId,
+        const MessagePatch(status: MessageStatus.sent),
+      );
+    }
+  }
+
+  Future<String> _createAssistantMessage(
+    String conversationId,
+    ChatResult<ChatMessage> currentResult,
+  ) async {
+    final metadata = currentResult.entityMetadata;
+    final metadataJson = metadata == null
+        ? null
+        : JsonCodec.encode(metadata.toJson());
+    final firstMessage = await messageRepository.createMessage(
+      .new(
+        conversationId: conversationId,
+        content: currentResult.entityText,
+        messageType: .text,
+        isUser: false,
+        status: .unfinished,
+        metadata: metadataJson,
+      ),
+    );
+    _logger.info(
+      'debug:first assistant message conversation=$conversationId '
+      'message=${firstMessage.id} '
+      'hasThinking=${currentResult.entityThinking != null} '
+      'hasModelMetadata=${currentResult.entityModelMetadata.isNotEmpty}',
+    );
+
+    return firstMessage.id;
+  }
+
+  AgentChunkSink<ChatResult<ChatMessage>> _createUiStreamingSink(
+    String messageId,
+  ) {
+    final uiStreamingController =
+        StreamController<ChatResult<ChatMessage>>.broadcast();
+    final future = uiStreamingController.stream
+        .coalescingSave(
+          store: (result) async {
+            await Future<void>.delayed(Duration.zero);
+            messagesStreamingRuntime.updateResult(result, messageId);
+          },
         )
-        .call(conversationId: conversationId);
+        .drain<void>();
+
+    return _AppChunkSink(uiStreamingController, future);
+  }
+
+  AgentChunkSink<ChatResult<ChatMessage>> _createPersistenceSink(
+    CurrentAgentMessageId currentMessageId,
+  ) {
+    final streamingController =
+        StreamController<ChatResult<ChatMessage>>.broadcast();
+    final future = streamingController.stream
+        .coalescingSave(
+          store: (chunk) async {
+            final messageId = currentMessageId();
+            if (messageId == null) {
+              throw StateError('Assistant message is not initialized');
+            }
+
+            final _ = await messageRepository.patchMessage(
+              messageId,
+              .new(
+                content: chunk.entityText.isEmpty ? null : chunk.entityText,
+                metadata: chunk.entityMetadata,
+                status: .unfinished,
+              ),
+            );
+          },
+        )
+        .drain<void>();
+
+    return _AppChunkSink(streamingController, future);
   }
 
   Future<ContinueAgentResult> _continueWithValidatedInput({
@@ -129,263 +377,23 @@ class ContinueAgentService
     );
   }
 
-  @override
-  void startConversationStreaming(String conversationId) {
-    conversationStreamingRuntime.start(conversationId);
-  }
-
-  @override
-  void removeConversationStreaming(String conversationId) {
-    conversationStreamingRuntime.remove(conversationId);
-  }
-
-  AgentChunkSink<ChatResult<ChatMessage>> _createPersistenceSink(
-    CurrentAgentMessageId currentMessageId,
-  ) {
-    final streamingController =
-        StreamController<ChatResult<ChatMessage>>.broadcast();
-    final future = streamingController.stream
-        .coalescingSave(
-          store: (chunk) async {
-            final messageId = currentMessageId();
-            if (messageId == null) {
-              throw StateError('Assistant message is not initialized');
-            }
-
-            final _ = await messageRepository.patchMessage(
-              messageId,
-              .new(
-                content: chunk.entityText.isEmpty ? null : chunk.entityText,
-                metadata: chunk.entityMetadata,
-                status: .unfinished,
-              ),
-            );
-          },
+  Future<
+    PreparedContinueAgentInput<
+      WorkspaceModelSelectionWithConnectionEntity,
+      ChatMessage,
+      ToolSpec
+    >
+  >
+  _prepareInput(String conversationId) {
+    return AgentContinuationPreparer<
+          WorkspaceModelSelectionWithConnectionEntity,
+          MessageEntity,
+          ChatMessage,
+          ToolSpec
+        >(
+          provider: agentContinuationProvider,
         )
-        .drain<void>();
-
-    return _AppChunkSink(streamingController, future);
-  }
-
-  @override
-  AgentChunkSink<ChatResult<ChatMessage>> createPersistenceSink(
-    CurrentAgentMessageId currentMessageId,
-  ) {
-    return _createPersistenceSink(currentMessageId);
-  }
-
-  AgentChunkSink<ChatResult<ChatMessage>> _createUiStreamingSink(
-    String messageId,
-  ) {
-    final uiStreamingController =
-        StreamController<ChatResult<ChatMessage>>.broadcast();
-    final future = uiStreamingController.stream
-        .coalescingSave(
-          store: (result) async {
-            await Future<void>.delayed(Duration.zero);
-            messagesStreamingRuntime.updateResult(result, messageId);
-          },
-        )
-        .drain<void>();
-
-    return _AppChunkSink(uiStreamingController, future);
-  }
-
-  @override
-  AgentChunkSink<ChatResult<ChatMessage>> createUiStreamingSink(
-    String messageId,
-  ) {
-    return _createUiStreamingSink(messageId);
-  }
-
-  Future<String> _createAssistantMessage(
-    String conversationId,
-    ChatResult<ChatMessage> currentResult,
-  ) async {
-    final metadata = currentResult.entityMetadata;
-    final metadataJson = metadata == null
-        ? null
-        : JsonCodec.encode(metadata.toJson());
-    final firstMessage = await messageRepository.createMessage(
-      .new(
-        conversationId: conversationId,
-        content: currentResult.entityText,
-        messageType: .text,
-        isUser: false,
-        status: .unfinished,
-        metadata: metadataJson,
-      ),
-    );
-    _logger.info(
-      'debug:first assistant message conversation=$conversationId '
-      'message=${firstMessage.id} '
-      'hasThinking=${currentResult.entityThinking != null} '
-      'hasModelMetadata=${currentResult.entityModelMetadata.isNotEmpty}',
-    );
-
-    return firstMessage.id;
-  }
-
-  @override
-  Future<String> createAssistantMessage({
-    required String conversationId,
-    required ChatResult<ChatMessage> chunk,
-  }) {
-    return _createAssistantMessage(conversationId, chunk);
-  }
-
-  @override
-  Future<void> startMessageStreaming(String messageId) async {
-    messagesStreamingRuntime.startSubscription(
-      CompositeSubscription(),
-      messageId,
-    );
-  }
-
-  @override
-  Future<void> removeMessageStreaming(String messageId) {
-    return messagesStreamingRuntime.remove(messageId);
-  }
-
-  Future<void> _markPendingUsersSent(
-    List<String> pendingUserMessageIds,
-  ) async {
-    for (final pendingUserMessageId in pendingUserMessageIds) {
-      final _ = await messageRepository.patchMessage(
-        pendingUserMessageId,
-        const MessagePatch(status: MessageStatus.sent),
-      );
-    }
-  }
-
-  @override
-  Future<void> markPendingUsersSent(List<String> messageIds) {
-    return _markPendingUsersSent(messageIds);
-  }
-
-  Future<void> _persistStoppedAssistantMessage(
-    String? messageId,
-    ChatResult<ChatMessage>? result,
-  ) async {
-    if (messageId == null) return;
-
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      MessagePatch(
-        content: result?.entityText.isEmpty ?? true ? null : result?.entityText,
-        metadata: _markPendingToolsStopped(result?.entityMetadata),
-        status: MessageStatus.sent,
-      ),
-    );
-  }
-
-  @override
-  Future<void> persistStoppedAssistantMessage(
-    String? messageId,
-    ChatResult<ChatMessage>? result,
-  ) {
-    return _persistStoppedAssistantMessage(messageId, result);
-  }
-
-  Future<void> _persistCompletedAssistantMessage(
-    String messageId,
-    ChatResult<ChatMessage> result,
-  ) async {
-    final _ = await messageRepository.patchMessage(
-      messageId,
-      .new(metadata: result.entityMetadata, status: .sent),
-    );
-  }
-
-  @override
-  Future<void> persistCompletedAssistantMessage(
-    String messageId,
-    ChatResult<ChatMessage> result,
-  ) {
-    return _persistCompletedAssistantMessage(messageId, result);
-  }
-
-  Future<void> _markPendingUsersErrored(
-    List<String> pendingUserMessageIds,
-  ) async {
-    if (pendingUserMessageIds.isEmpty) return;
-
-    try {
-      for (final pendingUserMessageId in pendingUserMessageIds) {
-        final _ = await messageRepository.patchMessage(
-          pendingUserMessageId,
-          const MessagePatch(status: MessageStatus.error),
-        );
-      }
-    } on Object catch (cleanupError, cleanupStackTrace) {
-      monitoringService.trackError(
-        'Failed to persist pending user error state',
-        error: cleanupError,
-        stackTrace: cleanupStackTrace,
-      );
-    }
-  }
-
-  @override
-  Future<void> markPendingUsersErrored(List<String> messageIds) {
-    return _markPendingUsersErrored(messageIds);
-  }
-
-  Future<void> _markAssistantErrored(String messageId) async {
-    try {
-      final _ = await messageRepository.patchMessage(
-        messageId,
-        const .new(status: .error),
-      );
-    } on Object catch (cleanupError, cleanupStackTrace) {
-      monitoringService.trackError(
-        'Failed to persist assistant error state',
-        error: cleanupError,
-        stackTrace: cleanupStackTrace,
-      );
-    }
-  }
-
-  @override
-  Future<void> markAssistantErrored(String messageId) {
-    return _markAssistantErrored(messageId);
-  }
-
-  @override
-  ChatResult<ChatMessage> concatChunks(
-    ChatResult<ChatMessage> current,
-    ChatResult<ChatMessage> delta,
-  ) {
-    return current.concat(delta);
-  }
-
-  @override
-  bool shouldCreateAssistantMessage(ChatResult<ChatMessage> chunk) {
-    return chunk.entityText.isNotEmpty || _hasEncodableMetadata(chunk);
-  }
-
-  @override
-  bool hasToolCalls(ChatResult<ChatMessage> chunk) {
-    return chunk.entityTools.isNotEmpty;
-  }
-
-  @override
-  void trackResponseStreamError(Object error, StackTrace stackTrace) {
-    _logger.severe('Generation stream failed', error, stackTrace);
-    monitoringService.trackError(
-      'Error in continue agent stream',
-      error: error,
-      stackTrace: stackTrace,
-    );
-  }
-
-  @override
-  void trackCancellationStreamError(Object error, StackTrace stackTrace) {
-    monitoringService.trackError(
-      'Stream error during cancellation',
-      error: error,
-      stackTrace: stackTrace,
-    );
+        .call(conversationId: conversationId);
   }
 
   bool _hasEncodableMetadata(ChatResult<ChatMessage> result) {
@@ -395,21 +403,13 @@ class ContinueAgentService
     return JsonCodec.encode(metadata.toJson()) != null;
   }
 
-  MessageMetadataEntity? _markPendingToolsStopped(
-    MessageMetadataEntity? metadata,
-  ) {
-    if (metadata == null || metadata.toolCalls.isEmpty) {
-      return metadata;
-    }
-
-    return metadata.copyWith(
-      toolCalls: metadata.toolCalls.map((toolCall) {
-        if (!toolCall.isPending) return toolCall;
-
-        return toolCall.copyWith(
-          resultStatus: ToolCallResultStatus.stoppedByUser,
-        );
-      }).toList(),
+  Future<void> _persistCompletedAssistantMessage(
+    String messageId,
+    ChatResult<ChatMessage> result,
+  ) async {
+    final _ = await messageRepository.patchMessage(
+      messageId,
+      .new(metadata: result.entityMetadata, status: .sent),
     );
   }
 }

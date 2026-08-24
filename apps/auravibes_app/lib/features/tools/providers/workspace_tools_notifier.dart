@@ -13,7 +13,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_tools_notifier.g.dart';
 
-extension on WorkspaceToolsRepositoryFamily {
+extension WorkspaceToolsNotifier on WorkspaceToolsRepositoryFamily {
   Override overrideWithValue(WorkspaceToolsRepositoryContract value) =>
       overrideWith((_, _) => value);
 }
@@ -73,28 +73,6 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     ref.invalidateSelf();
   }
 
-  void _replaceTools(List<WorkspaceToolEntity> workspaceTools) {
-    if (state case AsyncData(:final value)) {
-      state = AsyncData(
-        value.map((wt) {
-          final workspaceTool = workspaceTools.firstWhereOrNull(
-            (element) => element.id == wt.id,
-          );
-
-          return workspaceTool ?? wt;
-        }).toList(),
-      );
-    }
-  }
-
-  void _removeToolsByIds(List<String> toolIds) {
-    if (state case AsyncData(:final value)) {
-      state = AsyncData(
-        value.where((wt) => !toolIds.contains(wt.id)).toList(),
-      );
-    }
-  }
-
   /// Enable or disable a workspace tool by its database ID.
   Future<void> setToolEnabled(
     String id, {
@@ -137,6 +115,28 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
       permissionMode: permissionMode,
     );
     _replaceTools([newTool]);
+  }
+
+  void _replaceTools(List<WorkspaceToolEntity> workspaceTools) {
+    if (state case AsyncData(:final value)) {
+      state = AsyncData(
+        value.map((wt) {
+          final workspaceTool = workspaceTools.firstWhereOrNull(
+            (element) => element.id == wt.id,
+          );
+
+          return workspaceTool ?? wt;
+        }).toList(),
+      );
+    }
+  }
+
+  void _removeToolsByIds(List<String> toolIds) {
+    if (state case AsyncData(:final value)) {
+      state = AsyncData(
+        value.where((wt) => !toolIds.contains(wt.id)).toList(),
+      );
+    }
   }
 }
 

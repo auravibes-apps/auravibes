@@ -13,11 +13,11 @@ class DisableSkillUsecase {
     this._appSkillWorkspaceSettingsRepository, {
     this.cloudStore,
   });
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final AppSkillWorkspaceSettingsRepository?
   _appSkillWorkspaceSettingsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<void> call({
     required String workspaceId,

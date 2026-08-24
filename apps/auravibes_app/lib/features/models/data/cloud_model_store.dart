@@ -170,9 +170,8 @@ class CloudModelStore implements ModelConnectionStore, ModelSelectionStore {
 }
 
 class CloudModelCatalogStore implements ModelCatalogStore {
-  const CloudModelCatalogStore(this._gateway);
-
   static const _pollInterval = Duration(minutes: 15);
+  const CloudModelCatalogStore(this._gateway);
 
   final CloudModelGateway _gateway;
 

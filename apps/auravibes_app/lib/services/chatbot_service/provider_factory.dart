@@ -13,6 +13,8 @@ import 'package:genkit_openai/genkit_openai.dart';
 typedef UntypedModelRef = ModelRef<Object?>;
 
 class ProviderFactory {
+  static const _openAIReasoningNamespace = 'openai_reasoning';
+  static const _thinkingBudgetTokens = 1024;
   const ProviderFactory({
     required this.serviceConnectionRepository,
     this.resolveOAuthAccessToken,
@@ -78,31 +80,6 @@ class ProviderFactory {
     );
   }
 
-  Future<String> _resolveCredential(
-    WorkspaceModelSelectionWithConnectionEntity config,
-  ) async {
-    if (config.modelConnection.authMode == ModelProviderAuthMode.oauth2) {
-      final resolver = resolveOAuthAccessToken;
-      if (resolver == null) {
-        throw const FormatException('OAuth token resolver is not configured.');
-      }
-
-      return resolver(config.modelConnection.id);
-    }
-
-    if (!config.modelConnection.hasKey) {
-      throw const FormatException('Model connection has no API key.');
-    }
-    final secret = await serviceConnectionRepository.readSecret(
-      config.modelConnection.id,
-    );
-    if (secret is! ServiceConnectionSecretApiKey) {
-      throw const FormatException('Model connection is not an API key.');
-    }
-
-    return secret.apiKey;
-  }
-
   UntypedModelRef getModelReference(
     WorkspaceModelSelectionWithConnectionEntity config,
   ) {
@@ -160,6 +137,31 @@ class ProviderFactory {
         as T;
   }
 
+  Future<String> _resolveCredential(
+    WorkspaceModelSelectionWithConnectionEntity config,
+  ) async {
+    if (config.modelConnection.authMode == ModelProviderAuthMode.oauth2) {
+      final resolver = resolveOAuthAccessToken;
+      if (resolver == null) {
+        throw const FormatException('OAuth token resolver is not configured.');
+      }
+
+      return resolver(config.modelConnection.id);
+    }
+
+    if (!config.modelConnection.hasKey) {
+      throw const FormatException('Model connection has no API key.');
+    }
+    final secret = await serviceConnectionRepository.readSecret(
+      config.modelConnection.id,
+    );
+    if (secret is! ServiceConnectionSecretApiKey) {
+      throw const FormatException('Model connection is not an API key.');
+    }
+
+    return secret.apiKey;
+  }
+
   ProviderRuntimeSelection _runtimeSelection(
     WorkspaceModelSelectionWithConnectionEntity config,
     String? connectionUrl,
@@ -183,9 +185,6 @@ class ProviderFactory {
 
     return trimmed;
   }
-
-  static const _openAIReasoningNamespace = 'openai_reasoning';
-  static const _thinkingBudgetTokens = 1024;
 }
 
 ChatCompletionsCodec _openRouterCodec() {

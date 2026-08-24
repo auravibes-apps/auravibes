@@ -142,28 +142,6 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
   bool _isFocused = false;
   bool _isHovered = false;
 
-  Color _getActiveColor(BuildContext context) {
-    final auraColors = context.auraColors;
-
-    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
-  }
-
-  Color _getBorderColor(BuildContext context, bool isDisabled) {
-    final auraColors = context.auraColors;
-    if (isDisabled) return auraColors.outlineVariant;
-    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
-      return _getActiveColor(context);
-    }
-
-    return auraColors.outline;
-  }
-
-  void _select() {
-    if (widget.disabled || widget.onChanged == null) return;
-
-    widget.onChanged?.call(widget.value);
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDisabled = widget.disabled || widget.onChanged == null;
@@ -217,5 +195,27 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
       inMutuallyExclusiveGroup: true,
       onTap: isDisabled ? null : _select,
     );
+  }
+
+  Color _getActiveColor(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
+  }
+
+  Color _getBorderColor(BuildContext context, bool isDisabled) {
+    final auraColors = context.auraColors;
+    if (isDisabled) return auraColors.outlineVariant;
+    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
+      return _getActiveColor(context);
+    }
+
+    return auraColors.outline;
+  }
+
+  void _select() {
+    if (widget.disabled || widget.onChanged == null) return;
+
+    widget.onChanged?.call(widget.value);
   }
 }

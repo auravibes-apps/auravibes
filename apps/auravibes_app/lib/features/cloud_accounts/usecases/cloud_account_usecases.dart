@@ -13,10 +13,10 @@ class CloudAccountUseCases {
     required this._workspaceRepository,
     required this.invalidateAccount,
   });
+  final void Function(String serverUrl, String userId) invalidateAccount;
 
   final ServerpodAuthStore _store;
   final WorkspaceRepository _workspaceRepository;
-  final void Function(String serverUrl, String userId) invalidateAccount;
 
   Future<CloudAccountSession> login({
     required String email,

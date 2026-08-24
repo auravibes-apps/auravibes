@@ -16,10 +16,10 @@ enum _DrawerDragDirection { opening, closing }
 
 class ResponsiveSlidingDrawerController {
   _ResponsiveSlidingDrawerState? _state;
+  bool get isDesktop => _state?.isDesktop ?? false;
   void open() => _state?._openDrawer();
   void close() => _state?._closeDrawer();
   void toggle() => _state?._toggleDrawer();
-  bool get isDesktop => _state?.isDesktop ?? false;
   void closeIfMobile() {
     if (!isDesktop) {
       _state?._closeDrawer();
@@ -57,7 +57,7 @@ class ResponsiveSlidingDrawer extends StatefulWidget {
 
 class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     with SingleTickerProviderStateMixin {
-  static const _animationDuration = Duration(milliseconds: 250);
+  static const _scrimGradientStartOpacityDarkMode = 0.2;
   static const _openRatio = 0.8;
   static const _desktopOpenRatio = 0.3;
   static const _desktopMinDrawerWidth = 150.0;
@@ -76,7 +76,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
   static const _scrimColorOpacityLightMode = 0.36;
   static const _scrimColorOpacityDarkMode = 0.38;
   static const _scrimGradientStartOpacityLightMode = 0.14;
-  static const _scrimGradientStartOpacityDarkMode = 0.2;
+  static const _animationDuration = Duration(milliseconds: 250);
   static const _scrimGradientWidth = 16.0;
 
   AnimationController? _controller;
@@ -110,6 +110,30 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     return width;
   }
 
+  double get _gradientStartOpacity {
+    return widget.isDarkMode
+        ? _scrimGradientStartOpacityDarkMode
+        : _scrimGradientStartOpacityLightMode;
+  }
+
+  double get _scrimOpacity {
+    return widget.isDarkMode
+        ? _scrimColorOpacityDarkMode
+        : _scrimColorOpacityLightMode;
+  }
+
+  Color get _scrimColor {
+    return widget.isDarkMode ? _scrimColorDarkMode : _scrimColorLightMode;
+  }
+
+  double get _currentDrawerWidth {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return isDesktop
+        ? (_desktopDrawerWidth ?? (_desktopOpenRatio * screenWidth))
+        : _openRatio * screenWidth;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -122,9 +146,13 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     widget.controller._state = this;
   }
 
-  void _handleControllerTick() => setState(() {
-    final _ = Object();
-  });
+  @override
+  void dispose() {
+    widget.controller._state = null;
+    _controller?.removeListener(_handleControllerTick);
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant ResponsiveSlidingDrawer oldWidget) {
@@ -146,165 +174,6 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
         _desktopMaxDrawerWidth,
       );
     }
-  }
-
-  void _toggleDrawer() {
-    if (_isOpen) {
-      _closeDrawer();
-    } else {
-      _openDrawer();
-    }
-  }
-
-  void _handleDragStart(DragStartDetails _) {
-    _dragStartedWhenOpen = _isOpen;
-    _dragDirection = null;
-  }
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    if (_isResizing) return;
-    final primaryDelta = details.primaryDelta;
-    if (primaryDelta == null) return;
-
-    if (_dragDirection == null) {
-      if (_dragStartedWhenOpen == false && primaryDelta > 0) {
-        _dragDirection = _DrawerDragDirection.opening;
-      } else if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
-        _dragDirection = _DrawerDragDirection.closing;
-      } else {
-        return;
-      }
-    }
-    final effectiveWidth = _currentDrawerWidth;
-    final delta = primaryDelta / effectiveWidth;
-    _requiredController.value += delta;
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    if (_isResizing || _dragDirection == null) return;
-    final velocity = details.velocity.pixelsPerSecond.dx;
-    if (velocity.abs() >= _swipeVelocityThreshold) {
-      if (velocity > 0) {
-        _openDrawer();
-      } else {
-        _closeDrawer();
-      }
-    } else {
-      if (_requiredController.value >= _dragPercentageThreshold) {
-        _openDrawer();
-      } else {
-        _closeDrawer();
-      }
-    }
-    _dragStartedWhenOpen = null;
-    _dragDirection = null;
-  }
-
-  void _openDrawer() {
-    const settledThreshold = 0.001;
-    if (_requiredController.value >= 1.0 - settledThreshold) {
-      _isOpen = true;
-
-      return;
-    }
-    _requiredController.animateTo(1, duration: _animationDuration).then((
-      _,
-    ) {
-      _isOpen = true;
-    });
-  }
-
-  void _closeDrawer() {
-    const settledThreshold = 0.001;
-    if (settledThreshold >= _requiredController.value) {
-      _isOpen = false;
-
-      return;
-    }
-    _requiredController.animateTo(0, duration: _animationDuration).then((
-      _,
-    ) {
-      _isOpen = false;
-    });
-  }
-
-  double get _currentDrawerWidth {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
-    return isDesktop
-        ? (_desktopDrawerWidth ?? (_desktopOpenRatio * screenWidth))
-        : _openRatio * screenWidth;
-  }
-
-  void _handleDividerPanUpdate(DragUpdateDetails details) {
-    if (_requiredController.value < 0.99) return;
-    final delta = details.delta.dx;
-
-    _applyDesktopResizeDelta(delta);
-    _clampDesktopDrawerWidth();
-    setState(() {
-      final _ = Object();
-    });
-  }
-
-  void _applyDesktopResizeDelta(double delta) {
-    if (_isResizeBeyondMax(delta) || _isResizeBeyondMin(delta)) {
-      _resizeOvershoot += delta;
-
-      return;
-    }
-
-    if (_resizeOvershoot == 0.0) {
-      _desktopDrawerWidth = (_requiredDesktopDrawerWidth + delta).clamp(
-        _desktopMinDrawerWidth,
-        _desktopMaxDrawerWidth,
-      );
-
-      return;
-    }
-
-    _applyOvershootRecovery(delta);
-  }
-
-  bool _isResizeBeyondMax(double delta) {
-    return _requiredDesktopDrawerWidth >= _desktopMaxDrawerWidth && delta > 0;
-  }
-
-  bool _isResizeBeyondMin(double delta) {
-    return _requiredDesktopDrawerWidth <= _desktopMinDrawerWidth && delta < 0;
-  }
-
-  void _applyOvershootRecovery(double delta) {
-    final reversingOvershoot =
-        (_resizeOvershoot > 0 && delta < 0) ||
-        (_resizeOvershoot < 0 && delta > 0);
-    if (!reversingOvershoot) {
-      _resizeOvershoot += delta;
-
-      return;
-    }
-
-    if (delta.abs() < _resizeOvershoot.abs()) {
-      _resizeOvershoot += delta;
-
-      return;
-    }
-
-    final remaining = delta.abs() - _resizeOvershoot.abs();
-    _resizeOvershoot = 0.0;
-    _desktopDrawerWidth =
-        (_requiredDesktopDrawerWidth + (delta > 0 ? remaining : -remaining))
-            .clamp(
-              _desktopMinDrawerWidth,
-              _desktopMaxDrawerWidth,
-            );
-  }
-
-  void _clampDesktopDrawerWidth() {
-    _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
-      _desktopMinDrawerWidth,
-      _desktopMaxDrawerWidth,
-    );
   }
 
   @override
@@ -539,6 +408,125 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     );
   }
 
+  void _closeDrawer() {
+    const settledThreshold = 0.001;
+    if (settledThreshold >= _requiredController.value) {
+      _isOpen = false;
+
+      return;
+    }
+    _requiredController.animateTo(0, duration: _animationDuration).then((
+      _,
+    ) {
+      _isOpen = false;
+    });
+  }
+
+  void _openDrawer() {
+    const settledThreshold = 0.001;
+    if (_requiredController.value >= 1.0 - settledThreshold) {
+      _isOpen = true;
+
+      return;
+    }
+    _requiredController.animateTo(1, duration: _animationDuration).then((
+      _,
+    ) {
+      _isOpen = true;
+    });
+  }
+
+  void _handleDividerPanUpdate(DragUpdateDetails details) {
+    if (_requiredController.value < 0.99) return;
+    final delta = details.delta.dx;
+
+    _applyDesktopResizeDelta(delta);
+    _clampDesktopDrawerWidth();
+    setState(() {
+      final _ = Object();
+    });
+  }
+
+  void _applyDesktopResizeDelta(double delta) {
+    if (_isResizeBeyondMax(delta) || _isResizeBeyondMin(delta)) {
+      _resizeOvershoot += delta;
+
+      return;
+    }
+
+    if (_resizeOvershoot == 0.0) {
+      _desktopDrawerWidth = (_requiredDesktopDrawerWidth + delta).clamp(
+        _desktopMinDrawerWidth,
+        _desktopMaxDrawerWidth,
+      );
+
+      return;
+    }
+
+    _applyOvershootRecovery(delta);
+  }
+
+  bool _isResizeBeyondMax(double delta) {
+    return _requiredDesktopDrawerWidth >= _desktopMaxDrawerWidth && delta > 0;
+  }
+
+  bool _isResizeBeyondMin(double delta) {
+    return _requiredDesktopDrawerWidth <= _desktopMinDrawerWidth && delta < 0;
+  }
+
+  void _applyOvershootRecovery(double delta) {
+    final reversingOvershoot =
+        (_resizeOvershoot > 0 && delta < 0) ||
+        (_resizeOvershoot < 0 && delta > 0);
+    if (!reversingOvershoot) {
+      _resizeOvershoot += delta;
+
+      return;
+    }
+
+    if (delta.abs() < _resizeOvershoot.abs()) {
+      _resizeOvershoot += delta;
+
+      return;
+    }
+
+    final remaining = delta.abs() - _resizeOvershoot.abs();
+    _resizeOvershoot = 0.0;
+    _desktopDrawerWidth =
+        (_requiredDesktopDrawerWidth + (delta > 0 ? remaining : -remaining))
+            .clamp(
+              _desktopMinDrawerWidth,
+              _desktopMaxDrawerWidth,
+            );
+  }
+
+  void _clampDesktopDrawerWidth() {
+    _desktopDrawerWidth = _requiredDesktopDrawerWidth.clamp(
+      _desktopMinDrawerWidth,
+      _desktopMaxDrawerWidth,
+    );
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (_isResizing || _dragDirection == null) return;
+    final velocity = details.velocity.pixelsPerSecond.dx;
+    if (velocity.abs() >= _swipeVelocityThreshold) {
+      if (velocity > 0) {
+        _openDrawer();
+      } else {
+        _closeDrawer();
+      }
+    } else {
+      if (_requiredController.value >= _dragPercentageThreshold) {
+        _openDrawer();
+      } else {
+        _closeDrawer();
+      }
+    }
+    _dragStartedWhenOpen = null;
+    _dragDirection = null;
+  }
+
   void _setResizing(bool value) {
     setState(() {
       _isResizing = value;
@@ -556,27 +544,39 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     if (drawerFullyOpen) _closeDrawer();
   }
 
-  Color get _scrimColor {
-    return widget.isDarkMode ? _scrimColorDarkMode : _scrimColorLightMode;
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (_isResizing) return;
+    final primaryDelta = details.primaryDelta;
+    if (primaryDelta == null) return;
+
+    if (_dragDirection == null) {
+      if (_dragStartedWhenOpen == false && primaryDelta > 0) {
+        _dragDirection = _DrawerDragDirection.opening;
+      } else if ((_dragStartedWhenOpen ?? false) && primaryDelta < 0) {
+        _dragDirection = _DrawerDragDirection.closing;
+      } else {
+        return;
+      }
+    }
+    final effectiveWidth = _currentDrawerWidth;
+    final delta = primaryDelta / effectiveWidth;
+    _requiredController.value += delta;
   }
 
-  double get _scrimOpacity {
-    return widget.isDarkMode
-        ? _scrimColorOpacityDarkMode
-        : _scrimColorOpacityLightMode;
+  void _toggleDrawer() {
+    if (_isOpen) {
+      _closeDrawer();
+    } else {
+      _openDrawer();
+    }
   }
 
-  double get _gradientStartOpacity {
-    return widget.isDarkMode
-        ? _scrimGradientStartOpacityDarkMode
-        : _scrimGradientStartOpacityLightMode;
-  }
+  void _handleControllerTick() => setState(() {
+    final _ = Object();
+  });
 
-  @override
-  void dispose() {
-    widget.controller._state = null;
-    _controller?.removeListener(_handleControllerTick);
-    _controller?.dispose();
-    super.dispose();
+  void _handleDragStart(DragStartDetails _) {
+    _dragStartedWhenOpen = _isOpen;
+    _dragDirection = null;
   }
 }

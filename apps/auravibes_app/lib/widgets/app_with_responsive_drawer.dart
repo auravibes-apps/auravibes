@@ -63,14 +63,6 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
     _router?.routeInformationProvider.addListener(_onRouteChanged);
   }
 
-  void _onRouteChanged() {
-    final currentRoute = _requiredRouter.routeInformationProvider.value.uri;
-    if (currentRoute == _previousRoute) return;
-
-    _controller.closeIfMobile();
-    setState(() => _previousRoute = currentRoute);
-  }
-
   @override
   void dispose() {
     _router?.routeInformationProvider.removeListener(_onRouteChanged);
@@ -98,6 +90,14 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
       isDarkMode: Theme.of(context).brightness == Brightness.dark,
       controller: _controller,
     );
+  }
+
+  void _onRouteChanged() {
+    final currentRoute = _requiredRouter.routeInformationProvider.value.uri;
+    if (currentRoute == _previousRoute) return;
+
+    _controller.closeIfMobile();
+    setState(() => _previousRoute = currentRoute);
   }
 }
 

@@ -7,10 +7,14 @@ export 'package:easy_localization/easy_localization.dart'
     show BuildContextEasyLocalizationExtension;
 
 class MainLocale extends StatelessWidget {
+  static const supportedLocales = [Locale('en'), Locale('es')];
   const MainLocale({required this.child, super.key});
   final Widget child;
 
-  static const supportedLocales = [Locale('en'), Locale('es')];
+  static Future<void> ensureInitialized() {
+    return EasyLocalization.ensureInitialized();
+  }
+
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
@@ -22,9 +26,5 @@ class MainLocale extends StatelessWidget {
       useFallbackTranslations: true,
       useFallbackTranslationsForEmptyResources: true,
     );
-  }
-
-  static Future<void> ensureInitialized() {
-    return EasyLocalization.ensureInitialized();
   }
 }

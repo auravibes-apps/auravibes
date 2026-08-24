@@ -32,18 +32,6 @@ class ToolItemRow extends HookConsumerWidget {
   /// Should be false for MCP tools (they can't be individually deleted).
   final bool showDeleteButton;
 
-  void _setToolEnabled(WidgetRef ref, bool value) {
-    ref
-        .read(workspaceToolsProvider(workspaceId).notifier)
-        .setToolEnabled(tool.id, isEnabled: value);
-  }
-
-  void _setPermissionMode(WidgetRef ref, ToolPermissionMode? mode) {
-    ref
-        .read(workspaceToolsProvider(workspaceId).notifier)
-        .setToolPermissionMode(tool.id, permissionMode: mode);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const iconSize = 36.0;
@@ -135,6 +123,12 @@ class ToolItemRow extends HookConsumerWidget {
       ),
     );
   }
+
+  void _setToolEnabled(WidgetRef ref, bool value) {
+    ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .setToolEnabled(tool.id, isEnabled: value);
+  }
 }
 
 /// Options section for an expanded tool item.
@@ -214,6 +208,14 @@ class _ToolOptions extends HookConsumerWidget {
       spacing: .sm,
       crossAxisAlignment: CrossAxisAlignment.start,
     );
+  }
+
+  void _setPermissionMode(WidgetRef ref, ToolPermissionMode? mode) {
+    if (mode == null) return;
+
+    ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .setToolPermissionMode(tool.id, permissionMode: mode);
   }
 
   Future<void> _confirmDelete(

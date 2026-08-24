@@ -16,6 +16,13 @@ class CloudAccountAddScreen extends StatelessWidget {
   final String workspaceId;
   final String? returnPath;
 
+  String get _returnPath {
+    final path = returnPath;
+    if (path != null && path.isNotEmpty) return path;
+
+    return CloudAccountsRoute(workspaceId: workspaceId).location;
+  }
+
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
@@ -56,12 +63,5 @@ class CloudAccountAddScreen extends StatelessWidget {
         title: TextLocale(LocaleKeys.cloud_accounts_add_title),
       ),
     );
-  }
-
-  String get _returnPath {
-    final path = returnPath;
-    if (path != null && path.isNotEmpty) return path;
-
-    return CloudAccountsRoute(workspaceId: workspaceId).location;
   }
 }

@@ -23,9 +23,9 @@ class LocalChatAttachmentServiceIo {
     AudioRecorder? recorder,
     this.storageNamespace = 'auravibes_app',
   }) : _recorder = recorder ?? AudioRecorder();
+  final String storageNamespace;
 
   final AudioRecorder _recorder;
-  final String storageNamespace;
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;

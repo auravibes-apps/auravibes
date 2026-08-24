@@ -48,29 +48,6 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
     return _tableToEntity(result);
   }
 
-  Future<void> _ensureNativeTools(String workspaceId) async {
-    await _database.transaction(() async {
-      final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
-      final existingNativeToolIds = workspaceTools
-          .where((tool) => tool.workspaceToolsGroupId == null)
-          .where((tool) => NativeToolService.hasTypeString(tool.toolId))
-          .map((tool) => tool.toolId)
-          .toSet();
-
-      for (final nativeType in NativeToolService.getTypes()) {
-        if (existingNativeToolIds.contains(nativeType.value)) {
-          continue;
-        }
-
-        final _ = await _dao.setWorkspaceToolEnabled(
-          workspaceId,
-          nativeType.value,
-          isEnabled: true,
-        );
-      }
-    });
-  }
-
   @override
   Future<WorkspaceToolEntity> setWorkspaceToolEnabled(
     String workspaceId,
@@ -185,6 +162,56 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
     }
   }
 
+  @override
+  Future<WorkspaceToolEntity> setToolPermissionMode(
+    String id, {
+    required ToolPermissionMode permissionMode,
+  }) async {
+    final table = await _dao.setWorkspaceToolPermission(
+      id,
+      permission: _mapPermissionMode(permissionMode),
+    );
+
+    return _tableToEntity(table);
+  }
+
+  @override
+  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
+    required String toolGroupId,
+    required String toolName,
+  }) async {
+    final table = await _dao.getEnabledToolByToolName(
+      toolGroupId: toolGroupId,
+      toolName: toolName,
+    );
+    if (table == null) return null;
+
+    return _tableToEntity(table);
+  }
+
+  Future<void> _ensureNativeTools(String workspaceId) async {
+    await _database.transaction(() async {
+      final workspaceTools = await _dao.getWorkspaceTools(workspaceId);
+      final existingNativeToolIds = workspaceTools
+          .where((tool) => tool.workspaceToolsGroupId == null)
+          .where((tool) => NativeToolService.hasTypeString(tool.toolId))
+          .map((tool) => tool.toolId)
+          .toSet();
+
+      for (final nativeType in NativeToolService.getTypes()) {
+        if (existingNativeToolIds.contains(nativeType.value)) {
+          continue;
+        }
+
+        final _ = await _dao.setWorkspaceToolEnabled(
+          workspaceId,
+          nativeType.value,
+          isEnabled: true,
+        );
+      }
+    });
+  }
+
   WorkspaceToolEntity _tableToEntity(ToolsTable table) {
     return WorkspaceToolEntity(
       id: table.id,
@@ -215,33 +242,6 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
       ToolPermissionMode.alwaysAllow => PermissionAccess.granted,
       ToolPermissionMode.alwaysDeny => PermissionAccess.denied,
     };
-  }
-
-  @override
-  Future<WorkspaceToolEntity> setToolPermissionMode(
-    String id, {
-    required ToolPermissionMode permissionMode,
-  }) async {
-    final table = await _dao.setWorkspaceToolPermission(
-      id,
-      permission: _mapPermissionMode(permissionMode),
-    );
-
-    return _tableToEntity(table);
-  }
-
-  @override
-  Future<WorkspaceToolEntity?> getWorkspaceToolByToolName({
-    required String toolGroupId,
-    required String toolName,
-  }) async {
-    final table = await _dao.getEnabledToolByToolName(
-      toolGroupId: toolGroupId,
-      toolName: toolName,
-    );
-    if (table == null) return null;
-
-    return _tableToEntity(table);
   }
 }
 

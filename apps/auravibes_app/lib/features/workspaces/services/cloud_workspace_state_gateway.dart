@@ -24,6 +24,20 @@ typedef WorkspaceCredentialMutation =
 typedef WorkspaceReconnectDelay = Future<void> Function(Duration duration);
 
 class CloudWorkspaceStateGateway {
+  static const _pageSize = 100;
+  static const _stateReadTimeout = Duration(seconds: 15);
+  static const _initialReconnectDelay = Duration(milliseconds: 250);
+  static const _maxReconnectDelay = Duration(seconds: 8);
+
+  CloudWorkspaceStateGateway.forTesting({
+    required this._workspace,
+    required this._readState,
+    required this._subscribe,
+    this._putSecret,
+    this._mutateCredential,
+    this._delay = _defaultDelay,
+    this.readTimeout = _stateReadTimeout,
+  }) : _client = null;
   CloudWorkspaceStateGateway({
     required Client client,
     required CloudWorkspaceRef workspace,
@@ -37,42 +51,24 @@ class CloudWorkspaceStateGateway {
        _putSecret = null,
        _mutateCredential = null,
        _delay = _defaultDelay;
-
-  CloudWorkspaceStateGateway.forTesting({
-    required this._workspace,
-    required this._readState,
-    required this._subscribe,
-    this._putSecret,
-    this._mutateCredential,
-    this._delay = _defaultDelay,
-    this.readTimeout = _stateReadTimeout,
-  }) : _client = null;
-
-  static const _pageSize = 100;
-  static const _stateReadTimeout = Duration(seconds: 15);
-  static const _initialReconnectDelay = Duration(milliseconds: 250);
-  static const _maxReconnectDelay = Duration(seconds: 8);
-
-  static Future<void> _defaultDelay(Duration duration) =>
-      Future<void>.delayed(duration);
-
-  final Client? _client;
+  final Duration readTimeout;
+  final WorkspaceSecretPut? _putSecret;
   final CloudWorkspaceRef _workspace;
   final WorkspaceStateRead _readState;
   final WorkspaceStreamSubscribe _subscribe;
-  final WorkspaceSecretPut? _putSecret;
   final WorkspaceCredentialMutation? _mutateCredential;
   final WorkspaceReconnectDelay _delay;
-  final Duration readTimeout;
+
+  final Client? _client;
   Future<void> _readTail = Future.value();
   bool _disposed = false;
   final _disposedSignal = Completer<bool>();
 
+  bool get isDisposed => _disposed;
+
   Client get client => _requiredClient;
 
   CloudWorkspaceRef get workspace => _workspace;
-
-  bool get isDisposed => _disposed;
 
   Client get _requiredClient {
     final client = _client;
@@ -103,20 +99,6 @@ class CloudWorkspaceStateGateway {
     final read = _enqueueRead(request);
 
     return CloudAppErrors.guardCall(.state, () => read.timeout(readTimeout));
-  }
-
-  Future<ReadWorkspaceStateResponse> _enqueueRead(
-    ReadWorkspaceStateRequest request,
-  ) async {
-    final previousRead = _readTail;
-    final completion = Completer<void>();
-    _readTail = completion.future;
-    await previousRead;
-    try {
-      return await _readState(request);
-    } finally {
-      completion.complete();
-    }
   }
 
   Future<PatchWorkspaceStateResponse> patch({
@@ -271,6 +253,25 @@ class CloudWorkspaceStateGateway {
     }
   }
 
+  static bool _isTerminalCode(String? code) =>
+      code == CloudWorkspaceErrorCode.authenticationRequired.name ||
+      code == CloudWorkspaceErrorCode.membershipRequired.name ||
+      code == CloudWorkspaceErrorCode.workspaceNotFound.name;
+
+  Future<ReadWorkspaceStateResponse> _enqueueRead(
+    ReadWorkspaceStateRequest request,
+  ) async {
+    final previousRead = _readTail;
+    final completion = Completer<void>();
+    _readTail = completion.future;
+    await previousRead;
+    try {
+      return await _readState(request);
+    } finally {
+      completion.complete();
+    }
+  }
+
   Future<({List<WorkspaceResource> resources, int currentSequence})> _readAll(
     List<WorkspaceResourceKind> kinds,
     int pageSize,
@@ -336,8 +337,6 @@ class CloudWorkspaceStateGateway {
       code == CloudWorkspaceErrorCode.membershipRequired ||
       code == CloudWorkspaceErrorCode.workspaceNotFound;
 
-  static bool _isTerminalCode(String? code) =>
-      code == CloudWorkspaceErrorCode.authenticationRequired.name ||
-      code == CloudWorkspaceErrorCode.membershipRequired.name ||
-      code == CloudWorkspaceErrorCode.workspaceNotFound.name;
+  static Future<void> _defaultDelay(Duration duration) =>
+      Future<void>.delayed(duration);
 }

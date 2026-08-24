@@ -16,11 +16,11 @@ class UnloadConversationSkillUsecase {
     this._appSkillRegistry, [
     this.cloudStore,
   ]);
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final ConversationSkillsRepository? _conversationSkillsRepository;
   final AppSkillRegistry _appSkillRegistry;
-  final CloudSkillStore? cloudStore;
 
   Future<void> call({
     required String conversationId,

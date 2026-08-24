@@ -61,18 +61,6 @@ class AuraPressableState extends State<AuraPressable> {
     super.dispose();
   }
 
-  void _onPressed() {
-    setState(() => _pressDown = true);
-  }
-
-  void _onExitPressed() {
-    setState(() => _pressDown = false);
-  }
-
-  void _onFocusChange(bool value) {
-    widget.onFocusChange?.call(value);
-  }
-
   @override
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
@@ -147,6 +135,18 @@ class AuraPressableState extends State<AuraPressable> {
       ),
     );
   }
+
+  void _onPressed() {
+    setState(() => _pressDown = true);
+  }
+
+  void _onExitPressed() {
+    setState(() => _pressDown = false);
+  }
+
+  void _onFocusChange(bool value) {
+    widget.onFocusChange?.call(value);
+  }
 }
 
 class _AuraPressableFocusRingPainter extends CustomPainter {
@@ -157,6 +157,16 @@ class _AuraPressableFocusRingPainter extends CustomPainter {
 
   final Color color;
   final Decoration? decoration;
+
+  double get _borderRadius {
+    final decoration = this.decoration;
+    if (decoration is! BoxDecoration) return 0;
+
+    final borderRadius = decoration.borderRadius;
+    if (borderRadius is! BorderRadius) return 0;
+
+    return borderRadius.topLeft.x;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -172,16 +182,6 @@ class _AuraPressableFocusRingPainter extends CustomPainter {
       RRect.fromRectAndRadius(ringRect, Radius.circular(radius)),
       paint,
     );
-  }
-
-  double get _borderRadius {
-    final decoration = this.decoration;
-    if (decoration is! BoxDecoration) return 0;
-
-    final borderRadius = decoration.borderRadius;
-    if (borderRadius is! BorderRadius) return 0;
-
-    return borderRadius.topLeft.x;
   }
 
   @override

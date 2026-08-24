@@ -18,6 +18,24 @@ class ModelApiService {
   /// Dio client for API requests.
   final Dio _dio;
 
+  /// Fetches all models and providers from the API.
+  ///
+  /// Returns a [ModelApiResponse] containing providers and models data.
+  Future<ModelApiResponse> fetchAllModels() async {
+    final apiResponseFuture = _dio.get<Map<String, dynamic>>('/api.json');
+    final canonicalModelIdsFuture = _fetchCanonicalModelIds();
+
+    return _parseDioResponse(
+      await apiResponseFuture,
+      await canonicalModelIdsFuture,
+    );
+  }
+
+  /// Disposes the Dio client.
+  void dispose() {
+    _dio.close();
+  }
+
   /// Creates a default Dio instance with configuration.
   static Dio _createDefaultDio() {
     return Dio(
@@ -31,19 +49,6 @@ class ModelApiService {
           'User-Agent': 'AuraVibes-App/1.0',
         },
       ),
-    );
-  }
-
-  /// Fetches all models and providers from the API.
-  ///
-  /// Returns a [ModelApiResponse] containing providers and models data.
-  Future<ModelApiResponse> fetchAllModels() async {
-    final apiResponseFuture = _dio.get<Map<String, dynamic>>('/api.json');
-    final canonicalModelIdsFuture = _fetchCanonicalModelIds();
-
-    return _parseDioResponse(
-      await apiResponseFuture,
-      await canonicalModelIdsFuture,
     );
   }
 
@@ -78,11 +83,6 @@ class ModelApiService {
         canonicalModelIds: canonicalModelIds,
       ),
     );
-  }
-
-  /// Disposes the Dio client.
-  void dispose() {
-    _dio.close();
   }
 }
 

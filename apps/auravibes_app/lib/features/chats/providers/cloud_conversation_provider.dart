@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cloud_conversation_provider.g.dart';
 
-extension on CloudConversationUsecaseFamily {
+extension CloudConversationProvider on CloudConversationUsecaseFamily {
   Override overrideWithValue(CloudConversationUsecase? value) =>
       overrideWith((_, _) => value);
 }

@@ -63,6 +63,39 @@ class SelectorField<T> extends Field<T> {
   /// The list of values to display in the dropdown.
   final List<KnobSelector<T>> selectors;
 
+  /// The default label builder that converts the value to a string.
+  static String defaultLabelBuilder(Object? value) {
+    return value.toString();
+  }
+
+  @override
+  Widget toWidget(BuildContext context, String group, T? value) {
+    return DropdownMenu<T>(
+      trailingIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+      selectedTrailingIcon: const Icon(Icons.keyboard_arrow_up_rounded),
+      initialSelection: value,
+      onSelected: (value) {
+        if (value != null) {
+          updateField(context, group, value);
+        }
+      },
+      expandedInsets: EdgeInsets.zero,
+      dropdownMenuEntries: selectors
+          .map(
+            (value) =>
+                DropdownMenuEntry(value: value.value, label: value.label),
+          )
+          .toList(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return selectors.asMap().map((key, value) {
+      return MapEntry(value.label, value.value);
+    });
+  }
+
   static T _defaultValue<T>(
     T? initialValue,
     List<KnobSelector<T>> selectors,
@@ -96,39 +129,6 @@ class SelectorField<T> extends Field<T> {
     }
 
     return firstSelector;
-  }
-
-  /// The default label builder that converts the value to a string.
-  static String defaultLabelBuilder(Object? value) {
-    return value.toString();
-  }
-
-  @override
-  Widget toWidget(BuildContext context, String group, T? value) {
-    return DropdownMenu<T>(
-      trailingIcon: const Icon(Icons.keyboard_arrow_down_rounded),
-      selectedTrailingIcon: const Icon(Icons.keyboard_arrow_up_rounded),
-      initialSelection: value,
-      onSelected: (value) {
-        if (value != null) {
-          updateField(context, group, value);
-        }
-      },
-      expandedInsets: EdgeInsets.zero,
-      dropdownMenuEntries: selectors
-          .map(
-            (value) =>
-                DropdownMenuEntry(value: value.value, label: value.label),
-          )
-          .toList(),
-    );
-  }
-
-  @override
-  Map<String, dynamic> toJson() {
-    return selectors.asMap().map((key, value) {
-      return MapEntry(value.label, value.value);
-    });
   }
 }
 

@@ -21,6 +21,9 @@ class AuraSnackBarHost extends StatefulWidget {
   /// The subtree that can show Aura snackbars.
   final Widget child;
 
+  @override
+  State<AuraSnackBarHost> createState() => _AuraSnackBarHostState();
+
   static _AuraSnackBarHostState? _maybeOf(BuildContext context) {
     final element = context
         .getElementForInheritedWidgetOfExactType<_AuraSnackBarHostScope>();
@@ -28,9 +31,6 @@ class AuraSnackBarHost extends StatefulWidget {
 
     return scope?.state;
   }
-
-  @override
-  State<AuraSnackBarHost> createState() => _AuraSnackBarHostState();
 }
 
 class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
@@ -85,13 +85,6 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
     );
   }
 
-  void _removeActiveSnackBarImmediately() {
-    if (_activeSnackBar == null) return;
-
-    _activeSnackBarId = null;
-    _activeSnackBar = null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final activeSnackBar = _activeSnackBar;
@@ -107,6 +100,13 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
         ],
       ),
     );
+  }
+
+  void _removeActiveSnackBarImmediately() {
+    if (_activeSnackBar == null) return;
+
+    _activeSnackBarId = null;
+    _activeSnackBar = null;
   }
 }
 
@@ -308,21 +308,6 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     unawaited(_reverseAndDismiss(animationController));
   }
 
-  Future<void> _reverseAndDismiss(
-    AnimationController animationController,
-  ) async {
-    try {
-      await animationController.reverse().orCancel;
-    } on TickerCanceled {
-      // Ignore ticker cancellations caused by widget disposal during animation.
-      return;
-    }
-
-    // Only call dismiss callback - don't dispose here.
-    // As dispose() will be called by the framework.
-    widget.dismissCallback();
-  }
-
   @override
   Widget build(BuildContext context) {
     final actionLabel = widget.actionLabel;
@@ -412,6 +397,21 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
         ),
       ),
     );
+  }
+
+  Future<void> _reverseAndDismiss(
+    AnimationController animationController,
+  ) async {
+    try {
+      await animationController.reverse().orCancel;
+    } on TickerCanceled {
+      // Ignore ticker cancellations caused by widget disposal during animation.
+      return;
+    }
+
+    // Only call dismiss callback - don't dispose here.
+    // As dispose() will be called by the framework.
+    widget.dismissCallback();
   }
 }
 

@@ -15,6 +15,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
   final UrlService? _urlService;
 
   @override
+  NativeToolType get type => .url;
+
+  @override
   ToolSpec getTool() => urlToolSpec;
 
   @override
@@ -64,7 +67,4 @@ final class UrlTool extends NativeToolEntity<String, String> {
 
     return request;
   }
-
-  @override
-  NativeToolType get type => .url;
 }

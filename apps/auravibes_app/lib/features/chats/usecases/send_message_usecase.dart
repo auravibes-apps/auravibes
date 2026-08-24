@@ -92,20 +92,6 @@ class SendMessageUsecase {
     );
   }
 
-  Future<void> _sendNow({
-    required String conversationId,
-    required ChatDraft draft,
-  }) async {
-    final createdMessage = await createUserMessage(
-      conversationId: conversationId,
-      draft: draft,
-    );
-    await continueFromUserMessage(
-      conversationId: conversationId,
-      messageId: createdMessage.id,
-    );
-  }
-
   Future<MessageEntity> createUserMessage({
     required String conversationId,
     required ChatDraft draft,
@@ -143,6 +129,20 @@ class SendMessageUsecase {
         origin: AgentIterationOrigin.userMessage,
         ackMessageIds: [messageId],
       ),
+    );
+  }
+
+  Future<void> _sendNow({
+    required String conversationId,
+    required ChatDraft draft,
+  }) async {
+    final createdMessage = await createUserMessage(
+      conversationId: conversationId,
+      draft: draft,
+    );
+    await continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: createdMessage.id,
     );
   }
 }

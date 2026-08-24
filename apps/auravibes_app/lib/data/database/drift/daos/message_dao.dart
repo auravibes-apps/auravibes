@@ -85,11 +85,6 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
         .toList();
   }
 
-  MessagesTableType _messageTypeFromStorage(String value) {
-    return MessagesTableType.values.asNameMap()[value] ??
-        MessagesTableType.text;
-  }
-
   Stream<MessagesTable?> watchLatestAssistantMessageByConversation(
     String conversationId,
   ) {
@@ -116,17 +111,6 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   Stream<List<MessagesTable>> watchMessagesByConversation(
     String conversationId,
   ) => _messagesByConversationQuery(conversationId).watch();
-
-  SimpleSelectStatement<$MessagesTable, MessagesTable>
-  _messagesByConversationQuery(String conversationId) {
-    return (select(messages)
-      ..where((tbl) => tbl.conversationId.equals(conversationId))
-      ..orderBy([
-        (tbl) => OrderingTerm(
-          expression: tbl.createdAt,
-        ),
-      ]));
-  }
 
   Future<List<MessagesTable>> getMessagesByConversationPaginated(
     String conversationId,
@@ -259,5 +243,21 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
     }
 
     return null;
+  }
+
+  MessagesTableType _messageTypeFromStorage(String value) {
+    return MessagesTableType.values.asNameMap()[value] ??
+        MessagesTableType.text;
+  }
+
+  SimpleSelectStatement<$MessagesTable, MessagesTable>
+  _messagesByConversationQuery(String conversationId) {
+    return (select(messages)
+      ..where((tbl) => tbl.conversationId.equals(conversationId))
+      ..orderBy([
+        (tbl) => OrderingTerm(
+          expression: tbl.createdAt,
+        ),
+      ]));
   }
 }

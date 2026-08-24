@@ -32,6 +32,7 @@ class LoadConversationSkillUsecase {
     this._listAppSkillCredentialCandidatesUsecase,
     this.cloudStore,
   ]);
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final ConversationSkillsRepository? _conversationSkillsRepository;
@@ -41,7 +42,6 @@ class LoadConversationSkillUsecase {
   _checkSkillCredentialReadinessUsecase;
   final ListAppSkillCredentialCandidatesUsecase?
   _listAppSkillCredentialCandidatesUsecase;
-  final CloudSkillStore? cloudStore;
 
   Future<void> call({
     required String conversationId,

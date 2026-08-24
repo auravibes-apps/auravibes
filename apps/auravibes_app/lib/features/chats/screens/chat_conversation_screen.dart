@@ -482,18 +482,18 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(_RateLimitRetryIndicator oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.retryAt == widget.retryAt) return;
 
     _timer?.cancel();
     _startTimer();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   @override

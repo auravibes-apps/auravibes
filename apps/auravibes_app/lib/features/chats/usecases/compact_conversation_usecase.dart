@@ -34,6 +34,11 @@ import 'package:auravibes_engine/auravibes_engine.dart'
 import 'package:riverpod/src/providers/provider.dart';
 
 class CompactConversationUsecase {
+  static const String _failureMessageKey =
+      LocaleKeys.compaction_errors_auto_blocked;
+  static const BuildPromptChatMessages _buildPromptChatMessages =
+      BuildPromptChatMessages();
+
   const CompactConversationUsecase({
     required this.compactionExecution,
     this.messageRepository,
@@ -54,11 +59,6 @@ class CompactConversationUsecase {
   final CompactionExecutionRuntime compactionExecution;
   final CloudCompactionUsecase? cloudCompaction;
   final Future<ConversationEntity?> Function(String id)? cloudConversation;
-
-  static const String _failureMessageKey =
-      LocaleKeys.compaction_errors_auto_blocked;
-  static const BuildPromptChatMessages _buildPromptChatMessages =
-      BuildPromptChatMessages();
 
   Future<CompactionExecutionState> call({
     required String conversationId,

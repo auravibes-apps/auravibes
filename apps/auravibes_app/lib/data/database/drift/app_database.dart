@@ -161,6 +161,10 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Builds the Drift database name for a hash source.
+  static String databaseNameForHashSource(String? dbHashSource) =>
+      AppStorageNamespace.forHashSource(dbHashSource);
+
   Future<void> _upgradeToSchema4(Migrator m) async {
     await m.addColumn(
       conversations,
@@ -210,10 +214,6 @@ class AppDatabase extends _$AppDatabase {
       native: const DriftNativeOptions(shareAcrossIsolates: true),
     );
   }
-
-  /// Builds the Drift database name for a hash source.
-  static String databaseNameForHashSource(String? dbHashSource) =>
-      AppStorageNamespace.forHashSource(dbHashSource);
 
   Future<bool> _tableExists(String tableName) async {
     final rows = await customSelect(

@@ -46,6 +46,18 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
     });
   }
 
+  /// Cancels any pending debounced switch.
+  void cancelPendingSwitch() {
+    _debounceTimer?.cancel();
+    _switchGeneration++;
+    state = const WorkspaceSwitchState();
+  }
+
+  /// Clears the current error state and returns to idle.
+  void clearError() {
+    state = const WorkspaceSwitchState();
+  }
+
   Future<void> _queueSwitch(
     String workspaceId,
     int switchGeneration,
@@ -110,17 +122,5 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
         );
       }
     }
-  }
-
-  /// Cancels any pending debounced switch.
-  void cancelPendingSwitch() {
-    _debounceTimer?.cancel();
-    _switchGeneration++;
-    state = const WorkspaceSwitchState();
-  }
-
-  /// Clears the current error state and returns to idle.
-  void clearError() {
-    state = const WorkspaceSwitchState();
   }
 }

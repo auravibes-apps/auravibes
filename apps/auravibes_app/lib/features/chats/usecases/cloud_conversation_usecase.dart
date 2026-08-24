@@ -58,6 +58,23 @@ class CloudConversationUsecase {
     }
   }
 
+  Future<void> delete(ConversationEntity conversation) =>
+      _gateway.deleteConversation(
+        DeleteConversationRequest(
+          workspaceId: 0,
+          requestId: const UuidV7().generate(),
+          conversationId: conversation.id,
+          expectedRevision: conversation.revision,
+        ),
+      );
+
+  Future<ConversationMutationResult> compact(ConversationEntity conversation) =>
+      _gateway.compactConversation(
+        requestId: const UuidV7().generate(),
+        conversationId: conversation.id,
+        expectedConversationRevision: conversation.revision,
+      );
+
   UpdateConversationRequest _updateRequest({
     required String conversationId,
     required int revision,
@@ -75,21 +92,4 @@ class CloudConversationUsecase {
     clearAgent: patch.clearAgent,
     clearParent: false,
   );
-
-  Future<void> delete(ConversationEntity conversation) =>
-      _gateway.deleteConversation(
-        DeleteConversationRequest(
-          workspaceId: 0,
-          requestId: const UuidV7().generate(),
-          conversationId: conversation.id,
-          expectedRevision: conversation.revision,
-        ),
-      );
-
-  Future<ConversationMutationResult> compact(ConversationEntity conversation) =>
-      _gateway.compactConversation(
-        requestId: const UuidV7().generate(),
-        conversationId: conversation.id,
-        expectedConversationRevision: conversation.revision,
-      );
 }

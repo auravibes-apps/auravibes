@@ -16,12 +16,12 @@ class UpdateSkillTemplateToolUsecase {
     this.skillsRepository,
     this.skillCredentialDefinitionsRepository,
   });
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
   final CloudSkillStore? cloudStore;
   final SkillsRepository? skillsRepository;
   final SkillCredentialDefinitionsRepository?
   skillCredentialDefinitionsRepository;
+
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
 
   Future<SkillTemplateToolEntity> call(
     String toolId,

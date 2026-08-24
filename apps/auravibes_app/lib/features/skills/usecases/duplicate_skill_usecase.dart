@@ -16,11 +16,11 @@ class DuplicateSkillUsecase {
     this._createSkillUsecase, {
     this.cloudStore,
   });
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
   final CreateSkillUsecase _createSkillUsecase;
-  final CloudSkillStore? cloudStore;
 
   Future<SkillEntity> call(String skillId) async {
     final cloud = cloudStore;

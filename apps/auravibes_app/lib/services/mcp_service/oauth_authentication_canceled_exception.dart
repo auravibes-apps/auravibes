@@ -18,45 +18,20 @@ class OAuthAuthenticationCanceledException implements Exception {
 }
 
 class OAuthAuthenticate {
+  static const String _chars =
+      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
+
+  static final Random _rng = _createSecureRandom();
   OAuthAuthenticate({
     required this.callbackUrlScheme,
     required this.clientName,
     Dio? dio,
   }) : _dio = dio ?? Dio();
 
-  final Dio _dio;
-
   final String callbackUrlScheme;
   final String clientName;
 
-  static const String _chars =
-      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-  static Random _createSecureRandom() {
-    try {
-      return Random.secure();
-      // ignore: avoid_catching_errors - Required to handle unsupported secure RNG.
-    } on UnsupportedError catch (_, stackTrace) {
-      Error.throwWithStackTrace(
-        StateError(
-          'Secure randomness is required to generate OAuth PKCE and state '
-          'values, but Random.secure() is not supported on this platform.',
-        ),
-        stackTrace,
-      );
-    }
-  }
-
-  static final Random _rng = _createSecureRandom();
-
-  /// Generates a random string for PKCE code verifier.
-  static String _generateRandomString(int length) {
-    return String.fromCharCodes(
-      Iterable.generate(
-        length,
-        (_) => _chars.codeUnitAt(_rng.nextInt(_chars.length)),
-      ),
-    );
-  }
+  final Dio _dio;
 
   /// Generates PKCE code challenge from verifier.
   static String generateCodeChallenge(String codeVerifier) {
@@ -111,24 +86,6 @@ class OAuthAuthenticate {
       codeVerifier: codeVerifier,
       redirectUrl: redirectUrl,
     );
-  }
-
-  Future<String> _authenticateInBrowser(Uri uri) async {
-    try {
-      return await FlutterWebAuth2.authenticate(
-        url: uri.toString(),
-        callbackUrlScheme: callbackUrlScheme,
-      );
-    } on PlatformException catch (e, stackTrace) {
-      if (e.code == 'CANCELED') {
-        Error.throwWithStackTrace(
-          const OAuthAuthenticationCanceledException(),
-          stackTrace,
-        );
-      }
-
-      rethrow;
-    }
   }
 
   static Uri buildAuthorizationUri({
@@ -232,5 +189,48 @@ class OAuthAuthenticate {
     }
 
     return OAuthTokenModel.fromJson(data);
+  }
+
+  static Random _createSecureRandom() {
+    try {
+      return Random.secure();
+      // ignore: avoid_catching_errors - Required to handle unsupported secure RNG.
+    } on UnsupportedError catch (_, stackTrace) {
+      Error.throwWithStackTrace(
+        StateError(
+          'Secure randomness is required to generate OAuth PKCE and state '
+          'values, but Random.secure() is not supported on this platform.',
+        ),
+        stackTrace,
+      );
+    }
+  }
+
+  /// Generates a random string for PKCE code verifier.
+  static String _generateRandomString(int length) {
+    return String.fromCharCodes(
+      Iterable.generate(
+        length,
+        (_) => _chars.codeUnitAt(_rng.nextInt(_chars.length)),
+      ),
+    );
+  }
+
+  Future<String> _authenticateInBrowser(Uri uri) async {
+    try {
+      return await FlutterWebAuth2.authenticate(
+        url: uri.toString(),
+        callbackUrlScheme: callbackUrlScheme,
+      );
+    } on PlatformException catch (e, stackTrace) {
+      if (e.code == 'CANCELED') {
+        Error.throwWithStackTrace(
+          const OAuthAuthenticationCanceledException(),
+          stackTrace,
+        );
+      }
+
+      rethrow;
+    }
   }
 }

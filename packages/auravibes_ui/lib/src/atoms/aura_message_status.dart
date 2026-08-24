@@ -50,44 +50,10 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
     _setupAnimations();
   }
 
-  void _setupAnimations() {
-    if (!widget.showAnimation) return;
-
-    if (widget.status == AuraMessageDeliveryStatus.sending) {
-      final rotationController = AnimationController(
-        duration: const Duration(milliseconds: 1000),
-        vsync: this,
-      );
-      _rotationController = rotationController;
-
-      final rotationAnimation = Tween<double>(
-        begin: 0,
-        end: 1,
-      ).animate(rotationController);
-      _rotationAnimation = rotationAnimation;
-
-      final _ = rotationController.repeat();
-    } else {
-      final scaleController = AnimationController(
-        duration: DesignDuration.normal,
-        vsync: this,
-      );
-      _scaleController = scaleController;
-
-      final scaleAnimation =
-          Tween<double>(
-            begin: 0,
-            end: 1,
-          ).animate(
-            CurvedAnimation(
-              parent: scaleController,
-              curve: Curves.elasticOut,
-            ),
-          );
-      _scaleAnimation = scaleAnimation;
-
-      final _ = scaleController.forward();
-    }
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
   }
 
   @override
@@ -99,21 +65,6 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
       _disposeControllers();
       _setupAnimations();
     }
-  }
-
-  void _disposeControllers() {
-    _rotationController?.dispose();
-    _scaleController?.dispose();
-    _rotationController = null;
-    _scaleController = null;
-    _rotationAnimation = null;
-    _scaleAnimation = null;
-  }
-
-  @override
-  void dispose() {
-    _disposeControllers();
-    super.dispose();
   }
 
   @override
@@ -165,6 +116,55 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
       padding: EdgeInsets.all(_getPadding()),
       child: statusIcon,
     );
+  }
+
+  void _setupAnimations() {
+    if (!widget.showAnimation) return;
+
+    if (widget.status == AuraMessageDeliveryStatus.sending) {
+      final rotationController = AnimationController(
+        duration: const Duration(milliseconds: 1000),
+        vsync: this,
+      );
+      _rotationController = rotationController;
+
+      final rotationAnimation = Tween<double>(
+        begin: 0,
+        end: 1,
+      ).animate(rotationController);
+      _rotationAnimation = rotationAnimation;
+
+      final _ = rotationController.repeat();
+    } else {
+      final scaleController = AnimationController(
+        duration: DesignDuration.normal,
+        vsync: this,
+      );
+      _scaleController = scaleController;
+
+      final scaleAnimation =
+          Tween<double>(
+            begin: 0,
+            end: 1,
+          ).animate(
+            CurvedAnimation(
+              parent: scaleController,
+              curve: Curves.elasticOut,
+            ),
+          );
+      _scaleAnimation = scaleAnimation;
+
+      final _ = scaleController.forward();
+    }
+  }
+
+  void _disposeControllers() {
+    _rotationController?.dispose();
+    _scaleController?.dispose();
+    _rotationController = null;
+    _scaleController = null;
+    _rotationAnimation = null;
+    _scaleAnimation = null;
   }
 
   IconData _getStatusIcon() {

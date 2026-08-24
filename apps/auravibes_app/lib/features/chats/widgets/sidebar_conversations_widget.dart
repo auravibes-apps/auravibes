@@ -225,24 +225,6 @@ class _SidebarConversationTileState
     super.dispose();
   }
 
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await DeleteConversationConfirmDialog.show(context);
-    if (!confirmed) return;
-
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
-
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -294,6 +276,24 @@ class _SidebarConversationTileState
         ),
       ),
     );
+  }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await DeleteConversationConfirmDialog.show(context);
+    if (!confirmed) return;
+
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
+    );
+    if (cloud != null) {
+      await cloud.delete(widget.chat);
+
+      return;
+    }
+
+    final _ = await ref
+        .read(conversationRepositoryProvider)
+        .deleteConversation(widget.chat.id);
   }
 }
 

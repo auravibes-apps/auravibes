@@ -32,12 +32,13 @@ part 'cloud_message_tools.dart';
 part 'streaming_message_metadata.dart';
 part 'pending_tool_call.dart';
 
-extension on ChatMessagesFamily {
+extension MessageIdList on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>
       overrideWith((_, _) => value);
 }
 
-extension on ConversationCompactionExecutionStateFamily {
+extension MessageIdListCompaction
+    on ConversationCompactionExecutionStateFamily {
   Override overrideWithValue(CompactionExecutionState? value) =>
       overrideWith((_, _) => value);
 }

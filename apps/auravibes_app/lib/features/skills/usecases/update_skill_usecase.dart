@@ -9,9 +9,9 @@ import 'package:riverpod/src/providers/provider.dart';
 
 class UpdateSkillUsecase {
   const UpdateSkillUsecase(this._skillsRepository, {this.cloudStore});
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<SkillEntity> call(String skillId, SkillToUpdate skill) async {
     final title = skill.title;

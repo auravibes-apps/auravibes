@@ -128,6 +128,10 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
   factory MessageMetadataEntity.fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);
 
+  int get usedTokens {
+    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
+  }
+
   static MessageMetadataEntity? fromJsonString(String? metadata) {
     if (metadata == null) return null;
     try {
@@ -137,10 +141,6 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     } on Exception catch (_) {
       return null;
     }
-  }
-
-  int get usedTokens {
-    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
 }
 

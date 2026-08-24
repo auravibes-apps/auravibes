@@ -4,6 +4,12 @@ import 'package:flutter/widgets.dart';
 @immutable
 /// Definition of aura paddings.
 class AuraEdgeInsetsGeometry {
+  static const none = AuraEdgeInsetsGeometry.all(.none);
+  static const base = AuraEdgeInsetsGeometry.all(.base);
+  static const medium = AuraEdgeInsetsGeometry.all(.md);
+  static const large = AuraEdgeInsetsGeometry.all(.lg);
+  static const small = AuraEdgeInsetsGeometry.all(.sm);
+
   /// Constructor for each side.
   const AuraEdgeInsetsGeometry.only({
     this.left = .none,
@@ -42,21 +48,6 @@ class AuraEdgeInsetsGeometry {
        top = vertical,
        bottom = vertical;
 
-  /// None spacing.
-  static const none = AuraEdgeInsetsGeometry.all(.none);
-
-  /// Base spacing.
-  static const base = AuraEdgeInsetsGeometry.all(.base);
-
-  /// Medium spacing.
-  static const medium = AuraEdgeInsetsGeometry.all(.md);
-
-  /// Large spacing.
-  static const large = AuraEdgeInsetsGeometry.all(.lg);
-
-  /// Small spacing.
-  static const small = AuraEdgeInsetsGeometry.all(.sm);
-
   /// Left padding.
   final AuraSpacing left;
 
@@ -67,16 +58,15 @@ class AuraEdgeInsetsGeometry {
   final AuraSpacing right;
 
   /// Bottom padding.
-  final AuraSpacing bottom;
+  final AuraSpacing bottom; // Compare properties.
 
-  EdgeInsetsGeometry _padding(BuildContext context) {
-    return EdgeInsetsGeometry.only(
-      left: context.auraTheme.fromSpacing(left),
-      right: context.auraTheme.fromSpacing(right),
-      top: context.auraTheme.fromSpacing(top),
-      bottom: context.auraTheme.fromSpacing(bottom),
-    );
-  }
+  @override
+  int get hashCode => Object.hashAll([
+    left,
+    top,
+    right,
+    bottom,
+  ]);
 
   @override
   bool operator ==(Object other) =>
@@ -86,15 +76,16 @@ class AuraEdgeInsetsGeometry {
           left == other.left && // Compare properties.
           right == other.right && // Compare properties.
           top == other.top && // Compare properties.
-          bottom == other.bottom; // Compare properties.
+          bottom == other.bottom;
 
-  @override
-  int get hashCode => Object.hashAll([
-    left,
-    top,
-    right,
-    bottom,
-  ]); // Combine hash codes.
+  EdgeInsetsGeometry _padding(BuildContext context) {
+    return EdgeInsetsGeometry.only(
+      left: context.auraTheme.fromSpacing(left),
+      right: context.auraTheme.fromSpacing(right),
+      top: context.auraTheme.fromSpacing(top),
+      bottom: context.auraTheme.fromSpacing(bottom),
+    );
+  } // Combine hash codes.
 }
 
 /// Padding for const.

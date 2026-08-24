@@ -116,15 +116,13 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     );
   }
 
-  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.escape) {
-      _closeDropdown();
-
-      return KeyEventResult.handled;
+  @override
+  void dispose() {
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
     }
-
-    return KeyEventResult.ignored;
+    _requiredMenuFocusScopeNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -138,57 +136,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       _requiredFocusNode.dispose();
     }
     _initFocusNode(widget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    if (_ownsFocusNode) {
-      _requiredFocusNode.dispose();
-    }
-    _requiredMenuFocusScopeNode.dispose();
-    super.dispose();
-  }
-
-  void _initFocusNode(FocusNode? focusNode) {
-    _focusNode = focusNode ?? FocusNode();
-    _ownsFocusNode = focusNode == null;
-  }
-
-  void _toggleDropdown() {
-    if (_isDropdownOpen) {
-      _closeDropdown();
-
-      return;
-    }
-
-    _openDropdown();
-  }
-
-  void _openDropdown() {
-    if (!widget.isEnabled || _isDropdownOpen) {
-      return;
-    }
-
-    setState(() {
-      _isDropdownOpen = true;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isDropdownOpen) return;
-
-      _requiredMenuFocusScopeNode.requestFocus();
-    });
-  }
-
-  void _closeDropdown() {
-    if (!_isDropdownOpen) {
-      return;
-    }
-
-    setState(() {
-      _isDropdownOpen = false;
-    });
-    FocusScope.of(context).unfocus();
-    _requiredFocusNode.unfocus();
   }
 
   @override
@@ -291,6 +238,59 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
       skipTraversal: true,
       descendantsAreFocusable: true,
     );
+  }
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
+      _closeDropdown();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
+  }
+
+  void _toggleDropdown() {
+    if (_isDropdownOpen) {
+      _closeDropdown();
+
+      return;
+    }
+
+    _openDropdown();
+  }
+
+  void _openDropdown() {
+    if (!widget.isEnabled || _isDropdownOpen) {
+      return;
+    }
+
+    setState(() {
+      _isDropdownOpen = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isDropdownOpen) return;
+
+      _requiredMenuFocusScopeNode.requestFocus();
+    });
+  }
+
+  void _closeDropdown() {
+    if (!_isDropdownOpen) {
+      return;
+    }
+
+    setState(() {
+      _isDropdownOpen = false;
+    });
+    FocusScope.of(context).unfocus();
+    _requiredFocusNode.unfocus();
   }
 
   KeyEventResult _handleTriggerKeyEvent(FocusNode node, KeyEvent event) {

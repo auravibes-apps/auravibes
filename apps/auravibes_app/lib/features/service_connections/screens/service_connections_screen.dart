@@ -134,6 +134,14 @@ class _ConnectionTile extends ConsumerWidget {
 
   final ServiceConnectionListItem connection;
 
+  IconData get _icon {
+    return switch (connection.kind) {
+      ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
+      ServiceConnectionListItemKind.skillCredential => Icons.key_outlined,
+      ServiceConnectionListItemKind.mcpServer => Icons.hub_outlined,
+    };
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menuController = AuraPopupMenuController();
@@ -206,14 +214,6 @@ class _ConnectionTile extends ConsumerWidget {
       ),
       style: AuraCardStyle.border,
     );
-  }
-
-  IconData get _icon {
-    return switch (connection.kind) {
-      ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
-      ServiceConnectionListItemKind.skillCredential => Icons.key_outlined,
-      ServiceConnectionListItemKind.mcpServer => Icons.hub_outlined,
-    };
   }
 
   String _subtitle(BuildContext context) {
