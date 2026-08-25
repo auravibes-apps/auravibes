@@ -65,6 +65,16 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
   `provider_dependencies` still crashes through `riverpod_syntax_error`.
   This points to an upstream Riverpod analyzer-utils/plugin defect, not a DCL
   rule or app build failure.
+- 2026-08-25 isolation: native Riverpod diagnostics disabled with `false` for
+  `avoid_build_context_in_providers`, `notifier_extends`,
+  `only_use_keep_alive_inside_keep_alive`, `provider_dependencies`,
+  `provider_parameters`, `riverpod_syntax_error`,
+  `scoped_providers_should_specify_dependencies`, and
+  `unsupported_provider_value`. Omitting the diagnostics block does not
+  disable them. Remaining Riverpod rules run; one
+  `ASYNC_VALUE_NULLABLE_PATTERN` warning remains. Native analysis completes
+  without plugin crashes and reports 128 compile errors, 125 warning/info
+  diagnostics, one fatalized unused-import diagnostic, and 48 lints.
 - `prefer-static-class`: 0 at baseline.
 - `prefer-commenting-analyzer-ignores`: 0 at baseline.
 - Fatal Dart analyzer passed before this goal per task brief.
