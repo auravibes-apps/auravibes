@@ -77,21 +77,21 @@ plugins:
     version: 3.1.8
     diagnostics:
       async_value_nullable_pattern: true
-      avoid_build_context_in_providers: false
+      avoid_build_context_in_providers: true
       avoid_keep_alive_dependency_inside_auto_dispose: true
       avoid_public_notifier_properties: true
       avoid_ref_inside_state_dispose: true
       functional_ref: true
       missing_provider_scope: true
       notifier_build: true
-      notifier_extends: false
-      only_use_keep_alive_inside_keep_alive: false
+      notifier_extends: true
+      only_use_keep_alive_inside_keep_alive: true
       protected_notifier_properties: true
-      provider_dependencies: false
-      provider_parameters: false
-      riverpod_syntax_error: false
-      scoped_providers_should_specify_dependencies: false
-      unsupported_provider_value: false
+      provider_dependencies: true
+      provider_parameters: true
+      riverpod_syntax_error: true
+      scoped_providers_should_specify_dependencies: true
+      unsupported_provider_value: true
 
 dart_code_linter:
   rules:
