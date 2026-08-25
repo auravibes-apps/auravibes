@@ -182,8 +182,8 @@ class AuraSpacingScale {
     if (t >= 1) return other;
 
     return AuraSpacingScale(
-      none: _lerpDouble(none, other.none, t),
       base: _lerpDouble(base, other.base, t),
+      none: _lerpDouble(none, other.none, t),
       xs: _lerpDouble(xs, other.xs, t),
       sm: _lerpDouble(sm, other.sm, t),
       md: _lerpDouble(md, other.md, t),

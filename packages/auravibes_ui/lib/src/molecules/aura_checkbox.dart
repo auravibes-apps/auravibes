@@ -130,10 +130,11 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
     );
   }
 
-  Object? _handleActivate(ActivateIntent intent) {
+  Null _handleActivate(ActivateIntent _) {
     if (!widget.isDisabled && widget.onChanged != null) {
       widget.onChanged?.call(!widget.value);
     }
+
     return null;
   }
 }

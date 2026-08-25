@@ -4,10 +4,19 @@ import 'package:flutter/widgets.dart';
 @immutable
 /// Definition of aura paddings.
 class AuraEdgeInsetsGeometry {
+  /// No padding on any side.
   static const none = AuraEdgeInsetsGeometry.all(.none);
+
+  /// Standard base padding on every side.
   static const base = AuraEdgeInsetsGeometry.all(.base);
+
+  /// Medium padding on every side.
   static const medium = AuraEdgeInsetsGeometry.all(.md);
+
+  /// Large padding on every side.
   static const large = AuraEdgeInsetsGeometry.all(.lg);
+
+  /// Small padding on every side.
   static const small = AuraEdgeInsetsGeometry.all(.sm);
 
   /// Constructor for each side.

@@ -240,7 +240,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     );
   }
 
-  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleMenuKeyEvent(FocusNode _, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape) {
       _closeDropdown();
@@ -293,7 +293,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     _requiredFocusNode.unfocus();
   }
 
-  KeyEventResult _handleTriggerKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleTriggerKeyEvent(FocusNode _, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
         _isDropdownOpen) {

@@ -208,7 +208,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     );
   }
 
-  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+  KeyEventResult _handleMenuKeyEvent(FocusNode _, KeyEvent event) {
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
         _visible) {
