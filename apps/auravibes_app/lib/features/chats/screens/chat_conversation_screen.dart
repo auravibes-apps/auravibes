@@ -726,9 +726,9 @@ Future<void> _continueAgent(
     );
     FlutterError.reportError(
       FlutterErrorDetails(
+        library: 'chat_conversation_screen',
         exception: error,
         stack: stackTrace,
-        library: 'chat_conversation_screen',
         context: ErrorDescription('while manually continuing a conversation'),
       ),
     );

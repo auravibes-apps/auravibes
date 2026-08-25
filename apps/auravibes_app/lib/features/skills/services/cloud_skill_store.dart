@@ -29,9 +29,9 @@ class CloudSkillStore {
     final now = DateTime.now().toUtc();
     final id = const UuidV7().generate();
     final entity = SkillEntity(
+      source: SkillSource.user,
       id: id,
       workspaceId: workspaceId,
-      source: SkillSource.user,
       kind: value.kind,
       title: value.title.trim(),
       slug: generateSkillSlug(value.title),
@@ -404,9 +404,9 @@ class CloudSkillStore {
     if (await skill(id) == null) {
       final now = DateTime.now().toUtc();
       final appSkill = SkillEntity(
+        source: SkillSource.app,
         id: id,
         workspaceId: workspaceId,
-        source: SkillSource.app,
         kind: SkillKind.native,
         title: title ?? id,
         slug: slug ?? id,
@@ -541,11 +541,11 @@ class CloudSkillStore {
     final data = _data(value);
 
     return SkillEntity(
-      id: value.resourceId,
-      workspaceId: workspaceId,
       source: SkillSource.values.byName(
         data['source'] as String? ?? SkillSource.user.name,
       ),
+      id: value.resourceId,
+      workspaceId: workspaceId,
       kind: SkillKind.values.byName(data['kind'] as String),
       title: data['title'] as String,
       slug: data['slug'] as String,

@@ -34,6 +34,14 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
         );
 
         return CloudAgentRepository(
+          patch: ({required requestId, required operations}) async {
+            final cloud = await gateway;
+            if (cloud == null) {
+              throw StateError('Cloud workspace gateway unavailable');
+            }
+
+            return cloud.patch(requestId: requestId, operations: operations);
+          },
           workspaceId: session.workspace.localWorkspaceId,
           read: () async {
             final cloud = await gateway;
@@ -53,14 +61,6 @@ final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
 
             return response.pages.expand((page) => page.resources).toList();
           },
-          patch: ({required requestId, required operations}) async {
-            final cloud = await gateway;
-            if (cloud == null) {
-              throw StateError('Cloud workspace gateway unavailable');
-            }
-
-            return cloud.patch(requestId: requestId, operations: operations);
-          },
         );
       },
     );
@@ -74,6 +74,16 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
       .requireValue;
   if (session.cloud != null) {
     return CloudAgentToolsRepository(
+      patch: ({required requestId, required operations}) async {
+        final cloud = await ref.read(
+          cloudWorkspaceStateGatewayProvider(session).future,
+        );
+        if (cloud == null) {
+          throw StateError('Cloud workspace gateway unavailable');
+        }
+
+        return cloud.patch(requestId: requestId, operations: operations);
+      },
       read: () async {
         final cloud = await ref.read(
           cloudWorkspaceStateGatewayProvider(session).future,
@@ -89,16 +99,6 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
         );
 
         return response.pages.single.resources;
-      },
-      patch: ({required requestId, required operations}) async {
-        final cloud = await ref.read(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
-        if (cloud == null) {
-          throw StateError('Cloud workspace gateway unavailable');
-        }
-
-        return cloud.patch(requestId: requestId, operations: operations);
       },
     );
   }

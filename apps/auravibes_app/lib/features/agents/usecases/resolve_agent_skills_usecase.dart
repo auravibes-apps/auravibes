@@ -65,12 +65,12 @@ class ResolveAgentSkillsUsecase {
           }
           available.add(
             AvailableSkill(
+              source: SkillSource.app,
               id: skill.identifier,
               slug: skill.slug,
               title: skill.title,
               description: skill.description,
               content: skill.content,
-              source: SkillSource.app,
               kind: SkillKind.native,
             ),
           );
@@ -111,12 +111,12 @@ resolveAgentSkillsUsecaseProvider =
 extension AgentSkillEntityAvailableSkill on SkillEntity {
   AvailableSkill toAvailableSkill() {
     return AvailableSkill(
+      source: source,
       id: id,
       slug: slug,
       title: title,
       description: description,
       content: content,
-      source: source,
       kind: kind,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,

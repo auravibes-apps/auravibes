@@ -25,9 +25,9 @@ class SkillDetail {
 
   factory SkillDetail.fromUserSkill(SkillEntity skill) {
     return SkillDetail(
+      source: skill.source,
       id: skill.id,
       workspaceId: skill.workspaceId,
-      source: skill.source,
       kind: skill.kind,
       title: skill.title,
       slug: skill.slug,
