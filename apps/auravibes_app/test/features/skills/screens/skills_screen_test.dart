@@ -89,14 +89,15 @@ void main() {
       'skills_manager',
       isEnabled: false,
     );
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(workspace.id).overrideWithValue(null),
         skillsRepositoryProvider.overrideWithValue(skillsRepository),
         appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
           appSkillSettings,

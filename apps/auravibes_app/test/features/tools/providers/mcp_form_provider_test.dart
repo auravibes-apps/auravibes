@@ -183,7 +183,9 @@ void main() {
     setUp(() async {
       final testContainer = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ).overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
           workspaceSessionForRouteProvider.overrideWith(
@@ -370,7 +372,9 @@ void main() {
       readContainer().dispose();
       final failingContainer = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+          ).overrideWithValue(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
           ),
           workspaceSessionForRouteProvider.overrideWith(

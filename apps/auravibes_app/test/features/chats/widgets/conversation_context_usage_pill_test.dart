@@ -12,7 +12,7 @@ void main() {
   Widget buildSubject({required ContextUsageData data}) {
     final container = ProviderContainer(
       overrides: [
-        contextUsageProvider.overrideWithValue(data),
+        contextUsageProvider('ws-1', 'conv-1').overrideWithValue(data),
       ],
     );
     addTearDown(container.dispose);

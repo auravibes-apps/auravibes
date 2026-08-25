@@ -254,13 +254,21 @@ class _GroupedConversationToolsFixture {
     _mcpNotifier = mcpNotifier;
     _container = ProviderContainer(
       overrides: [
-        toolsGroupsRepositoryProvider.overrideWithValue(
+        toolsGroupsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(
           toolsGroupsRepository,
         ),
-        workspaceToolsRepositoryProvider.overrideWithValue(
+        workspaceToolsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(
           workspaceToolsRepository,
         ),
-        conversationToolsRepositoryProvider.overrideWithValue(
+        conversationToolsRepositoryProvider('workspace-1').overrideWithValue(
           conversationToolsRepository,
         ),
         syncSkillToolPermissionsUsecaseProvider.overrideWithValue(

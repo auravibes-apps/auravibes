@@ -177,7 +177,11 @@ ProviderContainer _container({
 }) {
   return ProviderContainer(
     overrides: [
-      workspaceSessionProvider.overrideWithValue(
+      workspaceSessionProvider(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      ).overrideWithValue(
         const WorkspaceSession(
           LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
         ),

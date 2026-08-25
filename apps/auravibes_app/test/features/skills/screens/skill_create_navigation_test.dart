@@ -35,14 +35,15 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(workspace.id).overrideWithValue(null),
       ],
     );
     addTearDown(container.dispose);

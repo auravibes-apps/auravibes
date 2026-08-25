@@ -14,12 +14,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'conversation_tool_state.freezed.dart';
 part 'conversation_tool_state.g.dart';
 
-extension ConversationToolsRepositoryFamilyOverrides
-    on ConversationToolsRepositoryFamily {
-  Override overrideWithValue(ConversationToolsRepository value) =>
-      overrideWith((_, _) => value);
-}
-
 /// State for a single tool in a conversation context.
 @freezed
 abstract class ConversationToolState with _$ConversationToolState {

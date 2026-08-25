@@ -5,11 +5,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'cloud_skill_store_provider.g.dart';
 
-extension CloudSkillStoreFamilyOverrides on CloudSkillStoreFamily {
-  Override overrideWithValue(CloudSkillStore? value) =>
-      overrideWith((_, _) => value);
-}
-
 @riverpod
 CloudSkillStore? cloudSkillStore(Ref ref, String workspaceId) {
   final session = ref

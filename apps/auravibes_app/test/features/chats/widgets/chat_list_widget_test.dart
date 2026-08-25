@@ -21,17 +21,14 @@ void main() {
     required String workspaceId,
     required List<Object> overrides,
   }) {
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspaceId),
+    );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: workspaceId),
-          ),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         workspaceSessionForRouteProvider.overrideWith(
-          (_, workspaceId) async => WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: workspaceId),
-          ),
+          (_, _) async => session,
         ),
         ...overrides.cast(),
       ],

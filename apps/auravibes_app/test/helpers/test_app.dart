@@ -12,6 +12,7 @@ class TestableApp extends StatefulWidget {
     required this.child,
     this.overrides = const [],
     this.workspaceId = 'test-workspace',
+    this.workspaceSession,
     super.key,
   });
 
@@ -24,6 +25,9 @@ class TestableApp extends StatefulWidget {
   /// Local workspace used by workspace-aware providers.
   final String workspaceId;
 
+  /// Session instance used as the generated provider family argument.
+  final WorkspaceSession? workspaceSession;
+
   @override
   State<TestableApp> createState() => _TestableAppState();
 }
@@ -34,17 +38,16 @@ class _TestableAppState extends State<TestableApp> {
   @override
   void initState() {
     super.initState();
+    final session =
+        widget.workspaceSession ??
+        WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
+        );
     _container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
-          ),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         workspaceSessionForRouteProvider.overrideWith(
-          (_, _) async => WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
-          ),
+          (_, _) async => session,
         ),
         ...widget.overrides.cast(),
       ],

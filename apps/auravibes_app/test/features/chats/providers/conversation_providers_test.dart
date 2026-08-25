@@ -237,7 +237,11 @@ class _ConversationProviderFixture {
             LocalWorkspaceRef(localWorkspaceId: 'ws1'),
           ),
         ),
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'ws1'),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'ws1'),
           ),

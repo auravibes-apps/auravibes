@@ -169,7 +169,7 @@ void main() {
       Never local() => throw StateError('local storage touched');
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(workspace),
+          workspaceSessionProvider(workspace).overrideWithValue(workspace),
           workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
             const AsyncData(workspace),
           ),

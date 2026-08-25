@@ -97,16 +97,17 @@ void main() {
             type: WorkspaceType.local,
           ),
         );
+    final appSkillSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
+    );
     final appSkillContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(appSkillDatabase),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: appSkillWorkspace.id),
-          ),
+        workspaceSessionProvider(appSkillSession).overrideWithValue(
+          appSkillSession,
         ),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(appSkillWorkspace.id).overrideWithValue(null),
       ],
     );
     addTearDown(appSkillContainer.dispose);
@@ -126,17 +127,20 @@ void main() {
             type: WorkspaceType.local,
           ),
         );
+    final selectedCredentialSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
+    );
     final selectedCredentialContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
         encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: selectedCredentialWorkspace.id),
-          ),
+        workspaceSessionProvider(selectedCredentialSession).overrideWithValue(
+          selectedCredentialSession,
         ),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(
+          selectedCredentialWorkspace.id,
+        ).overrideWithValue(null),
       ],
     );
     addTearDown(selectedCredentialContainer.dispose);
@@ -212,16 +216,19 @@ void main() {
             type: WorkspaceType.local,
           ),
         );
+    final staleCredentialSession = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
+    );
     final staleCredentialContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: staleCredentialWorkspace.id),
-          ),
+        workspaceSessionProvider(staleCredentialSession).overrideWithValue(
+          staleCredentialSession,
         ),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(staleCredentialWorkspace.id).overrideWithValue(
+          null,
+        ),
       ],
     );
     addTearDown(staleCredentialContainer.dispose);

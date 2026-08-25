@@ -118,7 +118,7 @@ void main() {
 
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(cloud),
+        workspaceSessionProvider(cloud).overrideWithValue(cloud),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
         cloudWorkspaceStateGatewayProvider.overrideWith(
           (_, _) async => gateway,
@@ -145,7 +145,7 @@ void main() {
             );
           },
         ),
-        toolsGroupsRepositoryProvider.overrideWithValue(
+        toolsGroupsRepositoryProvider(cloud).overrideWithValue(
           CloudToolsRepository(Future.value(gateway)),
         ),
         workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
@@ -302,10 +302,10 @@ void main() {
     addTearDown(database.close);
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(local),
+        workspaceSessionProvider(local).overrideWithValue(local),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => local),
         appDatabaseProvider.overrideWithValue(database),
-        toolsGroupsRepositoryProvider.overrideWithValue(
+        toolsGroupsRepositoryProvider(local).overrideWithValue(
           ToolsGroupsRepository(database),
         ),
         serverpodClientForWorkspaceProvider.overrideWith(

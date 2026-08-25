@@ -58,7 +58,7 @@ void main() {
     () async {
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(cloud),
+          workspaceSessionProvider(cloud).overrideWithValue(cloud),
           workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
         ],
       );
@@ -74,7 +74,7 @@ void main() {
   test('unsupported cloud paths fail typed before local fallback', () async {
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(cloud),
+        workspaceSessionProvider(cloud).overrideWithValue(cloud),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
       ],
     );

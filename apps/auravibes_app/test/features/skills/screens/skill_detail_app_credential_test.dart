@@ -47,7 +47,7 @@ void main() {
             ),
           ),
           cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-          cloudSkillStoreProvider.overrideWithValue(null),
+          cloudSkillStoreProvider('workspace-1').overrideWithValue(null),
         ],
       );
       addTearDown(container.dispose);

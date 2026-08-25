@@ -53,13 +53,12 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: workspace.id),
-          ),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         appDatabaseProvider.overrideWithValue(database),
         encryptionServiceProvider.overrideWithValue(encryptionService),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),

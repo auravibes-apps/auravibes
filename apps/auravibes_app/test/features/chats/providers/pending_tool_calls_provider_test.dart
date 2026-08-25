@@ -180,7 +180,11 @@ void main() {
       await tester.pumpWidget(
         hooks.ProviderScope(
           overrides: [
-            workspaceSessionProvider.overrideWithValue(
+            workspaceSessionProvider(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ).overrideWithValue(
               const WorkspaceSession(
                 LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
               ),
@@ -243,7 +247,11 @@ void main() {
       await tester.pumpWidget(
         hooks.ProviderScope(
           overrides: [
-            workspaceSessionProvider.overrideWithValue(
+            workspaceSessionProvider(
+              const WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ).overrideWithValue(
               const WorkspaceSession(
                 LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
               ),
@@ -341,7 +349,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
             ),
@@ -414,7 +426,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
             ),
@@ -495,7 +511,11 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
             ),

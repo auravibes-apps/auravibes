@@ -169,11 +169,16 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
 }
 
 void main() {
-  final localSessionOverride = workspaceSessionProvider.overrideWithValue(
-    const WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-    ),
-  );
+  final localSessionOverride =
+      workspaceSessionProvider(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      ).overrideWithValue(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      );
   group('listWorkspaceModelSelectionsProvider', () {
     test('returns selections for given workspace', () async {
       final now = DateTime(2024);

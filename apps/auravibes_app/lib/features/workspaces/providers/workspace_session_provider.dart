@@ -14,13 +14,6 @@ part 'workspace_session_provider.g.dart';
 @riverpod
 WorkspaceSession workspaceSession(Ref _, WorkspaceSession session) => session;
 
-/// Supports legacy test fixtures while every production read stays keyed.
-extension WorkspaceSessionFamilyOverrides on WorkspaceSessionFamily {
-  Override overrideWithValue(WorkspaceSession value) {
-    return overrideWith((_, _) => value);
-  }
-}
-
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
 Future<WorkspaceSession> workspaceSessionForRoute(

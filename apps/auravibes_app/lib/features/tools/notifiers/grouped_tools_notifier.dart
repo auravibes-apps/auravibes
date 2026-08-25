@@ -17,11 +17,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'grouped_tools_notifier.g.dart';
 
-extension ToolsGroupsRepositoryFamilyOverrides on ToolsGroupsRepositoryFamily {
-  Override overrideWithValue(ToolsGroupsRepositoryContract value) =>
-      overrideWith((_, _) => value);
-}
-
 /// Provider for the tools groups repository.
 @riverpod
 ToolsGroupsRepositoryContract toolsGroupsRepository(

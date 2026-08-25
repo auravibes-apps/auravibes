@@ -177,7 +177,16 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         currentRouteWorkspaceIdProvider.overrideWithValue('workspace-1'),
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             CloudWorkspaceRef(
               localWorkspaceId: 'workspace-1',
@@ -200,8 +209,26 @@ void main() {
           ),
         ),
         mcpServersRepositoryProvider.overrideWithValue(repository),
-        toolsGroupsRepositoryProvider.overrideWithValue(repository),
-        workspaceToolsRepositoryProvider.overrideWithValue(repository),
+        toolsGroupsRepositoryProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+          ),
+        ).overrideWithValue(repository),
+        workspaceToolsRepositoryProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace-1',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 7,
+            ),
+          ),
+        ).overrideWithValue(repository),
         mcpManagerServiceProvider.overrideWith(
           (_) => throw StateError('local MCP manager accessed'),
         ),

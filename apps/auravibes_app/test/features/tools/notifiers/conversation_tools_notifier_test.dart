@@ -638,10 +638,17 @@ class _ConversationToolsNotifierFixture {
       workspaceToolsRepository: workspaceToolsRepository,
       container: ProviderContainer(
         overrides: [
-          conversationToolsRepositoryProvider.overrideWithValue(
+          conversationToolsRepositoryProvider('workspace-1').overrideWithValue(
             conversationToolsRepository,
           ),
-          workspaceToolsRepositoryProvider.overrideWithValue(
+          conversationToolsRepositoryProvider('ws-1').overrideWithValue(
+            conversationToolsRepository,
+          ),
+          workspaceToolsRepositoryProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(
             workspaceToolsRepository,
           ),
           workspaceSessionForRouteProvider('workspace-1').overrideWithValue(

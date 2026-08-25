@@ -40,7 +40,9 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(workspace),
+        ).overrideWithValue(
           const WorkspaceSession(workspace),
         ),
         workspaceSessionForRouteProvider.overrideWith(
