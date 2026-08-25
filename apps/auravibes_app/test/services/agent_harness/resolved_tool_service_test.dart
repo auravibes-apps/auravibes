@@ -54,12 +54,12 @@ class _MockSkillCredentialsRepository extends Mock
 
 AvailableSkill _appAvailableSkill(String slug) {
   return AvailableSkill(
+    source: SkillSource.app,
     id: slug,
     slug: slug,
     title: slug,
     description: '',
     content: '',
-    source: SkillSource.app,
     kind: SkillKind.native,
   );
 }

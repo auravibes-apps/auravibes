@@ -24,20 +24,6 @@ void main() {
     var creates = 0;
     var discoveries = 0;
     final repository = CloudToolsRepository.forTesting(
-      read: ({required pages}) async => ReadWorkspaceStateResponse(
-        pages: [
-          for (final page in pages)
-            WorkspaceResourcePage(
-              resourceKind: page.resourceKind,
-              resources: resources
-                  .where((item) => item.resourceKind == page.resourceKind)
-                  .toList(),
-            ),
-        ],
-        currentSequence: 1,
-        events: const [],
-        requiresSnapshot: false,
-      ),
       patch: ({required requestId, required operations}) async {
         patchedKinds.addAll(operations.map((item) => item.resourceKind));
         final changed = <WorkspaceResource>[];
@@ -65,6 +51,20 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: changed, sequence: 1);
       },
+      read: ({required pages}) async => ReadWorkspaceStateResponse(
+        pages: [
+          for (final page in pages)
+            WorkspaceResourcePage(
+              resourceKind: page.resourceKind,
+              resources: resources
+                  .where((item) => item.resourceKind == page.resourceKind)
+                  .toList(),
+            ),
+        ],
+        currentSequence: 1,
+        events: const [],
+        requiresSnapshot: false,
+      ),
       create:
           ({
             required requestId,
