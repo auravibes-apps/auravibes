@@ -237,6 +237,7 @@ class _SkillTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const tagSpacing = 8.0;
+
     return AuraCard(
       child: AuraRow(
         children: [

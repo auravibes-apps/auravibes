@@ -71,8 +71,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
           if (agent == null) return const Center(child: AuraSpinner());
           _initialize(agent);
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() {});
+            if (mounted) setState(() => _loaded = true);
           });
+
           return const Center(child: AuraSpinner());
         },
       );
@@ -89,8 +90,9 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
           }
           _initializeToolOverrides(snapshot.requireData);
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) setState(() {});
+            if (mounted) setState(() => _toolOverridesLoaded = true);
           });
+
           return const AuraScreen(child: Center(child: AuraSpinner()));
         },
       );
@@ -186,15 +188,17 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   void _setVisibility(AgentVisibility value) =>
       setState(() => _visibility = value);
 
-  Future<void> _manageSkills({
+  void _manageSkills({
     required List<WorkspaceSkill> enabledSkills,
     required List<WorkspaceSkill> disabledSkills,
     required List<AgentSkillRef> unavailableRefs,
   }) {
-    return _showSkillsManager(
-      enabledSkills: enabledSkills,
-      disabledSkills: disabledSkills,
-      unavailableRefs: unavailableRefs,
+    unawaited(
+      _showSkillsManager(
+        enabledSkills: enabledSkills,
+        disabledSkills: disabledSkills,
+        unavailableRefs: unavailableRefs,
+      ),
     );
   }
 

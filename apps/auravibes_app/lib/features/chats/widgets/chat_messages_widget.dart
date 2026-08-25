@@ -816,6 +816,7 @@ class _ToolCallStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     const iconSize = 14.0;
     const textSize = 12.0;
+
     return Padding(
       padding: EdgeInsets.only(
         top: context.auraTheme.fromSpacing(.xs),

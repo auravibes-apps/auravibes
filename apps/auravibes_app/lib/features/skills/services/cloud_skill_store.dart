@@ -668,6 +668,7 @@ class CloudSkillStore {
     if (value == null) return null;
 
     const suffixLength = 6;
+
     return value.characters.length <= suffixLength
         ? value
         : value.characters

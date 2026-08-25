@@ -118,14 +118,15 @@ class GroupedConversationToolsNotifier
       );
     }
 
-    // Sort: Default first, then by priority (errors first), then by.
+    // Sort: Default first, then by priority (errors first), then by
     // CreatedAt desc.
     result.sort((a, b) {
       final priorityCompare = a.sortPriority.compareTo(b.sortPriority);
       if (priorityCompare != 0) return priorityCompare;
 
       // Same priority. Sort by createdAt descending, with newest first.
-      // The default group has no createdAt, so use a far-future date to keep it first.
+      // The default group has no createdAt, so use a far-future date to keep it
+      // first.
       final aDate = a.group?.createdAt ?? DateTime(2099);
       final bDate = b.group?.createdAt ?? DateTime(2099);
 

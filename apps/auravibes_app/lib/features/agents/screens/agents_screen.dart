@@ -163,6 +163,7 @@ class _AgentsList extends ConsumerWidget {
   ) {
     if (value == 'edit') {
       _openAgent(context, agentId);
+
       return;
     }
     unawaited(_confirmDelete(context, ref, agentId));
