@@ -94,6 +94,38 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
   `member-ordering` 358, `format-comment` 67, and
   `prefer-extracting-callbacks` 38.
 
+## Native analyzer cleanup — 2026-08-25
+
+- Baseline native analyzer: 302 diagnostics (128 compile errors, one
+  fatalized unused import, 39 warnings, 134 infos, and 48 DCL entries) with
+  the eight Riverpod rules disabled while the source errors were repaired.
+- Safe `dart fix` batch committed as `0453e162`; provider-family collision
+  cleanup as `210facd2`; nullable async pattern fix as `9dd50ee9`.
+- Removed the six manual family `overrideWithValue` extensions and migrated
+  tests to generated provider-instance overrides in `ccab0094`. This removes
+  the family-name collisions without editing generated files. The keyed
+  `ws-1` fixture override was retained where the old family-wide test helper
+  had covered both workspace IDs.
+- UI diagnostics committed as `88cbee9e`. App library diagnostics are split
+  across `bda42f8d`, `f1fa54d4`, `2317b332`, and `23c0140d`. App test
+  diagnostics are split across `e3bb161d` and `20969525`.
+- The native DCL `arguments-ordering` adapter in DCL 4.2.x does not recognize
+  analyzer-13 `KeywordToken` named arguments (`source`, `patch`, `library`,
+  and similar) and treats them as positional. Reported calls were reordered
+  to that adapter's actual ordering; no ignores or rule removals were added.
+- Re-enabled all eight Riverpod diagnostics in `5efe9c52`; each fatal app
+  analyzer run completed with zero diagnostics and no plugin crash.
+- Full app fatal analyzer completed with zero diagnostics after `ccab0094`;
+  targeted provider/skill/workspace/tool tests passed after the fixture-key
+  correction.
+- Residual `arguments-ordering` in `tool/changed_test_selector.dart` was
+  corrected in `69791dc4` using the DCL `KeywordToken` ordering workaround.
+- Final gates completed: app analyzer 0, UI analyzer 0, DCL 0 rule issues and
+  0 anti-patterns, `validate:quick` passed, dependency validator passed,
+  import sorter passed, app CI passed 2,818 tests, and UI CI passed 559 tests.
+- Generated files remain untouched. Current app and UI fatal analyzers are
+  clean; final repository-wide gates remain to be run once.
+
 ## Recovery protocol
 
 After compaction read this ledger, the attached goal, `git log`, `git status`,
