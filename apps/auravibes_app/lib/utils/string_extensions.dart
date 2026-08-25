@@ -6,8 +6,8 @@ extension StringExtensions on String {
   /// Converts it to a human-readable format with proper capitalization.
   ///
   /// Examples include `read_file`, `readFile`, `read-file`, and `READ_FILE`,
-  /// which become `Read File`. The identifiers `my_server` and `MyServer` become
-  /// `My Server`.
+  /// which become `Read File`. The identifiers `my_server` and `MyServer`
+  /// become `My Server`.
   String toHumanReadable() {
     if (isEmpty) return this;
 

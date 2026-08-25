@@ -187,6 +187,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             animation: _requiredController,
             builder: (context, child) {
               final leftOffset = drawerWidth * _requiredController.value;
+
               return Positioned(
                 left: leftOffset,
                 top: 0,
@@ -200,6 +201,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             animation: _requiredController,
             builder: (context, child) {
               final dx = -drawerWidth * (1 - _requiredController.value);
+
               return Transform.translate(
                 offset: Offset(dx, 0),
                 child: GestureDetector(
@@ -297,6 +299,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
           animation: _requiredController,
           builder: (context, child) {
             final dx = drawerWidth * _requiredController.value;
+
             return Transform.translate(
               offset: Offset(dx, 0),
               child: GestureDetector(
@@ -320,6 +323,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
             final gradientColor = widget.isDarkMode
                 ? Colors.black
                 : _scrimColor;
+
             return Transform.translate(
               offset: Offset(dx, 0),
               child: IgnorePointer(
@@ -382,6 +386,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
           animation: _requiredController,
           builder: (context, child) {
             final dx = -drawerWidth * (1 - _requiredController.value);
+
             return Transform.translate(
               offset: Offset(dx, 0),
               child: GestureDetector(

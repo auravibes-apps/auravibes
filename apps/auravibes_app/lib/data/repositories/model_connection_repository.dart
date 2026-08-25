@@ -441,6 +441,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
 
   String _keySuffix(String key) {
     const keySuffixLength = 6;
+
     return key.lastCharacters(keySuffixLength);
   }
 

@@ -319,6 +319,7 @@ class CodexOAuthService {
     if (value is int) return Duration(seconds: max(value, 1));
     if (value is String) {
       const defaultPollSeconds = 5;
+
       return Duration(
         seconds: max(int.tryParse(value) ?? defaultPollSeconds, 1),
       );

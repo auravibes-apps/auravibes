@@ -49,6 +49,7 @@ class GroupedToolsViewItem {
     const disconnectedIndex = 3;
     const connectingIndex = 4;
     const connectedIndex = 5;
+
     return switch (mcpConnection?.status) {
       McpConnectionViewStatus.error => errorIndex,
       McpConnectionViewStatus.disconnected => disconnectedIndex,

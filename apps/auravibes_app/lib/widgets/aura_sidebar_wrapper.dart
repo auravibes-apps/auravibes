@@ -67,6 +67,7 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
   const newChatIndex = 0;
   const appSettingsIndex = 1;
   const footerSettingsIndex = 2;
+
   return switch (shellIndex) {
     newChatIndex => newChatIndex, // New Chat.
     appSettingsIndex => appSettingsIndex, // App Settings.
