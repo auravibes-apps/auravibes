@@ -93,7 +93,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
         case AsyncData(value: final detail?):
           _initializeForm(context, detail);
           _formDetail = detail;
-        case AsyncLoading(value: final detail?, hasValue: true):
+        case AsyncLoading(value: final SkillDetail detail, hasValue: true):
           _initializeForm(context, detail);
           _formDetail = detail;
         case AsyncLoading():
