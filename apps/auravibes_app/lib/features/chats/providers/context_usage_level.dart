@@ -9,7 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';
 
-extension ContextUsageLevel on ContextUsageFamily {
+extension ContextUsageFamilyOverrides on ContextUsageFamily {
   Override overrideWithValue(ContextUsageData value) =>
       overrideWith((_, _) => value);
 }

@@ -15,7 +15,7 @@ part 'workspace_session_provider.g.dart';
 WorkspaceSession workspaceSession(Ref _, WorkspaceSession session) => session;
 
 /// Supports legacy test fixtures while every production read stays keyed.
-extension WorkspaceSessionProvider on WorkspaceSessionFamily {
+extension WorkspaceSessionFamilyOverrides on WorkspaceSessionFamily {
   Override overrideWithValue(WorkspaceSession value) {
     return overrideWith((_, _) => value);
   }
