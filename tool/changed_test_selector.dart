@@ -462,8 +462,8 @@ Future<void> main(List<String> args) async {
       case 'select':
         _checkOptions(options, const {'base', 'head', 'output'});
         final result = await selectRepository(
-          rootPath: Directory.current.path,
           base: _requiredOption(options, 'base'),
+          rootPath: Directory.current.path,
           head: _requiredOption(options, 'head'),
         );
         final _ = await File(

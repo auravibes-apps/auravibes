@@ -340,8 +340,8 @@ void main() {
       final failContainer = ProviderContainer(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
-            (_, workspaceId) async => WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            (_, _) async => const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'ws1'),
             ),
           ),
           workspaceToolsRepositoryProvider(
