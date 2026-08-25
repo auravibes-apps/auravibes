@@ -2,9 +2,9 @@ import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/workspaces/providers/last_workspace_selection_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
+import 'package:auravibes_app/features/workspaces/usecases/workspace_selection.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'workspace_selection.dart';
 
 export 'workspace_selection.dart';
 

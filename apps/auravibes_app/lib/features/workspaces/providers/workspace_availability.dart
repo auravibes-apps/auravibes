@@ -1,5 +1,4 @@
-import 'package:auravibes_server_client/auravibes_server_client.dart';
-import '../models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 
 sealed class WorkspaceAvailability {
   const WorkspaceAvailability(this.session);

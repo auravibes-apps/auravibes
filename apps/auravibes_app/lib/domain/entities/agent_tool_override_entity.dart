@@ -1,6 +1,5 @@
-import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-
 import 'package:auravibes_app/domain/entities/agent_tool_permission_mode.dart';
+import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
 export 'agent_tool_permission_mode.dart';
 

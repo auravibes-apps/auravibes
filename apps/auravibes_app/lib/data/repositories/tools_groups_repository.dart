@@ -1,8 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
-import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
-
 import 'package:auravibes_app/data/repositories/tools_groups_repository_contract.dart';
+import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 
 export 'tools_groups_repository_contract.dart';
 

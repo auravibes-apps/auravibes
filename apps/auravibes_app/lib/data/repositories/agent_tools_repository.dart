@@ -1,9 +1,8 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/repositories/agent_tools_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
-
-import 'package:auravibes_app/data/repositories/agent_tools_repository_contract.dart';
 
 export 'agent_tools_repository_contract.dart';
 

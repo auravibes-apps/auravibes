@@ -1,10 +1,9 @@
+import 'package:auravibes_app/features/workspaces/models/workspace_mcp_authentication.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_mcp_transport.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'workspace_mcp_authentication.dart';
-import 'workspace_mcp_transport.dart';
-
-export 'workspace_mcp_transport.dart';
 
 export 'workspace_mcp_authentication.dart';
+export 'workspace_mcp_transport.dart';
 
 final class WorkspaceCapabilities {
   static const local = WorkspaceCapabilities(

@@ -28,16 +28,6 @@ class CloudWorkspaceStateGateway {
   static const _stateReadTimeout = Duration(seconds: 15);
   static const _initialReconnectDelay = Duration(milliseconds: 250);
   static const _maxReconnectDelay = Duration(seconds: 8);
-
-  CloudWorkspaceStateGateway.forTesting({
-    required this._workspace,
-    required this._readState,
-    required this._subscribe,
-    this._putSecret,
-    this._mutateCredential,
-    this._delay = _defaultDelay,
-    this.readTimeout = _stateReadTimeout,
-  }) : _client = null;
   CloudWorkspaceStateGateway({
     required Client client,
     required CloudWorkspaceRef workspace,
@@ -51,6 +41,16 @@ class CloudWorkspaceStateGateway {
        _putSecret = null,
        _mutateCredential = null,
        _delay = _defaultDelay;
+
+  CloudWorkspaceStateGateway.forTesting({
+    required this._workspace,
+    required this._readState,
+    required this._subscribe,
+    this._putSecret,
+    this._mutateCredential,
+    this._delay = _defaultDelay,
+    this.readTimeout = _stateReadTimeout,
+  }) : _client = null;
   final Duration readTimeout;
   final WorkspaceSecretPut? _putSecret;
   final CloudWorkspaceRef _workspace;
