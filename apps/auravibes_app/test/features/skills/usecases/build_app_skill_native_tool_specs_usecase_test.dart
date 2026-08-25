@@ -277,12 +277,12 @@ void main() {
 
 AvailableSkill _appSkill(String slug) {
   return AvailableSkill(
+    source: SkillSource.app,
     id: slug,
     slug: slug,
     title: slug,
     description: '',
     content: '',
-    source: SkillSource.app,
     kind: SkillKind.native,
   );
 }

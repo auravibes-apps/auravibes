@@ -11,7 +11,6 @@ void main() {
     final resources = <WorkspaceResource>[];
     final capturedOperations = <WorkspacePatchOperation>[];
     final repository = CloudAgentToolsRepository(
-      read: () async => List.of(resources),
       patch: ({required requestId, required operations}) async {
         capturedOperations.addAll(operations);
         final changed = <WorkspaceResource>[];
@@ -47,6 +46,7 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: changed, sequence: 1);
       },
+      read: () async => List.of(resources),
     );
 
     expect(
@@ -91,6 +91,8 @@ void main() {
   test('ignores stale, deleted, skill, and other-agent associations', () async {
     final now = DateTime.utc(2026);
     final repository = CloudAgentToolsRepository(
+      patch: ({required requestId, required operations}) =>
+          throw StateError('unexpected patch'),
       read: () async => [
         _resource(now, 'tool', {
           'agentId': 'agent-1',
@@ -116,8 +118,6 @@ void main() {
           'permissionMode': 'alwaysAsk',
         }),
       ],
-      patch: ({required requestId, required operations}) =>
-          throw StateError('unexpected patch'),
     );
 
     final overrides = await repository.getAgentTools('agent-1');
@@ -128,6 +128,10 @@ void main() {
   test('propagates stale revision conflicts', () async {
     final now = DateTime.utc(2026);
     final repository = CloudAgentToolsRepository(
+      patch: ({required requestId, required operations}) async {
+        expect(operations.single.expectedRevision, 1);
+        throw StateError('stale revision');
+      },
       read: () async => [
         _resource(now, 'association-1', {
           'agentId': 'agent-1',
@@ -135,10 +139,6 @@ void main() {
           'permissionMode': 'alwaysAsk',
         }),
       ],
-      patch: ({required requestId, required operations}) async {
-        expect(operations.single.expectedRevision, 1);
-        throw StateError('stale revision');
-      },
     );
 
     await expectLater(

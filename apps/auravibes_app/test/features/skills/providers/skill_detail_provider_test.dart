@@ -48,8 +48,8 @@ void main() {
         cloudSkillStoreProvider(workspaceId).overrideWithValue(
           _cloudStore([
             _resource(
-              id: 'duckduckgo',
               source: SkillSource.app,
+              id: 'duckduckgo',
               kind: SkillKind.native,
               title: 'Workspace Search',
               slug: 'workspace_search',
@@ -86,8 +86,8 @@ void main() {
           cloudSkillStoreProvider(workspaceId).overrideWithValue(
             _cloudStore([
               _resource(
-                id: 'duckduckgo',
                 source: SkillSource.user,
+                id: 'duckduckgo',
                 kind: SkillKind.template,
                 title: 'My Search',
                 slug: 'my_search',
@@ -160,9 +160,9 @@ void main() {
 CloudSkillStore _cloudStore(List<WorkspaceResource> resources) {
   return CloudSkillStore(
     CloudWorkspaceResourceStore.forTesting(
-      watch: (_) => Stream.value(resources),
       patch: ({required requestId, required operations}) =>
           throw UnimplementedError(),
+      watch: (_) => Stream.value(resources),
       putSecret:
           ({
             required requestId,

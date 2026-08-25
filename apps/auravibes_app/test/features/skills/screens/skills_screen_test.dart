@@ -104,11 +104,11 @@ void main() {
         workspaceSkillsProvider(workspace.id).overrideWith(
           (_) async => [
             WorkspaceSkill(
+              source: SkillSource.user,
               id: skill.id,
               slug: skill.slug,
               title: skill.title,
               description: skill.description,
-              source: SkillSource.user,
               kind: skill.kind,
               isEnabled: skill.isEnabled,
             ),

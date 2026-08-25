@@ -131,12 +131,12 @@ void main() {
         const workspaceId = 'workspace-1';
         const conversationId = 'conversation-1';
         final persistedAppSkill = _skill(
+          source: SkillSource.app,
           id: 'duckduckgo',
           workspaceId: workspaceId,
           title: 'Persisted DuckDuckGo',
           slug: 'duckduckgo',
           now: now,
-          source: SkillSource.app,
         );
         final usecase = ListAvailableSkillsUsecase(
           _FakeSkillsRepository([persistedAppSkill]),
@@ -404,13 +404,13 @@ void main() {
 CloudSkillStore _cloudStore(List<WorkspaceResource> resources) =>
     CloudSkillStore(
       CloudWorkspaceResourceStore.forTesting(
+        patch: ({required requestId, required operations}) =>
+            throw UnimplementedError(),
         watch: (kinds) => Stream.value(
           resources
               .where((resource) => kinds.contains(resource.resourceKind))
               .toList(),
         ),
-        patch: ({required requestId, required operations}) =>
-            throw UnimplementedError(),
         putSecret:
             ({
               required requestId,
@@ -464,9 +464,9 @@ SkillEntity _skill({
   SkillSource source = SkillSource.user,
 }) {
   return SkillEntity(
+    source: source,
     id: id,
     workspaceId: workspaceId,
-    source: source,
     kind: SkillKind.template,
     title: title,
     slug: slug,

@@ -79,11 +79,11 @@ void main() {
           workspaceSkillsProvider(fixture.workspace.id).overrideWith(
             (_) async => const [
               WorkspaceSkill(
+                source: SkillSource.user,
                 id: 'summarizer',
                 slug: 'summarizer',
                 title: 'Summarizer',
                 description: 'Summarize things.',
-                source: SkillSource.user,
                 kind: SkillKind.template,
                 isEnabled: true,
               ),

@@ -10,22 +10,6 @@ void main() {
     final capturedOperations = <WorkspacePatchOperation>[];
     final now = DateTime.utc(2026);
     final repository = CloudAgentRepository(
-      workspaceId: 'workspace',
-      read: () async => [
-        WorkspaceResource(
-          workspaceId: 1,
-          resourceKind: WorkspaceResourceKind.agent,
-          resourceId: 'agent-1',
-          data: jsonEncode({
-            'name': 'Agent',
-            'content': 'Prompt',
-            'visibility': 'both',
-          }),
-          revision: 3,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      ],
       patch: ({required requestId, required operations}) async {
         capturedOperations.addAll(operations);
         final agentOperation =
@@ -46,6 +30,22 @@ void main() {
           sequence: 1,
         );
       },
+      workspaceId: 'workspace',
+      read: () async => [
+        WorkspaceResource(
+          workspaceId: 1,
+          resourceKind: WorkspaceResourceKind.agent,
+          resourceId: 'agent-1',
+          data: jsonEncode({
+            'name': 'Agent',
+            'content': 'Prompt',
+            'visibility': 'both',
+          }),
+          revision: 3,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
     );
 
     expect(
@@ -121,8 +121,6 @@ void main() {
     ];
     final captured = <WorkspacePatchOperation>[];
     final repository = CloudAgentRepository(
-      workspaceId: 'workspace',
-      read: () async => List.of(resources),
       patch: ({required requestId, required operations}) async {
         captured.addAll(operations);
         final changed = <WorkspaceResource>[];
@@ -164,6 +162,8 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: changed, sequence: 1);
       },
+      workspaceId: 'workspace',
+      read: () async => List.of(resources),
     );
 
     final loaded = await repository.getAgentById('agent-1');
