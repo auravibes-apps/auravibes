@@ -206,12 +206,12 @@ class AppDatabase extends _$AppDatabase {
   /// with proper configuration for mobile and desktop platforms.
   static QueryExecutor _openConnection({String? dbHashSource}) {
     return driftDatabase(
+      native: const DriftNativeOptions(shareAcrossIsolates: true),
       name: databaseNameForHashSource(dbHashSource),
       web: .new(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
         driftWorker: Uri.parse('drift_worker.dart.js'),
       ),
-      native: const DriftNativeOptions(shareAcrossIsolates: true),
     );
   }
 

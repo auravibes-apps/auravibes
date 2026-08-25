@@ -43,8 +43,8 @@ class SkillsRepository {
   ) async {
     final table = await _dao.createSkill(
       SkillsCompanion(
-        workspaceId: Value(workspaceId),
         source: const Value(SkillSourceTable.user),
+        workspaceId: Value(workspaceId),
         kind: Value(_mapKindToTable(skill.kind)),
         title: Value(skill.title.trim()),
         slug: Value(generateSkillSlug(skill.title)),
@@ -87,9 +87,9 @@ class SkillsRepository {
 
   SkillEntity _tableToEntity(SkillsTable table) {
     return SkillEntity(
+      source: _mapSource(table.source),
       id: table.id,
       workspaceId: table.workspaceId,
-      source: _mapSource(table.source),
       kind: _mapKind(table.kind),
       title: table.title,
       slug: table.slug,
