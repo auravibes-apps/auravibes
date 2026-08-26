@@ -195,10 +195,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
             onTapOutside: (_) => close(),
             groupId: this,
           ),
-          child: TapRegion(
-            child: widget.child,
-            groupId: this,
-          ),
+          child: TapRegion(child: widget.child, groupId: this),
         ),
       ),
       focusNode: _requiredFocusNode,
@@ -227,10 +224,7 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 }
 
 class _AuraPopupMenuCloseScope extends InheritedWidget {
-  const _AuraPopupMenuCloseScope({
-    required this.close,
-    required super.child,
-  });
+  const _AuraPopupMenuCloseScope({required this.close, required super.child});
 
   final VoidCallback close;
 
@@ -250,7 +244,6 @@ class _AuraPopupMenuCloseScope extends InheritedWidget {
 ///
 /// This abstract class defines the interface for all menu items,
 /// including regular items, dividers, and custom builders.
-// ignore: one_member_abstracts - Required as extension point for menu entries.
 abstract class AuraPopupMenuEntry {
   /// Creates a new menu entry.
   const AuraPopupMenuEntry();
@@ -268,10 +261,7 @@ class AuraPopupMenuDivider extends AuraPopupMenuEntry {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(
-      height: 1,
-      thickness: 1,
-    );
+    return const Divider(height: 1, thickness: 1);
   }
 }
 
