@@ -282,64 +282,53 @@ void _logToolExecutionError({
   );
 }
 
-final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
-    Provider<AgentToolExecutionService>((ref) {
-      return AgentToolExecutionService(
-        loadLatestMessageToolCallsUsecase: ref.watch(
-          agentToolCallLoaderProvider,
-        ),
-        messageRepository: ref.watch(messageRepositoryProvider),
-        resolveToolApprovalDecisionForWorkspace: (workspaceId) =>
-            ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
-        resolveSkillCommandTarget:
-            ({
-              required conversationId,
-              required workspaceId,
-              required command,
-            }) async {
-              final manifests = await ref
-                  .read(buildLoadedSkillManifestsUsecaseProvider)
-                  .call(
-                    conversationId: conversationId,
-                    workspaceId: workspaceId,
-                  );
-              final manifest = manifests
-                  .where((candidate) => candidate.slug == command.skill)
-                  .firstOrNull;
-              if (manifest == null || manifest.revision != command.revision) {
-                return null;
-              }
-              final specs = [
-                ...await ref
-                    .read(buildSkillTemplateToolSpecsUsecaseProvider)
-                    .call(
-                      conversationId: conversationId,
-                      workspaceId: workspaceId,
-                    ),
-                ...await ref
-                    .read(buildAppSkillNativeToolSpecsUsecaseProvider)
-                    .call(
-                      conversationId: conversationId,
-                      workspaceId: workspaceId,
-                    ),
-              ];
-              const resolver = agent.AgentToolNameResolver();
-              final matches = <agent.AgentResolvedToolName>[];
-              for (final spec in specs) {
-                final candidate = resolver.resolve(spec.name);
-                if (candidate != null &&
-                    candidate.skillSlug == command.skill &&
-                    candidate.toolIdentifier == command.tool) {
-                  matches.add(candidate);
-                }
-              }
+final Provider<AgentToolExecutionService>
+agentToolExecutionServiceProvider = Provider<AgentToolExecutionService>((ref) {
+  return AgentToolExecutionService(
+    loadLatestMessageToolCallsUsecase: ref.watch(agentToolCallLoaderProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
+    resolveToolApprovalDecisionForWorkspace: (workspaceId) =>
+        ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
+    resolveSkillCommandTarget:
+        ({
+          required conversationId,
+          required workspaceId,
+          required command,
+        }) async {
+          final manifests = await ref
+              .read(buildLoadedSkillManifestsUsecaseProvider)
+              .call(conversationId: conversationId, workspaceId: workspaceId);
+          final manifest = manifests
+              .where((candidate) => candidate.slug == command.skill)
+              .firstOrNull;
+          if (manifest == null || manifest.revision != command.revision) {
+            return null;
+          }
+          final specs = [
+            ...await ref
+                .read(buildSkillTemplateToolSpecsUsecaseProvider)
+                .call(conversationId: conversationId, workspaceId: workspaceId),
+            ...await ref
+                .read(buildAppSkillNativeToolSpecsUsecaseProvider)
+                .call(conversationId: conversationId, workspaceId: workspaceId),
+          ];
+          const resolver = agent.AgentToolNameResolver();
+          final matches = <agent.AgentResolvedToolName>[];
+          for (final spec in specs) {
+            final candidate = resolver.resolve(spec.name);
+            if (candidate != null &&
+                candidate.skillSlug == command.skill &&
+                candidate.toolIdentifier == command.tool) {
+              matches.add(candidate);
+            }
+          }
 
-              return matches.length == 1 ? matches.single : null;
-            },
-        runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
-        getAgentIterationDecisionUsecase: ref.watch(
-          agentToolDecisionServiceProvider,
-        ),
-        agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-      );
-    });
+          return matches.length == 1 ? matches.single : null;
+        },
+    runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),
+    getAgentIterationDecisionUsecase: ref.watch(
+      agentToolDecisionServiceProvider,
+    ),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+  );
+});

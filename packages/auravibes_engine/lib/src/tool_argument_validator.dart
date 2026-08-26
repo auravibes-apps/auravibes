@@ -5,11 +5,7 @@ void validateToolArguments(
   _validateValue(schema, arguments, r'$');
 }
 
-void _validateValue(
-  Map<String, Object?> schema,
-  Object? value,
-  String path,
-) {
+void _validateValue(Map<String, Object?> schema, Object? value, String path) {
   switch (schema['type']) {
     case null:
       break;
@@ -38,11 +34,7 @@ void _validateValue(
   }
 }
 
-void _validateObject(
-  Map<String, Object?> schema,
-  Object? value,
-  String path,
-) {
+void _validateObject(Map<String, Object?> schema, Object? value, String path) {
   if (value is! Map) {
     throw FormatException('Expected object at $path');
   }
@@ -92,11 +84,7 @@ String _propertyPath(String path, Object? name) {
   return "$path['$escaped']";
 }
 
-void _validateArray(
-  Map<String, Object?> schema,
-  Object? value,
-  String path,
-) {
+void _validateArray(Map<String, Object?> schema, Object? value, String path) {
   if (value is! List) {
     throw FormatException('Expected array at $path');
   }

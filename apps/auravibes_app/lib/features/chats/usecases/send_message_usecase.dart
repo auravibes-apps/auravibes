@@ -165,6 +165,7 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
 
 final ProviderFamily<SendMessageUsecase, String>
 sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
+  // Keep callback and scoped dependencies as distinct arguments.
   (ref, workspaceId) {
     final session = ref
         .watch(workspaceSessionForRouteProvider(workspaceId))

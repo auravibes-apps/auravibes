@@ -17,16 +17,83 @@ import 'package:auravibes_app/features/chats/notifiers/messages_streaming_state.
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
+import 'package:auravibes_app/services/tools/native_tool_type.dart';
+import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart' as hooks;
 import 'package:riverpod/riverpod.dart';
+import 'package:riverpod/src/framework.dart' show Override;
 import 'package:rxdart/rxdart.dart';
+
+ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
+  return ProviderContainer(
+    overrides: [
+      workspaceSessionForRouteProvider.overrideWith(
+        (_, workspaceId) =>
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
+      ),
+      loadConversationToolSpecsUsecaseProvider.overrideWith(
+        (_, _) => const _FakeLoadConversationToolSpecsUsecase(),
+      ),
+      ...overrides,
+    ],
+  );
+}
+
+class _FakeLoadConversationToolSpecsUsecase
+    implements LoadConversationToolSpecsUsecase {
+  const _FakeLoadConversationToolSpecsUsecase();
+
+  @override
+  Future<List<ToolSpec>> call({
+    required String conversationId,
+    required String workspaceId,
+  }) async => (await buildCatalog(
+    conversationId: conversationId,
+    workspaceId: workspaceId,
+  )).specs;
+
+  @override
+  Future<ToolCatalog<ResolvedTool>> buildCatalog({
+    required String conversationId,
+    required String workspaceId,
+  }) async {
+    return buildToolCatalog([
+      ToolCatalogCandidate.external(
+        spec: ToolSpec(
+          name: 'built_in_calc_calculator',
+          description: 'Calculator',
+          inputJsonSchema: {},
+        ),
+        target: ResolvedTool.builtIn(
+          tableId: 'calc',
+          toolIdentifier: 'calculator',
+          tooltype: UserToolType.calculator,
+        ),
+        sourceId: 'calc',
+      ),
+      ToolCatalogCandidate.external(
+        spec: ToolSpec(
+          name: 'native_ws-tool-url_url',
+          description: 'URL',
+          inputJsonSchema: {},
+        ),
+        target: ResolvedTool.native(
+          tableId: 'url',
+          nativeToolType: NativeToolType.url,
+        ),
+        sourceId: 'url',
+      ),
+    ]);
+  }
+}
 
 MessageToolCallEntity _pendingToolCall({
   required String id,
@@ -314,7 +381,7 @@ void main() {
   );
 
   group('pendingToolCallsProvider', () {
-    var container = ProviderContainer();
+    var container = _pendingToolContainer();
 
     tearDown(() {
       container.dispose();
@@ -338,7 +405,7 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -412,7 +479,7 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -494,7 +561,7 @@ void main() {
         parentConversationId: 'conv-1',
       );
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           workspaceSessionProvider(
             const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
@@ -567,7 +634,7 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
@@ -625,7 +692,7 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
@@ -702,7 +769,7 @@ void main() {
         ),
       });
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
@@ -742,7 +809,7 @@ void main() {
 
       container.dispose();
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
@@ -808,7 +875,7 @@ void main() {
         ),
       );
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(
@@ -878,7 +945,7 @@ void main() {
         ),
       ];
 
-      container = ProviderContainer(
+      container = _pendingToolContainer(
         overrides: [
           conversationSelectedProvider.overrideWithValue('conv-1'),
           childConversationsStreamProvider(

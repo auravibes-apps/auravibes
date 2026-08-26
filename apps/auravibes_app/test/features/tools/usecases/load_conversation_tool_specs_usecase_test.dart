@@ -301,19 +301,19 @@ void main() {
           workspaceId: 'ws-1',
         );
         final names = catalog.specs.map((spec) => spec.name).toList();
+        final githubSearchSuffix = stableToolNameSuffix(
+          'mcp:github-server:github-search-row:search',
+        );
+        final linearSearchSuffix = stableToolNameSuffix(
+          'mcp:linear-server:linear-search-row:search',
+        );
         final externalTargets = {
           'calculator_${stableToolNameSuffix('user:calculator-row-a')}':
               calculatorA,
           'calculator_${stableToolNameSuffix('user:calculator-row-b')}':
               calculatorB,
-          'mcp_search_${stableToolNameSuffix(
-                'mcp:github-server:github-search-row:search',
-              )}':
-              githubSearch,
-          'mcp_search_${stableToolNameSuffix(
-                'mcp:linear-server:linear-search-row:search',
-              )}':
-              linearSearch,
+          'mcp_search_$githubSearchSuffix': githubSearch,
+          'mcp_search_$linearSearchSuffix': linearSearch,
         };
 
         expect(
@@ -330,10 +330,7 @@ void main() {
         for (final entry in externalTargets.entries) {
           expect(catalog.resolve(entry.key), same(entry.value));
         }
-        expect(
-          names,
-          isNot(contains('skill__user__github__create_issue')),
-        );
+        expect(names, isNot(contains('skill__user__github__create_issue')));
         expect(names.any((name) => name.startsWith('skill__')), isFalse);
         expect(
           names.where(skillCommandToolNames.contains).toSet(),

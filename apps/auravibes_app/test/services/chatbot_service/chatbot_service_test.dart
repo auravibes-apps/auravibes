@@ -201,10 +201,7 @@ void main() {
         );
         expect(replayedRequest?['ref'], nativeId);
         expect(replayedResult?['ref'], nativeId);
-        expect(
-          refs,
-          everyElement(matches(RegExp(r'^[A-Za-z0-9_-]{1,64}$'))),
-        );
+        expect(refs, everyElement(matches(RegExp(r'^[A-Za-z0-9_-]{1,64}$'))));
         expect(
           refs.cast<String>().map((ref) => ref.length),
           everyElement(lessThanOrEqualTo(64)),

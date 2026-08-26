@@ -157,9 +157,9 @@ void main() {
           ],
         ),
       );
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => generatedMessage,
-      );
+      when(
+        () => messageRepository.getMessageById(messageId),
+      ).thenAnswer((_) async => generatedMessage);
       when(
         () => conversationRepository.getConversationById(conversationId),
       ).thenAnswer((_) async => conversation);

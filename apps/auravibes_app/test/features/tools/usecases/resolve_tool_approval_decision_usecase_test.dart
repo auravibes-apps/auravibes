@@ -149,9 +149,7 @@ void main() {
                 workspaceId: 'ws-1',
                 toolId: permissionId,
               ),
-            ).thenAnswer(
-              (_) async => ToolPermissionResult.needsConfirmation,
-            );
+            ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
 
             final decision = await usecase(
               conversationId: 'conv-1',
@@ -169,81 +167,69 @@ void main() {
         },
       );
 
-      test(
-        'nested grants stay isolated to exact effective target',
-        () async {
-          final conversationToolsRepository =
-              fixture.conversationToolsRepository;
-          final syncSkillToolPermissionsUsecase =
-              MockSyncSkillToolPermissionsUsecase();
-          when(
-            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolName: 'skill__app__duckduckgo__search',
-            ),
-          ).thenAnswer((_) async => 'duckduckgo-search');
-          when(
-            () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolName: 'skill__app__weather__search',
-            ),
-          ).thenAnswer((_) async => 'weather-search');
-          when(
-            () => conversationToolsRepository.checkToolPermission(
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolId: 'duckduckgo-search',
-            ),
-          ).thenAnswer((_) async => ToolPermissionResult.granted);
-          when(
-            () => conversationToolsRepository.checkToolPermission(
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolId: 'weather-search',
-            ),
-          ).thenAnswer(
-            (_) async => ToolPermissionResult.needsConfirmation,
-          );
-          final usecase = ResolveToolApprovalDecisionUsecase(
-            conversationToolsRepository: conversationToolsRepository,
-            toolsGroupsRepository: fixture.toolsGroupsRepository,
-            workspaceToolsRepository: fixture.workspaceToolsRepository,
-            syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
-          );
+      test('nested grants stay isolated to exact effective target', () async {
+        final conversationToolsRepository = fixture.conversationToolsRepository;
+        final syncSkillToolPermissionsUsecase =
+            MockSyncSkillToolPermissionsUsecase();
+        when(
+          () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolName: 'skill__app__duckduckgo__search',
+          ),
+        ).thenAnswer((_) async => 'duckduckgo-search');
+        when(
+          () => syncSkillToolPermissionsUsecase.permissionTableIdFor(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolName: 'skill__app__weather__search',
+          ),
+        ).thenAnswer((_) async => 'weather-search');
+        when(
+          () => conversationToolsRepository.checkToolPermission(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolId: 'duckduckgo-search',
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.granted);
+        when(
+          () => conversationToolsRepository.checkToolPermission(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolId: 'weather-search',
+          ),
+        ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
+        final usecase = ResolveToolApprovalDecisionUsecase(
+          conversationToolsRepository: conversationToolsRepository,
+          toolsGroupsRepository: fixture.toolsGroupsRepository,
+          workspaceToolsRepository: fixture.workspaceToolsRepository,
+          syncSkillToolPermissionsUsecase: syncSkillToolPermissionsUsecase,
+        );
 
-          Future<ToolApprovalDecision> resolve(
-            String skill,
-            String toolCallId,
-          ) {
-            return usecase(
-              conversationId: 'conv-1',
-              workspaceId: 'ws-1',
-              toolCallId: toolCallId,
-              resolvedTool: ResolvedTool.skillCommand(
-                commandName: agent.callSkillToolName,
-                target: agent.AgentResolvedToolName.skillNative(
-                  tableId: 'search',
-                  skillSlug: skill,
-                  toolIdentifier: 'search',
-                ),
+        Future<ToolApprovalDecision> resolve(String skill, String toolCallId) {
+          return usecase(
+            conversationId: 'conv-1',
+            workspaceId: 'ws-1',
+            toolCallId: toolCallId,
+            resolvedTool: ResolvedTool.skillCommand(
+              commandName: agent.callSkillToolName,
+              target: agent.AgentResolvedToolName.skillNative(
+                tableId: 'search',
+                skillSlug: skill,
+                toolIdentifier: 'search',
               ),
-            );
-          }
-
-          final granted = await resolve('duckduckgo', 'tc-1');
-          final other = await resolve('weather', 'tc-2');
-
-          expect(granted.permissionResult, ToolPermissionResult.granted);
-          expect(granted.permissionTableId, 'duckduckgo-search');
-          expect(
-            other.permissionResult,
-            ToolPermissionResult.needsConfirmation,
+            ),
           );
-          expect(other.permissionTableId, 'weather-search');
-        },
-      );
+        }
+
+        final granted = await resolve('duckduckgo', 'tc-1');
+        final other = await resolve('weather', 'tc-2');
+
+        expect(granted.permissionResult, ToolPermissionResult.granted);
+        expect(granted.permissionTableId, 'duckduckgo-search');
+        expect(other.permissionResult, ToolPermissionResult.needsConfirmation);
+        expect(other.permissionTableId, 'weather-search');
+      });
 
       test('ignores legacy call_skill_tool grant for nested target', () async {
         final syncSkillToolPermissionsUsecase =

@@ -12,10 +12,7 @@ void main() {
     expect(schema['required']! as List, contains('credentialId'));
     final first = ToolSpec(name: 'x', description: 'one', inputJsonSchema: {});
     final second = ToolSpec(name: 'x', description: 'two', inputJsonSchema: {});
-    expect(
-      () => uniqueToolSpecs([first, second]),
-      throwsStateError,
-    );
+    expect(() => uniqueToolSpecs([first, second]), throwsStateError);
   });
 
   test('keeps optional template inputs out of required fields', () {

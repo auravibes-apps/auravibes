@@ -88,10 +88,7 @@ void main() {
 
   test('rejects extra argument when additional properties are false', () {
     expect(
-      () => validateToolArguments(schema, {
-        'query': 'cache',
-        'secret': 'nope',
-      }),
+      () => validateToolArguments(schema, {'query': 'cache', 'secret': 'nope'}),
       throwsA(
         isA<FormatException>().having(
           (error) => error.message,
@@ -132,10 +129,7 @@ void main() {
       ),
     );
     expect(
-      () => validateToolArguments(schema, {
-        'query': 'cache',
-        'limit': 2,
-      }),
+      () => validateToolArguments(schema, {'query': 'cache', 'limit': 2}),
       throwsA(
         isA<FormatException>().having(
           (error) => error.message,
@@ -225,10 +219,9 @@ void main() {
       returnsNormally,
     );
     expect(
-      () => validateToolArguments(
-        const {'type': 'date'},
-        const <String, Object?>{},
-      ),
+      () => validateToolArguments(const {
+        'type': 'date',
+      }, const <String, Object?>{}),
       throwsA(
         isA<FormatException>().having(
           (error) => error.message,

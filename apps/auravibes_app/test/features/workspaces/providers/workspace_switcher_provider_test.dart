@@ -222,11 +222,12 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
       final states = <WorkspaceSwitchState>[];
 
-      final _ = container.listen(
+      final subscription = container.listen(
         workspaceSwitcherProvider,
         (previous, next) => states.add(next),
         fireImmediately: true,
       );
+      addTearDown(subscription.close);
 
       notifier.switchToWorkspace('ws-1');
       await Future<void>.delayed(const Duration(milliseconds: 350));

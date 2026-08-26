@@ -72,10 +72,7 @@ class BuildLoadedSkillManifestsUsecase {
     ]..sort((left, right) => left.slug.compareTo(right.slug));
   }
 
-  SkillManifest _manifest(
-    AvailableSkill skill,
-    List<SkillManifestTool> tools,
-  ) {
+  SkillManifest _manifest(AvailableSkill skill, List<SkillManifestTool> tools) {
     tools.sort((left, right) => left.name.compareTo(right.name));
     final revision = sha256
         .convert(

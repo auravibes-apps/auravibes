@@ -11,10 +11,7 @@ void main() {
         spec: spec('call_skill_tool'),
         target: 'skill',
       ),
-      ToolCatalogCandidate.reserved(
-        spec: spec('run_sub_agent'),
-        target: 'sub',
-      ),
+      ToolCatalogCandidate.reserved(spec: spec('run_sub_agent'), target: 'sub'),
     ]);
 
     expect(catalog.specs.map((value) => value.name), [

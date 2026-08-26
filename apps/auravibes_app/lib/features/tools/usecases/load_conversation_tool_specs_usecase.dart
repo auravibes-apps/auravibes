@@ -51,10 +51,7 @@ class LoadConversationToolSpecsUsecase {
       workspaceId: workspaceId,
     );
     final enabledTools = await _conversationToolsRepository
-        .getAvailableToolEntitiesForConversation(
-          conversationId,
-          workspaceId,
-        );
+        .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
     final toolCandidates = await _buildCombinedToolSpecsUseCase.call(
       enabledTools,
     );

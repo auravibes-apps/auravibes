@@ -453,13 +453,16 @@ void main() {
         conversationId: conversation.id,
         workspaceId: workspace.id,
       );
+      final fixedSchemas = {
+        for (final spec in specs) spec.name: spec.inputJsonSchema,
+      };
       expect(
-        _slugEnumFor(specs, loadSkillToolName),
-        containsAll(['example_services', 'skills_manager']),
+        fixedSchemas.keys,
+        containsAll([loadSkillToolName, unloadSkillToolName]),
       );
       expect(
-        specs.map((spec) => spec.name),
-        isNot(contains(unloadSkillToolName)),
+        _propertySchema(specs, loadSkillToolName, 'slug')['enum'],
+        equals(null),
       );
 
       await loadSkillUsecase.call(
@@ -473,12 +476,9 @@ void main() {
       );
 
       expect(
-        _slugEnumFor(specs, loadSkillToolName),
-        isNot(contains('example_services')),
-      );
-      expect(
-        _slugEnumFor(specs, unloadSkillToolName),
-        contains('example_services'),
+        {for (final spec in specs) spec.name: spec.inputJsonSchema},
+        // Dynamic state must not mutate provider-visible schemas.
+        fixedSchemas,
       );
 
       await unloadSkillUsecase.call(
@@ -1965,14 +1965,17 @@ void main() {
   });
 }
 
-List<Object?> _slugEnumFor(List<ToolSpec> specs, String toolName) {
+Map<String, dynamic> _propertySchema(
+  List<ToolSpec> specs,
+  String toolName,
+  String propertyName,
+) {
   final schema = specs
       .firstWhere((spec) => spec.name == toolName)
       .inputJsonSchema;
   final properties = schema['properties']! as Map<String, dynamic>;
-  final slugSchema = properties['slug'] as Map<String, dynamic>;
 
-  return slugSchema['enum'] as List<Object?>;
+  return properties[propertyName] as Map<String, dynamic>;
 }
 
 List<Object?> _propertyEnumFor(ToolSpec spec, String propertyName) {
