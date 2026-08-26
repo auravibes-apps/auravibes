@@ -150,6 +150,8 @@ and the newest `/tmp/auravibes-dcl.json`. Never repeat a completed wave.
 - Committed fatal analyzers pass with zero diagnostics for the app, engine, and
   UI. DCL, dependency validation, and import sorting pass. App CI passed 2,818
   tests; UI CI passed 559 tests.
+- DCL was rerun after the final provider-builder change and still reports no
+  issues.
 - `validate:quick` analyzer step passes, but its repository-wide format step
   still reports 510 pre-existing files as unformatted. All 79 Dart files
   changed in this migration pass the same formatter check; no unrelated files
