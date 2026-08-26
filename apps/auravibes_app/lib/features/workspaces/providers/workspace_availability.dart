@@ -6,6 +6,7 @@ sealed class WorkspaceAvailability {
   final WorkspaceSession session;
 }
 
+// ignore: unused-code, returned by workspaceAvailability provider.
 final class WorkspaceAvailable extends WorkspaceAvailability {
   const WorkspaceAvailable(super.session);
 }

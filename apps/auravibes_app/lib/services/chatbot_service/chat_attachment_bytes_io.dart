@@ -14,4 +14,5 @@ abstract final class ChatAttachmentBytesIo {
   }
 }
 
+// ignore: unused-code, conditional export implementation used on IO platforms.
 typedef ChatAttachmentBytes = ChatAttachmentBytesIo;

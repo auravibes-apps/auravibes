@@ -25,4 +25,5 @@ class ChatAttachmentImageIo extends StatelessWidget {
   }
 }
 
+// ignore: unused-code, conditional export implementation used on IO platforms.
 typedef ChatAttachmentImage = ChatAttachmentImageIo;

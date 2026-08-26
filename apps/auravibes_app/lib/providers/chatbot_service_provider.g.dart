@@ -9,19 +9,19 @@ part of 'chatbot_service_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Provider that creates a ChatbotService without tools.
-/// (for title generation, etc.)
+/// For title generation and similar tasks.
 
 @ProviderFor(chatbotService)
 final chatbotServiceProvider = ChatbotServiceProvider._();
 
 /// Provider that creates a ChatbotService without tools.
-/// (for title generation, etc.)
+/// For title generation and similar tasks.
 
 final class ChatbotServiceProvider
     extends $FunctionalProvider<ChatbotService, ChatbotService, ChatbotService>
     with $Provider<ChatbotService> {
   /// Provider that creates a ChatbotService without tools.
-  /// (for title generation, etc.)
+  /// For title generation and similar tasks.
   ChatbotServiceProvider._()
     : super(
         from: null,

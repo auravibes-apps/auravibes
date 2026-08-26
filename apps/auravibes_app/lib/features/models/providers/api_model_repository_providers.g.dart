@@ -216,7 +216,7 @@ final class ApiModelProvidersProvider
   }
 }
 
-String _$apiModelProvidersHash() => r'd1eb5e84882f2f383fff7dd2236cdbd822cd6d68';
+String _$apiModelProvidersHash() => r'6f598edeb685ef40bca70dae3922f1b995164a6a';
 
 final class ApiModelProvidersFamily extends $Family
     with
@@ -297,7 +297,7 @@ final class GetAllModelsProvider
   }
 }
 
-String _$getAllModelsHash() => r'fb25941bc09b2c6109ca21b036d63685d0292890';
+String _$getAllModelsHash() => r'2f5dffe0fd5fa2fc66d1456672b12e7934e66bc5';
 
 final class GetAllModelsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<ApiModelEntity>>, String> {
@@ -383,7 +383,7 @@ final class GetModelByProviderAndModelIdProvider
 }
 
 String _$getModelByProviderAndModelIdHash() =>
-    r'cd6018853e1c7bc32fda71379bbdbe40ccfca3d8';
+    r'316cc1b624a10b405048fdaeabc6b9581e6f0d62';
 
 final class GetModelByProviderAndModelIdFamily extends $Family
     with
@@ -479,7 +479,7 @@ final class GetModelsByProviderProvider
 }
 
 String _$getModelsByProviderHash() =>
-    r'256879560167fb04203af313a61dd30a91153dd2';
+    r'9bc08eff49a4d90b6ed37160c2734693bac25b78';
 
 final class GetModelsByProviderFamily extends $Family
     with

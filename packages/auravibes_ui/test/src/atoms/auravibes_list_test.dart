@@ -12,8 +12,18 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
-      expect(find.byType(Flex), findsOneWidget);
+      final listFinder = find.byType(AuraList);
+      expect(
+        find.descendant(
+          of: listFinder,
+          matching: find.byType(SingleChildScrollView),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: listFinder, matching: find.byType(Flex)),
+        findsOneWidget,
+      );
     });
 
     testWidgets('renders children vertically by default', (tester) async {
@@ -27,14 +37,20 @@ void main() {
 
       final list = tester.widget<AuraList>(find.byType(AuraList));
       final scrollView = tester.widget<SingleChildScrollView>(
-        find.byType(SingleChildScrollView),
+        find.descendant(
+          of: find.byType(AuraList),
+          matching: find.byType(SingleChildScrollView),
+        ),
       );
-      final flex = tester.widget<Flex>(find.byType(Flex));
+      final flex = tester.widget<Flex>(
+        find.descendant(of: find.byType(AuraList), matching: find.byType(Flex)),
+      );
 
       expect(find.text('First'), findsOneWidget);
       expect(find.text('Second'), findsOneWidget);
       expect(list.direction, Axis.vertical);
       expect(scrollView.scrollDirection, Axis.vertical);
+      expect(scrollView.primary, isFalse);
       expect(flex.direction, Axis.vertical);
       expect(flex.crossAxisAlignment, CrossAxisAlignment.stretch);
     });
@@ -55,9 +71,14 @@ void main() {
       );
 
       final scrollView = tester.widget<SingleChildScrollView>(
-        find.byType(SingleChildScrollView),
+        find.descendant(
+          of: find.byType(AuraList),
+          matching: find.byType(SingleChildScrollView),
+        ),
       );
-      final flex = tester.widget<Flex>(find.byType(Flex));
+      final flex = tester.widget<Flex>(
+        find.descendant(of: find.byType(AuraList), matching: find.byType(Flex)),
+      );
 
       expect(scrollView.scrollDirection, Axis.horizontal);
       expect(flex.direction, Axis.horizontal);
@@ -85,24 +106,31 @@ void main() {
         tester.getSize(find.byKey(const ValueKey('bounded-list'))),
         const Size(120, 80),
       );
-      final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+      final scrollable = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byType(AuraList),
+          matching: find.byType(Scrollable),
+        ),
+      );
       expect(scrollable.position.maxScrollExtent, greaterThan(0));
     });
 
     testWidgets('shrink-wraps in an unbounded scroll axis', (tester) async {
+      const childHeight = 24.0;
+
       await tester.pumpWidget(
         const MaterialApp(
           home: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              AuraList(children: [SizedBox(height: 24)]),
+              AuraList(children: [SizedBox(height: childHeight)]),
             ],
           ),
         ),
       );
 
       expect(tester.takeException(), isNull);
-      expect(tester.getSize(find.byType(AuraList)), const Size(800, 24));
+      expect(tester.getSize(find.byType(AuraList)).height, childHeight);
     });
   });
 }

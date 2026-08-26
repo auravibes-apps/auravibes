@@ -27,6 +27,7 @@ class AuraList extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: direction,
+      primary: false,
       child: Flex(
         direction: direction,
         mainAxisSize: MainAxisSize.min,

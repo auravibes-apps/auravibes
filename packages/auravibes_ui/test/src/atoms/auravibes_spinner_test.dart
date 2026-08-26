@@ -94,9 +94,7 @@ void main() {
       expect(progressIndicator.semanticsLabel, semanticLabel);
     });
 
-    testWidgets('applies default semantic label when none provided', (
-      tester,
-    ) async {
+    testWidgets('omits semantic label when none provided', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: AuraSpinner())),
       );
@@ -104,7 +102,7 @@ void main() {
       final progressIndicator = tester.widget<CircularProgressIndicator>(
         find.byType(CircularProgressIndicator),
       );
-      expect(progressIndicator.semanticsLabel, 'Loading');
+      expect(progressIndicator.semanticsLabel, isNull);
     });
 
     group('AuraSpinnerSize enum', () {

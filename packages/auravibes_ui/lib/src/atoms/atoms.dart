@@ -13,6 +13,7 @@ library;
 export 'aura_column.dart';
 export 'aura_edge_insets_geometry.dart';
 export 'aura_icon.dart';
+export 'aura_image.dart';
 export 'aura_linear_progress_indicator.dart';
 export 'aura_list.dart';
 export 'aura_message_status.dart';
