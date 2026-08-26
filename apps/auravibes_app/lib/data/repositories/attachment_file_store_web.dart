@@ -1,5 +1,5 @@
-class AttachmentFileStore {
-  const AttachmentFileStore({this.storageNamespace = 'auravibes_app'});
+class AttachmentFileStoreWeb {
+  const AttachmentFileStoreWeb({this.storageNamespace = 'auravibes_app'});
 
   final String storageNamespace;
 
@@ -7,3 +7,5 @@ class AttachmentFileStore {
 
   Future<void> deleteFile(String _) => Future.value();
 }
+
+typedef AttachmentFileStore = AttachmentFileStoreWeb;

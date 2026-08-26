@@ -33,22 +33,21 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 part 'workspace_route.g.dart';
+part 'intro_route.dart';
 
+// Required: Framework declaration must remain top-level.
+// ignore: prefer-static-class
 const introPath = '/intro';
+// Required: GoRouter route global must remain top-level.
+// ignore: prefer-static-class
 const workspacePathPrefix = '/workspaces';
 
+// Required: GoRouter navigator key must remain top-level.
+// ignore: prefer-static-class
 final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
+// Required: GoRouter navigator key must remain top-level.
+// ignore: prefer-static-class
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
-
-@TypedGoRoute<IntroRoute>(path: introPath)
-class IntroRoute extends GoRouteData with $IntroRoute {
-  const IntroRoute();
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const IntroScreen();
-  }
-}
 
 @TypedGoRoute<WorkspaceRoute>(
   path: '$workspacePathPrefix/:workspaceId',
@@ -94,18 +93,12 @@ class IntroRoute extends GoRouteData with $IntroRoute {
                     ),
                   ],
                 ),
-                TypedGoRoute<ToolsRoute>(
-                  path: 'tools',
-                ),
-                TypedGoRoute<ModelsRoute>(
-                  path: 'models',
-                ),
+                TypedGoRoute<ToolsRoute>(path: 'tools'),
+                TypedGoRoute<ModelsRoute>(path: 'models'),
                 TypedGoRoute<ServiceConnectionsRoute>(
                   path: 'service-connections',
                   routes: [
-                    TypedGoRoute<ServiceConnectionCreateRoute>(
-                      path: 'new',
-                    ),
+                    TypedGoRoute<ServiceConnectionCreateRoute>(path: 'new'),
                     TypedGoRoute<ServiceConnectionEditRoute>(
                       path: ':connectionId',
                     ),
@@ -114,18 +107,14 @@ class IntroRoute extends GoRouteData with $IntroRoute {
                 TypedGoRoute<SkillsRoute>(
                   path: 'skills',
                   routes: [
-                    TypedGoRoute<SkillCreateRoute>(
-                      path: 'new',
-                    ),
+                    TypedGoRoute<SkillCreateRoute>(path: 'new'),
                     TypedGoRoute<SkillToolCreateRoute>(
                       path: ':skillId/tools/new',
                     ),
                     TypedGoRoute<SkillToolEditRoute>(
                       path: ':skillId/tools/:toolId',
                     ),
-                    TypedGoRoute<SkillDetailRoute>(
-                      path: ':skillId',
-                    ),
+                    TypedGoRoute<SkillDetailRoute>(path: ':skillId'),
                   ],
                 ),
                 TypedGoRoute<SkillCredentialDefinitionsRoute>(
@@ -142,12 +131,8 @@ class IntroRoute extends GoRouteData with $IntroRoute {
                 TypedGoRoute<AgentsRoute>(
                   path: 'agents',
                   routes: [
-                    TypedGoRoute<AgentCreateRoute>(
-                      path: 'new',
-                    ),
-                    TypedGoRoute<AgentDetailRoute>(
-                      path: ':agentId',
-                    ),
+                    TypedGoRoute<AgentCreateRoute>(path: 'new'),
+                    TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
                   ],
                 ),
               ],
@@ -155,9 +140,7 @@ class IntroRoute extends GoRouteData with $IntroRoute {
           ],
         ),
         TypedStatefulShellBranch(
-          routes: [
-            TypedGoRoute<SettingsRoute>(path: 'settings'),
-          ],
+          routes: [TypedGoRoute<SettingsRoute>(path: 'settings')],
         ),
       ],
     ),
@@ -186,9 +169,8 @@ class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
 }
 
 class MyShellRouteData extends StatefulShellRouteData {
-  const MyShellRouteData();
-
   static final GlobalKey<NavigatorState> $navigatorKey = shellNavigatorKey;
+  const MyShellRouteData();
 
   @override
   Widget builder(
@@ -198,9 +180,7 @@ class MyShellRouteData extends StatefulShellRouteData {
   ) {
     final workspaceId = state.pathParameters['workspaceId'];
     if (workspaceId == null || workspaceId.isEmpty) {
-      throw StateError(
-        'workspaceId must be present in route pathParameters',
-      );
+      throw StateError('workspaceId must be present in route pathParameters');
     }
 
     return _WorkspaceSessionGate(
@@ -222,13 +202,27 @@ class _WorkspaceSessionGate extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(workspaceSessionForRouteProvider(workspaceId))) {
-      AsyncData() => _workspaceShell(),
+      AsyncData() => _WorkspaceShell(
+        workspaceId: workspaceId,
+        navigationShell: navigationShell,
+      ),
       AsyncError(:final error) => ErrorWidget(error),
       _ => const SizedBox.shrink(),
     };
   }
+}
 
-  Widget _workspaceShell() => PopScope(
+class _WorkspaceShell extends StatelessWidget {
+  const _WorkspaceShell({
+    required this.workspaceId,
+    required this.navigationShell,
+  });
+
+  final String workspaceId;
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) => PopScope(
     child: AuraSidebarWrapper(
       navigationShell: navigationShell,
       workspaceId: workspaceId,
@@ -684,3 +678,4 @@ class WorkspaceCreateRoute extends GoRouteData with $WorkspaceCreateRoute {
     return CreateWorkspaceScreen(workspaceId: workspaceId);
   }
 }
+// Top-level API/provider declarations are required by their consumers.

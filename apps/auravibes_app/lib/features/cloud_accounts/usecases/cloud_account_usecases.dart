@@ -13,10 +13,10 @@ class CloudAccountUseCases {
     required this._workspaceRepository,
     required this.invalidateAccount,
   });
+  final void Function(String serverUrl, String userId) invalidateAccount;
 
   final ServerpodAuthStore _store;
   final WorkspaceRepository _workspaceRepository;
-  final void Function(String serverUrl, String userId) invalidateAccount;
 
   Future<CloudAccountSession> login({
     required String email,
@@ -25,7 +25,7 @@ class CloudAccountUseCases {
     final client = _newClient();
     final auth = await client.emailIdp.login(email: email, password: password);
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<UuidValue> startRegistration({required String email}) {
@@ -52,7 +52,7 @@ class CloudAccountUseCases {
       password: password,
     );
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<UuidValue> startPasswordReset({required String email}) {
@@ -83,7 +83,7 @@ class CloudAccountUseCases {
     required String serverUrl,
     required String userId,
   }) async {
-    final origin = canonicalServerOrigin(serverUrl);
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
     final _ = await _workspaceRepository.deleteCloudWorkspaceMirrorsForAccount(
       userId,
       serverUrl: origin,
@@ -117,7 +117,9 @@ class CloudAccountUseCases {
     await client.auth.updateSignedInUser(auth);
     final account = await client.account.currentUser();
     final session = CloudAccountSession(
-      serverUrl: canonicalServerOrigin(AppEnvConfig.auravibesServerUrl),
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+        AppEnvConfig.auravibesServerUrl,
+      ),
       userId: account.userId,
       email: account.email,
     );

@@ -62,10 +62,7 @@ class ConversationRateLimitRetryNotifier
   }
 
   void start(String conversationId, DateTime retryAt) {
-    state = {
-      ...state,
-      conversationId: retryAt,
-    };
+    state = {...state, conversationId: retryAt};
   }
 
   DateTime? retryAt(String conversationId) {

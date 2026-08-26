@@ -89,9 +89,7 @@ loadConversationToolSpecsUsecaseProvider =
       workspaceId,
     ) {
       final session = ref
-          .watch(
-            workspaceSessionForRouteProvider(workspaceId),
-          )
+          .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
       return LoadConversationToolSpecsUsecase(

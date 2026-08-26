@@ -71,10 +71,8 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
             tbl.parentConversationId.isNull(),
       )
       ..orderBy([
-        (tbl) => OrderingTerm(
-          expression: tbl.updatedAt,
-          mode: OrderingMode.desc,
-        ),
+        (tbl) =>
+            OrderingTerm(expression: tbl.updatedAt, mode: OrderingMode.desc),
       ]));
   }
 
@@ -83,10 +81,8 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     return (select(conversations)
       ..where((tbl) => tbl.parentConversationId.equals(parentConversationId))
       ..orderBy([
-        (tbl) => OrderingTerm(
-          expression: tbl.updatedAt,
-          mode: OrderingMode.desc,
-        ),
+        (tbl) =>
+            OrderingTerm(expression: tbl.updatedAt, mode: OrderingMode.desc),
       ]));
   }
 }

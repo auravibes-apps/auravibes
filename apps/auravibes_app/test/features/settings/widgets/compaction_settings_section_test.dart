@@ -63,21 +63,17 @@ void main() {
         data: ThemeData(extensions: [AuraTheme.light]),
         child: const Scaffold(
           body: Material(
-            child: CompactionSettingsSection(
-              workspaceId: testWorkspaceId,
-            ),
+            child: CompactionSettingsSection(workspaceId: testWorkspaceId),
           ),
         ),
       ),
       overrides: [
-        compactionSettingsProvider(testWorkspaceId).overrideWith(
-          (ref) => readSettingsController().stream,
-        ),
+        compactionSettingsProvider(
+          testWorkspaceId,
+        ).overrideWith((ref) => readSettingsController().stream),
         saveWorkspaceCompactionSettingsUsecaseProvider(
           testWorkspaceId,
-        ).overrideWith(
-          (ref) => readMockSave(),
-        ),
+        ).overrideWith((ref) => readMockSave()),
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
           (ref) => readMockRepository(),
         ),
@@ -209,9 +205,7 @@ void main() {
         () => verify(
           () => readMockSave()(
             workspaceId: testWorkspaceId,
-            settings: const CompactionSettings(
-              usagePercentageThreshold: 2,
-            ),
+            settings: const CompactionSettings(usagePercentageThreshold: 2),
           ),
         ).called(1),
         returnsNormally,

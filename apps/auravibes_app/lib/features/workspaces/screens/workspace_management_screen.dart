@@ -172,11 +172,11 @@ class _WorkspaceList extends ConsumerWidget {
     String id,
     String name,
   ) async {
-    final _ = await editWorkspaceMutation.run(ref, (_) {
+    final _ = await WorkspaceManagementMutations.edit.run(ref, (_) {
       return ref.read(editWorkspaceUseCaseProvider).call(id: id, name: name);
     });
     if (!context.mounted) return;
-    switch (ref.read(editWorkspaceMutation)) {
+    switch (ref.read(WorkspaceManagementMutations.edit)) {
       case MutationSuccess():
         ref.read(workspaceManagementModeProvider.notifier).clearEditing();
       case MutationError(:final error):
@@ -191,7 +191,7 @@ class _WorkspaceList extends ConsumerWidget {
     WidgetRef ref,
     WorkspaceEntity workspace,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.workspace_management_delete_title),
       message: Text(
@@ -207,16 +207,15 @@ class _WorkspaceList extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
 
-    await deleteWorkspaceMutation.run(ref, (_) {
+    await WorkspaceManagementMutations.delete.run(ref, (_) {
       return ref
           .read(deleteWorkspaceUseCaseProvider)
-          .call(
-            id: workspace.id,
-            activeWorkspaceId: activeWorkspaceId,
-          );
+          .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
     });
     if (!context.mounted) return;
-    if (ref.read(deleteWorkspaceMutation) case MutationError(:final error)) {
+    if (ref.read(WorkspaceManagementMutations.delete) case MutationError(
+      :final error,
+    )) {
       _showError(context, error);
 
       return;
@@ -231,7 +230,7 @@ class _WorkspaceList extends ConsumerWidget {
     WidgetRef ref,
     WorkspaceEntity workspace,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.workspace_management_cloud_detach),
       message: Text(
@@ -688,9 +687,7 @@ void _openDetails(
   required String? cloudWorkspaceId,
 }) {
   final parsedId = int.tryParse(cloudWorkspaceId ?? '');
-  final workspaceId = GoRouterState.of(
-    context,
-  ).pathParameters['workspaceId'];
+  final workspaceId = GoRouterState.of(context).pathParameters['workspaceId'];
   if (accountId == null || parsedId == null || workspaceId == null) return;
 
   context.go(
@@ -712,7 +709,7 @@ void _showError(BuildContext context, Object error) {
   if (error is! WorkspaceException && error is! AppCloudWorkspaceException) {
     debugPrint('Workspace management failed: $error');
   }
-  final _ = showAuraSnackBar(
+  final _ = AuraSnackBars.show(
     context: context,
     content: Text(message),
     variant: AuraSnackBarVariant.error,

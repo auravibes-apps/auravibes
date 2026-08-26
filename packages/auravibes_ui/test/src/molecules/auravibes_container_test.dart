@@ -11,11 +11,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text(testText),
-            ),
-          ),
+          home: Scaffold(body: AuraContainer(child: Text(testText))),
         ),
       );
 
@@ -29,10 +25,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              padding: customPadding,
-            ),
+            body: AuraContainer(child: Text('Content'), padding: customPadding),
           ),
         ),
       );
@@ -47,10 +40,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              margin: customMargin,
-            ),
+            body: AuraContainer(child: Text('Content'), margin: customMargin),
           ),
         ),
       );
@@ -109,10 +99,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-              border: customBorder,
-            ),
+            body: AuraContainer(child: Text('Content'), border: customBorder),
           ),
         ),
       );
@@ -167,11 +154,7 @@ void main() {
     testWidgets('applies no shadow correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraContainer(
-              child: Text('Content'),
-            ),
-          ),
+          home: Scaffold(body: AuraContainer(child: Text('Content'))),
         ),
       );
 

@@ -23,10 +23,7 @@ class EditWorkspaceUseCase {
   ///
   /// Validates the name length (3–20 chars) before persisting.
   /// Returns the updated [WorkspaceEntity].
-  Future<WorkspaceEntity> call({
-    required String id,
-    required String name,
-  }) {
+  Future<WorkspaceEntity> call({required String id, required String name}) {
     final trimmed = name.trim();
     _validateName.call(name: trimmed);
 

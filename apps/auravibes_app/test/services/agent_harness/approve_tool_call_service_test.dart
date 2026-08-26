@@ -113,9 +113,9 @@ void main() {
     });
 
     test('loads approvable tool call from message metadata', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
+      when(
+        () => messageRepository.getMessageById(messageId),
+      ).thenAnswer((_) async => message);
 
       final result = await provider.loadToolCall(
         messageId: messageId,
@@ -186,18 +186,15 @@ void main() {
     });
 
     test('returns null when message or tool call is missing', () async {
-      when(() => messageRepository.getMessageById('missing')).thenAnswer(
-        (_) async => null,
-      );
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
+      when(
+        () => messageRepository.getMessageById('missing'),
+      ).thenAnswer((_) async => null);
+      when(
+        () => messageRepository.getMessageById(messageId),
+      ).thenAnswer((_) async => message);
 
       expect(
-        await provider.loadToolCall(
-          messageId: 'missing',
-          toolCallId: 'tool-1',
-        ),
+        await provider.loadToolCall(messageId: 'missing', toolCallId: 'tool-1'),
         isNull,
       );
       expect(
@@ -277,12 +274,12 @@ void main() {
     });
 
     test('updates tool call result status in message metadata', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
-        (_) async => message,
-      );
+      when(
+        () => messageRepository.getMessageById(messageId),
+      ).thenAnswer((_) async => message);
+      when(
+        () => messageRepository.patchMessage(messageId, any()),
+      ).thenAnswer((_) async => message);
 
       const cases = {
         agent.AgentToolResultStatus.success: ToolCallResultStatus.success,
@@ -325,12 +322,12 @@ void main() {
     });
 
     test('marks tool call running in message metadata', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
-        (_) async => message,
-      );
+      when(
+        () => messageRepository.getMessageById(messageId),
+      ).thenAnswer((_) async => message);
+      when(
+        () => messageRepository.patchMessage(messageId, any()),
+      ).thenAnswer((_) async => message);
 
       await provider.markToolCallRunning(
         messageId: messageId,

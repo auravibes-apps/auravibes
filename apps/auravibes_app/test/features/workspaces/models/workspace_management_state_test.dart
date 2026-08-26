@@ -3,10 +3,7 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/workspaces/models/management_mode.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-WorkspaceEntity _workspace({
-  required String id,
-  required String name,
-}) {
+WorkspaceEntity _workspace({required String id, required String name}) {
   return WorkspaceEntity(
     id: id,
     name: name,
@@ -89,9 +86,7 @@ void main() {
 
     test('copyWith changes only specified fields', () {
       final workspace = _workspace(id: 'ws-1', name: 'Test');
-      final state = WorkspaceManagementState(
-        editingWorkspace: workspace,
-      );
+      final state = WorkspaceManagementState(editingWorkspace: workspace);
       final copied = state.copyWith(mode: ManagementMode.create);
 
       expect(copied.mode, ManagementMode.create);

@@ -41,11 +41,7 @@ class AgentsScreen extends ConsumerWidget {
         actions: [
           AuraIconButton(
             icon: Icons.add,
-            onPressed: () {
-              final _ = context.push(
-                '/workspaces/$workspaceId/more/agents/new',
-              );
-            },
+            onPressed: () => _openCreate(context),
             tooltip: LocaleKeys.agents_create.tr(context: context),
           ),
         ],
@@ -55,6 +51,10 @@ class AgentsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _openCreate(BuildContext context) {
+    final _ = context.push('/workspaces/$workspaceId/more/agents/new');
   }
 }
 
@@ -75,15 +75,9 @@ class _AgentsList extends ConsumerWidget {
               child: TextLocale(LocaleKeys.agents_empty_title),
               style: AuraTextStyle.heading4,
             ),
-            const AuraText(
-              child: TextLocale(LocaleKeys.agents_empty_subtitle),
-            ),
+            const AuraText(child: TextLocale(LocaleKeys.agents_empty_subtitle)),
             AuraButton(
-              onPressed: () {
-                final _ = context.push(
-                  '/workspaces/$workspaceId/more/agents/new',
-                );
-              },
+              onPressed: () => _openCreate(context),
               child: const TextLocale(LocaleKeys.agents_create),
             ),
           ],
@@ -127,11 +121,7 @@ class _AgentsList extends ConsumerWidget {
             spacing: .xs,
             crossAxisAlignment: CrossAxisAlignment.start,
           ),
-          onTap: () {
-            final _ = context.push(
-              '/workspaces/$workspaceId/more/agents/${agent.id}',
-            );
-          },
+          onTap: () => _openAgent(context, agent.id),
           variant: AuraTileVariant.ghost,
           leading: const AuraIcon(Icons.smart_toy_outlined),
           trailing: PopupMenuButton<String>(
@@ -145,22 +135,36 @@ class _AgentsList extends ConsumerWidget {
                 child: Text(LocaleKeys.common_delete.tr(context: context)),
               ),
             ],
-            onSelected: (value) {
-              if (value == 'edit') {
-                final _ = context.push(
-                  '/workspaces/$workspaceId/more/agents/${agent.id}',
-                );
-
-                return;
-              }
-              unawaited(_confirmDelete(context, ref, agent.id));
-            },
+            onSelected: (value) =>
+                _handleSelection(context, ref, value, agent.id),
           ),
         );
       },
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemCount: agents.length,
     );
+  }
+
+  void _openCreate(BuildContext context) {
+    final _ = context.push('/workspaces/$workspaceId/more/agents/new');
+  }
+
+  void _openAgent(BuildContext context, String agentId) {
+    final _ = context.push('/workspaces/$workspaceId/more/agents/$agentId');
+  }
+
+  void _handleSelection(
+    BuildContext context,
+    WidgetRef ref,
+    String value,
+    String agentId,
+  ) {
+    if (value == 'edit') {
+      _openAgent(context, agentId);
+
+      return;
+    }
+    unawaited(_confirmDelete(context, ref, agentId));
   }
 
   Future<void> _confirmDelete(

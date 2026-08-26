@@ -19,11 +19,11 @@ import '../../test_mocks.dart';
 void main() {
   test('projects app awaiting approval and running as engine pending', () {
     expect(
-      toAgentToolCallLifecycle(null),
+      AgentToolStatusMapper.toLifecycle(null),
       agent.AgentToolCallLifecycle.pending,
     );
     expect(
-      toAgentToolCallLifecycle(ToolCallResultStatus.running),
+      AgentToolStatusMapper.toLifecycle(ToolCallResultStatus.running),
       agent.AgentToolCallLifecycle.pending,
     );
   });
@@ -131,50 +131,48 @@ void main() {
       );
     });
 
+    Future<void> returnsPendingResolvedTools() async {
+      when(
+        () => messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer(
+        (_) async => [
+          _message(id: 'user-1', isUser: true),
+          _message(
+            id: 'assistant-1',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'resolved-tool',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                ),
+                MessageToolCallEntity(
+                  id: 'missing-tool',
+                  name: 'unknown_tool',
+                  argumentsRaw: '{}',
+                ),
+                MessageToolCallEntity(
+                  id: 'already-resolved',
+                  name: 'built_in_calc_calculator',
+                  argumentsRaw: '{}',
+                  resultStatus: ToolCallResultStatus.success,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+      final result = await usecase.call(conversationId: 'conversation-1');
+
+      expect(result.messageId, 'assistant-1');
+      expect(result.toolsToRun.map((tool) => tool.id), ['resolved-tool']);
+      expect(result.notFoundToolCallIds, ['missing-tool']);
+    }
+
     test(
-      'returns pending resolved tools and not-found ids '
-      'from latest assistant message',
-      () async {
-        when(
-          () => messageRepository.getMessagesByConversation('conversation-1'),
-        ).thenAnswer(
-          (_) async => [
-            _message(
-              id: 'user-1',
-              isUser: true,
-            ),
-            _message(
-              id: 'assistant-1',
-              metadata: const MessageMetadataEntity(
-                toolCalls: [
-                  MessageToolCallEntity(
-                    id: 'resolved-tool',
-                    name: 'built_in_calc_calculator',
-                    argumentsRaw: '{}',
-                  ),
-                  MessageToolCallEntity(
-                    id: 'missing-tool',
-                    name: 'unknown_tool',
-                    argumentsRaw: '{}',
-                  ),
-                  MessageToolCallEntity(
-                    id: 'already-resolved',
-                    name: 'built_in_calc_calculator',
-                    argumentsRaw: '{}',
-                    resultStatus: ToolCallResultStatus.success,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-
-        final result = await usecase.call(conversationId: 'conversation-1');
-
-        expect(result.messageId, 'assistant-1');
-        expect(result.toolsToRun.map((tool) => tool.id), ['resolved-tool']);
-        expect(result.notFoundToolCallIds, ['missing-tool']);
-      },
+      'returns pending resolved tools and not-found ids',
+      returnsPendingResolvedTools,
     );
 
     test('dispatches generated tool name through loaded catalog', () async {
@@ -223,11 +221,7 @@ void main() {
       () async {
         when(
           () => messageRepository.getMessagesByConversation('conversation-2'),
-        ).thenAnswer(
-          (_) async => [
-            _message(id: 'assistant-2'),
-          ],
-        );
+        ).thenAnswer((_) async => [_message(id: 'assistant-2')]);
 
         final result = await usecase.call(conversationId: 'conversation-2');
 
@@ -267,94 +261,86 @@ void main() {
       expect(result.previouslyFailedToolCallIds, isEmpty);
     });
 
-    test(
-      'T005: resolves native tool composite ID to correct '
-      'ResolvedTool with valid tableId',
-      () async {
-        when(
-          () => messageRepository.getMessagesByConversation('conversation-1'),
-        ).thenAnswer(
-          (_) async => [
-            _message(id: 'user-1', isUser: true),
-            _message(
-              id: 'assistant-1',
-              metadata: const MessageMetadataEntity(
-                toolCalls: [
-                  MessageToolCallEntity(
-                    id: 'native-tool-1',
-                    name: 'native_ws-tool-123_url',
-                    argumentsRaw: '{"input": "https://example.com"}',
-                  ),
-                ],
-              ),
+    test('T005: resolves native composite tool ID', () async {
+      when(
+        () => messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer(
+        (_) async => [
+          _message(id: 'user-1', isUser: true),
+          _message(
+            id: 'assistant-1',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'native-tool-1',
+                  name: 'native_ws-tool-123_url',
+                  argumentsRaw: '{"input": "https://example.com"}',
+                ),
+              ],
             ),
-          ],
-        );
+          ),
+        ],
+      );
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+      final result = await usecase.call(conversationId: 'conversation-1');
 
-        expect(result.toolsToRun.length, 1);
-        expect(result.toolsToRun.first.id, 'native-tool-1');
-        expect(result.toolsToRun.first.tool.isNative, isTrue);
-        expect(result.toolsToRun.first.tool.tableId, 'ws-tool-123');
-        expect(result.toolsToRun.first.tool.toolIdentifier, 'url');
-        expect(
-          result.toolsToRun.first.tool.nativeTool,
-          NativeToolType.url,
-        );
-      },
-    );
-    test(
-      'T009: filters out pending tool call whose name and arguments match '
-      'a previously-failed tool in the same turn window',
-      () async {
-        when(
-          () => messageRepository.getMessagesByConversation('conversation-1'),
-        ).thenAnswer(
-          (_) async => [
-            _message(id: 'user-1', isUser: true),
-            _message(
-              id: 'assistant-1',
-              metadata: const MessageMetadataEntity(
-                toolCalls: [
-                  MessageToolCallEntity(
-                    id: 'old-call-1',
-                    name: 'native_ws-tool-123_url',
-                    argumentsRaw: '{"input": "https://example.com"}',
-                    resultStatus: ToolCallResultStatus.notConfigured,
-                  ),
-                ],
-              ),
+      expect(result.toolsToRun.length, 1);
+      expect(result.toolsToRun.first.id, 'native-tool-1');
+      expect(result.toolsToRun.first.tool.isNative, isTrue);
+      expect(result.toolsToRun.first.tool.tableId, 'ws-tool-123');
+      expect(result.toolsToRun.first.tool.toolIdentifier, 'url');
+      expect(result.toolsToRun.first.tool.nativeTool, NativeToolType.url);
+    });
+    test('allows explicit retry after a new user message', () async {
+      when(
+        () => messageRepository.getMessagesByConversation('conversation-1'),
+      ).thenAnswer(
+        (_) async => [
+          _message(id: 'user-1', isUser: true),
+          _message(
+            id: 'assistant-1',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'old-call-1',
+                  name: 'native_ws-tool-123_url',
+                  argumentsRaw: '{"input": "https://example.com"}',
+                  resultStatus: ToolCallResultStatus.notConfigured,
+                ),
+              ],
             ),
-            _message(id: 'user-2', isUser: true),
-            _message(
-              id: 'assistant-2',
-              metadata: const MessageMetadataEntity(
-                toolCalls: [
-                  MessageToolCallEntity(
-                    id: 'new-call-1',
-                    name: 'native_ws-tool-123_url',
-                    argumentsRaw: '{"input": "https://other.com"}',
-                  ),
-                  MessageToolCallEntity(
-                    id: 'new-call-2',
-                    name: 'native_ws-tool-123_url',
-                    argumentsRaw: '{"input": "https://example.com"}',
-                  ),
-                ],
-              ),
+          ),
+          _message(id: 'user-2', isUser: true),
+          _message(
+            id: 'assistant-2',
+            metadata: const MessageMetadataEntity(
+              toolCalls: [
+                MessageToolCallEntity(
+                  id: 'new-call-1',
+                  name: 'native_ws-tool-123_url',
+                  argumentsRaw: '{"input": "https://other.com"}',
+                ),
+                MessageToolCallEntity(
+                  id: 'new-call-2',
+                  name: 'native_ws-tool-123_url',
+                  argumentsRaw: '{"input": "https://example.com"}',
+                ),
+              ],
             ),
-          ],
-        );
+          ),
+        ],
+      );
 
-        final result = await usecase.call(conversationId: 'conversation-1');
+      final result = await usecase.call(conversationId: 'conversation-1');
 
-        expect(result.hasToolCalls, isTrue);
-        expect(result.toolsToRun.map((tool) => tool.id), ['new-call-1']);
-        expect(result.previouslyFailedToolCallIds, ['new-call-2']);
-        expect(result.notFoundToolCallIds, isEmpty);
-      },
-    );
+      expect(result.hasToolCalls, isTrue);
+      expect(result.toolsToRun.map((tool) => tool.id), [
+        'new-call-1',
+        'new-call-2',
+      ]);
+      expect(result.previouslyFailedToolCallIds, isEmpty);
+      expect(result.notFoundToolCallIds, isEmpty);
+    });
   });
 }
 

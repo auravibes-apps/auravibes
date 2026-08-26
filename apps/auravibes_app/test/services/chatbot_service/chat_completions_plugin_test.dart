@@ -43,10 +43,8 @@ void main() {
             apiKey: 'key',
             codec: ChatCompletionsCodec(
               errorLabel: 'UriTest',
-              customize: (modelName, config) => (
-                model: modelName,
-                extraBody: const <String, dynamic>{},
-              ),
+              customize: (modelName, config) =>
+                  (model: modelName, extraBody: const <String, dynamic>{}),
             ),
             models: const [ChatCompletionsModelDefinition(name: 'm')],
             httpClient: client,

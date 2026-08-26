@@ -222,9 +222,7 @@ final _legacyPlaceholderPattern = RegExp(
 final _legacyWholeJsonPlaceholderPattern = RegExp(
   r'"\{(input|credential):([A-Za-z0-9_]+)\}"',
 );
-final _forTagPattern = RegExp(
-  r'\{%\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b',
-);
+final _forTagPattern = RegExp(r'\{%\s*for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\b');
 final _bareOutputPattern = RegExp(r'\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\b');
 final _bareConditionPattern = RegExp(
   r'\{%\s*(?:if|unless|elsif)\s+([A-Za-z_][A-Za-z0-9_]*)\b',

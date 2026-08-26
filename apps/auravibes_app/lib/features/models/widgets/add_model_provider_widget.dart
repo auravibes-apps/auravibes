@@ -28,6 +28,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 class AddModelProviderWidget extends HookConsumerWidget {
+  // Extract long locale key to avoid line length issues.
+  static const String noModelsFoundKey =
+      LocaleKeys.models_screens_add_provider_search_no_models_found;
   const AddModelProviderWidget({
     required this.workspaceId,
     super.key,
@@ -40,41 +43,6 @@ class AddModelProviderWidget extends HookConsumerWidget {
   final VoidCallback? onCreated;
   final VoidCallback? onCancel;
   final bool showHeader;
-
-  // Extract long locale key to avoid line length issues.
-  static const String noModelsFoundKey =
-      LocaleKeys.models_screens_add_provider_search_no_models_found;
-
-  Future<void> _submitForm(
-    BuildContext context,
-    WidgetRef ref, {
-    CodexOAuthMethod? codexOAuthMethod,
-    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
-  }) async {
-    try {
-      await addCredentialsModelMutationProvider.run(ref, (transaction) async {
-        final notifier = transaction.get(
-          addModelProviderStateProvider(workspaceId).notifier,
-        );
-        final created = await notifier.addModelProvider(
-          codexOAuthMethod: codexOAuthMethod,
-          onCodexDeviceCode: onCodexDeviceCode,
-          isCodexDeviceCodeCancelled: isCodexDeviceCodeCancelled,
-        );
-        if (context.mounted && created != null) {
-          final onCreated = this.onCreated;
-          if (onCreated != null) {
-            onCreated();
-          } else {
-            Navigator.of(context).pop(created);
-          }
-        }
-      });
-    } on Object {
-      // Mutation state renders the mapped failure in _ErrorBanner.
-    }
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -93,7 +61,9 @@ class AddModelProviderWidget extends HookConsumerWidget {
       ),
     );
     final isOAuth = selectedState.authMode == ModelProviderAuthMode.oauth2;
-    final isCodex = isOpenAICodexProvider(selectedState.modelId);
+    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(
+      selectedState.modelId,
+    );
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
     final isDesktop =
         !kIsWeb &&
@@ -116,15 +86,11 @@ class AddModelProviderWidget extends HookConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (showHeader)
-          _ModalHeader(
-            onClose: onCancel ?? () => Navigator.of(context).pop(),
-          ),
+          _ModalHeader(onClose: onCancel ?? () => Navigator.of(context).pop()),
         _SelectedModelHeader(workspaceId: workspaceId),
         Flexible(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(
-              context.auraTheme.fromSpacing(.lg),
-            ),
+            padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
             controller: scrollController,
             child: Form(
               key: formKey,
@@ -166,35 +132,18 @@ class AddModelProviderWidget extends HookConsumerWidget {
                     isDesktop: isDesktop,
                     supportsBrowserOAuth: capabilities.modelBrowserOAuth,
                     supportsDeviceOAuth: capabilities.modelDeviceOAuth,
-                    onCodexBrowserSubmit: () {
-                      codexDeviceCodeCancelled.value = false;
-                      codexDeviceCode.value = null;
-                      unawaited(
-                        _submitForm(
-                          context,
-                          ref,
-                          codexOAuthMethod: CodexOAuthMethod.browser,
-                        ),
-                      );
-                    },
-                    onCodexDeviceSubmit: () {
-                      codexDeviceCodeCancelled.value = false;
-                      codexDeviceCode.value = null;
-                      unawaited(
-                        _submitForm(
-                          context,
-                          ref,
-                          codexOAuthMethod: CodexOAuthMethod.deviceCode,
-                          onCodexDeviceCode: (deviceCode) {
-                            if (context.mounted) {
-                              codexDeviceCode.value = deviceCode;
-                            }
-                          },
-                          isCodexDeviceCodeCancelled: () =>
-                              codexDeviceCodeCancelled.value,
-                        ),
-                      );
-                    },
+                    onCodexBrowserSubmit: () => _submitCodexBrowser(
+                      context,
+                      ref,
+                      codexDeviceCode,
+                      codexDeviceCodeCancelled,
+                    ),
+                    onCodexDeviceSubmit: () => _submitCodexDevice(
+                      context,
+                      ref,
+                      codexDeviceCode,
+                      codexDeviceCodeCancelled,
+                    ),
                   ),
                 ],
               ),
@@ -203,6 +152,78 @@ class AddModelProviderWidget extends HookConsumerWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _submitForm(
+    BuildContext context,
+    WidgetRef ref, {
+    CodexOAuthMethod? codexOAuthMethod,
+    void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
+    bool Function()? isCodexDeviceCodeCancelled,
+  }) async {
+    try {
+      await addCredentialsModelMutationProvider.run(ref, (transaction) async {
+        final notifier = transaction.get(
+          addModelProviderStateProvider(workspaceId).notifier,
+        );
+        final created = await notifier.addModelProvider(
+          codexOAuthMethod: codexOAuthMethod,
+          onCodexDeviceCode: onCodexDeviceCode,
+          isCodexDeviceCodeCancelled: isCodexDeviceCodeCancelled,
+        );
+        if (context.mounted && created != null) {
+          final onCreated = this.onCreated;
+          if (onCreated != null) {
+            onCreated();
+          } else {
+            Navigator.of(context).pop(created);
+          }
+        }
+      });
+    } on Object {
+      // Mutation state renders the mapped failure in _ErrorBanner.
+    }
+  }
+
+  void _submitCodexBrowser(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<CodexDeviceCode?> deviceCode,
+    ObjectRef<bool> cancelled,
+  ) {
+    cancelled.value = false;
+    deviceCode.value = null;
+    unawaited(
+      _submitForm(context, ref, codexOAuthMethod: CodexOAuthMethod.browser),
+    );
+  }
+
+  void _submitCodexDevice(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<CodexDeviceCode?> deviceCode,
+    ObjectRef<bool> cancelled,
+  ) {
+    cancelled.value = false;
+    deviceCode.value = null;
+    unawaited(
+      _submitForm(
+        context,
+        ref,
+        codexOAuthMethod: CodexOAuthMethod.deviceCode,
+        onCodexDeviceCode: (value) =>
+            _setCodexDeviceCode(context, deviceCode, value),
+        isCodexDeviceCodeCancelled: () => cancelled.value,
+      ),
+    );
+  }
+
+  void _setCodexDeviceCode(
+    BuildContext context,
+    ValueNotifier<CodexDeviceCode?> deviceCode,
+    CodexDeviceCode value,
+  ) {
+    if (context.mounted) deviceCode.value = value;
   }
 }
 
@@ -215,16 +236,12 @@ class _ModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.lg),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
       child: Row(
         children: [
           const Expanded(
             child: AuraText(
-              child: TextLocale(
-                LocaleKeys.models_screens_add_provider_title,
-              ),
+              child: TextLocale(LocaleKeys.models_screens_add_provider_title),
               style: AuraTextStyle.heading5,
             ),
           ),
@@ -241,10 +258,7 @@ class _ModalHeader extends StatelessWidget {
 
 /// API configuration section with key and URL.
 class _ApiConfigSection extends StatelessWidget {
-  const _ApiConfigSection({
-    required this.workspaceId,
-    required this.onSubmit,
-  });
+  const _ApiConfigSection({required this.workspaceId, required this.onSubmit});
 
   final String workspaceId;
   final VoidCallback onSubmit;
@@ -265,10 +279,7 @@ class _ApiConfigSection extends StatelessWidget {
 
 /// Reusable form section with title and content.
 class _HiddenSection extends HookWidget {
-  const _HiddenSection({
-    required this.title,
-    required this.child,
-  });
+  const _HiddenSection({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -300,10 +311,7 @@ class _HiddenSection extends HookWidget {
           ],
         ),
         const AuraSizedBox(height: .md),
-        Visibility(
-          child: child,
-          visible: visibilityState.value,
-        ),
+        Visibility(child: child, visible: visibilityState.value),
       ],
     );
   }
@@ -327,36 +335,27 @@ class _ErrorBanner extends ConsumerWidget {
     if (error == null) {
       return const SizedBox.shrink();
     }
+    final errorColor = context.auraColors.error;
 
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
-        color: context.auraColors.error.withValues(alpha: 0.1),
-        border: Border.all(
-          color: context.auraColors.error,
-        ),
+        color: errorColor.withValues(alpha: 0.1),
+        border: Border.all(color: errorColor),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 20,
-            color: context.auraColors.error,
-          ),
+          Icon(Icons.error_outline, size: 20, color: errorColor),
           const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
               error,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: context.auraColors.error,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: errorColor),
             ),
           ),
         ],
@@ -400,15 +399,13 @@ class _CreateButton extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
-      addCredentialsModelMutationProvider.select(
-        (value) => value.isPending,
-      ),
+      addCredentialsModelMutationProvider.select((value) => value.isPending),
     );
 
     final isValid = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => value.isValid(),
-      ),
+      addModelProviderStateProvider(
+        workspaceId,
+      ).select((value) => value.isValid()),
     );
     final disabled = isSubmitting || !isValid;
 
@@ -454,88 +451,6 @@ class _CodexDeviceCodePanel extends StatelessWidget {
 
   final CodexDeviceCode deviceCode;
   final VoidCallback onCancel;
-
-  Future<void> _copyCode(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: deviceCode.userCode));
-    if (!context.mounted) return;
-
-    final _ = showAuraSnackBar(
-      context: context,
-      content: Text(
-        LocaleKeys.models_screens_add_provider_device_code_copied.tr(),
-      ),
-      variant: AuraSnackBarVariant.success,
-    );
-  }
-
-  Future<void> _copyVerificationUrl(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: deviceCode.verificationUrl));
-    if (!context.mounted) return;
-
-    final _ = showAuraSnackBar(
-      context: context,
-      content: Text(
-        LocaleKeys.models_screens_add_provider_device_code_link_copied.tr(),
-      ),
-      variant: AuraSnackBarVariant.success,
-    );
-  }
-
-  void _showVerificationUrlActions(BuildContext context) {
-    showAuraAlertDialog(
-      context: context,
-      title: const TextLocale(
-        LocaleKeys.models_screens_add_provider_device_code_link_actions_title,
-      ),
-      message: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          AuraButton(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              unawaited(_launchVerificationUrl(context));
-            },
-            child: const TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_open_browser,
-            ),
-            isFullWidth: true,
-          ),
-          const AuraSizedBox(height: .sm),
-          AuraButton(
-            onPressed: () {
-              Navigator.of(context, rootNavigator: true).pop();
-              unawaited(_copyVerificationUrl(context));
-            },
-            child: const TextLocale(
-              LocaleKeys.models_screens_add_provider_device_code_copy_link,
-            ),
-            variant: AuraButtonVariant.outlined,
-            isFullWidth: true,
-          ),
-        ],
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
-    );
-  }
-
-  Future<void> _launchVerificationUrl(BuildContext context) async {
-    final uri = Uri.parse(deviceCode.verificationUrl);
-    try {
-      await openSystemBrowser(uri);
-    } on Exception {
-      if (!context.mounted) return;
-
-      final _ = showAuraSnackBar(
-        context: context,
-        content: Text(
-          LocaleKeys.models_screens_add_provider_device_code_open_link_failed
-              .tr(),
-        ),
-        variant: AuraSnackBarVariant.error,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -616,6 +531,88 @@ class _CodexDeviceCodePanel extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _copyCode(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: deviceCode.userCode));
+    if (!context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        LocaleKeys.models_screens_add_provider_device_code_copied.tr(),
+      ),
+      variant: AuraSnackBarVariant.success,
+    );
+  }
+
+  Future<void> _copyVerificationUrl(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: deviceCode.verificationUrl));
+    if (!context.mounted) return;
+
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(
+        LocaleKeys.models_screens_add_provider_device_code_link_copied.tr(),
+      ),
+      variant: AuraSnackBarVariant.success,
+    );
+  }
+
+  void _showVerificationUrlActions(BuildContext context) {
+    AuraDialogs.alert(
+      context: context,
+      title: const TextLocale(
+        LocaleKeys.models_screens_add_provider_device_code_link_actions_title,
+      ),
+      message: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AuraButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              unawaited(_launchVerificationUrl(context));
+            },
+            child: const TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_open_browser,
+            ),
+            isFullWidth: true,
+          ),
+          const AuraSizedBox(height: .sm),
+          AuraButton(
+            onPressed: () {
+              Navigator.of(context, rootNavigator: true).pop();
+              unawaited(_copyVerificationUrl(context));
+            },
+            child: const TextLocale(
+              LocaleKeys.models_screens_add_provider_device_code_copy_link,
+            ),
+            variant: AuraButtonVariant.outlined,
+            isFullWidth: true,
+          ),
+        ],
+      ),
+      dismissLabel: const TextLocale(LocaleKeys.common_cancel),
+    );
+  }
+
+  Future<void> _launchVerificationUrl(BuildContext context) async {
+    final uri = Uri.parse(deviceCode.verificationUrl);
+    try {
+      await OpenSystemBrowser.call(uri);
+    } on Exception {
+      if (!context.mounted) return;
+
+      final _ = AuraSnackBars.show(
+        context: context,
+        content: Text(
+          LocaleKeys.models_screens_add_provider_device_code_open_link_failed
+              .tr(),
+        ),
+        variant: AuraSnackBarVariant.error,
+      );
+    }
+  }
 }
 
 class _SelectModelProvider extends HookConsumerWidget {
@@ -626,9 +623,7 @@ class _SelectModelProvider extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final models = ref
-        .watch(
-          apiModelProvidersProvider(workspaceId: workspaceId),
-        )
+        .watch(apiModelProvidersProvider(workspaceId: workspaceId))
         .value;
     final searchQuery = useState('');
     final addModelProvider = ref.watch(
@@ -636,28 +631,29 @@ class _SelectModelProvider extends HookConsumerWidget {
     );
 
     // Filter models based on search query using useMemoized.
-    final filteredModels = useMemoized(
-      () {
-        if (models == null) return <ApiModelProviderEntity>[];
+    List<ApiModelProviderEntity> filterModels() {
+      if (models == null) return <ApiModelProviderEntity>[];
 
-        if (searchQuery.value.isEmpty) {
-          return models;
-        }
+      if (searchQuery.value.isEmpty) {
+        return models;
+      }
 
-        final query = searchQuery.value.toLowerCase();
+      final query = searchQuery.value.toLowerCase();
 
-        return models.where((model) {
-          return model.name.toLowerCase().contains(query);
-        }).toList();
-      },
-      [models, searchQuery.value],
-    );
+      return models.where((model) {
+        return model.name.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    final filteredModels = useMemoized(filterModels, [
+      models,
+      searchQuery.value,
+    ]);
 
     if (models == null) {
       return AuraButton(
-        onPressed: () => ref.invalidate(
-          apiModelProvidersProvider(workspaceId: workspaceId),
-        ),
+        onPressed: () =>
+            ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId)),
         child: const TextLocale(LocaleKeys.common_reload),
       );
     }
@@ -711,18 +707,15 @@ class _SelectModelProvider extends HookConsumerWidget {
               : ListView.builder(
                   itemBuilder: (context, index) {
                     final model = filteredModels[index];
-                    final isOAuthProvider = isOpenAICodexProvider(model.id);
+                    final isOAuthProvider =
+                        ModelProviderOAuthProfiles.isCodexProvider(model.id);
 
                     return AuraCard(
                       child: Row(
                         mainAxisAlignment: .spaceBetween,
                         children: [
-                          ModelLogo(
-                            modelId: model.id,
-                          ),
-                          AuraText(
-                            child: Text(model.name),
-                          ),
+                          ModelLogo(modelId: model.id),
+                          AuraText(child: Text(model.name)),
                           if (isOAuthProvider)
                             const AuraText(
                               child: TextLocale(
@@ -755,9 +748,9 @@ class _SelectedModelHeader extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedModelId = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => value.modelId,
-      ),
+      addModelProviderStateProvider(
+        workspaceId,
+      ).select((value) => value.modelId),
     );
 
     final addModelProvider = ref.watch(
@@ -765,9 +758,7 @@ class _SelectedModelHeader extends HookConsumerWidget {
     );
 
     final models = ref
-        .watch(
-          apiModelProvidersProvider(workspaceId: workspaceId),
-        )
+        .watch(apiModelProvidersProvider(workspaceId: workspaceId))
         .value;
 
     if (selectedModelId == null || models == null) {
@@ -779,8 +770,8 @@ class _SelectedModelHeader extends HookConsumerWidget {
     );
     final selectedModelName =
         selectedModel?.name ??
-        (isOpenAICodexProvider(selectedModelId)
-            ? openAICodexDisplayName
+        (ModelProviderOAuthProfiles.isCodexProvider(selectedModelId)
+            ? ModelProviderOAuthProfiles.displayName
             : null);
     if (selectedModelName == null) return const SizedBox.shrink();
 
@@ -797,7 +788,7 @@ class _SelectedModelHeader extends HookConsumerWidget {
         ),
         const AuraSizedBox(width: .md),
         ModelLogo(
-          modelId: selectedModel?.id ?? openAICodexProviderId,
+          modelId: selectedModel?.id ?? ModelProviderOAuthProfiles.providerId,
           height: 24,
         ),
         const AuraSizedBox(width: .md),

@@ -42,26 +42,26 @@ class AppLogging {
     };
   }
 
-  static void _handleRecord(LogRecord record) {
-    final timestamp = record.time.toIso8601String();
-    final line =
-        '[$timestamp] [${record.level.name}] ${record.loggerName}: '
-        '${redactLogValue(record.message)}';
-    debugPrint(line);
-
-    if (record.error != null) {
-      debugPrint('Error: ${redactLogValue(record.error)}');
-    }
-
-    if (record.stackTrace != null) {
-      debugPrint('StackTrace: ${redactLogValue(record.stackTrace)}');
-    }
-  }
-
   @visibleForTesting
   static void resetForTesting() {
     _configured = false;
     _subscription?.cancel();
     _subscription = null;
+  }
+
+  static void _handleRecord(LogRecord record) {
+    final timestamp = record.time.toIso8601String();
+    final line =
+        '[$timestamp] [${record.level.name}] ${record.loggerName}: '
+        '${LogRedaction.redact(record.message)}';
+    debugPrint(line);
+
+    if (record.error != null) {
+      debugPrint('Error: ${LogRedaction.redact(record.error)}');
+    }
+
+    if (record.stackTrace != null) {
+      debugPrint('StackTrace: ${LogRedaction.redact(record.stackTrace)}');
+    }
   }
 }

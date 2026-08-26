@@ -41,23 +41,17 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
             tint: AuraTint.error,
           ),
           const AuraText(
-            child: _AppErrorText(
-              LocaleKeys.common_error_title,
-            ),
+            child: _AppErrorText(LocaleKeys.common_error_title),
             style: AuraTextStyle.heading6,
             textAlign: TextAlign.center,
           ),
           AuraText(
-            child: _AppErrorText(
-              switch (widget.error) {
-                UnsupportedWorkspaceCapabilityException(
-                  :final localizationKey,
-                ) =>
-                  localizationKey,
-                CloudAppException(:final localizationKey) => localizationKey,
-                _ => LocaleKeys.common_error_message,
-              },
-            ),
+            child: _AppErrorText(switch (widget.error) {
+              UnsupportedWorkspaceCapabilityException(:final localizationKey) =>
+                localizationKey,
+              CloudAppException(:final localizationKey) => localizationKey,
+              _ => LocaleKeys.common_error_message,
+            }),
             textAlign: TextAlign.center,
           ),
           ?widget.action,

@@ -177,16 +177,18 @@ ProviderContainer _container({
 }) {
   return ProviderContainer(
     overrides: [
-      workspaceSessionProvider.overrideWithValue(
+      workspaceSessionProvider(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      ).overrideWithValue(
         const WorkspaceSession(
           LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
         ),
       ),
       workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
         const AsyncData(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-          ),
+          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'workspace-1')),
         ),
       ),
       appDatabaseProvider.overrideWithValue(database),

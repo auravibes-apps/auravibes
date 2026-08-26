@@ -95,7 +95,9 @@ class AppAgentToolCallProvider
               id: toolCall.id,
               name: toolCall.name,
               argumentsRaw: toolCall.argumentsRaw,
-              lifecycle: toAgentToolCallLifecycle(toolCall.resultStatus),
+              lifecycle: AgentToolStatusMapper.toLifecycle(
+                toolCall.resultStatus,
+              ),
             ),
       ],
     );

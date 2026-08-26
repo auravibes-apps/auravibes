@@ -47,3 +47,4 @@ Future<ServiceConnectionsActionUsecase> serviceConnectionsActionUsecase(
   ref.watch(oauthCredentialServiceProvider).forceRefresh,
   await ref.watch(deleteServiceConnectionUsecaseProvider(workspaceId).future),
 );
+// Top-level API/provider declarations are required by their consumers.

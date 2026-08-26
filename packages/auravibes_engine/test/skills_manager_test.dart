@@ -29,13 +29,17 @@ void main() {
         'skill__app__skills_manager__delete_skill_credential_definition',
       ]),
     );
-    expect(
-      skillsManagerToolSpecs[2].inputJsonSchema['required'],
-      ['title', 'description', 'content'],
-    );
-    expect(
-      skillsManagerToolSpecs[7].inputJsonSchema['required'],
-      ['skillSlug', 'title', 'description', 'template', 'inputs'],
-    );
+    expect(skillsManagerToolSpecs[2].inputJsonSchema['required'], [
+      'title',
+      'description',
+      'content',
+    ]);
+    expect(skillsManagerToolSpecs[7].inputJsonSchema['required'], [
+      'skillSlug',
+      'title',
+      'description',
+      'template',
+      'inputs',
+    ]);
   });
 }

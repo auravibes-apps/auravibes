@@ -45,12 +45,17 @@ class GroupedToolsViewItem {
       };
     }
 
+    const errorIndex = 2;
+    const disconnectedIndex = 3;
+    const connectingIndex = 4;
+    const connectedIndex = 5;
+
     return switch (mcpConnection?.status) {
-      McpConnectionViewStatus.error => 2,
-      McpConnectionViewStatus.disconnected => 3,
-      McpConnectionViewStatus.connecting => 4,
-      McpConnectionViewStatus.connected => 5,
-      null => 5,
+      McpConnectionViewStatus.error => errorIndex,
+      McpConnectionViewStatus.disconnected => disconnectedIndex,
+      McpConnectionViewStatus.connecting => connectingIndex,
+      McpConnectionViewStatus.connected => connectedIndex,
+      null => connectedIndex,
     };
   }
 }

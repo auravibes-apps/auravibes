@@ -19,13 +19,10 @@ void main() {
   });
 
   test('keeps optional template inputs out of required fields', () {
-    final schema = templateInputSchema(
-      [
-        {'name': 'requiredValue', 'type': 'string'},
-        {'name': 'optionalValue', 'type': 'string', 'isOptional': true},
-      ],
-      requiresCredential: false,
-    );
+    final schema = templateInputSchema([
+      {'name': 'requiredValue', 'type': 'string'},
+      {'name': 'optionalValue', 'type': 'string', 'isOptional': true},
+    ], requiresCredential: false);
 
     expect(schema['required'], ['requiredValue']);
     expect(

@@ -19,9 +19,6 @@ class SaveAgentUsecase {
 }
 
 final ProviderFamily<SaveAgentUsecase, String> saveAgentUsecaseProvider =
-    Provider.family<SaveAgentUsecase, String>((
-      ref,
-      workspaceId,
-    ) {
+    Provider.family<SaveAgentUsecase, String>((ref, workspaceId) {
       return SaveAgentUsecase(ref.watch(agentRepositoryProvider(workspaceId)));
     });

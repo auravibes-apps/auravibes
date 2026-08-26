@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Widget buildSubject({
-    required String toolName,
-    required String content,
-  }) {
+  Widget buildSubject({required String toolName, required String content}) {
     return EasyLocalization(
       child: Builder(
         builder: (context) {

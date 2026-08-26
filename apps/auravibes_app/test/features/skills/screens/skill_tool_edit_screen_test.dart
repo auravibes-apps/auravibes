@@ -68,14 +68,15 @@ void main() {
     final skillTemplateToolsRepository = SkillTemplateToolsRepository(database);
     final skillCredentialDefinitionsRepository =
         SkillCredentialDefinitionsRepository(database);
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(workspace.id).overrideWithValue(null),
         skillsRepositoryProvider.overrideWithValue(skillsRepository),
         skillTemplateToolsRepositoryProvider.overrideWithValue(
           skillTemplateToolsRepository,
@@ -83,9 +84,10 @@ void main() {
         skillCredentialDefinitionsRepositoryProvider.overrideWithValue(
           skillCredentialDefinitionsRepository,
         ),
-        skillDetailProvider(workspace.id, skill.id).overrideWith(
-          (_) async => SkillDetail.fromUserSkill(skill),
-        ),
+        skillDetailProvider(
+          workspace.id,
+          skill.id,
+        ).overrideWith((_) async => SkillDetail.fromUserSkill(skill)),
         createSkillTemplateToolUsecaseProvider(workspace.id).overrideWithValue(
           CreateSkillTemplateToolUsecase(
             skillTemplateToolsRepository,
@@ -123,9 +125,8 @@ void main() {
               container: container,
               child: MaterialApp.router(
                 routerConfig: router,
-                builder: (context, child) => AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
+                builder: (context, child) =>
+                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -154,14 +155,12 @@ void main() {
     expect(find.text('Requires credential'), findsOneWidget);
 
     Future<void> enterLabeledField(String label, String value) async {
-      final input = find.byWidgetPredicate(
-        (widget) {
-          if (widget is! AuraInput) return false;
-          final labelWidget = widget.label;
+      final input = find.byWidgetPredicate((widget) {
+        if (widget is! AuraInput) return false;
+        final labelWidget = widget.label;
 
-          return labelWidget is Text && labelWidget.data == label;
-        },
-      ).first;
+        return labelWidget is Text && labelWidget.data == label;
+      }).first;
       await tester.scrollUntilVisible(
         input,
         200,
@@ -218,10 +217,7 @@ void main() {
       'bodyFormat': 'json',
     });
     expect(jsonDecode(tool.inputsJson), {
-      'company_id': {
-        'type': 'string',
-        'description': 'Company id',
-      },
+      'company_id': {'type': 'string', 'description': 'Company id'},
     });
     expect(tool.requiresCredential, isTrue);
   });

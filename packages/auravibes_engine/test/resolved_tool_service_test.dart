@@ -148,10 +148,7 @@ class _FakeResolvedToolProvider
   AgentResolvedToolExecution<AgentResolvedToolName> toExecution(
     AgentResolvedToolName tool,
   ) {
-    return AgentResolvedToolExecution(
-      descriptor: tool,
-      tool: tool,
-    );
+    return AgentResolvedToolExecution(descriptor: tool, tool: tool);
   }
 
   @override

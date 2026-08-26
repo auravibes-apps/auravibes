@@ -31,9 +31,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   }
 
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
-  getWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) async {
+  getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) async {
     final tableResults = await _database.workspaceModelSelectionsDao
         .getAllWorkspaceModelSelectionsByWorkspace(
           workspaceIds: filter.workspaces,
@@ -43,9 +41,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   }
 
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-  watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     return _database.workspaceModelSelectionsDao
         .watchAllWorkspaceModelSelectionsByWorkspace(
           workspaceIds: filter.workspaces,
@@ -57,9 +53,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   }
 
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(
-    String id,
-  ) async {
+  getWorkspaceModelSelectionById(String id) async {
     final workspaceModelSelectionWithConnection = await _database
         .workspaceModelSelectionsDao
         .getWorkspaceModelSelectionById(id);
@@ -92,9 +86,8 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
     WorkspaceModelSelectionWithConnection withProvider,
   ) {
     final modelProvider = withProvider.modelProvider;
-    final isCodex = isOpenAICodexProvider(
-      withProvider.modelConnection.serviceId,
-    );
+    final serviceId = withProvider.modelConnection.serviceId;
+    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(serviceId);
     final providerType = _mapToTypeTable(modelProvider?.type);
 
     return WorkspaceModelSelectionWithConnectionEntity(
@@ -113,7 +106,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
       modelConnection: ModelConnectionEntity(
         id: withProvider.modelConnection.id,
         name: withProvider.modelConnection.name,
-        modelId: withProvider.modelConnection.serviceId,
+        modelId: serviceId,
         createdAt: withProvider.modelConnection.createdAt,
         updatedAt: withProvider.modelConnection.updatedAt,
         workspaceId: withProvider.modelConnection.workspaceId,
@@ -127,11 +120,11 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
         ),
       ),
       modelsProvider: ApiModelProviderEntity(
-        id: modelProvider?.id ?? withProvider.modelConnection.serviceId,
+        id: modelProvider?.id ?? serviceId,
         name:
             modelProvider?.name ??
-            (isCodex ? openAICodexDisplayName : null) ??
-            withProvider.modelConnection.serviceId,
+            (isCodex ? ModelProviderOAuthProfiles.displayName : null) ??
+            serviceId,
         type: providerType ?? (isCodex ? ModelProvidersType.openai : null),
         url: modelProvider?.url ?? '',
         doc: modelProvider?.doc ?? '',

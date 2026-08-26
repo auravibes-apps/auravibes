@@ -49,10 +49,7 @@ void main() {
       bearerToken: null,
     );
 
-    expect(
-      () => usecase.call(form),
-      throwsA(isA<Exception>()),
-    );
+    expect(() => usecase.call(form), throwsA(isA<Exception>()));
   });
 
   test('throws when oauth discovery fails', () {
@@ -65,9 +62,6 @@ void main() {
       bearerToken: null,
     );
 
-    expect(
-      () => usecase.call(form),
-      throwsA(isA<Exception>()),
-    );
+    expect(() => usecase.call(form), throwsA(isA<Exception>()));
   });
 }

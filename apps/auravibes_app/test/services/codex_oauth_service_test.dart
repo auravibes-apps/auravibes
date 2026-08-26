@@ -19,13 +19,22 @@ void main() {
         state: 'state',
       );
 
-      expect(uri.toString(), startsWith(openAICodexAuthorizationEndpoint));
-      expect(uri.queryParameters['client_id'], openAICodexClientId);
+      expect(
+        uri.toString(),
+        startsWith(ModelProviderOAuthProfiles.authorizationEndpoint),
+      );
+      expect(
+        uri.queryParameters['client_id'],
+        ModelProviderOAuthProfiles.clientId,
+      );
       expect(
         uri.queryParameters['redirect_uri'],
         'http://localhost:1455/auth/callback',
       );
-      expect(uri.queryParameters['scope'], openAICodexScopes.join(' '));
+      expect(
+        uri.queryParameters['scope'],
+        ModelProviderOAuthProfiles.scopes.join(' '),
+      );
       expect(uri.queryParameters['code_challenge'], 'challenge');
       expect(uri.queryParameters['state'], 'state');
       expect(uri.queryParameters['originator'], 'auravibes');
@@ -63,7 +72,10 @@ void main() {
       final dio = Dio()
         ..httpClientAdapter = _FakeHttpClientAdapter(
           onFetch: (options) async {
-            expect(options.uri.toString(), openAICodexTokenEndpoint);
+            expect(
+              options.uri.toString(),
+              ModelProviderOAuthProfiles.tokenEndpoint,
+            );
 
             return _json({
               'access_token': 'access',
@@ -115,16 +127,17 @@ void main() {
           },
         );
 
-      final token =
-          await CodexOAuthService(
-            dio: dio,
-          ).authenticateWithDeviceCode(
+      final token = await CodexOAuthService(dio: dio)
+          .authenticateWithDeviceCode(
             onDeviceCode: (deviceCode) {
               shownCode = deviceCode;
             },
           );
 
-      expect(shownCode?.verificationUrl, '$openAICodexIssuer/codex/device');
+      expect(
+        shownCode?.verificationUrl,
+        '${ModelProviderOAuthProfiles.issuer}/codex/device',
+      );
       expect(shownCode?.userCode, 'ABCD-EFGH');
       expect(token.accessToken, 'access');
     });
@@ -179,9 +192,9 @@ void main() {
         );
 
       await expectLater(
-        CodexOAuthService(dio: dio).authenticateWithDeviceCode(
-          isCancelled: () => true,
-        ),
+        CodexOAuthService(
+          dio: dio,
+        ).authenticateWithDeviceCode(isCancelled: () => true),
         throwsA(isA<CodexOAuthCanceledException>()),
       );
     });

@@ -7,13 +7,12 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
 class BuildSkillContextMessagesService {
+  static const _builder = agent.BuildSkillContextMessages();
   const BuildSkillContextMessagesService(
     this._listAvailableSkillsUsecase,
     this._listConversationAgentSkillsUsecase, [
     this._buildLoadedSkillManifestsUsecase,
   ]);
-
-  static const _builder = agent.BuildSkillContextMessages();
 
   final Future<List<AvailableSkill>> Function({
     required String conversationId,

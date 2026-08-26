@@ -347,10 +347,7 @@ void main() {
 
     test('copyCryptor preserves issuedAt', () async {
       final issued = DateTime(2026, 1, 15);
-      final token = OAuthTokenEntity(
-        accessToken: 'abc',
-        issuedAt: issued,
-      );
+      final token = OAuthTokenEntity(accessToken: 'abc', issuedAt: issued);
 
       final encrypted = await token.copyCryptor((v) async => 'enc($v)');
       expect(encrypted.issuedAt, issued);
@@ -413,10 +410,7 @@ void main() {
         updatedAt: DateTime(2026),
       );
 
-      expect(
-        tool.finalToolName(server),
-        'mcp_srv-1_my-server_read_file',
-      );
+      expect(tool.finalToolName(server), 'mcp_srv-1_my-server_read_file');
     });
 
     test('finalToolName sanitizes special characters', () {

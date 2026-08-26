@@ -89,7 +89,7 @@ void main() {
         ),
       ).thenAnswer(
         (_) async => [
-          _appSkill(skillsManagerSlug),
+          _appSkill(SkillToolSlugs.skillsManager),
           _appSkill('brave'),
         ],
       );
@@ -277,12 +277,12 @@ void main() {
 
 AvailableSkill _appSkill(String slug) {
   return AvailableSkill(
+    source: SkillSource.app,
     id: slug,
     slug: slug,
     title: slug,
     description: '',
     content: '',
-    source: SkillSource.app,
     kind: SkillKind.native,
   );
 }
@@ -324,8 +324,5 @@ class _FakeAppSkillCandidates
 }
 
 AppSkillCredentialCandidate _candidate(String id, {String? name}) {
-  return AppSkillCredentialCandidate(
-    id: id,
-    name: name ?? id,
-  );
+  return AppSkillCredentialCandidate(id: id, name: name ?? id);
 }

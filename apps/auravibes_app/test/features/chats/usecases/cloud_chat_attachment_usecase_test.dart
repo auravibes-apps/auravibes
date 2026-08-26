@@ -12,7 +12,7 @@ void main() {
     () async {
       final calls = <String>[];
       final bytes = Uint8List.fromList([1, 2, 3]);
-      final checksum = cloudAttachmentChecksum(bytes);
+      final checksum = CloudAttachmentChecksum.fromBytes(bytes);
       final usecase = CloudChatAttachmentUsecase(
         beginUpload:
             ({
@@ -167,7 +167,9 @@ void main() {
             displayName: 'draft.txt',
             mimeType: 'text/plain',
             sizeBytes: 1,
-            checksumSha256: cloudAttachmentChecksum(Uint8List.fromList([1])),
+            checksumSha256: CloudAttachmentChecksum.fromBytes(
+              Uint8List.fromList([1]),
+            ),
             revision: 2,
           ),
         );
@@ -179,10 +181,7 @@ void main() {
             required requestId,
             required expectedRevision,
           }) => Future(
-            () => deleted.add((
-              objectId: objectId,
-              revision: expectedRevision,
-            )),
+            () => deleted.add((objectId: objectId, revision: expectedRevision)),
           ),
       readBytes: (_) async => Uint8List.fromList([1]),
     );
@@ -288,9 +287,6 @@ void main() {
       expectedRevision: 2,
     );
 
-    expect(
-      received,
-      (objectId: 9, requestId: 'delete-1', expectedRevision: 2),
-    );
+    expect(received, (objectId: 9, requestId: 'delete-1', expectedRevision: 2));
   });
 }

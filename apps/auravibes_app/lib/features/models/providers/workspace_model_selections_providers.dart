@@ -14,10 +14,7 @@ part 'workspace_model_selections_providers.g.dart';
 
 @riverpod
 Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-listWorkspaceModelSelections(
-  Ref ref, {
-  required String workspaceId,
-}) async* {
+listWorkspaceModelSelections(Ref ref, {required String workspaceId}) async* {
   final workspaceModelSelectionRepository = await ref.watch(
     modelSelectionStoreProvider(workspaceId).future,
   );
@@ -55,33 +52,35 @@ _projectWorkspaceModelSelections({
     controller.add(_withCodexProjections(selections, providers, openAIModels));
   }
 
+  void onSelectionsChanged(
+    List<WorkspaceModelSelectionWithConnectionEntity> value,
+  ) {
+    latestSelections = value;
+    emit();
+  }
+
+  void onProvidersChanged(List<ApiModelProviderEntity> value) {
+    latestProviders = value;
+    emit();
+  }
+
+  void onOpenAIModelsChanged(List<ApiModelEntity> value) {
+    latestOpenAIModels = value;
+    emit();
+  }
+
   controller
     ..onListen = () {
       subscriptions
         ..add(
-          selections.listen(
-            (value) {
-              latestSelections = value;
-              emit();
-            },
-            onError: controller.addError,
-          ),
+          selections.listen(onSelectionsChanged, onError: controller.addError),
         )
         ..add(
-          providers.listen(
-            (value) {
-              latestProviders = value;
-              emit();
-            },
-            onError: controller.addError,
-          ),
+          providers.listen(onProvidersChanged, onError: controller.addError),
         )
         ..add(
           openAIModels.listen(
-            (value) {
-              latestOpenAIModels = value;
-              emit();
-            },
+            onOpenAIModelsChanged,
             onError: controller.addError,
           ),
         );
@@ -101,7 +100,8 @@ List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
   List<ApiModelEntity> openAIModels,
 ) {
   final hasCodexSelections = models.any(
-    (model) => model.modelConnection.modelId == openAICodexProviderId,
+    (model) =>
+        model.modelConnection.modelId == ModelProviderOAuthProfiles.providerId,
   );
   if (!hasCodexSelections) return models;
 
@@ -111,7 +111,9 @@ List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
   if (openAIProvider == null) {
     return models
         .where(
-          (model) => model.modelConnection.modelId != openAICodexProviderId,
+          (model) =>
+              model.modelConnection.modelId !=
+              ModelProviderOAuthProfiles.providerId,
         )
         .toList();
   }
@@ -123,7 +125,8 @@ List<WorkspaceModelSelectionWithConnectionEntity> _withCodexProjections(
 
   return [
     for (final model in models)
-      if (model.modelConnection.modelId != openAICodexProviderId)
+      if (model.modelConnection.modelId !=
+          ModelProviderOAuthProfiles.providerId)
         model
       else if (openAIModelsById[model.workspaceModelSelection.modelId]
           case final openAIModel?)
@@ -139,14 +142,14 @@ WorkspaceModelSelectionWithConnectionEntity _withCodexProjection(
   return model.copyWith(
     workspaceModelSelection: model.workspaceModelSelection.copyWith(
       modelName: openAIModel.name,
-      modalitiesInput: codexInputModalities(openAIModel),
+      modalitiesInput: CodexInputModalities.forModel(openAIModel),
       modalitiesOutput: openAIModel.modalitiesOutput,
       supportsReasoning: openAIModel.supportsReasoning,
       supportsToolCalls: openAIModel.supportsToolCalls,
     ),
     modelsProvider: ApiModelProviderEntity(
-      id: openAICodexProviderId,
-      name: openAICodexDisplayName,
+      id: ModelProviderOAuthProfiles.providerId,
+      name: ModelProviderOAuthProfiles.displayName,
       type: openAIProvider.type,
       url: openAIProvider.url,
       doc: openAIProvider.doc,
@@ -199,9 +202,7 @@ _groupModelsByProvider(
   final sortedKeys = grouped.keys.toList()
     ..sort((left, right) => _compareProviderGroups(grouped, left, right));
 
-  return {
-    for (final key in sortedKeys) key: ?grouped[key],
-  };
+  return {for (final key in sortedKeys) key: ?grouped[key]};
 }
 
 int _compareProviderGroups(
@@ -224,3 +225,4 @@ int _compareProviderGroups(
 
   return left.compareTo(right);
 }
+// Top-level API/provider declarations are required by their consumers.

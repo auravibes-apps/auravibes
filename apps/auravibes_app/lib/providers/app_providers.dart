@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'app_providers.g.dart';
 
 final appStorageNamespaceProvider = Provider<String>((_) {
-  return appStorageNamespaceFor(AppEnvConfig.dbHashSource);
+  return AppStorageNamespace.forHashSource(AppEnvConfig.dbHashSource);
 });
 
 final attachmentFileStoreProvider = Provider<AttachmentFileStore>((ref) {

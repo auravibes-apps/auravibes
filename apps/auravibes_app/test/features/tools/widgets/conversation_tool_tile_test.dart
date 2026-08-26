@@ -34,10 +34,7 @@ class _MockConversationToolsNotifier extends ConversationToolsNotifier {
 }
 
 class _Subject extends StatelessWidget {
-  const _Subject({
-    required this.toolState,
-    this.conversationId,
-  });
+  const _Subject({required this.toolState, this.conversationId});
 
   final ConversationToolState toolState;
   final String? conversationId;
@@ -61,9 +58,7 @@ class _Subject extends StatelessWidget {
         conversationToolsProvider(
           workspaceId: _workspaceId,
           conversationId: conversationId,
-        ).overrideWith(
-          () => _MockConversationToolsNotifier([toolState]),
-        ),
+        ).overrideWith(() => _MockConversationToolsNotifier([toolState])),
       ],
     );
   }
@@ -271,11 +266,7 @@ void main() {
       isWorkspaceEnabled: true,
     );
 
-    await _pumpSubject(
-      tester,
-      toolState: toolState,
-      conversationId: 'conv-1',
-    );
+    await _pumpSubject(tester, toolState: toolState, conversationId: 'conv-1');
 
     expect(find.byType(AuraCard), findsOneWidget);
   });

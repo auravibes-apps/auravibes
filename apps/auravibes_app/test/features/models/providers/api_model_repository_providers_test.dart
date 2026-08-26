@@ -35,9 +35,7 @@ class _FakeApiModelRepository implements ApiModelRepository {
     String modelId,
   ) async {
     return models
-        .where(
-          (m) => m.modelProvider == providerId && m.id == modelId,
-        )
+        .where((m) => m.modelProvider == providerId && m.id == modelId)
         .firstOrNull;
   }
 
@@ -95,9 +93,7 @@ void main() {
     test('returns ApiModelRepository from container', () {
       final repo = _FakeApiModelRepository();
       final container = ProviderContainer(
-        overrides: [
-          apiModelRepositoryProvider.overrideWithValue(repo),
-        ],
+        overrides: [apiModelRepositoryProvider.overrideWithValue(repo)],
       );
       addTearDown(container.dispose);
 
@@ -112,9 +108,7 @@ void main() {
       addTearDown(database.close);
 
       final container = ProviderContainer(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(database),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(database)],
       );
       addTearDown(container.dispose);
 
@@ -158,7 +152,7 @@ void main() {
         apiModelProvidersProvider(workspaceId: 'workspace').future,
       );
       expect(result.map((provider) => provider.id), [
-        if (openAICodexClientId.isNotEmpty) 'openai-codex',
+        if (ModelProviderOAuthProfiles.clientId.isNotEmpty) 'openai-codex',
         'openai',
       ]);
     });

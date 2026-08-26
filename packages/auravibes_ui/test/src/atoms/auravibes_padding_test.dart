@@ -118,11 +118,7 @@ void main() {
     testWidgets('renders child with default padding', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: const Scaffold(
-            body: AuraPadding(
-              child: Text('Padded'),
-            ),
-          ),
+          home: const Scaffold(body: AuraPadding(child: Text('Padded'))),
           theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );

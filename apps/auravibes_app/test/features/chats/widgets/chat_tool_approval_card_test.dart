@@ -11,9 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
-  Widget buildSubject({
-    required List<Object> overrides,
-  }) {
+  Widget buildSubject({required List<Object> overrides}) {
     return EasyLocalization(
       child: ProviderScope(
         overrides: overrides.cast(),
@@ -82,9 +80,7 @@ void main() {
       await pumpAndInit(
         tester,
         buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => []),
-          ],
+          overrides: [pendingToolCallsProvider.overrideWith((ref, _) => [])],
         ),
       );
 
@@ -132,9 +128,7 @@ void main() {
     });
 
     testWidgets('shows formatted tool display name', (tester) async {
-      final pendingCalls = [
-        _createPendingToolCall(),
-      ];
+      final pendingCalls = [_createPendingToolCall()];
       await pumpAndInit(
         tester,
         buildSubject(
@@ -324,9 +318,7 @@ void main() {
       expect(find.text('Stop All'), findsOneWidget);
     });
 
-    testWidgets('renders SizedBox.shrink when async has error', (
-      tester,
-    ) async {
+    testWidgets('renders SizedBox.shrink when async has error', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(

@@ -73,11 +73,7 @@ Future<void> _showDialog(WidgetTester tester) async {
 List<Object> _dataOverride([
   List<UserToolType> tools = const [UserToolType.calculator],
 ]) {
-  return [
-    availableToolsToAddProvider.overrideWith(
-      (ref, arg) async => tools,
-    ),
-  ];
+  return [availableToolsToAddProvider.overrideWith((ref, arg) async => tools)];
 }
 
 class _RecordingWorkspaceToolsNotifier extends WorkspaceToolsNotifier {

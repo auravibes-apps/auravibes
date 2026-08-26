@@ -53,6 +53,12 @@ abstract class McpFormState with _$McpFormState {
   /// Whether to show bearer token field.
   bool get showBearerTokenField => authenticationType == .bearerToken;
 
+  /// Check if the form is valid.
+  bool get isValid => toCreateEntity().isValid;
+
+  /// Get validation errors.
+  List<String> get validationErrors => toCreateEntity().validationErrors;
+
   /// Convert to McpServerToCreate for validation and saving.
   McpServerFormToCreate toCreateEntity() {
     return McpServerFormToCreate(
@@ -73,12 +79,6 @@ abstract class McpFormState with _$McpFormState {
         return const McpTransportTypeSSE();
     }
   }
-
-  /// Check if the form is valid.
-  bool get isValid => toCreateEntity().isValid;
-
-  /// Get validation errors.
-  List<String> get validationErrors => toCreateEntity().validationErrors;
 }
 
 /// Notifier for managing MCP form state.
@@ -86,17 +86,17 @@ abstract class McpFormState with _$McpFormState {
 class McpFormNotifier extends _$McpFormNotifier {
   String _workspaceId = '';
 
+  WorkspaceCapabilities get _capabilities => ref
+      .read(workspaceSessionForRouteProvider(_workspaceId))
+      .requireValue
+      .capabilities;
+
   @override
   McpFormState build(String workspaceId) {
     _workspaceId = workspaceId;
 
     return const McpFormState();
   }
-
-  WorkspaceCapabilities get _capabilities => ref
-      .read(workspaceSessionForRouteProvider(_workspaceId))
-      .requireValue
-      .capabilities;
 
   /// Update the name field.
   void setName(String value) {
@@ -129,9 +129,7 @@ class McpFormNotifier extends _$McpFormNotifier {
     // Reset auth type if current selection is not available for new transport.
     final availableTypes = newState.availableAuthTypes;
     if (!availableTypes.contains(newState.authenticationType)) {
-      newState = newState.copyWith(
-        authenticationType: .none,
-      );
+      newState = newState.copyWith(authenticationType: .none);
     }
 
     state = newState;
@@ -178,10 +176,8 @@ class McpFormNotifier extends _$McpFormNotifier {
 
   /// Submit the form.
   ///
-  /// Validates the form and submits to the MCP manager to:
-  /// 1. Save the MCP server to the database (TODO)
-  /// 2. Connect to the MCP server
-  /// 3. Load and register the MCP's tools
+  /// Validates the form and submits it to the MCP manager. The manager saves
+  /// the MCP server, connects to it, and loads and registers its tools.
   Future<bool> submit() async {
     final capabilities = _capabilities;
     capabilities
@@ -207,9 +203,7 @@ class McpFormNotifier extends _$McpFormNotifier {
     try {
       final mcpToCreate = state.toCreateEntity();
       await ref
-          .read(
-            mcpConnectionProvider.notifier,
-          )
+          .read(mcpConnectionProvider.notifier)
           .addMcpServer(mcpToCreate, workspaceId: _workspaceId);
 
       setSubmitting(value: false);

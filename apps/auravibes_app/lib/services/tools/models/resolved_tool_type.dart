@@ -72,9 +72,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillControl({
-    required String toolIdentifier,
-  }) {
+  factory ResolvedTool.skillControl({required String toolIdentifier}) {
     return ResolvedTool._(
       type: ResolvedToolType.skillControl,
       tableId: toolIdentifier,

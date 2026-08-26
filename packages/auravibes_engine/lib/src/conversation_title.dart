@@ -27,9 +27,7 @@ String normalizeConversationTitle(String title, String firstMessage) {
         normalized.endsWith(quote)) {
       normalized = normalized.characters
           .skip(1)
-          .take(
-            normalized.characters.length - 2,
-          )
+          .take(normalized.characters.length - 2)
           .toString();
     }
   }

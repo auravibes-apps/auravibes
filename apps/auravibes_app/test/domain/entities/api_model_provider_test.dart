@@ -66,10 +66,7 @@ void main() {
     });
 
     test('returns null type when npm is missing', () {
-      final json = <String, dynamic>{
-        'id': 'custom',
-        'name': 'Custom',
-      };
+      final json = <String, dynamic>{'id': 'custom', 'name': 'Custom'};
       final provider = ApiModelProviderEntity.fromJson(json);
       expect(provider.type, isNull);
     });
@@ -81,11 +78,7 @@ void main() {
     });
 
     test('hasUrl false when url is empty', () {
-      final json = <String, dynamic>{
-        'id': 'p',
-        'name': 'P',
-        'api': '',
-      };
+      final json = <String, dynamic>{'id': 'p', 'name': 'P', 'api': ''};
       final provider = ApiModelProviderEntity.fromJson(json);
       expect(provider.hasUrl, isFalse);
     });

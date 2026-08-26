@@ -27,6 +27,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
+void _ignoreProviderUpdate(Object? _, Object? _) {
+  final _ = Object();
+}
+
 List<String> _messageIds(ProviderContainer container) =>
     container
         .read(chatMessagesProvider('workspace-1', 'conversation-1'))
@@ -40,7 +44,11 @@ void main() {
     var repository = _FakeMessageRepository();
     var container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),
@@ -61,7 +69,11 @@ void main() {
       repository = _FakeMessageRepository();
       container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
@@ -107,9 +119,7 @@ void main() {
         container
             .read(chatMessagesProvider('workspace-1', 'conversation-1'))
             .value,
-        [
-          _message(id: 'message-1', content: 'hello', isUser: true),
-        ],
+        [_message(id: 'message-1', content: 'hello', isUser: true)],
       );
       expect(_messageIds(container), ['message-1']);
 
@@ -135,9 +145,7 @@ void main() {
       container
         ..listen(
           chatMessagesProvider('workspace-1', 'conversation-1'),
-          (_, _) {
-            final _ = Object();
-          },
+          _ignoreProviderUpdate,
           fireImmediately: true,
         )
         ..listen(
@@ -194,9 +202,7 @@ void main() {
         container
           ..listen(
             chatMessagesProvider('workspace-1', 'conversation-1'),
-            (_, _) {
-              final _ = Object();
-            },
+            _ignoreProviderUpdate,
             fireImmediately: true,
           )
           ..listen(
@@ -269,7 +275,11 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
@@ -313,7 +323,11 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
@@ -555,9 +569,7 @@ class _FakeWorkspaceModelSelectionRepository
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(
-    String id,
-  ) async {
+  getWorkspaceModelSelectionById(String id) async {
     return selectedModel;
   }
 
@@ -567,17 +579,13 @@ class _FakeWorkspaceModelSelectionRepository
 
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
-  getWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     throw UnimplementedError();
   }
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-  watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     throw UnimplementedError();
   }
 

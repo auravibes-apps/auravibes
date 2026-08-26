@@ -37,9 +37,7 @@ void main() {
     });
 
     test('merges output metadata before concatenating chunks', () {
-      final first = ChatResult<ChatMessage>(
-        output: ChatMessage.model('Hello'),
-      );
+      final first = ChatResult<ChatMessage>(output: ChatMessage.model('Hello'));
       final second = ChatResult<ChatMessage>(
         output: ChatMessage.model(
           ' world',

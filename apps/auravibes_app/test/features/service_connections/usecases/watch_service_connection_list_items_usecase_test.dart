@@ -107,10 +107,7 @@ void main() {
     test('invalid MCP metadata field types do not fail the stream', () async {
       final fixture = await _createFixture();
       addTearDown(fixture.close);
-      await _insertMcpCredential(
-        fixture,
-        metadataJson: '{"client_id":123}',
-      );
+      await _insertMcpCredential(fixture, metadataJson: '{"client_id":123}');
       final usecase = _createUsecase(fixture);
 
       final items = await usecase(fixture.workspace.id).first;
@@ -185,10 +182,7 @@ Future<_Fixture> _createFixture() async {
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
   final workspace = await WorkspaceRepository(database).createWorkspace(
-    const WorkspaceToCreate(
-      name: 'Workspace',
-      type: WorkspaceType.local,
-    ),
+    const WorkspaceToCreate(name: 'Workspace', type: WorkspaceType.local),
   );
 
   return _Fixture(

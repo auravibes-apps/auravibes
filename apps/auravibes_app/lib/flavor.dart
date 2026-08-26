@@ -1,18 +1,10 @@
-enum Flavor {
-  prod,
-  dev,
-  beta,
-}
+enum Flavor { prod, dev, beta }
 
 class AppFlavorConfig {
   static Flavor? _appFlavor;
 
   static Flavor get appFlavor =>
       _appFlavor ?? (throw StateError('appFlavor is not initialized'));
-
-  static set appFlavor(Flavor value) => _appFlavor = value;
-
-  static String get name => appFlavor.name;
 
   static String get title {
     switch (appFlavor) {
@@ -24,4 +16,8 @@ class AppFlavorConfig {
         return 'AuraVibes Beta';
     }
   }
+
+  static String get name => appFlavor.name;
+
+  static set appFlavor(Flavor value) => _appFlavor = value;
 }

@@ -21,11 +21,8 @@ WHERE workspace_tools_group_id IS NOT NULL
 ''')
 class Tools extends Table with TableMixin {
   /// Reference to the workspace this tool belongs to.
-  TextColumn get workspaceId => text().references(
-    Workspaces,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get workspaceToolsGroupId => text().nullable().references(
     ToolsGroups,

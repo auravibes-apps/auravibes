@@ -52,10 +52,7 @@ class SendMessageUsecase {
   final MessageRepository? messageRepository;
   final GetConversationBusyStateUsecase? getConversationBusyStateUsecase;
   final ConversationSendQueueRuntime? sendQueueRuntime;
-  final Future<void> Function(
-    String conversationId,
-    ChatDraft draft,
-  )?
+  final Future<void> Function(String conversationId, ChatDraft draft)?
   cloudSend;
 
   Future<void> call({
@@ -74,36 +71,14 @@ class SendMessageUsecase {
     if (getBusyState == null || queue == null) {
       throw StateError('Local send dependencies unavailable');
     }
-    final busyState = await getBusyState.call(
-      conversationId: conversationId,
-    );
+    final busyState = await getBusyState.call(conversationId: conversationId);
     if (busyState.isBusy) {
-      final _ = queue.enqueue(
-        conversationId: conversationId,
-        draft: draft,
-      );
+      final _ = queue.enqueue(conversationId: conversationId, draft: draft);
 
       return;
     }
 
-    await _sendNow(
-      conversationId: conversationId,
-      draft: draft,
-    );
-  }
-
-  Future<void> _sendNow({
-    required String conversationId,
-    required ChatDraft draft,
-  }) async {
-    final createdMessage = await createUserMessage(
-      conversationId: conversationId,
-      draft: draft,
-    );
-    await continueFromUserMessage(
-      conversationId: conversationId,
-      messageId: createdMessage.id,
-    );
+    await _sendNow(conversationId: conversationId, draft: draft);
   }
 
   Future<MessageEntity> createUserMessage({
@@ -145,6 +120,20 @@ class SendMessageUsecase {
       ),
     );
   }
+
+  Future<void> _sendNow({
+    required String conversationId,
+    required ChatDraft draft,
+  }) async {
+    final createdMessage = await createUserMessage(
+      conversationId: conversationId,
+      draft: draft,
+    );
+    await continueFromUserMessage(
+      conversationId: conversationId,
+      messageId: createdMessage.id,
+    );
+  }
 }
 
 extension SendMessageUsecaseNewConversation on SendMessageUsecase {
@@ -178,9 +167,7 @@ final ProviderFamily<SendMessageUsecase, String>
 sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
   (ref, workspaceId) {
     final session = ref
-        .watch(
-          workspaceSessionForRouteProvider(workspaceId),
-        )
+        .watch(workspaceSessionForRouteProvider(workspaceId))
         .requireValue;
     session.capabilities.require(
       supported: session.capabilities.agentExecution,
@@ -201,9 +188,7 @@ sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
           throw const UnsupportedWorkspaceCapabilityException();
         }
         final chat = CloudChatGateway(gateway);
-        final projection = await chat.getConversationSnapshot(
-          conversationId,
-        );
+        final projection = await chat.getConversationSnapshot(conversationId);
         _logger.info(
           'Cloud send snapshot: conversationId=$conversationId, '
           'sequence=${projection.sequence}, '

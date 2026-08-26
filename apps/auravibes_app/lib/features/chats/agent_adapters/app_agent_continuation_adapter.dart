@@ -1,4 +1,3 @@
-
 import 'package:auravibes_app/data/repositories/api_model_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -42,13 +41,13 @@ class AppAgentContinuationAdapter
   final ConversationRepository conversationRepository;
   final Future<ModelSelectionStore> Function(String workspaceId)
   modelSelectionStore;
-  final Map<String, String> _workspaceIdsByModelId = {};
   final ApiModelRepository apiModelRepository;
   final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
   final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
   final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase;
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
   loadConversationToolSpecsUsecaseForWorkspace;
+  final Map<String, String> _workspaceIdsByModelId = {};
 
   @override
   Future<AgentConversationReference?> loadConversation(
@@ -76,14 +75,16 @@ class AppAgentContinuationAdapter
     final workspaceId = _workspaceIdsByModelId[modelId];
     if (workspaceId == null) return null;
 
-    return (await modelSelectionStore(workspaceId)).getById(modelId);
+    return await (await modelSelectionStore(workspaceId)).getById(modelId);
   }
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity> projectSelectedModel(
     WorkspaceModelSelectionWithConnectionEntity model,
   ) async {
-    if (!isOpenAICodexProvider(model.modelConnection.modelId)) {
+    if (!ModelProviderOAuthProfiles.isCodexProvider(
+      model.modelConnection.modelId,
+    )) {
       return model;
     }
     final openAIModel = await apiModelRepository.getModelByProviderAndModelId(
@@ -102,7 +103,7 @@ class AppAgentContinuationAdapter
         modelName: openAIModel.name,
         supportsReasoning: openAIModel.supportsReasoning,
         supportsToolCalls: openAIModel.supportsToolCalls,
-        modalitiesInput: codexInputModalities(openAIModel),
+        modalitiesInput: CodexInputModalities.forModel(openAIModel),
         modalitiesOutput: openAIModel.modalitiesOutput,
       ),
     );
@@ -156,7 +157,9 @@ class AppAgentContinuationAdapter
 
   @override
   bool shouldDisableTools(WorkspaceModelSelectionWithConnectionEntity model) {
-    return isOpenAICodexProvider(model.modelConnection.modelId) &&
+    return ModelProviderOAuthProfiles.isCodexProvider(
+          model.modelConnection.modelId,
+        ) &&
         !model.workspaceModelSelection.supportsToolCalls;
   }
 
@@ -174,28 +177,22 @@ class AppAgentContinuationAdapter
   }
 }
 
-final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>(
-  (
-    ref,
-  ) {
-    return AppAgentContinuationAdapter(
-      conversationRepository: ref.watch(conversationRepositoryProvider),
-      modelSelectionStore: (workspaceId) => ref.read(
-        modelSelectionStoreProvider(workspaceId).future,
-      ),
-      apiModelRepository: ref.watch(apiModelRepositoryProvider),
-      selectPromptMessagesUsecase: ref.watch(
-        selectPromptMessagesUsecaseProvider,
-      ),
-      buildSkillContextMessagesUsecase: ref.watch(
-        buildSkillContextMessagesServiceProvider,
-      ),
-      loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) => ref.read(
-        loadConversationToolSpecsUsecaseProvider(workspaceId),
-      ),
-    );
-  },
-);
+final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
+  ref,
+) {
+  return AppAgentContinuationAdapter(
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    modelSelectionStore: (workspaceId) =>
+        ref.read(modelSelectionStoreProvider(workspaceId).future),
+    apiModelRepository: ref.watch(apiModelRepositoryProvider),
+    selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
+    buildSkillContextMessagesUsecase: ref.watch(
+      buildSkillContextMessagesServiceProvider,
+    ),
+    loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
+        ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
+  );
+});
 
 extension on ChatMessage {
   bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;

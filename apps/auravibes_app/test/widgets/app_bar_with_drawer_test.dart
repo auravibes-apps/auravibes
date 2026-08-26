@@ -9,9 +9,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(
-            title: Text('Test AppBar'),
-          ),
+          appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),
       ),
@@ -25,9 +23,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: const Scaffold(
-          appBar: AuraAppBarWithDrawer(
-            title: Text('Test Title'),
-          ),
+          appBar: AuraAppBarWithDrawer(title: Text('Test Title')),
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),
       ),
@@ -42,9 +38,7 @@ void main() {
         home: const Scaffold(
           appBar: AuraAppBarWithDrawer(
             title: Text('Test AppBar'),
-            actions: [
-              Icon(Icons.settings),
-            ],
+            actions: [Icon(Icons.settings)],
           ),
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),
@@ -72,9 +66,7 @@ void main() {
   });
 
   testWidgets('preferredSize without bottom is kToolbarHeight', (tester) {
-    const bar = AuraAppBarWithDrawer(
-      title: Text('Test AppBar'),
-    );
+    const bar = AuraAppBarWithDrawer(title: Text('Test AppBar'));
 
     expect(bar.preferredSize, equals(const Size.fromHeight(kToolbarHeight)));
 
@@ -89,9 +81,7 @@ void main() {
         home: ResponsiveSlidingDrawerProvider(
           controller: controller,
           child: const Scaffold(
-            appBar: AuraAppBarWithDrawer(
-              title: Text('Test AppBar'),
-            ),
+            appBar: AuraAppBarWithDrawer(title: Text('Test AppBar')),
           ),
         ),
         theme: ThemeData(extensions: [AuraTheme.light]),

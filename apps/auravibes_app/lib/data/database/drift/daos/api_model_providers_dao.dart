@@ -1,24 +1,17 @@
 // Required: Existing helpers remain top-level for local feature use.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/database/drift/daos/popular_api_providers.dart';
 import 'package:auravibes_app/data/database/drift/tables/model_providers_table_type.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
+export 'popular_api_providers.dart';
+
 part 'api_model_providers_dao.g.dart';
 
-// Define popular providers in priority order (top 10).
-const List<String> popularProviders = [
-  'openai',
-  'anthropic',
-  'groq',
-  'xai',
-  'togetherai',
-  'deepseek',
-];
-
 int _sortProviders(ApiModelProvidersTable a, ApiModelProvidersTable b) {
-  final aIndex = popularProviders.indexOf(a.id);
-  final bIndex = popularProviders.indexOf(b.id);
+  final aIndex = PopularApiProviders.values.indexOf(a.id);
+  final bIndex = PopularApiProviders.values.indexOf(b.id);
 
   // If both are popular, sort by their position in the popular list.
   if (aIndex != -1 && bIndex != -1) {
@@ -57,9 +50,9 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   }
 
   Stream<List<ApiModelProvidersTable>> watchAllProviders() {
-    return select(apiModelProviders).watch().map(
-      (providers) => providers.sorted(_sortProviders),
-    );
+    return select(
+      apiModelProviders,
+    ).watch().map((providers) => providers.sorted(_sortProviders));
   }
 
   /// Retrieves a provider by its ID.
@@ -145,7 +138,7 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted providers.
   Future<List<ApiModelProvidersTable>> batchUpsertProviders(
     List<ApiModelProvidersCompanion> providers,
-  ) async {
+  ) {
     return transaction(() async {
       return [for (final provider in providers) await upsertProvider(provider)];
     });

@@ -33,10 +33,11 @@ abstract class AddModelProviderModel with _$AddModelProviderModel {
     if (name == null || name.trim().isEmpty) {
       return 'Name is required';
     }
-    if (name.trim().length < 2) {
+    final trimmedName = name.trim();
+    if (trimmedName.length < 2) {
       return 'Name must be at least 2 characters';
     }
-    if (name.trim().length > 50) {
+    if (trimmedName.length > 50) {
       return 'Name must be less than 50 characters';
     }
 

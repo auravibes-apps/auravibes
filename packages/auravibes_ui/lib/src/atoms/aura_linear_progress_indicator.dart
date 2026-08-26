@@ -64,9 +64,7 @@ class AuraLinearProgressIndicator extends StatelessWidget {
               FractionallySizedBox(
                 alignment: Alignment.centerLeft,
                 widthFactor: clampedValue,
-                child: ColoredBox(
-                  color: auraColors.colorFor(tint),
-                ),
+                child: ColoredBox(color: auraColors.colorFor(tint)),
               ),
             ],
           ),

@@ -80,10 +80,7 @@ CancelableOperation<Object?> _rerank(
   putIfPresent(body, 'model', stringInput(input, 'model'));
   putIfPresent(body, 'top_n', positiveIntInput(input, 'topN'));
 
-  return postJson(
-    context,
-    'https://api.jina.ai/v1/rerank',
-    {'authorization': 'Bearer ${apiKey(input)}'},
-    body,
-  );
+  return postJson(context, 'https://api.jina.ai/v1/rerank', {
+    'authorization': 'Bearer ${apiKey(input)}',
+  }, body);
 }

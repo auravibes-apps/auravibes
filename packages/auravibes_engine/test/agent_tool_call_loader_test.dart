@@ -30,9 +30,7 @@ void main() {
     () async {
       const usecase = AgentToolCallLoader<String>(
         provider: _FakeAgentToolCallProvider(
-          messages: [
-            AgentToolMessage(id: 'assistant-1', isUser: false),
-          ],
+          messages: [AgentToolMessage(id: 'assistant-1', isUser: false)],
         ),
       );
 

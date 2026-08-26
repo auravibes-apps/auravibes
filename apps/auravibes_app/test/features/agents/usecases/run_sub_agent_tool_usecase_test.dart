@@ -14,20 +14,14 @@ void main() {
     test('lists all enabled agents with types', () async {
       final repository = _MockAgentsRepository();
       final now = DateTime(2026);
-      when(
-        () => repository.getAgentsByWorkspace('workspace-1'),
-      ).thenAnswer(
+      when(() => repository.getAgentsByWorkspace('workspace-1')).thenAnswer(
         (_) async => [
           _agent(
             id: 'main',
             now: now,
             visibility: AgentVisibility.chatSelector,
           ),
-          _agent(
-            id: 'sub',
-            now: now,
-            visibility: AgentVisibility.subAgentList,
-          ),
+          _agent(id: 'sub', now: now, visibility: AgentVisibility.subAgentList),
           _agent(id: 'both', now: now, visibility: AgentVisibility.both),
           _agent(
             id: 'off',
@@ -53,18 +47,14 @@ void main() {
     test('gets only enabled sub-agent-list agents', () async {
       final repository = _MockAgentsRepository();
       final now = DateTime(2026);
-      when(
-        () => repository.getAgentById('sub'),
-      ).thenAnswer(
+      when(() => repository.getAgentById('sub')).thenAnswer(
         (_) async => _agent(
           id: 'sub',
           now: now,
           visibility: AgentVisibility.subAgentList,
         ),
       );
-      when(
-        () => repository.getAgentById('main'),
-      ).thenAnswer(
+      when(() => repository.getAgentById('main')).thenAnswer(
         (_) async => _agent(
           id: 'main',
           now: now,
@@ -142,9 +132,7 @@ void main() {
         isUser: true,
         status: MessageStatus.sent,
       );
-      when(
-        () => repository.createMessage(input),
-      ).thenAnswer(
+      when(() => repository.createMessage(input)).thenAnswer(
         (_) async => _message(
           id: 'message-1',
           conversationId: 'child',

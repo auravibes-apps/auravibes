@@ -21,7 +21,7 @@ void main() {
     'recovers its snapshot when a stream event has a sequence gap',
     () async {
       var snapshots = 0;
-      final states = watchCloudConversation(
+      final states = CloudConversationStream.watch(
         _gateway(
           snapshots: () => _snapshot(sequence: snapshots++ == 0 ? 4 : 8),
           events: (_) => Stream.value(_event(sequence: 7)),

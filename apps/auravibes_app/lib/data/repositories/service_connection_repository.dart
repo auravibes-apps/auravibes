@@ -10,10 +10,7 @@ import 'package:drift/drift.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class ServiceConnectionRepository {
-  const ServiceConnectionRepository(
-    this._database,
-    this._encryptionService,
-  );
+  const ServiceConnectionRepository(this._database, this._encryptionService);
 
   final AppDatabase _database;
   final EncryptionService _encryptionService;
@@ -88,11 +85,10 @@ class ServiceConnectionRepository {
   Stream<List<ServiceConnectionEntity>> watchWorkspaceConnections(
     String workspaceId,
   ) {
-    return (_database.select(
-      _database.serviceConnections,
-    )..where((tbl) => tbl.workspaceId.equals(workspaceId))).watch().map(
-      (rows) => rows.map(_toEntity).toList(),
-    );
+    return (_database.select(_database.serviceConnections)
+          ..where((tbl) => tbl.workspaceId.equals(workspaceId)))
+        .watch()
+        .map((rows) => rows.map(_toEntity).toList());
   }
 
   Future<List<ServiceConnectionCandidate>> listAppSkillCredentialCandidates({
@@ -102,9 +98,7 @@ class ServiceConnectionRepository {
   }) async {
     final compatibleProviders = compatibleModelProviderIds.toSet();
     final rows =
-        await (_database.select(_database.serviceConnections)..where((
-              tbl,
-            ) {
+        await (_database.select(_database.serviceConnections)..where((tbl) {
               final appCredential =
                   tbl.kind.equals(
                     ServiceConnectionKindTable.appSkillCredential.name,
@@ -177,10 +171,10 @@ class ServiceConnectionRepository {
   Future<String?> createMcpServiceConnection({
     required String workspaceId,
     required McpServiceConnectionProfile profile,
-  }) async {
+  }) {
     switch (profile.authenticationType) {
       case McpAuthenticationTypeNone():
-        return null;
+        return Future.value();
       case McpAuthenticationTypeBearerToken(:final bearerToken):
         return _createBearer(
           workspaceId: workspaceId,
@@ -263,9 +257,7 @@ class ServiceConnectionRepository {
     required ServiceConnectionKindTable kind,
     required String bearerToken,
   }) async {
-    final secret = ServiceConnectionSecretBearerToken(
-      bearerToken: bearerToken,
-    );
+    final secret = ServiceConnectionSecretBearerToken(bearerToken: bearerToken);
     final encrypted = await _encryptionService.encrypt(
       ServiceConnectionAuthCodec.encodeSecret(secret),
     );

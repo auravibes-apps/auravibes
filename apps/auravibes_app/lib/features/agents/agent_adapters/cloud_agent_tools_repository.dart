@@ -20,9 +20,6 @@ class CloudAgentToolsRepository implements AgentToolsRepositoryContract {
   final ReadCloudAgentTools read;
   final PatchCloudAgentTools patch;
 
-  Map<String, dynamic> _data(WorkspaceResource resource) =>
-      CloudResourceMapper.decode(resource);
-
   @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async =>
       (await read())
@@ -111,4 +108,7 @@ class CloudAgentToolsRepository implements AgentToolsRepositoryContract {
 
     return true;
   }
+
+  Map<String, dynamic> _data(WorkspaceResource resource) =>
+      CloudResourceMapper.decode(resource);
 }

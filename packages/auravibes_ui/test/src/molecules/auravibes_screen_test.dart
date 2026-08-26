@@ -9,14 +9,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: const AuraScreen(
-            child: Text(childText),
-          ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          home: const AuraScreen(child: Text(childText)),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -33,11 +27,7 @@ void main() {
             // ignore: avoid_redundant_argument_values - Required to cover explicit standard variant separately from default behavior.
             variant: AuraScreenVariation.standard,
           ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -55,11 +45,7 @@ void main() {
             child: SizedBox(),
             variant: AuraScreenVariation.aurora,
           ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -75,15 +61,9 @@ void main() {
         MaterialApp(
           home: const AuraScreen(
             child: SizedBox(),
-            appBar: AuraAppBar(
-              title: Text(titleText),
-            ),
+            appBar: AuraAppBar(title: Text(titleText)),
           ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -105,15 +85,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: const AuraScreen(
-            child: SizedBox(),
-            padding: padding,
-          ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          home: const AuraScreen(child: SizedBox(), padding: padding),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -123,14 +96,8 @@ void main() {
     testWidgets('uses standard variant by default', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: const AuraScreen(
-            child: SizedBox(),
-          ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          home: const AuraScreen(child: SizedBox()),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -151,11 +118,7 @@ void main() {
               leading: Text('Leading'),
             ),
           ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -179,11 +142,7 @@ void main() {
               leading: Text(customLeadingText),
             ),
           ),
-          theme: ThemeData(
-            extensions: [
-              AuraTheme.light,
-            ],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 

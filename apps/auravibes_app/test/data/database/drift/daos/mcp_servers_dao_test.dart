@@ -106,9 +106,7 @@ void main() {
         _testServer(workspaceId: workspaceId, name: 'Server 2'),
       );
       final servers = await fixture.database.mcpServersDao
-          .getMcpServersForWorkspace(
-            workspaceId,
-          );
+          .getMcpServersForWorkspace(workspaceId);
       expect(servers.length, equals(2));
     });
 
@@ -119,9 +117,7 @@ void main() {
           _testServer(workspaceId: workspaceId),
         );
         final servers = await fixture.database.mcpServersDao
-            .getMcpServersForWorkspace(
-              'other-ws',
-            );
+            .getMcpServersForWorkspace('other-ws');
         expect(servers, isEmpty);
       },
     );
@@ -138,9 +134,7 @@ void main() {
         ),
       );
       final enabled = await fixture.database.mcpServersDao
-          .getEnabledMcpServersForWorkspace(
-            workspaceId,
-          );
+          .getEnabledMcpServersForWorkspace(workspaceId);
       expect(enabled.length, equals(1));
       expect(enabled.firstOrNull?.name, equals('Enabled'));
     });
@@ -186,10 +180,7 @@ void main() {
         _testServer(workspaceId: workspaceId),
       );
       final toggled = await fixture.database.mcpServersDao
-          .toggleMcpServerEnabled(
-            server.id,
-            isEnabled: false,
-          );
+          .toggleMcpServerEnabled(server.id, isEnabled: false);
       expect(toggled, isNotNull);
       expect(
         (toggled ?? fail('Expected toggled to be non-null')).isEnabled,

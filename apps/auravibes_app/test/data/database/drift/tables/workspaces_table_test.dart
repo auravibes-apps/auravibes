@@ -42,9 +42,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(workspaces)',
-          )
+          .customSelect('PRAGMA table_info(workspaces)')
           .get();
     });
 
@@ -72,23 +70,17 @@ void main() {
     });
 
     test('name is not null', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'name',
-      );
+      final col = columns.firstWhere((r) => r.read<String>('name') == 'name');
       expect(col.read<int>('notnull'), 1);
     });
 
     test('type is not null', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'type',
-      );
+      final col = columns.firstWhere((r) => r.read<String>('name') == 'type');
       expect(col.read<int>('notnull'), 1);
     });
 
     test('url is nullable', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'url',
-      );
+      final col = columns.firstWhere((r) => r.read<String>('name') == 'url');
       expect(col.read<int>('notnull'), 0);
     });
   });

@@ -38,12 +38,12 @@ void main() {
       ).thenAnswer(
         (_) async => const [
           AvailableSkill(
+            source: SkillSource.user,
             id: 'skill-1',
             slug: 'research',
             title: 'Research',
             description: 'Research sources.',
             content: 'Use primary sources.',
-            source: SkillSource.user,
             kind: SkillKind.template,
           ),
         ],

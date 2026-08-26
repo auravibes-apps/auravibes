@@ -159,7 +159,7 @@ class AppAllowedToolsDataProvider
     );
 
     return agent.AgentToolApprovalDecision(
-      permissionResult: toAgentToolPermissionResult(
+      permissionResult: AgentToolStatusMapper.toPermissionResult(
         decision.permissionResult,
       ),
     );
@@ -232,9 +232,7 @@ class AppAllowedToolsDataProvider
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(
-        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
-      ),
+      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
   }
 
@@ -254,16 +252,14 @@ class AppAllowedToolsDataProvider
       if (update == null) return toolCall;
 
       return toolCall.copyWith(
-        resultStatus: toAppToolCallResultStatus(update.resultStatus),
+        resultStatus: AgentToolStatusMapper.toResultStatus(update.resultStatus),
         responseRaw: update.responseRaw,
       );
     }).toList();
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(
-        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
-      ),
+      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
   }
 }
@@ -287,17 +283,14 @@ void _logToolExecutionError({
 }
 
 final Provider<AgentToolExecutionService> agentToolExecutionServiceProvider =
-    Provider<AgentToolExecutionService>((
-      ref,
-    ) {
+    Provider<AgentToolExecutionService>((ref) {
       return AgentToolExecutionService(
         loadLatestMessageToolCallsUsecase: ref.watch(
           agentToolCallLoaderProvider,
         ),
         messageRepository: ref.watch(messageRepositoryProvider),
-        resolveToolApprovalDecisionForWorkspace: (workspaceId) => ref.read(
-          resolveToolApprovalDecisionUsecaseProvider(workspaceId),
-        ),
+        resolveToolApprovalDecisionForWorkspace: (workspaceId) =>
+            ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
         resolveSkillCommandTarget:
             ({
               required conversationId,

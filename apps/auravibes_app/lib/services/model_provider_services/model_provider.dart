@@ -25,10 +25,7 @@ class ModelProviderServices {
         provider.url,
         fallback: 'https://api.openai.com/v1',
       );
-      final client = OpenAIClient.withApiKey(
-        provider.key,
-        baseUrl: baseUrl,
-      );
+      final client = OpenAIClient.withApiKey(provider.key, baseUrl: baseUrl);
 
       final modelsResponse = await client.models.list();
 
@@ -83,6 +80,8 @@ Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
     fallback: 'https://openrouter.ai/api/v1',
   );
   try {
+    const successStatusLowerBound = 200;
+    const successStatusUpperBound = 300;
     final request = await http
         .get(
           Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/key'),
@@ -93,7 +92,8 @@ Future<bool> _validateOpenRouterKey(ModelProvider provider) async {
         )
         .timeout(const Duration(seconds: 10));
 
-    return request.statusCode >= 200 && request.statusCode < 300;
+    return request.statusCode >= successStatusLowerBound &&
+        request.statusCode < successStatusUpperBound;
   } on Exception {
     return false;
   }
@@ -105,6 +105,8 @@ Future<List<String>?> _openRouterModels(ModelProvider provider) async {
     fallback: 'https://openrouter.ai/api/v1',
   );
   try {
+    const successStatusLowerBound = 200;
+    const successStatusUpperBound = 300;
     final request = await http
         .get(
           Uri.parse('${url.replaceFirst(RegExp(r'/$'), '')}/models'),
@@ -114,7 +116,10 @@ Future<List<String>?> _openRouterModels(ModelProvider provider) async {
           },
         )
         .timeout(const Duration(seconds: 10));
-    if (request.statusCode < 200 || request.statusCode >= 300) return null;
+    if (request.statusCode < successStatusLowerBound ||
+        request.statusCode >= successStatusUpperBound) {
+      return null;
+    }
 
     final json = jsonDecode(request.body);
     if (json is! Map<String, dynamic>) return null;
@@ -169,13 +174,13 @@ Future<AntropicResponseModels> _anthopicModels(
     provider.url,
     fallback: 'https://api.anthropic.com/v1',
   );
-  final qp = <String, dynamic>{'limit': '1000'};
+  final queryParameters = <String, dynamic>{'limit': '1000'};
 
   if (afterId != null) {
-    qp.addAll({'after_id': afterId});
+    queryParameters.addAll({'after_id': afterId});
   }
   final request = await http.get(
-    Uri.parse('$url/models').replace(queryParameters: qp),
+    Uri.parse('$url/models').replace(queryParameters: queryParameters),
     headers: <String, String>{
       'x-api-key': provider.key,
       'anthropic-version': '2023-06-01',
@@ -188,7 +193,7 @@ Future<AntropicResponseModels> _anthopicModels(
 }
 
 Future<String> _providerBaseUrl(String? url, {required String fallback}) async {
-  final uri = await requirePublicHttpsUri(url ?? fallback);
+  final uri = await PublicUrlGuard.requireHttpsUri(url ?? fallback);
 
   return uri.toString().replaceFirst(RegExp(r'/$'), '');
 }

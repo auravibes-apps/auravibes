@@ -4,10 +4,7 @@ import 'package:test/test.dart';
 void main() {
   group('serviceSkillDefinitions', () {
     test('cannot be mutated', () {
-      expect(
-        serviceSkillDefinitions.removeLast,
-        throwsUnsupportedError,
-      );
+      expect(serviceSkillDefinitions.removeLast, throwsUnsupportedError);
     });
 
     test('uses unique service slugs', () {
@@ -156,9 +153,7 @@ Map<String, Object?> _properties(String skillSlug, String toolSlug) {
   );
   final tool = skill.nativeTools.singleWhere((tool) => tool.slug == toolSlug);
 
-  return Map<String, Object?>.from(
-    tool.inputJsonSchema['properties']! as Map,
-  );
+  return Map<String, Object?>.from(tool.inputJsonSchema['properties']! as Map);
 }
 
 void _collectInternalLeaks(List<String> leaks, String path, String text) {

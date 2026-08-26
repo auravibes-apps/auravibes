@@ -82,9 +82,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(api_model_providers)',
-          )
+          .customSelect('PRAGMA table_info(api_model_providers)')
           .get();
     });
 

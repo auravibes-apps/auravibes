@@ -37,7 +37,7 @@ class BuildCombinedToolSpecsUseCase {
     WorkspaceToolEntity workspaceTool,
   ) async {
     if (workspaceTool.belongsToGroup) {
-      return _buildMcpCandidate(workspaceTool);
+      return await _buildMcpCandidate(workspaceTool);
     }
 
     final builtInCandidate = _buildBuiltInCandidate(workspaceTool);

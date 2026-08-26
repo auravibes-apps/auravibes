@@ -15,11 +15,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for managing conversation tools.
 ///
-/// Shows ALL workspace tools organized by group (Built-in Tools, MCP servers).
-/// Each group is collapsible (collapsed by default) with:
-/// - MCP status indicators for MCP groups
-/// - Group-level toggle to enable/disable all tools at once
-/// - Reconnect button for MCP groups with connection issues
+/// Shows all workspace tools organized by group, with each group collapsed by
+/// default. MCP groups include status indicators, group-level toggles, and a
+/// reconnect button for connection issues.
 class ToolsManagementModal extends ConsumerWidget {
   const ToolsManagementModal({
     required this.workspaceId,
@@ -56,9 +54,7 @@ class ToolsManagementModal extends ConsumerWidget {
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.xl),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
@@ -72,9 +68,7 @@ class ToolsManagementModal extends ConsumerWidget {
           children: [
             // Header with close button.
             Container(
-              padding: EdgeInsets.all(
-                context.auraTheme.fromSpacing(.md),
-              ),
+              padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -109,9 +103,7 @@ class ToolsManagementModal extends ConsumerWidget {
                 ),
                 AsyncError(:final error) => Center(
                   child: AuraText(
-                    child: TextLocale(
-                      cloudErrorLocalizationKey(error),
-                    ),
+                    child: TextLocale(CloudAppErrors.localizationKey(error)),
                     tint: AuraTint.error,
                   ),
                 ),
@@ -146,9 +138,7 @@ class _GroupedToolsList extends StatelessWidget {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       itemBuilder: (context, index) {
         final group = groups[index];
 

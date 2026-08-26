@@ -124,10 +124,7 @@ void main() {
         'slow-id': AgentToolPermissionResult.granted,
         'fast-id': AgentToolPermissionResult.granted,
       },
-      resultFutures: {
-        'slow': slow.future,
-        'fast': fast.future,
-      },
+      resultFutures: {'slow': slow.future, 'fast': fast.future},
     );
     final service = AgentToolExecutionService<String>(provider: provider);
 
@@ -171,9 +168,7 @@ void main() {
         'blocked-id': AgentToolPermissionResult.granted,
         'manual-id': AgentToolPermissionResult.needsConfirmation,
       },
-      results: {
-        'blocked': Exception('blocked'),
-      },
+      results: {'blocked': Exception('blocked')},
     );
     final service = AgentToolExecutionService<String>(provider: provider);
 
@@ -284,7 +279,7 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     required Map<String, dynamic> arguments,
   }) async {
     final future = resultFutures[tool];
-    if (future != null) return future;
+    if (future != null) return await future;
 
     final result = results[tool];
     if (result is Object) {

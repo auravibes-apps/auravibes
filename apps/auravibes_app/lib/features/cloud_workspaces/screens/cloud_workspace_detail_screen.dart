@@ -24,10 +24,8 @@ class CloudWorkspaceDetailScreen extends ConsumerWidget {
   final String cloudAccountId;
   final int cloudWorkspaceId;
 
-  CloudWorkspaceDetailKey get _key => (
-    accountId: cloudAccountId,
-    workspaceId: cloudWorkspaceId,
-  );
+  CloudWorkspaceDetailKey get _key =>
+      (accountId: cloudAccountId, workspaceId: cloudWorkspaceId);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -273,7 +271,7 @@ Future<void> _runCloudAction(
   } on Object catch (error) {
     if (!context.mounted) return;
     debugPrint('Cloud workspace action failed: $error');
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: const TextLocale(LocaleKeys.workspace_management_cloud_error),
       variant: AuraSnackBarVariant.error,
@@ -542,9 +540,8 @@ Future<_InviteRequest?> _invitePrompt(
             child: const TextLocale(LocaleKeys.common_cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(
-              context,
-            ).pop((email: controller.text, role: role)),
+            onPressed: () =>
+                Navigator.of(context).pop((email: controller.text, role: role)),
             child: const TextLocale(LocaleKeys.common_add),
           ),
         ],

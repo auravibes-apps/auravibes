@@ -40,12 +40,12 @@ void main() {
           serviceConnectionRepositoryProvider.overrideWith(
             (_) => throw StateError('local repository touched'),
           ),
-          workspaceSessionForRouteProvider('cloud-workspace').overrideWith(
-            (_) async => session,
-          ),
-          cloudWorkspaceStateGatewayProvider(session).overrideWith(
-            (_) async => throw StateError('cloud unavailable'),
-          ),
+          workspaceSessionForRouteProvider(
+            'cloud-workspace',
+          ).overrideWith((_) async => session),
+          cloudWorkspaceStateGatewayProvider(
+            session,
+          ).overrideWith((_) async => throw StateError('cloud unavailable')),
         ],
       );
       addTearDown(container.dispose);
@@ -133,9 +133,7 @@ void main() {
     );
 
     expect(
-      candidates.map(
-        (candidate) => (id: candidate.id, name: candidate.name),
-      ),
+      candidates.map((candidate) => (id: candidate.id, name: candidate.name)),
       [(id: 'service:matching', name: 'Example Search credential')],
     );
   });
@@ -144,9 +142,14 @@ void main() {
     'eligibility includes service callbacks but excludes control callbacks',
     () async {
       final repository = _ServiceConnectionRepository();
-      final usecase = ListAppSkillCredentialCandidatesUsecase(
-        () => repository,
-      );
+      when(
+        () => repository.listAppSkillCredentialCandidates(
+          workspaceId: any(named: 'workspaceId'),
+          appSkillServiceId: any(named: 'appSkillServiceId'),
+          compatibleModelProviderIds: any(named: 'compatibleModelProviderIds'),
+        ),
+      ).thenAnswer((_) async => []);
+      final usecase = ListAppSkillCredentialCandidatesUsecase(() => repository);
       const registry = AppSkillRegistry();
       final skillsManager =
           registry.getByIdentifier('skills_manager') ??

@@ -34,19 +34,28 @@ void main() {
       // Polarity-agnostic: the on color must clear the perceptual target
       // regardless of whether it is light-on-dark or dark-on-light.
       expect(
-        apcaLc(foreground: s.onPrimary, background: s.primary).abs(),
+        ColorContrast.apcaLc(
+          foreground: s.onPrimary,
+          background: s.primary,
+        ).abs(),
         greaterThanOrEqualTo(60 - 1),
       );
       expect(
-        apcaLc(foreground: s.onSurface, background: s.surface).abs(),
+        ColorContrast.apcaLc(
+          foreground: s.onSurface,
+          background: s.surface,
+        ).abs(),
         greaterThanOrEqualTo(60 - 1),
       );
       expect(
-        apcaLc(foreground: s.onBackground, background: s.background).abs(),
+        ColorContrast.apcaLc(
+          foreground: s.onBackground,
+          background: s.background,
+        ).abs(),
         greaterThanOrEqualTo(60 - 1),
       );
       expect(
-        apcaLc(foreground: s.onError, background: s.error).abs(),
+        ColorContrast.apcaLc(foreground: s.onError, background: s.error).abs(),
         greaterThanOrEqualTo(60 - 1),
       );
     });
@@ -57,11 +66,17 @@ void main() {
         brightness: AuraBrightness.dark,
       );
       expect(
-        apcaLc(foreground: s.onPrimary, background: s.primary).abs(),
+        ColorContrast.apcaLc(
+          foreground: s.onPrimary,
+          background: s.primary,
+        ).abs(),
         greaterThanOrEqualTo(60 - 1),
       );
       expect(
-        apcaLc(foreground: s.onSurface, background: s.surface).abs(),
+        ColorContrast.apcaLc(
+          foreground: s.onSurface,
+          background: s.surface,
+        ).abs(),
         greaterThanOrEqualTo(60 - 1),
       );
     });
@@ -75,39 +90,42 @@ void main() {
           );
 
           expect(
-            wcagContrastRatio(s.onPrimary, s.primary),
+            ColorContrast.wcagContrastRatio(s.onPrimary, s.primary),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onSecondary, s.secondary),
+            ColorContrast.wcagContrastRatio(s.onSecondary, s.secondary),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onSurface, s.surface),
+            ColorContrast.wcagContrastRatio(s.onSurface, s.surface),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onSurfaceVariant, s.surfaceVariant),
+            ColorContrast.wcagContrastRatio(
+              s.onSurfaceVariant,
+              s.surfaceVariant,
+            ),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onBackground, s.background),
+            ColorContrast.wcagContrastRatio(s.onBackground, s.background),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onError, s.error),
+            ColorContrast.wcagContrastRatio(s.onError, s.error),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onWarning, s.warning),
+            ColorContrast.wcagContrastRatio(s.onWarning, s.warning),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onSuccess, s.success),
+            ColorContrast.wcagContrastRatio(s.onSuccess, s.success),
             greaterThanOrEqualTo(4.5),
           );
           expect(
-            wcagContrastRatio(s.onInfo, s.info),
+            ColorContrast.wcagContrastRatio(s.onInfo, s.info),
             greaterThanOrEqualTo(4.5),
           );
         }

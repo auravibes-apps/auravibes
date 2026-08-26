@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 /// corners,
 /// and padding variants for content organization.
 class AuraCard extends StatelessWidget {
+  static const _borderWidth = 1.5;
+
   /// Creates a Aura card.
   const AuraCard({
     required this.child,
@@ -52,7 +54,7 @@ class AuraCard extends StatelessWidget {
       backgroundColor = auraColors.surface.withValues(alpha: 0.1);
       border = Border.all(
         color: auraColors.surfaceVariant.withValues(alpha: 0.2),
-        width: 1.5,
+        width: _borderWidth,
       );
       shadows = [DesignShadows.glass];
     } else if (isBorder) {
@@ -79,20 +81,14 @@ class AuraCard extends StatelessWidget {
       ];
     }
 
-    final Widget cardContent = AuraPadding(
-      child: child,
-      padding: padding,
-    );
+    final Widget cardContent = AuraPadding(child: child, padding: padding);
+    final cardRadius = context.auraTheme.fromBorderRadius(.xl);
 
-    // Glass style implementation based on best practices.
-    // Reference: https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3.
+    // Glass style implementation based on best practices. See
+    // https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3.
     var card = isGlass
         ? ClipRRect(
-            borderRadius: BorderRadius.all(
-              Radius.circular(
-                context.auraTheme.fromBorderRadius(.xl),
-              ),
-            ),
+            borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
             // ClipBehavior: Clip.hardEdge,.
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
@@ -100,20 +96,14 @@ class AuraCard extends StatelessWidget {
                 child: cardContent,
                 color: auraColors.onBackground,
                 decoration: BoxDecoration(
-                  // Use a subtle gradient for better glass effect than a.
-                  // Flat color.
-                  // Color: auraColors.inverseSurface.withValues(alpha: 0.3),.
+                  // Use a subtle gradient for a better glass effect than a flat
+                  // color. Previously, this used
+                  // auraColors.inverseSurface.withValues(alpha: 0.3).
                   border: Border.all(
                     color: auraColors.background.withValues(alpha: 0.05),
-                    width: 1.5,
+                    width: _borderWidth,
                   ),
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(
-                      context.auraTheme.fromBorderRadius(
-                        .xl,
-                      ),
-                    ),
-                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
                   gradient: LinearGradient(
                     begin: .topLeft,
                     end: .bottomCenter,
@@ -133,22 +123,14 @@ class AuraCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor,
               border: border,
-              borderRadius: BorderRadius.all(
-                Radius.circular(
-                  context.auraTheme.fromBorderRadius(.xl),
-                ),
-              ),
+              borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
               boxShadow: shadows,
             ),
             onPressed: onTap,
           );
 
     if (semanticLabel != null) {
-      card = Semantics(
-        child: card,
-        container: true,
-        label: semanticLabel,
-      );
+      card = Semantics(child: card, container: true, label: semanticLabel);
     }
 
     return card;

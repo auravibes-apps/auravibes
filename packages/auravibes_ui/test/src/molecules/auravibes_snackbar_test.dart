@@ -26,7 +26,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Test message'),
                     );
@@ -36,9 +36,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -60,7 +58,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Success!'),
                       variant: AuraSnackBarVariant.success,
@@ -71,9 +69,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -93,7 +89,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Error!'),
                       variant: AuraSnackBarVariant.error,
@@ -104,9 +100,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -125,7 +119,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Warning!'),
                       variant: AuraSnackBarVariant.warning,
@@ -136,9 +130,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -157,7 +149,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Info!'),
                       variant: AuraSnackBarVariant.info,
@@ -168,9 +160,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -194,7 +184,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('With action'),
                       actionLabel: 'UNDO',
@@ -208,9 +198,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -242,7 +230,7 @@ void main() {
                     ElevatedButton(
                       onPressed: () {
                         controllers.add(
-                          showAuraSnackBar(
+                          AuraSnackBars.show(
                             context: context,
                             content: const Text('First message'),
                           ),
@@ -253,7 +241,7 @@ void main() {
                     ElevatedButton(
                       onPressed: () {
                         controllers.add(
-                          showAuraSnackBar(
+                          AuraSnackBars.show(
                             context: context,
                             content: const Text('Second message'),
                           ),
@@ -266,9 +254,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -310,7 +296,7 @@ void main() {
                       builder: (context) {
                         return ElevatedButton(
                           onPressed: () {
-                            final _ = showAuraSnackBar(
+                            final _ = AuraSnackBars.show(
                               context: context,
                               content: const Text('Left message'),
                             );
@@ -327,7 +313,7 @@ void main() {
                       builder: (context) {
                         return ElevatedButton(
                           onPressed: () {
-                            final _ = showAuraSnackBar(
+                            final _ = AuraSnackBars.show(
                               context: context,
                               content: const Text('Right message'),
                             );
@@ -341,9 +327,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -372,7 +356,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Animated'),
                     );
@@ -382,9 +366,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -408,7 +390,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Colored snackbar'),
                       variant: AuraSnackBarVariant.error,
@@ -419,9 +401,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -441,7 +421,7 @@ void main() {
               builder: (context) {
                 return ElevatedButton(
                   onPressed: () {
-                    final _ = showAuraSnackBar(
+                    final _ = AuraSnackBars.show(
                       context: context,
                       content: const Text('Bottom position'),
                     );
@@ -451,9 +431,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -470,10 +448,7 @@ void main() {
 }
 
 class _SnackBarTestApp extends StatelessWidget {
-  const _SnackBarTestApp({
-    required this.home,
-    required this.theme,
-  });
+  const _SnackBarTestApp({required this.home, required this.theme});
 
   final Widget home;
   final ThemeData theme;
@@ -482,9 +457,8 @@ class _SnackBarTestApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: home,
-      builder: (context, child) => AuraSnackBarHost(
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) =>
+          AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
       theme: theme,
     );
   }

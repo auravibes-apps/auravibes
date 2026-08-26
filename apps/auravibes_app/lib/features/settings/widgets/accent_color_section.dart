@@ -15,7 +15,8 @@ class AccentColorSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hue = ref.watch(accentHueProvider).asData?.value ?? defaultAccentHue;
+    final hue =
+        ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
 
     return AuraCard(
       child: AuraColumn(
@@ -25,16 +26,12 @@ class AccentColorSection extends ConsumerWidget {
             style: AuraTextStyle.heading6,
           ),
           const AuraText(
-            child: TextLocale(
-              LocaleKeys.settings_screen_accent_color_subtitle,
-            ),
+            child: TextLocale(LocaleKeys.settings_screen_accent_color_subtitle),
             style: AuraTextStyle.bodySmall,
           ),
           AuraTile(
             child: const AuraText(
-              child: TextLocale(
-                LocaleKeys.settings_screen_accent_color_title,
-              ),
+              child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
               style: AuraTextStyle.bodyLarge,
             ),
             onTap: () => _showAccentDialog(context, ref, hue),
@@ -68,9 +65,9 @@ class AccentColorSection extends ConsumerWidget {
     WidgetRef ref,
     double current,
   ) async {
-    // ponytail: persist once on Save; live preview stays local to the dialog.
+    // Ponytail: persist once on Save; live preview stays local to the dialog.
     var working = current;
-    final shouldSave = await showAuraConfirmDialog(
+    final shouldSave = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(
         LocaleKeys.settings_screen_accent_color_dialog_title,
@@ -123,15 +120,15 @@ class _HueSwatch extends StatelessWidget {
 }
 
 class _HueSlider extends StatelessWidget {
+  static const _stops = [0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0];
   const _HueSlider({required this.hue, required this.onChanged});
 
   final double hue;
   final ValueChanged<double> onChanged;
 
-  static const _stops = [0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0];
-
   @override
   Widget build(BuildContext context) {
+    const maxHue = 360.0;
     final colors = _stops.map((h) => _primaryColorFor(context, h)).toList();
 
     return Stack(
@@ -140,9 +137,7 @@ class _HueSlider extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(6)),
-            gradient: LinearGradient(
-              colors: colors,
-            ),
+            gradient: LinearGradient(colors: colors),
           ),
           height: 12,
         ),
@@ -155,9 +150,9 @@ class _HueSlider extends StatelessWidget {
             overlayColor: context.auraColors.primary.withValues(alpha: 0.12),
           ),
           child: Slider(
-            value: hue.clamp(0, 360),
+            value: hue.clamp(0, maxHue),
             onChanged: onChanged,
-            max: 360,
+            max: maxHue,
           ),
         ),
       ],

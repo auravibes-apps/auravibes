@@ -73,16 +73,9 @@ void main() {
 
   test('copies drafts into namespaced temporary storage', () async {
     const namespace = 'auravibes_app_0123456789abcdef';
-    final source = await File('${tempDirectory.path}/image.png').writeAsBytes([
-      0x89,
-      0x50,
-      0x4E,
-      0x47,
-      0x0D,
-      0x0A,
-      0x1A,
-      0x0A,
-    ]);
+    final source = await File(
+      '${tempDirectory.path}/image.png',
+    ).writeAsBytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
     final attachment = await LocalChatAttachmentService(
       storageNamespace: namespace,
@@ -218,7 +211,7 @@ void main() {
     });
 
     final file = File('${dir.path}/voice.wav');
-    final wait = waitForRecordedFile(
+    final wait = LocalChatAttachmentRecording.waitForRecordedFile(
       file,
       timeout: const Duration(milliseconds: 200),
       pollInterval: const Duration(milliseconds: 10),
@@ -230,7 +223,7 @@ void main() {
   });
 
   test('pcm16ToWav writes a playable wav header', () {
-    final wav = pcm16ToWav(
+    final wav = LocalChatAttachmentRecording.pcm16ToWav(
       Uint8List.fromList([1, 2, 3, 4]),
       sampleRate: 44100,
       channels: 1,
@@ -309,10 +302,8 @@ class _FakeRecordPlatform extends RecordPlatform {
   Future<bool> isPaused(String recorderId) async => false;
 
   @override
-  Future<bool> hasPermission(
-    String recorderId, {
-    bool request = true,
-  }) async => hasPermissionValue;
+  Future<bool> hasPermission(String recorderId, {bool request = true}) async =>
+      hasPermissionValue;
 
   @override
   Future<void> dispose(String recorderId) => Future.value();

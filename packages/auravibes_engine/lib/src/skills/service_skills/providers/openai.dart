@@ -93,10 +93,7 @@ CancelableOperation<Object?> _webSearch(
     positiveIntInput(input, 'maxOutputTokens'),
   );
 
-  return postJson(
-    context,
-    'https://api.openai.com/v1/responses',
-    {'authorization': 'Bearer ${apiKey(input)}'},
-    body,
-  );
+  return postJson(context, 'https://api.openai.com/v1/responses', {
+    'authorization': 'Bearer ${apiKey(input)}',
+  }, body);
 }

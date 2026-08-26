@@ -42,6 +42,7 @@ Future<String> toolDisplayName(
 /// Returns null if the server is not found.
 /// Cached per server ID via Riverpod's family mechanism.
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<String?> mcpServerName(
   Ref ref,
   String workspaceId,

@@ -1,20 +1,11 @@
+import 'package:auravibes_app/domain/entities/agent_limits.dart';
+import 'package:auravibes_app/domain/entities/agent_visibility.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+export 'agent_limits.dart';
+export 'agent_visibility.dart';
+
 part 'agent_entity.freezed.dart';
-
-const agentDescriptionMaxLength = 512;
-
-enum AgentVisibility { chatSelector, subAgentList, both }
-
-extension AgentVisibilityX on AgentVisibility {
-  bool get appearsInChatSelector {
-    return this == AgentVisibility.chatSelector || this == AgentVisibility.both;
-  }
-
-  bool get appearsInSubAgentList {
-    return this == AgentVisibility.subAgentList || this == AgentVisibility.both;
-  }
-}
 
 @freezed
 abstract class AgentEntity with _$AgentEntity {
@@ -56,7 +47,7 @@ abstract class AgentToCreate with _$AgentToCreate {
 
     return name.trim().isNotEmpty &&
         normalizedDescription.isNotEmpty &&
-        normalizedDescription.length <= agentDescriptionMaxLength &&
+        normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
 }
@@ -78,7 +69,7 @@ abstract class AgentToUpdate with _$AgentToUpdate {
 
     return name.trim().isNotEmpty &&
         normalizedDescription.isNotEmpty &&
-        normalizedDescription.length <= agentDescriptionMaxLength &&
+        normalizedDescription.length <= AgentLimits.descriptionMaxLength &&
         content.trim().isNotEmpty;
   }
 }

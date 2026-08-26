@@ -1,8 +1,8 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:riverpod/riverpod.dart';
 
-class LocalChatAttachmentService {
-  LocalChatAttachmentService({String storageNamespace = 'auravibes_app'}) {
+class LocalChatAttachmentServiceWeb {
+  LocalChatAttachmentServiceWeb({String storageNamespace = 'auravibes_app'}) {
     if (storageNamespace.isEmpty) {
       throw ArgumentError.value(storageNamespace, 'storageNamespace');
     }
@@ -28,6 +28,8 @@ class LocalChatAttachmentService {
   Future<void> deleteAttachment(String _) => Future.value();
 }
 
+typedef LocalChatAttachmentService = LocalChatAttachmentServiceWeb;
+
 final localChatAttachmentServiceProvider = Provider<LocalChatAttachmentService>(
-  (_) => LocalChatAttachmentService(),
+  (_) => LocalChatAttachmentServiceWeb(),
 );

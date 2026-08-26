@@ -14,6 +14,15 @@ class MarkdownEditorToolbar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
 
+  TextSelection get _safeSelection {
+    final selection = controller.selection;
+    if (selection.isValid) return selection;
+
+    final length = controller.text.length;
+
+    return TextSelection.collapsed(offset: length);
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -22,9 +31,7 @@ class MarkdownEditorToolbar extends StatelessWidget {
         children: [
           _ToolbarButton(
             icon: Icons.format_bold,
-            label: LocaleKeys.markdown_editor_toolbar_bold.tr(
-              context: context,
-            ),
+            label: LocaleKeys.markdown_editor_toolbar_bold.tr(context: context),
             onPressed: () => _wrapSelection('**', '**'),
           ),
           _ToolbarButton(
@@ -50,9 +57,7 @@ class MarkdownEditorToolbar extends StatelessWidget {
           ),
           _ToolbarButton(
             icon: Icons.code,
-            label: LocaleKeys.markdown_editor_toolbar_code.tr(
-              context: context,
-            ),
+            label: LocaleKeys.markdown_editor_toolbar_code.tr(context: context),
             onPressed: _formatCode,
           ),
           _ToolbarButton(
@@ -130,15 +135,6 @@ class MarkdownEditorToolbar extends StatelessWidget {
     if (!focusNode.hasFocus) {
       focusNode.requestFocus();
     }
-  }
-
-  TextSelection get _safeSelection {
-    final selection = controller.selection;
-    if (selection.isValid) return selection;
-
-    final length = controller.text.length;
-
-    return TextSelection.collapsed(offset: length);
   }
 }
 

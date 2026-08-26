@@ -17,7 +17,57 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
-  test('global change returns full', () {
+  test('non-Dart non-global diff returns none', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.pi/pi-lsp.json'),
+        const ChangedFile.modified('.pi/settings.json'),
+        const ChangedFile.modified('sonar-project.properties'),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.none);
+    expect(result.packages, isEmpty);
+  });
+
+  test('non-scoped changes do not force full beside package Dart', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.pi/new-config.json'),
+        const ChangedFile.modified('sonar-project.properties'),
+        const ChangedFile.modified('packages/core/lib/leaf.dart'),
+      ],
+      headSources: _sources,
+      baseSources: _sources,
+      packageRoots: _roots,
+    );
+
+    expect(result.mode, SelectionMode.affected);
+    expect(result.packages['packages/core'], [
+      'test/behavior_test.dart',
+      'test/transitive_behavior_test.dart',
+    ]);
+  });
+
+  test('global change remains full beside non-scoped paths', () {
+    final result = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('.github/workflows/ci.yml'),
+        const ChangedFile.modified('.pi/pi-lsp.json'),
+        const ChangedFile.modified('sonar-project.properties'),
+      ],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+
+    expect(result.mode, SelectionMode.full);
+  });
+
+  test('package runtime config change returns full', () {
     final result = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/pubspec.yaml')],
       headSources: {},
@@ -104,10 +154,7 @@ void main() {
   });
 
   test('rejects unsupported status at runtime', () {
-    expect(
-      () => ChangedFile(status: 'unsupported'),
-      throwsArgumentError,
-    );
+    expect(() => ChangedFile(status: 'unsupported'), throwsArgumentError);
   });
 
   test('freezes result package inputs and outputs', () {
@@ -359,10 +406,7 @@ void main() {
 
     final parseFailure = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/lib/bad.dart')],
-      headSources: {
-        ..._sources,
-        'packages/core/lib/bad.dart': 'class {',
-      },
+      headSources: {..._sources, 'packages/core/lib/bad.dart': 'class {'},
       baseSources: _sources,
       packageRoots: _roots,
     );
@@ -517,9 +561,9 @@ Future<Directory> _runnerFixture({
 }) async {
   final root = await Directory.systemTemp.createTemp('changed-selector-');
   final package = Directory('${root.path}/packages/core');
-  final _ = await Directory('${package.path}/test/features').create(
-    recursive: true,
-  );
+  final _ = await Directory(
+    '${package.path}/test/features',
+  ).create(recursive: true);
   final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
 name: fixture
 workspace:
@@ -545,10 +589,7 @@ ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
   return root;
 }
 
-const _roots = <String, String>{
-  'core': 'packages/core',
-  'ui': 'packages/ui',
-};
+const _roots = <String, String>{'core': 'packages/core', 'ui': 'packages/ui'};
 
 const _sources = <String, String>{
   'packages/core/lib/leaf.dart': 'class Leaf {}',

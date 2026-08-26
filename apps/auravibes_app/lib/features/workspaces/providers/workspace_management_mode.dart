@@ -6,12 +6,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'workspace_management_mode.g.dart';
 
-// ─── Mutation providers ───.
-
-final editWorkspaceMutation = Mutation<WorkspaceEntity>();
-final deleteWorkspaceMutation = Mutation<void>();
-final cloudAccountMutation = Mutation<void>();
-
 // ─── UI mode notifier ───.
 
 /// Notifier that tracks the workspace-management UI mode and
@@ -35,4 +29,12 @@ class WorkspaceManagementMode extends _$WorkspaceManagementMode {
   void clearEditing() {
     state = state.copyWith(mode: ManagementMode.list, editingWorkspace: null);
   }
+}
+
+// ─── Mutation providers ───.
+
+abstract final class WorkspaceManagementMutations {
+  static final edit = Mutation<WorkspaceEntity>();
+  static final delete = Mutation<void>();
+  static final cloudAccount = Mutation<void>();
 }

@@ -57,9 +57,7 @@ class AgentResolvedToolName {
     );
   }
 
-  factory AgentResolvedToolName.skillControl({
-    required String toolIdentifier,
-  }) {
+  factory AgentResolvedToolName.skillControl({required String toolIdentifier}) {
     return AgentResolvedToolName._(
       kind: AgentResolvedToolKind.skillControl,
       tableId: toolIdentifier,
@@ -184,9 +182,7 @@ class AgentToolNameResolver {
   ({String mcpServerId, String mcpSlug, String toolIdentifier})? _parseMcpTool(
     String compositeId,
   ) {
-    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(
-      compositeId,
-    );
+    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(compositeId);
     if (match == null) return null;
 
     final mcpId = match.group(1);
@@ -195,11 +191,7 @@ class AgentToolNameResolver {
     if (mcpId == null || mcpSlug == null || tool == null) return null;
     if (mcpId.isEmpty || mcpSlug.isEmpty || tool.isEmpty) return null;
 
-    return (
-      mcpServerId: mcpId,
-      mcpSlug: mcpSlug,
-      toolIdentifier: tool,
-    );
+    return (mcpServerId: mcpId, mcpSlug: mcpSlug, toolIdentifier: tool);
   }
 
   ({String tableId, String toolIdentifier})? _parseTableTool(

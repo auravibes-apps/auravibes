@@ -32,10 +32,7 @@ class CompactedMessageDetails extends StatelessWidget {
         children: [
           const TextLocale(
             LocaleKeys.compaction_compacted_details_title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const AuraSizedBox(height: .md),
           _DetailRow(
@@ -54,7 +51,7 @@ class CompactedMessageDetails extends StatelessWidget {
           _DetailRow(
             label: LocaleKeys.compaction_compacted_details_created.tr(),
             value: switch (metadata?.compactionCreatedAt) {
-              final createdAt? => formatRelativeTime(createdAt),
+              final createdAt? => RelativeTimeFormatter.format(createdAt),
               _ => '',
             },
           ),
@@ -72,10 +69,7 @@ class CompactedMessageDetails extends StatelessWidget {
             ),
           ),
           const AuraSizedBox(height: .xs),
-          AuraSelectableText(
-            message.content,
-            style: AuraTextStyle.bodySmall,
-          ),
+          AuraSelectableText(message.content, style: AuraTextStyle.bodySmall),
         ],
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
@@ -92,9 +86,7 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(.xs),
-      ),
+      padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.xs)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

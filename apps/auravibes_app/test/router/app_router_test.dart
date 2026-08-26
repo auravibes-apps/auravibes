@@ -305,26 +305,14 @@ void main() {
       const wsId = 'shared-ws';
       const prefix = '/workspaces/$wsId';
 
-      expect(
-        NewChatRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
-      expect(
-        ChatsRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
-      expect(
-        ToolsRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
+      expect(NewChatRoute(workspaceId: wsId).location, startsWith(prefix));
+      expect(ChatsRoute(workspaceId: wsId).location, startsWith(prefix));
+      expect(ToolsRoute(workspaceId: wsId).location, startsWith(prefix));
       expect(
         ServiceConnectionsRoute(workspaceId: wsId).location,
         startsWith(prefix),
       );
-      expect(
-        SettingsRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
+      expect(SettingsRoute(workspaceId: wsId).location, startsWith(prefix));
     });
   });
 
@@ -362,26 +350,14 @@ void main() {
       const wsId = 'shared-ws';
       const prefix = '/workspaces/$wsId';
 
-      expect(
-        NewChatRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
-      expect(
-        ChatsRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
-      expect(
-        ToolsRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
+      expect(NewChatRoute(workspaceId: wsId).location, startsWith(prefix));
+      expect(ChatsRoute(workspaceId: wsId).location, startsWith(prefix));
+      expect(ToolsRoute(workspaceId: wsId).location, startsWith(prefix));
       expect(
         ServiceConnectionsRoute(workspaceId: wsId).location,
         startsWith(prefix),
       );
-      expect(
-        SettingsRoute(workspaceId: wsId).location,
-        startsWith(prefix),
-      );
+      expect(SettingsRoute(workspaceId: wsId).location, startsWith(prefix));
     });
   });
 
@@ -460,10 +436,7 @@ void main() {
         pageKey: const ValueKey('test'),
       );
 
-      final result = route.redirect(
-        _FakeBuildContext(),
-        state,
-      );
+      final result = route.redirect(_FakeBuildContext(), state);
       expect(result, '/workspaces/ws-1/chat/new');
     });
 
@@ -485,10 +458,7 @@ void main() {
         pageKey: const ValueKey('test'),
       );
 
-      final result = route.redirect(
-        _FakeBuildContext(),
-        state,
-      );
+      final result = route.redirect(_FakeBuildContext(), state);
       expect(result, isNull);
     });
 

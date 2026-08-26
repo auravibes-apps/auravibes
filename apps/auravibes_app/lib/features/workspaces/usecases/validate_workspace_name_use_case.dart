@@ -10,13 +10,12 @@ part 'validate_workspace_name_use_case.g.dart';
 /// Throws [WorkspaceValidationException] when the name is too short
 /// or too long.
 class ValidateWorkspaceNameUseCase {
-  const ValidateWorkspaceNameUseCase();
-
   /// Minimum workspace name length.
   static const minLength = 3;
 
   /// Maximum workspace name length.
   static const maxLength = 20;
+  const ValidateWorkspaceNameUseCase();
 
   /// Validates that [name] is between 3 and 20 characters.
   void call({required String name}) {

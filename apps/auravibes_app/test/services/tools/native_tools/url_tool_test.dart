@@ -65,19 +65,13 @@ void main() {
     test('rejects malformed JSON-object input starting with {', () {
       final tool = UrlTool();
 
-      expect(
-        tool.runner('{bad}').value,
-        throwsA(isA<FormatException>()),
-      );
+      expect(tool.runner('{bad}').value, throwsA(isA<FormatException>()));
     });
 
     test('rejects bare opening brace', () {
       final tool = UrlTool();
 
-      expect(
-        tool.runner('{').value,
-        throwsA(isA<FormatException>()),
-      );
+      expect(tool.runner('{').value, throwsA(isA<FormatException>()));
     });
 
     test('getTool returns spec with url name', () {
@@ -141,9 +135,7 @@ void main() {
 
       expect(
         tool
-            .runner(
-              '{"url": "https://example.com", "method": "CONNECT"}',
-            )
+            .runner('{"url": "https://example.com", "method": "CONNECT"}')
             .value,
         throwsA(isA<FormatException>()),
       );
@@ -153,11 +145,7 @@ void main() {
       final tool = UrlTool();
 
       expect(
-        tool
-            .runner(
-              '{"url": "https://example.com", "headers": "bad"}',
-            )
-            .value,
+        tool.runner('{"url": "https://example.com", "headers": "bad"}').value,
         throwsA(isA<FormatException>()),
       );
     });
@@ -165,10 +153,7 @@ void main() {
     test('rejects JSON array input starting with [', () {
       final tool = UrlTool();
 
-      expect(
-        tool.runner('["url"]').value,
-        throwsA(isA<FormatException>()),
-      );
+      expect(tool.runner('["url"]').value, throwsA(isA<FormatException>()));
     });
 
     test('rejects mutating methods', () {
@@ -366,10 +351,7 @@ void main() {
 
     test('handles unknown content type with unsupported format', () async {
       final dio = Dio()
-        ..httpClientAdapter = _SuccessAdapter(
-          body: 'data',
-          statusCode: 200,
-        );
+        ..httpClientAdapter = _SuccessAdapter(body: 'data', statusCode: 200);
       final tool = UrlTool(urlService: UrlService(dio: dio));
 
       final result = await tool.runner('https://1.1.1.1').value;
@@ -395,9 +377,7 @@ void main() {
         final tool = UrlTool(urlService: UrlService(dio: dio));
 
         final result = await tool
-            .runner(
-              '{"url": "https://1.1.1.1", "format": "markdown"}',
-            )
+            .runner('{"url": "https://1.1.1.1", "format": "markdown"}')
             .value;
 
         expect(result, contains('Format: markdown'));
@@ -419,9 +399,7 @@ void main() {
         final tool = UrlTool(urlService: UrlService(dio: dio));
 
         final result = await tool
-            .runner(
-              '{"url": "https://1.1.1.1", "format": "text"}',
-            )
+            .runner('{"url": "https://1.1.1.1", "format": "text"}')
             .value;
 
         expect(result, contains('Format: text'));
@@ -442,9 +420,7 @@ void main() {
         final tool = UrlTool(urlService: UrlService(dio: dio));
 
         final result = await tool
-            .runner(
-              '{"url": "https://1.1.1.1", "format": "html"}',
-            )
+            .runner('{"url": "https://1.1.1.1", "format": "html"}')
             .value;
 
         expect(result, contains('Format: html'));
@@ -473,9 +449,7 @@ void main() {
 
         expect(
           tool
-              .runner(
-                '{"url": "https://example.com", "format": "unknown"}',
-              )
+              .runner('{"url": "https://example.com", "format": "unknown"}')
               .value,
           throwsA(isA<FormatException>()),
         );
@@ -485,11 +459,7 @@ void main() {
         final tool = UrlTool();
 
         expect(
-          tool
-              .runner(
-                '{"url": "https://example.com", "format": 123}',
-              )
-              .value,
+          tool.runner('{"url": "https://example.com", "format": 123}').value,
           throwsA(isA<FormatException>()),
         );
       });

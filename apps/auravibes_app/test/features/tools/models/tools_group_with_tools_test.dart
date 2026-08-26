@@ -54,10 +54,7 @@ void main() {
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
       );
-      final grouped = ToolsGroupWithTools(
-        group: testGroup,
-        tools: [tool3],
-      );
+      final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool3]);
       expect(grouped.enabledToolsCount, 0);
     });
 
@@ -79,10 +76,7 @@ void main() {
     });
 
     test('isDefaultGroup is false when group is provided', () {
-      final grouped = ToolsGroupWithTools(
-        group: testGroup,
-        tools: [tool1],
-      );
+      final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool1]);
       expect(grouped.isDefaultGroup, isFalse);
     });
 
@@ -115,10 +109,7 @@ void main() {
         updatedAt: DateTime(2025),
         mcpServerId: 'server1',
       );
-      final grouped = ToolsGroupWithTools(
-        group: mcpGroup,
-        tools: [],
-      );
+      final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
       expect(grouped.isMcpGroup, isTrue);
     });
 
@@ -133,10 +124,7 @@ void main() {
         updatedAt: DateTime(2025),
         mcpServerId: 'server_42',
       );
-      final grouped = ToolsGroupWithTools(
-        group: mcpGroup,
-        tools: [],
-      );
+      final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
       expect(grouped.mcpServerId, 'server_42');
     });
 
@@ -150,10 +138,7 @@ void main() {
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
       );
-      final grouped = ToolsGroupWithTools(
-        group: disabledGroup,
-        tools: [],
-      );
+      final grouped = ToolsGroupWithTools(group: disabledGroup, tools: []);
       expect(grouped.isEnabled, isFalse);
     });
 
@@ -195,20 +180,14 @@ void main() {
       });
 
       test('returns 5 for connected normal group', () {
-        final grouped = ToolsGroupWithTools(
-          group: testGroup,
-          tools: [tool1],
-        );
+        final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool1]);
         expect(grouped.sortPriority, 5);
       });
     });
 
     group('localizedDisplayNameKey', () {
       test('returns null for non-default group', () {
-        final grouped = ToolsGroupWithTools(
-          group: testGroup,
-          tools: [tool1],
-        );
+        final grouped = ToolsGroupWithTools(group: testGroup, tools: [tool1]);
         expect(grouped.localizedDisplayNameKey, isNull);
       });
 

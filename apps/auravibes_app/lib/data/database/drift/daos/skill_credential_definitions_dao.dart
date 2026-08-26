@@ -49,11 +49,9 @@ class SkillCredentialDefinitionsDao extends DatabaseAccessor<AppDatabase>
     String definitionId,
     SkillCredentialDefinitionsCompanion definition,
   ) async {
-    final _ =
-        await (update(skillCredentialDefinitions)..where(
-              (tbl) => tbl.id.equals(definitionId),
-            ))
-            .write(definition);
+    final _ = await (update(
+      skillCredentialDefinitions,
+    )..where((tbl) => tbl.id.equals(definitionId))).write(definition);
     final updated = await getDefinitionById(definitionId);
     if (updated == null) {
       throw StateError('Updated skill credential definition was not found');

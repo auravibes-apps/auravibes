@@ -2,38 +2,20 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_availability.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+export 'workspace_availability.dart';
 part 'workspace_session_provider.g.dart';
-
-sealed class WorkspaceAvailability {
-  const WorkspaceAvailability(this.session);
-
-  final WorkspaceSession session;
-}
-
-final class WorkspaceAvailable extends WorkspaceAvailability {
-  const WorkspaceAvailable(super.session);
-}
-
-final class WorkspaceAuthenticationRequired extends WorkspaceAvailability {
-  const WorkspaceAuthenticationRequired(super.session);
-}
 
 @riverpod
 WorkspaceSession workspaceSession(Ref _, WorkspaceSession session) => session;
 
-/// Supports legacy test fixtures while every production read stays keyed.
-extension WorkspaceSessionFamilyTestOverride on WorkspaceSessionFamily {
-  Override overrideWithValue(WorkspaceSession value) {
-    return overrideWith((_, _) => value);
-  }
-}
-
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<WorkspaceSession> workspaceSessionForRoute(
   Ref ref,
   String localWorkspaceId,
@@ -65,7 +47,7 @@ Future<WorkspaceSession> workspaceSessionForRoute(
   return WorkspaceSession(
     CloudWorkspaceRef(
       localWorkspaceId: localWorkspaceId,
-      serverUrl: canonicalServerOrigin(serverUrl),
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(serverUrl),
       accountId: accountId,
       cloudWorkspaceId: cloudWorkspaceId,
     ),
@@ -73,6 +55,7 @@ Future<WorkspaceSession> workspaceSessionForRoute(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<WorkspaceAvailability> workspaceAvailability(
   Ref ref,
   String localWorkspaceId,
@@ -103,6 +86,7 @@ Future<WorkspaceAvailability> workspaceAvailability(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGateway(
   Ref ref,
   WorkspaceSession session,
@@ -121,6 +105,7 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGateway(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
   Ref ref,
   String localWorkspaceId,
@@ -142,6 +127,7 @@ Future<CloudWorkspaceStateGateway?> cloudWorkspaceStateGatewayForWorkspace(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<WorkspaceResource>> cloudWorkspaceConfiguration(
   Ref ref,
   WorkspaceSession session,

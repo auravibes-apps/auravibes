@@ -21,6 +21,7 @@ class MarkdownEditorScreen extends StatefulWidget {
 }
 
 class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
+  static const _minimumEditorLines = 12;
   final _controller = TextfEditingController();
   final _focusNode = FocusNode();
   bool _isFocused = false;
@@ -52,9 +53,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     return AuraScreen(
       child: TextFieldTapRegion(
         child: Container(
-          decoration: BoxDecoration(
-            color: editorBackgroundColor,
-          ),
+          decoration: BoxDecoration(color: editorBackgroundColor),
           child: Column(
             children: [
               AnimatedContainer(
@@ -79,9 +78,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                               decoration: InputDecoration(
                                 hintText: LocaleKeys
                                     .markdown_editor_editor_label
-                                    .tr(
-                                      context: context,
-                                    ),
+                                    .tr(context: context),
                                 hintStyle: TextStyle(
                                   color: auraColors.onSurfaceVariant.withValues(
                                     alpha: 0.6,
@@ -103,7 +100,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                                 fontFamily: typography.bodyFontFamily,
                               ),
                               maxLines: null,
-                              minLines: 12,
+                              minLines: _minimumEditorLines,
                             ),
                           ],
                           spacing: .md,

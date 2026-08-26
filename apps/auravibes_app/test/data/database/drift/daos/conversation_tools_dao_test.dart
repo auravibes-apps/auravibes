@@ -105,19 +105,13 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final found = await fixture.database.conversationToolsDao
-          .getConversationTool(
-            conversationId,
-            toolId,
-          );
+          .getConversationTool(conversationId, toolId);
       expect(found, isNotNull);
     });
 
     test('getConversationTool returns null for nonexistent', () async {
       final found = await fixture.database.conversationToolsDao
-          .getConversationTool(
-            conversationId,
-            'missing',
-          );
+          .getConversationTool(conversationId, 'missing');
       expect(found, isNull);
     });
 
@@ -130,19 +124,13 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final tools = await fixture.database.conversationToolsDao
-          .getConversationTools(
-            conversationId,
-          );
+          .getConversationTools(conversationId);
       expect(tools.length, equals(1));
     });
 
     test('setConversationToolEnabled inserts when not exists', () async {
       final result = await fixture.database.conversationToolsDao
-          .setConversationToolEnabled(
-            conversationId,
-            toolId,
-            isEnabled: true,
-          );
+          .setConversationToolEnabled(conversationId, toolId, isEnabled: true);
       expect(result.isEnabled, isTrue);
     });
 
@@ -155,11 +143,7 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final result = await fixture.database.conversationToolsDao
-          .setConversationToolEnabled(
-            conversationId,
-            toolId,
-            isEnabled: false,
-          );
+          .setConversationToolEnabled(conversationId, toolId, isEnabled: false);
       expect(result.isEnabled, isFalse);
     });
 
@@ -199,10 +183,7 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final deleted = await fixture.database.conversationToolsDao
-          .deleteConversationTool(
-            conversationId,
-            toolId,
-          );
+          .deleteConversationTool(conversationId, toolId);
       expect(deleted, isTrue);
       expect(
         await fixture.database.conversationToolsDao.getConversationTool(
@@ -215,19 +196,13 @@ void main() {
 
     test('deleteConversationTool returns false for nonexistent', () async {
       final deleted = await fixture.database.conversationToolsDao
-          .deleteConversationTool(
-            conversationId,
-            'missing',
-          );
+          .deleteConversationTool(conversationId, 'missing');
       expect(deleted, isFalse);
     });
 
     test('isConversationToolEnabled returns true when no override', () async {
       final enabled = await fixture.database.conversationToolsDao
-          .isConversationToolEnabled(
-            conversationId,
-            toolId,
-          );
+          .isConversationToolEnabled(conversationId, toolId);
       expect(enabled, isTrue);
     });
 
@@ -240,10 +215,7 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final enabled = await fixture.database.conversationToolsDao
-          .isConversationToolEnabled(
-            conversationId,
-            toolId,
-          );
+          .isConversationToolEnabled(conversationId, toolId);
       expect(enabled, isFalse);
     });
 
@@ -310,10 +282,7 @@ void main() {
         conv2.id,
       );
       final copied = await fixture.database.conversationToolsDao
-          .getConversationTool(
-            conv2.id,
-            toolId,
-          );
+          .getConversationTool(conv2.id, toolId);
       expect(copied, isNotNull);
       expect(
         (copied ?? fail('Expected copied to be non-null')).isEnabled,
@@ -331,15 +300,9 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final _ = await fixture.database.conversationToolsDao
-          .toggleConversationTool(
-            conversationId,
-            toolId,
-          );
+          .toggleConversationTool(conversationId, toolId);
       final tool = await fixture.database.conversationToolsDao
-          .getConversationTool(
-            conversationId,
-            toolId,
-          );
+          .getConversationTool(conversationId, toolId);
       expect((tool ?? fail('Expected tool to be non-null')).isEnabled, isFalse);
     });
 
@@ -376,9 +339,7 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final disabled = await fixture.database.conversationToolsDao
-          .getDisabledConversationTools(
-            conversationId,
-          );
+          .getDisabledConversationTools(conversationId);
       expect(disabled.length, equals(1));
     });
 
@@ -392,9 +353,7 @@ void main() {
           );
       expect(
         await fixture.database.conversationToolsDao
-            .getDisabledConversationToolsCount(
-              conversationId,
-            ),
+            .getDisabledConversationToolsCount(conversationId),
         equals(1),
       );
     });
@@ -404,10 +363,7 @@ void main() {
       final workspace =
           ws.firstOrNull ?? fail('Expected ws.firstOrNull to be non-null');
       await fixture.database.workspaceToolsDao.insertToolsBatch([
-        ToolsCompanion.insert(
-          workspaceId: workspace.id,
-          toolId: 'tool2',
-        ),
+        ToolsCompanion.insert(workspaceId: workspace.id, toolId: 'tool2'),
       ]);
       final tools = await fixture.database.workspaceToolsDao.getWorkspaceTools(
         workspace.id,
@@ -419,9 +375,7 @@ void main() {
       );
       expect(
         await fixture.database.conversationToolsDao
-            .getDisabledConversationToolsCount(
-              conversationId,
-            ),
+            .getDisabledConversationToolsCount(conversationId),
         equals(2),
       );
     });
@@ -435,10 +389,7 @@ void main() {
             permission: PermissionAccess.ask,
           );
       final enabled = await fixture.database.conversationToolsDao
-          .enableConversationTool(
-            conversationId,
-            toolId,
-          );
+          .enableConversationTool(conversationId, toolId);
       expect(enabled, isTrue);
     });
 
@@ -451,9 +402,7 @@ void main() {
             permission: PermissionAccess.ask,
           );
       await fixture.database.conversationToolsDao
-          .removeDisabledToolsForConversation(
-            conversationId,
-          );
+          .removeDisabledToolsForConversation(conversationId);
       expect(
         await fixture.database.conversationToolsDao.getConversationToolsCount(
           conversationId,

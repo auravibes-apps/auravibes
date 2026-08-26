@@ -1,23 +1,10 @@
 const skillContextMetadataKind = 'skill_context';
 
-enum AgentPromptMessageType {
-  text,
-  system,
-}
+enum AgentPromptMessageType { text, system }
 
-enum AgentChatMessageRole {
-  system,
-  user,
-  model,
-  tool,
-}
+enum AgentChatMessageRole { system, user, model, tool }
 
-enum AgentChatPartType {
-  text,
-  reasoning,
-  toolRequest,
-  toolResponse,
-}
+enum AgentChatPartType { text, reasoning, toolRequest, toolResponse }
 
 class AgentPromptToolCall {
   const AgentPromptToolCall({
@@ -153,9 +140,7 @@ class AgentChatMessage {
   }
 
   List<AgentToolRequest> get toolCalls {
-    return [
-      for (final part in parts) ?part.toolRequest,
-    ];
+    return [for (final part in parts) ?part.toolRequest];
   }
 }
 
@@ -163,9 +148,7 @@ class BuildPromptChatMessages {
   const BuildPromptChatMessages();
 
   List<AgentChatMessage> call(List<AgentPromptMessage> messages) {
-    return [
-      for (final message in messages) ..._mapMessage(message),
-    ];
+    return [for (final message in messages) ..._mapMessage(message)];
   }
 
   List<AgentChatMessage> _mapMessage(AgentPromptMessage message) {

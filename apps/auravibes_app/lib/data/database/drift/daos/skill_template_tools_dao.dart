@@ -19,10 +19,7 @@ class SkillTemplateToolsDao extends DatabaseAccessor<AppDatabase>
     skillTemplateTools,
   )..where((tbl) => tbl.id.equals(toolId))).getSingleOrNull();
 
-  Future<SkillTemplateToolsTable?> getToolBySlug(
-    String skillId,
-    String slug,
-  ) =>
+  Future<SkillTemplateToolsTable?> getToolBySlug(String skillId, String slug) =>
       (select(skillTemplateTools)..where(
             (tbl) => tbl.skillId.equals(skillId) & tbl.slug.equals(slug),
           ))

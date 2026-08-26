@@ -35,6 +35,13 @@
 - Run the smallest focused check that proves the change.
 - For code edits, prefer focused tests, analysis, or boundary checks over generic whitespace checks.
 
+- Assign one owner per validation command.
+- Run broad validation once, only after implementation stabilizes and scope requires it.
+- Do not repeat a completed command unless relevant files or configuration changed.
+- Before a long-running command, announce the exact command and expected duration.
+- In handoffs, include each command, result, duration, and relevant failures.
+- Report decision blockers immediately. Before retrying or replacing delegated work, inspect its current state and preserved output.
+
 | Scope | Required validation |
 | --- | --- |
 | Focused file/bug | Focused test or analyzer |

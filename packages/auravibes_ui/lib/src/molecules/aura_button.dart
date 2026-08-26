@@ -83,9 +83,7 @@ class AuraButton extends StatelessWidget {
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
           borderRadius: BorderRadius.all(
-            Radius.circular(
-              context.auraTheme.fromBorderRadius(.xl),
-            ),
+            Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
           ),
           boxShadow: _getBoxShadow(),
         ),
@@ -116,14 +114,15 @@ class AuraButton extends StatelessWidget {
 
   Color _getForegroundColor(AuraColorScheme colors) {
     if (disabled) return colors.onSurfaceVariant;
+    final primaryColor = colors.colorFor(tint ?? AuraTint.primary);
 
     return switch (variant) {
       AuraButtonVariant.primary => colors.onTint(tint ?? AuraTint.primary),
       AuraButtonVariant.secondary => colors.onTint(AuraTint.secondary),
-      AuraButtonVariant.outlined => colors.colorFor(tint ?? AuraTint.primary),
-      AuraButtonVariant.ghost => colors.colorFor(tint ?? AuraTint.primary),
+      AuraButtonVariant.outlined => primaryColor,
+      AuraButtonVariant.ghost => primaryColor,
       AuraButtonVariant.elevated => colors.onTint(tint ?? AuraTint.primary),
-      AuraButtonVariant.text => colors.colorFor(tint ?? AuraTint.primary),
+      AuraButtonVariant.text => primaryColor,
     };
   }
 

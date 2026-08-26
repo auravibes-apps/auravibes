@@ -185,10 +185,7 @@ void main() {
       });
 
       test('throws on empty title', () async {
-        const toCreate = ConversationToCreate(
-          title: '',
-          workspaceId: 'ws-1',
-        );
+        const toCreate = ConversationToCreate(title: '', workspaceId: 'ws-1');
 
         await expectLater(
           repository.createConversation(toCreate),

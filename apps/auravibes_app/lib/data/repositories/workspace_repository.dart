@@ -73,10 +73,7 @@ class WorkspaceRepository {
       throw WorkspaceNotFoundException(id);
     }
 
-    _validateWorkspacePatch(
-      workspace,
-      _mapToWorkspace(currentWorkspaceTable),
-    );
+    _validateWorkspacePatch(workspace, _mapToWorkspace(currentWorkspaceTable));
 
     final workspaceCompanion = _mapPatchToWorkspacesCompanion(workspace);
     final updated = await _database.workspaceDao.patchWorkspace(
@@ -108,9 +105,7 @@ class WorkspaceRepository {
     final attachmentPaths = await _attachmentPathsForWorkspace(id);
     final deleted = await _database.workspaceDao.deleteWorkspace(id);
     if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map(_deleteAttachmentFile),
-      );
+      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
     }
 
     return deleted;
@@ -163,7 +158,7 @@ class WorkspaceRepository {
     );
 
     if (existing == null) {
-      return createWorkspace(
+      return await createWorkspace(
         WorkspaceToCreate(
           name: name,
           type: WorkspaceType.remote,
@@ -174,7 +169,7 @@ class WorkspaceRepository {
       );
     }
 
-    return patchWorkspace(
+    return await patchWorkspace(
       existing.id,
       WorkspacePatch(
         name: name,
@@ -198,7 +193,7 @@ class WorkspaceRepository {
     );
     if (existing == null) return false;
 
-    return deleteWorkspace(existing.id);
+    return await deleteWorkspace(existing.id);
   }
 
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
@@ -218,34 +213,6 @@ class WorkspaceRepository {
     }
 
     return deleted;
-  }
-
-  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
-    final rows = await (_database.select(_database.messageAttachments).join([
-      innerJoin(
-        _database.messages,
-        _database.messages.id.equalsExp(
-          _database.messageAttachments.messageId,
-        ),
-      ),
-      innerJoin(
-        _database.conversations,
-        _database.conversations.id.equalsExp(_database.messages.conversationId),
-      ),
-    ])..where(_database.conversations.workspaceId.equals(id))).get();
-
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
-  }
-
-  Future<void> _deleteAttachmentFile(String localPath) async {
-    try {
-      await _attachmentFileStore.deleteFile(localPath);
-    } on Object {
-      return;
-    }
   }
 
   Future<bool> workspaceExists(String id) {
@@ -284,7 +251,33 @@ class WorkspaceRepository {
       return false; // Return false instead of throwing for patch operations.
     }
 
-    return _database.workspaceDao.patchWorkspaceTimestamp(id);
+    return await _database.workspaceDao.patchWorkspaceTimestamp(id);
+  }
+
+  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
+    final rows = await (_database.select(_database.messageAttachments).join([
+      innerJoin(
+        _database.messages,
+        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
+      ),
+      innerJoin(
+        _database.conversations,
+        _database.conversations.id.equalsExp(_database.messages.conversationId),
+      ),
+    ])..where(_database.conversations.workspaceId.equals(id))).get();
+
+    return [
+      for (final row in rows)
+        row.readTable(_database.messageAttachments).localPath,
+    ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   /// Maps a [workspacesTable] database record to a [WorkspaceEntity]

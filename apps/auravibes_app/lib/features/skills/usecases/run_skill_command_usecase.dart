@@ -48,7 +48,7 @@ class RunSkillCommandUsecase {
     required String commandName,
     required Map<String, dynamic> arguments,
   }) async {
-    return switch (commandName) {
+    return await switch (commandName) {
       listSkillsToolName => _listSkills(conversationId, workspaceId),
       loadSkillToolName => _load(conversationId, workspaceId, arguments),
       unloadSkillToolName => _unload(conversationId, workspaceId, arguments),

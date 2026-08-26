@@ -80,9 +80,7 @@ void main() {
         conversationId: 'conversation-1',
         workspaceId: 'workspace-1',
       )).single;
-      final templateRunner = _TemplateRunner(
-        result: const {'issueNumber': 42},
-      );
+      final templateRunner = _TemplateRunner(result: const {'issueNumber': 42});
       final nativeRunner = _NativeRunner();
       final usecase = RunSkillCommandUsecase(
         listAvailableSkillsUsecase: (_) => _UnusedListSkills(),
@@ -126,9 +124,7 @@ void main() {
       expect(templateRunner.lastWorkspaceId, 'workspace-1');
       expect(templateRunner.lastSkillSlug, 'github');
       expect(templateRunner.lastToolSlug, 'create_issue');
-      expect(templateRunner.lastArguments, {
-        'title': 'Collision regression',
-      });
+      expect(templateRunner.lastArguments, {'title': 'Collision regression'});
       expect(nativeRunner.calls, 0);
     },
   );
@@ -183,12 +179,12 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
 
     return const [
       AvailableSkill(
+        source: SkillSource.user,
         id: 'github-skill-row',
         slug: 'github',
         title: 'GitHub',
         description: 'Manage GitHub issues.',
         content: 'Create issues when requested.',
-        source: SkillSource.user,
         kind: SkillKind.template,
       ),
     ];
@@ -201,7 +197,7 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
 class _TemplateRunner implements RunSkillTemplateToolUsecase {
   _TemplateRunner({this.result});
 
-  final dynamic result;
+  final Map<String, int>? result;
   int calls = 0;
   String? lastWorkspaceId;
   String? lastSkillSlug;

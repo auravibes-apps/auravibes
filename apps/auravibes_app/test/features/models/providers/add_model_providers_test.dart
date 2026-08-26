@@ -162,11 +162,7 @@ void main() {
 
     test('setModel updates modelId and name from api models', () async {
       final providers = [
-        const ApiModelProviderEntity(
-          id: 'openai',
-          name: 'OpenAI',
-          type: null,
-        ),
+        const ApiModelProviderEntity(id: 'openai', name: 'OpenAI', type: null),
       ];
       final container2 = ProviderContainer(
         overrides: [
@@ -225,10 +221,7 @@ void main() {
         ..setUrl('https://api.example.com')
         ..setUrl(null);
 
-      expect(
-        container.read(addModelProviderStateProvider('ws1')).url,
-        isNull,
-      );
+      expect(container.read(addModelProviderStateProvider('ws1')).url, isNull);
     });
 
     test('addModelProvider returns entity on success', () async {
@@ -309,10 +302,7 @@ void main() {
         ..setKey('sk-valid-key-12345')
         ..setModel('openai');
 
-      expect(
-        notifier.addModelProvider,
-        throwsA(isA<Exception>()),
-      );
+      expect(notifier.addModelProvider, throwsA(isA<Exception>()));
     });
 
     test('build with different workspaceIds are independent', () {

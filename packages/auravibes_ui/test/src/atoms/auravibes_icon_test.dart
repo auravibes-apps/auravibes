@@ -8,11 +8,7 @@ void main() {
   group('AuraIcon', () {
     testWidgets('renders icon correctly', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraIcon(Icons.star),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraIcon(Icons.star))),
       );
 
       expect(find.byIcon(Icons.star), findsOneWidget);
@@ -23,15 +19,8 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: const Scaffold(
-            body: AuraIcon(
-              Icons.star,
-              tint: customColor,
-            ),
-          ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          home: const Scaffold(body: AuraIcon(Icons.star, tint: customColor)),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -42,13 +31,7 @@ void main() {
 
     testWidgets('applies medium size correctly', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraIcon(
-              Icons.star,
-            ),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraIcon(Icons.star))),
       );
 
       final iconWidget = tester.widget<Icon>(find.byIcon(Icons.star));
@@ -58,12 +41,7 @@ void main() {
     testWidgets('applies large size correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraIcon(
-              Icons.star,
-              size: AuraIconSize.large,
-            ),
-          ),
+          home: Scaffold(body: AuraIcon(Icons.star, size: AuraIconSize.large)),
         ),
       );
 
@@ -77,10 +55,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraIcon(
-              Icons.star,
-              semanticLabel: semanticLabel,
-            ),
+            body: AuraIcon(Icons.star, semanticLabel: semanticLabel),
           ),
         ),
       );
@@ -247,9 +222,7 @@ void main() {
               variant: AuraIconButtonVariant.filled,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
