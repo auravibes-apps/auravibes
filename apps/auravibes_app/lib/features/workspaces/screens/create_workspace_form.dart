@@ -152,7 +152,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     } on WorkspaceException catch (error) {
       if (mounted) setState(() => _errorText = _workspaceError(error));
     } on Object catch (error, stackTrace) {
-      _logger.severe('Create workspace failed', error, stackTrace);
+      _logger.severe('Create workspace failed', error.runtimeType, stackTrace);
       if (mounted) {
         setState(
           () => _errorText = LocaleKeys.workspace_management_unexpected_error

@@ -79,7 +79,8 @@ void main() {
     final record = records.firstWhere(
       (record) => record.message == 'Create workspace failed',
     );
-    expect(record.error, isA<StateError>());
+    expect(record.error, StateError);
+    expect(record.error.toString(), isNot(contains('workspace-secret')));
     expect(record.stackTrace, isNotNull);
     expect(
       find.text('An unexpected error occurred. Please try again.'),
