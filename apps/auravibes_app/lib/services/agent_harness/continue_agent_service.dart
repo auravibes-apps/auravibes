@@ -410,7 +410,7 @@ class ContinueAgentService
   }
 }
 
-final continueAgentServiceProvider = Provider<ContinueAgentService>((ref) {
+ContinueAgentService _continueAgentService(Ref ref) {
   return ContinueAgentService(
     chatbotService: ref.watch(chatbotServiceProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
@@ -422,7 +422,12 @@ final continueAgentServiceProvider = Provider<ContinueAgentService>((ref) {
     agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
     monitoringService: ref.watch(monitoringServiceProvider),
   );
-}, dependencies: [appAgentContinuationProvider]);
+}
+
+final continueAgentServiceProvider = Provider<ContinueAgentService>(
+  _continueAgentService,
+  dependencies: [appAgentContinuationProvider],
+);
 
 class _AppChunkSink implements AgentChunkSink<ChatResult<ChatMessage>> {
   const _AppChunkSink(this._controller, this._future);
