@@ -180,3 +180,17 @@ and the newest `/tmp/auravibes-dcl.json`. Never repeat a completed wave.
   left unchanged because this cleanup did not require it.
 - All 15 touched test files pass together (`159` tests); the worktree is clean
   and no generated files changed.
+
+## AuraTabs catalog item — 2026-08-26
+
+- Agent 3 owns the domain-neutral `AuraTabs` basic-catalog component, focused
+  package tests, and Widgetbook story. Keep protocol types, renderer, app, and
+  server work out of this item.
+- Status: completed. Follow-up visual review found the shared
+  AuraPressable alpha contract made opaque callers render excessive hover and
+  pressed layers, and AuraTabs' widthless indicator could collapse. Fix the
+  shared primitive, tab target/indicator geometry, package guidance, and
+  regressions without adding a new abstraction.
+- Evidence: AuraPressable and AuraTabs focused tests pass (`14` tests), affected
+  AuraPressable caller tests pass (`56` tests), targeted fatal analysis passes,
+  formatting passes, and no A2UI/GenUI or app/engine imports were added.
