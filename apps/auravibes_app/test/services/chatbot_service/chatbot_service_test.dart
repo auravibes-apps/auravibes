@@ -224,27 +224,24 @@ void main() {
       },
     );
 
-    test(
-      'does not infer thinking config from anthropic model ids',
-      () async {
-        genkit.ModelRequest? capturedRequest;
-        final providerFactory = _FakeProviderFactory(
-          onRequest: (request) => capturedRequest = request,
-        );
-        final service = _createService(providerFactory: providerFactory);
+    test('does not infer thinking config from anthropic model ids', () async {
+      genkit.ModelRequest? capturedRequest;
+      final providerFactory = _FakeProviderFactory(
+        onRequest: (request) => capturedRequest = request,
+      );
+      final service = _createService(providerFactory: providerFactory);
 
-        final chunks = await service.sendMessage(
-          _makeConfig(
-            type: ModelProvidersType.anthropic,
-            modelId: 'claude-sonnet-4-5',
-          ),
-          [ChatMessage.user('hello')],
-        ).toList();
-        expect(chunks, isNotEmpty);
+      final chunks = await service.sendMessage(
+        _makeConfig(
+          type: ModelProvidersType.anthropic,
+          modelId: 'claude-sonnet-4-5',
+        ),
+        [ChatMessage.user('hello')],
+      ).toList();
+      expect(chunks, isNotEmpty);
 
-        expect(capturedRequest?.config, isNull);
-      },
-    );
+      expect(capturedRequest?.config, isNull);
+    });
 
     test('maps non-tool finish reasons from Genkit final response', () async {
       final service = _createService(
@@ -428,9 +425,7 @@ void main() {
           chunks: [
             genkit.ModelResponseChunk(
               content: [
-                genkit.TextPart(
-                  text: '${singleQuote}Deep Focus$singleQuote',
-                ),
+                genkit.TextPart(text: '${singleQuote}Deep Focus$singleQuote'),
               ],
             ),
           ],

@@ -5,8 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/v7.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
-class AttachmentFileStore {
-  const AttachmentFileStore({this.storageNamespace = 'auravibes_app'});
+class AttachmentFileStoreIo {
+  const AttachmentFileStoreIo({this.storageNamespace = 'auravibes_app'});
 
   final String storageNamespace;
 
@@ -66,3 +66,6 @@ class AttachmentFileStore {
     return p.join(basePath, storageNamespace, directory);
   }
 }
+
+// ignore: unused-code, conditional export implementation used on IO platforms.
+typedef AttachmentFileStore = AttachmentFileStoreIo;

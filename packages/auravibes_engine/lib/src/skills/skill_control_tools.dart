@@ -2,10 +2,7 @@ import 'package:auravibes_engine/src/tool_spec.dart';
 
 const loadSkillToolName = 'load_skill';
 const unloadSkillToolName = 'unload_skill';
-const skillControlToolNames = <String>{
-  loadSkillToolName,
-  unloadSkillToolName,
-};
+const skillControlToolNames = <String>{loadSkillToolName, unloadSkillToolName};
 
 List<ToolSpec> buildSkillControlToolSpecs({
   required Iterable<String> loadableSkillSlugs,

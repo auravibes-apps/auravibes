@@ -138,9 +138,7 @@ class _CompactionSettingsSectionState
             placeholder: Text(
               LocaleKeys.compaction_settings_usage_threshold_hint.tr(),
             ),
-            label: Text(
-              LocaleKeys.compaction_settings_usage_threshold.tr(),
-            ),
+            label: Text(LocaleKeys.compaction_settings_usage_threshold.tr()),
             keyboardType: TextInputType.number,
           ),
           AuraInput(
@@ -213,7 +211,7 @@ class _CompactionSettingsSectionState
         settings: settings,
       );
       if (mounted) {
-        final _ = showAuraSnackBar(
+        final _ = AuraSnackBars.show(
           context: context,
           content: const TextLocale(
             LocaleKeys.compaction_settings_save_success,
@@ -226,7 +224,7 @@ class _CompactionSettingsSectionState
       setState(() => _validationError = e.localeKey.tr());
     } on Exception {
       if (mounted) {
-        final _ = showAuraSnackBar(
+        final _ = AuraSnackBars.show(
           context: context,
           content: const TextLocale(LocaleKeys.compaction_settings_save_error),
           variant: AuraSnackBarVariant.error,
@@ -257,7 +255,7 @@ class _CompactionSettingsSectionState
       }
     } on Exception {
       if (mounted) {
-        final _ = showAuraSnackBar(
+        final _ = AuraSnackBars.show(
           context: context,
           content: const TextLocale(LocaleKeys.compaction_settings_reset_error),
           variant: AuraSnackBarVariant.error,
@@ -275,7 +273,7 @@ class _CompactionSettingsSectionState
       _validationError = null;
     });
     if (mounted) {
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.compaction_settings_reset_success),
         variant: AuraSnackBarVariant.success,

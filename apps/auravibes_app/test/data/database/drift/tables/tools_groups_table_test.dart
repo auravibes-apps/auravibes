@@ -42,9 +42,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(tools_groups)',
-          )
+          .customSelect('PRAGMA table_info(tools_groups)')
           .get();
     });
 
@@ -72,9 +70,7 @@ void main() {
     });
 
     test('primary key on id', () {
-      final idCol = columns.firstWhere(
-        (r) => r.read<String>('name') == 'id',
-      );
+      final idCol = columns.firstWhere((r) => r.read<String>('name') == 'id');
       expect(idCol.read<int>('pk'), greaterThan(0));
       expect(columns.where((r) => r.read<int>('pk') > 0), hasLength(1));
       expect(
@@ -93,9 +89,7 @@ void main() {
     });
 
     test('name is not null', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'name',
-      );
+      final col = columns.firstWhere((r) => r.read<String>('name') == 'name');
       expect(col.read<int>('notnull'), 1);
     });
 

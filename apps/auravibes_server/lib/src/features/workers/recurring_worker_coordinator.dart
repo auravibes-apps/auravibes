@@ -196,7 +196,7 @@ class RecurringWorkerCoordinator {
       Future<bool> renewRun() async {
         final renewalSession = await pod.createSession();
         try {
-          return repository.renewRun(
+          return await repository.renewRun(
             renewalSession,
             schedule: schedule,
             coordinator: coordinator,

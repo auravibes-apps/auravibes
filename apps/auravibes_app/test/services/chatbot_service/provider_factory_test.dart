@@ -72,7 +72,7 @@ void main() {
       );
       final config = makeConfig(
         type: ModelProvidersType.openai,
-        connectionModelId: openAICodexProviderId,
+        connectionModelId: ModelProviderOAuthProfiles.providerId,
         authMode: ModelProviderAuthMode.oauth2,
       );
 
@@ -84,7 +84,7 @@ void main() {
     test('resolves Codex OAuth model reference with Codex namespace', () {
       final config = makeConfig(
         type: ModelProvidersType.openai,
-        connectionModelId: openAICodexProviderId,
+        connectionModelId: ModelProviderOAuthProfiles.providerId,
         authMode: ModelProviderAuthMode.oauth2,
       );
 
@@ -191,20 +191,17 @@ void main() {
       },
     );
 
-    test(
-      'resolves OpenAI-compatible reasoning model to custom namespace',
-      () {
-        final config = makeConfig(
-          type: ModelProvidersType.openai,
-          modelId: 'glm-4.5',
-          providerUrl: 'https://openai-compatible.example.com/v1',
-          supportsReasoning: true,
-        );
-        final ref = factory.getModelReference(config);
+    test('resolves OpenAI-compatible reasoning model to custom namespace', () {
+      final config = makeConfig(
+        type: ModelProvidersType.openai,
+        modelId: 'glm-4.5',
+        providerUrl: 'https://openai-compatible.example.com/v1',
+        supportsReasoning: true,
+      );
+      final ref = factory.getModelReference(config);
 
-        expect(ref.name, 'openai_reasoning/glm-4.5');
-      },
-    );
+      expect(ref.name, 'openai_reasoning/glm-4.5');
+    });
 
     test('enables thinking config for reasoning-capable anthropic models', () {
       final config = makeConfig(
@@ -229,30 +226,27 @@ void main() {
       expect(factory.getGenerationConfig<Object?>(config), isNull);
     });
 
-    test(
-      'uses adaptive thinking for anthropic models that support it',
-      () {
-        for (final modelId in [
-          'claude-mythos-preview',
-          'claude-opus-4-7',
-          'claude-opus-4-6',
-          'claude-sonnet-4-6',
-        ]) {
-          final config = makeConfig(
-            type: ModelProvidersType.anthropic,
-            modelId: modelId,
-            supportsReasoning: true,
-          );
+    test('uses adaptive thinking for anthropic models that support it', () {
+      for (final modelId in [
+        'claude-mythos-preview',
+        'claude-opus-4-7',
+        'claude-opus-4-6',
+        'claude-sonnet-4-6',
+      ]) {
+        final config = makeConfig(
+          type: ModelProvidersType.anthropic,
+          modelId: modelId,
+          supportsReasoning: true,
+        );
 
-          expect(
-            _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-            {
-              'thinking': {'type': 'adaptive'},
-            },
-          );
-        }
-      },
-    );
+        expect(
+          _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
+          {
+            'thinking': {'type': 'adaptive'},
+          },
+        );
+      }
+    });
 
     test('uses manual thinking for older anthropic reasoning models', () {
       final config = makeConfig(
@@ -295,9 +289,7 @@ void main() {
 
       expect(
         _generationConfigJson(factory.getGenerationConfig<Object?>(config)),
-        {
-          'reasoningType': 'enabled',
-        },
+        {'reasoningType': 'enabled'},
       );
     });
 
@@ -330,9 +322,7 @@ Map<String, dynamic>? _generationConfigJson(Object? config) {
 }
 
 class _FakeServiceConnectionRepository implements ServiceConnectionRepository {
-  const _FakeServiceConnectionRepository({
-    this.apiKey = 'test-api-key',
-  });
+  const _FakeServiceConnectionRepository({this.apiKey = 'test-api-key'});
 
   static const _expectedId = 'mc1';
 

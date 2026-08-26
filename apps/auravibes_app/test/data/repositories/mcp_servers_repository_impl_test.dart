@@ -88,9 +88,7 @@ void main() {
         ).thenAnswer((_) async => groupRow);
         when(
           () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 
@@ -288,9 +286,7 @@ void main() {
         ).thenAnswer((_) async => [existingTool]);
         when(
           () => fixture.mockWorkspaceToolsDao.insertToolsBatch(any()),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
         when(
@@ -420,9 +416,7 @@ void main() {
         ).thenAnswer((_) async => [createServerRow()]);
 
         final result = await fixture.repository
-            .getEnabledMcpServersForWorkspace(
-              'ws-1',
-            );
+            .getEnabledMcpServersForWorkspace('ws-1');
 
         expect(result, hasLength(1));
       });

@@ -357,9 +357,7 @@ void main() {
       ).thenAnswer((_) async {
         callCount += 1;
         if (callCount == 1) {
-          throw Exception(
-            'RateLimitException(429): try again in 3 seconds',
-          );
+          throw Exception('RateLimitException(429): try again in 3 seconds');
         }
 
         return const ContinueAgentResult(
@@ -445,79 +443,69 @@ void main() {
       },
     );
 
-    test(
-      'marks queued drafts sent when stopped after dequeue',
-      () async {
-        final _ = fixture.container
-            .read(conversationSendQueueProvider.notifier)
-            .enqueue(
-              conversationId: 'conversation-1',
-              draft: const ChatDraft(text: 'Queued follow-up'),
-            );
-        when(
-          () => fixture.messageRepository.createMessage(any()),
-        ).thenAnswer((_) async {
-          fixture.agentCancellationRuntime.requestStop('conversation-1');
-
-          return MessageEntity(
-            id: 'queued-user-1',
+    test('marks queued drafts sent when stopped after dequeue', () async {
+      final _ = fixture.container
+          .read(conversationSendQueueProvider.notifier)
+          .enqueue(
             conversationId: 'conversation-1',
-            content: 'Queued follow-up',
-            messageType: MessageType.text,
-            isUser: true,
-            status: MessageStatus.sending,
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
+            draft: const ChatDraft(text: 'Queued follow-up'),
           );
-        });
-        when(
-          () => fixture.messageRepository.patchMessage(any(), any()),
-        ).thenAnswer(
-          (_) async => MessageEntity(
-            id: 'queued-user-1',
-            conversationId: 'conversation-1',
-            content: 'Queued follow-up',
-            messageType: MessageType.text,
-            isUser: true,
-            status: MessageStatus.sent,
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
-          ),
-        );
+      when(() => fixture.messageRepository.createMessage(any())).thenAnswer((
+        _,
+      ) async {
+        fixture.agentCancellationRuntime.requestStop('conversation-1');
 
-        final result = await fixture.usecase.call(
+        return MessageEntity(
+          id: 'queued-user-1',
           conversationId: 'conversation-1',
-          context: const AgentIterationContext(
-            origin: AgentIterationOrigin.userMessage,
-            ackMessageIds: ['user-1'],
-          ),
+          content: 'Queued follow-up',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sending,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
         );
+      });
+      when(
+        () => fixture.messageRepository.patchMessage(any(), any()),
+      ).thenAnswer(
+        (_) async => MessageEntity(
+          id: 'queued-user-1',
+          conversationId: 'conversation-1',
+          content: 'Queued follow-up',
+          messageType: MessageType.text,
+          isUser: true,
+          status: MessageStatus.sent,
+          createdAt: DateTime(2025),
+          updatedAt: DateTime(2025),
+        ),
+      );
 
-        expect(result, AgentIterationDecision.done);
-        final _ = verifyNever(
-          () => fixture.continueAgentUsecase.call(
-            conversationId: any(named: 'conversationId'),
-            context: any(named: 'context'),
-          ),
-        );
-        final capturedPatches = verify(
-          () => fixture.messageRepository.patchMessage(
-            captureAny(),
-            captureAny(),
-          ),
-        ).captured;
-        expect(capturedPatches.whereType<String>(), [
-          'user-1',
-          'queued-user-1',
-        ]);
-        expect(
-          capturedPatches.whereType<MessagePatch>().map(
-            (patch) => patch.status,
-          ),
-          everyElement(MessageStatus.sent),
-        );
-      },
-    );
+      final result = await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+          ackMessageIds: ['user-1'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      final _ = verifyNever(
+        () => fixture.continueAgentUsecase.call(
+          conversationId: any(named: 'conversationId'),
+          context: any(named: 'context'),
+        ),
+      );
+      final capturedPatches = verify(
+        () =>
+            fixture.messageRepository.patchMessage(captureAny(), captureAny()),
+      ).captured;
+      expect(capturedPatches.whereType<String>(), ['user-1', 'queued-user-1']);
+      expect(
+        capturedPatches.whereType<MessagePatch>().map((patch) => patch.status),
+        everyElement(MessageStatus.sent),
+      );
+    });
 
     test(
       'returns the tool decision when execution must pause for approval',
@@ -555,58 +543,55 @@ void main() {
       },
     );
 
-    test(
-      'includes queued drafts in the same iteration context',
-      () async {
-        final _ = fixture.container
-            .read(conversationSendQueueProvider.notifier)
-            .enqueue(
-              conversationId: 'conversation-1',
-              draft: const ChatDraft(text: 'Queued follow-up'),
-            );
-
-        when(
-          () => fixture.continueAgentUsecase.call(
+    test('includes queued drafts in the same iteration context', () async {
+      final _ = fixture.container
+          .read(conversationSendQueueProvider.notifier)
+          .enqueue(
             conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['user-1', 'queued-user-1'],
-            ),
-          ),
-        ).thenAnswer(
-          (_) async => const ContinueAgentResult(
-            messageId: 'assistant-1',
-            hasToolCalls: false,
-          ),
-        );
+            draft: const ChatDraft(text: 'Queued follow-up'),
+          );
 
-        final result = await fixture.usecase.call(
+      when(
+        () => fixture.continueAgentUsecase.call(
           conversationId: 'conversation-1',
           context: const AgentIterationContext(
             origin: AgentIterationOrigin.userMessage,
-            ackMessageIds: ['user-1'],
+            ackMessageIds: ['user-1', 'queued-user-1'],
           ),
-        );
+        ),
+      ).thenAnswer(
+        (_) async => const ContinueAgentResult(
+          messageId: 'assistant-1',
+          hasToolCalls: false,
+        ),
+      );
 
-        expect(result, AgentIterationDecision.done);
-        verify(() => fixture.messageRepository.createMessage(any())).called(1);
-        verify(
-          () => fixture.continueAgentUsecase.call(
-            conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['user-1', 'queued-user-1'],
-            ),
+      final result = await fixture.usecase.call(
+        conversationId: 'conversation-1',
+        context: const AgentIterationContext(
+          origin: AgentIterationOrigin.userMessage,
+          ackMessageIds: ['user-1'],
+        ),
+      );
+
+      expect(result, AgentIterationDecision.done);
+      verify(() => fixture.messageRepository.createMessage(any())).called(1);
+      verify(
+        () => fixture.continueAgentUsecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1', 'queued-user-1'],
           ),
-        ).called(1);
-        expect(
-          fixture.container
-              .read(conversationSendQueueProvider.notifier)
-              .peek('conversation-1'),
-          isNull,
-        );
-      },
-    );
+        ),
+      ).called(1);
+      expect(
+        fixture.container
+            .read(conversationSendQueueProvider.notifier)
+            .peek('conversation-1'),
+        isNull,
+      );
+    });
 
     test(
       'adds queued drafts before the next continuation after tool execution',
@@ -719,9 +704,9 @@ void main() {
         });
 
         var createdCount = 0;
-        when(
-          () => fixture.messageRepository.createMessage(any()),
-        ).thenAnswer((_) async {
+        when(() => fixture.messageRepository.createMessage(any())).thenAnswer((
+          _,
+        ) async {
           createdCount += 1;
 
           return MessageEntity(
@@ -757,43 +742,40 @@ void main() {
     );
 
     group('compaction integration', () {
-      test(
-        'triggers auto compaction before the first AI call',
-        () async {
-          when(
+      test('triggers auto compaction before the first AI call', () async {
+        when(
+          () => fixture.continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: any(named: 'context'),
+          ),
+        ).thenAnswer(
+          (_) async => const ContinueAgentResult(
+            messageId: 'assistant-1',
+            hasToolCalls: false,
+          ),
+        );
+
+        final _ = await fixture.usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+
+        expect(
+          () => verifyInOrder([
+            () => fixture.maybeAutoCompactConversationUsecase.call(
+              conversationId: 'conversation-1',
+            ),
             () => fixture.continueAgentUsecase.call(
               conversationId: 'conversation-1',
               context: any(named: 'context'),
             ),
-          ).thenAnswer(
-            (_) async => const ContinueAgentResult(
-              messageId: 'assistant-1',
-              hasToolCalls: false,
-            ),
-          );
-
-          final _ = await fixture.usecase.call(
-            conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['user-1'],
-            ),
-          );
-
-          expect(
-            () => verifyInOrder([
-              () => fixture.maybeAutoCompactConversationUsecase.call(
-                conversationId: 'conversation-1',
-              ),
-              () => fixture.continueAgentUsecase.call(
-                conversationId: 'conversation-1',
-                context: any(named: 'context'),
-              ),
-            ]),
-            returnsNormally,
-          );
-        },
-      );
+          ]),
+          returnsNormally,
+        );
+      });
 
       test(
         'triggers auto compaction in every loop iteration before the AI call',
@@ -823,9 +805,7 @@ void main() {
               conversationId: 'conversation-1',
               workspaceId: 'workspace-1',
             ),
-          ).thenAnswer(
-            (_) async => AgentIterationDecision.continueIteration,
-          );
+          ).thenAnswer((_) async => AgentIterationDecision.continueIteration);
 
           final _ = await fixture.usecase.call(
             conversationId: 'conversation-1',
@@ -846,36 +826,33 @@ void main() {
         },
       );
 
-      test(
-        'propagates compaction failure to stop agent loop',
-        () async {
-          when(
-            () => fixture.maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-          ).thenThrow(Exception('compaction error'));
+      test('propagates compaction failure to stop agent loop', () async {
+        when(
+          () => fixture.maybeAutoCompactConversationUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenThrow(Exception('compaction error'));
 
-          await expectLater(
-            fixture.usecase.call(
-              conversationId: 'conversation-1',
-              context: const AgentIterationContext(
-                origin: AgentIterationOrigin.userMessage,
-                ackMessageIds: ['user-1'],
-              ),
+        await expectLater(
+          fixture.usecase.call(
+            conversationId: 'conversation-1',
+            context: const AgentIterationContext(
+              origin: AgentIterationOrigin.userMessage,
+              ackMessageIds: ['user-1'],
             ),
-            throwsA(isA<Exception>()),
-          );
-          expect(
-            () => verifyNever(
-              () => fixture.continueAgentUsecase.call(
-                conversationId: any(named: 'conversationId'),
-                context: any(named: 'context'),
-              ),
+          ),
+          throwsA(isA<Exception>()),
+        );
+        expect(
+          () => verifyNever(
+            () => fixture.continueAgentUsecase.call(
+              conversationId: any(named: 'conversationId'),
+              context: any(named: 'context'),
             ),
-            returnsNormally,
-          );
-        },
-      );
+          ),
+          returnsNormally,
+        );
+      });
 
       test(
         'runs compaction after queued drafts drain but before AI call',
@@ -923,83 +900,80 @@ void main() {
         },
       );
 
-      test(
-        'skips compaction and AI call when cancelled after drain',
-        () async {
-          final _ = fixture.container
-              .read(conversationSendQueueProvider.notifier)
-              .enqueue(
-                conversationId: 'conversation-1',
-                draft: const ChatDraft(text: 'Queued follow-up'),
-              );
-          when(
-            () => fixture.messageRepository.createMessage(any()),
-          ).thenAnswer((_) async {
-            fixture.agentCancellationRuntime.requestStop('conversation-1');
-
-            return MessageEntity(
-              id: 'queued-user-1',
+      test('skips compaction and AI call when cancelled after drain', () async {
+        final _ = fixture.container
+            .read(conversationSendQueueProvider.notifier)
+            .enqueue(
               conversationId: 'conversation-1',
-              content: 'Queued follow-up',
-              messageType: MessageType.text,
-              isUser: true,
-              status: MessageStatus.sending,
-              createdAt: DateTime(2025),
-              updatedAt: DateTime(2025),
+              draft: const ChatDraft(text: 'Queued follow-up'),
             );
-          });
-          when(
-            () => fixture.messageRepository.patchMessage(any(), any()),
-          ).thenAnswer(
-            (_) async => MessageEntity(
-              id: 'queued-user-1',
-              conversationId: 'conversation-1',
-              content: 'Queued follow-up',
-              messageType: MessageType.text,
-              isUser: true,
-              status: MessageStatus.sent,
-              createdAt: DateTime(2025),
-              updatedAt: DateTime(2025),
-            ),
-          );
+        when(() => fixture.messageRepository.createMessage(any())).thenAnswer((
+          _,
+        ) async {
+          fixture.agentCancellationRuntime.requestStop('conversation-1');
 
-          final _ = await fixture.usecase.call(
+          return MessageEntity(
+            id: 'queued-user-1',
             conversationId: 'conversation-1',
-            context: const AgentIterationContext(
-              origin: AgentIterationOrigin.userMessage,
-              ackMessageIds: ['user-1'],
-            ),
+            content: 'Queued follow-up',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sending,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
           );
+        });
+        when(
+          () => fixture.messageRepository.patchMessage(any(), any()),
+        ).thenAnswer(
+          (_) async => MessageEntity(
+            id: 'queued-user-1',
+            conversationId: 'conversation-1',
+            content: 'Queued follow-up',
+            messageType: MessageType.text,
+            isUser: true,
+            status: MessageStatus.sent,
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+        );
 
-          final _ = verifyNever(
-            () => fixture.maybeAutoCompactConversationUsecase.call(
-              conversationId: 'conversation-1',
-            ),
-          );
-          final _ = verifyNever(
-            () => fixture.continueAgentUsecase.call(
-              conversationId: 'conversation-1',
-              context: any(named: 'context'),
-            ),
-          );
-          final capturedPatches = verify(
-            () => fixture.messageRepository.patchMessage(
-              captureAny(),
-              captureAny(),
-            ),
-          ).captured;
-          expect(capturedPatches.whereType<String>(), [
-            'user-1',
-            'queued-user-1',
-          ]);
-          expect(
-            capturedPatches.whereType<MessagePatch>().map(
-              (patch) => patch.status,
-            ),
-            everyElement(MessageStatus.sent),
-          );
-        },
-      );
+        final _ = await fixture.usecase.call(
+          conversationId: 'conversation-1',
+          context: const AgentIterationContext(
+            origin: AgentIterationOrigin.userMessage,
+            ackMessageIds: ['user-1'],
+          ),
+        );
+
+        final _ = verifyNever(
+          () => fixture.maybeAutoCompactConversationUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        );
+        final _ = verifyNever(
+          () => fixture.continueAgentUsecase.call(
+            conversationId: 'conversation-1',
+            context: any(named: 'context'),
+          ),
+        );
+        final capturedPatches = verify(
+          () => fixture.messageRepository.patchMessage(
+            captureAny(),
+            captureAny(),
+          ),
+        ).captured;
+        expect(capturedPatches.whereType<String>(), [
+          'user-1',
+          'queued-user-1',
+        ]);
+        expect(
+          capturedPatches.whereType<MessagePatch>().map(
+            (patch) => patch.status,
+          ),
+          everyElement(MessageStatus.sent),
+        );
+      });
     });
 
     test('provider returns usecase with maybeAutoCompact wired', () {
@@ -1009,7 +983,11 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
-          workspaceSessionProvider.overrideWithValue(
+          workspaceSessionProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),

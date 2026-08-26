@@ -94,9 +94,7 @@ class AuraBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
         border: variant == AuraBadgeVariant.outlined
-            ? Border.all(
-                color: _getBorderColor(auraColors),
-              )
+            ? Border.all(color: _getBorderColor(auraColors))
             : null,
         borderRadius: BorderRadius.circular(
           context.auraTheme.fromBorderRadius(_getBorderRadius()),
@@ -112,10 +110,7 @@ class AuraBadge extends StatelessWidget {
     );
 
     if (semanticLabel != null) {
-      badge = Semantics(
-        child: badge,
-        label: semanticLabel,
-      );
+      badge = Semantics(child: badge, label: semanticLabel);
     }
 
     return badge;

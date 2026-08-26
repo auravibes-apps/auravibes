@@ -7,9 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 final class FakeHttpClientAdapter implements HttpClientAdapter {
-  FakeHttpClientAdapter({
-    required this.fetchCallback,
-  });
+  FakeHttpClientAdapter({required this.fetchCallback});
 
   final Future<ResponseBody> Function(
     RequestOptions options,
@@ -313,19 +311,14 @@ void main() {
       test('uses injected dio instance for token exchange', () async {
         final adapter = FakeHttpClientAdapter(
           fetchCallback: (options, _, _) async {
-            expect(
-              options.responseType,
-              ResponseType.json,
-            );
+            expect(options.responseType, ResponseType.json);
             expect(options.method, 'POST');
             expect(options.path, 'https://example.com/token');
 
             final data = options.data;
             final Map<String, dynamic> body;
             if (data is FormData) {
-              body = {
-                for (final field in data.fields) field.key: field.value,
-              };
+              body = {for (final field in data.fields) field.key: field.value};
             } else if (data is Map) {
               body = Map<String, dynamic>.from(data);
             } else {

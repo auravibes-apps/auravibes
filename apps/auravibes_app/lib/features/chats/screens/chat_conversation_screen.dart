@@ -89,9 +89,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
     );
 
     if (conversationAsync.isLoading && !conversationAsync.hasValue) {
-      return const AuraScreen(
-        child: Center(child: AuraSpinner()),
-      );
+      return const AuraScreen(child: Center(child: AuraSpinner()));
     }
 
     if (conversationAsync.hasError && !conversationAsync.hasValue) {
@@ -147,26 +145,26 @@ class _LoadedChatConversation extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stopRequested = useState(false);
 
-    final onToolsPress = useCallback(
-      () {
-        _showToolsModal(
-          context: context,
-          workspaceId: workspaceId,
-          conversationId: conversation.id,
-        );
-      },
-      [ref, workspaceId, conversation.id],
-    );
+    void onToolsPressCallback() {
+      _showToolsModal(
+        context: context,
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
+      );
+    }
 
-    final onStop = useCallback(
-      () {
-        stopRequested.value = true;
-        unawaited(
-          _stopConversation(context, ref, workspaceId, conversation.id),
-        );
-      },
-      [ref, stopRequested],
-    );
+    final onToolsPress = useCallback(onToolsPressCallback, [
+      ref,
+      workspaceId,
+      conversation.id,
+    ]);
+
+    void onStopCallback() {
+      stopRequested.value = true;
+      unawaited(_stopConversation(context, ref, workspaceId, conversation.id));
+    }
+
+    final onStop = useCallback(onStopCallback, [ref, stopRequested]);
 
     final onSendMessage = useCallback<Future<void> Function(ChatDraft)>(
       (draft) =>
@@ -174,12 +172,11 @@ class _LoadedChatConversation extends HookConsumerWidget {
       [ref],
     );
 
-    final onCompact = useCallback(
-      () {
-        unawaited(_manualCompact(context, ref, workspaceId, conversation.id));
-      },
-      [ref, conversation.id],
-    );
+    void onCompactCallback() {
+      unawaited(_manualCompact(context, ref, workspaceId, conversation.id));
+    }
+
+    final onCompact = useCallback(onCompactCallback, [ref, conversation.id]);
 
     final isCloud =
         ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
@@ -215,7 +212,7 @@ class _LoadedChatConversation extends HookConsumerWidget {
         selectedModelAsync?.value?.workspaceModelSelection.modalitiesInput ??
         const <String>[];
     final pendingCalls = isCloud
-        ? cloudPendingToolCalls(cloudConversation)
+        ? CloudMessageTools.pendingToolCalls(cloudConversation)
         : ref
                   .watch(pendingToolCallsProvider(workspaceId, conversation.id))
                   .value ??
@@ -233,24 +230,22 @@ class _LoadedChatConversation extends HookConsumerWidget {
                       'awaitingApproval'
             : busyState?.isBusy ?? false) ||
         rateLimitRetryAt != null;
-    useEffect(
-      () {
+    Dispose? resetStopRequested() {
+      stopRequested.value = false;
+
+      return null;
+    }
+
+    useEffect(resetStopRequested, [conversation.id]);
+    Dispose? resetStopRequestedWhenIdle() {
+      if (!isInputBusy) {
         stopRequested.value = false;
+      }
 
-        return null;
-      },
-      [conversation.id],
-    );
-    useEffect(
-      () {
-        if (!isInputBusy) {
-          stopRequested.value = false;
-        }
+      return null;
+    }
 
-        return null;
-      },
-      [conversation.id, isInputBusy],
-    );
+    useEffect(resetStopRequestedWhenIdle, [conversation.id, isInputBusy]);
     final hidesStoppedRun = stopRequested.value && isInputBusy;
 
     return AuraScreen(
@@ -293,68 +288,46 @@ class _LoadedChatConversation extends HookConsumerWidget {
                 modelSheetControl: CompactWorkspaceModelSelector(
                   workspaceId: workspaceId,
                   workspaceModelSelectionId: conversation.modelId,
-                  onChanged: (modelId) {
-                    unawaited(
-                      _setModelWithAttachmentWarning(
-                        context: context,
-                        ref: ref,
-                        workspaceId: workspaceId,
-                        conversationId: conversation.id,
-                        modelId: modelId,
-                      ),
-                    );
-                  },
+                  onChanged: (modelId) => _onModelChanged(
+                    context,
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    modelId,
+                  ),
                   sheetMode: true,
                 ),
                 agentSheetControl: CompactAgentSelector(
                   workspaceId: workspaceId,
                   agentId: conversation.agentId,
-                  onChanged: (agentId) {
-                    unawaited(
-                      ref
-                          .read(
-                            conversationChatProvider(
-                              workspaceId,
-                              conversation.id,
-                            ).notifier,
-                          )
-                          .setAgent(agentId),
-                    );
-                  },
+                  onChanged: (agentId) => _onAgentChanged(
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    agentId,
+                  ),
                   sheetMode: true,
                 ),
                 modelCompactControl: CompactWorkspaceModelSelector(
                   workspaceId: workspaceId,
                   workspaceModelSelectionId: conversation.modelId,
-                  onChanged: (modelId) {
-                    unawaited(
-                      ref
-                          .read(
-                            conversationChatProvider(
-                              workspaceId,
-                              conversation.id,
-                            ).notifier,
-                          )
-                          .setModel(modelId),
-                    );
-                  },
+                  onChanged: (modelId) => _onModelSelectionChanged(
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    modelId,
+                  ),
                   compactMode: true,
                 ),
                 agentCompactControl: CompactAgentSelector(
                   workspaceId: workspaceId,
                   agentId: conversation.agentId,
-                  onChanged: (agentId) {
-                    unawaited(
-                      ref
-                          .read(
-                            conversationChatProvider(
-                              workspaceId,
-                              conversation.id,
-                            ).notifier,
-                          )
-                          .setAgent(agentId),
-                    );
-                  },
+                  onChanged: (agentId) => _onAgentChanged(
+                    ref,
+                    workspaceId,
+                    conversation.id,
+                    agentId,
+                  ),
                   compactMode: true,
                 ),
                 modalitiesInput: modalitiesInput,
@@ -389,6 +362,50 @@ class _LoadedChatConversation extends HookConsumerWidget {
     );
   }
 
+  void _onModelChanged(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    String? modelId,
+  ) {
+    unawaited(
+      _setModelWithAttachmentWarning(
+        context: context,
+        ref: ref,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        modelId: modelId,
+      ),
+    );
+  }
+
+  void _onModelSelectionChanged(
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    String? modelId,
+  ) {
+    unawaited(
+      ref
+          .read(conversationChatProvider(workspaceId, conversationId).notifier)
+          .setModel(modelId),
+    );
+  }
+
+  void _onAgentChanged(
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+    String? agentId,
+  ) {
+    unawaited(
+      ref
+          .read(conversationChatProvider(workspaceId, conversationId).notifier)
+          .setAgent(agentId),
+    );
+  }
+
   Widget? _leading(BuildContext context) {
     if (showInputComposer) return null;
 
@@ -415,9 +432,7 @@ class _ChatControlsBar extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant,
-        border: Border(
-          bottom: BorderSide(color: auraColors.outlineVariant),
-        ),
+        border: Border(bottom: BorderSide(color: auraColors.outlineVariant)),
       ),
       child: SafeArea(
         top: false,
@@ -460,18 +475,18 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(_RateLimitRetryIndicator oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.retryAt == widget.retryAt) return;
 
     _timer?.cancel();
     _startTimer();
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -503,11 +518,13 @@ class _RateLimitRetryIndicatorState extends State<_RateLimitRetryIndicator> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() {
-        final _ = Object();
-      });
+    _timer = Timer.periodic(const Duration(seconds: 1), _onTimerTick);
+  }
+
+  void _onTimerTick(Timer timer) {
+    if (!mounted) return;
+    setState(() {
+      final _ = Object();
     });
   }
 
@@ -586,17 +603,13 @@ Future<void> _setModelWithAttachmentWarning({
   final supported =
       selectedModel?.workspaceModelSelection.modalitiesInput ?? [];
   final messages =
-      ref
-          .read(
-            chatMessagesProvider(workspaceId, conversationId),
-          )
-          .value ??
+      ref.read(chatMessagesProvider(workspaceId, conversationId)).value ??
       const [];
   final missing = <String>{};
   for (final message in messages) {
     for (final attachment in message.attachments) {
       final modality = attachment.modality.name;
-      if (!supportsAttachmentModality(
+      if (!ChatAttachmentModality.supports(
         attachment.modality,
         supported,
         mimeType: attachment.mimeType,
@@ -661,9 +674,7 @@ Future<void> _continueAgent(
   if ((busyState?.isBusy ?? false) || rateLimitRetryAt != null) return;
 
   try {
-    final cloud = await ref.read(
-      cloudTurnUsecaseProvider(workspaceId).future,
-    );
+    final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
     if (cloud != null) {
       final state = ref
           .read(
@@ -702,15 +713,15 @@ Future<void> _continueAgent(
     );
     FlutterError.reportError(
       FlutterErrorDetails(
+        library: 'chat_conversation_screen',
         exception: error,
         stack: stackTrace,
-        library: 'chat_conversation_screen',
         context: ErrorDescription('while manually continuing a conversation'),
       ),
     );
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(
         LocaleKeys.chats_screens_chat_conversation_continue_error.tr(),
@@ -757,9 +768,7 @@ Future<void> _stopConversation(
     await ref
         .read(auraAgentServiceProvider)
         .agent
-        .stop(
-          conversationId: conversationId,
-        );
+        .stop(conversationId: conversationId);
   } on Object catch (error, stackTrace) {
     stopError = error;
     stopStackTrace = stackTrace;
@@ -775,9 +784,7 @@ Future<void> _stopConversation(
       await ref
           .read(auraAgentServiceProvider)
           .agent
-          .stop(
-            conversationId: childId,
-          );
+          .stop(conversationId: childId);
     } on Object catch (error, stackTrace) {
       stopError ??= error;
       stopStackTrace ??= stackTrace;
@@ -805,11 +812,9 @@ Future<void> _stopConversation(
     );
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
-      content: Text(
-        LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
-      ),
+      content: Text(LocaleKeys.chats_screens_chat_conversation_stop_error.tr()),
       variant: AuraSnackBarVariant.error,
     );
   }
@@ -834,11 +839,9 @@ Future<void> _sendMessage(
     );
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
-      content: Text(
-        LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
-      ),
+      content: Text(LocaleKeys.chats_screens_chat_conversation_send_error.tr()),
       variant: AuraSnackBarVariant.error,
     );
   }
@@ -860,7 +863,7 @@ Future<void> _manualCompact(
     }
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.compaction_manual_success.tr()),
       variant: AuraSnackBarVariant.success,
@@ -868,7 +871,7 @@ Future<void> _manualCompact(
   } on CompactionException {
     if (!context.mounted) return;
 
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: Text(LocaleKeys.compaction_manual_failure.tr()),
       variant: AuraSnackBarVariant.error,

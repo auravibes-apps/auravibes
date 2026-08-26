@@ -155,7 +155,7 @@ class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
   }) async {
     await _reserve(session, job: job, providerId: providerId);
     try {
-      return _withReservationRenewal(job, body);
+      return await _withReservationRenewal(job, body);
     } finally {
       await _release(session, job);
     }

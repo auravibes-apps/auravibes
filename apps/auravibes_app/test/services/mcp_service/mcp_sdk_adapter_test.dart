@@ -5,7 +5,7 @@ import 'package:mcp_client/mcp_client.dart' as mcp;
 
 void main() {
   test('maps every SDK result variant', () {
-    final result = mcpToolResultFromSdk(
+    final result = McpSdkAdapter.toolResult(
       const mcp.CallToolResult(
         [
           mcp.TextContent(text: 'text'),
@@ -34,7 +34,7 @@ void main() {
   });
 
   test('drops SDK legacy streaming hint', () {
-    final result = mcpToolResultFromSdk(
+    final result = McpSdkAdapter.toolResult(
       const mcp.CallToolResult(
         [mcp.TextContent(text: 'legacy')],
         // ignore: deprecated_member_use - Verifies the legacy SDK hint is dropped.

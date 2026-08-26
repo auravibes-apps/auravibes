@@ -72,7 +72,10 @@ class CloudSkillSettingsAdapter {
   ) async {
     final state = await watchCompactionSettingsState().first;
 
-    return saveCompactionSettings(settings, expectedRevision: state.revision);
+    return await saveCompactionSettings(
+      settings,
+      expectedRevision: state.revision,
+    );
   }
 
   Future<void> resetCompactionSettings() async {
@@ -179,13 +182,13 @@ class CloudSkillSettingsAdapter {
           final kind = SkillKind.values.byName(data['kind'] as String);
 
           return WorkspaceSkill(
+            source: SkillSource.values.byName(
+              data['source'] as String? ?? SkillSource.user.name,
+            ),
             id: resource.resourceId,
             slug: data['slug'] as String,
             title: data['title'] as String,
             description: data['description'] as String,
-            source: SkillSource.values.byName(
-              data['source'] as String? ?? SkillSource.user.name,
-            ),
             kind: kind,
             isEnabled:
                 settings[resource.resourceId] ?? data['isEnabled'] as bool,

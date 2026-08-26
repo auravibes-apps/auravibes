@@ -93,9 +93,7 @@ class _Subject extends StatelessWidget {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
-          mcpConnectionProvider.overrideWith(
-            _MockMcpConnectionNotifier.new,
-          ),
+          mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
           groupedToolsProvider(
             _workspaceId,
           ).overrideWith(() => _MockGroupedNotifier([])),
@@ -204,10 +202,7 @@ void main() {
   });
 
   testWidgets('renders inside AuraCard', (tester) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [],
-    );
+    final groupWithTools = ToolsGroupWithTools(group: _group(), tools: []);
 
     await tester.pumpWidget(
       _Subject(
@@ -274,10 +269,7 @@ void main() {
   testWidgets('shows empty message when tools list is empty and expanded', (
     tester,
   ) async {
-    final groupWithTools = ToolsGroupWithTools(
-      group: _group(),
-      tools: [],
-    );
+    final groupWithTools = ToolsGroupWithTools(group: _group(), tools: []);
 
     await tester.pumpWidget(
       _Subject(
@@ -317,10 +309,7 @@ void main() {
   });
 
   testWidgets('MCP group with error shows reconnect', (tester) async {
-    final mcpGroup = _group(
-      id: 'mcp-g1',
-      name: 'MCP Server',
-    );
+    final mcpGroup = _group(id: 'mcp-g1', name: 'MCP Server');
     final groupWithTools = ToolsGroupWithTools(
       group: mcpGroup,
       tools: [_tool()],

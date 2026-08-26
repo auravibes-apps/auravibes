@@ -19,9 +19,7 @@ class ProviderTransportResponse {
 }
 
 typedef ProviderTransport =
-    Future<ProviderTransportResponse> Function(
-      Map<String, dynamic> body,
-    );
+    Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
 class ChatCompletionsModelDefinition {
   const ChatCompletionsModelDefinition({required this.name, this.info});

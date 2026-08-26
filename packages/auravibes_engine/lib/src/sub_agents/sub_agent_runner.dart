@@ -13,10 +13,7 @@ typedef ContinueSubAgentTurn =
     });
 
 typedef SubAgentChildStarted =
-    void Function({
-      required String parentId,
-      required String childId,
-    });
+    void Function({required String parentId, required String childId});
 
 class SubAgentRunner {
   const SubAgentRunner({
@@ -105,7 +102,7 @@ class SubAgentRunner {
       if (requestHandle.isStopped) {
         completionStatus = SubAgentCompletionStatus.stopped;
 
-        return _result(child.id, 'stopped', agentId: request.agentId);
+        return await _result(child.id, 'stopped', agentId: request.agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
         final waitResult = await _waitForToolApproval(
@@ -120,7 +117,7 @@ class SubAgentRunner {
         }
       }
 
-      return _result(child.id, 'done', agentId: request.agentId);
+      return await _result(child.id, 'done', agentId: request.agentId);
     } on Object {
       completionStatus = SubAgentCompletionStatus.error;
 

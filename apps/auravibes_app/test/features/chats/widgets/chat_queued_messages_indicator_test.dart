@@ -29,13 +29,9 @@ class _EasyLocalizationTestWrapper extends StatelessWidget {
 }
 
 void main() {
-  Widget buildSubject({
-    required List<ConversationQueuedDraft> queuedDrafts,
-  }) {
+  Widget buildSubject({required List<ConversationQueuedDraft> queuedDrafts}) {
     final container = ProviderContainer(
-      overrides: [
-        conversationSelectedProvider.overrideWithValue('conv-1'),
-      ],
+      overrides: [conversationSelectedProvider.overrideWithValue('conv-1')],
     );
     addTearDown(container.dispose);
 

@@ -12,21 +12,17 @@ void main() {
 
   group('ModelSyncService', () {
     var syncApiModelsUseCase = _MockSyncApiModelsUseCase();
-    var service = ModelSyncService(
-      syncApiModelsUseCase: syncApiModelsUseCase,
-    );
+    var service = ModelSyncService(syncApiModelsUseCase: syncApiModelsUseCase);
 
     setUp(() {
       syncApiModelsUseCase = _MockSyncApiModelsUseCase();
-      service = ModelSyncService(
-        syncApiModelsUseCase: syncApiModelsUseCase,
-      );
+      service = ModelSyncService(syncApiModelsUseCase: syncApiModelsUseCase);
     });
 
     test('performFullSync delegates sync orchestration', () async {
-      when(() => syncApiModelsUseCase()).thenAnswer(
-        (_) => Future<void>.value(),
-      );
+      when(
+        () => syncApiModelsUseCase(),
+      ).thenAnswer((_) => Future<void>.value());
 
       await expectLater(service.performFullSync(), completes);
 

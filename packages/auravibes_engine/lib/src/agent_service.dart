@@ -7,7 +7,6 @@ import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 const defaultAgentRateLimitRetryDelay = Duration(seconds: 60);
 const defaultAgentRateLimitRetryCount = 1;
 
-// ignore: one_member_abstracts, provider interface keeps tool loop injectable.
 abstract interface class AgentLoopToolProvider {
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
@@ -156,7 +155,7 @@ class AgentService {
       origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
     );
     if (!continueResult.hasToolCalls) {
-      return _continueAfterNoToolCalls(
+      return await _continueAfterNoToolCalls(
         conversationId,
         cancellationScope,
         currentContext,
@@ -173,10 +172,7 @@ class AgentService {
       currentContext,
     );
 
-    return _AgentIterationStep(
-      currentContext,
-      postToolCancel ?? decision,
-    );
+    return _AgentIterationStep(currentContext, postToolCancel ?? decision);
   }
 
   Future<_AgentIterationStep> _continueAfterNoToolCalls(
@@ -268,7 +264,7 @@ class AgentService {
       }
     }
 
-    return _cancelIfRequested(conversationId, cancellationScope, context);
+    return await _cancelIfRequested(conversationId, cancellationScope, context);
   }
 
   Duration? _rateLimitRetryDelayFor(Object error) {

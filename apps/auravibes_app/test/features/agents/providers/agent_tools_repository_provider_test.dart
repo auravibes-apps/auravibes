@@ -38,9 +38,7 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final repository = container.read(
-      agentToolsRepositoryProvider('local'),
-    );
+    final repository = container.read(agentToolsRepositoryProvider('local'));
     expect(repository, isA<AgentToolsRepositoryContract>());
     expect(repository, isA<CloudAgentToolsRepository>());
   });

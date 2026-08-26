@@ -146,8 +146,7 @@ final runSkillTemplateToolUsecaseProvider =
         ref.watch(skillCredentialDefinitionsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
         ref.watch(runSkillUrlTemplateUsecaseProvider),
-        (workspaceId) => ref.read(
-          workspaceSessionForRouteProvider(workspaceId).future,
-        ),
+        (workspaceId) =>
+            ref.read(workspaceSessionForRouteProvider(workspaceId).future),
       );
     });

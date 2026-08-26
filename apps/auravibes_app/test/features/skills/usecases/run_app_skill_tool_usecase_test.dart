@@ -74,11 +74,7 @@ void main() {
       final adapter = AppSkillHttpClientAdapter(urlService);
 
       await expectLater(
-        adapter
-            .execute(
-              const UrlRequest(url: 'http://localhost/search'),
-            )
-            .value,
+        adapter.execute(const UrlRequest(url: 'http://localhost/search')).value,
         throwsA(isA<FormatException>()),
       );
       final _ = verifyNever(() => urlService.execute(any()));
@@ -90,9 +86,7 @@ void main() {
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
-      when(
-        () => serviceConnections.readSecret('connection-1'),
-      ).thenAnswer(
+      when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(
           apiKey: 'https://search.example.com',
         ),
@@ -113,9 +107,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'searxng',
         toolSlug: 'search',
-        arguments: {
-          'query': 'dart',
-        },
+        arguments: {'query': 'dart'},
       );
 
       expect(
@@ -132,9 +124,7 @@ void main() {
         when(
           () => serviceConnections.getById('connection-1'),
         ).thenAnswer((_) async => _serviceConnection());
-        when(
-          () => serviceConnections.readSecret('connection-1'),
-        ).thenAnswer(
+        when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
           (_) async => const ServiceConnectionSecretApiKey(
             apiKey: 'http://localhost:8080',
           ),
@@ -145,7 +135,7 @@ void main() {
             'searxng': [_candidate('searxng')],
           },
           urlService: urlService,
-          requirePublicUri: requirePublicHttpsUri,
+          requirePublicUri: PublicUrlGuard.requireHttpsUri,
         );
 
         await expectLater(
@@ -169,9 +159,7 @@ void main() {
         when(
           () => serviceConnections.getById('connection-1'),
         ).thenAnswer((_) async => _serviceConnection());
-        when(
-          () => serviceConnections.readSecret('connection-1'),
-        ).thenAnswer(
+        when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
           (_) async => const ServiceConnectionSecretApiKey(apiKey: 'brave-key'),
         );
         final usecase = _usecase(
@@ -211,9 +199,7 @@ void main() {
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
-      when(
-        () => serviceConnections.readSecret('connection-1'),
-      ).thenAnswer(
+      when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(apiKey: 'synthetic'),
       );
       final usecase = _usecase(
@@ -232,10 +218,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'synthetic',
         toolSlug: 'search',
-        arguments: {
-          'query': 'flutter',
-          'credentialId': 'service:connection-1',
-        },
+        arguments: {'query': 'flutter', 'credentialId': 'service:connection-1'},
       );
 
       expect(capturedRequest.method, UrlRequestMethod.post);
@@ -250,9 +233,7 @@ void main() {
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
-      when(
-        () => serviceConnections.readSecret('connection-1'),
-      ).thenAnswer(
+      when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(apiKey: 'exa-key'),
       );
       final usecase = _usecase(
@@ -289,9 +270,7 @@ void main() {
       when(
         () => serviceConnections.getById('connection-1'),
       ).thenAnswer((_) async => _serviceConnection());
-      when(
-        () => serviceConnections.readSecret('connection-1'),
-      ).thenAnswer(
+      when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(apiKey: 'openai-key'),
       );
       final usecase = _usecase(
@@ -310,9 +289,7 @@ void main() {
         workspaceId: 'workspace-1',
         skillSlug: 'openai',
         toolSlug: 'web_search',
-        arguments: {
-          'question': 'latest Flutter news',
-        },
+        arguments: {'question': 'latest Flutter news'},
       );
 
       expect(capturedRequest.method, UrlRequestMethod.post);
@@ -347,9 +324,7 @@ void main() {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
       var capturedRequest = const UrlRequest(url: '');
-      when(
-        () => serviceConnections.getById('codex-connection'),
-      ).thenAnswer(
+      when(() => serviceConnections.getById('codex-connection')).thenAnswer(
         (_) async => _serviceConnection(
           authenticationType: ServiceConnectionAuthenticationType.oauth2,
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -360,9 +335,7 @@ void main() {
           ),
         ),
       );
-      when(
-        () => serviceConnections.readSecret('codex-connection'),
-      ).thenAnswer(
+      when(() => serviceConnections.readSecret('codex-connection')).thenAnswer(
         (_) async => const ServiceConnectionSecretOAuth2(
           accessToken: 'stale-token',
           refreshToken: 'refresh-token',
@@ -375,12 +348,7 @@ void main() {
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
         candidatesBySlug: {
-          'codex': [
-            _candidate(
-              'codex',
-              id: 'model:codex-connection',
-            ),
-          ],
+          'codex': [_candidate('codex', id: 'model:codex-connection')],
         },
         executeUrl: (request) async {
           capturedRequest = request;
@@ -469,10 +437,7 @@ void main() {
         oauthCredentials: oauthCredentials,
         candidatesBySlug: {
           'codex': [
-            _candidate(
-              'codex',
-              id: 'model:codex-annotation-connection',
-            ),
+            _candidate('codex', id: 'model:codex-annotation-connection'),
           ],
         },
         executeUrl: (_) async => _response('''
@@ -503,9 +468,7 @@ data: [DONE]
     test('keeps SSE parsing as Codex fallback', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
-      when(
-        () => serviceConnections.getById('codex-sse-connection'),
-      ).thenAnswer(
+      when(() => serviceConnections.getById('codex-sse-connection')).thenAnswer(
         (_) async => _serviceConnection(
           authenticationType: ServiceConnectionAuthenticationType.oauth2,
           metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
@@ -528,12 +491,7 @@ data: [DONE]
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
         candidatesBySlug: {
-          'codex': [
-            _candidate(
-              'codex',
-              id: 'model:codex-sse-connection',
-            ),
-          ],
+          'codex': [_candidate('codex', id: 'model:codex-sse-connection')],
         },
         executeUrl: (_) async => _response('''
 data: {"type":"response.output_text.delta","delta":"Streamed answer"}
@@ -586,9 +544,7 @@ RunAppSkillToolUsecase _usecase({
 }) {
   final effectiveUrlService = urlService ?? _MockUrlService();
   if (urlService == null) {
-    when(
-      () => effectiveUrlService.execute(any()),
-    ).thenAnswer(
+    when(() => effectiveUrlService.execute(any())).thenAnswer(
       (invocation) => CancelableOperation.fromFuture(
         (executeUrl ?? (_) async => _response(''))(
           invocation.positionalArguments.single as UrlRequest,
@@ -609,10 +565,7 @@ RunAppSkillToolUsecase _usecase({
     _MockSkillCredentialsRepository(),
     _FakeAppSkillCandidates(candidatesBySlug),
     AppSkillExecutor(
-      RunSkillUrlTemplate(
-        const ResolveSkillUrlTemplate(),
-        httpClient.execute,
-      ),
+      RunSkillUrlTemplate(const ResolveSkillUrlTemplate(), httpClient.execute),
       httpClient.execute,
     ),
     oauthCredentials,
@@ -656,10 +609,7 @@ AppSkillCredentialCandidate _candidate(
   String skillSlug, {
   String id = 'service:connection-1',
 }) {
-  return AppSkillCredentialCandidate(
-    id: id,
-    name: '$skillSlug credential',
-  );
+  return AppSkillCredentialCandidate(id: id, name: '$skillSlug credential');
 }
 
 UrlResponse _response(

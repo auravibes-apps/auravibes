@@ -172,12 +172,6 @@ class _AuraInputState extends State<AuraInput> {
     super.dispose();
   }
 
-  void _onFocusChange() {
-    setState(() {
-      _isFocused = _requiredFocusNode.hasFocus;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -255,6 +249,12 @@ class _AuraInputState extends State<AuraInput> {
       isFocused: _isFocused,
       semanticLabel: widget.semanticLabel,
     );
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _requiredFocusNode.hasFocus;
+    });
   }
 
   AuraFieldState _convertToFieldState(AuraInputState state) {

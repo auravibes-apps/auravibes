@@ -47,7 +47,7 @@ class SkillsScreen extends ConsumerWidget {
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError(:final error) => Center(
           child: AuraText(
-            child: TextLocale(cloudErrorLocalizationKey(error)),
+            child: TextLocale(CloudAppErrors.localizationKey(error)),
           ),
         ),
       },
@@ -78,10 +78,7 @@ class SkillsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openSkill(
-    BuildContext context,
-    String skillId,
-  ) async {
+  Future<void> _openSkill(BuildContext context, String skillId) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
       '/workspaces/$workspaceId/more/skills/$skillId',
@@ -227,8 +224,17 @@ class _SkillTile extends StatelessWidget {
   final VoidCallback onDelete;
   final ValueChanged<bool> onChanged;
 
+  IconData get _icon {
+    return switch (skill.source) {
+      SkillSource.user => Icons.psychology_alt_outlined,
+      SkillSource.app => Icons.auto_awesome_outlined,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    const tagSpacing = 8.0;
+
     return AuraCard(
       child: AuraRow(
         children: [
@@ -255,7 +261,7 @@ class _SkillTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 Wrap(
-                  spacing: 8,
+                  spacing: tagSpacing,
                   runSpacing: 4,
                   children: [
                     _SkillChip(label: _sourceLabel(context)),
@@ -310,13 +316,6 @@ class _SkillTile extends StatelessWidget {
     return description;
   }
 
-  IconData get _icon {
-    return switch (skill.source) {
-      SkillSource.user => Icons.psychology_alt_outlined,
-      SkillSource.app => Icons.auto_awesome_outlined,
-    };
-  }
-
   String _sourceLabel(BuildContext context) {
     return switch (skill.source) {
       SkillSource.user => LocaleKeys.skills_screen_source_user.tr(
@@ -348,10 +347,7 @@ class _SkillChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraBadge(
-      child: AuraText(
-        child: Text(label),
-        style: AuraTextStyle.caption,
-      ),
+      child: AuraText(child: Text(label), style: AuraTextStyle.caption),
       variant: AuraBadgeVariant.outlined,
       size: AuraBadgeSize.small,
     );

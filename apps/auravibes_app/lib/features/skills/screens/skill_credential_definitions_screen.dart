@@ -40,9 +40,7 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                         child: AuraColumn(
                           children: [
                             AuraText(child: Text(definition.title)),
-                            AuraText(
-                              child: Text(definition.slug),
-                            ),
+                            AuraText(child: Text(definition.slug)),
                           ],
                           spacing: AuraSpacing.xs,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,9 +66,7 @@ class SkillCredentialDefinitionsScreen extends ConsumerWidget {
                 child: AuraColumn(
                   children: [
                     AuraText(child: Text(definition.title)),
-                    AuraText(
-                      child: Text(definition.slug),
-                    ),
+                    AuraText(child: Text(definition.slug)),
                   ],
                   spacing: AuraSpacing.xs,
                   crossAxisAlignment: CrossAxisAlignment.start,

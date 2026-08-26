@@ -2,7 +2,7 @@ import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/widgets.dart';
 
 /// A [SizedBox] whose dimensions are selected by [AuraSpacing] and resolved
-/// from the ambient theme. This keeps sizing rethemeable: a subtree Theme
+/// from the ambient theme. This keeps sizing rethemeable. A subtree Theme
 /// override that rescales spacing resizes every [AuraSizedBox].
 ///
 /// [AuraSpacing.none] resolves to `null` (no constraint), so the default

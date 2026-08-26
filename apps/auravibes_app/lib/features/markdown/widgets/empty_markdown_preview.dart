@@ -20,10 +20,7 @@ class EmptyMarkdownPreview extends StatelessWidget {
         ),
         borderRadius: const BorderRadius.all(Radius.circular(8)),
       ),
-      child: AuraText(
-        child: TextLocale(label),
-        style: AuraTextStyle.caption,
-      ),
+      child: AuraText(child: TextLocale(label), style: AuraTextStyle.caption),
     );
   }
 }

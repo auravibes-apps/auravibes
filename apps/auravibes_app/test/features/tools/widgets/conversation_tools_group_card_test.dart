@@ -105,19 +105,13 @@ class _Subject extends StatelessWidget {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
-          mcpConnectionProvider.overrideWith(
-            _MockMcpConnectionNotifier.new,
-          ),
+          mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
           conversationToolsProvider(
             workspaceId: _workspaceId,
-          ).overrideWith(
-            () => _MockConversationToolsNotifier([]),
-          ),
+          ).overrideWith(() => _MockConversationToolsNotifier([])),
           groupedConversationToolsProvider(
             workspaceId: _workspaceId,
-          ).overrideWith(
-            () => _MockGroupedConversationToolsNotifier([]),
-          ),
+          ).overrideWith(() => _MockGroupedConversationToolsNotifier([])),
         ],
         child: MaterialApp(
           home: Theme(
@@ -403,11 +397,7 @@ void main() {
   });
 
   testWidgets('MCP connected group renders without reconnect', (tester) async {
-    final mcpGroup = _group(
-      id: 'mcp-g3',
-      name: 'MCP OK',
-      mcpServerId: 'mcp-3',
-    );
+    final mcpGroup = _group(id: 'mcp-g3', name: 'MCP OK', mcpServerId: 'mcp-3');
     final groupWithTools = ConversationToolsGroupWithTools(
       group: mcpGroup,
       tools: [_toolState()],
@@ -595,9 +585,7 @@ void main() {
     expect(find.byType(AuraCard), findsOneWidget);
   });
 
-  testWidgets('MCP error group reconnect button can be tapped', (
-    tester,
-  ) async {
+  testWidgets('MCP error group reconnect button can be tapped', (tester) async {
     final mcpGroup = _group(
       id: 'mcp-recon',
       name: 'MCP Recon',
@@ -641,9 +629,7 @@ void main() {
     expect(find.byType(ConversationGroupHeader), findsOneWidget);
   });
 
-  testWidgets('MCP disconnected group reconnect can be tapped', (
-    tester,
-  ) async {
+  testWidgets('MCP disconnected group reconnect can be tapped', (tester) async {
     final mcpGroup = _group(
       id: 'mcp-discon2',
       name: 'MCP Discon',

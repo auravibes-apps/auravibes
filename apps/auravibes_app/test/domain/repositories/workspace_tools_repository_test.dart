@@ -106,10 +106,7 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<bool> removeWorkspaceTool(
-    String workspaceId,
-    String toolType,
-  ) async {
+  Future<bool> removeWorkspaceTool(String workspaceId, String toolType) async {
     return removeResult;
   }
 
@@ -120,9 +117,7 @@ class _StubWorkspaceToolsRepository implements WorkspaceToolsRepository {
   Future<int> getWorkspaceToolsCount(String workspaceId) async => toolsCount;
 
   @override
-  Future<int> getEnabledWorkspaceToolsCount(
-    String workspaceId,
-  ) async {
+  Future<int> getEnabledWorkspaceToolsCount(String workspaceId) async {
     return enabledCount;
   }
 
@@ -205,10 +200,7 @@ void main() {
     test('setToolEnabledById returns entity', () async {
       final repo = _StubWorkspaceToolsRepository();
 
-      final result = await repo.setToolEnabledById(
-        'wt-1',
-        isEnabled: false,
-      );
+      final result = await repo.setToolEnabledById('wt-1', isEnabled: false);
 
       expect(result.id, 'wt-1');
       expect(result.isEnabled, false);
@@ -273,13 +265,7 @@ void main() {
     test('validateWorkspaceToolSetting returns bool', () async {
       final repo = _StubWorkspaceToolsRepository();
 
-      expect(
-        await repo.validateWorkspaceToolSetting(
-          'ws-1',
-          'search',
-        ),
-        true,
-      );
+      expect(await repo.validateWorkspaceToolSetting('ws-1', 'search'), true);
     });
 
     test('setToolPermissionMode returns entity', () async {

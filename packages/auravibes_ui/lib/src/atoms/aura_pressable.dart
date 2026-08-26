@@ -48,6 +48,7 @@ class AuraPressable extends StatefulWidget {
 
 /// AuraPressableState.
 class AuraPressableState extends State<AuraPressable> {
+  static const _pressedAlphaDivisor = 2.0;
   // Our state.
   bool _hovering = false;
   bool _focused = false;
@@ -58,18 +59,6 @@ class AuraPressableState extends State<AuraPressable> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
-  }
-
-  void _onPressed() {
-    setState(() => _pressDown = true);
-  }
-
-  void _onExitPressed() {
-    setState(() => _pressDown = false);
-  }
-
-  void _onFocusChange(bool value) {
-    widget.onFocusChange?.call(value);
   }
 
   @override
@@ -85,7 +74,7 @@ class AuraPressableState extends State<AuraPressable> {
     if (pressed) {
       alpha = selectedColor.a;
     } else if (highlighted) {
-      alpha = selectedColor.a / 2;
+      alpha = selectedColor.a / _pressedAlphaDivisor;
     }
     if (widget.onPressed == null) {
       return Container(
@@ -146,6 +135,18 @@ class AuraPressableState extends State<AuraPressable> {
       ),
     );
   }
+
+  void _onPressed() {
+    setState(() => _pressDown = true);
+  }
+
+  void _onExitPressed() {
+    setState(() => _pressDown = false);
+  }
+
+  void _onFocusChange(bool value) {
+    widget.onFocusChange?.call(value);
+  }
 }
 
 class _AuraPressableFocusRingPainter extends CustomPainter {
@@ -156,6 +157,16 @@ class _AuraPressableFocusRingPainter extends CustomPainter {
 
   final Color color;
   final Decoration? decoration;
+
+  double get _borderRadius {
+    final decoration = this.decoration;
+    if (decoration is! BoxDecoration) return 0;
+
+    final borderRadius = decoration.borderRadius;
+    if (borderRadius is! BorderRadius) return 0;
+
+    return borderRadius.topLeft.x;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -171,16 +182,6 @@ class _AuraPressableFocusRingPainter extends CustomPainter {
       RRect.fromRectAndRadius(ringRect, Radius.circular(radius)),
       paint,
     );
-  }
-
-  double get _borderRadius {
-    final decoration = this.decoration;
-    if (decoration is! BoxDecoration) return 0;
-
-    final borderRadius = decoration.borderRadius;
-    if (borderRadius is! BorderRadius) return 0;
-
-    return borderRadius.topLeft.x;
   }
 
   @override

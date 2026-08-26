@@ -80,9 +80,8 @@ class _Subject extends StatelessWidget {
                   data: ThemeData(extensions: [AuraTheme.light]),
                   child: const Scaffold(body: SizedBox.shrink()),
                 ),
-                builder: (context, child) => AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
+                builder: (context, child) =>
+                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -112,10 +111,7 @@ Future<void> _pumpAndInit(WidgetTester tester, Widget widget) async {
 
 Future<void> _showDialog(WidgetTester tester) async {
   await tester.runAsync(() {
-    AddMcpModal.show(
-      tester.element(find.byType(Scaffold)),
-      workspaceId: _wsId,
-    );
+    AddMcpModal.show(tester.element(find.byType(Scaffold)), workspaceId: _wsId);
 
     return Future<void>.value();
   });

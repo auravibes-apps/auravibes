@@ -209,7 +209,7 @@ class AgentToolExecutionService<TTool extends Object> {
       return AgentIterationDecision.done;
     }
 
-    return provider.getAgentIterationDecision(
+    return await provider.getAgentIterationDecision(
       messageId: latestToolCalls.messageId,
     );
   }

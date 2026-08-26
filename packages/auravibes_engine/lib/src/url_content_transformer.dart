@@ -57,9 +57,7 @@ class UrlContentTransformer {
     'area',
   };
 
-  static const Set<String> _skipContentTags = {
-    'nav',
-  };
+  static const Set<String> _skipContentTags = {'nav'};
 
   TransformedUrlContent transform(
     UrlResponse response, {
@@ -399,10 +397,7 @@ class UrlContentTransformer {
     _ensureNewline(buffer);
   }
 
-  void _processBlockquote(
-    dom.Element element,
-    StringBuffer buffer,
-  ) {
+  void _processBlockquote(dom.Element element, StringBuffer buffer) {
     _ensureNewline(buffer);
 
     final inlineBuffer = StringBuffer();
@@ -572,11 +567,7 @@ class UrlContentTransformer {
     }
   }
 
-  void _processHeading(
-    dom.Element element,
-    StringBuffer buffer,
-    String tag,
-  ) {
+  void _processHeading(dom.Element element, StringBuffer buffer, String tag) {
     final level = int.parse(tag.replaceFirst('h', ''));
     final inlineBuffer = StringBuffer();
     _processInlineChildren(element, inlineBuffer);
@@ -598,11 +589,7 @@ class UrlContentTransformer {
     buffer.writeln(text);
   }
 
-  void _processListItem(
-    dom.Element element,
-    StringBuffer buffer,
-    int depth,
-  ) {
+  void _processListItem(dom.Element element, StringBuffer buffer, int depth) {
     _ensureNewline(buffer);
     final indent = '  ' * (depth > 0 ? depth - 1 : 0);
     buffer.write('$indent${_listMarker(element)}');

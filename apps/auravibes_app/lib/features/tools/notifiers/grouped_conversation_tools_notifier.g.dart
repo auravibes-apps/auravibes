@@ -10,14 +10,10 @@ part of 'grouped_conversation_tools_notifier.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all conversation tool states for the workspace/conversation
-/// - Fetches all tools groups for the workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Filters out empty groups
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches conversation tool states and tool groups for the
+/// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+/// group for ungrouped tools, enriches MCP groups with connection state,
+/// filters empty groups, and sorts default, error, and newest groups first.
 
 @ProviderFor(GroupedConversationToolsNotifier)
 final groupedConversationToolsProvider =
@@ -25,14 +21,10 @@ final groupedConversationToolsProvider =
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all conversation tool states for the workspace/conversation
-/// - Fetches all tools groups for the workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Filters out empty groups
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches conversation tool states and tool groups for the
+/// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+/// group for ungrouped tools, enriches MCP groups with connection state,
+/// filters empty groups, and sorts default, error, and newest groups first.
 final class GroupedConversationToolsNotifierProvider
     extends
         $AsyncNotifierProvider<
@@ -41,14 +33,10 @@ final class GroupedConversationToolsNotifierProvider
         > {
   /// Provider that groups conversation tools by their workspaceToolsGroupId.
   ///
-  /// This provider:
-  /// - Fetches all conversation tool states for the workspace/conversation
-  /// - Fetches all tools groups for the workspace
-  /// - Groups tools by their workspaceToolsGroupId
-  /// - Creates a "Built-in Tools" virtual group for tools without a group
-  /// - Enriches MCP groups with their connection state
-  /// - Filters out empty groups
-  /// - Sorts groups: Default first, then MCP errors, then by creation date
+  /// This provider fetches conversation tool states and tool groups for the
+  /// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+  /// group for ungrouped tools, enriches MCP groups with connection state,
+  /// filters empty groups, and sorts default, error, and newest groups first.
   GroupedConversationToolsNotifierProvider._({
     required GroupedConversationToolsNotifierFamily super.from,
     required ({String workspaceId, String? conversationId}) super.argument,
@@ -92,14 +80,10 @@ String _$groupedConversationToolsNotifierHash() =>
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all conversation tool states for the workspace/conversation
-/// - Fetches all tools groups for the workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Filters out empty groups
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches conversation tool states and tool groups for the
+/// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+/// group for ungrouped tools, enriches MCP groups with connection state,
+/// filters empty groups, and sorts default, error, and newest groups first.
 
 final class GroupedConversationToolsNotifierFamily extends $Family
     with
@@ -121,14 +105,10 @@ final class GroupedConversationToolsNotifierFamily extends $Family
 
   /// Provider that groups conversation tools by their workspaceToolsGroupId.
   ///
-  /// This provider:
-  /// - Fetches all conversation tool states for the workspace/conversation
-  /// - Fetches all tools groups for the workspace
-  /// - Groups tools by their workspaceToolsGroupId
-  /// - Creates a "Built-in Tools" virtual group for tools without a group
-  /// - Enriches MCP groups with their connection state
-  /// - Filters out empty groups
-  /// - Sorts groups: Default first, then MCP errors, then by creation date
+  /// This provider fetches conversation tool states and tool groups for the
+  /// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+  /// group for ungrouped tools, enriches MCP groups with connection state,
+  /// filters empty groups, and sorts default, error, and newest groups first.
 
   GroupedConversationToolsNotifierProvider call({
     required String workspaceId,
@@ -144,14 +124,10 @@ final class GroupedConversationToolsNotifierFamily extends $Family
 
 /// Provider that groups conversation tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all conversation tool states for the workspace/conversation
-/// - Fetches all tools groups for the workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Filters out empty groups
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches conversation tool states and tool groups for the
+/// workspace, groups them by workspaceToolsGroupId, creates a Built-in Tools
+/// group for ungrouped tools, enriches MCP groups with connection state,
+/// filters empty groups, and sorts default, error, and newest groups first.
 
 abstract class _$GroupedConversationToolsNotifier
     extends $AsyncNotifier<List<ConversationToolsGroupWithTools>> {

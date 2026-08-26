@@ -48,7 +48,7 @@ class CloudConversationUsecase {
       if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
       final latest = await _gateway.getConversation(conversation.id);
 
-      return _gateway.updateConversation(
+      return await _gateway.updateConversation(
         _updateRequest(
           conversationId: conversation.id,
           revision: latest.revision,
@@ -57,6 +57,23 @@ class CloudConversationUsecase {
       );
     }
   }
+
+  Future<void> delete(ConversationEntity conversation) =>
+      _gateway.deleteConversation(
+        DeleteConversationRequest(
+          workspaceId: 0,
+          requestId: const UuidV7().generate(),
+          conversationId: conversation.id,
+          expectedRevision: conversation.revision,
+        ),
+      );
+
+  Future<ConversationMutationResult> compact(ConversationEntity conversation) =>
+      _gateway.compactConversation(
+        requestId: const UuidV7().generate(),
+        conversationId: conversation.id,
+        expectedConversationRevision: conversation.revision,
+      );
 
   UpdateConversationRequest _updateRequest({
     required String conversationId,
@@ -75,21 +92,4 @@ class CloudConversationUsecase {
     clearAgent: patch.clearAgent,
     clearParent: false,
   );
-
-  Future<void> delete(ConversationEntity conversation) =>
-      _gateway.deleteConversation(
-        DeleteConversationRequest(
-          workspaceId: 0,
-          requestId: const UuidV7().generate(),
-          conversationId: conversation.id,
-          expectedRevision: conversation.revision,
-        ),
-      );
-
-  Future<ConversationMutationResult> compact(ConversationEntity conversation) =>
-      _gateway.compactConversation(
-        requestId: const UuidV7().generate(),
-        conversationId: conversation.id,
-        expectedConversationRevision: conversation.revision,
-      );
 }

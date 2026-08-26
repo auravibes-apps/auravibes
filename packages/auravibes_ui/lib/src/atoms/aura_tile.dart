@@ -63,6 +63,13 @@ class _AuraTileState extends State<AuraTile> {
 
   bool get _canInteract => widget.enabled && !widget.isLoading;
 
+  double get _overlayAlpha {
+    if (_pressed) return 0.16;
+    if (_hovered || _focused) return 0.08;
+
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -91,10 +98,7 @@ class _AuraTileState extends State<AuraTile> {
     } else {
       content = Row(
         children: [
-          if (leading != null) ...[
-            leading,
-            const AuraSizedBox(width: .sm),
-          ],
+          if (leading != null) ...[leading, const AuraSizedBox(width: .sm)],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
@@ -105,10 +109,7 @@ class _AuraTileState extends State<AuraTile> {
               child: widget.child,
             ),
           ),
-          if (trailing != null) ...[
-            const AuraSizedBox(width: .sm),
-            trailing,
-          ],
+          if (trailing != null) ...[const AuraSizedBox(width: .sm), trailing],
         ],
       );
     }
@@ -121,9 +122,7 @@ class _AuraTileState extends State<AuraTile> {
           BorderSide(color: _getBorderColor(auraColors)),
         ),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.lg),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
         ),
         boxShadow: _getBoxShadow(),
       ),
@@ -195,13 +194,6 @@ class _AuraTileState extends State<AuraTile> {
     if (_focused && _canInteract) return colors.primary;
 
     return Colors.transparent;
-  }
-
-  double get _overlayAlpha {
-    if (_pressed) return 0.16;
-    if (_hovered || _focused) return 0.08;
-
-    return 0;
   }
 
   List<BoxShadow> _getBoxShadow() {

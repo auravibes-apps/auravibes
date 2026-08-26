@@ -67,15 +67,12 @@ abstract interface class SkipToolCallProvider {
   Future<void> resumeConversationIfReady({required String messageId});
 }
 
-// ignore: one_member_abstracts, provider interface keeps DB writes injectable.
 abstract interface class StopPendingToolCallsProvider {
   Future<void> stopPendingToolCalls({required String messageId});
 }
 
 class ApproveToolCallService<TTool extends Object> {
-  const ApproveToolCallService({
-    required this.provider,
-  });
+  const ApproveToolCallService({required this.provider});
 
   final ApproveToolCallProvider<TTool> provider;
 
@@ -153,9 +150,7 @@ class ApproveToolCallService<TTool extends Object> {
 }
 
 class SkipToolCallService {
-  const SkipToolCallService({
-    required this.provider,
-  });
+  const SkipToolCallService({required this.provider});
 
   final SkipToolCallProvider provider;
 

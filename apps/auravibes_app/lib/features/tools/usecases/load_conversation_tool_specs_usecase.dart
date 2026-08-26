@@ -45,10 +45,7 @@ class LoadConversationToolSpecsUsecase {
       workspaceId: workspaceId,
     );
     final enabledTools = await _conversationToolsRepository
-        .getAvailableToolEntitiesForConversation(
-          conversationId,
-          workspaceId,
-        );
+        .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
     final agentSkills =
         await _listConversationAgentSkillsUsecase?.call(
           conversationId: conversationId,
@@ -76,7 +73,9 @@ class LoadConversationToolSpecsUsecase {
         ) ??
         const <ToolSpec>[];
     final enabledSkillToolNames = enabledTools
-        .where((tool) => isSkillPermissionToolName(tool.toolId))
+        .where(
+          (tool) => SkillPermissionTools.isSkillPermissionToolName(tool.toolId),
+        )
         .map((tool) => tool.toolId)
         .toSet();
 
@@ -96,7 +95,7 @@ class LoadConversationToolSpecsUsecase {
   bool _isAvailableSkillControlTool(ToolSpec spec) {
     return spec.name == loadSkillToolName ||
         spec.name == unloadSkillToolName ||
-        spec.name == listSkillCredentialsToolName;
+        spec.name == SkillToolNames.listCredentials;
   }
 }
 
@@ -107,9 +106,7 @@ loadConversationToolSpecsUsecaseProvider =
       workspaceId,
     ) {
       final session = ref
-          .watch(
-            workspaceSessionForRouteProvider(workspaceId),
-          )
+          .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
       return LoadConversationToolSpecsUsecase(

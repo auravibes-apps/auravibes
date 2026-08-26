@@ -84,10 +84,7 @@ class _CloudAccountForgotPasswordFormState
           ),
         ],
         if (_errorKey case final errorKey?)
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            child: TextLocale(errorKey),
-          ),
+          AuraText(style: AuraTextStyle.bodySmall, child: TextLocale(errorKey)),
         AuraButton(
           onPressed: _submit,
           child: TextLocale(

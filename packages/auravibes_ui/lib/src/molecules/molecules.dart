@@ -27,6 +27,6 @@ export 'aura_message_bubble.dart';
 export 'aura_radio_option.dart' show AuraRadio, AuraRadioOption;
 export 'aura_screen.dart';
 export 'aura_snack_bar_variant.dart'
-    show AuraSnackBarHost, AuraSnackBarVariant, showAuraSnackBar;
+    show AuraSnackBarHost, AuraSnackBarVariant, AuraSnackBars;
 
 // WorkspaceDropdown moved to app layer per UI Package Purity Contract.

@@ -63,14 +63,12 @@ class _SendNewMessageUsecaseFixture {
     );
 
     when(
-      () => workspaceModelSelectionRepo.getWorkspaceModelSelectionById(
-        any(),
-      ),
+      () => workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any()),
     ).thenAnswer((_) async => modelSelection);
 
-    when(() => conversationRepo.createConversation(any())).thenAnswer(
-      (_) async => newConversation,
-    );
+    when(
+      () => conversationRepo.createConversation(any()),
+    ).thenAnswer((_) async => newConversation);
     when(
       () => sendMessageUsecase.call(
         conversationId: any(named: 'conversationId'),
@@ -312,9 +310,7 @@ void main() {
       expect(
         () => verify(
           () => fixture.workspaceModelSelectionRepo
-              .getWorkspaceModelSelectionById(
-                'model-sel-1',
-              ),
+              .getWorkspaceModelSelectionById('model-sel-1'),
         ).called(1),
         returnsNormally,
       );

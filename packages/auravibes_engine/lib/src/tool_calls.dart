@@ -89,9 +89,7 @@ abstract interface class AgentToolCallProvider<TTool extends Object> {
 }
 
 class AgentToolCallLoader<TTool extends Object> {
-  const AgentToolCallLoader({
-    required this.provider,
-  });
+  const AgentToolCallLoader({required this.provider});
 
   final AgentToolCallProvider<TTool> provider;
 

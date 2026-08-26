@@ -175,9 +175,7 @@ void main() {
       });
 
       test('handles horizontal rules', () {
-        final response = _htmlResponse(
-          '<p>Above</p><hr><p>Below</p>',
-        );
+        final response = _htmlResponse('<p>Above</p><hr><p>Below</p>');
         final result = transformer.transform(response);
 
         expect(result.format, UrlContentFormat.markdown);
@@ -281,164 +279,140 @@ void main() {
     });
 
     group('Requested format', () {
-      test(
-        'default format maps HTML to markdown',
-        () {
-          final response = _htmlResponse('<h1>Hello</h1>');
-          final result = transformer.transform(response);
+      test('default format maps HTML to markdown', () {
+        final response = _htmlResponse('<h1>Hello</h1>');
+        final result = transformer.transform(response);
 
-          expect(result.format, UrlContentFormat.markdown);
-          expect(result.body, contains('# Hello'));
-        },
-      );
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.body, contains('# Hello'));
+      });
 
-      test(
-        'markdown format maps HTML to markdown',
-        () {
-          final response = _htmlResponse('<h1>Hello</h1>');
-          final result = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.markdown,
-          );
+      test('markdown format maps HTML to markdown', () {
+        final response = _htmlResponse('<h1>Hello</h1>');
+        final result = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.markdown,
+        );
 
-          expect(result.format, UrlContentFormat.markdown);
-          expect(result.body, contains('# Hello'));
-        },
-      );
+        expect(result.format, UrlContentFormat.markdown);
+        expect(result.body, contains('# Hello'));
+      });
 
-      test(
-        'text format maps HTML to plain text',
-        () {
-          final response = _htmlResponse(
-            '<h1>Title</h1><p>Paragraph with '
-            '<a href="https://example.com">link</a> and '
-            '<strong>bold</strong> text.</p>',
-          );
-          final result = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.text,
-          );
+      test('text format maps HTML to plain text', () {
+        final response = _htmlResponse(
+          '<h1>Title</h1><p>Paragraph with '
+          '<a href="https://example.com">link</a> and '
+          '<strong>bold</strong> text.</p>',
+        );
+        final result = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.text,
+        );
 
-          expect(result.format, UrlContentFormat.text);
-          expect(result.body, contains('Title'));
-          expect(result.body, contains('Paragraph'));
-          expect(result.body, contains('link'));
-          expect(result.body, contains('bold'));
-          expect(result.body, isNot(contains('#')));
-          expect(result.body, isNot(contains('**')));
-          expect(result.body, isNot(contains('[')));
-        },
-      );
+        expect(result.format, UrlContentFormat.text);
+        expect(result.body, contains('Title'));
+        expect(result.body, contains('Paragraph'));
+        expect(result.body, contains('link'));
+        expect(result.body, contains('bold'));
+        expect(result.body, isNot(contains('#')));
+        expect(result.body, isNot(contains('**')));
+        expect(result.body, isNot(contains('[')));
+      });
 
-      test(
-        'html format returns raw HTML body',
-        () {
-          const html = '<h1>Raw</h1><p>Content</p>';
-          final response = _htmlResponse(html);
-          final result = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.html,
-          );
+      test('html format returns raw HTML body', () {
+        const html = '<h1>Raw</h1><p>Content</p>';
+        final response = _htmlResponse(html);
+        final result = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.html,
+        );
 
-          expect(result.format, UrlContentFormat.html);
-          expect(result.body, contains('<h1>Raw</h1>'));
-          expect(result.body, contains('<p>Content</p>'));
-        },
-      );
+        expect(result.format, UrlContentFormat.html);
+        expect(result.body, contains('<h1>Raw</h1>'));
+        expect(result.body, contains('<p>Content</p>'));
+      });
 
-      test(
-        'html format returns raw HTML body (no stripping)',
-        () {
-          const html =
-              '<html><script>alert(1)</script><body><p>Safe</p></body></html>';
-          final response = _htmlResponse(html);
-          final result = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.html,
-          );
+      test('html format returns raw HTML body (no stripping)', () {
+        const html =
+            '<html><script>alert(1)</script><body><p>Safe</p></body></html>';
+        final response = _htmlResponse(html);
+        final result = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.html,
+        );
 
-          expect(result.format, UrlContentFormat.html);
-          expect(result.body, contains('<p>Safe</p>'));
-          expect(result.body, contains('<script'));
-        },
-      );
+        expect(result.format, UrlContentFormat.html);
+        expect(result.body, contains('<p>Safe</p>'));
+        expect(result.body, contains('<script'));
+      });
 
-      test(
-        'text format strips script tags',
-        () {
-          final response = _htmlResponse(
-            '<html><script>alert(1)</script><body><p>Safe</p></body></html>',
-          );
-          final result = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.text,
-          );
+      test('text format strips script tags', () {
+        final response = _htmlResponse(
+          '<html><script>alert(1)</script><body><p>Safe</p></body></html>',
+        );
+        final result = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.text,
+        );
 
-          expect(result.format, UrlContentFormat.text);
-          expect(result.body, contains('Safe'));
-          expect(result.body, isNot(contains('alert')));
-        },
-      );
+        expect(result.format, UrlContentFormat.text);
+        expect(result.body, contains('Safe'));
+        expect(result.body, isNot(contains('alert')));
+      });
 
-      test(
-        'json content stays json regardless of requested format',
-        () {
-          final response = _jsonResponse('{"key": "value"}');
+      test('json content stays json regardless of requested format', () {
+        final response = _jsonResponse('{"key": "value"}');
 
-          final md = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.markdown,
-          );
-          expect(md.format, UrlContentFormat.json);
-          expect(md.body, '{"key": "value"}');
+        final md = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.markdown,
+        );
+        expect(md.format, UrlContentFormat.json);
+        expect(md.body, '{"key": "value"}');
 
-          final txt = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.text,
-          );
-          expect(txt.format, UrlContentFormat.json);
-          expect(txt.body, '{"key": "value"}');
+        final txt = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.text,
+        );
+        expect(txt.format, UrlContentFormat.json);
+        expect(txt.body, '{"key": "value"}');
 
-          final html = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.html,
-          );
-          expect(html.format, UrlContentFormat.json);
-          expect(html.body, '{"key": "value"}');
+        final html = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.html,
+        );
+        expect(html.format, UrlContentFormat.json);
+        expect(html.body, '{"key": "value"}');
 
-          final defaultFmt = transformer.transform(response);
-          expect(defaultFmt.format, UrlContentFormat.json);
-          expect(defaultFmt.body, '{"key": "value"}');
-        },
-      );
+        final defaultFmt = transformer.transform(response);
+        expect(defaultFmt.format, UrlContentFormat.json);
+        expect(defaultFmt.body, '{"key": "value"}');
+      });
 
-      test(
-        'plain text stays text regardless of requested format',
-        () {
-          final response = _plainTextResponse('Hello world');
+      test('plain text stays text regardless of requested format', () {
+        final response = _plainTextResponse('Hello world');
 
-          final md = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.markdown,
-          );
-          expect(md.format, UrlContentFormat.text);
-          expect(md.body, 'Hello world');
+        final md = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.markdown,
+        );
+        expect(md.format, UrlContentFormat.text);
+        expect(md.body, 'Hello world');
 
-          final txt = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.text,
-          );
-          expect(txt.format, UrlContentFormat.text);
-          expect(txt.body, 'Hello world');
+        final txt = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.text,
+        );
+        expect(txt.format, UrlContentFormat.text);
+        expect(txt.body, 'Hello world');
 
-          final html = transformer.transform(
-            response,
-            requestedFormat: UrlResponseFormat.html,
-          );
-          expect(html.format, UrlContentFormat.text);
-          expect(html.body, 'Hello world');
-        },
-      );
+        final html = transformer.transform(
+          response,
+          requestedFormat: UrlResponseFormat.html,
+        );
+        expect(html.format, UrlContentFormat.text);
+        expect(html.body, 'Hello world');
+      });
     });
 
     group('Markdown escaping', () {
@@ -516,9 +490,7 @@ void main() {
       });
 
       test('backslash itself is escaped', () {
-        final response = _htmlResponse(
-          r'<p>Path is C:\Users\name</p>',
-        );
+        final response = _htmlResponse(r'<p>Path is C:\Users\name</p>');
         final result = transformer.transform(response);
 
         expect(result.body, contains(r'C:\\Users\\name'));
@@ -554,9 +526,7 @@ void main() {
       });
 
       test('preserves nested formatting inside heading', () {
-        final response = _htmlResponse(
-          '<h1>Welcome to <em>My</em> Site</h1>',
-        );
+        final response = _htmlResponse('<h1>Welcome to <em>My</em> Site</h1>');
         final result = transformer.transform(response);
 
         expect(result.body, contains('# Welcome to *My* Site'));
@@ -699,30 +669,18 @@ void main() {
 }
 
 UrlResponse _htmlResponse(String html, {Duration elapsed = Duration.zero}) {
-  return _responseWithContentType(
-    html,
-    'text/html',
-    elapsed: elapsed,
-  );
+  return _responseWithContentType(html, 'text/html', elapsed: elapsed);
 }
 
 UrlResponse _jsonResponse(String json, {Duration elapsed = Duration.zero}) {
-  return _responseWithContentType(
-    json,
-    'application/json',
-    elapsed: elapsed,
-  );
+  return _responseWithContentType(json, 'application/json', elapsed: elapsed);
 }
 
 UrlResponse _plainTextResponse(
   String text, {
   Duration elapsed = Duration.zero,
 }) {
-  return _responseWithContentType(
-    text,
-    'text/plain',
-    elapsed: elapsed,
-  );
+  return _responseWithContentType(text, 'text/plain', elapsed: elapsed);
 }
 
 UrlResponse _responseWithContentType(

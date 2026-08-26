@@ -97,7 +97,7 @@ void main() {
 
       final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
         workspaceId: fixture.workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
       );
       expect(group?.permissions, PermissionAccess.ask);
 
@@ -125,7 +125,7 @@ void main() {
       );
       final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
         workspaceId: fixture.workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
       );
       final groupId = group?.id ?? fail('Expected skills group');
       final created =
@@ -133,10 +133,7 @@ void main() {
             groupId,
           )).single;
       final _ = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolEnabledById(
-            created.id,
-            isEnabled: false,
-          );
+          .setWorkspaceToolEnabledById(created.id, isEnabled: false);
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolPermission(
             created.id,
@@ -183,7 +180,7 @@ void main() {
       );
       final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
         workspaceId: fixture.workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
       );
       final groupId = group?.id ?? fail('Expected skills group');
       final created =
@@ -223,7 +220,7 @@ void main() {
 
       final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
         workspaceId: fixture.workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
       );
       final tools = await fixture.database.workspaceToolsDao.getToolsByGroupId(
         group?.id ?? fail('Expected skills group'),
@@ -248,7 +245,7 @@ void main() {
 
       final group = await fixture.database.toolsGroupsDao.getToolsGroupByName(
         workspaceId: fixture.workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
       );
       final tool = (await fixture.database.workspaceToolsDao.getToolsByGroupId(
         group?.id ?? fail('Expected skills group'),
@@ -269,17 +266,36 @@ void main() {
     });
 
     test('isSkillPermissionToolName identifies skill permission subjects', () {
-      expect(isSkillPermissionToolName('load_skill'), isTrue);
-      expect(isSkillPermissionToolName('unload_skill'), isTrue);
-      expect(isSkillPermissionToolName('list_skill_credentials'), isTrue);
-      expect(isSkillPermissionToolName('skill__user__example__search'), isTrue);
       expect(
-        isSkillPermissionToolName(
+        SkillPermissionTools.isSkillPermissionToolName('load_skill'),
+        isTrue,
+      );
+      expect(
+        SkillPermissionTools.isSkillPermissionToolName('unload_skill'),
+        isTrue,
+      );
+      expect(
+        SkillPermissionTools.isSkillPermissionToolName(
+          'list_skill_credentials',
+        ),
+        isTrue,
+      );
+      expect(
+        SkillPermissionTools.isSkillPermissionToolName(
+          'skill__user__example__search',
+        ),
+        isTrue,
+      );
+      expect(
+        SkillPermissionTools.isSkillPermissionToolName(
           'skill__app__skills_manager__list_user_skills',
         ),
         isTrue,
       );
-      expect(isSkillPermissionToolName('web_search'), isFalse);
+      expect(
+        SkillPermissionTools.isSkillPermissionToolName('web_search'),
+        isFalse,
+      );
     });
   });
 }

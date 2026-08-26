@@ -48,6 +48,12 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
       );
   const ApiModelProviderEntity._();
 
+  /// Returns true if the provider has a URL.
+  bool get hasUrl => url?.isNotEmpty ?? false;
+
+  /// Returns true if the provider has documentation.
+  bool get hasDocumentation => doc?.isNotEmpty ?? false;
+
   static ModelProvidersType? _getType(Map<String, dynamic> json) {
     final npm = json.get<String?>('npm');
 
@@ -63,10 +69,4 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
 
     return null;
   }
-
-  /// Returns true if the provider has a URL.
-  bool get hasUrl => url?.isNotEmpty ?? false;
-
-  /// Returns true if the provider has documentation.
-  bool get hasDocumentation => doc?.isNotEmpty ?? false;
 }

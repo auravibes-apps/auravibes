@@ -9,6 +9,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class CompactWorkspaceModelSelector extends HookConsumerWidget {
+  static const _selectorWidth = 220.0;
   const CompactWorkspaceModelSelector({
     required this.workspaceId,
     required this.workspaceModelSelectionId,
@@ -46,7 +47,7 @@ class CompactWorkspaceModelSelector extends HookConsumerWidget {
         sheetMode
             ? AppErrorWidget(error: error, stackTrace: stackTrace)
             : SizedBox(
-                width: 220,
+                width: _selectorWidth,
                 child: AppErrorWidget(error: error, stackTrace: stackTrace),
               ),
       AsyncData(:final value) => _CompactModelSelectorBody(
@@ -245,7 +246,7 @@ class _CompactModelDropdown extends StatelessWidget {
 
     if (groupedModels.isEmpty) {
       return const SizedBox(
-        width: 220,
+        width: CompactWorkspaceModelSelector._selectorWidth,
         child: AuraDropdownSelector<String>(
           options: [],
           placeholder: TextLocale(
@@ -260,7 +261,7 @@ class _CompactModelDropdown extends StatelessWidget {
     }
 
     return SizedBox(
-      width: 220,
+      width: CompactWorkspaceModelSelector._selectorWidth,
       child: AuraDropdownSelector<String>(
         options: filteredModels
             .map(
@@ -346,11 +347,7 @@ class _ModelCompactChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             )
-          : Text(
-              selectedName,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+          : Text(selectedName, overflow: TextOverflow.ellipsis, maxLines: 1),
     );
   }
 }
@@ -422,10 +419,7 @@ class _ModelSheetOptionContent extends StatelessWidget {
           runSpacing: context.auraTheme.fromSpacing(.xs),
           children: [
             AuraBadge.text(
-              child: Text(
-                selection.modelId,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
               variant: AuraBadgeVariant.soft,
               size: AuraBadgeSize.small,
             ),
@@ -476,10 +470,7 @@ class _ModelOptionSubtitle extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           AuraText(
-            child: Text(
-              selection.modelId,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
             style: AuraTextStyle.bodySmall,
           ),
           AuraText(

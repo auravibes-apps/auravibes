@@ -28,14 +28,9 @@ void main() {
     final repository = _MockWorkspaceRepository();
     when(
       () => repository.createWorkspace(
-        const WorkspaceToCreate(
-          name: 'Project',
-          type: WorkspaceType.local,
-        ),
+        const WorkspaceToCreate(name: 'Project', type: WorkspaceType.local),
       ),
-    ).thenThrow(
-      StateError('token=workspace-secret'),
-    );
+    ).thenThrow(StateError('token=workspace-secret'));
 
     final records = <LogRecord>[];
     final subscription = Logger.root.onRecord.listen(records.add);
@@ -51,9 +46,7 @@ void main() {
             return TestProviderScope(
               overrides: [
                 cloudAccountsProvider.overrideWith((ref) async => const []),
-                workspaceRepositoryProvider.overrideWithValue(
-                  repository,
-                ),
+                workspaceRepositoryProvider.overrideWithValue(repository),
               ],
               child: MaterialApp(
                 home: AuraScreen(

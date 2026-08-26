@@ -15,7 +15,7 @@ class CloudMcpGateway {
     required bool useHttp2,
     required String? description,
     required String? bearerToken,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.create(
       CreateMcpServerRequest(
@@ -31,19 +31,20 @@ class CloudMcpGateway {
     ),
   );
 
-  Future<void> deleteMcpServer({required String mcpServerId}) => guardCloudCall(
-    .mcp,
-    () => _stateGateway.client.mcpServer.delete(
-      DeleteMcpServerRequest(
-        workspaceId: _stateGateway.workspace.cloudWorkspaceId,
-        mcpServerId: mcpServerId,
-      ),
-    ),
-  );
+  Future<void> deleteMcpServer({required String mcpServerId}) =>
+      CloudAppErrors.guardCall(
+        .mcp,
+        () => _stateGateway.client.mcpServer.delete(
+          DeleteMcpServerRequest(
+            workspaceId: _stateGateway.workspace.cloudWorkspaceId,
+            mcpServerId: mcpServerId,
+          ),
+        ),
+      );
 
   Future<DiscoverMcpServerResult> discoverMcpServer({
     required String mcpServerId,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.discoverAndCheck(
       DiscoverMcpServerRequest(

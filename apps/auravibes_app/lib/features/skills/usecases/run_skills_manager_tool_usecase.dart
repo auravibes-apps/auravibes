@@ -33,12 +33,12 @@ class RunSkillsManagerToolUsecase {
     this._updateSkillCredentialDefinitionUsecase, {
     this.cloudStore,
   });
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
   final SkillCredentialDefinitionsRepository?
   _skillCredentialDefinitionsRepository;
-  final CloudSkillStore? cloudStore;
   final CreateSkillUsecase _createSkillUsecase;
   final UpdateSkillUsecase _updateSkillUsecase;
   final CreateSkillTemplateToolUsecase _createSkillTemplateToolUsecase;
@@ -53,60 +53,89 @@ class RunSkillsManagerToolUsecase {
     required Map<String, dynamic> arguments,
   }) {
     return switch (toolSlug) {
-      listUserSkillsToolSlug => _listUserSkills(workspaceId),
-      getUserSkillToolSlug => _getUserSkillResult(workspaceId, arguments),
-      createUserSkillToolSlug => _createUserSkill(workspaceId, arguments),
-      updateUserSkillToolSlug => _updateUserSkill(workspaceId, arguments),
-      deleteUserSkillToolSlug => _deleteUserSkill(workspaceId, arguments),
-      listSkillTemplateToolsToolSlug => _listSkillTemplateTools(
+      SkillToolSlugs.listUserSkills => _listUserSkills(workspaceId),
+      SkillToolSlugs.getUserSkill => _getUserSkillResult(
         workspaceId,
         arguments,
       ),
-      getSkillTemplateToolToolSlug => _getSkillTemplateToolResult(
+      SkillToolSlugs.createUserSkill => _createUserSkill(
         workspaceId,
         arguments,
       ),
-      createSkillTemplateToolSlug => _createSkillTemplateTool(
+      SkillToolSlugs.updateUserSkill => _updateUserSkill(
         workspaceId,
         arguments,
       ),
-      updateSkillTemplateToolSlug => _updateSkillTemplateTool(
+      SkillToolSlugs.deleteUserSkill => _deleteUserSkill(
         workspaceId,
         arguments,
       ),
-      deleteSkillTemplateToolSlug => _deleteSkillTemplateTool(
+      SkillToolSlugs.listSkillTemplateTools => _listSkillTemplateTools(
         workspaceId,
         arguments,
       ),
-      listSkillCredentialDefinitionsToolSlug => _listSkillCredentialDefinitions(
+      SkillToolSlugs.getSkillTemplateTool => _getSkillTemplateToolResult(
         workspaceId,
+        arguments,
       ),
-      getSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.createSkillTemplateTool => _createSkillTemplateTool(
+        workspaceId,
+        arguments,
+      ),
+      SkillToolSlugs.updateSkillTemplateTool => _updateSkillTemplateTool(
+        workspaceId,
+        arguments,
+      ),
+      SkillToolSlugs.deleteSkillTemplateTool => _deleteSkillTemplateTool(
+        workspaceId,
+        arguments,
+      ),
+      SkillToolSlugs.listSkillCredentialDefinitions =>
+        _listSkillCredentialDefinitions(workspaceId),
+      SkillToolSlugs.getSkillCredentialDefinition =>
         _getSkillCredentialDefinitionResult(workspaceId, arguments),
-      createSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.createSkillCredentialDefinition =>
         _createSkillCredentialDefinition(workspaceId, arguments),
-      updateSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.updateSkillCredentialDefinition =>
         _updateSkillCredentialDefinition(workspaceId, arguments),
-      deleteSkillCredentialDefinitionToolSlug =>
+      SkillToolSlugs.deleteSkillCredentialDefinition =>
         _deleteSkillCredentialDefinition(workspaceId, arguments),
       _ => throw UnsupportedError('Unsupported skills manager tool: $toolSlug'),
     };
   }
 
-  Future<Object> _listUserSkills(String workspaceId) async {
-    final cloud = cloudStore;
-    final skills = cloud != null
-        ? await cloud.skills()
-        : await _skillsRepositoryOrThrow().getWorkspaceSkills(workspaceId);
+  Future<Object> _updateUserSkill(
+    String workspaceId,
+    Map<String, dynamic> arguments,
+  ) async {
+    _rejectCredentialDefinitionSlug(arguments);
+    final skill = await _getUserSkill(
+      workspaceId,
+      _requiredString(arguments, 'skillSlug'),
+    );
+    final hasCredentialDefinitionArgument = arguments.containsKey(
+      'credentialDefinitionId',
+    );
+    final credentialDefinitionId = hasCredentialDefinitionArgument
+        ? await _resolveCredentialDefinitionId(
+            arguments['credentialDefinitionId'],
+          )
+        : null;
+    final updated = await _updateSkillUsecase.call(
+      skill.id,
+      SkillToUpdate(
+        title: _optionalString(arguments, 'title'),
+        description: _optionalString(arguments, 'description'),
+        content: _optionalString(arguments, 'content'),
+        credentialDefinitionId: credentialDefinitionId,
+        clearCredentialDefinition:
+            hasCredentialDefinitionArgument && credentialDefinitionId == null,
+        isCredentialOptional: _optionalBool(arguments, 'isCredentialOptional'),
+        isEnabled: _optionalBool(arguments, 'isEnabled'),
+      ),
+    );
 
-    return {
-      'skills': [
-        for (final skill in skills.where(
-          (skill) => skill.source == SkillSource.user,
-        ))
-          _skillResult('found', skill),
-      ],
-    };
+    return _skillResult('updated', updated, includeDetails: true);
   }
 
   Future<Object> _getUserSkillResult(
@@ -146,38 +175,20 @@ class RunSkillsManagerToolUsecase {
     return _skillResult('created', skill, includeDetails: true);
   }
 
-  Future<Object> _updateUserSkill(
-    String workspaceId,
-    Map<String, dynamic> arguments,
-  ) async {
-    _rejectCredentialDefinitionSlug(arguments);
-    final skill = await _getUserSkill(
-      workspaceId,
-      _requiredString(arguments, 'skillSlug'),
-    );
-    final hasCredentialDefinitionArgument = arguments.containsKey(
-      'credentialDefinitionId',
-    );
-    final credentialDefinitionId = hasCredentialDefinitionArgument
-        ? await _resolveCredentialDefinitionId(
-            arguments['credentialDefinitionId'],
-          )
-        : null;
-    final updated = await _updateSkillUsecase.call(
-      skill.id,
-      SkillToUpdate(
-        title: _optionalString(arguments, 'title'),
-        description: _optionalString(arguments, 'description'),
-        content: _optionalString(arguments, 'content'),
-        credentialDefinitionId: credentialDefinitionId,
-        clearCredentialDefinition:
-            hasCredentialDefinitionArgument && credentialDefinitionId == null,
-        isCredentialOptional: _optionalBool(arguments, 'isCredentialOptional'),
-        isEnabled: _optionalBool(arguments, 'isEnabled'),
-      ),
-    );
+  Future<Object> _listUserSkills(String workspaceId) async {
+    final cloud = cloudStore;
+    final skills = cloud != null
+        ? await cloud.skills()
+        : await _skillsRepositoryOrThrow().getWorkspaceSkills(workspaceId);
 
-    return _skillResult('updated', updated, includeDetails: true);
+    return {
+      'skills': [
+        for (final skill in skills.where(
+          (skill) => skill.source == SkillSource.user,
+        ))
+          _skillResult('found', skill),
+      ],
+    };
   }
 
   Future<Object> _deleteUserSkill(
@@ -421,10 +432,7 @@ class RunSkillsManagerToolUsecase {
       (cloud: final cloud?, repository: _) =>
         (await cloud.skills()).where((item) => item.slug == slug).firstOrNull,
       (cloud: _, repository: final repository?) =>
-        await repository.getSkillBySlug(
-          workspaceId,
-          slug,
-        ),
+        await repository.getSkillBySlug(workspaceId, slug),
       _ => throw StateError('Skill store is unavailable'),
     };
     if (skill == null || skill.source != SkillSource.user) {
@@ -478,22 +486,13 @@ class RunSkillsManagerToolUsecase {
     return definition.id;
   }
 
-  Future<SkillTemplateToolEntity?> _toolBySlug(
-    String skillId,
-    String slug,
-  ) async {
-    final cloud = cloudStore;
-    if (cloud != null) {
-      return (await cloud.tools(
-        skillId,
-      )).where((item) => item.slug == slug).firstOrNull;
-    }
-    final repository = _skillTemplateToolsRepository;
-    if (repository == null) {
-      throw StateError('Skill template tool store is unavailable');
-    }
+  String? _optionalJsonObjectString(
+    Map<String, dynamic> arguments,
+    String key,
+  ) {
+    if (!arguments.containsKey(key)) return null;
 
-    return repository.getToolBySlug(skillId, slug);
+    return _jsonObjectString(arguments, key);
   }
 
   Future<SkillCredentialDefinitionEntity?> _definitionBySlug(
@@ -511,7 +510,7 @@ class RunSkillsManagerToolUsecase {
       throw StateError('Credential definition store is unavailable');
     }
 
-    return repository.getDefinitionBySlug(workspaceId, slug);
+    return await repository.getDefinitionBySlug(workspaceId, slug);
   }
 
   SkillsRepository _skillsRepositoryOrThrow() {
@@ -663,41 +662,42 @@ class RunSkillsManagerToolUsecase {
     return jsonEncode(value);
   }
 
-  String? _optionalJsonObjectString(
-    Map<String, dynamic> arguments,
-    String key,
-  ) {
-    if (!arguments.containsKey(key)) return null;
+  Future<SkillTemplateToolEntity?> _toolBySlug(
+    String skillId,
+    String slug,
+  ) async {
+    final cloud = cloudStore;
+    if (cloud != null) {
+      return (await cloud.tools(
+        skillId,
+      )).where((item) => item.slug == slug).firstOrNull;
+    }
+    final repository = _skillTemplateToolsRepository;
+    if (repository == null) {
+      throw StateError('Skill template tool store is unavailable');
+    }
 
-    return _jsonObjectString(arguments, key);
+    return await repository.getToolBySlug(skillId, slug);
   }
 }
 
 final ProviderFamily<RunSkillsManagerToolUsecase, String>
 runSkillsManagerToolUsecaseProvider =
-    Provider.family<RunSkillsManagerToolUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<RunSkillsManagerToolUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return RunSkillsManagerToolUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(skillTemplateToolsRepositoryProvider)
-              : null,
-          cloud == null
-              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-              : null,
-          ref.watch(createSkillUsecaseProvider(workspaceId)),
-          ref.watch(updateSkillUsecaseProvider(workspaceId)),
-          ref.watch(createSkillTemplateToolUsecaseProvider(workspaceId)),
-          ref.watch(updateSkillTemplateToolUsecaseProvider(workspaceId)),
-          ref.watch(
-            createSkillCredentialDefinitionUsecaseProvider(workspaceId),
-          ),
-          ref.watch(
-            updateSkillCredentialDefinitionUsecaseProvider(workspaceId),
-          ),
-          cloudStore: cloud,
-        );
-      },
-    );
+      return RunSkillsManagerToolUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+        ref.watch(createSkillUsecaseProvider(workspaceId)),
+        ref.watch(updateSkillUsecaseProvider(workspaceId)),
+        ref.watch(createSkillTemplateToolUsecaseProvider(workspaceId)),
+        ref.watch(updateSkillTemplateToolUsecaseProvider(workspaceId)),
+        ref.watch(createSkillCredentialDefinitionUsecaseProvider(workspaceId)),
+        ref.watch(updateSkillCredentialDefinitionUsecaseProvider(workspaceId)),
+        cloudStore: cloud,
+      );
+    });

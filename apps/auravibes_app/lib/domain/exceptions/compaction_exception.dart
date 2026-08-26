@@ -19,11 +19,10 @@ abstract class CompactionException implements Exception {
 class CompactionFailedException extends CompactionException {
   // Cause is absent for user-triggered failures.
   // ignore: unnecessary-nullable
-  const CompactionFailedException({Exception? cause})
+  const CompactionFailedException({super.cause})
     : super(
         LocaleKeys.compaction_errors_compaction_failed,
         recoveryHint: LocaleKeys.compaction_manual_failure,
-        cause: cause,
       );
 }
 

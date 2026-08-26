@@ -13,10 +13,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageBubble(
-              content: messageContent,
-              isUser: true,
-            ),
+            body: AuraMessageBubble(content: messageContent, isUser: true),
           ),
         ),
       );
@@ -29,10 +26,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraMessageBubble(
-              content: 'User message',
-              isUser: true,
-            ),
+            body: AuraMessageBubble(content: 'User message', isUser: true),
           ),
         ),
       );

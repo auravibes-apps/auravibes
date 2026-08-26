@@ -2,11 +2,17 @@ import 'dart:io';
 
 import 'package:auravibes_app/features/chats/services/attachment_modality.dart';
 
-// ignore: unused-code, conditional export implementation used on IO platforms.
-Future<List<int>?> readChatAttachmentBytes(String localPath) async {
-  final file = File(localPath);
-  if (!file.existsSync()) return null;
-  if (await file.length() > maxChatAttachmentBytes) return null;
+abstract final class ChatAttachmentBytesIo {
+  static Future<List<int>?> read(String localPath) async {
+    final file = File(localPath);
+    if (!file.existsSync()) return null;
+    if (await file.length() > ChatAttachmentModality.maxChatAttachmentBytes) {
+      return null;
+    }
 
-  return file.readAsBytes();
+    return await file.readAsBytes();
+  }
 }
+
+// ignore: unused-code, conditional export implementation used on IO platforms.
+typedef ChatAttachmentBytes = ChatAttachmentBytesIo;

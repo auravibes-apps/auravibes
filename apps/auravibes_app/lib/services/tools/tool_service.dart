@@ -7,7 +7,7 @@ import 'package:collection/collection.dart';
 ///
 /// This service provides hardcoded tool definitions and handles the resolution
 /// of tool availability based on conversation and workspace preferences.
-/// The resolution priority is: conversation → workspace → app defaults.
+/// The resolution priority is conversation, then workspace, then app defaults.
 class ToolService {
   /// Hardcoded list of all available tools in the app.
   static const List<UserToolEntity<Object, Object, Object>> availableTools = [

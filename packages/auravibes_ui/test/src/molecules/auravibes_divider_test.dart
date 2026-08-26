@@ -8,11 +8,7 @@ void main() {
   group('AuraDivider', () {
     testWidgets('renders horizontal divider correctly', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraDivider(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraDivider())),
       );
 
       expect(
@@ -26,11 +22,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDivider(
-              height: customHeight,
-            ),
-          ),
+          home: Scaffold(body: AuraDivider(height: customHeight)),
         ),
       );
 
@@ -45,11 +37,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDivider(
-              thickness: customThickness,
-            ),
-          ),
+          home: Scaffold(body: AuraDivider(thickness: customThickness)),
         ),
       );
 
@@ -64,11 +52,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDivider(
-              color: customColor,
-            ),
-          ),
+          home: Scaffold(body: AuraDivider(color: customColor)),
         ),
       );
 
@@ -84,11 +68,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDivider(
-              indent: indent,
-            ),
-          ),
+          home: Scaffold(body: AuraDivider(indent: indent)),
         ),
       );
 
@@ -103,11 +83,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraDivider(
-              endIndent: endIndent,
-            ),
-          ),
+          home: Scaffold(body: AuraDivider(endIndent: endIndent)),
         ),
       );
 
@@ -120,11 +96,7 @@ void main() {
     group('AuraDivider.vertical', () {
       testWidgets('renders vertical divider correctly', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AuraDivider.vertical(),
-            ),
-          ),
+          const MaterialApp(home: Scaffold(body: AuraDivider.vertical())),
         );
 
         expect(find.byType(Container), findsNWidgets(2));
@@ -135,11 +107,7 @@ void main() {
 
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(
-              body: AuraDivider.vertical(
-                width: customWidth,
-              ),
-            ),
+            home: Scaffold(body: AuraDivider.vertical(width: customWidth)),
           ),
         );
 
@@ -154,11 +122,7 @@ void main() {
 
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(
-              body: AuraDivider.vertical(
-                indent: indent,
-              ),
-            ),
+            home: Scaffold(body: AuraDivider.vertical(indent: indent)),
           ),
         );
 
@@ -175,11 +139,7 @@ void main() {
 
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(
-              body: AuraDivider.withLabel(
-                label: Text(labelText),
-              ),
-            ),
+            home: Scaffold(body: AuraDivider.withLabel(label: Text(labelText))),
           ),
         );
 
@@ -205,10 +165,7 @@ void main() {
         );
 
         final outerContainer = tester.widget<Container>(
-          find.ancestor(
-            of: find.byType(Row),
-            matching: find.byType(Container),
-          ),
+          find.ancestor(of: find.byType(Row), matching: find.byType(Container)),
         );
         expect(outerContainer.constraints?.maxHeight, customHeight);
       });

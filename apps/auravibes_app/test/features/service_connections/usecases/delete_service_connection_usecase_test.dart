@@ -84,9 +84,7 @@ void main() {
       );
 
       expect(deletedId, 'cloud-credential');
-      final _ = verifyNever(
-        () => modelRepository.deleteModelConnection(any()),
-      );
+      final _ = verifyNever(() => modelRepository.deleteModelConnection(any()));
     });
 
     test('rejects MCP server delete requests', () {
@@ -122,15 +120,15 @@ void main() {
         final session = Completer<WorkspaceSession>();
         final container = ProviderContainer(
           overrides: [
-            workspaceSessionForRouteProvider('workspace').overrideWith(
-              (_) => session.future,
-            ),
+            workspaceSessionForRouteProvider(
+              'workspace',
+            ).overrideWith((_) => session.future),
             cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async {
               return _MockCloudWorkspaceStateGateway();
             }),
-            modelConnectionStoreProvider('workspace').overrideWith(
-              (_) async => _MockModelConnectionStore(),
-            ),
+            modelConnectionStoreProvider(
+              'workspace',
+            ).overrideWith((_) async => _MockModelConnectionStore()),
           ],
         );
         addTearDown(container.dispose);

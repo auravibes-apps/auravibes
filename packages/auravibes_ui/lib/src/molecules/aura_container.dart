@@ -70,10 +70,7 @@ class AuraContainer extends StatelessWidget {
     var container = child;
 
     if (padding != null) {
-      container = AuraPadding(
-        child: child,
-        padding: padding,
-      );
+      container = AuraPadding(child: child, padding: padding);
     }
 
     container = Container(
@@ -97,10 +94,7 @@ class AuraContainer extends StatelessWidget {
     );
 
     if (margin != null) {
-      container = AuraPadding(
-        child: container,
-        padding: margin,
-      );
+      container = AuraPadding(child: container, padding: margin);
     }
 
     if (semanticLabel != null) {

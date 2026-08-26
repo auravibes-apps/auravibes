@@ -13,12 +13,8 @@ void main() {
     testWidgets('renders text correctly', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: const Scaffold(
-            body: AuraSelectableText('Selectable text'),
-          ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          home: const Scaffold(body: AuraSelectableText('Selectable text')),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -39,9 +35,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
     });
@@ -55,9 +49,7 @@ void main() {
               style: AuraTextStyle.heading1,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -77,9 +69,7 @@ void main() {
               style: AuraTextStyle.heading2,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -98,9 +88,7 @@ void main() {
               style: AuraTextStyle.heading3,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -119,9 +107,7 @@ void main() {
               style: AuraTextStyle.bodyLarge,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -140,9 +126,7 @@ void main() {
               style: AuraTextStyle.bodySmall,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -156,14 +140,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Caption',
-              style: AuraTextStyle.caption,
-            ),
+            body: AuraSelectableText('Caption', style: AuraTextStyle.caption),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -177,38 +156,25 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Code text',
-              style: AuraTextStyle.code,
-            ),
+            body: AuraSelectableText('Code text', style: AuraTextStyle.code),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
       final selectableText = tester.widget<SelectableText>(
         find.byType(SelectableText),
       );
-      expect(
-        selectableText.style?.fontFamily,
-        typography.monoFontFamily,
-      );
+      expect(selectableText.style?.fontFamily, typography.monoFontFamily);
     });
 
     testWidgets('applies tint', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Error text',
-              tint: AuraTint.error,
-            ),
+            body: AuraSelectableText('Error text', tint: AuraTint.error),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -227,9 +193,7 @@ void main() {
               textAlign: TextAlign.center,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -243,14 +207,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Limited lines',
-              maxLines: 2,
-            ),
+            body: AuraSelectableText('Limited lines', maxLines: 2),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -273,9 +232,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -286,12 +243,8 @@ void main() {
     testWidgets('uses default cursor color from theme', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: const Scaffold(
-            body: AuraSelectableText('Cursor test'),
-          ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          home: const Scaffold(body: AuraSelectableText('Cursor test')),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -310,9 +263,7 @@ void main() {
               cursorTint: AuraTint.secondary,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -328,14 +279,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Wide cursor',
-              cursorWidth: customWidth,
-            ),
+            body: AuraSelectableText('Wide cursor', cursorWidth: customWidth),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -349,14 +295,9 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: const Scaffold(
-            body: AuraSelectableText(
-              'Min lines',
-              minLines: 2,
-            ),
+            body: AuraSelectableText('Min lines', minLines: 2),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 

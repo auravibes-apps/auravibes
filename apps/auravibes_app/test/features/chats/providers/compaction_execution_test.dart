@@ -217,10 +217,7 @@ void main() {
 
       notifier.markSuccess('conv-1');
 
-      expect(
-        () => container.dispose(),
-        returnsNormally,
-      );
+      expect(() => container.dispose(), returnsNormally);
     });
 
     test('markSuccessCleanup removes entry when status is success', () {

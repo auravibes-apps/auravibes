@@ -18,17 +18,11 @@ ON conversation_skills (conversation_id, app_skill_identifier)
 WHERE app_skill_identifier IS NOT NULL
 ''')
 class ConversationSkills extends Table with TableMixin {
-  TextColumn get conversationId => text().references(
-    Conversations,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get conversationId =>
+      text().references(Conversations, #id, onDelete: KeyAction.cascade)();
 
-  TextColumn get workspaceSkillId => text().nullable().references(
-    Skills,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get workspaceSkillId =>
+      text().nullable().references(Skills, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get appSkillIdentifier => text().nullable()();
 

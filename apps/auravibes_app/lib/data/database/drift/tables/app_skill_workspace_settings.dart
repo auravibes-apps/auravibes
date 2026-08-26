@@ -12,11 +12,8 @@ import 'package:drift/drift.dart';
   unique: true,
 )
 class AppSkillWorkspaceSettings extends Table with TableMixin {
-  TextColumn get workspaceId => text().references(
-    Workspaces,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get appSkillIdentifier => text()();
 

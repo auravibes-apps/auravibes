@@ -37,10 +37,7 @@ ToolsGroupEntity _group({String id = 'g1', String name = 'Test Group'}) {
   );
 }
 
-ConversationToolState _toolState({
-  String id = 't1',
-  bool isEnabled = true,
-}) {
+ConversationToolState _toolState({String id = 't1', bool isEnabled = true}) {
   return ConversationToolState(
     tool: _tool(id: id),
     isEnabled: isEnabled,

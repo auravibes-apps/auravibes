@@ -11,13 +11,13 @@ import 'package:flutter/material.dart';
 /// Header widget for a tools group card.
 ///
 /// Displays:
-/// - Group icon (extension for MCP, build_circle for default)
-/// - Group name
-/// - MCP status badge (spinner/success/error/disconnected)
-/// - Tool count: "X of Y enabled"
-/// - Master toggle (hidden for default group)
-/// - Delete button (for MCP groups only)
-/// - Expand/collapse chevron
+/// - Group icon (extension for MCP, build_circle for default).
+/// - Group name.
+/// - MCP status badge (spinner/success/error/disconnected).
+/// - Tool count: "X of Y enabled".
+/// - Master toggle (hidden for default group).
+/// - Delete button (for MCP groups only).
+/// - Expand/collapse chevron.
 class ToolsGroupHeader extends StatelessWidget {
   const ToolsGroupHeader({
     required this.groupWithTools,
@@ -117,9 +117,7 @@ class ToolsGroupHeader extends StatelessWidget {
               ),
             AuraIconButton.custom(
               child: AnimatedRotation(
-                child: const AuraIcon(
-                  Icons.keyboard_arrow_down,
-                ),
+                child: const AuraIcon(Icons.keyboard_arrow_down),
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
               ),
@@ -141,6 +139,7 @@ class _GroupIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const iconSize = 40.0;
     final isEnabled = groupWithTools.isEnabled;
     final isMcp = groupWithTools.isMcpGroup;
 
@@ -150,13 +149,11 @@ class _GroupIcon extends StatelessWidget {
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
-      width: 40,
-      height: 40,
+      width: iconSize,
+      height: iconSize,
       child: Center(
         child: AuraIcon(
           isMcp ? Icons.extension : Icons.build_circle_outlined,

@@ -13,10 +13,10 @@ class UpdateSkillCredentialDefinitionUsecase {
     this._skillCredentialDefinitionsRepository, {
     this.cloudStore,
   });
+  final CloudSkillStore? cloudStore;
 
   final SkillCredentialDefinitionsRepository?
   _skillCredentialDefinitionsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<SkillCredentialDefinitionEntity> call(
     String definitionId,
@@ -32,7 +32,7 @@ class UpdateSkillCredentialDefinitionUsecase {
     }
     final title = definition.title;
     if (title != null) {
-      validateSkillTitle(title);
+      ValidateSkillTitleUsecase.call(title);
       final slug = generateSkillSlug(title);
       final cloud = cloudStore;
       final repository = _skillCredentialDefinitionsRepository;
@@ -60,27 +60,30 @@ class UpdateSkillCredentialDefinitionUsecase {
     }
 
     final cloud = cloudStore;
-    if (cloud != null) return cloud.updateDefinition(definitionId, definition);
+    if (cloud != null) {
+      return await cloud.updateDefinition(definitionId, definition);
+    }
     final repository = _skillCredentialDefinitionsRepository;
     if (repository == null) {
       throw StateError('Credential definition store is unavailable');
     }
 
-    return repository.updateDefinition(definitionId, definition);
+    return await repository.updateDefinition(definitionId, definition);
   }
 }
 
 final ProviderFamily<UpdateSkillCredentialDefinitionUsecase, String>
 updateSkillCredentialDefinitionUsecaseProvider =
-    Provider.family<UpdateSkillCredentialDefinitionUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<UpdateSkillCredentialDefinitionUsecase, String>((
+      ref,
+      workspaceId,
+    ) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return UpdateSkillCredentialDefinitionUsecase(
-          cloud == null
-              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-              : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return UpdateSkillCredentialDefinitionUsecase(
+        cloud == null
+            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+        cloudStore: cloud,
+      );
+    });

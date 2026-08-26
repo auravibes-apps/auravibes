@@ -44,6 +44,7 @@ const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
 
 class ChatInputWidget extends HookConsumerWidget {
+  static const _maxInputLines = 2;
   const ChatInputWidget({
     required this.workspaceId,
     required this.onSendMessage,
@@ -95,9 +96,9 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
     final workspaceCapabilities = ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).select(
-        (session) => session.value?.capabilities,
-      ),
+      workspaceSessionForRouteProvider(
+        workspaceId,
+      ).select((session) => session.value?.capabilities),
     );
 
     final isTextEmpty = useListenableSelector(
@@ -122,30 +123,28 @@ class ChatInputWidget extends HookConsumerWidget {
       isEmpty: isEmpty,
     );
 
-    useEffect(
-      () {
-        return actions.disposeDraft;
-      },
-      const [],
-    );
+    Dispose? disposeDraft() => actions.disposeDraft;
+
+    useEffect(disposeDraft, const []);
 
     final shouldShowStopButton = showStopButton ?? isBusy;
     final supportsLocalAttachments =
         (workspaceCapabilities?.attachments ?? false) && !kIsWeb;
     final supportsAudio =
         supportsLocalAttachments &&
-        supportsAttachmentModality(
+        ChatAttachmentModality.supports(
           MessageAttachmentModality.audio,
           modalitiesInput,
         );
     final supportsImage =
         (workspaceCapabilities?.attachments ?? false) &&
-        supportsAttachmentModality(
+        ChatAttachmentModality.supports(
           MessageAttachmentModality.image,
           modalitiesInput,
         );
     final supportsFile =
-        supportsLocalAttachments && supportsFileAttachments(modalitiesInput);
+        supportsLocalAttachments &&
+        ChatAttachmentModality.supportsFiles(modalitiesInput);
     final isMacOS = defaultTargetPlatform == TargetPlatform.macOS;
     const messagePlaceholderKey =
         LocaleKeys.chats_screens_chat_conversation_message_placeholder;
@@ -161,7 +160,7 @@ class ChatInputWidget extends HookConsumerWidget {
               placeholder: const TextLocale(messagePlaceholderKey),
               textInputAction: TextInputAction.send,
               readOnly: isRecording.value,
-              maxLines: 2,
+              maxLines: _maxInputLines,
               onSubmitted: (value) {
                 unawaited(actions.sendMessage());
               },
@@ -324,12 +323,12 @@ class _ChatInputActions {
         .read(localChatAttachmentUsecaseProvider)
         .copyIntoAppStorage(
           path,
-          displayName: uniqueAttachmentDisplayName(
+          displayName: AttachmentDisplayNames.unique(
             displayName,
             attachments.value.map((attachment) => attachment.displayName),
           ),
         );
-    if (!supportsAttachmentModality(
+    if (!ChatAttachmentModality.supports(
       attachment.modality,
       modalitiesInput,
       mimeType: attachment.mimeType,
@@ -346,9 +345,8 @@ class _ChatInputActions {
     unawaited(
       (() async {
         try {
-          final allowedExtensions = filePickerAllowedExtensions(
-            modalitiesInput,
-          );
+          final allowedExtensions =
+              ChatAttachmentModality.pickerAllowedExtensions(modalitiesInput);
           final result = await fp.FilePicker.pickFiles(
             allowedExtensions: allowedExtensions,
             type: allowedExtensions == null
@@ -400,12 +398,11 @@ class _ChatInputActions {
           final startedAt = DateTime.now();
           isStartingRecording.value = false;
           recordingTimer.value?.cancel();
-          recordingTimer.value = Timer.periodic(
-            const Duration(seconds: 1),
-            (_) {
-              recordingElapsed.value = DateTime.now().difference(startedAt);
-            },
-          );
+          recordingTimer.value = Timer.periodic(const Duration(seconds: 1), (
+            _,
+          ) {
+            recordingElapsed.value = DateTime.now().difference(startedAt);
+          });
         } on Object catch (_) {
           clearRecordingState();
         }
@@ -475,7 +472,7 @@ class _ChatInputActions {
     Iterable<MessageAttachmentToCreate> existingAttachments,
   ) {
     return attachment.copyWith(
-      displayName: uniqueAttachmentDisplayName(
+      displayName: AttachmentDisplayNames.unique(
         _voiceRecordLabelKey.tr(),
         existingAttachments.map((attachment) => attachment.displayName),
       ),
@@ -629,11 +626,120 @@ class _ChatInputFooter extends StatelessWidget {
           ],
           Row(
             children: [
-              if (!isRecording) ..._idleControls(context),
-              if (isRecording)
-                ..._recordingControls()
-              else if (supportsAudio)
-                ..._audioControls(),
+              if (!isRecording) ...[
+                AuraPopupMenuButton(
+                  items: [
+                    _attachmentMenuItem(
+                      titleKey: _attachFileKey,
+                      icon: Icons.attach_file,
+                      enabled: supportsFile,
+                      onTap: actions.pickFiles,
+                    ),
+                    if (!isMacOS)
+                      _attachmentMenuItem(
+                        titleKey: _attachPhotoKey,
+                        icon: Icons.photo_outlined,
+                        enabled: supportsLocalAttachments && supportsImage,
+                        onTap: () => actions.pickImage(ImageSource.gallery),
+                      ),
+                    if (defaultTargetPlatform == TargetPlatform.android ||
+                        defaultTargetPlatform == TargetPlatform.iOS)
+                      _attachmentMenuItem(
+                        titleKey: _attachCameraKey,
+                        icon: Icons.photo_camera_outlined,
+                        enabled: supportsLocalAttachments && supportsImage,
+                        onTap: () => actions.pickImage(ImageSource.camera),
+                      ),
+                    AuraPopupMenuItem(
+                      title: const TextLocale(LocaleKeys.menu_tools),
+                      onTap: onToolsPress,
+                      leading: const AuraIcon(Icons.build_circle_outlined),
+                    ),
+                    if (onSkillsPress case final onSkillsPress?)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.skills_selector_title,
+                        ),
+                        onTap: onSkillsPress,
+                        leading: const AuraIcon(Icons.psychology_alt_outlined),
+                      ),
+                    if (onContinueAgent != null)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys
+                              .chats_screens_chat_conversation_continue_agent,
+                        ),
+                        onTap: onContinueAgent,
+                        leading: const AuraIcon(Icons.play_circle_outline),
+                      ),
+                    if (onCompact != null &&
+                        !disabled &&
+                        !isBusy &&
+                        !isCompacting)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.compaction_manual_button_tooltip,
+                        ),
+                        onTap: onCompact,
+                        leading: const AuraIcon(Icons.compress_outlined),
+                      ),
+                  ],
+                  icon: Icons.tune_rounded,
+                  tooltip: LocaleKeys
+                      .chats_screens_chat_conversation_options_tooltip
+                      .tr(),
+                ),
+                const AuraSizedBox(width: .xs),
+                Expanded(
+                  child: GestureDetector(
+                    child: modelCompactControl,
+                    onTap: () => _showSelectorSheet(
+                      context: context,
+                      title: const TextLocale(
+                        LocaleKeys.models_screens_select_model,
+                      ),
+                      child: modelSheetControl,
+                    ),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ],
+              if (isRecording) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.close_rounded,
+                    onPressed: actions.cancelRecording,
+                    disabled: isStartingRecording,
+                    tooltip: _cancelRecordingKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+                Expanded(child: _RecordingIndicator(elapsed: recordingElapsed)),
+                const AuraSizedBox(width: .xs),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.stop_rounded,
+                    onPressed: actions.stopRecording,
+                    disabled: isStartingRecording,
+                    tint: AuraTint.error,
+                    tooltip: _stopRecordingKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ] else if (supportsAudio) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.mic_none_outlined,
+                    onPressed: actions.startRecording,
+                    disabled: disabled,
+                    tooltip: _recordVoiceKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ],
               if (onStop case final onStop?) ...[
                 Visibility(
                   child: AuraTooltip(
@@ -666,121 +772,6 @@ class _ChatInputFooter extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  List<Widget> _idleControls(BuildContext context) {
-    return [
-      AuraPopupMenuButton(
-        items: [
-          _attachmentMenuItem(
-            titleKey: _attachFileKey,
-            icon: Icons.attach_file,
-            enabled: supportsFile,
-            onTap: actions.pickFiles,
-          ),
-          if (!isMacOS)
-            _attachmentMenuItem(
-              titleKey: _attachPhotoKey,
-              icon: Icons.photo_outlined,
-              enabled: supportsLocalAttachments && supportsImage,
-              onTap: () => actions.pickImage(ImageSource.gallery),
-            ),
-          if (defaultTargetPlatform == TargetPlatform.android ||
-              defaultTargetPlatform == TargetPlatform.iOS)
-            _attachmentMenuItem(
-              titleKey: _attachCameraKey,
-              icon: Icons.photo_camera_outlined,
-              enabled: supportsLocalAttachments && supportsImage,
-              onTap: () => actions.pickImage(ImageSource.camera),
-            ),
-          AuraPopupMenuItem(
-            title: const TextLocale(LocaleKeys.menu_tools),
-            onTap: onToolsPress,
-            leading: const AuraIcon(Icons.build_circle_outlined),
-          ),
-          if (onSkillsPress case final onSkillsPress?)
-            AuraPopupMenuItem(
-              title: const TextLocale(LocaleKeys.skills_selector_title),
-              onTap: onSkillsPress,
-              leading: const AuraIcon(Icons.psychology_alt_outlined),
-            ),
-          if (onContinueAgent != null)
-            AuraPopupMenuItem(
-              title: const TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_continue_agent,
-              ),
-              onTap: onContinueAgent,
-              leading: const AuraIcon(Icons.play_circle_outline),
-            ),
-          if (onCompact != null && !disabled && !isBusy && !isCompacting)
-            AuraPopupMenuItem(
-              title: const TextLocale(
-                LocaleKeys.compaction_manual_button_tooltip,
-              ),
-              onTap: onCompact,
-              leading: const AuraIcon(Icons.compress_outlined),
-            ),
-        ],
-        icon: Icons.tune_rounded,
-        tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
-            .tr(),
-      ),
-      const AuraSizedBox(width: .xs),
-      Expanded(
-        child: GestureDetector(
-          child: modelCompactControl,
-          onTap: () => _showSelectorSheet(
-            context: context,
-            title: const TextLocale(LocaleKeys.models_screens_select_model),
-            child: modelSheetControl,
-          ),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
-  List<Widget> _recordingControls() {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.close_rounded,
-          onPressed: actions.cancelRecording,
-          disabled: isStartingRecording,
-          tooltip: _cancelRecordingKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-      Expanded(child: _RecordingIndicator(elapsed: recordingElapsed)),
-      const AuraSizedBox(width: .xs),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.stop_rounded,
-          onPressed: actions.stopRecording,
-          disabled: isStartingRecording,
-          tint: AuraTint.error,
-          tooltip: _stopRecordingKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
-  List<Widget> _audioControls() {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.mic_none_outlined,
-          onPressed: actions.startRecording,
-          disabled: disabled,
-          tooltip: _recordVoiceKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
   }
 
   void _removeAttachment(MessageAttachmentToCreate attachment) {
@@ -832,11 +823,7 @@ class _RecordingIndicator extends StatelessWidget {
     return AuraText(
       child: Row(
         children: [
-          Icon(
-            Icons.graphic_eq,
-            size: 18,
-            color: colors.error,
-          ),
+          Icon(Icons.graphic_eq, size: 18, color: colors.error),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -858,22 +845,21 @@ String _formatElapsed(Duration elapsed) {
   return '$minutes:$seconds';
 }
 
-@visibleForTesting
-String uniqueAttachmentDisplayName(
-  String displayName,
-  Iterable<String> existingNames,
-) {
-  if (!existingNames.contains(displayName)) return displayName;
+abstract final class AttachmentDisplayNames {
+  @visibleForTesting
+  static String unique(String displayName, Iterable<String> existingNames) {
+    if (!existingNames.contains(displayName)) return displayName;
 
-  final extension = p.extension(displayName);
-  final baseName = extension.isEmpty
-      ? displayName
-      : p.basenameWithoutExtension(displayName);
-  var index = 1;
-  while (true) {
-    final candidate = '$baseName ($index)$extension';
-    if (!existingNames.contains(candidate)) return candidate;
-    index += 1;
+    final extension = p.extension(displayName);
+    final baseName = extension.isEmpty
+        ? displayName
+        : p.basenameWithoutExtension(displayName);
+    var index = 1;
+    while (true) {
+      final candidate = '$baseName ($index)$extension';
+      if (!existingNames.contains(candidate)) return candidate;
+      index += 1;
+    }
   }
 }
 

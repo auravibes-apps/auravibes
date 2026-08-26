@@ -95,9 +95,7 @@ void main() {
           messages: ['msg-1'],
           overrides: [
             messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(
-                content: 'Hello AI',
-              ),
+              (ref, id) => _createMessage(content: 'Hello AI'),
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
@@ -148,10 +146,7 @@ void main() {
           messages: ['msg-1'],
           overrides: [
             messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(
-                content: 'Hello user',
-                isUser: false,
-              ),
+              (ref, id) => _createMessage(content: 'Hello user', isUser: false),
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
@@ -559,9 +554,7 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
-    testWidgets('renders tool call with not configured status', (
-      tester,
-    ) async {
+    testWidgets('renders tool call with not configured status', (tester) async {
       const toolCall = MessageToolCallEntity(
         id: 'tc-1',
         name: 'built_in_1_calculator',

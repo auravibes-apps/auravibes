@@ -91,16 +91,11 @@ class AuraRadioOption<T> {
 /// Follows the const-first design pattern using [AuraTint] for
 /// compile-time color configuration.
 ///
-/// ## Selection Contract
+/// Selection contract. An equal value and group value is selected and has no
+/// interaction. An unequal value is unselected and tappable. A disabled item
+/// or an item with a null callback is greyed out and has no response.
 ///
-/// | Condition | Visual State | Interaction |
-/// |-----------|--------------|-------------|
-/// | value == groupValue | Selected (filled) | None |
-/// | value != groupValue | Unselected (empty) | Tappable |
-/// | disabled == true | Greyed out | No response |
-/// | onChanged == null | Greyed out | No response |
-///
-/// ## Example
+/// Example.
 ///
 /// ```dart
 /// AuraRadio<String>(
@@ -143,30 +138,9 @@ class AuraRadio<T> extends StatefulWidget {
 }
 
 class _AuraRadioState<T> extends State<AuraRadio<T>> {
+  static const _radioSize = 24.0;
   bool _isFocused = false;
   bool _isHovered = false;
-
-  Color _getActiveColor(BuildContext context) {
-    final auraColors = context.auraColors;
-
-    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
-  }
-
-  Color _getBorderColor(BuildContext context, bool isDisabled) {
-    final auraColors = context.auraColors;
-    if (isDisabled) return auraColors.outlineVariant;
-    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
-      return _getActiveColor(context);
-    }
-
-    return auraColors.outline;
-  }
-
-  void _select() {
-    if (widget.disabled || widget.onChanged == null) return;
-
-    widget.onChanged?.call(widget.value);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,8 +174,8 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
           child: Opacity(
             opacity: isDisabled ? 0.6 : 1.0,
             child: SizedBox(
-              width: 24,
-              height: 24,
+              width: _radioSize,
+              height: _radioSize,
               child: CustomPaint(
                 painter: _RadioPainter(
                   isSelected: isSelected,
@@ -221,5 +195,27 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
       inMutuallyExclusiveGroup: true,
       onTap: isDisabled ? null : _select,
     );
+  }
+
+  Color _getActiveColor(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
+  }
+
+  Color _getBorderColor(BuildContext context, bool isDisabled) {
+    final auraColors = context.auraColors;
+    if (isDisabled) return auraColors.outlineVariant;
+    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
+      return _getActiveColor(context);
+    }
+
+    return auraColors.outline;
+  }
+
+  void _select() {
+    if (widget.disabled || widget.onChanged == null) return;
+
+    widget.onChanged?.call(widget.value);
   }
 }

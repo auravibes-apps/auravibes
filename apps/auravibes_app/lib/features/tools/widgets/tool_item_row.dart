@@ -34,6 +34,7 @@ class ToolItemRow extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const iconSize = 36.0;
     final isExpanded = useState(false);
     final isEnabled = tool.isEnabled;
     final permissionMode = tool.permissionMode;
@@ -52,13 +53,11 @@ class ToolItemRow extends HookConsumerWidget {
                       ? context.auraColors.primary.withValues(alpha: 0.1)
                       : context.auraColors.surfaceVariant,
                   borderRadius: BorderRadius.all(
-                    Radius.circular(
-                      context.auraTheme.fromBorderRadius(.sm),
-                    ),
+                    Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
                   ),
                 ),
-                width: 36,
-                height: 36,
+                width: iconSize,
+                height: iconSize,
                 child: Center(
                   child: AuraText(
                     child: tool.getIconWidget(),
@@ -86,11 +85,7 @@ class ToolItemRow extends HookConsumerWidget {
               ),
               AuraSwitch(
                 value: isEnabled,
-                onChanged: (value) {
-                  ref
-                      .read(workspaceToolsProvider(workspaceId).notifier)
-                      .setToolEnabled(tool.id, isEnabled: value);
-                },
+                onChanged: (value) => _setToolEnabled(ref, value),
                 size: AuraSwitchSize.sm,
               ),
               AuraIconButton.custom(
@@ -110,7 +105,7 @@ class ToolItemRow extends HookConsumerWidget {
           if (isExpanded.value)
             Padding(
               padding: EdgeInsets.only(
-                left: 36 + context.auraTheme.fromSpacing(.sm),
+                left: iconSize + context.auraTheme.fromSpacing(.sm),
                 top: context.auraTheme.fromSpacing(.sm),
               ),
               child: _ToolOptions(
@@ -125,6 +120,12 @@ class ToolItemRow extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
       ),
     );
+  }
+
+  void _setToolEnabled(WidgetRef ref, bool value) {
+    ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .setToolEnabled(tool.id, isEnabled: value);
   }
 }
 
@@ -173,14 +174,7 @@ class _ToolOptions extends HookConsumerWidget {
                   ),
                 ],
                 selectedValue: permissionMode,
-                onChanged: (mode) {
-                  ref
-                      .read(workspaceToolsProvider(workspaceId).notifier)
-                      .setToolPermissionMode(
-                        workspaceTool.id,
-                        permissionMode: mode,
-                      );
-                },
+                onChanged: (mode) => _setPermissionMode(ref, mode),
                 size: AuraButtonGroupSize.sm,
               ),
             ],
@@ -214,12 +208,20 @@ class _ToolOptions extends HookConsumerWidget {
     );
   }
 
+  void _setPermissionMode(WidgetRef ref, ToolPermissionMode? mode) {
+    if (mode == null) return;
+
+    ref
+        .read(workspaceToolsProvider(workspaceId).notifier)
+        .setToolPermissionMode(tool.id, permissionMode: mode);
+  }
+
   Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
     WorkspaceToolEntity workspaceTool,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.tools_screen_remove_tool_title),
       message: const TextLocale(LocaleKeys.tools_screen_remove_tool_confirm),

@@ -76,9 +76,9 @@ void main() {
     });
 
     test('returns unknownContextLimit when contextLimit is null', () async {
-      when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-        (_) async => CompactionSettings.defaults,
-      );
+      when(
+        () => mockSettingsRepo.getEffectiveSettings(any()),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
       usecase = ShouldCompactConversationUsecase(
         messageRepository: mockRepository,
         settingsRepository: mockSettingsRepo,
@@ -101,9 +101,9 @@ void main() {
     });
 
     test('returns unsafeState when pending tool calls exist', () async {
-      when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-        (_) async => CompactionSettings.defaults,
-      );
+      when(
+        () => mockSettingsRepo.getEffectiveSettings(any()),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
       usecase = ShouldCompactConversationUsecase(
         messageRepository: mockRepository,
         settingsRepository: mockSettingsRepo,
@@ -146,9 +146,9 @@ void main() {
     test(
       'returns belowPercentageThreshold when usage is below threshold',
       () async {
-        when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-          (_) async => CompactionSettings.defaults,
-        );
+        when(
+          () => mockSettingsRepo.getEffectiveSettings(any()),
+        ).thenAnswer((_) async => CompactionSettings.defaults);
         usecase = ShouldCompactConversationUsecase(
           messageRepository: mockRepository,
           settingsRepository: mockSettingsRepo,
@@ -159,9 +159,7 @@ void main() {
           _makeMessage(
             id: 'msg-2',
             isUser: false,
-            metadata: const MessageMetadataEntity(
-              totalTokens: 50000,
-            ),
+            metadata: const MessageMetadataEntity(totalTokens: 50000),
           ),
         ];
 
@@ -186,93 +184,44 @@ void main() {
       },
     );
 
-    test(
-      'returns eligible when usage threshold is met even if '
-      'remaining tokens are high',
-      () async {
-        when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-          (_) async => CompactionSettings.defaults,
-        );
-        usecase = ShouldCompactConversationUsecase(
-          messageRepository: mockRepository,
-          settingsRepository: mockSettingsRepo,
-        );
+    test('returns eligible when usage threshold is met', () async {
+      when(
+        () => mockSettingsRepo.getEffectiveSettings(any()),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
+      usecase = ShouldCompactConversationUsecase(
+        messageRepository: mockRepository,
+        settingsRepository: mockSettingsRepo,
+      );
 
-        final messages = [
-          _makeMessage(),
-          _makeMessage(
-            id: 'msg-2',
-            isUser: false,
-            metadata: const MessageMetadataEntity(
-              totalTokens: 110000,
-            ),
-          ),
-        ];
+      final messages = [
+        _makeMessage(),
+        _makeMessage(
+          id: 'msg-2',
+          isUser: false,
+          metadata: const MessageMetadataEntity(totalTokens: 110000),
+        ),
+      ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+      when(
+        () => mockRepository.getMessagesByConversation('conv-1'),
+      ).thenAnswer((_) async => messages);
 
-        final decision = await usecase(
-          conversationId: 'conv-1',
-          workspaceId: 'workspace-1',
-          selectedModelId: 'model-1',
-          selectedProviderId: 'provider-1',
-          maxOutputTokens: 4096,
-          contextLimit: 128000,
-        );
+      final decision = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'workspace-1',
+        selectedModelId: 'model-1',
+        selectedProviderId: 'provider-1',
+        maxOutputTokens: 4096,
+        contextLimit: 128000,
+      );
 
-        expect(decision.shouldCompact, isTrue);
-        expect(decision.reason, CompactionDecisionReason.eligible);
-      },
-    );
+      expect(decision.shouldCompact, isTrue);
+      expect(decision.reason, CompactionDecisionReason.eligible);
+    });
 
-    test(
-      'returns eligible when remaining token threshold is met even if '
-      'usage is below threshold',
-      () async {
-        when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-          (_) async => const CompactionSettings(
-            remainingTokenThreshold: 60000,
-          ),
-        );
-        usecase = ShouldCompactConversationUsecase(
-          messageRepository: mockRepository,
-          settingsRepository: mockSettingsRepo,
-        );
-
-        final messages = [
-          _makeMessage(),
-          _makeMessage(
-            id: 'msg-2',
-            isUser: false,
-            metadata: const MessageMetadataEntity(
-              totalTokens: 70000,
-            ),
-          ),
-        ];
-
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
-
-        final decision = await usecase(
-          conversationId: 'conv-1',
-          workspaceId: 'workspace-1',
-          selectedModelId: 'model-1',
-          selectedProviderId: 'provider-1',
-          maxOutputTokens: 4096,
-          contextLimit: 128000,
-        );
-
-        expect(decision.shouldCompact, isTrue);
-        expect(decision.reason, CompactionDecisionReason.eligible);
-      },
-    );
-
-    test('returns eligible when both thresholds are met', () async {
+    test('returns eligible when remaining token threshold is met', () async {
       when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-        (_) async => CompactionSettings.defaults,
+        (_) async => const CompactionSettings(remainingTokenThreshold: 60000),
       );
       usecase = ShouldCompactConversationUsecase(
         messageRepository: mockRepository,
@@ -284,9 +233,42 @@ void main() {
         _makeMessage(
           id: 'msg-2',
           isUser: false,
-          metadata: const MessageMetadataEntity(
-            totalTokens: 127000,
-          ),
+          metadata: const MessageMetadataEntity(totalTokens: 70000),
+        ),
+      ];
+
+      when(
+        () => mockRepository.getMessagesByConversation('conv-1'),
+      ).thenAnswer((_) async => messages);
+
+      final decision = await usecase(
+        conversationId: 'conv-1',
+        workspaceId: 'workspace-1',
+        selectedModelId: 'model-1',
+        selectedProviderId: 'provider-1',
+        maxOutputTokens: 4096,
+        contextLimit: 128000,
+      );
+
+      expect(decision.shouldCompact, isTrue);
+      expect(decision.reason, CompactionDecisionReason.eligible);
+    });
+
+    test('returns eligible when both thresholds are met', () async {
+      when(
+        () => mockSettingsRepo.getEffectiveSettings(any()),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
+      usecase = ShouldCompactConversationUsecase(
+        messageRepository: mockRepository,
+        settingsRepository: mockSettingsRepo,
+      );
+
+      final messages = [
+        _makeMessage(),
+        _makeMessage(
+          id: 'msg-2',
+          isUser: false,
+          metadata: const MessageMetadataEntity(totalTokens: 127000),
         ),
       ];
 
@@ -311,9 +293,9 @@ void main() {
     test(
       'returns eligible for manual trigger regardless of thresholds',
       () async {
-        when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-          (_) async => CompactionSettings.defaults,
-        );
+        when(
+          () => mockSettingsRepo.getEffectiveSettings(any()),
+        ).thenAnswer((_) async => CompactionSettings.defaults);
         usecase = ShouldCompactConversationUsecase(
           messageRepository: mockRepository,
           settingsRepository: mockSettingsRepo,
@@ -372,9 +354,9 @@ void main() {
     });
 
     test('loads settings from service at call time', () async {
-      when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-        (_) async => CompactionSettings.defaults,
-      );
+      when(
+        () => mockSettingsRepo.getEffectiveSettings(any()),
+      ).thenAnswer((_) async => CompactionSettings.defaults);
       usecase = ShouldCompactConversationUsecase(
         messageRepository: mockRepository,
         settingsRepository: mockSettingsRepo,
@@ -535,10 +517,7 @@ void main() {
         );
 
         expect(decision.shouldCompact, isTrue);
-        expect(
-          decision.reason,
-          CompactionDecisionReason.eligible,
-        );
+        expect(decision.reason, CompactionDecisionReason.eligible);
       },
     );
 
@@ -549,9 +528,9 @@ void main() {
           usagePercentageThreshold: 1,
           updatedAt: DateTime(2026),
         );
-        when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
-          (_) async => settings,
-        );
+        when(
+          () => mockSettingsRepo.getEffectiveSettings(any()),
+        ).thenAnswer((_) async => settings);
         usecase = ShouldCompactConversationUsecase(
           messageRepository: mockRepository,
           settingsRepository: mockSettingsRepo,

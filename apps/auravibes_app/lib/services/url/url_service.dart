@@ -10,12 +10,11 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:dio/dio.dart';
 
 class UrlService {
+  static const int _maxResponseSize = 1024 * 1024;
+  static const String _truncatedSuffix = '\n... [truncated]';
   UrlService({Dio? dio}) : _dio = dio ?? Dio();
 
   final Dio _dio;
-
-  static const int _maxResponseSize = 1024 * 1024;
-  static const String _truncatedSuffix = '\n... [truncated]';
 
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
     final cancelToken = CancelToken();
@@ -88,12 +87,7 @@ class UrlService {
         ),
       );
     } on Object catch (error, stackTrace) {
-      await _handleRequestError(
-        error,
-        stackTrace,
-        completer,
-        stopwatch,
-      );
+      await _handleRequestError(error, stackTrace, completer, stopwatch);
     }
   }
 
@@ -109,13 +103,13 @@ class UrlService {
 
     final destination = Uri.parse(request.url).resolve(location);
     if (request.headers.isNotEmpty) {
-      final _ = await requirePublicHttpsUri(destination.toString());
+      final _ = await PublicUrlGuard.requireHttpsUri(destination.toString());
     } else {
       final uri = requirePublicUriSyntax(
         destination.toString(),
         requireHttps: false,
       );
-      await ensurePublicHost(uri.host);
+      await PublicUrlGuard.ensureHost(uri.host);
     }
   }
 
@@ -174,7 +168,7 @@ class UrlService {
 
   Future<String> _readErrorResponseBody(Object? data, String? message) async =>
       switch (data) {
-        ResponseBody() => _readResponseBody(data),
+        ResponseBody() => await _readResponseBody(data),
         List<int>() => _decodeErrorBytes(data),
         _ => _truncateText(data?.toString() ?? message ?? ''),
       };
@@ -247,7 +241,7 @@ class UrlService {
       cancelOnError: true,
     );
 
-    return completer.future;
+    return await completer.future;
   }
 
   String _truncateText(String body) {

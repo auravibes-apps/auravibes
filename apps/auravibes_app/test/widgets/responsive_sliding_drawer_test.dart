@@ -397,14 +397,8 @@ void main() {
       final _ = await tester.pumpAndSettle();
       final tooltip = LocaleKeys.navigation_drawer_resize_handle_tooltip.tr();
 
-      expect(
-        find.byTooltip(tooltip),
-        findsOneWidget,
-      );
-      expect(
-        find.bySemanticsLabel(tooltip),
-        findsOneWidget,
-      );
+      expect(find.byTooltip(tooltip), findsOneWidget);
+      expect(find.bySemanticsLabel(tooltip), findsOneWidget);
 
       final opacity = tester.widget<AnimatedOpacity>(
         find.descendant(

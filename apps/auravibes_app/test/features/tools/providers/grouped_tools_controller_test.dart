@@ -42,48 +42,41 @@ void main() {
       },
     );
 
-    test(
-      'deleteMcpGroup deletes by repository lookup when controller state is '
-      'loading',
-      () async {
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
+    test('deleteMcpGroup uses repository lookup while loading', () async {
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
-        final notifier = container.read(
-          groupedToolsProvider(_workspace.id).notifier,
-        )..state = const AsyncLoading();
+      final notifier = container.read(
+        groupedToolsProvider(_workspace.id).notifier,
+      )..state = const AsyncLoading();
 
-        await notifier.deleteMcpGroup('group-1');
+      await notifier.deleteMcpGroup('group-1');
 
-        expect(mcpNotifier.deletedServerIds, ['server-1']);
-      },
-    );
+      expect(mcpNotifier.deletedServerIds, ['server-1']);
+    });
 
-    test(
-      'setMcpGroupEnabled ignores groups from another workspace',
-      () async {
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        toolsGroupsRepository.groupById['group-2'] = _mcpGroup.copyWith(
-          id: 'group-2',
-          workspaceId: 'workspace-2',
-          mcpServerId: 'server-2',
-        );
+    test('setMcpGroupEnabled ignores groups from another workspace', () async {
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      toolsGroupsRepository.groupById['group-2'] = _mcpGroup.copyWith(
+        id: 'group-2',
+        workspaceId: 'workspace-2',
+        mcpServerId: 'server-2',
+      );
 
-        final notifier = container.read(
-          groupedToolsProvider(_workspace.id).notifier,
-        )..state = const AsyncLoading();
+      final notifier = container.read(
+        groupedToolsProvider(_workspace.id).notifier,
+      )..state = const AsyncLoading();
 
-        await notifier.setMcpGroupEnabled('group-2', isEnabled: false);
+      await notifier.setMcpGroupEnabled('group-2', isEnabled: false);
 
-        expect(toolsGroupsRepository.lastSetGroupId, isNull);
-        expect(mcpNotifier.disconnectedServerIds, isEmpty);
-        expect(mcpNotifier.reconnectedServerIds, isEmpty);
-      },
-    );
+      expect(toolsGroupsRepository.lastSetGroupId, isNull);
+      expect(mcpNotifier.disconnectedServerIds, isEmpty);
+      expect(mcpNotifier.reconnectedServerIds, isEmpty);
+    });
 
     test(
       'setMcpGroupEnabled skips side effects when repository update fails',
@@ -106,85 +99,70 @@ void main() {
       },
     );
 
-    test(
-      'setMcpGroupEnabled reconnects when enabled',
-      () async {
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
+    test('setMcpGroupEnabled reconnects when enabled', () async {
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      toolsGroupsRepository.groupById['group-1'] = _mcpGroup;
 
-        final notifier = container.read(
-          groupedToolsProvider(_workspace.id).notifier,
-        )..state = const AsyncLoading();
+      final notifier = container.read(
+        groupedToolsProvider(_workspace.id).notifier,
+      )..state = const AsyncLoading();
 
-        await notifier.setMcpGroupEnabled('group-1', isEnabled: true);
+      await notifier.setMcpGroupEnabled('group-1', isEnabled: true);
 
-        expect(toolsGroupsRepository.lastSetGroupId, 'group-1');
-        expect(toolsGroupsRepository.lastIsEnabled, isTrue);
-        expect(mcpNotifier.reconnectedServerIds, ['server-1']);
-        expect(mcpNotifier.disconnectedServerIds, isEmpty);
-      },
-    );
+      expect(toolsGroupsRepository.lastSetGroupId, 'group-1');
+      expect(toolsGroupsRepository.lastIsEnabled, isTrue);
+      expect(mcpNotifier.reconnectedServerIds, ['server-1']);
+      expect(mcpNotifier.disconnectedServerIds, isEmpty);
+    });
 
-    test(
-      'deleteMcpGroup skips non-MCP group',
-      () async {
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        final nonMcpGroup = _mcpGroup.copyWith(
-          id: 'group-non-mcp',
-          mcpServerId: null,
-        );
-        toolsGroupsRepository.groupById['group-non-mcp'] = nonMcpGroup;
+    test('deleteMcpGroup skips non-MCP group', () async {
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      final nonMcpGroup = _mcpGroup.copyWith(
+        id: 'group-non-mcp',
+        mcpServerId: null,
+      );
+      toolsGroupsRepository.groupById['group-non-mcp'] = nonMcpGroup;
 
-        final notifier = container.read(
-          groupedToolsProvider(_workspace.id).notifier,
-        )..state = const AsyncLoading();
+      final notifier = container.read(
+        groupedToolsProvider(_workspace.id).notifier,
+      )..state = const AsyncLoading();
 
-        await notifier.deleteMcpGroup('group-non-mcp');
+      await notifier.deleteMcpGroup('group-non-mcp');
 
-        expect(mcpNotifier.deletedServerIds, isEmpty);
-      },
-    );
+      expect(mcpNotifier.deletedServerIds, isEmpty);
+    });
 
-    test(
-      'reconnectMcp delegates to McpConnectionNotifier',
-      () async {
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        final notifier = container.read(
-          groupedToolsProvider(_workspace.id).notifier,
-        )..state = const AsyncLoading();
+    test('reconnectMcp delegates to McpConnectionNotifier', () async {
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      final notifier = container.read(
+        groupedToolsProvider(_workspace.id).notifier,
+      )..state = const AsyncLoading();
 
-        await notifier.reconnectMcp('server-1');
+      await notifier.reconnectMcp('server-1');
 
-        expect(mcpNotifier.reconnectedServerIds, ['server-1']);
-      },
-    );
+      expect(mcpNotifier.reconnectedServerIds, ['server-1']);
+    });
 
-    test(
-      'deleteMcpGroup skips group with null mcpServerId',
-      () async {
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        final group = _mcpGroup.copyWith(
-          id: 'group-empty-mcp',
-          mcpServerId: '',
-        );
-        toolsGroupsRepository.groupById['group-empty-mcp'] = group;
+    test('deleteMcpGroup skips group with null mcpServerId', () async {
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      final group = _mcpGroup.copyWith(id: 'group-empty-mcp', mcpServerId: '');
+      toolsGroupsRepository.groupById['group-empty-mcp'] = group;
 
-        final notifier = container.read(
-          groupedToolsProvider(_workspace.id).notifier,
-        )..state = const AsyncLoading();
+      final notifier = container.read(
+        groupedToolsProvider(_workspace.id).notifier,
+      )..state = const AsyncLoading();
 
-        await notifier.deleteMcpGroup('group-empty-mcp');
+      await notifier.deleteMcpGroup('group-empty-mcp');
 
-        expect(mcpNotifier.deletedServerIds, isEmpty);
-      },
-    );
+      expect(mcpNotifier.deletedServerIds, isEmpty);
+    });
   });
 }
 
@@ -212,9 +190,11 @@ class _GroupedToolsControllerFixture {
     _mcpNotifier = mcpNotifier;
     _container = ProviderContainer(
       overrides: [
-        toolsGroupsRepositoryProvider.overrideWithValue(
-          toolsGroupsRepository,
-        ),
+        toolsGroupsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(toolsGroupsRepository),
         workspaceToolsProvider(
           _workspace.id,
         ).overrideWith(() => workspaceToolsNotifier),

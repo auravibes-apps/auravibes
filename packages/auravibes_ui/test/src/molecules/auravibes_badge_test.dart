@@ -12,11 +12,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              child: Text(childText),
-            ),
-          ),
+          home: Scaffold(body: AuraBadge(child: Text(childText))),
         ),
       );
 
@@ -27,11 +23,7 @@ void main() {
     testWidgets('applies primary variant styling correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              child: Text('Primary'),
-            ),
-          ),
+          home: Scaffold(body: AuraBadge(child: Text('Primary'))),
         ),
       );
 
@@ -108,10 +100,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraBadge(
-              child: Text('Small'),
-              size: AuraBadgeSize.small,
-            ),
+            body: AuraBadge(child: Text('Small'), size: AuraBadgeSize.small),
           ),
         ),
       );
@@ -129,11 +118,7 @@ void main() {
     testWidgets('applies medium size correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraBadge(
-              child: Text('Medium'),
-            ),
-          ),
+          home: Scaffold(body: AuraBadge(child: Text('Medium'))),
         ),
       );
 
@@ -178,11 +163,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: AuraBadge.text(
-                child: const Text(badgeText),
-              ),
-            ),
+            home: Scaffold(body: AuraBadge.text(child: const Text(badgeText))),
           ),
         );
 
@@ -197,11 +178,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: AuraBadge.count(
-                count: count,
-              ),
-            ),
+            home: Scaffold(body: AuraBadge.count(count: count)),
           ),
         );
 
@@ -217,11 +194,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: AuraBadge.count(
-                count: count,
-              ),
-            ),
+            home: Scaffold(body: AuraBadge.count(count: count)),
           ),
         );
 
@@ -233,11 +206,7 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: AuraBadge.count(
-                count: count,
-              ),
-            ),
+            home: Scaffold(body: AuraBadge.count(count: count)),
           ),
         );
 
@@ -257,11 +226,7 @@ void main() {
     group('AuraBadge.dot constructor', () {
       testWidgets('renders dot badge correctly', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AuraBadge.dot(),
-            ),
-          ),
+          const MaterialApp(home: Scaffold(body: AuraBadge.dot())),
         );
 
         final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
@@ -271,11 +236,7 @@ void main() {
 
       testWidgets('applies default semantic label for dot', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: AuraBadge.dot(),
-            ),
-          ),
+          const MaterialApp(home: Scaffold(body: AuraBadge.dot())),
         );
 
         expect(find.bySemanticsLabel('notification indicator'), findsOneWidget);

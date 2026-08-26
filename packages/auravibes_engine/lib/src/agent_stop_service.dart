@@ -1,6 +1,5 @@
 import 'package:auravibes_engine/src/agent_runtime.dart';
 
-// ignore: one_member_abstracts, provider interface keeps DB writes injectable.
 abstract interface class AgentStopProvider {
   Future<void> stopLatestPendingTools(String conversationId);
 }

@@ -19,8 +19,25 @@ class IntroScreen extends ConsumerStatefulWidget {
 }
 
 class _IntroScreenState extends ConsumerState<IntroScreen> {
+  static const _slideButtonSpacing = 8.0;
   _IntroSlide _slide = _IntroSlide.welcome;
   WorkspaceEntity? _createdWorkspace;
+
+  String get _titleKey => switch (_slide) {
+    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
+    _IntroSlide.workspaceContext =>
+      LocaleKeys.intro_flow_workspace_context_title,
+    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
+    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
+  };
+
+  String get _bodyKey => switch (_slide) {
+    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
+    _IntroSlide.workspaceContext =>
+      LocaleKeys.intro_flow_workspace_context_body,
+    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
+    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -67,22 +84,6 @@ class _IntroScreenState extends ConsumerState<IntroScreen> {
       variant: AuraScreenVariation.aurora,
     );
   }
-
-  String get _titleKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_title,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_title,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_title,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_title,
-  };
-
-  String get _bodyKey => switch (_slide) {
-    _IntroSlide.welcome => LocaleKeys.intro_flow_welcome_body,
-    _IntroSlide.workspaceContext =>
-      LocaleKeys.intro_flow_workspace_context_body,
-    _IntroSlide.workspaceChoice => LocaleKeys.intro_flow_choice_body,
-    _IntroSlide.ready => LocaleKeys.intro_flow_ready_body,
-  };
 
   void _continue() {
     final next = _slide.next;
@@ -149,7 +150,9 @@ class _ProgressIndicator extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(
-                right: index == _IntroSlide.values.length - 1 ? 0 : 8,
+                right: index == _IntroSlide.values.length - 1
+                    ? 0
+                    : _IntroScreenState._slideButtonSpacing,
               ),
               child: DecoratedBox(
                 key: ValueKey('intro_progress_step_$index'),

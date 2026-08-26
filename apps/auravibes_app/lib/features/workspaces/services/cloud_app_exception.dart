@@ -1,20 +1,12 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
+import 'package:auravibes_app/features/workspaces/services/cloud_operation_context.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:logging/logging.dart';
 
-final _logger = Logger('cloud_app_exception');
+export 'cloud_operation_context.dart';
 
-enum CloudOperationContext {
-  workspace,
-  state,
-  conversation,
-  object,
-  mcp,
-  model,
-  oauth,
-  resource,
-}
+final _logger = Logger('cloud_app_exception');
 
 final class CloudAppException implements Exception {
   const CloudAppException({
@@ -31,55 +23,60 @@ final class CloudAppException implements Exception {
   String toString() => 'CloudAppException($context, $code)';
 }
 
-Future<T> guardCloudCall<T>(
-  CloudOperationContext context,
-  Future<T> Function() call,
-) async {
-  try {
-    return await call();
-  } on Object catch (error, stackTrace) {
-    _logger.severe('Cloud $context operation failed', error, stackTrace);
-    translateCloudException(error, context);
+abstract final class CloudAppErrors {
+  static Future<T> guardCall<T>(
+    CloudOperationContext context,
+    Future<T> Function() call,
+  ) async {
+    try {
+      return await call();
+    } on Object catch (error, stackTrace) {
+      _logger.severe('Cloud $context operation failed', error, stackTrace);
+      translateException(error, context);
+    }
   }
-}
 
-String cloudErrorLocalizationKey(Object error) => switch (error) {
-  CloudAppException(:final localizationKey) => localizationKey,
-  UnsupportedWorkspaceCapabilityException(:final localizationKey) =>
-    localizationKey,
-  _ => LocaleKeys.cloud_errors_unavailable,
-};
-
-Never translateCloudException(Object error, CloudOperationContext context) {
-  if (error is CloudAppException) throw error;
-  final translated = switch (error) {
-    CloudWorkspaceException(:final code) => (
-      localizationKey: _workspaceKey(code),
-      code: code.name,
-    ),
-    ConversationException(:final code) => (
-      localizationKey: _conversationKey(code),
-      code: code.name,
-    ),
-    ObjectException(:final code) => (
-      localizationKey: _objectKey(code),
-      code: code.name,
-    ),
-    UnsupportedWorkspaceCapabilityException() => (
-      localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
-      code: 'unsupportedCapability',
-    ),
-    TypeError() || FormatException() || StateError() || UnsupportedError() => (
-      localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-      code: error.runtimeType.toString(),
-    ),
-    _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
+  static String localizationKey(Object error) => switch (error) {
+    CloudAppException(:final localizationKey) => localizationKey,
+    UnsupportedWorkspaceCapabilityException(:final localizationKey) =>
+      localizationKey,
+    _ => LocaleKeys.cloud_errors_unavailable,
   };
-  throw CloudAppException(
-    localizationKey: translated.localizationKey,
-    context: context,
-    code: translated.code,
-  );
+
+  static Never translateException(Object error, CloudOperationContext context) {
+    if (error is CloudAppException) throw error;
+    final translated = switch (error) {
+      CloudWorkspaceException(:final code) => (
+        localizationKey: _workspaceKey(code),
+        code: code.name,
+      ),
+      ConversationException(:final code) => (
+        localizationKey: _conversationKey(code),
+        code: code.name,
+      ),
+      ObjectException(:final code) => (
+        localizationKey: _objectKey(code),
+        code: code.name,
+      ),
+      UnsupportedWorkspaceCapabilityException() => (
+        localizationKey: LocaleKeys.workspace_capabilities_unsupported_error,
+        code: 'unsupportedCapability',
+      ),
+      TypeError() ||
+      FormatException() ||
+      StateError() ||
+      UnsupportedError() => (
+        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+        code: error.runtimeType.toString(),
+      ),
+      _ => (localizationKey: LocaleKeys.cloud_errors_unavailable, code: null),
+    };
+    throw CloudAppException(
+      localizationKey: translated.localizationKey,
+      context: context,
+      code: translated.code,
+    );
+  }
 }
 
 String _workspaceKey(CloudWorkspaceErrorCode code) => switch (code) {

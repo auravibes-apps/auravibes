@@ -10,18 +10,16 @@ import 'package:dio/dio.dart';
 import 'package:riverpod/riverpod.dart';
 
 class OAuthCredentialService {
-  OAuthCredentialService(
-    this._serviceConnectionRepository, {
-    Dio? dio,
-  }) : _dio =
-           dio ??
-           Dio(
-             BaseOptions(
-               connectTimeout: const Duration(seconds: 10),
-               receiveTimeout: const Duration(seconds: 20),
-               sendTimeout: const Duration(seconds: 10),
-             ),
-           );
+  OAuthCredentialService(this._serviceConnectionRepository, {Dio? dio})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 20),
+              sendTimeout: const Duration(seconds: 10),
+            ),
+          );
 
   final ServiceConnectionRepository _serviceConnectionRepository;
   final Dio _dio;
@@ -34,9 +32,7 @@ class OAuthCredentialService {
       return const McpAuthenticationType.none();
     }
 
-    final row = await _serviceConnectionRepository.getById(
-      serviceConnectionId,
-    );
+    final row = await _serviceConnectionRepository.getById(serviceConnectionId);
     if (row == null || !row.isEnabled) {
       return const McpAuthenticationType.none();
     }
@@ -88,9 +84,7 @@ class OAuthCredentialService {
     final expiresAt = row.expiresAt;
     final shouldRefresh =
         expiresAt == null ||
-        DateTime.now().isAfter(
-          expiresAt.subtract(const Duration(minutes: 5)),
-        );
+        DateTime.now().isAfter(expiresAt.subtract(const Duration(minutes: 5)));
     if (!shouldRefresh) {
       final issuedAt = row.lastRefreshedAt ?? row.updatedAt;
 
@@ -102,7 +96,7 @@ class OAuthCredentialService {
       );
     }
 
-    return forceRefresh(serviceConnectionId);
+    return await forceRefresh(serviceConnectionId);
   }
 
   Future<OAuthTokenEntity> forceRefresh(String serviceConnectionId) {
@@ -158,7 +152,7 @@ class OAuthCredentialService {
     }
 
     try {
-      final tokenUri = await requirePublicHttpsUri(tokenEndpoint);
+      final tokenUri = await PublicUrlGuard.requireHttpsUri(tokenEndpoint);
       final response = await _dio.post<Object?>(
         tokenUri.toString(),
         data: {
@@ -248,8 +242,6 @@ class OAuthCredentialService {
 // coverage:ignore-start
 // Required: Riverpod provider wiring is exercised through integration callers.
 final oauthCredentialServiceProvider = Provider<OAuthCredentialService>((ref) {
-  return OAuthCredentialService(
-    ref.watch(serviceConnectionRepositoryProvider),
-  );
+  return OAuthCredentialService(ref.watch(serviceConnectionRepositoryProvider));
 });
 // coverage:ignore-end

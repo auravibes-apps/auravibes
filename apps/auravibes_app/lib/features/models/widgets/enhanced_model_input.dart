@@ -64,10 +64,7 @@ class EnhancedModelInput extends HookConsumerWidget {
     String placeholder,
     TextInputType keyboardType,
   })
-  _getFieldData(
-    ModelInputFieldType type,
-    AddModelProviderModel state,
-  ) {
+  _getFieldData(ModelInputFieldType type, AddModelProviderModel state) {
     switch (type) {
       case ModelInputFieldType.name:
         return (
@@ -136,8 +133,4 @@ class EnhancedModelInput extends HookConsumerWidget {
 }
 
 /// Enum representing the different input field types in the form.
-enum ModelInputFieldType {
-  name,
-  key,
-  url,
-}
+enum ModelInputFieldType { name, key, url }

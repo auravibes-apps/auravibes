@@ -1,19 +1,14 @@
 import 'dart:async';
 
 class AgentQueuedDraft {
-  const AgentQueuedDraft({
-    required this.content,
-    this.payload,
-  });
+  const AgentQueuedDraft({required this.content, this.payload});
 
   final String content;
   final Object? payload;
 }
 
 class AgentCreatedMessage {
-  const AgentCreatedMessage({
-    required this.id,
-  });
+  const AgentCreatedMessage({required this.id});
 
   final String id;
 }
@@ -105,10 +100,7 @@ abstract interface class AgentSendQueueRuntime {
 }
 
 class AgentRateLimitRetryRuntime {
-  const AgentRateLimitRetryRuntime({
-    required this.start,
-    required this.clear,
-  });
+  const AgentRateLimitRetryRuntime({required this.start, required this.clear});
 
   final void Function(String conversationId, DateTime retryAt) start;
   final void Function(String conversationId) clear;

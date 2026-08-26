@@ -4,10 +4,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
 class ToolsEmptyState extends StatelessWidget {
-  const ToolsEmptyState({
-    super.key,
-    this.padding = const EdgeInsets.all(24),
-  });
+  const ToolsEmptyState({super.key, this.padding = const EdgeInsets.all(24)});
 
   final EdgeInsetsGeometry padding;
 

@@ -19,6 +19,7 @@ const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 
 class ServiceConnectionsScreen extends ConsumerWidget {
+  static const _tagSpacing = 6.0;
   const ServiceConnectionsScreen({required this.workspaceId, super.key});
 
   final String workspaceId;
@@ -95,10 +96,7 @@ class _ConnectionsList extends StatelessWidget {
       return Center(
         child: AuraColumn(
           children: [
-            const AuraIcon(
-              Icons.hub_outlined,
-              size: AuraIconSize.extraLarge,
-            ),
+            const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_title),
               style: AuraTextStyle.heading3,
@@ -133,6 +131,14 @@ class _ConnectionTile extends ConsumerWidget {
 
   final ServiceConnectionListItem connection;
 
+  IconData get _icon {
+    return switch (connection.kind) {
+      ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
+      ServiceConnectionListItemKind.skillCredential => Icons.key_outlined,
+      ServiceConnectionListItemKind.mcpServer => Icons.hub_outlined,
+    };
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menuController = AuraPopupMenuController();
@@ -145,9 +151,7 @@ class _ConnectionTile extends ConsumerWidget {
               child: Text(connection.name),
               style: AuraTextStyle.heading6,
             ),
-            AuraText(
-              child: Text(_subtitle(context)),
-            ),
+            AuraText(child: Text(_subtitle(context))),
             if (connection.kind == ServiceConnectionListItemKind.mcpServer)
               _ConnectionStatusBadge(status: connection.displayStatus),
             if (connection.metadataValues.isNotEmpty)
@@ -207,14 +211,6 @@ class _ConnectionTile extends ConsumerWidget {
     );
   }
 
-  IconData get _icon {
-    return switch (connection.kind) {
-      ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
-      ServiceConnectionListItemKind.skillCredential => Icons.key_outlined,
-      ServiceConnectionListItemKind.mcpServer => Icons.hub_outlined,
-    };
-  }
-
   String _subtitle(BuildContext context) {
     final kind = switch (connection.kind) {
       ServiceConnectionListItemKind.modelProvider =>
@@ -248,10 +244,7 @@ class _ConnectionTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final titleKey = switch (connection.kind) {
       ServiceConnectionListItemKind.modelProvider =>
         LocaleKeys.service_connections_delete_model_provider_title,
@@ -276,14 +269,11 @@ class _ConnectionTile extends ConsumerWidget {
       'kind=${connection.kind.name} connectionNameLength='
       '${connection.name.length}',
     );
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: TextLocale(titleKey),
       message: Text(
-        confirmKey.tr(
-          namedArgs: {'name': connection.name},
-          context: context,
-        ),
+        confirmKey.tr(namedArgs: {'name': connection.name}, context: context),
       ),
       actions: const AuraConfirmDialogActions(
         confirmLabel: TextLocale(LocaleKeys.common_delete),
@@ -336,7 +326,7 @@ class _ConnectionTile extends ConsumerWidget {
         ServiceConnectionListItemKind.mcpServer =>
           LocaleKeys.service_connections_action_reconnect_error,
       };
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: TextLocale(errorKey),
         variant: AuraSnackBarVariant.error,
@@ -344,10 +334,7 @@ class _ConnectionTile extends ConsumerWidget {
     }
   }
 
-  Future<void> _reconnectMcpServer(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _reconnectMcpServer(BuildContext context, WidgetRef ref) async {
     final serverId = connection.mcpServerId;
     if (serverId == null) return;
 
@@ -357,7 +344,7 @@ class _ConnectionTile extends ConsumerWidget {
       );
       await usecase.reconnectMcpServer(serverId);
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_reconnect_success,
@@ -372,7 +359,7 @@ class _ConnectionTile extends ConsumerWidget {
         stackTrace,
       );
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_reconnect_error,
@@ -395,7 +382,7 @@ class _ConnectionTile extends ConsumerWidget {
         mcpServerId: serverId,
       );
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_refresh_success,
@@ -410,7 +397,7 @@ class _ConnectionTile extends ConsumerWidget {
         stackTrace,
       );
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(
           LocaleKeys.service_connections_action_refresh_error,
@@ -465,8 +452,8 @@ class _ConnectionMetadata extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: ServiceConnectionsScreen._tagSpacing,
+      runSpacing: ServiceConnectionsScreen._tagSpacing,
       children: values.map((value) {
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -507,10 +494,7 @@ String _statusLabel(
   return key.tr(context: context);
 }
 
-String _metadataLabel(
-  BuildContext context,
-  ServiceConnectionMetadataKey key,
-) {
+String _metadataLabel(BuildContext context, ServiceConnectionMetadataKey key) {
   final localeKey = switch (key) {
     ServiceConnectionMetadataKey.issuer =>
       LocaleKeys.service_connections_metadata_issuer,

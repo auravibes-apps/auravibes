@@ -10,7 +10,10 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(await container.read(accentHueProvider.future), defaultAccentHue);
+      expect(
+        await container.read(accentHueProvider.future),
+        AccentHue.defaultValue,
+      );
     });
 
     test('build restores saved hue', () async {
@@ -34,7 +37,10 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(await container.read(accentHueProvider.future), defaultAccentHue);
+      expect(
+        await container.read(accentHueProvider.future),
+        AccentHue.defaultValue,
+      );
     });
 
     test('setHue persists to SharedPreferences', () async {
@@ -65,7 +71,10 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(await container.read(accentHueProvider.future), defaultAccentHue);
+      expect(
+        await container.read(accentHueProvider.future),
+        AccentHue.defaultValue,
+      );
       await container.read(accentHueProvider.notifier).setHue(500);
 
       expect(container.read(accentHueProvider).value, 360);
@@ -76,7 +85,10 @@ void main() {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
-      expect(await container.read(accentHueProvider.future), defaultAccentHue);
+      expect(
+        await container.read(accentHueProvider.future),
+        AccentHue.defaultValue,
+      );
       await container.read(accentHueProvider.notifier).setHue(-50);
 
       expect(container.read(accentHueProvider).value, 0);
@@ -90,11 +102,11 @@ void main() {
 
         expect(
           await container.read(accentHueProvider.future),
-          defaultAccentHue,
+          AccentHue.defaultValue,
         );
         await container.read(accentHueProvider.notifier).setHue(hue);
 
-        expect(container.read(accentHueProvider).value, defaultAccentHue);
+        expect(container.read(accentHueProvider).value, AccentHue.defaultValue);
       }
     });
   });

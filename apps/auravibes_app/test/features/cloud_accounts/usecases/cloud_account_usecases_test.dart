@@ -29,7 +29,10 @@ void main() {
       store: store,
       workspaceRepository: repository,
       invalidateAccount: (serverUrl, userId) {
-        invalidatedIdentity = accountIdentity(serverUrl, userId);
+        invalidatedIdentity = CloudAccountIdentity.accountIdentity(
+          serverUrl,
+          userId,
+        );
       },
     );
 
@@ -40,7 +43,7 @@ void main() {
 
     expect(
       invalidatedIdentity,
-      accountIdentity('https://server.example', 'account'),
+      CloudAccountIdentity.accountIdentity('https://server.example', 'account'),
     );
     verify(
       () => store.removeAccount(

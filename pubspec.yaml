@@ -13,13 +13,13 @@ workspace:
 
 dev_dependencies:
   analyzer: ^14.0.0
-  dart_code_linter: ^4.1.6
+  dart_code_linter: ^4.2.0
   dependency_validator: ^5.0.5
   import_sorter: ^5.0.0-releasecandidate.1
   melos: ^8.1.0
   riverpod_lint: 3.1.8
   test: 1.31.2
-  very_good_analysis: ^10.3.0
+  very_good_analysis: ^11.0.0-rc.1
 
 dependency_overrides:
   # ponytail: analyzer 13 required by riverpod_lint; older tool metadata still caps it.
@@ -60,7 +60,7 @@ melos:
       description: Fail when unused Dart files are detected
 
     dcl:analyze:
-      run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib apps/auravibes_app/test packages/auravibes_engine/lib packages/auravibes_engine/test packages/auravibes_ui/lib packages/auravibes_ui/test widgetbook/lib --set-exit-on-violation-level=noted
+      run: dart run dart_code_linter:metrics analyze apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib widgetbook/lib --exclude='{**/*_test.dart,**/test/**}' --set-exit-on-violation-level=noted
       description: Run legacy Dart Code Linter rule analysis manually
 
     unused:code:
@@ -72,7 +72,7 @@ melos:
     unnecessary:nullable:
       # Excluded callbacks/entities use null as behavior: fallback close flow,
       # Flutter-style disabled icon buttons, and patch fields.
-      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/domain/entities/conversation_entity.dart,apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart,apps/auravibes_app/lib/features/chats/agent_adapters/app_agent_continuation_adapter.dart,apps/auravibes_app/lib/features/chats/services/cloud_chat_gateway.dart,apps/auravibes_app/lib/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart,apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart,apps/auravibes_app/lib/features/chats/widgets/chat_tool_approval_card.dart,apps/auravibes_app/lib/services/agent_harness/agent_tool_execution_service.dart,apps/auravibes_app/lib/services/agent_harness/approve_tool_call_service.dart,packages/auravibes_engine/lib/src/provider_tool_exchange.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
+      run: dart run dart_code_linter:metrics check-unnecessary-nullable --monorepo --exclude='{apps/auravibes_app/lib/domain/entities/conversation_entity.dart,apps/auravibes_app/lib/features/models/widgets/add_model_provider_widget.dart,packages/auravibes_ui/lib/src/atoms/aura_icon.dart,packages/auravibes_ui/lib/src/atoms/aura_icon_button.dart,apps/auravibes_app/lib/features/chats/agent_adapters/app_agent_continuation_adapter.dart,apps/auravibes_app/lib/features/chats/services/cloud_chat_gateway.dart,apps/auravibes_app/lib/features/chats/usecases/maybe_auto_compact_conversation_usecase.dart,apps/auravibes_app/lib/features/chats/widgets/chat_messages_widget.dart,apps/auravibes_app/lib/features/chats/widgets/chat_tool_approval_card.dart,apps/auravibes_app/lib/services/agent_harness/agent_tool_execution_service.dart,apps/auravibes_app/lib/services/agent_harness/approve_tool_call_service.dart,apps/auravibes_app/lib/services/agent_harness/app_approve_tool_call_data_provider.dart,apps/auravibes_app/lib/features/tools/widgets/tool_item_row.dart,packages/auravibes_engine/lib/src/provider_tool_exchange.dart}' apps/auravibes_app/lib packages/auravibes_engine/lib packages/auravibes_ui/lib
       description: Fail when unnecessary nullable parameters are detected
 
     format:check:

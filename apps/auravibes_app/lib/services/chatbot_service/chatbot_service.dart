@@ -195,10 +195,7 @@ class ChatbotService {
     );
 
     return ChatResult<ChatMessage>(
-      output: ChatMessage(
-        role: ChatMessageRole.model,
-        parts: toolCallParts,
-      ),
+      output: ChatMessage(role: ChatMessageRole.model, parts: toolCallParts),
       finishReason: normalized.finishReason,
       usage: normalized.usage,
       metadata: normalized.metadata,

@@ -83,11 +83,9 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<bool> deleteModelByProviderAndId(String providerId, String id) async {
-    final deleteCount =
-        await (delete(apiModels)..where(
-              (t) => t.modelProvider.equals(providerId) & t.id.equals(id),
-            ))
-            .go();
+    final deleteCount = await (delete(
+      apiModels,
+    )..where((t) => t.modelProvider.equals(providerId) & t.id.equals(id))).go();
 
     return deleteCount > 0;
   }
@@ -158,7 +156,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted models.
   Future<List<ApiModelsTable>> batchInsertModels(
     List<ApiModelsCompanion> models,
-  ) async {
+  ) {
     return transaction(() async {
       final results = <ApiModelsTable>[];
       for (final model in models) {
@@ -181,7 +179,7 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted/updated models.
   Future<List<ApiModelsTable>> batchUpsertModels(
     List<ApiModelsCompanion> models,
-  ) async {
+  ) {
     return transaction(() async {
       return [for (final model in models) await upsertModel(model)];
     });

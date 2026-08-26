@@ -63,41 +63,6 @@ class SelectorField<T> extends Field<T> {
   /// The list of values to display in the dropdown.
   final List<KnobSelector<T>> selectors;
 
-  static T _defaultValue<T>(
-    T? initialValue,
-    List<KnobSelector<T>> selectors,
-  ) {
-    if (initialValue != null) {
-      return initialValue;
-    }
-
-    final firstSelector = selectors.firstOrNull;
-    if (firstSelector == null) {
-      throw StateError('SelectorField requires at least one selector.');
-    }
-
-    return firstSelector.value;
-  }
-
-  static KnobSelector<T> _selectorFor<T>(
-    List<KnobSelector<T>> selectors,
-    String param,
-  ) {
-    final selector = selectors.firstWhereOrNull(
-      (selector) => selector.label == param,
-    );
-    if (selector != null) {
-      return selector;
-    }
-
-    final firstSelector = selectors.firstOrNull;
-    if (firstSelector == null) {
-      throw StateError('SelectorField requires at least one selector.');
-    }
-
-    return firstSelector;
-  }
-
   /// The default label builder that converts the value to a string.
   static String defaultLabelBuilder(Object? value) {
     return value.toString();
@@ -129,6 +94,38 @@ class SelectorField<T> extends Field<T> {
     return selectors.asMap().map((key, value) {
       return MapEntry(value.label, value.value);
     });
+  }
+
+  static T _defaultValue<T>(T? initialValue, List<KnobSelector<T>> selectors) {
+    if (initialValue != null) {
+      return initialValue;
+    }
+
+    final firstSelector = selectors.firstOrNull;
+    if (firstSelector == null) {
+      throw StateError('SelectorField requires at least one selector.');
+    }
+
+    return firstSelector.value;
+  }
+
+  static KnobSelector<T> _selectorFor<T>(
+    List<KnobSelector<T>> selectors,
+    String param,
+  ) {
+    final selector = selectors.firstWhereOrNull(
+      (selector) => selector.label == param,
+    );
+    if (selector != null) {
+      return selector;
+    }
+
+    final firstSelector = selectors.firstOrNull;
+    if (firstSelector == null) {
+      throw StateError('SelectorField requires at least one selector.');
+    }
+
+    return firstSelector;
   }
 }
 

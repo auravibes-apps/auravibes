@@ -34,9 +34,8 @@ void main() {
             container: container,
             child: MaterialApp.router(
               routerConfig: router,
-              builder: (context, child) => AuraSnackBarHost(
-                child: child ?? const SizedBox.shrink(),
-              ),
+              builder: (context, child) =>
+                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
@@ -89,14 +88,15 @@ void main() {
       'skills_manager',
       isEnabled: false,
     );
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspace.id)),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider.overrideWithValue(null),
+        cloudSkillStoreProvider(workspace.id).overrideWithValue(null),
         skillsRepositoryProvider.overrideWithValue(skillsRepository),
         appSkillWorkspaceSettingsRepositoryProvider.overrideWithValue(
           appSkillSettings,
@@ -104,19 +104,19 @@ void main() {
         workspaceSkillsProvider(workspace.id).overrideWith(
           (_) async => [
             WorkspaceSkill(
+              source: SkillSource.user,
               id: skill.id,
               slug: skill.slug,
               title: skill.title,
               description: skill.description,
-              source: SkillSource.user,
               kind: skill.kind,
               isEnabled: skill.isEnabled,
             ),
           ],
         ),
-        deleteSkillProvider(workspace.id).overrideWithValue(
-          skillsRepository.deleteSkill,
-        ),
+        deleteSkillProvider(
+          workspace.id,
+        ).overrideWithValue(skillsRepository.deleteSkill),
       ],
     );
     addTearDown(container.dispose);
@@ -138,31 +138,25 @@ void main() {
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills',
-          builder: (context, state) => SkillsScreen(
-            workspaceId: state.pathParameters['workspaceId']!,
-          ),
+          builder: (context, state) =>
+              SkillsScreen(workspaceId: state.pathParameters['workspaceId']!),
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills/:skillId',
-          builder: (context, state) => Text(
-            'Editing ${state.pathParameters['skillId']}',
-          ),
+          builder: (context, state) =>
+              Text('Editing ${state.pathParameters['skillId']}'),
         ),
       ],
       initialLocation: '/',
     );
   }
 
-  testWidgets('renders and manages user skills from the list', (
-    tester,
-  ) async {
+  testWidgets('renders and manages user skills from the list', (tester) async {
     final fixture = await createFixture();
     final router = createRouter();
     addTearDown(router.dispose);
 
-    await tester.pumpWidget(
-      buildRouterScreen(fixture.container, router),
-    );
+    await tester.pumpWidget(buildRouterScreen(fixture.container, router));
     final _ = await tester.pumpAndSettle();
     router.go('/workspaces/${fixture.workspace.id}/more/skills');
     final _ = await tester.pumpAndSettle();

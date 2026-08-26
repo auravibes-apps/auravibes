@@ -103,9 +103,9 @@ void main() {
           builder: (context) {
             return TestProviderScope(
               overrides: [
-                workspaceToolsProvider(workspaceId).overrideWith(
-                  () => _DataToolsNotifier(tools),
-                ),
+                workspaceToolsProvider(
+                  workspaceId,
+                ).overrideWith(() => _DataToolsNotifier(tools)),
               ],
               child: MaterialApp(
                 home: Theme(
@@ -140,9 +140,9 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
-          workspaceToolsProvider(workspaceId).overrideWith(
-            _ErrorToolsNotifier.new,
-          ),
+          workspaceToolsProvider(
+            workspaceId,
+          ).overrideWith(_ErrorToolsNotifier.new),
         ],
         child: MaterialApp(
           home: Theme(

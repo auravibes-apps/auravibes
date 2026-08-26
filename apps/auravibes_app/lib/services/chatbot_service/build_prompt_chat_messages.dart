@@ -12,11 +12,10 @@ import 'package:genkit/genkit.dart';
 import 'package:path/path.dart' as p;
 
 class BuildPromptChatMessages {
+  static const _agentBuilder = agent.BuildPromptChatMessages();
   const BuildPromptChatMessages({this.modalitiesInput = const []});
 
   final List<String> modalitiesInput;
-
-  static const _agentBuilder = agent.BuildPromptChatMessages();
 
   Future<List<ChatMessage>> call(List<MessageEntity> messages) async {
     final chatMessages = <ChatMessage>[];
@@ -46,7 +45,8 @@ class BuildPromptChatMessages {
       final part = await _toMediaPart(attachment);
       if (part == null) continue;
       final encodedBytes = part.media.url.length;
-      if (totalBytes + encodedBytes > maxChatPromptAttachmentBytes) {
+      if (totalBytes + encodedBytes >
+          ChatAttachmentModality.maxChatPromptAttachmentBytes) {
         continue;
       }
       totalBytes += encodedBytes;
@@ -65,7 +65,7 @@ class BuildPromptChatMessages {
   }
 
   bool _supportsAttachment(MessageAttachmentEntity attachment) {
-    return supportsAttachmentModality(
+    return ChatAttachmentModality.supports(
       attachment.modality,
       modalitiesInput,
       mimeType: attachment.mimeType,
@@ -73,7 +73,7 @@ class BuildPromptChatMessages {
   }
 
   Future<MediaPart?> _toMediaPart(MessageAttachmentEntity attachment) async {
-    final bytes = await readChatAttachmentBytes(attachment.localPath);
+    final bytes = await ChatAttachmentBytes.read(attachment.localPath);
     if (bytes == null) return null;
 
     final dataUrl = 'data:${attachment.mimeType};base64,${base64Encode(bytes)}';

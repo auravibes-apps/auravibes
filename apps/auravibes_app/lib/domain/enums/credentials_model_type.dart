@@ -10,7 +10,7 @@ enum CredentialsModelType {
 
   /// Creates a credentials model type from a string value.
   ///
-  /// Throws [ArgumentError] if the value is not a valid chat model type
+  /// Throws [ArgumentError] if the value is not a valid chat model type.
   factory CredentialsModelType.fromString(String value) {
     switch (value.toLowerCase()) {
       case 'openai':

@@ -240,10 +240,7 @@ void main() {
             workspaceId: 'ws-1',
             isEnabled: true,
           ),
-          modelProvider: const ApiModelProvidersTable(
-            id: 'test',
-            name: 'Test',
-          ),
+          modelProvider: const ApiModelProvidersTable(id: 'test', name: 'Test'),
         );
 
         when(

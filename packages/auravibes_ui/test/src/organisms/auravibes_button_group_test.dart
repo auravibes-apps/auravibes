@@ -289,10 +289,7 @@ void main() {
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
-                AuraButtonGroupItem(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
+                AuraButtonGroupItem(value: 'delete', child: Text('Delete')),
               ],
               onPressed: (_) {
                 final _ = Object();
@@ -314,10 +311,7 @@ void main() {
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
-                AuraButtonGroupItem(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
+                AuraButtonGroupItem(value: 'delete', child: Text('Delete')),
               ],
               onPressed: (value) => pressedValue = value,
             ),
@@ -339,10 +333,7 @@ void main() {
             child: AuraButtonGroup<String>.action(
               items: const [
                 AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
-                AuraButtonGroupItem(
-                  value: 'delete',
-                  child: Text('Delete'),
-                ),
+                AuraButtonGroupItem(value: 'delete', child: Text('Delete')),
               ],
               onPressed: (_) => wasCalled = true,
               disabled: true,
@@ -356,39 +347,36 @@ void main() {
         expect(wasCalled, isFalse);
       });
 
-      testWidgets(
-        'does not call onPressed for disabled item',
-        (tester) async {
-          String? pressedValue;
+      testWidgets('does not call onPressed for disabled item', (tester) async {
+        String? pressedValue;
 
-          await tester.pumpWidget(
-            Directionality(
-              textDirection: TextDirection.ltr,
-              child: AuraButtonGroup<String>.action(
-                items: const [
-                  AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
-                  AuraButtonGroupItem(
-                    value: 'delete',
-                    child: Text('Delete'),
-                    disabled: true,
-                  ),
-                ],
-                onPressed: (value) => pressedValue = value,
-              ),
+        await tester.pumpWidget(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: AuraButtonGroup<String>.action(
+              items: const [
+                AuraButtonGroupItem(value: 'edit', child: Text('Edit')),
+                AuraButtonGroupItem(
+                  value: 'delete',
+                  child: Text('Delete'),
+                  disabled: true,
+                ),
+              ],
+              onPressed: (value) => pressedValue = value,
             ),
-          );
+          ),
+        );
 
-          await tester.tap(find.text('Delete'));
-          await tester.pump();
+        await tester.tap(find.text('Delete'));
+        await tester.pump();
 
-          expect(pressedValue, isNull);
+        expect(pressedValue, isNull);
 
-          await tester.tap(find.text('Edit'));
-          await tester.pump();
+        await tester.tap(find.text('Edit'));
+        await tester.pump();
 
-          expect(pressedValue, 'edit');
-        },
-      );
+        expect(pressedValue, 'edit');
+      });
     });
 
     group('Size variants', () {
@@ -397,9 +385,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -420,9 +406,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -442,9 +426,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -467,9 +449,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -490,9 +470,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -512,9 +490,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -596,9 +572,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -621,9 +595,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();
@@ -647,9 +619,7 @@ void main() {
           Directionality(
             textDirection: TextDirection.ltr,
             child: AuraButtonGroup<String>.single(
-              items: const [
-                AuraButtonGroupItem(value: 'a', child: Text('A')),
-              ],
+              items: const [AuraButtonGroupItem(value: 'a', child: Text('A'))],
               selectedValue: 'a',
               onChanged: (_) {
                 final _ = Object();

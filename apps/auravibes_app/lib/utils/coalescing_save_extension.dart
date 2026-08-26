@@ -4,10 +4,7 @@ import 'dart:async';
 import 'package:rxdart/rxdart.dart';
 
 class _CoalescingSaver<T> {
-  _CoalescingSaver({
-    required this._store,
-    required this._onSaved,
-  });
+  _CoalescingSaver({required this._store, required this._onSaved});
 
   final Future<void> Function(T state) _store;
   final void Function(T state) _onSaved;
@@ -71,15 +68,10 @@ class _CoalescingSaver<T> {
 }
 
 extension CoalescingSaveExtension<T> on Stream<T> {
-  Stream<T> coalescingSave({
-    required Future<void> Function(T state) store,
-  }) {
+  Stream<T> coalescingSave({required Future<void> Function(T state) store}) {
     final controller = StreamController<T>();
 
-    final saver = _CoalescingSaver<T>(
-      store: store,
-      onSaved: controller.add,
-    );
+    final saver = _CoalescingSaver<T>(store: store, onSaved: controller.add);
 
     StreamSubscription<T>? subscription;
 

@@ -9,14 +9,14 @@ import 'package:riverpod/src/providers/provider.dart';
 
 class UpdateSkillUsecase {
   const UpdateSkillUsecase(this._skillsRepository, {this.cloudStore});
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
-  final CloudSkillStore? cloudStore;
 
   Future<SkillEntity> call(String skillId, SkillToUpdate skill) async {
     final title = skill.title;
     if (title != null) {
-      validateSkillTitle(title);
+      ValidateSkillTitleUsecase.call(title);
       final existingSkill =
           await cloudStore?.skill(skillId) ??
           await _skillsRepository?.getSkillById(skillId);
@@ -46,22 +46,20 @@ class UpdateSkillUsecase {
     }
 
     final cloud = cloudStore;
-    if (cloud != null) return cloud.updateSkill(skillId, skill);
+    if (cloud != null) return await cloud.updateSkill(skillId, skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
 
-    return repository.updateSkill(skillId, skill);
+    return await repository.updateSkill(skillId, skill);
   }
 }
 
 final ProviderFamily<UpdateSkillUsecase, String> updateSkillUsecaseProvider =
-    Provider.family<UpdateSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<UpdateSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return UpdateSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return UpdateSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloudStore: cloud,
+      );
+    });

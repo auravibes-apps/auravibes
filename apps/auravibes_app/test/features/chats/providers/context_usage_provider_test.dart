@@ -93,29 +93,20 @@ void main() {
       });
 
       test('returns unknown level when limit is 0', () {
-        final data = ContextUsageData.compute(
-          usedTokens: 500,
-          limitTokens: 0,
-        );
+        final data = ContextUsageData.compute(usedTokens: 500, limitTokens: 0);
         expect(data.level, ContextUsageLevel.unknown);
         expect(data.hasLimit, isFalse);
       });
 
       test('returns unknown level when limit is negative', () {
-        final data = ContextUsageData.compute(
-          usedTokens: 500,
-          limitTokens: -1,
-        );
+        final data = ContextUsageData.compute(usedTokens: 500, limitTokens: -1);
         expect(data.level, ContextUsageLevel.unknown);
         expect(data.hasLimit, isFalse);
         expect(data.normalizedLimit, 0);
       });
 
       test('computes normal usage correctly', () {
-        final data = ContextUsageData.compute(
-          usedTokens: 50,
-          limitTokens: 100,
-        );
+        final data = ContextUsageData.compute(usedTokens: 50, limitTokens: 100);
         expect(data.level, ContextUsageLevel.normal);
         expect(data.hasLimit, isTrue);
         expect(data.percent, 50);

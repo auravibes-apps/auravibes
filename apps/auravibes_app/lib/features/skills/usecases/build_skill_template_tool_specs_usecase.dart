@@ -42,13 +42,9 @@ class BuildSkillTemplateToolSpecsUsecase {
       filter: SkillLoadFilter.loaded,
     );
     final skillKeys = <String>{};
-    final runtimeSkills =
-        [
-              ...loadedSkills,
-              ...extraSkills,
-            ]
-            .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
-            .toList();
+    final runtimeSkills = [...loadedSkills, ...extraSkills]
+        .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
+        .toList();
     final specs = <ToolSpec>[];
 
     for (final skill in runtimeSkills.where(
@@ -147,8 +143,7 @@ final buildSkillTemplateToolSpecsUsecaseProvider =
             ref.watch(listAvailableSkillsUsecaseProvider(workspaceId)),
         ref.watch(skillTemplateToolsRepositoryProvider),
         ref.watch(skillCredentialsRepositoryProvider),
-        workspaceSession: (workspaceId) => ref.read(
-          workspaceSessionForRouteProvider(workspaceId).future,
-        ),
+        workspaceSession: (workspaceId) =>
+            ref.read(workspaceSessionForRouteProvider(workspaceId).future),
       );
     });

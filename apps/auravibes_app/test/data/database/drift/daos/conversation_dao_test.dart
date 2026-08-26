@@ -64,10 +64,7 @@ void main() {
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
       final created = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
-          workspaceId: ws.id,
-          title: 'Test',
-        ),
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'Test'),
       );
       final found = await fixture.database.conversationDao.getConversationById(
         created.id,
@@ -91,10 +88,7 @@ void main() {
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
       final created = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
-          workspaceId: ws.id,
-          title: 'Original',
-        ),
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'Original'),
       );
       final patched = await fixture.database.conversationDao.patchConversation(
         created.id,
@@ -126,10 +120,7 @@ void main() {
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
       final created = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
-          workspaceId: ws.id,
-          title: 'To Delete',
-        ),
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'To Delete'),
       );
       final deleted = await fixture.database.conversationDao.deleteConversation(
         created.id,
@@ -153,10 +144,7 @@ void main() {
         WorkspacesCompanion.insert(name: 'WS', type: WorkspaceType.local),
       );
       final created = await fixture.database.conversationDao.insertConversation(
-        ConversationsCompanion.insert(
-          workspaceId: ws.id,
-          title: 'Watched',
-        ),
+        ConversationsCompanion.insert(workspaceId: ws.id, title: 'Watched'),
       );
       final emitted = await fixture.database.conversationDao
           .watchConversationById(created.id)
