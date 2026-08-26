@@ -464,13 +464,15 @@ class CloudToolsRepository
     final resources = <WorkspaceResource>[];
     String? afterResourceId;
     do {
-      final page = (await _readPages([
+      final pages = (await _readPages([
         WorkspaceResourcePageRequest(
           resourceKind: kind,
           afterResourceId: afterResourceId,
           limit: 100,
         ),
-      ])).pages.single;
+      ])).pages;
+      if (pages.isEmpty) break;
+      final page = pages.single;
       resources.addAll(page.resources);
       afterResourceId = page.nextResourceId;
     } while (afterResourceId != null);

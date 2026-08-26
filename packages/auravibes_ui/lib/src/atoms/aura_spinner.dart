@@ -37,7 +37,7 @@ class AuraSpinner extends StatelessWidget {
       child: CircularProgressIndicator(
         color: spinnerColor,
         strokeWidth: strokeWidth ?? _getDefaultStrokeWidth(),
-        semanticsLabel: semanticLabel ?? 'Loading',
+        semanticsLabel: semanticLabel,
       ),
     );
   }

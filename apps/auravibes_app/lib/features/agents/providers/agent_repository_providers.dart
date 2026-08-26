@@ -95,7 +95,7 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
           ],
         );
 
-        return response.pages.single.resources;
+        return response.pages.firstOrNull?.resources ?? const [];
       },
     );
   }
