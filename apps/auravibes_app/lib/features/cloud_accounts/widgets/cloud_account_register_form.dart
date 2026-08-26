@@ -86,10 +86,7 @@ class _CloudAccountRegisterFormState
           ),
         ],
         if (_errorKey case final errorKey?)
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            child: TextLocale(errorKey),
-          ),
+          AuraText(style: AuraTextStyle.bodySmall, child: TextLocale(errorKey)),
         AuraButton(
           onPressed: _registerStep,
           child: TextLocale(
@@ -130,7 +127,7 @@ class _CloudAccountRegisterFormState
       _isSubmitting = true;
     });
     try {
-      await cloudAccountMutation.run(ref, (_) async {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
         final useCases = ref.read(cloudAccountUseCasesProvider);
         final requestId = _registrationRequestId;
         if (requestId == null) {

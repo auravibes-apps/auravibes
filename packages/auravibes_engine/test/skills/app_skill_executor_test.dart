@@ -264,9 +264,8 @@ void main() {
             template: SkillUrlTemplate(url: 'https://example.com'),
             inputs: {},
           ),
-          callback: (input, request) => request(
-            const UrlRequest(url: 'https://example.com'),
-          ),
+          callback: (input, request) =>
+              request(const UrlRequest(url: 'https://example.com')),
         ),
         throwsA(isA<AssertionError>()),
       );
@@ -395,9 +394,7 @@ AppSkillDefinition _skill(String slug) {
   return serviceSkillDefinitions.singleWhere((skill) => skill.slug == slug);
 }
 
-AppSkillExecutor _executor(
-  UrlResponse Function(UrlRequest) run,
-) {
+AppSkillExecutor _executor(UrlResponse Function(UrlRequest) run) {
   final httpClient = _FakeSkillHttpClient(run);
 
   return AppSkillExecutor(
@@ -423,13 +420,9 @@ const _templateSkill = AppSkillDefinition(
           headers: {'authorization': 'Bearer {{ credential.apiKey }}'},
           query: {'q': '{{ input.query }}'},
         ),
-        inputs: {
-          'query': SkillTemplateInputDefinition(description: 'Query'),
-        },
+        inputs: {'query': SkillTemplateInputDefinition(description: 'Query')},
         credentialDefinitions: {
-          'apiKey': SkillCredentialAttributeDefinition(
-            description: 'API key',
-          ),
+          'apiKey': SkillCredentialAttributeDefinition(description: 'API key'),
         },
       ),
     ),

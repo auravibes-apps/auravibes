@@ -98,10 +98,7 @@ void main() {
     expect(evaluation.meetsUsageThreshold, isFalse);
     expect(evaluation.meetsRemainingThreshold, isTrue);
     expect(evaluation.shouldCompact, isTrue);
-    expect(
-      defaultRemainingTokenThreshold(maxOutputTokens: 4096),
-      2000,
-    );
+    expect(defaultRemainingTokenThreshold(maxOutputTokens: 4096), 2000);
     expect(
       defaultRemainingTokenThreshold(
         maxOutputTokens: 4096,

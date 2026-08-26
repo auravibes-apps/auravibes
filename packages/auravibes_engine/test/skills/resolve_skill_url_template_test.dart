@@ -15,10 +15,7 @@ void main() {
           }),
           inputsJson: jsonEncode({
             'filters': {'description': 'Filters', 'type': 'array'},
-            'location': {
-              'description': 'Optional location',
-              'optional': true,
-            },
+            'location': {'description': 'Optional location', 'optional': true},
           }),
           credentialDefinitions: const {},
         );
@@ -401,10 +398,7 @@ void main() {
       );
       expect(UrlResponseFormat.text.acceptHeader, contains('text/plain'));
       expect(UrlResponseFormat.html.acceptHeader, contains('text/html'));
-      expect(
-        () => UrlResponseFormat.fromString('json'),
-        throwsFormatException,
-      );
+      expect(() => UrlResponseFormat.fromString('json'), throwsFormatException);
     });
   });
 }

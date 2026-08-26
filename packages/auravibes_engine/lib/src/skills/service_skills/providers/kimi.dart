@@ -63,10 +63,7 @@ CancelableOperation<Object?> _webSearchChat(
   putIfPresent(body, 'temperature', input['temperature']);
   putIfPresent(body, 'max_tokens', positiveIntInput(input, 'maxTokens'));
 
-  return postJson(
-    context,
-    'https://api.moonshot.ai/v1/chat/completions',
-    {'authorization': 'Bearer ${apiKey(input)}'},
-    body,
-  );
+  return postJson(context, 'https://api.moonshot.ai/v1/chat/completions', {
+    'authorization': 'Bearer ${apiKey(input)}',
+  }, body);
 }

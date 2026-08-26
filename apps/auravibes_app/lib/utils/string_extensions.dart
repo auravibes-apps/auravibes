@@ -3,15 +3,11 @@ import 'package:characters/characters.dart';
 /// Extension methods for String manipulation.
 extension StringExtensions on String {
   /// Converts an identifier (snake_case, camelCase, kebab-case, or mixed).
-  /// to a human-readable format with proper capitalization.
+  /// Converts it to a human-readable format with proper capitalization.
   ///
-  /// Examples:
-  /// - `read_file` -> `Read File`
-  /// - `readFile` -> `Read File`
-  /// - `read-file` -> `Read File`
-  /// - `READ_FILE` -> `Read File`
-  /// - `my_server` -> `My Server`
-  /// - `MyServer` -> `My Server`
+  /// Examples include `read_file`, `readFile`, `read-file`, and `READ_FILE`,
+  /// which become `Read File`. The identifiers `my_server` and `MyServer`
+  /// become `My Server`.
   String toHumanReadable() {
     if (isEmpty) return this;
 
@@ -66,12 +62,13 @@ extension StringExtensions on String {
 
   /// Removes one user-perceived character from both ends.
   String withoutEdgeCharacters() {
+    const edgeCharacterCount = 2;
     final stringCharacters = characters;
-    if (stringCharacters.length <= 2) return '';
+    if (stringCharacters.length <= edgeCharacterCount) return '';
 
     return stringCharacters
         .skip(1)
-        .take(stringCharacters.length - 2)
+        .take(stringCharacters.length - edgeCharacterCount)
         .toString();
   }
 }

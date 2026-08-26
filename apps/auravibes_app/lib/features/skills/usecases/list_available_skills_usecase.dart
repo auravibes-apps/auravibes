@@ -24,6 +24,7 @@ class ListAvailableSkillsUsecase {
     this._listAppSkillCredentialCandidatesUsecase,
     this.cloudStore,
   ]);
+  final CloudSkillStore? cloudStore;
 
   final SkillsRepository? _skillsRepository;
   final ConversationSkillsRepository? _conversationSkillsRepository;
@@ -33,7 +34,24 @@ class ListAvailableSkillsUsecase {
   _checkSkillCredentialReadinessUsecase;
   final ListAppSkillCredentialCandidatesUsecase?
   _listAppSkillCredentialCandidatesUsecase;
-  final CloudSkillStore? cloudStore;
+
+  ConversationSkillsRepository get _requiredConversationSkillsRepository {
+    final repository = _conversationSkillsRepository;
+    if (repository == null) {
+      throw StateError('Conversation skill store is unavailable');
+    }
+
+    return repository;
+  }
+
+  AppSkillWorkspaceSettingsRepository get _requiredAppSkillSettingsRepository {
+    final repository = _appSkillSettingsRepository;
+    if (repository == null) {
+      throw StateError('App skill settings store is unavailable');
+    }
+
+    return repository;
+  }
 
   Future<List<AvailableSkill>> call({
     required String conversationId,
@@ -45,9 +63,7 @@ class ListAvailableSkillsUsecase {
     final userSkills = switch ((cloud: cloud, repository: skillsRepository)) {
       (cloud: final cloud?, repository: _) => await cloud.skills(),
       (cloud: _, repository: final repository?) =>
-        await repository.getWorkspaceSkills(
-          workspaceId,
-        ),
+        await repository.getWorkspaceSkills(workspaceId),
       _ => throw StateError('Skill store is unavailable'),
     };
     final conversationSkills = cloud == null
@@ -104,12 +120,12 @@ class ListAvailableSkillsUsecase {
       if (!filter.matches(isLoaded: isLoaded)) continue;
       result.add(
         AvailableSkill(
+          source: SkillSource.app,
           id: skill.identifier,
           slug: skill.slug,
           title: skill.title,
           description: skill.description,
           content: skill.content,
-          source: SkillSource.app,
           kind: SkillKind.native,
         ),
       );
@@ -123,24 +139,6 @@ class ListAvailableSkillsUsecase {
     if (usecase == null) return Future.value(true);
 
     return usecase.call(workspaceId: workspaceId, skill: skill);
-  }
-
-  ConversationSkillsRepository get _requiredConversationSkillsRepository {
-    final repository = _conversationSkillsRepository;
-    if (repository == null) {
-      throw StateError('Conversation skill store is unavailable');
-    }
-
-    return repository;
-  }
-
-  AppSkillWorkspaceSettingsRepository get _requiredAppSkillSettingsRepository {
-    final repository = _appSkillSettingsRepository;
-    if (repository == null) {
-      throw StateError('App skill settings store is unavailable');
-    }
-
-    return repository;
   }
 
   Future<bool> _hasLocallyUsableAppSkillTool(
@@ -173,25 +171,21 @@ class ListAvailableSkillsUsecase {
 
 final ProviderFamily<ListAvailableSkillsUsecase, String>
 listAvailableSkillsUsecaseProvider =
-    Provider.family<ListAvailableSkillsUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<ListAvailableSkillsUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return ListAvailableSkillsUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(conversationSkillsRepositoryProvider)
-              : null,
-          cloud == null
-              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-              : null,
-          ref.watch(appSkillRegistryProvider),
-          ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
-          ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
-          cloud,
-        );
-      },
-    );
+      return ListAvailableSkillsUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+            : null,
+        ref.watch(appSkillRegistryProvider),
+        ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
+        ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
+        cloud,
+      );
+    });
 
 enum SkillLoadFilter {
   loadable,
@@ -222,12 +216,12 @@ extension on List<ConversationSkillEntity> {
 extension on SkillEntity {
   AvailableSkill toAvailableSkill() {
     return AvailableSkill(
+      source: source,
       id: id,
       slug: slug,
       title: title,
       description: description,
       content: content,
-      source: source,
       kind: kind,
       isCredentialOptional: isCredentialOptional,
       credentialDefinitionId: credentialDefinitionId,

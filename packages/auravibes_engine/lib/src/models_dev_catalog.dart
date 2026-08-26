@@ -52,10 +52,7 @@ class ModelsDevCatalogValue {
           'name': modelJson['name'] ?? model.key,
           'limit':
               modelJson['limit'] ??
-              const <String, Object?>{
-                'context': 0,
-                'output': 0,
-              },
+              const <String, Object?>{'context': 0, 'output': 0},
           'modalities':
               modelJson['modalities'] ??
               const <String, Object?>{

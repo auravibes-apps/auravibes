@@ -16,11 +16,7 @@ enum SelectionMode { full, affected, none }
 
 /// One file row from a Git change range.
 class ChangedFile {
-  ChangedFile({
-    required this.status,
-    this.oldPath,
-    this.newPath,
-  }) {
+  ChangedFile({required this.status, this.oldPath, this.newPath}) {
     if (status != 'added' &&
         status != 'modified' &&
         status != 'deleted' &&
@@ -115,10 +111,7 @@ class SelectionResult {
 
   /// Returns values accepted by `jsonEncode`.
   Map<String, Object?> toJson() {
-    final json = <String, Object?>{
-      'mode': mode.name,
-      'reason': reason,
-    };
+    final json = <String, Object?>{'mode': mode.name, 'reason': reason};
     if (packages.isNotEmpty || mode == SelectionMode.affected) {
       json['packages'] = packages;
     }
@@ -290,11 +283,7 @@ SelectionResult selectChangedTests({
     for (final path in selected.toList()..sort()) {
       final root = _packageRootFor(path, roots.values);
       if (root == null) continue;
-      packages
-          .putIfAbsent(root, () => [])
-          .add(
-            path._slice(root.length + 1),
-          );
+      packages.putIfAbsent(root, () => []).add(path._slice(root.length + 1));
     }
     for (final packagePaths in packages.values) {
       packagePaths.sort();
@@ -409,20 +398,17 @@ Future<SelectionResult> selectRepository({
     final headSources = await _workspaceSources(packages);
     // ponytail: graph inputs are limited to package lib/test roots; skip
     // unrelated repository Dart files before loading base contents.
-    final basePaths = await _git(
-      rootPath,
-      [
-        'ls-tree',
-        '-r',
-        '--name-only',
-        base,
-        '--',
-        for (final package in packages) ...[
-          '${package.relativeRoot}/lib',
-          '${package.relativeRoot}/test',
-        ],
+    final basePaths = await _git(rootPath, [
+      'ls-tree',
+      '-r',
+      '--name-only',
+      base,
+      '--',
+      for (final package in packages) ...[
+        '${package.relativeRoot}/lib',
+        '${package.relativeRoot}/test',
       ],
-    );
+    ]);
     final baseSources = <String, String>{};
     for (final path
         in basePaths.split('\n').where((path) => path.endsWith('.dart'))) {
@@ -432,10 +418,13 @@ Future<SelectionResult> selectRepository({
         '$base:$normalized',
       ]);
     }
-    final diff = await _git(
-      rootPath,
-      ['diff', '--name-status', '--find-renames', '-z', '$base...$head'],
-    );
+    final diff = await _git(rootPath, [
+      'diff',
+      '--name-status',
+      '--find-renames',
+      '-z',
+      '$base...$head',
+    ]);
 
     return selectChangedTests(
       changes: parseNameStatus(diff),
@@ -462,8 +451,8 @@ Future<void> main(List<String> args) async {
       case 'select':
         _checkOptions(options, const {'base', 'head', 'output'});
         final result = await selectRepository(
-          rootPath: Directory.current.path,
           base: _requiredOption(options, 'base'),
+          rootPath: Directory.current.path,
           head: _requiredOption(options, 'head'),
         );
         final _ = await File(
@@ -780,9 +769,9 @@ bool _containsOpaqueRuntimeMarker(String source) =>
       '''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''',
     ).hasMatch(source) ||
     RegExp(r'\bDynamicLibrary\b').hasMatch(source) ||
-    RegExp(r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b').hasMatch(
-      source,
-    ) ||
+    RegExp(
+      r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b',
+    ).hasMatch(source) ||
     RegExp(r'''@pragma\s*\(\s*['"]vm:entry-point['"]''').hasMatch(source);
 
 Map<String, String> _normalizeSources(Map<String, String> sources) {
@@ -825,12 +814,7 @@ Map<String, Set<String>> _buildReverseGraph(
     for (final directive in parsed.unit.directives) {
       final uris = _directiveUris(directive);
       for (final uri in uris) {
-        final target = _resolveUri(
-          uri,
-          entry.key,
-          availableSources,
-          roots,
-        );
+        final target = _resolveUri(uri, entry.key, availableSources, roots);
         if (target == null) continue;
         if (!availableSources.containsKey(target)) {
           throw FormatException('Unresolved workspace URI: $uri');
@@ -942,11 +926,7 @@ Set<String> _currentTestCandidates(
   return candidates;
 }
 
-bool _isCandidateTest(
-  String path,
-  String root, {
-  required bool serverpod,
-}) {
+bool _isCandidateTest(String path, String root, {required bool serverpod}) {
   final prefix = '$root/test/';
   if (!path.startsWith(prefix) || !path.endsWith('.dart')) return false;
   final relative = path._slice(root.length + 1);
@@ -989,13 +969,8 @@ bool _isSupportedDartPath(String path, Iterable<String> roots) {
 }
 
 String? _packageRootFor(String path, Iterable<String> roots) {
-  final matches =
-      roots
-          .where(
-            (root) => path.startsWith('$root/test/'),
-          )
-          .toList()
-        ..sort((a, b) => b.length.compareTo(a.length));
+  final matches = roots.where((root) => path.startsWith('$root/test/')).toList()
+    ..sort((a, b) => b.length.compareTo(a.length));
 
   return matches.firstOrNull;
 }

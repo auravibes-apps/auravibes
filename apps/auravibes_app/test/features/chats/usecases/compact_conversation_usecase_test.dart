@@ -92,39 +92,39 @@ class _CompactConversationFixture {
       selectCompactionRangeUsecase: const SelectCompactionRangeUsecase(),
     );
 
-    when(() => mockMessageRepo.createMessage(any())).thenAnswer(
-      (invocation) async {
-        final msg = invocation.positionalArguments.first as MessageToCreate;
+    when(() => mockMessageRepo.createMessage(any())).thenAnswer((
+      invocation,
+    ) async {
+      final msg = invocation.positionalArguments.first as MessageToCreate;
 
-        return MessageEntity(
-          id: 'created-${DateTime.now().microsecondsSinceEpoch}',
-          conversationId: msg.conversationId,
-          content: msg.content,
-          messageType: msg.messageType,
-          isUser: msg.isUser,
-          status: MessageStatus.sending,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-          metadata: MessageMetadataEntity.fromJsonString(msg.metadata),
-        );
-      },
-    );
-    when(() => mockMessageRepo.patchMessage(any(), any())).thenAnswer(
-      (invocation) async {
-        final id = invocation.positionalArguments.first as String;
+      return MessageEntity(
+        id: 'created-${DateTime.now().microsecondsSinceEpoch}',
+        conversationId: msg.conversationId,
+        content: msg.content,
+        messageType: msg.messageType,
+        isUser: msg.isUser,
+        status: MessageStatus.sending,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+        metadata: MessageMetadataEntity.fromJsonString(msg.metadata),
+      );
+    });
+    when(() => mockMessageRepo.patchMessage(any(), any())).thenAnswer((
+      invocation,
+    ) async {
+      final id = invocation.positionalArguments.first as String;
 
-        return MessageEntity(
-          id: id,
-          conversationId: 'conv-1',
-          content: '',
-          messageType: MessageType.system,
-          isUser: false,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-        );
-      },
-    );
+      return MessageEntity(
+        id: id,
+        conversationId: 'conv-1',
+        content: '',
+        messageType: MessageType.system,
+        isUser: false,
+        status: MessageStatus.sent,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      );
+    });
   }
 
   void dispose() {
@@ -265,10 +265,7 @@ void main() {
       when(
         () => fixture.mockMessageRepo.getMessagesByConversation('conv-1'),
       ).thenAnswer(
-        (_) async => [
-          _makeMessage(),
-          _makeMessage(id: 'msg-2', isUser: false),
-        ],
+        (_) async => [_makeMessage(), _makeMessage(id: 'msg-2', isUser: false)],
       );
 
       expect(
@@ -410,22 +407,19 @@ void main() {
       },
     );
 
-    test(
-      'throws CompactionUnavailableException when no model selected',
-      () {
-        when(
-          () => fixture.mockConversationRepo.getConversationById('conv-1'),
-        ).thenAnswer((_) async => _makeConversation(modelId: null));
+    test('throws CompactionUnavailableException when no model selected', () {
+      when(
+        () => fixture.mockConversationRepo.getConversationById('conv-1'),
+      ).thenAnswer((_) async => _makeConversation(modelId: null));
 
-        expect(
-          () => fixture.usecase(
-            conversationId: 'conv-1',
-            trigger: CompactionTrigger.auto,
-          ),
-          throwsA(isA<CompactionUnavailableException>()),
-        );
-      },
-    );
+      expect(
+        () => fixture.usecase(
+          conversationId: 'conv-1',
+          trigger: CompactionTrigger.auto,
+        ),
+        throwsA(isA<CompactionUnavailableException>()),
+      );
+    });
 
     test('throws CompactionUnsafeException when no safe range', () {
       when(

@@ -7,10 +7,8 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:dio/dio.dart';
 
 class CloudChatAttachmentAdapter {
-  CloudChatAttachmentAdapter({
-    required this._gateway,
-    Dio? dio,
-  }) : _dio = dio ?? Dio();
+  CloudChatAttachmentAdapter({required this._gateway, Dio? dio})
+    : _dio = dio ?? Dio();
 
   final CloudChatGateway _gateway;
   final Dio _dio;
@@ -25,7 +23,7 @@ class CloudChatAttachmentAdapter {
   );
 
   Future<Uint8List> _readBytes(String localPath) async {
-    final bytes = await readChatAttachmentBytes(localPath);
+    final bytes = await ChatAttachmentBytes.read(localPath);
     if (bytes == null) throw StateError('Attachment file is unavailable.');
 
     return Uint8List.fromList(bytes);
@@ -35,9 +33,7 @@ class CloudChatAttachmentAdapter {
     final response = await _dio.put<void>(
       upload.uploadUrl,
       data: Stream<List<int>>.value(bytes),
-      options: Options(
-        headers: upload.headers,
-      ),
+      options: Options(headers: upload.headers),
     );
     final status = response.statusCode ?? 0;
     if (status < 200 || status >= 300) {

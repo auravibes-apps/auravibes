@@ -11,7 +11,7 @@ enum WorkspaceType {
 
   /// Creates a workspace type from a string value.
   ///
-  /// Throws [ArgumentError] if the value is not a valid workspace type
+  /// Throws [ArgumentError] if the value is not a valid workspace type.
   factory WorkspaceType.fromString(String value) {
     switch (value.toLowerCase()) {
       case 'local':

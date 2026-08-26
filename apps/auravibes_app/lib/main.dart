@@ -17,7 +17,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 Future<void> main() async {
   AppFlavorConfig.appFlavor = AppFlavorResolver.resolve(appFlavor);
-  // ponytail: Debug-only bridge; enable only for MCP driver screenshots.
+  // Ponytail: debug-only bridge; enable only for MCP driver screenshots.
   if (kDebugMode && const bool.fromEnvironment('ENABLE_FLUTTER_DRIVER')) {
     final _ = enableFlutterDriverExtension();
   } else {
@@ -64,7 +64,8 @@ class MyApp extends ConsumerWidget {
     final themeAsync = ref.watch(themeProvider);
     final routerConfig = ref.watch(routerProvider);
     final themeMode = themeAsync.asData?.value.themeMode ?? ThemeMode.system;
-    final hue = ref.watch(accentHueProvider).asData?.value ?? defaultAccentHue;
+    final hue =
+        ref.watch(accentHueProvider).asData?.value ?? AccentHue.defaultValue;
     final lightTheme = AuraTheme.light.copyWith(
       colors: AuraComputedColorScheme(
         primaryHue: hue,
@@ -82,9 +83,7 @@ class MyApp extends ConsumerWidget {
       child: MaterialApp.router(
         routerConfig: routerConfig,
         builder: (context, child) => AuraSnackBarHost(
-          child: AuraText(
-            child: child ?? const SizedBox.shrink(),
-          ),
+          child: AuraText(child: child ?? const SizedBox.shrink()),
         ),
         title: AppFlavorConfig.title,
         theme: _auraMaterialTheme(lightTheme, Brightness.light),
@@ -220,6 +219,11 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
       ? Typography.material2021().white
       : Typography.material2021().black;
 
+  final typography = auraTheme.typography;
+  final mediumWeight = typography.fontWeightMedium;
+  final smallSize = typography.fontSizeSm;
+  final extraSmallSize = typography.fontSizeXs;
+
   return baseTheme
       .apply(
         bodyColor: colors.onSurface,
@@ -263,26 +267,26 @@ TextTheme _auraTextTheme(AuraTheme auraTheme, Brightness brightness) {
         ),
         titleSmall: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeSm,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          smallSize,
+          fontWeight: mediumWeight,
         ),
         bodyLarge: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeBase),
-        bodyMedium: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeSm),
-        bodySmall: _auraTextStyle(auraTheme, auraTheme.typography.fontSizeXs),
+        bodyMedium: _auraTextStyle(auraTheme, smallSize),
+        bodySmall: _auraTextStyle(auraTheme, extraSmallSize),
         labelLarge: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeSm,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          smallSize,
+          fontWeight: mediumWeight,
         ),
         labelMedium: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeXs,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          extraSmallSize,
+          fontWeight: mediumWeight,
         ),
         labelSmall: _auraTextStyle(
           auraTheme,
-          auraTheme.typography.fontSizeXs,
-          fontWeight: auraTheme.typography.fontWeightMedium,
+          extraSmallSize,
+          fontWeight: mediumWeight,
         ),
       );
 }

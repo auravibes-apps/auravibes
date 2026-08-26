@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 /// customizable header, navigation items, and footer sections. It is designed
 /// to be a pure UI component that receives all necessary data and callbacks.
 class AuraSidebar extends StatelessWidget {
+  static const _shadowAlpha = 0.1;
+
   /// Creates a Aura sidebar organism.
   const AuraSidebar({
     required this.navigationItems,
@@ -51,55 +53,25 @@ class AuraSidebar extends StatelessWidget {
     final header = this.header;
     final footer = this.footer;
     final navigation = Column(
-      children: List.generate(navigationItems.length, (currentIndex) {
-        final item = navigationItems[currentIndex];
-        if (item.footer) return null;
-
-        return AuraPadding(
-          child: _AuraSidebarItem(
-            label: isExpanded ? item.label : const SizedBox.shrink(),
-            icon: item.icon,
-            onTap: () => onNavigationTap(currentIndex),
-            selected: currentIndex == selectedIndex,
-          ),
-          padding: const .symmetric(
-            horizontal: .sm,
-            vertical: .xs,
-          ),
-        );
-      }).whereType<Widget>().toList(),
+      children: List.generate(
+        navigationItems.length,
+        (index) => _buildNavigationItem(index, footer: false),
+      ).whereType<Widget>().toList(),
     );
     final footerNavigation = Column(
-      children: List.generate(navigationItems.length, (currentIndex) {
-        final item = navigationItems[currentIndex];
-        if (!item.footer) return null;
-
-        return AuraPadding(
-          child: _AuraSidebarItem(
-            label: isExpanded ? item.label : const SizedBox.shrink(),
-            icon: item.icon,
-            onTap: () => onNavigationTap(currentIndex),
-            selected: currentIndex == selectedIndex,
-          ),
-          padding: const .symmetric(
-            horizontal: .sm,
-            vertical: .xs,
-          ),
-        );
-      }).whereType<Widget>().toList(),
+      children: List.generate(
+        navigationItems.length,
+        (index) => _buildNavigationItem(index, footer: true),
+      ).whereType<Widget>().toList(),
     );
 
     return Container(
       decoration: BoxDecoration(
         color: context.auraColors.surface,
-        border: Border(
-          right: BorderSide(
-            color: context.auraColors.outline,
-          ),
-        ),
+        border: Border(right: BorderSide(color: context.auraColors.outline)),
         boxShadow: [
           BoxShadow(
-            color: context.auraColors.shadow.withValues(alpha: 0.1),
+            color: context.auraColors.shadow.withValues(alpha: _shadowAlpha),
             offset: const Offset(2, 0),
             blurRadius: 8,
           ),
@@ -109,29 +81,31 @@ class AuraSidebar extends StatelessWidget {
       child: Column(
         children: [
           if (header != null) header else const AuraSizedBox(height: .lg),
-          Expanded(
-            child: ListView(
-              children: [
-                navigation,
-                ?middleSection,
-              ],
-            ),
-          ),
-          SafeArea(
-            top: false,
-            right: false,
-            child: footerNavigation,
-          ),
+          Expanded(child: ListView(children: [navigation, ?middleSection])),
+          SafeArea(top: false, right: false, child: footerNavigation),
 
           if (footer != null)
             Padding(
-              padding: EdgeInsets.all(
-                context.auraTheme.fromSpacing(.sm),
-              ),
+              padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
               child: footer,
             ),
         ],
       ),
+    );
+  }
+
+  Widget? _buildNavigationItem(int index, {required bool footer}) {
+    final item = navigationItems[index];
+    if (item.footer != footer) return null;
+
+    return AuraPadding(
+      child: _AuraSidebarItem(
+        label: isExpanded ? item.label : const SizedBox.shrink(),
+        icon: item.icon,
+        onTap: () => onNavigationTap(index),
+        selected: index == selectedIndex,
+      ),
+      padding: const .symmetric(horizontal: .sm, vertical: .xs),
     );
   }
 }
@@ -159,6 +133,7 @@ class AuraNavigationData {
 }
 
 class _AuraSidebarItem extends StatelessWidget {
+  static const _selectedAlpha = 0.1;
   const _AuraSidebarItem({
     required this.label,
     required this.icon,
@@ -188,11 +163,11 @@ class _AuraSidebarItem extends StatelessWidget {
       ),
       color: colors.primary.withValues(alpha: 0.8),
       decoration: BoxDecoration(
-        color: selected ? colors.primary.withValues(alpha: 0.1) : null,
+        color: selected
+            ? colors.primary.withValues(alpha: _selectedAlpha)
+            : null,
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.xl),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       onPressed: onTap,

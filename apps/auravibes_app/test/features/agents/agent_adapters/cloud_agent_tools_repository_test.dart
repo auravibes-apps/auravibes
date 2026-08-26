@@ -5,13 +5,14 @@ import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_r
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+const _deletedResourceData = {'agentId': 'agent-1', 'toolId': 'tool-2'};
+
 void main() {
   test('tool overrides round-trip, update, and delete by revision', () async {
     final now = DateTime.utc(2026);
     final resources = <WorkspaceResource>[];
     final capturedOperations = <WorkspacePatchOperation>[];
     final repository = CloudAgentToolsRepository(
-      read: () async => List.of(resources),
       patch: ({required requestId, required operations}) async {
         capturedOperations.addAll(operations);
         final changed = <WorkspaceResource>[];
@@ -47,6 +48,7 @@ void main() {
 
         return PatchWorkspaceStateResponse(resources: changed, sequence: 1);
       },
+      read: () async => List.of(resources),
     );
 
     expect(
@@ -91,33 +93,22 @@ void main() {
   test('ignores stale, deleted, skill, and other-agent associations', () async {
     final now = DateTime.utc(2026);
     final repository = CloudAgentToolsRepository(
+      patch: ({required requestId, required operations}) =>
+          throw StateError('unexpected patch'),
       read: () async => [
         _resource(now, 'tool', {
           'agentId': 'agent-1',
           'toolId': 'tool-1',
           'permissionMode': 'alwaysAsk',
         }),
-        _resource(
-          now,
-          'deleted',
-          {
-            'agentId': 'agent-1',
-            'toolId': 'tool-2',
-          },
-          deletedAt: now,
-        ),
-        _resource(now, 'skill', {
-          'agentId': 'agent-1',
-          'skillId': 'skill-1',
-        }),
+        _resource(now, 'deleted', _deletedResourceData, deletedAt: now),
+        _resource(now, 'skill', {'agentId': 'agent-1', 'skillId': 'skill-1'}),
         _resource(now, 'other', {
           'agentId': 'agent-2',
           'toolId': 'tool-3',
           'permissionMode': 'alwaysAsk',
         }),
       ],
-      patch: ({required requestId, required operations}) =>
-          throw StateError('unexpected patch'),
     );
 
     final overrides = await repository.getAgentTools('agent-1');
@@ -128,6 +119,10 @@ void main() {
   test('propagates stale revision conflicts', () async {
     final now = DateTime.utc(2026);
     final repository = CloudAgentToolsRepository(
+      patch: ({required requestId, required operations}) async {
+        expect(operations.single.expectedRevision, 1);
+        throw StateError('stale revision');
+      },
       read: () async => [
         _resource(now, 'association-1', {
           'agentId': 'agent-1',
@@ -135,10 +130,6 @@ void main() {
           'permissionMode': 'alwaysAsk',
         }),
       ],
-      patch: ({required requestId, required operations}) async {
-        expect(operations.single.expectedRevision, 1);
-        throw StateError('stale revision');
-      },
     );
 
     await expectLater(

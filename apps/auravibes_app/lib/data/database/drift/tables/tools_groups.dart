@@ -17,11 +17,8 @@ WHERE mcp_server_id IS NOT NULL
 ''')
 class ToolsGroups extends Table with TableMixin {
   /// Reference to the workspace this tools group belongs to.
-  TextColumn get workspaceId => text().references(
-    Workspaces,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
 
   /// Optional reference to the MCP server this group belongs to.
   /// When the MCP server is deleted, this group and its tools are also deleted.

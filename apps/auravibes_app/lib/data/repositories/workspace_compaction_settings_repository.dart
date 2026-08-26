@@ -9,25 +9,6 @@ class WorkspaceCompactionSettingsRepository {
 
   final WorkspaceCompactionSettingsDao _dao;
 
-  CompactionSettings _resolveEffective(
-    WorkspaceCompactionSettingsTable? row,
-  ) {
-    if (row == null) return CompactionSettings.defaults;
-
-    return CompactionSettings(
-      autoCompactionEnabled:
-          row.autoCompactEnabled ??
-          CompactionSettings.defaults.autoCompactionEnabled,
-      usagePercentageThreshold:
-          row.usagePercentageThreshold ??
-          CompactionSettings.defaults.usagePercentageThreshold,
-      remainingTokenThreshold:
-          row.remainingTokenThreshold ??
-          CompactionSettings.defaults.remainingTokenThreshold,
-      updatedAt: row.updatedAt,
-    );
-  }
-
   Stream<CompactionSettings> watchEffectiveSettings(String workspaceId) {
     return _dao.watchByWorkspaceId(workspaceId).map(_resolveEffective);
   }
@@ -56,5 +37,22 @@ class WorkspaceCompactionSettingsRepository {
     await _dao.deleteByWorkspaceId(workspaceId);
 
     return CompactionSettings.defaults;
+  }
+
+  CompactionSettings _resolveEffective(WorkspaceCompactionSettingsTable? row) {
+    if (row == null) return CompactionSettings.defaults;
+
+    return CompactionSettings(
+      autoCompactionEnabled:
+          row.autoCompactEnabled ??
+          CompactionSettings.defaults.autoCompactionEnabled,
+      usagePercentageThreshold:
+          row.usagePercentageThreshold ??
+          CompactionSettings.defaults.usagePercentageThreshold,
+      remainingTokenThreshold:
+          row.remainingTokenThreshold ??
+          CompactionSettings.defaults.remainingTokenThreshold,
+      updatedAt: row.updatedAt,
+    );
   }
 }

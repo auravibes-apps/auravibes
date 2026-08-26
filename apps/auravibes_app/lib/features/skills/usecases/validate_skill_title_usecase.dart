@@ -1,18 +1,20 @@
 import 'package:auravibes_app/i18n/locale_keys.dart';
 
-void validateSkillTitle(String title) {
-  final trimmedTitle = title.trim();
-  if (trimmedTitle.isEmpty) {
-    throw const SkillTitleValidationException(
-      'Skill title is required',
-      localizationKey: LocaleKeys.skills_screen_error_title_required,
-    );
-  }
-  if (!RegExp(r'^[A-Za-z0-9 ]+$').hasMatch(trimmedTitle)) {
-    throw const SkillTitleValidationException(
-      'Skill title can only contain letters, numbers, and spaces',
-      localizationKey: LocaleKeys.skills_screen_error_title_invalid,
-    );
+abstract final class ValidateSkillTitleUsecase {
+  static void call(String title) {
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) {
+      throw const SkillTitleValidationException(
+        'Skill title is required',
+        localizationKey: LocaleKeys.skills_screen_error_title_required,
+      );
+    }
+    if (!RegExp(r'^[A-Za-z0-9 ]+$').hasMatch(trimmedTitle)) {
+      throw const SkillTitleValidationException(
+        'Skill title can only contain letters, numbers, and spaces',
+        localizationKey: LocaleKeys.skills_screen_error_title_invalid,
+      );
+    }
   }
 }
 
@@ -25,3 +27,4 @@ class SkillTitleValidationException implements Exception {
   @override
   String toString() => 'SkillTitleValidationException: $message';
 }
+// Top-level API/provider declarations are required by their consumers.

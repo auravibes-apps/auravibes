@@ -142,9 +142,7 @@ void main() {
 
     test('rejects unknown agent without creating child', () async {
       final conversations = _ConversationStore();
-      final runner = _runner(
-        conversations: conversations,
-      );
+      final runner = _runner(conversations: conversations);
 
       final result =
           jsonDecode(

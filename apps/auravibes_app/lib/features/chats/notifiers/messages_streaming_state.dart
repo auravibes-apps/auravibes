@@ -21,10 +21,7 @@ class MessagesStreamingNotifier extends _$MessagesStreamingNotifier {
     return {};
   }
 
-  void startSubscription(
-    CompositeSubscription subscription,
-    String messageId,
-  ) {
+  void startSubscription(CompositeSubscription subscription, String messageId) {
     state = {
       ...state,
       messageId: MessagesStreamingState(streamSubscription: subscription),
@@ -34,14 +31,9 @@ class MessagesStreamingNotifier extends _$MessagesStreamingNotifier {
   void updateResult(ChatResult<ChatMessage> result, String messageId) {
     final currentState = state[messageId];
     if (currentState == null) {
-      throw Exception(
-        'No subscription found for message id: $messageId',
-      );
+      throw Exception('No subscription found for message id: $messageId');
     }
-    state = {
-      ...state,
-      messageId: currentState.copyWith(lastResult: result),
-    };
+    state = {...state, messageId: currentState.copyWith(lastResult: result)};
   }
 
   Future<void> remove(String messageId) async {

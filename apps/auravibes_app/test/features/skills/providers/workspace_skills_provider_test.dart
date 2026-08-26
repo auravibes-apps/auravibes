@@ -27,9 +27,9 @@ void main() {
     'merges the cloud snapshot with the app catalog without local storage',
     () async {
       final gateway = _Gateway();
-      when(() => gateway.watchResources(any())).thenAnswer(
-        (_) => Stream.value(const <WorkspaceResource>[]),
-      );
+      when(
+        () => gateway.watchResources(any()),
+      ).thenAnswer((_) => Stream.value(const <WorkspaceResource>[]));
       final container = ProviderContainer(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(

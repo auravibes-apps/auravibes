@@ -6,28 +6,40 @@ import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
 const _endIndentLabel = 'End Indent';
+const _zeroIndent = 0.0;
+const _maxIndent = 100.0;
+const _maxHeight = 20.0;
+const _defaultThickness = 1.0;
+const _maxThickness = 10.0;
 
 double _endIndentKnob(BuildContext context) {
   return context.knobs.double.slider(
     label: _endIndentLabel,
-    initialValue: 0,
-    max: 100,
+    initialValue: _zeroIndent,
+    max: _maxIndent,
   );
 }
 
 double _heightKnob(BuildContext context) {
-  return context.knobs.double.slider(label: 'Height', initialValue: 0, max: 20);
+  return context.knobs.double.slider(
+    label: 'Height',
+    initialValue: _zeroIndent,
+    max: _maxHeight,
+  );
 }
 
-double _indentKnob(BuildContext context) =>
-    context.knobs.double.slider(label: 'Indent', initialValue: 0, max: 100);
+double _indentKnob(BuildContext context) => context.knobs.double.slider(
+  label: 'Indent',
+  initialValue: _zeroIndent,
+  max: _maxIndent,
+);
 
 double _thicknessKnob(BuildContext context) {
   return context.knobs.double.slider(
     label: 'Thickness',
-    initialValue: 1,
-    min: 0,
-    max: 10,
+    initialValue: _defaultThickness,
+    min: _zeroIndent,
+    max: _maxThickness,
   );
 }
 
@@ -46,9 +58,9 @@ Widget verticalDividerUseCase(BuildContext context) {
   return AuraDivider.vertical(
     width: context.knobs.double.slider(
       label: 'Width',
-      initialValue: 0,
-      min: 0,
-      max: 20,
+      initialValue: _zeroIndent,
+      min: _zeroIndent,
+      max: _maxHeight,
     ),
     thickness: _thicknessKnob(context),
     indent: _indentKnob(context),

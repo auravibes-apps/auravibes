@@ -74,9 +74,7 @@ class ApiModelRepository implements ModelCatalogStore {
   Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
     return _database.apiModelsDao
         .watchModelsByProvider(providerId)
-        .map(
-          (models) => models.map(_mapToModelEntity).toList(),
-        );
+        .map((models) => models.map(_mapToModelEntity).toList());
   }
 
   // Batch operations.

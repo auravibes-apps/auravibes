@@ -17,14 +17,10 @@ class CloudWorkspaceResourceStore {
   ) : _watch = ((kinds) async* {
         yield* (await _requireGateway(gateway)).watchResources(kinds);
       }),
-      _patch =
-          (({
-            required requestId,
-            required operations,
-          }) async => (await _requireGateway(gateway)).patch(
-            requestId: requestId,
-            operations: operations,
-          )),
+      _patch = (({required requestId, required operations}) async =>
+          await (await _requireGateway(
+            gateway,
+          )).patch(requestId: requestId, operations: operations)),
       _putSecret =
           (({
             required requestId,
@@ -33,7 +29,7 @@ class CloudWorkspaceResourceStore {
             required resourceId,
             secret,
             expectedRevision,
-          }) async => (await _requireGateway(gateway)).putSecret(
+          }) async => await (await _requireGateway(gateway)).putSecret(
             requestId: requestId,
             secretKind: secretKind,
             scope: scope,
@@ -50,7 +46,7 @@ class CloudWorkspaceResourceStore {
             required secret,
             required clearSecret,
             expectedSecretRevision,
-          }) async => (await _requireGateway(gateway)).mutateCredential(
+          }) async => await (await _requireGateway(gateway)).mutateCredential(
             requestId: requestId,
             resourceOperation: resourceOperation,
             secretKind: secretKind,

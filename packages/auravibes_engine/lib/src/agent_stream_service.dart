@@ -90,14 +90,14 @@ class AgentStreamService<TChunk> {
       await state.responseCompleter.future;
 
       if (cancellationScope.isCancellationRequested) {
-        return _completeCancelledRun(state);
+        return await _completeCancelledRun(state);
       }
 
       final completedMessageId = state.messageId;
       final completedResult = state.accumulatedResult;
       if (completedMessageId == null || completedResult == null) {
         if (allowEmptyResult) {
-          return _completeEmptyRun(state);
+          return await _completeEmptyRun(state);
         }
 
         throw StateError('Agent stream completed without any result');

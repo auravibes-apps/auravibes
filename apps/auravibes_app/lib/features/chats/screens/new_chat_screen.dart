@@ -99,7 +99,7 @@ class _NewChatContent extends ConsumerWidget {
           stackTrace,
         );
         if (context.mounted) {
-          final _ = showAuraSnackBar(
+          final _ = AuraSnackBars.show(
             context: context,
             content: const TextLocale(
               LocaleKeys.chats_screens_chat_conversation_send_error,
@@ -186,9 +186,7 @@ class _NewChatUnavailable extends StatelessWidget {
               child: AuraColumn(
                 children: [
                   AuraIcon(Icons.cloud_off_outlined),
-                  TextLocale(
-                    LocaleKeys.workspace_management_cloud_unavailable,
-                  ),
+                  TextLocale(LocaleKeys.workspace_management_cloud_unavailable),
                 ],
                 spacing: .sm,
                 mainAxisSize: MainAxisSize.min,
@@ -240,13 +238,7 @@ class _WorkspaceSelector extends ConsumerWidget {
           ],
           key: const Key('new_chat_workspace_selector'),
           value: workspaceId,
-          onChanged: (value) {
-            if (value != null && value != workspaceId) {
-              ref
-                  .read(workspaceSwitcherProvider.notifier)
-                  .switchToWorkspace(value);
-            }
-          },
+          onChanged: (value) => _switchWorkspace(ref, value),
           semanticLabel: LocaleKeys.workspace_management_title.tr(),
         ),
         AsyncLoading() => const AuraDropdownSelector<String>(
@@ -263,6 +255,11 @@ class _WorkspaceSelector extends ConsumerWidget {
         ),
       },
     );
+  }
+
+  void _switchWorkspace(WidgetRef ref, String? value) {
+    if (value == null || value == workspaceId) return;
+    ref.read(workspaceSwitcherProvider.notifier).switchToWorkspace(value);
   }
 }
 

@@ -9,6 +9,9 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
   const CalculatorTool();
 
   @override
+  UserToolType get type => UserToolType.calculator;
+
+  @override
   ToolSpec getTool() {
     return ToolSpec(
       name: 'calculator',
@@ -47,7 +50,4 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
       }),
     );
   }
-
-  @override
-  UserToolType get type => UserToolType.calculator;
 }

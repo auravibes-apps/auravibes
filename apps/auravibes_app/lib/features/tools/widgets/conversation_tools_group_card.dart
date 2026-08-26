@@ -49,9 +49,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
     final isExpanded = useState(initiallyExpanded);
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
         child: AuraColumn(
           children: [
@@ -123,7 +121,7 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
   }
 
   void _showErrorDetails(BuildContext context) {
-    showAuraAlertDialog(
+    AuraDialogs.alert(
       context: context,
       title: Text(_kMcpErrorTitle.tr()),
       message: AuraSelectableText(
@@ -164,9 +162,7 @@ class _ToolsList extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.sm),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
       child: AuraColumn(
         children: groupWithTools.tools.map((toolState) {
           return ConversationToolTile(

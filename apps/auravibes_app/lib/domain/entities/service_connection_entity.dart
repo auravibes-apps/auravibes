@@ -1,6 +1,8 @@
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 
-enum ServiceConnectionAuthenticationType { none, apiKey, bearerToken, oauth2 }
+import 'package:auravibes_app/domain/entities/service_connection_authentication_type.dart';
+
+export 'service_connection_authentication_type.dart';
 
 class ServiceConnectionEntity {
   const ServiceConnectionEntity({

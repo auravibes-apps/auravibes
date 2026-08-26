@@ -294,9 +294,7 @@ void main() {
         );
 
         expect(fixture.database.transactionCount, 1);
-        final _ = verifyNever(
-          () => fixture.mockModelsDao.deleteAllModels(),
-        );
+        final _ = verifyNever(() => fixture.mockModelsDao.deleteAllModels());
         final _ = verifyNever(
           () => fixture.mockProvidersDao.deleteAllProviders(),
         );
@@ -314,16 +312,10 @@ void main() {
           () => fixture.mockModelsDao.batchUpsertModels(any()),
         ).thenAnswer((_) async => [modelRow]);
         when(() => fixture.mockModelsDao.getAllModels()).thenAnswer(
-          (_) async => [
-            modelRow,
-            modelRow.copyWith(id: 'old-model'),
-          ],
+          (_) async => [modelRow, modelRow.copyWith(id: 'old-model')],
         );
         when(() => fixture.mockProvidersDao.getAllProviders()).thenAnswer(
-          (_) async => [
-            providerRow,
-            providerRow.copyWith(id: 'old-provider'),
-          ],
+          (_) async => [providerRow, providerRow.copyWith(id: 'old-provider')],
         );
         when(
           () => fixture.mockModelsDao.deleteModelByProviderAndId(

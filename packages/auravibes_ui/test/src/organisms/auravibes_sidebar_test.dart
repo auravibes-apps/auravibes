@@ -10,10 +10,7 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [
-                AuraNavigationData(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
+                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
                 AuraNavigationData(
                   icon: Icon(Icons.settings),
                   label: Text('Settings'),
@@ -37,10 +34,7 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [
-                AuraNavigationData(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
+                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
               ],
               onNavigationTap: (_) {
                 final _ = Object();
@@ -60,10 +54,7 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [
-                AuraNavigationData(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
+                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
               ],
               onNavigationTap: (_) {
                 final _ = Object();
@@ -86,10 +77,7 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [
-                AuraNavigationData(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
+                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
                 AuraNavigationData(
                   icon: Icon(Icons.settings),
                   label: Text('Settings'),
@@ -165,10 +153,7 @@ void main() {
           home: Scaffold(
             body: AuraSidebar(
               navigationItems: const [
-                AuraNavigationData(
-                  icon: Icon(Icons.home),
-                  label: Text('Home'),
-                ),
+                AuraNavigationData(icon: Icon(Icons.home), label: Text('Home')),
                 AuraNavigationData(
                   icon: Icon(Icons.logout),
                   label: Text('Logout'),
@@ -186,10 +171,7 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       expect(find.text('Logout'), findsOneWidget);
       expect(
-        find.descendant(
-          of: find.byType(ListView),
-          matching: find.text('Home'),
-        ),
+        find.descendant(of: find.byType(ListView), matching: find.text('Home')),
         findsOneWidget,
       );
       expect(

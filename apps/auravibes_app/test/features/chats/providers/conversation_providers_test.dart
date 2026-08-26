@@ -84,11 +84,16 @@ void main() {
         conversationId: 'c1',
       );
       final result = Completer<ConversationEntity?>();
+      void completeConversation(
+        AsyncValue<ConversationEntity?>? _,
+        AsyncValue<ConversationEntity?> next,
+      ) {
+        if (next case AsyncData(:final value)) result.complete(value);
+      }
+
       final subscription = fixture.container.listen(
         provider,
-        (_, next) {
-          if (next case AsyncData(:final value)) result.complete(value);
-        },
+        completeConversation,
         fireImmediately: true,
       );
       final value = await result.future;
@@ -155,11 +160,16 @@ void main() {
       fixture.repository.conversationsByWorkspace = conversations;
       final provider = conversationsStreamProvider(workspaceId: 'ws1');
       final result = Completer<List<ConversationEntity>>();
+      void completeConversations(
+        AsyncValue<List<ConversationEntity>>? _,
+        AsyncValue<List<ConversationEntity>> next,
+      ) {
+        if (next case AsyncData(:final value)) result.complete(value);
+      }
+
       final subscription = fixture.container.listen(
         provider,
-        (_, next) {
-          if (next case AsyncData(:final value)) result.complete(value);
-        },
+        completeConversations,
         fireImmediately: true,
       );
       final value = await result.future;
@@ -237,10 +247,10 @@ class _ConversationProviderFixture {
             LocalWorkspaceRef(localWorkspaceId: 'ws1'),
           ),
         ),
-        workspaceSessionProvider.overrideWithValue(
-          const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'ws1'),
-          ),
+        workspaceSessionProvider(
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
+        ).overrideWithValue(
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
         ),
         conversationRepositoryProvider.overrideWithValue(repository),
       ],

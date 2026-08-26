@@ -96,16 +96,12 @@ class _StubConversationToolsRepository implements ConversationToolsRepository {
   }
 
   @override
-  Future<int> getConversationToolsCount(
-    String conversationId,
-  ) async {
+  Future<int> getConversationToolsCount(String conversationId) async {
     return toolsCount;
   }
 
   @override
-  Future<int> getEnabledConversationToolsCount(
-    String conversationId,
-  ) async {
+  Future<int> getEnabledConversationToolsCount(String conversationId) async {
     return enabledCount;
   }
 
@@ -230,10 +226,7 @@ void main() {
       final repo = _StubConversationToolsRepository();
       repo.isEnabledResult = true;
 
-      expect(
-        await repo.isConversationToolEnabled('c-1', 't-1'),
-        true,
-      );
+      expect(await repo.isConversationToolEnabled('c-1', 't-1'), true);
     });
 
     test('removeConversationTool returns bool', () async {
@@ -270,13 +263,7 @@ void main() {
     test('validateConversationToolSetting returns bool', () async {
       final repo = _StubConversationToolsRepository();
 
-      expect(
-        await repo.validateConversationToolSetting(
-          'c-1',
-          't-1',
-        ),
-        true,
-      );
+      expect(await repo.validateConversationToolSetting('c-1', 't-1'), true);
     });
 
     test('isToolAvailableForConversation returns bool', () async {

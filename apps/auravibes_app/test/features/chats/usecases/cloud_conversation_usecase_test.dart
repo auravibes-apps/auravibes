@@ -13,9 +13,7 @@ class _UpdateConversationRequestFake extends Fake
     implements UpdateConversationRequest {}
 
 void main() {
-  setUpAll(
-    () => registerFallbackValue(_UpdateConversationRequestFake()),
-  );
+  setUpAll(() => registerFallbackValue(_UpdateConversationRequestFake()));
 
   test('retries a stale cloud model update with the latest revision', () async {
     final gateway = _Gateway();
@@ -50,9 +48,9 @@ void main() {
     );
     final requests = <UpdateConversationRequest>[];
 
-    when(
-      () => gateway.updateConversation(captureAny()),
-    ).thenAnswer((invocation) async {
+    when(() => gateway.updateConversation(captureAny())).thenAnswer((
+      invocation,
+    ) async {
       requests.add(
         invocation.positionalArguments.single as UpdateConversationRequest,
       );
@@ -70,10 +68,9 @@ void main() {
       () => gateway.getConversation(conversation.id),
     ).thenAnswer((_) async => refreshed);
 
-    final actual = await CloudConversationUsecase(gateway).updateModel(
-      conversation,
-      'replacement-model',
-    );
+    final actual = await CloudConversationUsecase(
+      gateway,
+    ).updateModel(conversation, 'replacement-model');
 
     expect(actual, same(updated));
     expect(requests, hasLength(2));

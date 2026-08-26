@@ -114,10 +114,7 @@ void main() {
     });
 
     test('fromString throws for empty string', () {
-      expect(
-        () => CredentialsModelType.fromString(''),
-        throwsArgumentError,
-      );
+      expect(() => CredentialsModelType.fromString(''), throwsArgumentError);
     });
 
     test('toString returns value', () {

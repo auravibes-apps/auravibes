@@ -18,12 +18,8 @@ class AuraThemeWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        body: child,
-      ),
-      theme: ThemeData(
-        extensions: [AuraTheme.light],
-      ),
+      home: Scaffold(body: child),
+      theme: ThemeData(extensions: [AuraTheme.light]),
     );
   }
 }
@@ -100,9 +96,7 @@ void main() {
       );
 
       // The confirm button should have error styling.
-      final confirmButton = findAuraButtonByColorVariant(
-        AuraTint.error,
-      );
+      final confirmButton = findAuraButtonByColorVariant(AuraTint.error);
 
       expect(confirmButton, findsOneWidget);
     });
@@ -244,7 +238,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                dialogResult = await showAuraConfirmDialog(
+                dialogResult = await AuraDialogs.confirm(
                   context: context,
                   title: const Text('Dialog Title'),
                   message: const Text('Are you sure?'),
@@ -282,7 +276,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                dialogResult = await showAuraConfirmDialog(
+                dialogResult = await AuraDialogs.confirm(
                   context: context,
                   title: const Text('Dialog Title'),
                   message: const Text('Are you sure?'),
@@ -317,7 +311,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                await showAuraAlertDialog(
+                await AuraDialogs.alert(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('This is an alert.'),
@@ -348,7 +342,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                await showAuraAlertDialog(
+                await AuraDialogs.alert(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('This is an alert.'),
@@ -389,7 +383,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                final _ = await showAuraConfirmDialog(
+                final _ = await AuraDialogs.confirm(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
@@ -417,7 +411,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                await showAuraAlertDialog(
+                await AuraDialogs.alert(
                   context: context,
                   title: const Text('Alert'),
                   message: const Text('Message'),
@@ -449,7 +443,7 @@ void main() {
           child: Builder(
             builder: (context) => TextButton(
               onPressed: runDialogAction(() async {
-                result = await showAuraConfirmDialog(
+                result = await AuraDialogs.confirm(
                   context: context,
                   title: const Text('Title'),
                   message: const Text('Message'),
@@ -483,7 +477,7 @@ void main() {
             child: Builder(
               builder: (context) => TextButton(
                 onPressed: runDialogAction(() async {
-                  result = await showAuraConfirmDialog(
+                  result = await AuraDialogs.confirm(
                     context: context,
                     title: const Text('Title'),
                     message: const Text('Message'),

@@ -28,3 +28,4 @@ Stream<CompactionSettings> compactionSettings(
 
   yield* CloudSkillSettingsAdapter(gateway).watchCompactionSettings();
 }
+// Top-level API/provider declarations are required by their consumers.

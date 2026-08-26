@@ -25,12 +25,12 @@ void main() {
       ).thenAnswer(
         (_) async => [
           const AvailableSkill(
+            source: SkillSource.user,
             id: '1',
             slug: 'slug',
             title: '<a&b"c\'d>',
             description: '',
             content: '<x&y"z\'w>',
-            source: SkillSource.user,
             kind: SkillKind.template,
           ),
         ],
@@ -40,9 +40,7 @@ void main() {
           conversationId: 'c',
           workspaceId: 'w',
         ),
-      ).thenAnswer(
-        (_) async => null,
-      );
+      ).thenAnswer((_) async => null);
       when(
         () => listAgentSkills.call(conversationId: 'c', workspaceId: 'w'),
       ).thenAnswer((_) async => const []);
@@ -68,30 +66,30 @@ void main() {
       );
       final now = DateTime(2026);
       const loadedSkill = AvailableSkill(
+        source: SkillSource.user,
         id: 'skill-1',
         slug: 'skill_one',
         title: 'Skill One',
         description: '',
         content: 'Loaded content',
-        source: SkillSource.user,
         kind: SkillKind.template,
       );
       const duplicateAgentSkill = AvailableSkill(
+        source: SkillSource.user,
         id: 'skill-1',
         slug: 'skill_one',
         title: 'Skill One Duplicate',
         description: '',
         content: 'Agent duplicate content',
-        source: SkillSource.user,
         kind: SkillKind.template,
       );
       const appAgentSkill = AvailableSkill(
+        source: SkillSource.app,
         id: 'app-skill',
         slug: 'app_skill',
         title: 'App Skill',
         description: '',
         content: 'App content',
-        source: SkillSource.app,
         kind: SkillKind.native,
       );
 
@@ -156,9 +154,7 @@ void main() {
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
         ),
-      ).thenAnswer(
-        (_) async => null,
-      );
+      ).thenAnswer((_) async => null);
       when(
         () => listAgentSkills.call(
           conversationId: 'conversation-1',

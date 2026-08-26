@@ -193,287 +193,265 @@ void main() {
     });
   });
 
-  testWidgets(
-    'workspaceId from route state is available synchronously:'
-    ' no Riverpod dependency',
-    (tester) async {
-      String? capturedWorkspaceId;
+  testWidgets('workspaceId is synchronous without Riverpod', (tester) async {
+    String? capturedWorkspaceId;
 
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/workspaces/:workspaceId',
-            builder: (context, state) => const SizedBox.shrink(),
-            routes: [
-              StatefulShellRoute.indexedStack(
-                branches: [
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'chat/new',
-                        builder: (context, state) =>
-                            const Text('New chat screen'),
-                      ),
-                    ],
-                  ),
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'tools',
-                        builder: (context, state) => const Text('Tools screen'),
-                      ),
-                    ],
-                  ),
-                ],
-                builder: (context, state, navigationShell) {
-                  capturedWorkspaceId = state.pathParameters['workspaceId'];
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId',
+          builder: (context, state) => const SizedBox.shrink(),
+          routes: [
+            StatefulShellRoute.indexedStack(
+              branches: [
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'chat/new',
+                      builder: (context, state) =>
+                          const Text('New chat screen'),
+                    ),
+                  ],
+                ),
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'tools',
+                      builder: (context, state) => const Text('Tools screen'),
+                    ),
+                  ],
+                ),
+              ],
+              builder: (context, state, navigationShell) {
+                capturedWorkspaceId = state.pathParameters['workspaceId'];
 
-                  return Text('workspaceId: $capturedWorkspaceId');
-                },
-              ),
-            ],
-          ),
-        ],
-        initialLocation: '/workspaces/ws-test/tools',
-      );
-      addTearDown(router.dispose);
+                return Text('workspaceId: $capturedWorkspaceId');
+              },
+            ),
+          ],
+        ),
+      ],
+      initialLocation: '/workspaces/ws-test/tools',
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: router),
-      );
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
-      expect(capturedWorkspaceId, 'ws-test');
+    expect(capturedWorkspaceId, 'ws-test');
 
-      final _ = await tester.pumpAndSettle();
-      expect(find.text('workspaceId: ws-test'), findsOneWidget);
-    },
-  );
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('workspaceId: ws-test'), findsOneWidget);
+  });
 
-  testWidgets(
-    'workspaceId available after async redirect from root',
-    (tester) async {
-      String? capturedWorkspaceId;
+  testWidgets('workspaceId available after async redirect from root', (
+    tester,
+  ) async {
+    String? capturedWorkspaceId;
 
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/workspaces/:workspaceId',
-            builder: (context, state) => const SizedBox.shrink(),
-            routes: [
-              StatefulShellRoute.indexedStack(
-                branches: [
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'chat/new',
-                        builder: (context, state) =>
-                            const Text('New chat screen'),
-                      ),
-                    ],
-                  ),
-                ],
-                builder: (context, state, navigationShell) {
-                  capturedWorkspaceId = state.pathParameters['workspaceId'];
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId',
+          builder: (context, state) => const SizedBox.shrink(),
+          routes: [
+            StatefulShellRoute.indexedStack(
+              branches: [
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'chat/new',
+                      builder: (context, state) =>
+                          const Text('New chat screen'),
+                    ),
+                  ],
+                ),
+              ],
+              builder: (context, state, navigationShell) {
+                capturedWorkspaceId = state.pathParameters['workspaceId'];
 
-                  return Text('workspaceId: $capturedWorkspaceId');
-                },
-              ),
-            ],
-          ),
-        ],
-        redirect: (context, state) {
-          if (state.uri.toString() == '/') {
-            return '/workspaces/ws-redirect-test/chat/new';
-          }
+                return Text('workspaceId: $capturedWorkspaceId');
+              },
+            ),
+          ],
+        ),
+      ],
+      redirect: (context, state) {
+        if (state.uri.toString() == '/') {
+          return '/workspaces/ws-redirect-test/chat/new';
+        }
 
-          return null;
-        },
-        initialLocation: '/',
-      );
-      addTearDown(router.dispose);
+        return null;
+      },
+      initialLocation: '/',
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: router),
-      );
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
 
-      expect(capturedWorkspaceId, 'ws-redirect-test');
+    expect(capturedWorkspaceId, 'ws-redirect-test');
 
-      final _ = await tester.pumpAndSettle();
-      expect(find.text('workspaceId: ws-redirect-test'), findsOneWidget);
-    },
-  );
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('workspaceId: ws-redirect-test'), findsOneWidget);
+  });
 
-  testWidgets(
-    'specific chat route navigates to branch 0 alongside chat/new',
-    (tester) async {
-      int? capturedShellIndex;
+  testWidgets('specific chat route navigates to branch 0 alongside chat/new', (
+    tester,
+  ) async {
+    int? capturedShellIndex;
 
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/workspaces/:workspaceId',
-            builder: (context, state) => const SizedBox.shrink(),
-            routes: [
-              StatefulShellRoute.indexedStack(
-                branches: [
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'chat/new',
-                        builder: (context, state) => const Text('New chat'),
-                      ),
-                      GoRoute(
-                        path: 'chats/:chatId',
-                        builder: (context, state) => const Text('Chat screen'),
-                      ),
-                    ],
-                  ),
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'tools',
-                        builder: (context, state) => const Text('Tools screen'),
-                      ),
-                    ],
-                  ),
-                ],
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId',
+          builder: (context, state) => const SizedBox.shrink(),
+          routes: [
+            StatefulShellRoute.indexedStack(
+              branches: [
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'chat/new',
+                      builder: (context, state) => const Text('New chat'),
+                    ),
+                    GoRoute(
+                      path: 'chats/:chatId',
+                      builder: (context, state) => const Text('Chat screen'),
+                    ),
+                  ],
+                ),
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'tools',
+                      builder: (context, state) => const Text('Tools screen'),
+                    ),
+                  ],
+                ),
+              ],
+              builder: (context, state, navigationShell) {
+                capturedShellIndex = navigationShell.currentIndex;
 
-                  return navigationShell;
-                },
-              ),
-            ],
-          ),
-        ],
-        initialLocation: '/workspaces/ws-test/chats/chat-123',
-      );
-      addTearDown(router.dispose);
+                return navigationShell;
+              },
+            ),
+          ],
+        ),
+      ],
+      initialLocation: '/workspaces/ws-test/chats/chat-123',
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: router),
-      );
-      final _ = await tester.pumpAndSettle();
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    final _ = await tester.pumpAndSettle();
 
-      expect(capturedShellIndex, 0);
-      expect(find.text('Chat screen'), findsOneWidget);
-    },
-  );
+    expect(capturedShellIndex, 0);
+    expect(find.text('Chat screen'), findsOneWidget);
+  });
 
-  testWidgets(
-    'tools route navigates to branch 1',
-    (tester) async {
-      int? capturedShellIndex;
+  testWidgets('tools route navigates to branch 1', (tester) async {
+    int? capturedShellIndex;
 
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/workspaces/:workspaceId',
-            builder: (context, state) => const SizedBox.shrink(),
-            routes: [
-              StatefulShellRoute.indexedStack(
-                branches: [
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'chat/new',
-                        builder: (context, state) => const Text('New chat'),
-                      ),
-                    ],
-                  ),
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'tools',
-                        builder: (context, state) => const Text('Tools screen'),
-                      ),
-                    ],
-                  ),
-                ],
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId',
+          builder: (context, state) => const SizedBox.shrink(),
+          routes: [
+            StatefulShellRoute.indexedStack(
+              branches: [
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'chat/new',
+                      builder: (context, state) => const Text('New chat'),
+                    ),
+                  ],
+                ),
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'tools',
+                      builder: (context, state) => const Text('Tools screen'),
+                    ),
+                  ],
+                ),
+              ],
+              builder: (context, state, navigationShell) {
+                capturedShellIndex = navigationShell.currentIndex;
 
-                  return navigationShell;
-                },
-              ),
-            ],
-          ),
-        ],
-        initialLocation: '/workspaces/ws-test/tools',
-      );
-      addTearDown(router.dispose);
+                return navigationShell;
+              },
+            ),
+          ],
+        ),
+      ],
+      initialLocation: '/workspaces/ws-test/tools',
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: router),
-      );
-      final _ = await tester.pumpAndSettle();
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    final _ = await tester.pumpAndSettle();
 
-      expect(capturedShellIndex, 1);
-      expect(find.text('Tools screen'), findsOneWidget);
-    },
-  );
+    expect(capturedShellIndex, 1);
+    expect(find.text('Tools screen'), findsOneWidget);
+  });
 
-  testWidgets(
-    'settings route navigates to branch 2',
-    (tester) async {
-      int? capturedShellIndex;
+  testWidgets('settings route navigates to branch 2', (tester) async {
+    int? capturedShellIndex;
 
-      final router = GoRouter(
-        routes: [
-          GoRoute(
-            path: '/workspaces/:workspaceId',
-            builder: (context, state) => const SizedBox.shrink(),
-            routes: [
-              StatefulShellRoute.indexedStack(
-                branches: [
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'chat/new',
-                        builder: (context, state) => const Text('New chat'),
-                      ),
-                    ],
-                  ),
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'tools',
-                        builder: (context, state) => const Text('Tools screen'),
-                      ),
-                    ],
-                  ),
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: 'settings',
-                        builder: (context, state) =>
-                            const Text('Settings screen'),
-                      ),
-                    ],
-                  ),
-                ],
-                builder: (context, state, navigationShell) {
-                  capturedShellIndex = navigationShell.currentIndex;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/workspaces/:workspaceId',
+          builder: (context, state) => const SizedBox.shrink(),
+          routes: [
+            StatefulShellRoute.indexedStack(
+              branches: [
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'chat/new',
+                      builder: (context, state) => const Text('New chat'),
+                    ),
+                  ],
+                ),
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'tools',
+                      builder: (context, state) => const Text('Tools screen'),
+                    ),
+                  ],
+                ),
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
+                      path: 'settings',
+                      builder: (context, state) =>
+                          const Text('Settings screen'),
+                    ),
+                  ],
+                ),
+              ],
+              builder: (context, state, navigationShell) {
+                capturedShellIndex = navigationShell.currentIndex;
 
-                  return navigationShell;
-                },
-              ),
-            ],
-          ),
-        ],
-        initialLocation: '/workspaces/ws-test/settings',
-      );
-      addTearDown(router.dispose);
+                return navigationShell;
+              },
+            ),
+          ],
+        ),
+      ],
+      initialLocation: '/workspaces/ws-test/settings',
+    );
+    addTearDown(router.dispose);
 
-      await tester.pumpWidget(
-        MaterialApp.router(routerConfig: router),
-      );
-      final _ = await tester.pumpAndSettle();
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    final _ = await tester.pumpAndSettle();
 
-      expect(capturedShellIndex, 2);
-      expect(find.text('Settings screen'), findsOneWidget);
-    },
-  );
+    expect(capturedShellIndex, 2);
+    expect(find.text('Settings screen'), findsOneWidget);
+  });
 
   testWidgets('workspace shell blocks root pop', (tester) async {
     final router = GoRouter(
@@ -626,18 +604,12 @@ void main() {
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: 'tools',
-              builder: (_, _) => const SizedBox.shrink(),
-            ),
+            GoRoute(path: 'tools', builder: (_, _) => const SizedBox.shrink()),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: 'models',
-              builder: (_, _) => const SizedBox.shrink(),
-            ),
+            GoRoute(path: 'models', builder: (_, _) => const SizedBox.shrink()),
           ],
         ),
         StatefulShellBranch(

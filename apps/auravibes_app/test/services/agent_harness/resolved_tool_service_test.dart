@@ -54,12 +54,12 @@ class _MockSkillCredentialsRepository extends Mock
 
 AvailableSkill _appAvailableSkill(String slug) {
   return AvailableSkill(
+    source: SkillSource.app,
     id: slug,
     slug: slug,
     title: slug,
     description: '',
     content: '',
-    source: SkillSource.app,
     kind: SkillKind.native,
   );
 }
@@ -76,10 +76,7 @@ void main() {
           required toolIdentifier,
           required arguments,
         }) async {
-          mcpCalls.add((
-            serverId: mcpServerId,
-            toolIdentifier: toolIdentifier,
-          ));
+          mcpCalls.add((serverId: mcpServerId, toolIdentifier: toolIdentifier));
 
           return 'mcp result';
         },
@@ -162,10 +159,7 @@ void main() {
     );
 
     expect(result, 'mcp result');
-    expect(
-      mcpCalls,
-      [(serverId: 'server-1', toolIdentifier: 'remote-tool')],
-    );
+    expect(mcpCalls, [(serverId: 'server-1', toolIdentifier: 'remote-tool')]);
   });
 
   test('rejects MCP tools without a server binding', () {
@@ -398,16 +392,10 @@ void main() {
       ),
     ).thenAnswer((_) async => [_appAvailableSkill('openai')]);
     when(
-      () => appCandidates.call(
-        workspaceId: 'workspace-1',
-        skill: appSkill,
-      ),
+      () => appCandidates.call(workspaceId: 'workspace-1', skill: appSkill),
     ).thenAnswer(
       (_) async => const [
-        AppSkillCredentialCandidate(
-          id: 'model:openai-1',
-          name: 'OpenAI key',
-        ),
+        AppSkillCredentialCandidate(id: 'model:openai-1', name: 'OpenAI key'),
       ],
     );
     final provider = AppResolvedToolProvider(
@@ -427,7 +415,7 @@ void main() {
     final result = await provider.runSkillControlTool(
       conversationId: 'conversation-1',
       workspaceId: 'workspace-1',
-      toolIdentifier: listSkillCredentialsToolName,
+      toolIdentifier: SkillToolNames.listCredentials,
       arguments: {'skillSlug': 'openai'},
     );
 
@@ -439,93 +427,87 @@ void main() {
     });
   });
 
-  test(
-    'delegates skill template, manager, and app native tools',
-    () async {
-      final templateTool = _MockRunSkillTemplateToolUsecase();
-      final appSkillTool = _MockRunAppSkillToolUsecase();
-      final nativeTool = _MockRunSkillsManagerToolUsecase();
-      final nativeSuccesses = <({String workspaceId, String toolSlug})>[];
-      when(
-        () => templateTool.call(
-          workspaceId: 'workspace-1',
-          skillSlug: 'skill-1',
-          toolSlug: 'template-tool',
-          arguments: {'value': 1},
-        ),
-      ).thenAnswer((_) async => 'template result');
-      when(
-        () => nativeTool.call(
-          workspaceId: 'workspace-1',
-          toolSlug: 'native-tool',
-          arguments: {'value': 2},
-        ),
-      ).thenAnswer((_) async => {'ok': true});
-      when(
-        () => appSkillTool.callCancelable(
-          workspaceId: 'workspace-1',
-          skillSlug: 'duckduckgo',
-          toolSlug: 'search',
-          arguments: {'query': 'dart'},
-        ),
-      ).thenReturn(
-        CancelableOperation.fromFuture(Future.value('service result')),
-      );
-      final provider = AppResolvedToolProvider(
-        agentCancellationRuntime: cancellationRuntime,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) async => 'mcp result',
-        runSkillTemplateToolUsecase: templateTool,
-        runAppSkillToolUsecase: appSkillTool,
-        runSkillsManagerToolUsecase: (_) => nativeTool,
-        onSkillsManagerToolSuccess:
-            ({required workspaceId, required toolSlug, required result}) {
-              nativeSuccesses.add((
-                workspaceId: workspaceId,
-                toolSlug: toolSlug,
-              ));
-            },
-      );
+  test('delegates skill template, manager, and app native tools', () async {
+    final templateTool = _MockRunSkillTemplateToolUsecase();
+    final appSkillTool = _MockRunAppSkillToolUsecase();
+    final nativeTool = _MockRunSkillsManagerToolUsecase();
+    final nativeSuccesses = <({String workspaceId, String toolSlug})>[];
+    when(
+      () => templateTool.call(
+        workspaceId: 'workspace-1',
+        skillSlug: 'skill-1',
+        toolSlug: 'template-tool',
+        arguments: {'value': 1},
+      ),
+    ).thenAnswer((_) async => 'template result');
+    when(
+      () => nativeTool.call(
+        workspaceId: 'workspace-1',
+        toolSlug: 'native-tool',
+        arguments: {'value': 2},
+      ),
+    ).thenAnswer((_) async => {'ok': true});
+    when(
+      () => appSkillTool.callCancelable(
+        workspaceId: 'workspace-1',
+        skillSlug: 'duckduckgo',
+        toolSlug: 'search',
+        arguments: {'query': 'dart'},
+      ),
+    ).thenReturn(
+      CancelableOperation.fromFuture(Future.value('service result')),
+    );
+    final provider = AppResolvedToolProvider(
+      agentCancellationRuntime: cancellationRuntime,
+      mcpToolCaller:
+          ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+          }) async => 'mcp result',
+      runSkillTemplateToolUsecase: templateTool,
+      runAppSkillToolUsecase: appSkillTool,
+      runSkillsManagerToolUsecase: (_) => nativeTool,
+      onSkillsManagerToolSuccess:
+          ({required workspaceId, required toolSlug, required result}) {
+            nativeSuccesses.add((workspaceId: workspaceId, toolSlug: toolSlug));
+          },
+    );
 
-      expect(
-        await provider.runSkillTemplateTool(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          skillSlug: 'skill-1',
-          toolSlug: 'template-tool',
-          arguments: {'value': 1},
-        ),
-        'template result',
-      );
-      expect(
-        await provider.runSkillNativeTool(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          skillSlug: 'skills_manager',
-          toolSlug: 'native-tool',
-          arguments: {'value': 2},
-        ),
-        {'ok': true},
-      );
-      expect(
-        await provider.runSkillNativeTool(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          skillSlug: 'duckduckgo',
-          toolSlug: 'search',
-          arguments: {'query': 'dart'},
-        ),
-        'service result',
-      );
-      expect(nativeSuccesses, [
-        (workspaceId: 'workspace-1', toolSlug: 'native-tool'),
-      ]);
-    },
-  );
+    expect(
+      await provider.runSkillTemplateTool(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        skillSlug: 'skill-1',
+        toolSlug: 'template-tool',
+        arguments: {'value': 1},
+      ),
+      'template result',
+    );
+    expect(
+      await provider.runSkillNativeTool(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        skillSlug: 'skills_manager',
+        toolSlug: 'native-tool',
+        arguments: {'value': 2},
+      ),
+      {'ok': true},
+    );
+    expect(
+      await provider.runSkillNativeTool(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+        skillSlug: 'duckduckgo',
+        toolSlug: 'search',
+        arguments: {'query': 'dart'},
+      ),
+      'service result',
+    );
+    expect(nativeSuccesses, [
+      (workspaceId: 'workspace-1', toolSlug: 'native-tool'),
+    ]);
+  });
 
   test('registers app native skill calls for cancellation', () async {
     final _ = cancellationRuntime.start('conversation-1');
@@ -634,7 +616,11 @@ void main() {
   test('provider creates the shared tool runner', () {
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),

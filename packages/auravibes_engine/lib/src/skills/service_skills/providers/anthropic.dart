@@ -95,10 +95,7 @@ CancelableOperation<Object?> _message(
   return postJson(
     context,
     'https://api.anthropic.com/v1/messages',
-    {
-      'x-api-key': apiKey(input),
-      'anthropic-version': '2023-06-01',
-    },
+    {'x-api-key': apiKey(input), 'anthropic-version': '2023-06-01'},
     {
       'model': stringInput(
         input,

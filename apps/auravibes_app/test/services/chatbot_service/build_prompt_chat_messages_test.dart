@@ -42,10 +42,7 @@ void main() {
 
         expect(result, hasLength(2));
         final resultMessage = result[1];
-        expect(
-          resultMessage.parts.whereType<ToolResponsePart>(),
-          hasLength(1),
-        );
+        expect(resultMessage.parts.whereType<ToolResponsePart>(), hasLength(1));
         expect(resultMessage.role.name, 'tool');
         expect(
           resultMessage.parts
@@ -86,7 +83,8 @@ void main() {
                 displayName: 'large.png',
                 mimeType: 'image/png',
                 modality: MessageAttachmentModality.image,
-                sizeBytes: maxChatPromptAttachmentBytes + 1,
+                sizeBytes:
+                    ChatAttachmentModality.maxChatPromptAttachmentBytes + 1,
                 createdAt: DateTime(2025),
                 updatedAt: DateTime(2025),
               ),

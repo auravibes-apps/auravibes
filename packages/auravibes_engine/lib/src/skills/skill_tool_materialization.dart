@@ -106,10 +106,7 @@ Map<String, Object?> materializeSkillToolSchema(
   if (ids.isEmpty) {
     properties.remove('credentialId');
   } else {
-    properties['credentialId'] = {
-      'type': 'string',
-      'enum': ids,
-    };
+    properties['credentialId'] = {'type': 'string', 'enum': ids};
     if (requiresCredential && ids.length > 1) required.add('credentialId');
   }
   result['properties'] = properties;

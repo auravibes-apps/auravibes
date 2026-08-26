@@ -52,7 +52,9 @@ class ShouldCompactConversationUsecase {
       conversationId,
     );
 
-    final context = toAgentContextSnapshot(messages);
+    final context = MessageTranscriptSnapshotMapper.toAgentContextSnapshot(
+      messages,
+    );
     if (!isContextSafeForCompaction(context)) {
       return CompactionDecision(
         shouldCompact: false,

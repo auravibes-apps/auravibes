@@ -20,10 +20,7 @@ AgentService _buildAgentService(
     cancellationEffects: cancellationEffects ?? FakeCancellationEffects(),
     rateLimitRetryRuntime:
         rateLimitRetryRuntime ??
-        AgentRateLimitRetryRuntime(
-          start: (_, _) {},
-          clear: (_) {},
-        ),
+        AgentRateLimitRetryRuntime(start: (_, _) {}, clear: (_) {}),
     rateLimitRetryDelay: rateLimitRetryDelay ?? defaultAgentRateLimitRetryDelay,
     now: now ?? DateTime.now,
     sleep: sleep ?? Future<void>.delayed,
@@ -346,9 +343,7 @@ class _FakeAgentConversationDataProvider
   }
 
   @override
-  Future<void> autoCompactConversation({
-    required String conversationId,
-  }) async {
+  Future<void> autoCompactConversation({required String conversationId}) async {
     onAutoCompact?.call();
   }
 
@@ -385,9 +380,7 @@ class _FakeAgentConversationDataProvider
 }
 
 class _FakeAgentSendQueueRuntime implements AgentSendQueueRuntime {
-  _FakeAgentSendQueueRuntime({
-    this.drafts = const [],
-  });
+  _FakeAgentSendQueueRuntime({this.drafts = const []});
 
   final List<AgentQueuedDraft> drafts;
   final cleared = <String>[];

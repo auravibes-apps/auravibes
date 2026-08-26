@@ -210,10 +210,8 @@ void main() {
 
     expect(
       () => verifyNever(
-        () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
-          any(),
-          any(),
-        ),
+        () =>
+            fixture.mockApiModelRepo.getModelByProviderAndModelId(any(), any()),
       ),
       returnsNormally,
     );
@@ -365,9 +363,7 @@ void main() {
         messageRepositoryProvider.overrideWith(
           (ref) => MockMessageRepository(),
         ),
-        chatbotServiceProvider.overrideWith(
-          (ref) => MockChatbotService(),
-        ),
+        chatbotServiceProvider.overrideWith((ref) => MockChatbotService()),
         workspaceModelSelectionRepositoryProvider.overrideWith(
           (ref) => fixture.mockModelRepo,
         ),
@@ -377,9 +373,9 @@ void main() {
         shouldCompactConversationUsecaseProvider.overrideWith(
           (ref) => fixture.mockShouldCompact,
         ),
-        compactConversationUsecaseProvider('ws-1').overrideWith(
-          (ref) => fixture.mockCompact,
-        ),
+        compactConversationUsecaseProvider(
+          'ws-1',
+        ).overrideWith((ref) => fixture.mockCompact),
       ],
     );
     addTearDown(container.dispose);

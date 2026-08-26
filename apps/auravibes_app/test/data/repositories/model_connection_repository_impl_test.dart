@@ -204,9 +204,7 @@ void main() {
         ).thenAnswer((_) async => connectionRow);
         when(
           () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 
@@ -236,7 +234,7 @@ void main() {
           createdAt: now,
           updatedAt: now,
           name: 'Codex',
-          serviceId: openAICodexProviderId,
+          serviceId: ModelProviderOAuthProfiles.providerId,
           kind: ServiceConnectionKindTable.modelProvider,
           authenticationType: ServiceAuthenticationTypeTable.oauth2,
           encryptedAuthValue: 'encrypted-token',
@@ -255,9 +253,7 @@ void main() {
         ).thenAnswer((_) async => oauthRow);
         when(
           () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 
@@ -265,7 +261,7 @@ void main() {
           ModelConnectionToCreate(
             name: 'Codex',
             workspaceId: 'ws-1',
-            modelId: openAICodexProviderId,
+            modelId: ModelProviderOAuthProfiles.providerId,
             authMode: ModelProviderAuthMode.oauth2,
             oauthToken: OAuthTokenEntity(
               accessToken: 'codex-access',
@@ -295,7 +291,10 @@ void main() {
                 as List<WorkspaceModelSelectionsCompanion>;
 
         expect(result.id, 'conn-oauth');
-        expect(connection.serviceId.value, openAICodexProviderId);
+        expect(
+          connection.serviceId.value,
+          ModelProviderOAuthProfiles.providerId,
+        );
         expect(
           connection.authenticationType.value,
           ServiceAuthenticationTypeTable.oauth2,
@@ -356,9 +355,7 @@ void main() {
             () => mockSelectionsDao.insertWorkspaceModelSelections(
               any<List<WorkspaceModelSelectionsCompanion>>(),
             ),
-          ).thenAnswer((
-            _,
-          ) async {
+          ).thenAnswer((_) async {
             return;
           });
 
@@ -634,9 +631,7 @@ void main() {
         ).thenAnswer((_) async => connectionRow);
         when(
           () => mockConnectionsDao.deleteModelConnection('conn-1'),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 

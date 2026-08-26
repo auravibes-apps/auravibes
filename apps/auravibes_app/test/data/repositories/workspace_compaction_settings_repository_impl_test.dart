@@ -25,9 +25,9 @@ void main() {
 
   group('getEffectiveSettings', () {
     test('returns defaults when no row exists', () async {
-      when(() => mockDao.getByWorkspaceId('ws-1')).thenAnswer(
-        (_) async => null,
-      );
+      when(
+        () => mockDao.getByWorkspaceId('ws-1'),
+      ).thenAnswer((_) async => null);
 
       final settings = await repo.getEffectiveSettings('ws-1');
 
@@ -45,9 +45,7 @@ void main() {
         autoCompactEnabled: false,
         usagePercentageThreshold: 50,
       );
-      when(() => mockDao.getByWorkspaceId('ws-1')).thenAnswer(
-        (_) async => row,
-      );
+      when(() => mockDao.getByWorkspaceId('ws-1')).thenAnswer((_) async => row);
 
       final settings = await repo.getEffectiveSettings('ws-1');
 
@@ -60,9 +58,9 @@ void main() {
 
   group('watchEffectiveSettings', () {
     test('maps null row to defaults', () {
-      when(() => mockDao.watchByWorkspaceId('ws-1')).thenAnswer(
-        (_) => Stream.value(null),
-      );
+      when(
+        () => mockDao.watchByWorkspaceId('ws-1'),
+      ).thenAnswer((_) => Stream.value(null));
 
       expect(
         repo.watchEffectiveSettings('ws-1'),
@@ -86,9 +84,7 @@ void main() {
         usagePercentageThreshold: 90,
         remainingTokenThreshold: 5000,
       );
-      when(
-        () => mockDao.upsert('ws-1', any()),
-      ).thenAnswer((_) async => row);
+      when(() => mockDao.upsert('ws-1', any())).thenAnswer((_) async => row);
 
       final settings = await repo.saveOverrides(
         'ws-1',
@@ -100,9 +96,7 @@ void main() {
       );
 
       final captured =
-          verify(
-                () => mockDao.upsert('ws-1', captureAny()),
-              ).captured.single
+          verify(() => mockDao.upsert('ws-1', captureAny())).captured.single
               as WorkspaceCompactionSettingsCompanion;
       expect(captured.autoCompactEnabled.value, isFalse);
       expect(captured.usagePercentageThreshold.value, 90);
@@ -116,9 +110,9 @@ void main() {
 
   group('resetOverrides', () {
     test('deletes row and returns defaults', () async {
-      when(() => mockDao.deleteByWorkspaceId('ws-1')).thenAnswer(
-        (_) async => 1,
-      );
+      when(
+        () => mockDao.deleteByWorkspaceId('ws-1'),
+      ).thenAnswer((_) async => 1);
 
       final settings = await repo.resetOverrides('ws-1');
 

@@ -154,10 +154,7 @@ void main() {
   });
 
   test('rejects unsupported status at runtime', () {
-    expect(
-      () => ChangedFile(status: 'unsupported'),
-      throwsArgumentError,
-    );
+    expect(() => ChangedFile(status: 'unsupported'), throwsArgumentError);
   });
 
   test('freezes result package inputs and outputs', () {
@@ -409,10 +406,7 @@ void main() {
 
     final parseFailure = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/lib/bad.dart')],
-      headSources: {
-        ..._sources,
-        'packages/core/lib/bad.dart': 'class {',
-      },
+      headSources: {..._sources, 'packages/core/lib/bad.dart': 'class {'},
       baseSources: _sources,
       packageRoots: _roots,
     );
@@ -567,9 +561,9 @@ Future<Directory> _runnerFixture({
 }) async {
   final root = await Directory.systemTemp.createTemp('changed-selector-');
   final package = Directory('${root.path}/packages/core');
-  final _ = await Directory('${package.path}/test/features').create(
-    recursive: true,
-  );
+  final _ = await Directory(
+    '${package.path}/test/features',
+  ).create(recursive: true);
   final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
 name: fixture
 workspace:
@@ -595,10 +589,7 @@ ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
   return root;
 }
 
-const _roots = <String, String>{
-  'core': 'packages/core',
-  'ui': 'packages/ui',
-};
+const _roots = <String, String>{'core': 'packages/core', 'ui': 'packages/ui'};
 
 const _sources = <String, String>{
   'packages/core/lib/leaf.dart': 'class Leaf {}',

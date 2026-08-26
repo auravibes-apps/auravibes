@@ -68,7 +68,6 @@ abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
 
 @freezed
 abstract class ModelConnectionFilter with _$ModelConnectionFilter {
-  const factory ModelConnectionFilter({
-    @Default([]) List<String> workspaces,
-  }) = _ModelConnectionFilter;
+  const factory ModelConnectionFilter({@Default([]) List<String> workspaces}) =
+      _ModelConnectionFilter;
 }

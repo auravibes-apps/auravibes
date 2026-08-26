@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -94,13 +95,10 @@ class OAuthDiscoveryService {
       _logger.info('Trying well-known endpoint: $wellKnownUrl');
 
       final response = await http
-          .get(
-            Uri.parse(wellKnownUrl),
-            headers: _jsonAcceptHeader,
-          )
+          .get(Uri.parse(wellKnownUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authorizationEndpoint =
@@ -151,10 +149,7 @@ class OAuthDiscoveryService {
       if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
 
       final response = await http
-          .get(
-            uri,
-            headers: {'Accept': 'text/event-stream'},
-          )
+          .get(uri, headers: {'Accept': 'text/event-stream'})
           .timeout(const Duration(seconds: 5));
 
       return _parseDirectProbeResponse(response);
@@ -234,13 +229,10 @@ class OAuthDiscoveryService {
       _logger.info('Trying OAuth metadata endpoint: $metadataUrl');
 
       final response = await http
-          .get(
-            Uri.parse(metadataUrl),
-            headers: _jsonAcceptHeader,
-          )
+          .get(Uri.parse(metadataUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authUrl = metadata['authorization_url'] as String?;
@@ -288,15 +280,13 @@ class OAuthDiscoveryService {
       final response = await http
           .post(
             Uri.parse(registrationEndpoint),
-            headers: {
-              'Content-Type': 'application/json',
-              ..._jsonAcceptHeader,
-            },
+            headers: {'Content-Type': 'application/json', ..._jsonAcceptHeader},
             body: json.encode(clientMetadata),
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == HttpStatus.ok ||
+          response.statusCode == HttpStatus.created) {
         final registrationResponse =
             json.decode(response.body) as Map<String, dynamic>;
         final clientId = registrationResponse['client_id'] as String?;

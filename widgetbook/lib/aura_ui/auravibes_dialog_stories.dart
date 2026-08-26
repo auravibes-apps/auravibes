@@ -25,10 +25,7 @@ Widget confirmDialogUseCase(BuildContext context) {
 }
 
 class _ConfirmDialogDemo extends StatelessWidget {
-  const _ConfirmDialogDemo({
-    required this.isDestructive,
-    required this.tint,
-  });
+  const _ConfirmDialogDemo({required this.isDestructive, required this.tint});
 
   final bool isDestructive;
   final AuraTint? tint;
@@ -48,7 +45,7 @@ class _ConfirmDialogDemo extends StatelessWidget {
   }
 
   Future<void> _showConfirmDialog(BuildContext context) async {
-    final result = await showAuraConfirmDialog(
+    final result = await AuraDialogs.confirm(
       context: context,
       title: const Text('Delete Item'),
       message: const Text(
@@ -87,21 +84,21 @@ class _AlertDialogDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () {
-            unawaited(
-              showAuraAlertDialog(
-                context: context,
-                title: const Text('Update Available'),
-                message: const Text(
-                  'A new version of the app is available. Please update to the latest version.',
-                ),
-                tint: tint,
-              ),
-            );
-          },
+          onPressed: () => unawaited(_showAlertDialog(context)),
           child: const Text('Show Alert Dialog'),
         ),
       ),
+    );
+  }
+
+  Future<void> _showAlertDialog(BuildContext context) {
+    return AuraDialogs.alert(
+      context: context,
+      title: const Text('Update Available'),
+      message: const Text(
+        'A new version of the app is available. Please update to the latest version.',
+      ),
+      tint: tint,
     );
   }
 }

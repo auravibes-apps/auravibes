@@ -26,9 +26,7 @@ void main() {
       final service = UrlService(dio: dio);
 
       final response = await service
-          .execute(
-            const UrlRequest(url: 'https://example.com'),
-          )
+          .execute(const UrlRequest(url: 'https://example.com'))
           .value;
 
       expect(response.statusCode, 200);
@@ -350,9 +348,7 @@ void main() {
               await (requestStream ??
                       fail('Expected requestStream to be non-null'))
                   .toList();
-          streamedBody = String.fromCharCodes(
-            chunks.expand((chunk) => chunk),
-          );
+          streamedBody = String.fromCharCodes(chunks.expand((chunk) => chunk));
 
           return ResponseBody.fromString('ok', 200);
         },
@@ -541,9 +537,7 @@ void main() {
         final service = UrlService(dio: dio);
 
         final _ = await service
-            .execute(
-              const UrlRequest(url: 'https://example.com'),
-            )
+            .execute(const UrlRequest(url: 'https://example.com'))
             .value;
 
         expect(userAgent, contains('Mozilla/5.0'));
@@ -587,9 +581,7 @@ void main() {
         final service = UrlService(dio: dio);
 
         final _ = await service
-            .execute(
-              const UrlRequest(url: 'https://example.com'),
-            )
+            .execute(const UrlRequest(url: 'https://example.com'))
             .value;
 
         expect(acceptLanguage, 'en-US,en;q=0.9');

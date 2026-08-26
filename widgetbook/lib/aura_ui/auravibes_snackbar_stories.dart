@@ -45,20 +45,7 @@ class _SnackBarDemo extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: ElevatedButton(
-          onPressed: () {
-            final _ = showAuraSnackBar(
-              context: context,
-              content: Text(_getMessage()),
-              variant: variant,
-              duration: duration,
-              actionLabel: showAction ? 'UNDO' : null,
-              onAction: showAction
-                  ? () {
-                      final _ = Object();
-                    }
-                  : null,
-            );
-          },
+          onPressed: () => _showSnackBar(context),
           child: const Text('Show SnackBar'),
         ),
       ),
@@ -73,5 +60,20 @@ class _SnackBarDemo extends StatelessWidget {
       AuraSnackBarVariant.warning => 'Warning: This action cannot be undone.',
       AuraSnackBarVariant.info => 'New updates are available.',
     };
+  }
+
+  void _showSnackBar(BuildContext context) {
+    final _ = AuraSnackBars.show(
+      context: context,
+      content: Text(_getMessage()),
+      variant: variant,
+      duration: duration,
+      actionLabel: showAction ? 'UNDO' : null,
+      onAction: showAction ? _handleUndo : null,
+    );
+  }
+
+  void _handleUndo() {
+    final _ = Object();
   }
 }

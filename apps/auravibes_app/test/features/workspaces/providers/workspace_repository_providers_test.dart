@@ -12,9 +12,8 @@ import 'package:riverpod/riverpod.dart';
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(
-      () => DatabaseConnection(
-        LazyDatabase(() async => NativeDatabase.memory()),
-      ),
+      () =>
+          DatabaseConnection(LazyDatabase(() async => NativeDatabase.memory())),
     ),
   );
 }
@@ -59,10 +58,7 @@ class _FakeWorkspaceRepository implements WorkspaceRepository {
   }
 
   @override
-  Future<WorkspaceEntity> patchWorkspace(
-    String id,
-    WorkspacePatch workspace,
-  ) {
+  Future<WorkspaceEntity> patchWorkspace(String id, WorkspacePatch workspace) {
     throw UnimplementedError();
   }
 
@@ -164,9 +160,7 @@ void main() {
     test('emits list from repository', () async {
       final fakeRepo = _FakeWorkspaceRepository();
       final testContainer = ProviderContainer(
-        overrides: [
-          workspaceRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
+        overrides: [workspaceRepositoryProvider.overrideWithValue(fakeRepo)],
       );
       addTearDown(testContainer.dispose);
 
@@ -182,9 +176,7 @@ void main() {
     test('returns same instance on subsequent reads (keepAlive)', () async {
       final fakeRepo = _FakeWorkspaceRepository();
       final testContainer = ProviderContainer(
-        overrides: [
-          workspaceRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
+        overrides: [workspaceRepositoryProvider.overrideWithValue(fakeRepo)],
       );
       addTearDown(testContainer.dispose);
 

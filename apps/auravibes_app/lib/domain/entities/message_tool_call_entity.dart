@@ -27,8 +27,8 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
 
     /// The result status of this tool call.
     ///
-    /// - null: Tool is awaiting approval
-    /// - non-null: Tool is running or completed with this result status
+    /// Null means the tool is awaiting approval. A non-null value means the
+    /// tool is running or completed with this result status.
     @JsonKey(
       fromJson: _toolCallResultStatusFromJson,
       toJson: _toolCallResultStatusToJson,
@@ -41,7 +41,7 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
       _$MessageToolCallEntityFromJson(json);
 
   Map<String, dynamic> get arguments {
-    return safeJsonDecode(argumentsRaw) ?? {};
+    return JsonCodec.decode(argumentsRaw) ?? {};
   }
 
   /// Whether this tool call has been resolved (success or failure).
@@ -128,6 +128,10 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
   factory MessageMetadataEntity.fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);
 
+  int get usedTokens {
+    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
+  }
+
   static MessageMetadataEntity? fromJsonString(String? metadata) {
     if (metadata == null) return null;
     try {
@@ -137,10 +141,6 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     } on Exception catch (_) {
       return null;
     }
-  }
-
-  int get usedTokens {
-    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
   }
 }
 
@@ -235,7 +235,7 @@ abstract class MessageToCreate with _$MessageToCreate {
     if (status == MessageStatus.unfinished && !isUser) {
       return metadata == null ||
           metadata.trim().isEmpty ||
-          safeJsonDecode(metadata) != null;
+          JsonCodec.decode(metadata) != null;
     }
 
     if (status == MessageStatus.sent) {
@@ -245,7 +245,7 @@ abstract class MessageToCreate with _$MessageToCreate {
     return !isUser &&
         metadata != null &&
         metadata.trim().isNotEmpty &&
-        safeJsonDecode(metadata) != null;
+        JsonCodec.decode(metadata) != null;
   }
 
   /// Returns true if the message is in a valid state.

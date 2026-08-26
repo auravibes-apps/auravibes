@@ -151,14 +151,8 @@ void main() {
       'includes messages of all statuses including error and sending',
       () async {
         final messages = [
-          _makeMessage(
-            id: 'err-1',
-            status: MessageStatus.error,
-          ),
-          _makeMessage(
-            id: 'send-1',
-            status: MessageStatus.sending,
-          ),
+          _makeMessage(id: 'err-1', status: MessageStatus.error),
+          _makeMessage(id: 'send-1', status: MessageStatus.sending),
           _makeMessage(id: 'msg-2'),
           _makeMessage(id: 'msg-3', isUser: false),
         ];
@@ -201,40 +195,37 @@ void main() {
       expect(result[1].id, 'new-1');
     });
 
-    test(
-      'uses compactedThroughMessageId boundary to keep only tail',
-      () async {
-        final messages = [
-          _makeMessage(id: 'old-1'),
-          _makeMessage(id: 'old-2', isUser: false),
-          _makeMessage(id: 'old-3'),
-          _makeMessage(id: 'kept-1'),
-          _makeMessage(id: 'kept-2', isUser: false),
-          _makeMessage(
-            id: 'summary',
-            isUser: false,
-            messageType: MessageType.system,
-            metadata: const MessageMetadataEntity(
-              isCompactionSummary: true,
-              compactedFromMessageId: 'old-1',
-              compactedThroughMessageId: 'old-3',
-              compactedMessageIds: ['old-1', 'old-2', 'old-3'],
-            ),
+    test('uses compactedThroughMessageId boundary to keep only tail', () async {
+      final messages = [
+        _makeMessage(id: 'old-1'),
+        _makeMessage(id: 'old-2', isUser: false),
+        _makeMessage(id: 'old-3'),
+        _makeMessage(id: 'kept-1'),
+        _makeMessage(id: 'kept-2', isUser: false),
+        _makeMessage(
+          id: 'summary',
+          isUser: false,
+          messageType: MessageType.system,
+          metadata: const MessageMetadataEntity(
+            isCompactionSummary: true,
+            compactedFromMessageId: 'old-1',
+            compactedThroughMessageId: 'old-3',
+            compactedMessageIds: ['old-1', 'old-2', 'old-3'],
           ),
-        ];
+        ),
+      ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+      when(
+        () => mockRepository.getMessagesByConversation('conv-1'),
+      ).thenAnswer((_) async => messages);
 
-        final result = await usecase('conv-1');
+      final result = await usecase('conv-1');
 
-        expect(result.firstOrNull, isNotNull);
-        expect(result.firstOrNull?.id, 'summary');
-        expect(result[1].id, 'kept-1');
-        expect(result[2].id, 'kept-2');
-      },
-    );
+      expect(result.firstOrNull, isNotNull);
+      expect(result.firstOrNull?.id, 'summary');
+      expect(result[1].id, 'kept-1');
+      expect(result[2].id, 'kept-2');
+    });
 
     test(
       'multiple compactions do not resurrect pre-boundary messages',

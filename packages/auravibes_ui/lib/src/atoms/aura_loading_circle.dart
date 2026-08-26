@@ -1,7 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Component callbacks stay colocated with UI state.
 
-import 'dart:async';
 import 'dart:math' as math show pi, sin;
 
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -9,17 +8,17 @@ import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
 class _DelayTween extends Tween<double> {
-  _DelayTween({
-    required this.delay,
-    required double begin,
-    required double end,
-  }) : super(begin: begin, end: end);
+  static const _fullTurn = 2.0;
+  _DelayTween({required this.delay, required double begin, required double end})
+    : super(begin: begin, end: end);
 
   final double delay;
 
   @override
   double lerp(double t) {
-    return super.lerp((math.sin((t - delay) * 2 * math.pi) + 1) / 2);
+    return super.lerp(
+      (math.sin((t - delay) * _fullTurn * math.pi) + 1) / _fullTurn,
+    );
   }
 
   @override
@@ -101,7 +100,7 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
         AnimationController(duration: widget.duration, vsync: this);
     _controller = controller;
 
-    unawaited(controller.repeat());
+    final _ = controller.repeat();
   }
 
   @override
@@ -121,39 +120,50 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
     return Center(
       child: SizedBox.fromSize(
         child: Stack(
-          children: List.generate(itemCount, (i) {
-            final position = widget.size * 0.5;
-
-            return Positioned.fill(
-              left: position,
-              top: position,
-              child: Transform(
-                transform: Matrix4.rotationZ((360 / itemCount) * i * 0.0174533),
-                child: Align(
-                  child: FadeTransition(
-                    opacity: _DelayTween(
-                      delay: i / itemCount,
-                      begin: 0,
-                      end: 1,
-                    ).animate(_requiredController),
-                    child: SizedBox.fromSize(
-                      child:
-                          itemBuilder?.call(context, i) ??
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: context.auraColors.colorFor(widget.tint),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                      size: Size.square(itemSize),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
+          children: List.generate(
+            itemCount,
+            (i) => _buildItem(context, i, itemCount, itemSize, itemBuilder),
+          ),
         ),
         size: Size.square(widget.size),
+      ),
+    );
+  }
+
+  Widget _buildItem(
+    BuildContext context,
+    int index,
+    int itemCount,
+    double itemSize,
+    Widget Function(BuildContext, int)? itemBuilder,
+  ) {
+    final position = widget.size * 0.5;
+
+    return Positioned.fill(
+      left: position,
+      top: position,
+      child: Transform(
+        transform: Matrix4.rotationZ((360 / itemCount) * index * 0.0174533),
+        child: Align(
+          child: FadeTransition(
+            opacity: _DelayTween(
+              delay: index / itemCount,
+              begin: 0,
+              end: 1,
+            ).animate(_requiredController),
+            child: SizedBox.fromSize(
+              child:
+                  itemBuilder?.call(context, index) ??
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: context.auraColors.colorFor(widget.tint),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              size: Size.square(itemSize),
+            ),
+          ),
+        ),
       ),
     );
   }

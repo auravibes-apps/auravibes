@@ -63,15 +63,10 @@ class AuraDropdownOption<T> extends StatelessWidget {
           vertical: context.auraTheme.fromSpacing(.sm),
           horizontal: context.auraTheme.fromSpacing(.md),
         ),
-        decoration: BoxDecoration(
-          color: _getBackgroundColor(auraColors),
-        ),
+        decoration: BoxDecoration(color: _getBackgroundColor(auraColors)),
         child: Row(
           children: [
-            if (leading != null) ...[
-              leading,
-              const AuraSizedBox(width: .sm),
-            ],
+            if (leading != null) ...[leading, const AuraSizedBox(width: .sm)],
             Expanded(
               child:
                   child ??
@@ -105,10 +100,7 @@ class AuraDropdownOption<T> extends StatelessWidget {
     );
 
     if (semanticLabel != null) {
-      result = Semantics(
-        child: result,
-        label: semanticLabel,
-      );
+      result = Semantics(child: result, label: semanticLabel);
     }
 
     return result;

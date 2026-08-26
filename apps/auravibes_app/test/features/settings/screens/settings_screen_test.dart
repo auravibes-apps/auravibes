@@ -75,9 +75,9 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer(
         overrides: [
-          compactionSettingsProvider('test-ws').overrideWith(
-            (ref) => Stream.value(CompactionSettings.defaults),
-          ),
+          compactionSettingsProvider(
+            'test-ws',
+          ).overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
         ],
       );
       addTearDown(container.dispose);

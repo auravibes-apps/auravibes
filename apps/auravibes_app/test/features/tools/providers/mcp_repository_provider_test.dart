@@ -12,9 +12,8 @@ import 'package:riverpod/riverpod.dart';
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(
-      () => DatabaseConnection(
-        LazyDatabase(() async => NativeDatabase.memory()),
-      ),
+      () =>
+          DatabaseConnection(LazyDatabase(() async => NativeDatabase.memory())),
     ),
   );
 }
@@ -33,7 +32,11 @@ void main() {
     container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace'),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: 'workspace'),
           ),

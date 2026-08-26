@@ -43,10 +43,10 @@ void main() {
         ],
       );
 
-      expect(
-        resolved.available.map((skill) => skill.id),
-        [enabledSkill.id, 'skills_manager'],
-      );
+      expect(resolved.available.map((skill) => skill.id), [
+        enabledSkill.id,
+        'skills_manager',
+      ]);
       expect(resolved.unavailable, [
         AgentSkillRef.user(disabledSkill.id),
         AgentSkillRef.user(otherWorkspaceSkill.id),

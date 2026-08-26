@@ -88,7 +88,7 @@ class ResolveToolApprovalDecisionUsecase {
     if (resolvedTool.isSkillControl ||
         resolvedTool.isSkillTemplate ||
         resolvedTool.isSkillNative) {
-      return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
+      return await syncSkillToolPermissionsUsecase?.permissionTableIdFor(
         conversationId: conversationId,
         workspaceId: workspaceId,
         toolName: resolvedTool.fullName,
@@ -130,9 +130,7 @@ resolveToolApprovalDecisionUsecaseProvider =
       workspaceId,
     ) {
       final session = ref
-          .watch(
-            workspaceSessionForRouteProvider(workspaceId),
-          )
+          .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
       return ResolveToolApprovalDecisionUsecase(

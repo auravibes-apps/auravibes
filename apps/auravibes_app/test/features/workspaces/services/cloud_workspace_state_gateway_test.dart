@@ -221,9 +221,7 @@ void main() {
     );
 
     await expectLater(
-      gateway.watchResources(
-        const [WorkspaceResourceKind.workspaceSetting],
-      ),
+      gateway.watchResources(const [WorkspaceResourceKind.workspaceSetting]),
       emitsInOrder([
         isA<List<WorkspaceResource>>(),
         emitsError(

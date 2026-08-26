@@ -24,10 +24,7 @@ class CloudWorkspaceUseCases {
     final results = await Future.wait([workspacesFuture, pendingInvitesFuture]);
     final workspaces = results.firstOrNull;
     if (workspaces == null) {
-      return const CloudWorkspaceViewState(
-        workspaces: [],
-        pendingInvites: [],
-      );
+      return const CloudWorkspaceViewState(workspaces: [], pendingInvites: []);
     }
 
     return CloudWorkspaceViewState(
@@ -164,7 +161,7 @@ class CloudWorkspaceUseCases {
       expectedInviteRevision: invite.revision,
     );
 
-    return attach(workspace);
+    return await attach(workspace);
   }
 
   Future<void> declineInvite(PendingWorkspaceInviteSummary invite) {

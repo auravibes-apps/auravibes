@@ -16,10 +16,8 @@ class ListAgentToolOverridesUsecase {
 
 final ProviderFamily<ListAgentToolOverridesUsecase, String>
 listAgentToolOverridesUsecaseProvider =
-    Provider.family<ListAgentToolOverridesUsecase, String>(
-      (ref, workspaceId) {
-        return ListAgentToolOverridesUsecase(
-          ref.watch(agentToolsRepositoryProvider(workspaceId)),
-        );
-      },
-    );
+    Provider.family<ListAgentToolOverridesUsecase, String>((ref, workspaceId) {
+      return ListAgentToolOverridesUsecase(
+        ref.watch(agentToolsRepositoryProvider(workspaceId)),
+      );
+    });

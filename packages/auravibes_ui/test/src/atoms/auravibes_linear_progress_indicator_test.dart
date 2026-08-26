@@ -11,9 +11,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraLinearProgressIndicator(value: 0.5),
-          ),
+          home: Scaffold(body: AuraLinearProgressIndicator(value: 0.5)),
         ),
       );
 
@@ -24,9 +22,7 @@ void main() {
     testWidgets('clamps value below zero', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraLinearProgressIndicator(value: -1),
-          ),
+          home: Scaffold(body: AuraLinearProgressIndicator(value: -1)),
         ),
       );
 
@@ -39,9 +35,7 @@ void main() {
     testWidgets('clamps value above one', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraLinearProgressIndicator(value: 2),
-          ),
+          home: Scaffold(body: AuraLinearProgressIndicator(value: 2)),
         ),
       );
 
@@ -55,10 +49,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraLinearProgressIndicator(
-              value: 0.5,
-              height: 8,
-            ),
+            body: AuraLinearProgressIndicator(value: 0.5, height: 8),
           ),
         ),
       );
@@ -77,9 +68,7 @@ void main() {
               backgroundAlpha: 0.25,
             ),
           ),
-          theme: ThemeData.light().copyWith(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData.light().copyWith(extensions: [AuraTheme.light]),
         ),
       );
 

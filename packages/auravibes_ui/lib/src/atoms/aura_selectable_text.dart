@@ -82,7 +82,7 @@ class AuraSelectableText extends StatelessWidget {
     final auraColors = context.auraColors;
     final tint = this.tint;
     final cursorTint = this.cursorTint;
-    final baseStyle = auraResolveTextStyle(
+    final baseStyle = AuraTextStyles.resolve(
       style: style,
       colors: auraColors,
       typography: context.auraTheme.typography,

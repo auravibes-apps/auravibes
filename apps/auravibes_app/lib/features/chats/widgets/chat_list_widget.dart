@@ -67,10 +67,7 @@ class _ChatListEmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AuraIcon(
-              Icons.chat_outlined,
-              size: AuraIconSize.extraLarge,
-            ),
+            const AuraIcon(Icons.chat_outlined, size: AuraIconSize.extraLarge),
             const SizedBox(height: 16),
             const AuraText(
               child: TextLocale(
@@ -121,26 +118,6 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
     super.dispose();
   }
 
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDeleteConversationConfirmDialog(context);
-    if (!confirmed) return;
-
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
-
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
-
-    return;
-  }
-
   @override
   Widget build(BuildContext context) {
     final workspaceModelSelectionsAsync = ref.watch(
@@ -183,7 +160,7 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
                 const SizedBox(height: 4),
                 AuraText(
                   child: Text(
-                    formatRelativeTime(widget.chat.updatedAt),
+                    RelativeTimeFormatter.format(widget.chat.updatedAt),
                     overflow: TextOverflow.ellipsis,
                   ),
                   style: AuraTextStyle.bodySmall,
@@ -220,13 +197,35 @@ class _ChatTileState extends ConsumerState<_ChatTile> {
           ),
         ],
       ),
-      onTap: () {
-        ConversationRoute(
-          workspaceId: widget.workspaceId,
-          chatId: widget.chat.id,
-        ).go(context);
-      },
+      onTap: () => _openConversation(context),
       style: AuraCardStyle.border,
     );
+  }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await DeleteConversationConfirmDialog.show(context);
+    if (!confirmed) return;
+
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
+    );
+    if (cloud != null) {
+      await cloud.delete(widget.chat);
+
+      return;
+    }
+
+    final _ = await ref
+        .read(conversationRepositoryProvider)
+        .deleteConversation(widget.chat.id);
+
+    return;
+  }
+
+  void _openConversation(BuildContext context) {
+    ConversationRoute(
+      workspaceId: widget.workspaceId,
+      chatId: widget.chat.id,
+    ).go(context);
   }
 }

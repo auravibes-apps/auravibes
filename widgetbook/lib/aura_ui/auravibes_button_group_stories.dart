@@ -8,25 +8,29 @@ import 'package:widgetbook_annotation/widgetbook_annotation.dart' as widgetbook;
 
 @widgetbook.UseCase(name: 'Single Selection (Radio)', type: AuraButtonGroup)
 Widget buttonGroupSingleUseCase(BuildContext context) {
+  final size = context.knobs.object.dropdown(
+    label: 'size',
+    options: AuraButtonGroupSize.values,
+    initialOption: AuraButtonGroupSize.base,
+    labelBuilder: (value) => value.name,
+  );
+  final variant = context.knobs.object.dropdown(
+    label: 'variant',
+    options: AuraButtonGroupVariant.values,
+    initialOption: AuraButtonGroupVariant.outlined,
+    labelBuilder: (value) => value.name,
+  );
+  final orientation = context.knobs.object.dropdown(
+    label: 'orientation',
+    options: Axis.values,
+    initialOption: Axis.horizontal,
+    labelBuilder: (value) => value.name,
+  );
+
   return _SingleSelectionDemo(
-    size: context.knobs.object.dropdown(
-      label: 'size',
-      options: AuraButtonGroupSize.values,
-      initialOption: AuraButtonGroupSize.base,
-      labelBuilder: (value) => value.name,
-    ),
-    variant: context.knobs.object.dropdown(
-      label: 'variant',
-      options: AuraButtonGroupVariant.values,
-      initialOption: AuraButtonGroupVariant.outlined,
-      labelBuilder: (value) => value.name,
-    ),
-    orientation: context.knobs.object.dropdown(
-      label: 'orientation',
-      options: Axis.values,
-      initialOption: Axis.horizontal,
-      labelBuilder: (value) => value.name,
-    ),
+    size: size,
+    variant: variant,
+    orientation: orientation,
     disabled: context.knobs.boolean(label: 'disabled', initialValue: false),
     isLoading: context.knobs.boolean(label: 'isLoading', initialValue: false),
   );
@@ -34,25 +38,29 @@ Widget buttonGroupSingleUseCase(BuildContext context) {
 
 @widgetbook.UseCase(name: 'Multi Selection (Toggle)', type: AuraButtonGroup)
 Widget buttonGroupMultiUseCase(BuildContext context) {
+  final size = context.knobs.object.dropdown(
+    label: 'size',
+    options: AuraButtonGroupSize.values,
+    initialOption: AuraButtonGroupSize.base,
+    labelBuilder: (value) => value.name,
+  );
+  final variant = context.knobs.object.dropdown(
+    label: 'variant',
+    options: AuraButtonGroupVariant.values,
+    initialOption: AuraButtonGroupVariant.outlined,
+    labelBuilder: (value) => value.name,
+  );
+  final orientation = context.knobs.object.dropdown(
+    label: 'orientation',
+    options: Axis.values,
+    initialOption: Axis.horizontal,
+    labelBuilder: (value) => value.name,
+  );
+
   return _MultiSelectionDemo(
-    size: context.knobs.object.dropdown(
-      label: 'size',
-      options: AuraButtonGroupSize.values,
-      initialOption: AuraButtonGroupSize.base,
-      labelBuilder: (value) => value.name,
-    ),
-    variant: context.knobs.object.dropdown(
-      label: 'variant',
-      options: AuraButtonGroupVariant.values,
-      initialOption: AuraButtonGroupVariant.outlined,
-      labelBuilder: (value) => value.name,
-    ),
-    orientation: context.knobs.object.dropdown(
-      label: 'orientation',
-      options: Axis.values,
-      initialOption: Axis.horizontal,
-      labelBuilder: (value) => value.name,
-    ),
+    size: size,
+    variant: variant,
+    orientation: orientation,
     disabled: context.knobs.boolean(label: 'disabled', initialValue: false),
     isLoading: context.knobs.boolean(label: 'isLoading', initialValue: false),
   );
@@ -60,25 +68,29 @@ Widget buttonGroupMultiUseCase(BuildContext context) {
 
 @widgetbook.UseCase(name: 'Action (Clickable)', type: AuraButtonGroup)
 Widget buttonGroupActionUseCase(BuildContext context) {
+  final size = context.knobs.object.dropdown(
+    label: 'size',
+    options: AuraButtonGroupSize.values,
+    initialOption: AuraButtonGroupSize.base,
+    labelBuilder: (value) => value.name,
+  );
+  final variant = context.knobs.object.dropdown(
+    label: 'variant',
+    options: AuraButtonGroupVariant.values,
+    initialOption: AuraButtonGroupVariant.outlined,
+    labelBuilder: (value) => value.name,
+  );
+  final orientation = context.knobs.object.dropdown(
+    label: 'orientation',
+    options: Axis.values,
+    initialOption: Axis.horizontal,
+    labelBuilder: (value) => value.name,
+  );
+
   return _ActionDemo(
-    size: context.knobs.object.dropdown(
-      label: 'size',
-      options: AuraButtonGroupSize.values,
-      initialOption: AuraButtonGroupSize.base,
-      labelBuilder: (value) => value.name,
-    ),
-    variant: context.knobs.object.dropdown(
-      label: 'variant',
-      options: AuraButtonGroupVariant.values,
-      initialOption: AuraButtonGroupVariant.outlined,
-      labelBuilder: (value) => value.name,
-    ),
-    orientation: context.knobs.object.dropdown(
-      label: 'orientation',
-      options: Axis.values,
-      initialOption: Axis.horizontal,
-      labelBuilder: (value) => value.name,
-    ),
+    size: size,
+    variant: variant,
+    orientation: orientation,
     disabled: context.knobs.boolean(label: 'disabled', initialValue: false),
     isLoading: context.knobs.boolean(label: 'isLoading', initialValue: false),
   );

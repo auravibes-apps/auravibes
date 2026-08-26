@@ -100,10 +100,7 @@ void main() {
         service.decrypt(base64Encode(shortPayload)),
         throwsA(isA<FormatException>()),
       );
-      expect(
-        service.decrypt(''),
-        throwsA(isA<FormatException>()),
-      );
+      expect(service.decrypt(''), throwsA(isA<FormatException>()));
     });
 
     test('decrypt rejects malformed base64 payloads', () {

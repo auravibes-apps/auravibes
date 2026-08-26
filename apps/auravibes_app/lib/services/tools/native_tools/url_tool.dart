@@ -15,6 +15,9 @@ final class UrlTool extends NativeToolEntity<String, String> {
   final UrlService? _urlService;
 
   @override
+  NativeToolType get type => .url;
+
+  @override
   ToolSpec getTool() => urlToolSpec;
 
   @override
@@ -57,14 +60,11 @@ final class UrlTool extends NativeToolEntity<String, String> {
     final request = parseUrlToolInput(toolInput);
     final uri = Uri.parse(request.url);
     if (request.headers.isEmpty) {
-      await ensurePublicHost(uri.host);
+      await PublicUrlGuard.ensureHost(uri.host);
     } else {
-      final _ = await requirePublicHttpsUri(uri.toString());
+      final _ = await PublicUrlGuard.requireHttpsUri(uri.toString());
     }
 
     return request;
   }
-
-  @override
-  NativeToolType get type => .url;
 }

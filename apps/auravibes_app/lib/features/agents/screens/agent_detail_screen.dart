@@ -38,6 +38,7 @@ class AgentDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
+  static const _compactLayoutWidth = 640.0;
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _contentController = TextEditingController();
@@ -69,17 +70,15 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
           final agent = snapshot.data;
           if (agent == null) return const Center(child: AuraSpinner());
           _initialize(agent);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _loaded = true);
+          });
 
-          return _buildScaffold();
+          return const Center(child: AuraSpinner());
         },
       );
     }
 
-    return _buildScaffold();
-  }
-
-  Widget _buildScaffold() {
-    final agentId = widget.agentId;
     if (agentId != null && !_toolOverridesLoaded) {
       return FutureBuilder<List<AgentToolOverrideEntity>>(
         future: ref
@@ -90,12 +89,14 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
             return const AuraScreen(child: Center(child: AuraSpinner()));
           }
           _initializeToolOverrides(snapshot.requireData);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _toolOverridesLoaded = true);
+          });
 
-          return _buildScaffold();
+          return const AuraScreen(child: Center(child: AuraSpinner()));
         },
       );
     }
-
     final skillsAsync = ref.watch(workspaceSkillsProvider(widget.workspaceId));
     final toolsAsync = ref.watch(workspaceToolsProvider(widget.workspaceId));
 
@@ -107,7 +108,26 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
         ) =>
           Column(
             children: [
-              Expanded(child: _buildForm(skills, tools)),
+              Expanded(
+                child: _AgentForm(
+                  skills: skills,
+                  tools: tools,
+                  nameController: _nameController,
+                  descriptionController: _descriptionController,
+                  contentController: _contentController,
+                  isEnabled: _isEnabled,
+                  visibility: _visibility,
+                  selectedSkills: _selectedSkills,
+                  toolPermissionModes: _toolPermissionModes,
+                  onEnabledChanged: _setEnabled,
+                  onVisibilityChanged: _setVisibility,
+                  onEditDescription: () => unawaited(_editDescription()),
+                  onEditPrompt: () => unawaited(_editPrompt()),
+                  onManageSkills: _manageSkills,
+                  onManageTools: () =>
+                      _showToolPermissionsManager(skills, tools),
+                ),
+              ),
               _SaveBar(
                 isCreate: widget.agentId == null,
                 isSaving: _saving,
@@ -140,65 +160,6 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
     );
   }
 
-  Widget _buildForm(
-    List<WorkspaceSkill> skills,
-    List<WorkspaceToolEntity> tools,
-  ) {
-    final enabledSkills = skills.where((skill) => skill.isEnabled).toList();
-    final disabledSkills = skills.where((skill) => !skill.isEnabled).toList();
-    final unavailableRefs = _selectedSkills.where((ref) {
-      return !skills.any((skill) => skill.ref == ref);
-    }).toList();
-    final selectedDisabledCount = disabledSkills
-        .where((skill) => _selectedSkills.contains(skill.ref))
-        .length;
-    final overrideCount = _toolPermissionModes.entries.where((entry) {
-      return entry.value != AgentToolPermissionMode.workspaceDefault &&
-          tools.any((tool) => tool.id == entry.key);
-    }).length;
-    final missingToolOverrideCount = _toolPermissionModes.entries.where((
-      entry,
-    ) {
-      return entry.value != AgentToolPermissionMode.workspaceDefault &&
-          !tools.any((tool) => tool.id == entry.key);
-    }).length;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _PromptCard(
-          nameController: _nameController,
-          descriptionController: _descriptionController,
-          contentController: _contentController,
-          isEnabled: _isEnabled,
-          visibility: _visibility,
-          onEnabledChanged: (value) => setState(() => _isEnabled = value),
-          onVisibilityChanged: (value) => setState(() => _visibility = value),
-          onEditDescription: () => unawaited(_editDescription()),
-          onEditPrompt: () => unawaited(_editPrompt()),
-        ),
-        const SizedBox(height: 16),
-        _SkillsSummaryCard(
-          selectedCount: _selectedSkills.length,
-          availableCount: enabledSkills.length,
-          disabledSelectedCount: selectedDisabledCount,
-          unavailableCount: unavailableRefs.length,
-          onManage: () => _showSkillsManager(
-            enabledSkills: enabledSkills,
-            disabledSkills: disabledSkills,
-            unavailableRefs: unavailableRefs,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _ToolPermissionsSummaryCard(
-          overrideCount: overrideCount,
-          missingOverrideCount: missingToolOverrideCount,
-          onManage: () => _showToolPermissionsManager(skills, tools),
-        ),
-      ],
-    );
-  }
-
   Future<void> _showSkillsManager({
     required List<WorkspaceSkill> enabledSkills,
     required List<WorkspaceSkill> disabledSkills,
@@ -217,11 +178,26 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
         onEnable: (skill) async {
           await _confirmEnableSkill(skill);
         },
-        onRemoveUnavailable: (ref) {
-          setState(() {
-            final _ = _selectedSkills.remove(ref);
-          });
-        },
+        onRemoveUnavailable: _removeUnavailableSkill,
+      ),
+    );
+  }
+
+  void _setEnabled(bool value) => setState(() => _isEnabled = value);
+
+  void _setVisibility(AgentVisibility value) =>
+      setState(() => _visibility = value);
+
+  void _manageSkills({
+    required List<WorkspaceSkill> enabledSkills,
+    required List<WorkspaceSkill> disabledSkills,
+    required List<AgentSkillRef> unavailableRefs,
+  }) {
+    unawaited(
+      _showSkillsManager(
+        enabledSkills: enabledSkills,
+        disabledSkills: disabledSkills,
+        unavailableRefs: unavailableRefs,
       ),
     );
   }
@@ -237,11 +213,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
         selectedSkills: _selectedSkills,
         tools: tools,
         values: _toolPermissionModes,
-        onChanged: (toolId, value) {
-          setState(() {
-            _toolPermissionModes[toolId] = value;
-          });
-        },
+        onChanged: _setToolPermissionMode,
       ),
     );
   }
@@ -258,16 +230,26 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       ..addAll(agent.skills);
   }
 
+  void _removeUnavailableSkill(AgentSkillRef skill) {
+    setState(() {
+      final _ = _selectedSkills.remove(skill);
+    });
+  }
+
+  void _setToolPermissionMode(String toolId, AgentToolPermissionMode value) {
+    setState(() {
+      _toolPermissionModes[toolId] = value;
+    });
+  }
+
   void _initializeToolOverrides(List<AgentToolOverrideEntity> overrides) {
     _toolOverridesLoaded = true;
     _toolPermissionModes
       ..clear()
       ..addEntries(
         overrides.map(
-          (override) => MapEntry(
-            override.toolId,
-            override.permissionMode.agentMode,
-          ),
+          (override) =>
+              MapEntry(override.toolId, override.permissionMode.agentMode),
         ),
       );
   }
@@ -281,7 +263,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _editPrompt() async {
-    final markdown = await showMarkdownEditor(
+    final markdown = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _contentController.text,
     );
@@ -291,10 +273,10 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _editDescription() async {
-    final markdown = await showMarkdownEditor(
+    final markdown = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _descriptionController.text,
-      maxCharacters: agentDescriptionMaxLength,
+      maxCharacters: AgentLimits.descriptionMaxLength,
     );
     if (markdown == null) return;
 
@@ -302,7 +284,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 
   Future<void> _confirmEnableSkill(WorkspaceSkill skill) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.agents_enable_skill_title),
       message: const TextLocale(LocaleKeys.agents_enable_skill_message),
@@ -338,7 +320,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       skills: _selectedSkills.toList(),
     );
     if (!draft.isValid) {
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.cloud_errors_validation),
         variant: AuraSnackBarVariant.error,
@@ -375,10 +357,103 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   Future<void> _saveToolOverrides(String agentId) {
     return ref
         .read(saveAgentToolOverridesUsecaseProvider(widget.workspaceId))
-        .call(
-          agentId: agentId,
-          permissionsByToolId: _toolPermissionModes,
-        );
+        .call(agentId: agentId, permissionsByToolId: _toolPermissionModes);
+  }
+}
+
+class _AgentForm extends StatelessWidget {
+  const _AgentForm({
+    required this.skills,
+    required this.tools,
+    required this.nameController,
+    required this.descriptionController,
+    required this.contentController,
+    required this.isEnabled,
+    required this.visibility,
+    required this.selectedSkills,
+    required this.toolPermissionModes,
+    required this.onEnabledChanged,
+    required this.onVisibilityChanged,
+    required this.onEditDescription,
+    required this.onEditPrompt,
+    required this.onManageSkills,
+    required this.onManageTools,
+  });
+
+  final List<WorkspaceSkill> skills;
+  final List<WorkspaceToolEntity> tools;
+  final TextEditingController nameController;
+  final TextEditingController descriptionController;
+  final TextEditingController contentController;
+  final bool isEnabled;
+  final AgentVisibility visibility;
+  final Set<AgentSkillRef> selectedSkills;
+  final Map<String, AgentToolPermissionMode> toolPermissionModes;
+  final ValueChanged<bool> onEnabledChanged;
+  final ValueChanged<AgentVisibility> onVisibilityChanged;
+  final VoidCallback onEditDescription;
+  final VoidCallback onEditPrompt;
+  final void Function({
+    required List<WorkspaceSkill> enabledSkills,
+    required List<WorkspaceSkill> disabledSkills,
+    required List<AgentSkillRef> unavailableRefs,
+  })
+  onManageSkills;
+  final VoidCallback onManageTools;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabledSkills = skills.where((skill) => skill.isEnabled).toList();
+    final disabledSkills = skills.where((skill) => !skill.isEnabled).toList();
+    final unavailableRefs = selectedSkills.where((ref) {
+      return !skills.any((skill) => skill.ref == ref);
+    }).toList();
+    final selectedDisabledCount = disabledSkills
+        .where((skill) => selectedSkills.contains(skill.ref))
+        .length;
+    final overrideCount = toolPermissionModes.entries.where((entry) {
+      return entry.value != AgentToolPermissionMode.workspaceDefault &&
+          tools.any((tool) => tool.id == entry.key);
+    }).length;
+    final missingToolOverrideCount = toolPermissionModes.entries.where((entry) {
+      return entry.value != AgentToolPermissionMode.workspaceDefault &&
+          !tools.any((tool) => tool.id == entry.key);
+    }).length;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _PromptCard(
+          nameController: nameController,
+          descriptionController: descriptionController,
+          contentController: contentController,
+          isEnabled: isEnabled,
+          visibility: visibility,
+          onEnabledChanged: onEnabledChanged,
+          onVisibilityChanged: onVisibilityChanged,
+          onEditDescription: onEditDescription,
+          onEditPrompt: onEditPrompt,
+        ),
+        const SizedBox(height: 16),
+        _SkillsSummaryCard(
+          selectedCount: selectedSkills.length,
+          availableCount: enabledSkills.length,
+          disabledSelectedCount: selectedDisabledCount,
+          unavailableCount: unavailableRefs.length,
+          onManage: () => onManageSkills(
+            enabledSkills: enabledSkills,
+            disabledSkills: disabledSkills,
+            unavailableRefs: unavailableRefs,
+          ),
+        ),
+        const SizedBox(height: 16),
+        _ToolPermissionsSummaryCard(
+          overrideCount: overrideCount,
+          missingOverrideCount: missingToolOverrideCount,
+          onManage: onManageTools,
+        ),
+      ],
+    );
   }
 }
 
@@ -614,10 +689,7 @@ class _CardHeader extends StatelessWidget {
     return AuraRow(
       children: [
         Expanded(
-          child: AuraText(
-            child: title,
-            style: AuraTextStyle.heading5,
-          ),
+          child: AuraText(child: title, style: AuraTextStyle.heading5),
         ),
         AuraButton(
           onPressed: onAction,
@@ -665,7 +737,8 @@ class _SaveBar extends StatelessWidget {
               ),
             );
 
-            return constraints.maxWidth < 640
+            return constraints.maxWidth <
+                    _AgentDetailScreenState._compactLayoutWidth
                 ? button
                 : Align(alignment: Alignment.centerRight, child: button);
           },
@@ -1253,9 +1326,7 @@ class _CollapsibleToolSection extends StatelessWidget {
         children: [
           AuraTile(
             child: AuraColumn(
-              children: [
-                Text(title),
-              ],
+              children: [Text(title)],
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
             onTap: onToggle,
@@ -1419,9 +1490,7 @@ class _AgentToolPermissionTile extends StatelessWidget {
                   ),
                   AuraButtonGroupItem(
                     value: AgentToolPermissionMode.alwaysDeny,
-                    child: TextLocale(
-                      LocaleKeys.agents_tool_permission_deny,
-                    ),
+                    child: TextLocale(LocaleKeys.agents_tool_permission_deny),
                   ),
                 ],
                 selectedValue: value,

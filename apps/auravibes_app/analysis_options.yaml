@@ -9,6 +9,12 @@ analyzer:
     - "lib/i18n/*"
     - "build/**"
     - "lib/generated/**"
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:

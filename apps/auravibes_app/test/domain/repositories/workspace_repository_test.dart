@@ -32,16 +32,12 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
   Future<WorkspaceEntity?> getWorkspaceById(String id) async => byIdResult;
 
   @override
-  Future<List<WorkspaceEntity>> getWorkspacesByType(
-    WorkspaceType type,
-  ) async {
+  Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) async {
     return byType;
   }
 
   @override
-  Future<WorkspaceEntity> createWorkspace(
-    WorkspaceToCreate workspace,
-  ) async {
+  Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
     final entity = WorkspaceEntity(
       id: 'ws-${created.length}',
       name: workspace.name,
@@ -132,9 +128,7 @@ class _StubWorkspaceRepository implements WorkspaceRepository {
   Future<bool> workspaceExists(String id) async => existsResult;
 
   @override
-  Future<List<WorkspaceEntity>> searchWorkspacesByName(
-    String query,
-  ) async {
+  Future<List<WorkspaceEntity>> searchWorkspacesByName(String query) async {
     return searchResults;
   }
 
@@ -257,10 +251,7 @@ void main() {
       final repo = _StubWorkspaceRepository();
       repo.countByTypeResult = 3;
 
-      expect(
-        await repo.getWorkspaceCountByType(WorkspaceType.local),
-        3,
-      );
+      expect(await repo.getWorkspaceCountByType(WorkspaceType.local), 3);
     });
 
     test('validateWorkspace throws for invalid name', () {

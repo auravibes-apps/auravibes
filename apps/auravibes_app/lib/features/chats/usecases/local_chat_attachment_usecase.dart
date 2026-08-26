@@ -32,7 +32,6 @@ class LocalChatAttachmentUsecase {
 }
 
 final localChatAttachmentUsecaseProvider = Provider<LocalChatAttachmentUsecase>(
-  (ref) => LocalChatAttachmentUsecase(
-    ref.watch(localChatAttachmentServiceProvider),
-  ),
+  (ref) =>
+      LocalChatAttachmentUsecase(ref.watch(localChatAttachmentServiceProvider)),
 );

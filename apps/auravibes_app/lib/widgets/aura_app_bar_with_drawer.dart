@@ -19,6 +19,10 @@ class AuraAppBarWithDrawer extends StatelessWidget
   final Widget? leading;
 
   @override
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
+
+  @override
   Widget build(BuildContext context) {
     return AuraAppBar(
       title: title,
@@ -28,20 +32,12 @@ class AuraAppBarWithDrawer extends StatelessWidget
           leading ??
           AuraIconButton(
             icon: Icons.menu,
-            onPressed: () {
-              final controller = ResponsiveSlidingDrawerProvider.maybeOf(
-                context,
-              );
-              if (controller != null) {
-                controller.toggle();
-              }
-            },
+            onPressed: () => _toggleDrawer(context),
           ),
     );
   }
 
-  @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (bottom?.preferredSize.height ?? 0),
-  );
+  void _toggleDrawer(BuildContext context) {
+    ResponsiveSlidingDrawerProvider.maybeOf(context)?.toggle();
+  }
 }

@@ -5,9 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'select_workspace_usecase.g.dart';
 
 class SelectWorkspaceUsecase {
-  const SelectWorkspaceUsecase({
-    required this._selectionRepository,
-  });
+  const SelectWorkspaceUsecase({required this._selectionRepository});
 
   final WorkspaceSelectionRepository _selectionRepository;
 

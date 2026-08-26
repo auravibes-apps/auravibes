@@ -40,13 +40,10 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
         conversationRepository: ref.watch(conversationRepositoryProvider),
         conversationToolsRepository: throw UnimplementedError(),
         resolveToolApprovalDecisionUsecase: throw UnimplementedError(),
-        conversationToolsRepositoryForWorkspace: (workspaceId) => ref.read(
-          conversationToolsRepositoryProvider(workspaceId),
-        ),
+        conversationToolsRepositoryForWorkspace: (workspaceId) =>
+            ref.read(conversationToolsRepositoryProvider(workspaceId)),
         resolveToolApprovalDecisionUsecaseForWorkspace: (workspaceId) =>
-            ref.read(
-              resolveToolApprovalDecisionUsecaseProvider(workspaceId),
-            ),
+            ref.read(resolveToolApprovalDecisionUsecaseProvider(workspaceId)),
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: ref.watch(resolvedToolServiceProvider),

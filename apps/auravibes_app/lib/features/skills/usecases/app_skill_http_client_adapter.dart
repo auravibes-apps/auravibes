@@ -9,7 +9,7 @@ class AppSkillHttpClientAdapter {
   AppSkillHttpClientAdapter(
     this._urlService, {
     AppSkillUrlGuard? requirePublicUri,
-  }) : _requirePublicUri = requirePublicUri ?? requirePublicHttpsUri;
+  }) : _requirePublicUri = requirePublicUri ?? PublicUrlGuard.requireHttpsUri;
 
   final UrlService _urlService;
   final AppSkillUrlGuard _requirePublicUri;

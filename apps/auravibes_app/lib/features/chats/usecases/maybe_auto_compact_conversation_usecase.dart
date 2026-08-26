@@ -56,9 +56,7 @@ class MaybeAutoCompactConversationUsecase {
         shouldCompact == null) {
       throw StateError('Local compaction dependencies unavailable');
     }
-    final conversation = await repository.getConversationById(
-      conversationId,
-    );
+    final conversation = await repository.getConversationById(conversationId);
     if (conversation == null) return;
 
     final modelId = conversation.modelId;
@@ -96,31 +94,25 @@ class MaybeAutoCompactConversationUsecase {
 }
 
 final maybeAutoCompactConversationUsecaseProvider =
-    Provider<MaybeAutoCompactConversationUsecase>(
-      (ref) {
-        return MaybeAutoCompactConversationUsecase(
-          compactConversationUsecase: CompactConversationUsecase(
-            compactionExecution: ref.watch(
-              compactionExecutionRuntimeProvider,
-            ),
-            messageRepository: ref.watch(messageRepositoryProvider),
-            conversationRepository: ref.watch(conversationRepositoryProvider),
-            modelSelectionStore: (workspaceId) => ref.read(
-              modelSelectionStoreProvider(workspaceId).future,
-            ),
-            chatbotService: ref.watch(chatbotServiceProvider),
-            selectCompactionRangeUsecase: ref.watch(
-              selectCompactionRangeUsecaseProvider,
-            ),
-          ),
+    Provider<MaybeAutoCompactConversationUsecase>((ref) {
+      return MaybeAutoCompactConversationUsecase(
+        compactConversationUsecase: CompactConversationUsecase(
+          compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
+          messageRepository: ref.watch(messageRepositoryProvider),
           conversationRepository: ref.watch(conversationRepositoryProvider),
-          modelSelectionStore: (workspaceId) => ref.read(
-            modelSelectionStoreProvider(workspaceId).future,
+          modelSelectionStore: (workspaceId) =>
+              ref.read(modelSelectionStoreProvider(workspaceId).future),
+          chatbotService: ref.watch(chatbotServiceProvider),
+          selectCompactionRangeUsecase: ref.watch(
+            selectCompactionRangeUsecaseProvider,
           ),
-          apiModelRepository: ref.watch(apiModelRepositoryProvider),
-          shouldCompactConversationUsecase: ref.watch(
-            shouldCompactConversationUsecaseProvider,
-          ),
-        );
-      },
-    );
+        ),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
+        modelSelectionStore: (workspaceId) =>
+            ref.read(modelSelectionStoreProvider(workspaceId).future),
+        apiModelRepository: ref.watch(apiModelRepositoryProvider),
+        shouldCompactConversationUsecase: ref.watch(
+          shouldCompactConversationUsecaseProvider,
+        ),
+      );
+    });

@@ -6,9 +6,7 @@ void main() {
   group('ApproveToolCallService', () {
     test('marks unresolved tool as not found and resumes', () async {
       final provider = _FakeApproveToolCallProvider(resolvedTool: null);
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -25,9 +23,7 @@ void main() {
         resolvedTool: 'calculator',
         runResult: '2',
       );
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -50,9 +46,7 @@ void main() {
         runResult: '2',
         isCancelled: true,
       );
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -68,9 +62,7 @@ void main() {
         resolvedTool: 'calculator',
         runError: StateError('blocked'),
       );
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -86,9 +78,7 @@ void main() {
   group('SkipToolCallService', () {
     test('skips then resumes when mutation succeeds', () async {
       final provider = _FakeSkipToolCallProvider(shouldSkip: true);
-      final usecase = SkipToolCallService(
-        provider: provider,
-      );
+      final usecase = SkipToolCallService(provider: provider);
 
       await usecase.call(messageId: 'message-1', toolCallId: 'tool-1');
 
@@ -97,9 +87,7 @@ void main() {
 
     test('does not resume when mutation is skipped', () async {
       final provider = _FakeSkipToolCallProvider(shouldSkip: false);
-      final usecase = SkipToolCallService(
-        provider: provider,
-      );
+      final usecase = SkipToolCallService(provider: provider);
 
       await usecase.call(messageId: 'message-1', toolCallId: 'tool-1');
 

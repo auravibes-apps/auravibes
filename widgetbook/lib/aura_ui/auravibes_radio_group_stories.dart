@@ -46,8 +46,6 @@ class _RadioGroupDemo extends StatefulWidget {
 }
 
 class _RadioGroupDemoState extends State<_RadioGroupDemo> {
-  String? _selectedValue;
-
   static final List<AuraRadioOption<String>> _options = [
     const AuraRadioOption<String>(
       value: 'system',
@@ -65,6 +63,7 @@ class _RadioGroupDemoState extends State<_RadioGroupDemo> {
       subtitle: Text('Always use dark theme'),
     ),
   ];
+  String? _selectedValue;
 
   @override
   Widget build(BuildContext context) {

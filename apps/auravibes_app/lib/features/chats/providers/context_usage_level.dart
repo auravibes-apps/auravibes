@@ -9,11 +9,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';
 
-extension ContextUsageFamilyTestOverride on ContextUsageFamily {
-  Override overrideWithValue(ContextUsageData value) =>
-      overrideWith((_, _) => value);
-}
-
 @riverpod
 ContextUsageData contextUsage(
   Ref ref,
@@ -24,9 +19,7 @@ ContextUsageData contextUsage(
     conversationUsedTokensProvider(workspaceId, conversationId),
   );
   final limitTokens = ref
-      .watch(
-        conversationContextLimitProvider(workspaceId, conversationId),
-      )
+      .watch(conversationContextLimitProvider(workspaceId, conversationId))
       .value;
 
   return ContextUsageData.compute(
@@ -157,7 +150,7 @@ class ContextUsageData {
   };
 }
 
-// ponytail: top-level compact format; default locale follows
-// Intl.systemLocale. Upgrade path: thread app locale via a provider
-// if device locale != app locale.
+// Ponytail. Top-level compact format; default locale follows Intl.systemLocale.
+// Upgrade path. Thread the app locale through a provider if the device locale
+// differs from the app locale.
 final NumberFormat _compactFormat = NumberFormat.compact();

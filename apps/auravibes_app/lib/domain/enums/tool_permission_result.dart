@@ -1,17 +1,14 @@
-/// Result of checking tool permission based on conversation and workspace.
+/// Result of checking tool permission based on conversation and workspace
 /// rules.
 ///
 /// Permission logic:
-/// 1. If tool is NOT in workspace (not enabled/configured) → [notConfigured]
-/// 2. If tool IS in workspace:
-///    a. Check conversation rules first (takes priority):
-///       - Conversation says DISABLED → [disabledInConversation]
-///       - Conversation says ASK → [needsConfirmation]
-///       - Conversation says GRANTED → [granted]
-///    b. If no conversation rule, check agent permissions.
-///    c. If no agent rule, check workspace permissions:
-///       - Workspace says GRANTED → [granted]
-///       - Workspace says ASK → [needsConfirmation]
+/// 1. If the tool is not in the workspace, return [notConfigured].
+/// 2. If the tool is in the workspace, check conversation rules first because
+///    they take priority. Disabled, ask, and granted rules return
+///    [disabledInConversation], [needsConfirmation], and [granted].
+/// 3. If no conversation rule exists, check agent permissions.
+/// 4. If no agent rule exists, check workspace permissions. Granted and ask
+///    rules return [granted] and [needsConfirmation].
 enum ToolPermissionResult {
   /// Tool can be executed immediately without user confirmation.
   granted,

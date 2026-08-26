@@ -8,6 +8,10 @@ part 'compaction_settings.g.dart';
 
 @freezed
 abstract class CompactionSettings with _$CompactionSettings {
+  /// Static fallback used when no per-workspace overrides exist.
+  /// The [remainingTokenThreshold] 2000 is a minimum guard; the effective
+  /// decision-time default is computed by [defaultRemainingTokenThreshold].
+  static const CompactionSettings defaults = CompactionSettings();
   const factory CompactionSettings({
     @Default(true) bool autoCompactionEnabled,
     @Default(80) int usagePercentageThreshold,
@@ -28,11 +32,6 @@ abstract class CompactionSettings with _$CompactionSettings {
     maxOutputTokens: maxOutputTokens,
     contextLimit: contextLimit,
   );
-
-  /// Static fallback used when no per-workspace overrides exist.
-  /// The [remainingTokenThreshold] 2000 is a minimum guard; the effective
-  /// decision-time default is computed by [defaultRemainingTokenThreshold].
-  static const CompactionSettings defaults = CompactionSettings();
 }
 
 @freezed

@@ -8,11 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('every generic resource kind has an explicit strict fixture', () {
     final fixtures = <WorkspaceResourceKind, Map<String, Object?>>{
-      .agent: {
-        'name': 'Agent',
-        'content': 'Prompt',
-        'visibility': 'both',
-      },
+      .agent: {'name': 'Agent', 'content': 'Prompt', 'visibility': 'both'},
       .agentAssociation: {'agentId': 'agent', 'skillId': 'skill'},
       .serviceConnection: {'name': 'Service', 'serviceId': 'service'},
       .modelConnection: {'name': 'Model', 'modelId': 'openai'},
@@ -28,10 +24,7 @@ void main() {
         'isEnabled': true,
         'permissionMode': 'alwaysAllow',
       },
-      .toolPermission: {
-        'toolId': 'tool',
-        'permissionMode': 'alwaysDeny',
-      },
+      .toolPermission: {'toolId': 'tool', 'permissionMode': 'alwaysDeny'},
       .mcpServer: {
         'name': 'MCP',
         'url': 'https://example.com',

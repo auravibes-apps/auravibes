@@ -70,7 +70,7 @@ class ResolvedToolService<TTool> {
     final execution = provider.toExecution(tool);
     final descriptor = execution.descriptor;
 
-    return switch (descriptor.kind) {
+    return await switch (descriptor.kind) {
       AgentResolvedToolKind.builtIn => _runInputTool(
         conversationId: conversationId,
         tool: execution.tool,
@@ -151,7 +151,7 @@ class ResolvedToolService<TTool> {
       conversationId,
     );
 
-    return provider.runSkillControlTool(
+    return await provider.runSkillControlTool(
       conversationId: conversationId,
       workspaceId: workspaceId,
       toolIdentifier: descriptor.toolIdentifier,
@@ -172,7 +172,7 @@ class ResolvedToolService<TTool> {
       conversationId,
     );
 
-    return provider.runSkillTemplateTool(
+    return await provider.runSkillTemplateTool(
       conversationId: conversationId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,
@@ -198,7 +198,7 @@ class ResolvedToolService<TTool> {
       conversationId,
     );
 
-    return provider.runSkillNativeTool(
+    return await provider.runSkillNativeTool(
       conversationId: conversationId,
       workspaceId: workspaceId,
       skillSlug: skillSlug,

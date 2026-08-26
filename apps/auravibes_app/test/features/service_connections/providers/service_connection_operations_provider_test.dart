@@ -21,7 +21,16 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             CloudWorkspaceRef(
               localWorkspaceId: 'workspace',
@@ -97,7 +106,16 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            CloudWorkspaceRef(
+              localWorkspaceId: 'workspace',
+              serverUrl: 'https://example.com',
+              accountId: 'account',
+              cloudWorkspaceId: 1,
+            ),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             CloudWorkspaceRef(
               localWorkspaceId: 'workspace',

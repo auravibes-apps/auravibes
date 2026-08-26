@@ -232,9 +232,7 @@ void main() {
             final account = accounts.firstOrNull;
             if (cloudAuthenticationRequired && account != null) {
               overrides.add(
-                cloudWorkspaceStateProvider(
-                  account.userId,
-                ).overrideWith(
+                cloudWorkspaceStateProvider(account.userId).overrideWith(
                   (ref) async =>
                       const CloudWorkspaceViewState.authenticationRequired(),
                 ),

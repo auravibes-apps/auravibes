@@ -112,17 +112,17 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
     _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraDropdownSelector menu',
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape) {
-          _closeDropdown();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleMenuKeyEvent,
     );
+  }
+
+  @override
+  void dispose() {
+    if (_ownsFocusNode) {
+      _requiredFocusNode.dispose();
+    }
+    _requiredMenuFocusScopeNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -139,57 +139,6 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   }
 
   @override
-  void dispose() {
-    if (_ownsFocusNode) {
-      _requiredFocusNode.dispose();
-    }
-    _requiredMenuFocusScopeNode.dispose();
-    super.dispose();
-  }
-
-  void _initFocusNode(FocusNode? focusNode) {
-    _focusNode = focusNode ?? FocusNode();
-    _ownsFocusNode = focusNode == null;
-  }
-
-  void _toggleDropdown() {
-    if (_isDropdownOpen) {
-      _closeDropdown();
-
-      return;
-    }
-
-    _openDropdown();
-  }
-
-  void _openDropdown() {
-    if (!widget.isEnabled || _isDropdownOpen) {
-      return;
-    }
-
-    setState(() {
-      _isDropdownOpen = true;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isDropdownOpen) return;
-
-      _requiredMenuFocusScopeNode.requestFocus();
-    });
-  }
-
-  void _closeDropdown() {
-    if (!_isDropdownOpen) {
-      return;
-    }
-
-    setState(() {
-      _isDropdownOpen = false;
-    });
-    FocusScope.of(context).unfocus();
-    _requiredFocusNode.unfocus();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final hasError = widget.error != null;
     final state = hasError ? AuraFieldState.error : AuraFieldState.normal;
@@ -198,10 +147,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
         ? null
         : widget.options.firstWhere(
             (option) => option.value == value,
-            orElse: () => AuraDropdownOption<T>(
-              value: value,
-              child: const Text(''),
-            ),
+            orElse: () =>
+                AuraDropdownOption<T>(value: value, child: const Text('')),
           );
     final placeholder = widget.placeholder;
     final Widget displayText;
@@ -277,11 +224,7 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
               isEnabled: widget.isEnabled,
               isFocused: _isDropdownOpen || _isTriggerFocused,
               onTap: _toggleDropdown,
-              onFocusChange: (value) {
-                setState(() {
-                  _isTriggerFocused = value;
-                });
-              },
+              onFocusChange: _handleTriggerFocusChange,
               semanticLabel: widget.semanticLabel,
             ),
             groupId: this,
@@ -289,20 +232,81 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
         ),
       ),
       focusNode: _requiredFocusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _isDropdownOpen) {
-          _closeDropdown();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleTriggerKeyEvent,
       skipTraversal: true,
       descendantsAreFocusable: true,
     );
+  }
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode _, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape) {
+      _closeDropdown();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
+  }
+
+  void _toggleDropdown() {
+    if (_isDropdownOpen) {
+      _closeDropdown();
+
+      return;
+    }
+
+    _openDropdown();
+  }
+
+  void _openDropdown() {
+    if (!widget.isEnabled || _isDropdownOpen) {
+      return;
+    }
+
+    setState(() {
+      _isDropdownOpen = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isDropdownOpen) return;
+
+      _requiredMenuFocusScopeNode.requestFocus();
+    });
+  }
+
+  void _closeDropdown() {
+    if (!_isDropdownOpen) {
+      return;
+    }
+
+    setState(() {
+      _isDropdownOpen = false;
+    });
+    FocusScope.of(context).unfocus();
+    _requiredFocusNode.unfocus();
+  }
+
+  KeyEventResult _handleTriggerKeyEvent(FocusNode _, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        _isDropdownOpen) {
+      _closeDropdown();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _handleTriggerFocusChange(bool value) {
+    setState(() {
+      _isTriggerFocused = value;
+    });
   }
 }
 
@@ -333,9 +337,7 @@ class _DropdownMenu<T> extends StatelessWidget {
         color: auraColors.surface,
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.xl),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       constraints: const BoxConstraints(maxHeight: 300),
@@ -357,12 +359,8 @@ class _DropdownMenu<T> extends StatelessWidget {
                     AuraPressable(
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          vertical: context.auraTheme.fromSpacing(
-                            .sm,
-                          ),
-                          horizontal: context.auraTheme.fromSpacing(
-                            .md,
-                          ),
+                          vertical: context.auraTheme.fromSpacing(.sm),
+                          horizontal: context.auraTheme.fromSpacing(.md),
                         ),
                         child: Row(
                           children: [
@@ -405,9 +403,7 @@ class _DropdownMenu<T> extends StatelessWidget {
                             : DesignColors.transparent,
                         borderRadius: BorderRadius.all(
                           Radius.circular(
-                            context.auraTheme.fromBorderRadius(
-                              .sm,
-                            ),
+                            context.auraTheme.fromBorderRadius(.sm),
                           ),
                         ),
                       ),

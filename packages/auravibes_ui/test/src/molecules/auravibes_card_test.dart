@@ -11,11 +11,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text(testText),
-            ),
-          ),
+          home: Scaffold(body: AuraCard(child: Text(testText))),
         ),
       );
 
@@ -45,11 +41,7 @@ void main() {
     testWidgets('does not show InkWell when onTap is null', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text('Non-tappable Card'),
-            ),
-          ),
+          home: Scaffold(body: AuraCard(child: Text('Non-tappable Card'))),
         ),
       );
 
@@ -116,11 +108,7 @@ void main() {
     testWidgets('renders elevated style by default', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraCard(
-              child: Text('Elevated Card'),
-            ),
-          ),
+          home: Scaffold(body: AuraCard(child: Text('Elevated Card'))),
         ),
       );
 
@@ -150,10 +138,7 @@ void main() {
           matching: find.byType(AuraPadding),
         ),
       );
-      expect(
-        auraPadding.padding,
-        AuraEdgeInsetsGeometry.small,
-      );
+      expect(auraPadding.padding, AuraEdgeInsetsGeometry.small);
     });
 
     test('AuraCardStyle enum has all values', () {

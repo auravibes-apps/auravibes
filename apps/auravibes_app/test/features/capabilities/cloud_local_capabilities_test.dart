@@ -7,9 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  const local = WorkspaceSession(
-    LocalWorkspaceRef(localWorkspaceId: 'local'),
-  );
+  const local = WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'local'));
   const cloud = WorkspaceSession(
     CloudWorkspaceRef(
       localWorkspaceId: 'mirror',
@@ -58,7 +56,7 @@ void main() {
     () async {
       final container = ProviderContainer(
         overrides: [
-          workspaceSessionProvider.overrideWithValue(cloud),
+          workspaceSessionProvider(cloud).overrideWithValue(cloud),
           workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
         ],
       );
@@ -74,7 +72,7 @@ void main() {
   test('unsupported cloud paths fail typed before local fallback', () async {
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(cloud),
+        workspaceSessionProvider(cloud).overrideWithValue(cloud),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
       ],
     );

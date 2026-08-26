@@ -47,10 +47,8 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
-    final definition =
-        await SkillCredentialDefinitionsRepository(
-          database,
-        ).createDefinition(
+    final definition = await SkillCredentialDefinitionsRepository(database)
+        .createDefinition(
           workspace.id,
           const SkillCredentialDefinitionToCreate(
             title: 'TheCatAPI Key',

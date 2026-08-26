@@ -30,22 +30,18 @@ void main() {
   });
 
   test('builds provider authorization headers', () {
-    expect(
-      providerAuthorizationHeaders('anthropic', 'key'),
-      {'x-api-key': 'key', 'anthropic-version': '2023-06-01'},
-    );
-    expect(
-      providerAuthorizationHeaders('openai-codex', 'token'),
-      {
-        'authorization': 'Bearer token',
-        'originator': 'auravibes',
-        'user-agent': 'AuraVibes',
-      },
-    );
-    expect(
-      providerAuthorizationHeaders('openai', 'token'),
-      {'authorization': 'Bearer token'},
-    );
+    expect(providerAuthorizationHeaders('anthropic', 'key'), {
+      'x-api-key': 'key',
+      'anthropic-version': '2023-06-01',
+    });
+    expect(providerAuthorizationHeaders('openai-codex', 'token'), {
+      'authorization': 'Bearer token',
+      'originator': 'auravibes',
+      'user-agent': 'AuraVibes',
+    });
+    expect(providerAuthorizationHeaders('openai', 'token'), {
+      'authorization': 'Bearer token',
+    });
   });
 
   test('builds provider model catalog URIs', () {

@@ -1,15 +1,9 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/tools_groups_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 
-/// Implementation of [ToolsGroupsRepository] using Drift database.
-abstract interface class ToolsGroupsRepositoryContract {
-  Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(String workspaceId);
-  Future<ToolsGroupEntity?> getToolsGroupById(String id);
-  Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(String mcpServerId);
-  Future<bool> setToolsGroupEnabled(String groupId, {required bool isEnabled});
-  Future<bool> deleteToolsGroup(String id);
-}
+export 'tools_groups_repository_contract.dart';
 
 class ToolsGroupsRepository implements ToolsGroupsRepositoryContract {
   /// Creates a new [ToolsGroupsRepository] instance.
@@ -47,10 +41,7 @@ class ToolsGroupsRepository implements ToolsGroupsRepositoryContract {
   }
 
   @override
-  Future<bool> setToolsGroupEnabled(
-    String groupId, {
-    required bool isEnabled,
-  }) {
+  Future<bool> setToolsGroupEnabled(String groupId, {required bool isEnabled}) {
     return _database.toolsGroupsDao.setToolsGroupEnabled(
       groupId,
       isEnabled: isEnabled,

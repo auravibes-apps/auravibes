@@ -1,5 +1,3 @@
-// Required: Existing test and UI helpers keep compact return flow.
-// Required: Existing helpers remain top-level for local feature use.
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
@@ -30,55 +28,20 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 export 'conversation_selection_provider.dart';
 
 part 'message_id_list.g.dart';
+part 'cloud_message_tools.dart';
+part 'streaming_message_metadata.dart';
+part 'pending_tool_call.dart';
 
-extension ChatMessagesFamilyTestOverride on ChatMessagesFamily {
+extension MessageIdList on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>
       overrideWith((_, _) => value);
 }
 
-extension ConversationCompactionExecutionStateFamilyTestOverride
+extension MessageIdListCompaction
     on ConversationCompactionExecutionStateFamily {
   Override overrideWithValue(CompactionExecutionState? value) =>
       overrideWith((_, _) => value);
 }
-
-ToolCallResultStatus? cloudToolCallResultStatus(String status) =>
-    switch (status) {
-      'pending' || 'needsConfirmation' => null,
-      'approved' || 'running' || 'granted' => ToolCallResultStatus.running,
-      'success' => ToolCallResultStatus.success,
-      'denied' => ToolCallResultStatus.skippedByUser,
-      'toolNotFound' => ToolCallResultStatus.toolNotFound,
-      'disabledInWorkspace' => ToolCallResultStatus.disabledInWorkspace,
-      'disabledInConversation' => ToolCallResultStatus.disabledInConversation,
-      'disabledByAgent' => ToolCallResultStatus.disabledByAgent,
-      'notConfigured' => ToolCallResultStatus.notConfigured,
-      'executionError' => ToolCallResultStatus.executionError,
-      _ => ToolCallResultStatus.executionError,
-    };
-
-List<PendingToolCall> cloudPendingToolCalls(
-  CloudConversationState? state,
-) => [
-  if (state case final cloudState?)
-    for (final call in cloudState.toolCalls)
-      if (call.status == 'pending')
-        for (final message in cloudState.messages)
-          if (message.id == call.messageId && message.turnRevision != null)
-            PendingToolCall(
-              toolCall: MessageToolCallEntity(
-                id: call.id,
-                name: call.name,
-                argumentsRaw: call.argumentsJson,
-                argumentsDigest: call.argumentsDigest,
-                turnId: message.turnId ?? call.turnId,
-                turnRevision: message.turnRevision,
-                responseRaw: call.resultJson,
-              ),
-              messageId: call.messageId,
-              sourceConversationId: cloudState.conversation.id,
-            ),
-];
 
 @riverpod
 Stream<List<MessageEntity>> chatMessagesByConversation(
@@ -95,11 +58,7 @@ Stream<List<MessageEntity>> chatMessagesByConversation(
         .watchMessagesByConversation(conversationId);
   }
 
-  return _cloudMessages(
-    ref,
-    workspaceId,
-    conversationId,
-  );
+  return _cloudMessages(ref, workspaceId, conversationId);
 }
 
 Stream<List<MessageEntity>> _cloudMessages(
@@ -109,9 +68,10 @@ Stream<List<MessageEntity>> _cloudMessages(
 ) {
   final controller = StreamController<List<MessageEntity>>();
   final subscription = ref.listen(
-    cloudConversationStateProvider(
-      (workspaceId: workspaceId, conversationId: conversationId),
-    ),
+    cloudConversationStateProvider((
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    )),
     (_, next) {
       switch (next) {
         case AsyncData(:final value):
@@ -166,9 +126,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
       metadata:
-          MessageMetadataEntity.fromJsonString(
-            message.metadataJson,
-          )?.copyWith(
+          MessageMetadataEntity.fromJsonString(message.metadataJson)?.copyWith(
             toolCalls: message.toolCalls
                 .map(
                   (call) => MessageToolCallEntity(
@@ -179,7 +137,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
                     turnId: message.turnId,
                     turnRevision: message.turnRevision,
                     responseRaw: call.resultJson,
-                    resultStatus: cloudToolCallResultStatus(call.status),
+                    resultStatus: CloudMessageTools.resultStatus(call.status),
                   ),
                 )
                 .toList(),
@@ -195,7 +153,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
                     turnId: message.turnId,
                     turnRevision: message.turnRevision,
                     responseRaw: call.resultJson,
-                    resultStatus: cloudToolCallResultStatus(call.status),
+                    resultStatus: CloudMessageTools.resultStatus(call.status),
                   ),
                 )
                 .toList(),
@@ -203,6 +161,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
     );
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<MessageEntity?> latestAssistantMessageByConversation(
   Ref ref,
   String conversationId,
@@ -213,6 +172,7 @@ Stream<MessageEntity?> latestAssistantMessageByConversation(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<MessageEntity>> chatMessages(
   Ref ref,
   String workspaceId,
@@ -242,6 +202,7 @@ Stream<List<MessageEntity>> chatMessages(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 List<String> chatMessageIds(
   Ref ref,
   String workspaceId,
@@ -256,6 +217,7 @@ List<String> chatMessageIds(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 MessageEntity? messageConversationById(
   Ref ref,
   String workspaceId,
@@ -276,7 +238,7 @@ MessageEntity? messageConversationById(
   if (streamingResult == null) return messageEntity;
 
   final streamingMetadata = streamingResult.entityMetadata;
-  final metadata = mergeStreamingMessageMetadata(
+  final metadata = StreamingMessageMetadata.merge(
     messageEntity.metadata,
     streamingMetadata,
   );
@@ -287,31 +249,8 @@ MessageEntity? messageConversationById(
   );
 }
 
-MessageMetadataEntity? mergeStreamingMessageMetadata(
-  MessageMetadataEntity? current,
-  MessageMetadataEntity? streaming,
-) {
-  if (streaming == null) return current;
-
-  var toolCalls = streaming.toolCalls;
-  if (toolCalls.isEmpty) {
-    toolCalls = current?.toolCalls ?? const <MessageToolCallEntity>[];
-  }
-
-  return (current ?? const MessageMetadataEntity()).copyWith(
-    toolCalls: toolCalls,
-    promptTokens: streaming.promptTokens ?? current?.promptTokens,
-    completionTokens: streaming.completionTokens ?? current?.completionTokens,
-    totalTokens: streaming.totalTokens ?? current?.totalTokens,
-    thinking: streaming.thinking ?? current?.thinking,
-    modelMetadata: {
-      ...?current?.modelMetadata,
-      ...streaming.modelMetadata,
-    },
-  );
-}
-
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 bool isMessageStreaming(Ref ref, String messageId) {
   return ref.watch(
     messagesStreamingProvider.select((state) => state.containsKey(messageId)),
@@ -319,6 +258,7 @@ bool isMessageStreaming(Ref ref, String messageId) {
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ConversationBusyState> conversationBusyState(
   Ref ref,
   String workspaceId,
@@ -329,12 +269,10 @@ Future<ConversationBusyState> conversationBusyState(
   );
   if (session.cloud != null) {
     final projection = ref.watch(
-      cloudConversationStateProvider(
-        (
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-      ),
+      cloudConversationStateProvider((
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      )),
     );
 
     return ConversationBusyState.cloud(
@@ -359,13 +297,14 @@ Future<ConversationBusyState> conversationBusyState(
 
   final usecase = ref.watch(getConversationBusyStateUsecaseProvider);
 
-  return usecase.call(
+  return await usecase.call(
     conversationId: conversationId,
     isCompacting: isCompacting,
   );
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 List<ConversationQueuedDraft> conversationQueuedDrafts(
   Ref ref,
   String _workspaceId,
@@ -381,6 +320,7 @@ List<ConversationQueuedDraft> conversationQueuedDrafts(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 CompactionExecutionState? conversationCompactionExecutionState(
   Ref ref,
   String _workspaceId,
@@ -391,21 +331,8 @@ CompactionExecutionState? conversationCompactionExecutionState(
   return ref.watch(compactionExecutionStateProvider(conversationId));
 }
 
-class PendingToolCall {
-  const PendingToolCall({
-    required this.toolCall,
-    required this.messageId,
-    this.sourceConversationId = '',
-    this.sourceLabel,
-  });
-
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-  final String sourceConversationId;
-  final String? sourceLabel;
-}
-
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 int conversationUsedTokens(Ref ref, String workspaceId, String conversationId) {
   final messages = ref
       .watch(chatMessagesProvider(workspaceId, conversationId))
@@ -429,6 +356,7 @@ int conversationUsedTokens(Ref ref, String workspaceId, String conversationId) {
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<int?> conversationContextLimit(
   Ref ref,
   String workspaceId,
@@ -464,6 +392,7 @@ Future<int?> conversationContextLimit(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<List<PendingToolCall>> pendingToolCalls(
   Ref ref,
   String workspaceId,
@@ -534,7 +463,7 @@ Future<List<PendingToolCall>> pendingToolCalls(
             ).future,
           ))?.workspaceId;
 
-      return _pendingToolCallsForConversation(
+      return await _pendingToolCallsForConversation(
         ref,
         conversationId: sourceConversationId,
         workspaceId: sourceWorkspaceId,

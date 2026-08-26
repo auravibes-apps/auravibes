@@ -5,11 +5,7 @@ import 'package:auravibes_engine/src/prompt_messages.dart';
 const _xmlEscape = HtmlEscape();
 
 class AgentSkill {
-  const AgentSkill({
-    required this.title,
-    required this.content,
-    this.identity,
-  });
+  const AgentSkill({required this.title, required this.content, this.identity});
 
   final String title;
   final String content;

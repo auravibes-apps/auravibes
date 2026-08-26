@@ -54,9 +54,7 @@ class GenerateTitleUsecase {
           store: (t) async {
             final _ = await conversationRepo.patchConversation(
               conversationId,
-              .new(
-                title: t,
-              ),
+              .new(title: t),
             );
           },
         )
@@ -64,13 +62,11 @@ class GenerateTitleUsecase {
   }
 }
 
-final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>(
-  (ref) {
-    return GenerateTitleUsecase(
-      conversationRepo: ref.watch(conversationRepositoryProvider),
-      chatbotService: ref.watch(chatbotServiceProvider),
-      titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
-    );
-  },
-);
+final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>((ref) {
+  return GenerateTitleUsecase(
+    conversationRepo: ref.watch(conversationRepositoryProvider),
+    chatbotService: ref.watch(chatbotServiceProvider),
+    titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
+    monitoringService: ref.watch(monitoringServiceProvider),
+  );
+});

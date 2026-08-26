@@ -75,9 +75,7 @@ class _SkillCredentialDefinitionEditScreenState
     } else {
       child = switch (definitionAsync) {
         AsyncData(value: null) => const Center(
-          child: TextLocale(
-            LocaleKeys.skill_credentials_definitions_not_found,
-          ),
+          child: TextLocale(LocaleKeys.skill_credentials_definitions_not_found),
         ),
         AsyncData(value: final definition?) => () {
           _initializeForm(definition);
@@ -111,13 +109,9 @@ class _SkillCredentialDefinitionEditScreenState
             }),
           );
         }(),
-        AsyncLoading() => const Center(
-          child: AuraSpinner(),
-        ),
+        AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
-          child: TextLocale(
-            LocaleKeys.skill_credentials_definitions_error,
-          ),
+          child: TextLocale(LocaleKeys.skill_credentials_definitions_error),
         ),
       };
     }
@@ -215,7 +209,7 @@ class _SkillCredentialDefinitionEditScreenState
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(
@@ -292,7 +286,7 @@ class _SkillCredentialDefinitionEditScreenState
       Navigator.of(context).pop();
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_definitions_save_error.tr(

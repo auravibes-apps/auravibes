@@ -78,18 +78,7 @@ class _ServiceConnectionCreateScreenState
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: _TypeSelector(
-              value: _type,
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() {
-                  _type = value;
-                  _definitionId = null;
-                  _appSkillId = null;
-                  _resetAttributeControllers();
-                });
-              },
-            ),
+            child: _TypeSelector(value: _type, onChanged: _onTypeChanged),
           ),
           Expanded(
             child: switch (_type) {
@@ -110,12 +99,7 @@ class _ServiceConnectionCreateScreenState
                 onNameChanged: (_) => setState(() {
                   final _ = Object();
                 }),
-                onDefinitionChanged: (value) {
-                  setState(() {
-                    _definitionId = value;
-                    _resetAttributeControllers();
-                  });
-                },
+                onDefinitionChanged: _onDefinitionChanged,
                 onSave: () => unawaited(_saveSkillCredential()),
               ),
               ServiceConnectionCreateType.appSkillCredential =>
@@ -185,7 +169,7 @@ class _ServiceConnectionCreateScreenState
         stackTrace,
       );
       if (!mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
@@ -255,7 +239,7 @@ class _ServiceConnectionCreateScreenState
         stackTrace,
       );
       if (!mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
@@ -284,6 +268,23 @@ class _ServiceConnectionCreateScreenState
     }
     if (!mounted) return;
     context.go('/workspaces/${widget.workspaceId}/more/service-connections');
+  }
+
+  void _onTypeChanged(ServiceConnectionCreateType? value) {
+    if (value == null) return;
+    setState(() {
+      _type = value;
+      _definitionId = null;
+      _appSkillId = null;
+      _resetAttributeControllers();
+    });
+  }
+
+  void _onDefinitionChanged(String? value) {
+    setState(() {
+      _definitionId = value;
+      _resetAttributeControllers();
+    });
   }
 
   void _resetAttributeControllers() {
@@ -479,9 +480,7 @@ class _AppSkillCredentialForm extends StatelessWidget {
               ),
               AuraInput(
                 controller: apiKeyController,
-                label: Text(
-                  _credentialValueLabel(context, selectedAppSkillId),
-                ),
+                label: Text(_credentialValueLabel(context, selectedAppSkillId)),
                 keyboardType: TextInputType.visiblePassword,
                 obscureText: true,
                 onChanged: onApiKeyChanged,

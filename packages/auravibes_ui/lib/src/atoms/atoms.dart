@@ -1,17 +1,11 @@
-/// Atomic components - the smallest building blocks of the design system.
+/// Atomic components. They are the smallest building blocks of the design
+/// system.
 ///
 /// Atoms are the basic building blocks of matter. Applied to web interfaces,
 /// atoms are our HTML tags, such as a form label, an input or a button.
 ///
-/// Examples:
-/// - Buttons
-/// - Icons
-/// - Text elements
-/// - Input fields
-/// - Loading indicators
-/// - Navigation components
-/// - Layout containers
-/// - Chat-specific components
+/// Examples include buttons, icons, text elements, input fields, loading
+/// indicators, navigation components, layout containers, and chat components.
 library;
 
 // Export all atomic components alphabetically.

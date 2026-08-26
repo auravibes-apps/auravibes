@@ -7,11 +7,8 @@ import 'package:drift/drift.dart';
 
 @DataClassName('SkillTemplateToolsTable')
 class SkillTemplateTools extends Table with TableMixin {
-  TextColumn get skillId => text().references(
-    Skills,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get skillId =>
+      text().references(Skills, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get templateType => textEnum<SkillTemplateToolTypeTable>()();
 

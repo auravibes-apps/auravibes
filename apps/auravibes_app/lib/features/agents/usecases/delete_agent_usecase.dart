@@ -12,10 +12,7 @@ class DeleteAgentUsecase {
 }
 
 final ProviderFamily<DeleteAgentUsecase, String> deleteAgentUsecaseProvider =
-    Provider.family<DeleteAgentUsecase, String>((
-      ref,
-      workspaceId,
-    ) {
+    Provider.family<DeleteAgentUsecase, String>((ref, workspaceId) {
       return DeleteAgentUsecase(
         ref.watch(agentRepositoryProvider(workspaceId)),
       );

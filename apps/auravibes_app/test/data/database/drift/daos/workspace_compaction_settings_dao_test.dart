@@ -121,9 +121,7 @@ void main() {
 
     test('watchByWorkspaceId emits null initially then updates', () async {
       final stream = fixture.database.workspaceCompactionSettingsDao
-          .watchByWorkspaceId(
-            workspaceId,
-          );
+          .watchByWorkspaceId(workspaceId);
 
       final completer = Completer<bool>();
       var callCount = 0;
