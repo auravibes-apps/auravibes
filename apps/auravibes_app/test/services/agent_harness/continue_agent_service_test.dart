@@ -164,8 +164,7 @@ void main() {
       ).thenAnswer((_) async => _unfinishedAssistantMessage);
     });
 
-    test('uses the accumulated model stream as lastResult '
-        'instead of persistence output', () async {
+    test('uses model stream as lastResult', () async {
       when(
         () => chatbotService.sendMessage(
           _model,

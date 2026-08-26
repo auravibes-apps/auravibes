@@ -53,8 +53,7 @@ void main() {
       expect(tool?.fullName, 'skill__app__agents__list_agents');
     });
 
-    test('returns pending resolved tools and not-found ids '
-        'from latest assistant message', () async {
+    test('returns pending and missing tools', () async {
       when(
         () => messageRepository.getMessagesByConversation('conversation-1'),
       ).thenAnswer(
@@ -138,8 +137,7 @@ void main() {
       expect(result.previouslyFailedToolCallIds, isEmpty);
     });
 
-    test('T005: resolves native tool composite ID to correct '
-        'ResolvedTool with valid tableId', () async {
+    test('T005: resolves native composite tool ID', () async {
       when(
         () => messageRepository.getMessagesByConversation('conversation-1'),
       ).thenAnswer(
@@ -169,8 +167,7 @@ void main() {
       expect(result.toolsToRun.first.tool.toolIdentifier, 'url');
       expect(result.toolsToRun.first.tool.nativeTool, NativeToolType.url);
     });
-    test('T009: filters out pending tool call whose name and arguments match '
-        'a previously-failed tool in the same turn window', () async {
+    test('T009: filters previously-failed matching tools', () async {
       when(
         () => messageRepository.getMessagesByConversation('conversation-1'),
       ).thenAnswer(

@@ -42,8 +42,7 @@ void main() {
       },
     );
 
-    test('deleteMcpGroup deletes by repository lookup when controller state is '
-        'loading', () async {
+    test('deleteMcpGroup uses repository lookup while loading', () async {
       final toolsGroupsRepository = fixture.toolsGroupsRepository;
       final container = fixture.container;
       final mcpNotifier = fixture.mcpNotifier;

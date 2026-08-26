@@ -11,6 +11,13 @@ import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
+void _ignoreWorkspaceTools(
+  AsyncValue<List<WorkspaceToolEntity>>? _,
+  AsyncValue<List<WorkspaceToolEntity>> _,
+) {
+  final _ = Object();
+}
+
 WorkspaceToolEntity _tool({
   String id = 'tool-1',
   String toolId = 'calculator',
@@ -214,9 +221,11 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
-      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
-        final _ = Object();
-      }, fireImmediately: true);
+      final _ = container.listen(
+        workspaceToolsProvider('ws1'),
+        _ignoreWorkspaceTools,
+        fireImmediately: true,
+      );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -232,9 +241,11 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1'), _tool(id: 't2')];
 
-      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
-        final _ = Object();
-      }, fireImmediately: true);
+      final _ = container.listen(
+        workspaceToolsProvider('ws1'),
+        _ignoreWorkspaceTools,
+        fireImmediately: true,
+      );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       final success = await container
@@ -250,9 +261,11 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
-      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
-        final _ = Object();
-      }, fireImmediately: true);
+      final _ = container.listen(
+        workspaceToolsProvider('ws1'),
+        _ignoreWorkspaceTools,
+        fireImmediately: true,
+      );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -273,9 +286,11 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1', isEnabled: false)];
 
-      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
-        final _ = Object();
-      }, fireImmediately: true);
+      final _ = container.listen(
+        workspaceToolsProvider('ws1'),
+        _ignoreWorkspaceTools,
+        fireImmediately: true,
+      );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -290,9 +305,11 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
-      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
-        final _ = Object();
-      }, fireImmediately: true);
+      final _ = container.listen(
+        workspaceToolsProvider('ws1'),
+        _ignoreWorkspaceTools,
+        fireImmediately: true,
+      );
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -321,9 +338,11 @@ void main() {
       );
       addTearDown(failContainer.dispose);
 
-      final _ = failContainer.listen(workspaceToolsProvider('ws1'), (_, _) {
-        final _ = Object();
-      }, fireImmediately: true);
+      final _ = failContainer.listen(
+        workspaceToolsProvider('ws1'),
+        _ignoreWorkspaceTools,
+        fireImmediately: true,
+      );
       final _ = await failContainer.read(workspaceToolsProvider('ws1').future);
 
       final success = await failContainer

@@ -193,8 +193,7 @@ void main() {
     });
   });
 
-  testWidgets('workspaceId from route state is available synchronously:'
-      ' no Riverpod dependency', (tester) async {
+  testWidgets('workspaceId is synchronous without Riverpod', (tester) async {
     String? capturedWorkspaceId;
 
     final router = GoRouter(

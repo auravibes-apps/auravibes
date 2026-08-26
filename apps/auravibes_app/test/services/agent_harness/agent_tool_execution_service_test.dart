@@ -299,8 +299,7 @@ void main() {
       },
     );
 
-    test('persists not-found tools, executes granted tools, '
-        'and returns final decision', () async {
+    test('persists, executes, and returns final decision', () async {
       final tool = ToolToCall(
         tool: ResolvedTool.builtIn(
           tableId: 'calc',
@@ -891,64 +890,68 @@ void main() {
       );
     });
 
-    test('T003: native tool with alwaysAsk permission returns '
-        'needsConfirmation (not notConfigured)', () async {
-      final nativeTool = ToolToCall(
-        tool: ResolvedTool.native(
-          tableId: 'ws-tool-url-id',
-          nativeToolType: NativeToolType.url,
-        ),
-        id: 'native-tool-1',
-        argumentsRaw: '{"input": "https://example.com"}',
-      );
+    test(
+      'T003: native tool with alwaysAsk permission returns needsConfirmation '
+      '(not notConfigured)',
+      () async {
+        final nativeTool = ToolToCall(
+          tool: ResolvedTool.native(
+            tableId: 'ws-tool-url-id',
+            nativeToolType: NativeToolType.url,
+          ),
+          id: 'native-tool-1',
+          argumentsRaw: '{"input": "https://example.com"}',
+        );
 
-      when(
-        () => loadLatestMessageToolCallsUsecase.call(
-          conversationId: 'conversation-1',
-        ),
-      ).thenAnswer(
-        (_) async => LoadLatestMessageToolCallsResult(
-          messageId: 'message-1',
-          hasToolCalls: true,
-          toolsToRun: [nativeTool],
-          notFoundToolCallIds: const [],
-          previouslyFailedToolCallIds: const [],
-        ),
-      );
-      when(
-        () => resolveToolApprovalDecision(
-          conversationId: 'conversation-1',
-          workspaceId: 'workspace-1',
-          toolCallId: 'native-tool-1',
-          resolvedTool: nativeTool.tool,
-        ),
-      ).thenAnswer(
-        (_) async => const ToolApprovalDecision(
-          toolCallId: 'native-tool-1',
-          permissionResult: ToolPermissionResult.needsConfirmation,
-          permissionTableId: 'url',
-        ),
-      );
+        when(
+          () => loadLatestMessageToolCallsUsecase.call(
+            conversationId: 'conversation-1',
+          ),
+        ).thenAnswer(
+          (_) async => LoadLatestMessageToolCallsResult(
+            messageId: 'message-1',
+            hasToolCalls: true,
+            toolsToRun: [nativeTool],
+            notFoundToolCallIds: const [],
+            previouslyFailedToolCallIds: const [],
+          ),
+        );
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'native-tool-1',
+            permissionResult: ToolPermissionResult.needsConfirmation,
+            permissionTableId: 'url',
+          ),
+        );
 
-      final result = await usecase.call(
-        conversationId: 'conversation-1',
-        workspaceId: 'workspace-1',
-      );
-
-      expect(result, AgentIterationDecision.waitForToolApproval);
-      verify(
-        () => resolveToolApprovalDecision(
+        final result = await usecase.call(
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
-          toolCallId: 'native-tool-1',
-          resolvedTool: nativeTool.tool,
-        ),
-      ).called(1);
-      final _ = verifyNever(() => messageRepository.patchMessage(any(), any()));
-    });
+        );
 
-    test('T004: native tool with alwaysAllow permission returns '
-        'granted and executes', () async {
+        expect(result, AgentIterationDecision.waitForToolApproval);
+        verify(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'native-tool-1',
+            resolvedTool: nativeTool.tool,
+          ),
+        ).called(1);
+        final _ = verifyNever(
+          () => messageRepository.patchMessage(any(), any()),
+        );
+      },
+    );
+
+    test('T004: alwaysAllow native tool executes', () async {
       final nativeTool = ToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
@@ -1031,8 +1034,7 @@ void main() {
       );
     });
 
-    test('T010: native tool with notConfigured permission persists '
-        'status to message metadata', () async {
+    test('T010: persists notConfigured status', () async {
       final nativeTool = ToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',
@@ -1114,8 +1116,7 @@ void main() {
       );
     });
 
-    test('T014: notConfigured error includes tool name and '
-        'descriptive message in responseRaw', () async {
+    test('T014: notConfigured response includes tool details', () async {
       final nativeTool = ToolToCall(
         tool: ResolvedTool.native(
           tableId: 'ws-tool-url-id',

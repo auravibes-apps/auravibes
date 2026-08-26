@@ -180,8 +180,7 @@ void main() {
       expect(toolsGroupsRepository.setEnabledCalled, isFalse);
     });
 
-    test('setMcpGroupEnabled does nothing when group belongs to '
-        'different workspace', () async {
+    test('setMcpGroupEnabled ignores another workspace group', () async {
       toolsGroupsRepository.groupById = ToolsGroupEntity(
         id: 'group-1',
         workspaceId: 'other-workspace',
