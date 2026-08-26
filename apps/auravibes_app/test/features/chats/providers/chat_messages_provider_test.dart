@@ -27,6 +27,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
+void _ignoreProviderUpdate(Object? _, Object? _) {
+  final _ = Object();
+}
+
 List<String> _messageIds(ProviderContainer container) =>
     container
         .read(chatMessagesProvider('workspace-1', 'conversation-1'))
@@ -139,9 +143,11 @@ void main() {
 
     test('applies streaming overlay only in message provider', () async {
       container
-        ..listen(chatMessagesProvider('workspace-1', 'conversation-1'), (_, _) {
-          final _ = Object();
-        }, fireImmediately: true)
+        ..listen(
+          chatMessagesProvider('workspace-1', 'conversation-1'),
+          _ignoreProviderUpdate,
+          fireImmediately: true,
+        )
         ..listen(
           messageConversationByIdProvider(
             'workspace-1',
@@ -194,12 +200,11 @@ void main() {
       'uses latest assistant usage and replaces with streaming value',
       () async {
         container
-          ..listen(chatMessagesProvider('workspace-1', 'conversation-1'), (
-            _,
-            _,
-          ) {
-            final _ = Object();
-          }, fireImmediately: true)
+          ..listen(
+            chatMessagesProvider('workspace-1', 'conversation-1'),
+            _ignoreProviderUpdate,
+            fireImmediately: true,
+          )
           ..listen(
             conversationUsedTokensProvider('workspace-1', 'conversation-1'),
             (_, _) {

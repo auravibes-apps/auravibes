@@ -84,9 +84,18 @@ void main() {
         conversationId: 'c1',
       );
       final result = Completer<ConversationEntity?>();
-      final subscription = fixture.container.listen(provider, (_, next) {
+      void completeConversation(
+        AsyncValue<ConversationEntity?>? _,
+        AsyncValue<ConversationEntity?> next,
+      ) {
         if (next case AsyncData(:final value)) result.complete(value);
-      }, fireImmediately: true);
+      }
+
+      final subscription = fixture.container.listen(
+        provider,
+        completeConversation,
+        fireImmediately: true,
+      );
       final value = await result.future;
       subscription.close();
 
@@ -151,9 +160,18 @@ void main() {
       fixture.repository.conversationsByWorkspace = conversations;
       final provider = conversationsStreamProvider(workspaceId: 'ws1');
       final result = Completer<List<ConversationEntity>>();
-      final subscription = fixture.container.listen(provider, (_, next) {
+      void completeConversations(
+        AsyncValue<List<ConversationEntity>>? _,
+        AsyncValue<List<ConversationEntity>> next,
+      ) {
         if (next case AsyncData(:final value)) result.complete(value);
-      }, fireImmediately: true);
+      }
+
+      final subscription = fixture.container.listen(
+        provider,
+        completeConversations,
+        fireImmediately: true,
+      );
       final value = await result.future;
       subscription.close();
 

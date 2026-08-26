@@ -170,8 +170,7 @@ class _StaticMessageRepository implements MessageRepository {
 }
 
 void main() {
-  testWidgets('updates from real chatMessagesProvider without overlapping '
-      'scheduler tasks', (tester) async {
+  testWidgets('updates pending calls from chat provider', (tester) async {
     final repository = _StreamingMessageRepository();
     addTearDown(repository.dispose);
 
@@ -676,8 +675,7 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('T025: re-evaluates when decision use case changes '
-        'from needsConfirmation to granted', () async {
+    test('T025: reevaluates when decision use case changes', () async {
       final messages = [
         _assistantMessage(
           id: 'msg-1',
@@ -782,8 +780,7 @@ void main() {
       expect(second, isEmpty);
     });
 
-    test('T026: 20 consecutive approved-tool updates produce '
-        'zero approval-card entries', () async {
+    test('T026: handles 20 approved-tool updates', () async {
       final toolCalls = List.generate(
         20,
         (i) => _pendingToolCall(id: 'tc-$i', name: 'built_in_calc_calculator'),
@@ -849,8 +846,7 @@ void main() {
       expect(result, isEmpty);
     });
 
-    test('T027: excludes completed, skipped, and disabled tools; '
-        'includes only needsConfirmation', () async {
+    test('T027: filters completed and disabled tools', () async {
       final messages = [
         _assistantMessage(
           id: 'msg-1',

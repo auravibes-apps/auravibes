@@ -184,8 +184,7 @@ void main() {
       },
     );
 
-    test('returns eligible when usage threshold is met even if '
-        'remaining tokens are high', () async {
+    test('returns eligible when usage threshold is met', () async {
       when(
         () => mockSettingsRepo.getEffectiveSettings(any()),
       ).thenAnswer((_) async => CompactionSettings.defaults);
@@ -220,8 +219,7 @@ void main() {
       expect(decision.reason, CompactionDecisionReason.eligible);
     });
 
-    test('returns eligible when remaining token threshold is met even if '
-        'usage is below threshold', () async {
+    test('returns eligible when remaining token threshold is met', () async {
       when(() => mockSettingsRepo.getEffectiveSettings(any())).thenAnswer(
         (_) async => const CompactionSettings(remainingTokenThreshold: 60000),
       );

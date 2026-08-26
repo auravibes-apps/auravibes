@@ -5,6 +5,8 @@ import 'package:auravibes_app/features/agents/agent_adapters/cloud_agent_tools_r
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+const _deletedResourceData = {'agentId': 'agent-1', 'toolId': 'tool-2'};
+
 void main() {
   test('tool overrides round-trip, update, and delete by revision', () async {
     final now = DateTime.utc(2026);
@@ -99,10 +101,7 @@ void main() {
           'toolId': 'tool-1',
           'permissionMode': 'alwaysAsk',
         }),
-        _resource(now, 'deleted', {
-          'agentId': 'agent-1',
-          'toolId': 'tool-2',
-        }, deletedAt: now),
+        _resource(now, 'deleted', _deletedResourceData, deletedAt: now),
         _resource(now, 'skill', {'agentId': 'agent-1', 'skillId': 'skill-1'}),
         _resource(now, 'other', {
           'agentId': 'agent-2',

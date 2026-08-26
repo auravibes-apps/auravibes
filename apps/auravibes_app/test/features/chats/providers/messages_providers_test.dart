@@ -16,6 +16,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
+void _ignoreProviderUpdate(Object? _, Object? _) {
+  final _ = Object();
+}
+
 MessageEntity _message({
   required String id,
   required String content,
@@ -272,12 +276,16 @@ void main() {
 
     test('returns true when message is streaming', () async {
       fixture.container
-        ..listen(chatMessagesProvider('ws-1', 'conv-1'), (_, _) {
-          final _ = Object();
-        }, fireImmediately: true)
-        ..listen(isMessageStreamingProvider('m1'), (_, _) {
-          final _ = Object();
-        }, fireImmediately: true);
+        ..listen(
+          chatMessagesProvider('ws-1', 'conv-1'),
+          _ignoreProviderUpdate,
+          fireImmediately: true,
+        )
+        ..listen(
+          isMessageStreamingProvider('m1'),
+          _ignoreProviderUpdate,
+          fireImmediately: true,
+        );
       fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
       ]);

@@ -77,18 +77,21 @@ void main() {
   });
 
   test('allows enabled video files in file picker', () {
-    expect(ChatAttachmentModality.supportsFiles(['text', 'video']), isTrue);
-    expect(ChatAttachmentModality.pickerAllowedExtensions(['text', 'video']), [
+    const modalities = ['text', 'video'];
+
+    expect(ChatAttachmentModality.supportsFiles(modalities), isTrue);
+    expect(ChatAttachmentModality.pickerAllowedExtensions(modalities), [
       'mp4',
       'mov',
       'mkv',
       'webm',
     ]);
     expect(
-      ChatAttachmentModality.supports(MessageAttachmentModality.file, [
-        'text',
-        'video',
-      ], mimeType: 'video/mp4'),
+      ChatAttachmentModality.supports(
+        MessageAttachmentModality.file,
+        modalities,
+        mimeType: 'video/mp4',
+      ),
       isTrue,
     );
   });
