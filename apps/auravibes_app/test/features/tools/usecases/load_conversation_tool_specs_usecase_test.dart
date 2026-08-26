@@ -301,17 +301,25 @@ void main() {
           workspaceId: 'ws-1',
         );
         final names = catalog.specs.map((spec) => spec.name).toList();
-        final githubSearchSuffix = stableToolNameSuffix(
+        final githubSearchSuffix = stableExternalToolNameSuffix(
           'mcp:github-server:github-search-row:search',
+          'mcp_search',
         );
-        final linearSearchSuffix = stableToolNameSuffix(
+        final linearSearchSuffix = stableExternalToolNameSuffix(
           'mcp:linear-server:linear-search-row:search',
+          'mcp_search',
+        );
+        final calculatorASuffix = stableExternalToolNameSuffix(
+          'user:calculator-row-a',
+          'calculator',
+        );
+        final calculatorBSuffix = stableExternalToolNameSuffix(
+          'user:calculator-row-b',
+          'calculator',
         );
         final externalTargets = {
-          'calculator_${stableToolNameSuffix('user:calculator-row-a')}':
-              calculatorA,
-          'calculator_${stableToolNameSuffix('user:calculator-row-b')}':
-              calculatorB,
+          'calculator_$calculatorASuffix': calculatorA,
+          'calculator_$calculatorBSuffix': calculatorB,
           'mcp_search_$githubSearchSuffix': githubSearch,
           'mcp_search_$linearSearchSuffix': linearSearch,
         };

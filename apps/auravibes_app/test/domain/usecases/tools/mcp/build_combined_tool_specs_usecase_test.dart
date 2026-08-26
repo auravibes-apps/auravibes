@@ -9,7 +9,7 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         AgentResolvedToolName,
         ToolSpec,
         buildToolCatalog,
-        stableToolNameSuffix;
+        stableExternalToolNameSuffix;
 import 'package:flutter_test/flutter_test.dart';
 
 WorkspaceToolEntity _tool({
@@ -145,14 +145,23 @@ void main() {
     );
 
     final catalog = buildToolCatalog(result);
-    final mcpCalculatorSuffix = stableToolNameSuffix(
+    final mcpCalculatorSuffix = stableExternalToolNameSuffix(
       'mcp:mcp-1:mcp-calculator:calculator',
+      'mcp_calculator',
+    );
+    final localCalculatorSuffix = stableExternalToolNameSuffix(
+      'user:local-calculator',
+      'calculator',
+    );
+    final mcpUrlSuffix = stableExternalToolNameSuffix(
+      'mcp:mcp-1:mcp-url:url',
+      'mcp_url',
     );
     expect(catalog.specs.map((spec) => spec.name), [
-      'calculator_${stableToolNameSuffix('user:local-calculator')}',
+      'calculator_$localCalculatorSuffix',
       'mcp_calculator_$mcpCalculatorSuffix',
       'url',
-      'mcp_url_${stableToolNameSuffix('mcp:mcp-1:mcp-url:url')}',
+      'mcp_url_$mcpUrlSuffix',
     ]);
   });
 
@@ -295,11 +304,25 @@ void main() {
     final catalog = buildToolCatalog(result);
     const githubSourceId = 'mcp:github-server:github-search-row:search';
     const linearSourceId = 'mcp:linear-server:linear-search-row:search';
-    final githubSuffix = stableToolNameSuffix(githubSourceId);
-    final linearSuffix = stableToolNameSuffix(linearSourceId);
+    final githubSuffix = stableExternalToolNameSuffix(
+      githubSourceId,
+      'mcp_search',
+    );
+    final linearSuffix = stableExternalToolNameSuffix(
+      linearSourceId,
+      'mcp_search',
+    );
+    final calculatorOneSuffix = stableExternalToolNameSuffix(
+      'user:calculator-row-1',
+      'calculator',
+    );
+    final calculatorTwoSuffix = stableExternalToolNameSuffix(
+      'user:calculator-row-2',
+      'calculator',
+    );
     expect(catalog.specs.map((value) => value.name), [
-      'calculator_${stableToolNameSuffix('user:calculator-row-1')}',
-      'calculator_${stableToolNameSuffix('user:calculator-row-2')}',
+      'calculator_$calculatorOneSuffix',
+      'calculator_$calculatorTwoSuffix',
       'mcp_search_$githubSuffix',
       'mcp_search_$linearSuffix',
     ]);
