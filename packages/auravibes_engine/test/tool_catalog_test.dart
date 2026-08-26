@@ -62,6 +62,26 @@ void main() {
     expect(catalog.specs.map((value) => value.name).toSet(), hasLength(2));
   });
 
+  test('separates normalized tool names from one source', () {
+    final catalog = buildToolCatalog<String>([
+      ToolCatalogCandidate.external(
+        spec: spec('weather.current'),
+        target: 'dot',
+        sourceId: 'shared-source',
+      ),
+      ToolCatalogCandidate.external(
+        spec: spec('weather/current'),
+        target: 'slash',
+        sourceId: 'shared-source',
+      ),
+    ]);
+
+    final names = catalog.specs.map((value) => value.name).toList();
+    expect(names.toSet(), hasLength(2));
+    expect(catalog.resolve(names[0]), 'dot');
+    expect(catalog.resolve(names[1]), 'slash');
+  });
+
   test('rejects duplicate reserved names', () {
     expect(
       () => buildToolCatalog<String>([

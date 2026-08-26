@@ -82,5 +82,5 @@ String _externalToolName(String preferredName, String sourceId) {
       .replaceAll(RegExp(r'^_+|_+$'), '');
   final readableLength = readableName.length > 53 ? 53 : readableName.length;
   return '${readableName.substring(0, readableLength)}_'
-      '${stableToolNameSuffix(sourceId)}';
+      '${stableToolNameSuffix('$sourceId\u0000$preferredName')}';
 }
