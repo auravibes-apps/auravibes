@@ -230,8 +230,8 @@ class WorkspacesTable extends DataClass implements Insertable<WorkspacesTable> {
   /// Human-readable name of the workspace.
   final String name;
 
-  /// Type of workspace (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of workspace (local or remote). Stored as a string to handle enum
+  /// conversion.
   final WorkspaceType type;
 
   /// URL for remote workspaces, null for local workspaces.
@@ -2120,8 +2120,8 @@ class ApiModelProvidersTable extends DataClass
   /// Human-readable name of the model.
   final String name;
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
   final ModelProvidersTableType? type;
   final String? url;
   final String? doc;
@@ -2788,8 +2788,8 @@ class ApiModelsTable extends DataClass implements Insertable<ApiModelsTable> {
   final String name;
   final String? family;
 
-  /// Type of chat model (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of chat model (local or remote). Stored as a string to handle enum
+  /// conversion.
   final List<String>? modalitiesInput;
   final List<String>? modalitiesOutput;
   final bool? openWeights;

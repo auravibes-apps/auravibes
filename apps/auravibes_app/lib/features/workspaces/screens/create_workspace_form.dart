@@ -14,6 +14,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('create_workspace_form');
 
 /// Form for creating a workspace.
 class CreateWorkspaceForm extends ConsumerStatefulWidget {
@@ -149,7 +152,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     } on WorkspaceException catch (error) {
       if (mounted) setState(() => _errorText = _workspaceError(error));
     } on Object catch (error, stackTrace) {
-      debugPrint('Create workspace failed: $error\n$stackTrace');
+      _logger.severe('Create workspace failed', error.runtimeType, stackTrace);
       if (mounted) {
         setState(
           () => _errorText = LocaleKeys.workspace_management_unexpected_error
