@@ -159,3 +159,22 @@ and the newest `/tmp/auravibes-dcl.json`. Never repeat a completed wave.
   files were still outside that commit; `266b4471` formatted them. The full
   `dart format --line-length 80 --output=none --set-exit-if-changed .` gate now
   passes with zero changes.
+
+## Post-format DCL cleanup — 2026-08-25
+
+- The formatting commit exposed 49 native DCL diagnostics: 47
+  `prefer-trailing-comma` entries and two lines over 80 characters. Fixes are
+  split into app library, chat/agent tests, and tools/service/widget tests.
+- Preserve the formatter output after each fix. No ignores, rule removals, or
+  generated-file edits are allowed. Acceptance is fatal analyzer zero,
+  formatter zero, and DCL zero on the final HEAD.
+- App library diagnostics were fixed and committed as `af0375b7`; tool,
+  service, and widget test diagnostics were fixed and committed as `9ed13b4e`.
+  Both batches pass focused fatal analysis and the formatter. The remaining
+  full-analyzer report contains 14 trailing-comma diagnostics in seven chat or
+  agent test files, assigned to the final test batch.
+- The final 14 chat or agent diagnostics were fixed and committed as
+  `848d04f8`. Repository-wide fatal analysis, full formatting, DCL CLI, and
+  `validate:quick --no-select` all pass with zero diagnostics and zero changed
+  files. DCL 4.2.0 reports an available 4.2.2 update; dependency versions were
+  left unchanged because this cleanup did not require it.
