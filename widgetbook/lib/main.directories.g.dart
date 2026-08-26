@@ -33,6 +33,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_icon_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_icon_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_input_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_input_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_list_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_list_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_message_bubble_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_message_bubble_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_message_status_stories.dart'
@@ -85,6 +87,16 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Icon Button Basic',
             builder: _widgetbook_workspace_aura_ui_auravibes_icon_stories
                 .iconButtonBasicUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraList',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'AuraList',
+            builder: _widgetbook_workspace_aura_ui_auravibes_list_stories
+                .auraListUseCase,
           ),
         ],
       ),
