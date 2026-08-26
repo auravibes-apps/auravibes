@@ -145,18 +145,26 @@ class _LoadedChatConversation extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stopRequested = useState(false);
 
-    final onToolsPress = useCallback(() {
+    void onToolsPressCallback() {
       _showToolsModal(
         context: context,
         workspaceId: workspaceId,
         conversationId: conversation.id,
       );
-    }, [ref, workspaceId, conversation.id]);
+    }
 
-    final onStop = useCallback(() {
+    final onToolsPress = useCallback(onToolsPressCallback, [
+      ref,
+      workspaceId,
+      conversation.id,
+    ]);
+
+    void onStopCallback() {
       stopRequested.value = true;
       unawaited(_stopConversation(context, ref, workspaceId, conversation.id));
-    }, [ref, stopRequested]);
+    }
+
+    final onStop = useCallback(onStopCallback, [ref, stopRequested]);
 
     final onSendMessage = useCallback<Future<void> Function(ChatDraft)>(
       (draft) =>
@@ -164,9 +172,11 @@ class _LoadedChatConversation extends HookConsumerWidget {
       [ref],
     );
 
-    final onCompact = useCallback(() {
+    void onCompactCallback() {
       unawaited(_manualCompact(context, ref, workspaceId, conversation.id));
-    }, [ref, conversation.id]);
+    }
+
+    final onCompact = useCallback(onCompactCallback, [ref, conversation.id]);
 
     final isCloud =
         ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
@@ -220,18 +230,22 @@ class _LoadedChatConversation extends HookConsumerWidget {
                       'awaitingApproval'
             : busyState?.isBusy ?? false) ||
         rateLimitRetryAt != null;
-    useEffect(() {
+    Dispose? resetStopRequested() {
       stopRequested.value = false;
 
       return null;
-    }, [conversation.id]);
-    useEffect(() {
+    }
+
+    useEffect(resetStopRequested, [conversation.id]);
+    Dispose? resetStopRequestedWhenIdle() {
       if (!isInputBusy) {
         stopRequested.value = false;
       }
 
       return null;
-    }, [conversation.id, isInputBusy]);
+    }
+
+    useEffect(resetStopRequestedWhenIdle, [conversation.id, isInputBusy]);
     final hidesStoppedRun = stopRequested.value && isInputBusy;
 
     return AuraScreen(

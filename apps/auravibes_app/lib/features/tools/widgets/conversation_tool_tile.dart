@@ -44,9 +44,11 @@ class ConversationToolTile extends HookConsumerWidget {
     );
     final toolId = toolState.tool.id;
 
-    final onToggle = useCallback(() {
+    void onToggleCallback() {
       unawaited(toolsNotifier.toggleTool(toolId));
-    }, [toolsNotifier, toolId]);
+    }
+
+    final onToggle = useCallback(onToggleCallback, [toolsNotifier, toolId]);
 
     final onPermissionChanged = useCallback<void Function(ToolPermissionMode?)>(
       (mode) {

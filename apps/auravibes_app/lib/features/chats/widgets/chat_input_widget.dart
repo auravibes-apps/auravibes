@@ -123,9 +123,9 @@ class ChatInputWidget extends HookConsumerWidget {
       isEmpty: isEmpty,
     );
 
-    useEffect(() {
-      return actions.disposeDraft;
-    }, const []);
+    Dispose? disposeDraft() => actions.disposeDraft;
+
+    useEffect(disposeDraft, const []);
 
     final shouldShowStopButton = showStopButton ?? isBusy;
     final supportsLocalAttachments =

@@ -52,26 +52,37 @@ _projectWorkspaceModelSelections({
     controller.add(_withCodexProjections(selections, providers, openAIModels));
   }
 
+  void onSelectionsChanged(
+    List<WorkspaceModelSelectionWithConnectionEntity> value,
+  ) {
+    latestSelections = value;
+    emit();
+  }
+
+  void onProvidersChanged(List<ApiModelProviderEntity> value) {
+    latestProviders = value;
+    emit();
+  }
+
+  void onOpenAIModelsChanged(List<ApiModelEntity> value) {
+    latestOpenAIModels = value;
+    emit();
+  }
+
   controller
     ..onListen = () {
       subscriptions
         ..add(
-          selections.listen((value) {
-            latestSelections = value;
-            emit();
-          }, onError: controller.addError),
+          selections.listen(onSelectionsChanged, onError: controller.addError),
         )
         ..add(
-          providers.listen((value) {
-            latestProviders = value;
-            emit();
-          }, onError: controller.addError),
+          providers.listen(onProvidersChanged, onError: controller.addError),
         )
         ..add(
-          openAIModels.listen((value) {
-            latestOpenAIModels = value;
-            emit();
-          }, onError: controller.addError),
+          openAIModels.listen(
+            onOpenAIModelsChanged,
+            onError: controller.addError,
+          ),
         );
     }
     ..onCancel = () async {

@@ -41,12 +41,14 @@ class AddToolModal extends HookConsumerWidget {
       availableToolsToAddProvider(workspaceId),
     );
 
-    useEffect(() {
+    Dispose? updateSearchQuery() {
       void listener() => searchQuery.value = searchController.text;
       searchController.addListener(listener);
 
       return () => searchController.removeListener(listener);
-    }, [searchController]);
+    }
+
+    useEffect(updateSearchQuery, [searchController]);
 
     return Dialog(
       shape: RoundedRectangleBorder(

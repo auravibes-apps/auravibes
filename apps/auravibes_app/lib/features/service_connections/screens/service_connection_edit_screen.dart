@@ -544,6 +544,9 @@ class _ModelProviderEditForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final suffix = state.connection.keySuffix;
+    final savedSecretLabel = LocaleKeys.skill_credentials_secret_saved.tr(
+      context: context,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -569,8 +572,7 @@ class _ModelProviderEditForm extends StatelessWidget {
                       ? LocaleKeys.skill_credentials_secret_saved.tr(
                           context: context,
                         )
-                      : '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)} '
-                            '****$suffix',
+                      : '$savedSecretLabel ****$suffix',
                 ),
                 label: const TextLocale(
                   LocaleKeys.models_screens_add_provider_fields_key_label,
@@ -632,6 +634,9 @@ class _GenericServiceConnectionEditForm extends StatelessWidget {
     final suffix = state.connection.keySuffix;
     final savedSecret = state.connection.hasSecret && !clearSecret;
     final savedSecretSuffix = suffix == null ? '' : ' ****$suffix';
+    final savedSecretLabel = LocaleKeys.skill_credentials_secret_saved.tr(
+      context: context,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -653,9 +658,7 @@ class _GenericServiceConnectionEditForm extends StatelessWidget {
               AuraInput(
                 controller: secretController,
                 placeholder: savedSecret
-                    ? Text(
-                        '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)}$savedSecretSuffix',
-                      )
+                    ? Text('$savedSecretLabel$savedSecretSuffix')
                     : null,
                 label: Text(
                   _genericCredentialValueLabel(

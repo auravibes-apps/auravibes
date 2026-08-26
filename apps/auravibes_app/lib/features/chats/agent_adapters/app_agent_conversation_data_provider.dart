@@ -216,7 +216,7 @@ class AppAgentModelProvider implements AgentModelProvider {
   }
 }
 
-final appAgentDataProvider = Provider<AppAgentConversationDataProvider>((ref) {
+AppAgentConversationDataProvider _buildAppAgentDataProvider(Ref ref) {
   return AppAgentConversationDataProvider(
     conversationRepository: ref.watch(conversationRepositoryProvider),
     messageRepository: ref.watch(messageRepositoryProvider),
@@ -224,7 +224,12 @@ final appAgentDataProvider = Provider<AppAgentConversationDataProvider>((ref) {
       maybeAutoCompactConversationUsecaseProvider,
     ),
   );
-}, dependencies: [maybeAutoCompactConversationUsecaseProvider]);
+}
+
+final appAgentDataProvider = Provider<AppAgentConversationDataProvider>(
+  _buildAppAgentDataProvider,
+  dependencies: [maybeAutoCompactConversationUsecaseProvider],
+);
 
 final appAgentModelProvider = Provider<AppAgentModelProvider>(
   (ref) => AppAgentModelProvider(ref.watch(continueAgentServiceProvider)),
@@ -235,7 +240,7 @@ final appAgentLoopToolProvider = Provider<AppAgentLoopToolProvider>((ref) {
   return AppAgentLoopToolProvider(ref.watch(agentToolExecutionServiceProvider));
 });
 
-final appAgentServiceProvider = Provider<AppAgentService>((ref) {
+AppAgentService _buildAppAgentService(Ref ref) {
   return AppAgentService._(
     data: ref.watch(appAgentDataProvider),
     models: ref.watch(appAgentModelProvider),
@@ -244,4 +249,9 @@ final appAgentServiceProvider = Provider<AppAgentService>((ref) {
     sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
     cancellationEffects: ref.watch(agentCancellationRuntimeProvider),
   );
-}, dependencies: [appAgentDataProvider, appAgentModelProvider]);
+}
+
+final appAgentServiceProvider = Provider<AppAgentService>(
+  _buildAppAgentService,
+  dependencies: [appAgentDataProvider, appAgentModelProvider],
+);
