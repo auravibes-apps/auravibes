@@ -23,7 +23,11 @@ class AuraSpinner extends StatelessWidget {
   /// The width of the spinner stroke. If null, uses a default based on size.
   final double? strokeWidth;
 
-  /// A semantic label for the spinner for accessibility.
+  /// Semantic label announced by assistive technologies.
+  ///
+  /// Pass localized text when loading state needs an accessibility
+  /// announcement.
+  /// If omitted, spinner has no semantic label.
   final String? semanticLabel;
 
   @override

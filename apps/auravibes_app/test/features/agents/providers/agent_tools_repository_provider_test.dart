@@ -79,6 +79,49 @@ void main() {
     expect(await repository.getAgentTools('agent'), isEmpty);
   });
 
+  test('cloud agent tools reject multiple resource pages', () async {
+    const workspace = CloudWorkspaceRef(
+      localWorkspaceId: 'cloud',
+      serverUrl: 'https://example.com',
+      accountId: 'account',
+      cloudWorkspaceId: 7,
+    );
+    final gateway = CloudWorkspaceStateGateway.forTesting(
+      workspace: workspace,
+      readState: (_) async => ReadWorkspaceStateResponse(
+        pages: [
+          WorkspaceResourcePage(
+            resourceKind: WorkspaceResourceKind.agentAssociation,
+            resources: [],
+          ),
+          WorkspaceResourcePage(
+            resourceKind: WorkspaceResourceKind.agentAssociation,
+            resources: [],
+          ),
+        ],
+        currentSequence: 1,
+        events: [],
+        requiresSnapshot: false,
+      ),
+      subscribe: (_) => const Stream.empty(),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        workspaceSessionForRouteProvider(
+          'cloud',
+        ).overrideWithValue(const AsyncData(WorkspaceSession(workspace))),
+        cloudWorkspaceStateGatewayProvider.overrideWith(
+          (_, _) async => gateway,
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final repository = container.read(agentToolsRepositoryProvider('cloud'));
+
+    await expectLater(repository.getAgentTools('agent'), throwsStateError);
+  });
+
   test('agent repository uses the workspace session scope', () {
     final container = ProviderContainer(
       overrides: [
