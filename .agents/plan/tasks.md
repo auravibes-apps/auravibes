@@ -178,3 +178,5 @@ and the newest `/tmp/auravibes-dcl.json`. Never repeat a completed wave.
   `validate:quick --no-select` all pass with zero diagnostics and zero changed
   files. DCL 4.2.0 reports an available 4.2.2 update; dependency versions were
   left unchanged because this cleanup did not require it.
+- All 15 touched test files pass together (`159` tests); the worktree is clean
+  and no generated files changed.
