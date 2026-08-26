@@ -4,36 +4,33 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:riverpod/src/providers/provider.dart';
 
 final ProviderFamily<Future<void> Function(String), String>
-deleteSkillProvider = Provider.family<Future<void> Function(String), String>(
-  (ref, workspaceId) {
-    final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-    if (cloud != null) return cloud.deleteSkill;
+deleteSkillProvider = Provider.family<Future<void> Function(String), String>((
+  ref,
+  workspaceId,
+) {
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+  if (cloud != null) return cloud.deleteSkill;
 
-    return (id) => ref.read(skillsRepositoryProvider).deleteSkill(id);
-  },
-);
+  return (id) => ref.read(skillsRepositoryProvider).deleteSkill(id);
+});
 
 final ProviderFamily<Future<void> Function(String), String>
 deleteSkillTemplateToolProvider =
-    Provider.family<Future<void> Function(String), String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-        if (cloud != null) return cloud.deleteTool;
+    Provider.family<Future<void> Function(String), String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+      if (cloud != null) return cloud.deleteTool;
 
-        return (id) =>
-            ref.read(skillTemplateToolsRepositoryProvider).deleteTool(id);
-      },
-    );
+      return (id) =>
+          ref.read(skillTemplateToolsRepositoryProvider).deleteTool(id);
+    });
 
 final ProviderFamily<Future<void> Function(String), String>
 deleteSkillCredentialDefinitionProvider =
-    Provider.family<Future<void> Function(String), String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-        if (cloud != null) return cloud.deleteDefinition;
+    Provider.family<Future<void> Function(String), String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+      if (cloud != null) return cloud.deleteDefinition;
 
-        return (id) => ref
-            .read(skillCredentialDefinitionsRepositoryProvider)
-            .deleteDefinition(id);
-      },
-    );
+      return (id) => ref
+          .read(skillCredentialDefinitionsRepositoryProvider)
+          .deleteDefinition(id);
+    });

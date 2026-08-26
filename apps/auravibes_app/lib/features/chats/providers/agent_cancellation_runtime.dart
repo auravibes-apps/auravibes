@@ -140,9 +140,8 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
   }
 
   @override
-  Set<String> childrenOf(String parentId) => Set.unmodifiable(
-    state[parentId] ?? const <String>{},
-  );
+  Set<String> childrenOf(String parentId) =>
+      Set.unmodifiable(state[parentId] ?? const <String>{});
 
   @override
   String? parentOf(String childId) {

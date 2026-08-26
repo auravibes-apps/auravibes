@@ -18,11 +18,7 @@ sealed class ServiceConnectionSecret {
         apiKey: _requiredSecretValue(json, 'api_key', 'apiKey'),
       ),
       'bearerToken' => ServiceConnectionSecretBearerToken(
-        bearerToken: _requiredSecretValue(
-          json,
-          'bearer_token',
-          'bearerToken',
-        ),
+        bearerToken: _requiredSecretValue(json, 'bearer_token', 'bearerToken'),
       ),
       'oauth2' => ServiceConnectionSecretOAuth2(
         accessToken: _requiredSecretValue(json, 'access_token', 'oauth2'),
@@ -49,10 +45,7 @@ class ServiceConnectionSecretApiKey extends ServiceConnectionSecret {
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': 'apiKey',
-      'api_key': apiKey,
-    };
+    return {'type': 'apiKey', 'api_key': apiKey};
   }
 }
 
@@ -63,10 +56,7 @@ class ServiceConnectionSecretBearerToken extends ServiceConnectionSecret {
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': 'bearerToken',
-      'bearer_token': bearerToken,
-    };
+    return {'type': 'bearerToken', 'bearer_token': bearerToken};
   }
 }
 

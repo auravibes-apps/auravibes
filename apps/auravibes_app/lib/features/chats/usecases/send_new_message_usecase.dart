@@ -100,49 +100,47 @@ class SendNewMessageUsecase {
 }
 
 final ProviderFamily<SendNewMessageUsecase, String>
-sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>(
-  (ref, workspaceId) {
-    final isCloud =
-        ref
-            .watch(
-              workspaceSessionForRouteProvider(workspaceId),
-            )
-            .requireValue
-            .cloud !=
-        null;
+sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>((
+  ref,
+  workspaceId,
+) {
+  final isCloud =
+      ref
+          .watch(workspaceSessionForRouteProvider(workspaceId))
+          .requireValue
+          .cloud !=
+      null;
 
-    return SendNewMessageUsecase(
-      conversationRepo: ref.watch(conversationRepositoryProvider),
-      sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
-      modelSelectionStore: (workspaceId) => ref.read(
-        modelSelectionStoreProvider(workspaceId).future,
-      ),
-      generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
-      cloudCreate: isCloud
-          ? (value) async {
-              final usecase = await ref.read(
-                cloudConversationUsecaseProvider(workspaceId).future,
-              );
-              if (usecase == null) {
-                throw StateError('Cloud workspace unavailable');
-              }
-              final created = await usecase.create(value);
-
-              return ConversationEntity(
-                id: created.id,
-                title: created.title,
-                workspaceId: value.workspaceId,
-                isPinned: created.isPinned,
-                createdAt: created.createdAt,
-                updatedAt: created.updatedAt,
-                revision: created.revision,
-                modelId: created.modelId,
-                agentId: created.agentId,
-                parentConversationId: created.parentConversationId,
-              );
+  return SendNewMessageUsecase(
+    conversationRepo: ref.watch(conversationRepositoryProvider),
+    sendMessageUsecase: ref.watch(sendMessageUsecaseProvider(workspaceId)),
+    modelSelectionStore: (workspaceId) =>
+        ref.read(modelSelectionStoreProvider(workspaceId).future),
+    generateTitleUsecase: ref.watch(generateTitleUsecaseProvider),
+    monitoringService: ref.watch(monitoringServiceProvider),
+    cloudCreate: isCloud
+        ? (value) async {
+            final usecase = await ref.read(
+              cloudConversationUsecaseProvider(workspaceId).future,
+            );
+            if (usecase == null) {
+              throw StateError('Cloud workspace unavailable');
             }
-          : null,
-    );
-  },
-);
+            final created = await usecase.create(value);
+
+            return ConversationEntity(
+              id: created.id,
+              title: created.title,
+              workspaceId: value.workspaceId,
+              isPinned: created.isPinned,
+              createdAt: created.createdAt,
+              updatedAt: created.updatedAt,
+              revision: created.revision,
+              modelId: created.modelId,
+              agentId: created.agentId,
+              parentConversationId: created.parentConversationId,
+            );
+          }
+        : null,
+  );
+});

@@ -28,9 +28,8 @@ void main() {
         return Future<void>.value();
       });
       when(() => storage.delete(key: any(named: 'key'))).thenAnswer(
-        (invocation) async => values.remove(
-          invocation.namedArguments[#key] as String,
-        ),
+        (invocation) async =>
+            values.remove(invocation.namedArguments[#key] as String),
       );
       final store = ServerpodAuthStore(secureStorage: storage);
 
@@ -55,10 +54,7 @@ void main() {
         accounts.map((account) => account.serverUrl),
         containsAll(['https://one.example', 'https://two.example']),
       );
-      expect(
-        jsonDecode(values['serverpod_cloud_accounts_v2']!),
-        hasLength(2),
-      );
+      expect(jsonDecode(values['serverpod_cloud_accounts_v2']!), hasLength(2));
     },
   );
 
@@ -120,53 +116,46 @@ void main() {
       }
     },
   );
-  test(
-    'default namespace migrates v1 account and preferred keys',
-    () async {
-      final values = <String, String>{
-        'serverpod_cloud_accounts_v1': jsonEncode([
-          {'userId': 'user', 'email': 'user@example.com'},
-        ]),
-        'serverpod_preferred_account_v1': 'user',
-      };
-      final storage = _MockSecureStorage();
-      when(
-        () => storage.read(key: any(named: 'key')),
-      ).thenAnswer(
-        (call) => Future.value(values[call.namedArguments[#key] as String]),
-      );
-      when(
-        () => storage.write(
-          key: any(named: 'key'),
-          value: any(named: 'value'),
-        ),
-      ).thenAnswer((call) {
-        values[call.namedArguments[#key] as String] =
-            call.namedArguments[#value] as String;
+  test('default namespace migrates v1 account and preferred keys', () async {
+    final values = <String, String>{
+      'serverpod_cloud_accounts_v1': jsonEncode([
+        {'userId': 'user', 'email': 'user@example.com'},
+      ]),
+      'serverpod_preferred_account_v1': 'user',
+    };
+    final storage = _MockSecureStorage();
+    when(() => storage.read(key: any(named: 'key'))).thenAnswer(
+      (call) => Future.value(values[call.namedArguments[#key] as String]),
+    );
+    when(
+      () => storage.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    ).thenAnswer((call) {
+      values[call.namedArguments[#key] as String] =
+          call.namedArguments[#value] as String;
 
-        return Future<void>.value();
-      });
-      when(() => storage.delete(key: any(named: 'key'))).thenAnswer(
-        (call) {
-          final _ = values.remove(call.namedArguments[#key] as String);
+      return Future<void>.value();
+    });
+    when(() => storage.delete(key: any(named: 'key'))).thenAnswer((call) {
+      final _ = values.remove(call.namedArguments[#key] as String);
 
-          return Future<void>.value();
-        },
-      );
-      final store = ServerpodAuthStore(secureStorage: storage);
-      final accounts = await store.listAccounts(
-        legacyServerUrl: 'https://legacy.example/api',
-      );
-      expect(accounts.single.serverUrl, 'https://legacy.example');
-      expect(
-        await store.preferredAccountIdentity(),
-        CloudAccountIdentity.accountIdentity('https://legacy.example', 'user'),
-      );
-      expect(values, contains('serverpod_cloud_accounts_v2'));
-      expect(values, isNot(contains('serverpod_cloud_accounts_v1')));
-      expect(values, isNot(contains('serverpod_preferred_account_v1')));
-    },
-  );
+      return Future<void>.value();
+    });
+    final store = ServerpodAuthStore(secureStorage: storage);
+    final accounts = await store.listAccounts(
+      legacyServerUrl: 'https://legacy.example/api',
+    );
+    expect(accounts.single.serverUrl, 'https://legacy.example');
+    expect(
+      await store.preferredAccountIdentity(),
+      CloudAccountIdentity.accountIdentity('https://legacy.example', 'user'),
+    );
+    expect(values, contains('serverpod_cloud_accounts_v2'));
+    expect(values, isNot(contains('serverpod_cloud_accounts_v1')));
+    expect(values, isNot(contains('serverpod_preferred_account_v1')));
+  });
 
   test('stores account index under namespace', () async {
     final values = <String, String>{};
@@ -185,13 +174,11 @@ void main() {
 
       return Future<void>.value();
     });
-    when(() => storage.delete(key: any(named: 'key'))).thenAnswer(
-      (call) {
-        final _ = values.remove(call.namedArguments[#key] as String);
+    when(() => storage.delete(key: any(named: 'key'))).thenAnswer((call) {
+      final _ = values.remove(call.namedArguments[#key] as String);
 
-        return Future<void>.value();
-      },
-    );
+      return Future<void>.value();
+    });
     final store = ServerpodAuthStore(
       secureStorage: storage,
       storageNamespace: 'auravibes_app_0123456789abcdef',

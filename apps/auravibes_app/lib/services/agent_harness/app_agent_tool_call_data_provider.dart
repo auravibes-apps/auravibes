@@ -34,13 +34,12 @@ class AppAgentToolCallDataProvider implements agent.AgentToolDecisionProvider {
 }
 
 class AgentToolDecisionService extends agent.AgentToolDecisionRunner {
-  AgentToolDecisionService({
-    required MessageRepository messageRepository,
-  }) : super(
-         provider: AppAgentToolCallDataProvider(
-           messageRepository: messageRepository,
-         ),
-       );
+  AgentToolDecisionService({required MessageRepository messageRepository})
+    : super(
+        provider: AppAgentToolCallDataProvider(
+          messageRepository: messageRepository,
+        ),
+      );
 }
 
 final agentToolDecisionServiceProvider = Provider<AgentToolDecisionService>((

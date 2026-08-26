@@ -36,10 +36,7 @@ class AppSkillExecutor {
 
     final callback = resolvedTool.callback;
     if (callback != null) {
-      return callback(
-        {...input, 'credential': credentials},
-        _httpClient,
-      );
+      return callback({...input, 'credential': credentials}, _httpClient);
     }
 
     throw UnsupportedError('App skill tool has no executor: $toolSlug');

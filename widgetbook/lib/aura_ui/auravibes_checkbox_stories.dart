@@ -46,11 +46,7 @@ Widget checkboxFocusStatesUseCase(BuildContext context) {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _FocusStateRow(
-            label: 'Focused',
-            value: selected,
-            autofocus: true,
-          ),
+          _FocusStateRow(label: 'Focused', value: selected, autofocus: true),
           const SizedBox(height: 16),
           _FocusStateRow(label: 'Not focused', value: selected),
         ],

@@ -31,9 +31,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   }
 
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
-  getWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) async {
+  getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) async {
     final tableResults = await _database.workspaceModelSelectionsDao
         .getAllWorkspaceModelSelectionsByWorkspace(
           workspaceIds: filter.workspaces,
@@ -43,9 +41,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   }
 
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-  watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     return _database.workspaceModelSelectionsDao
         .watchAllWorkspaceModelSelectionsByWorkspace(
           workspaceIds: filter.workspaces,
@@ -57,9 +53,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   }
 
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(
-    String id,
-  ) async {
+  getWorkspaceModelSelectionById(String id) async {
     final workspaceModelSelectionWithConnection = await _database
         .workspaceModelSelectionsDao
         .getWorkspaceModelSelectionById(id);
@@ -93,9 +87,7 @@ class WorkspaceModelSelectionRepository implements ModelSelectionStore {
   ) {
     final modelProvider = withProvider.modelProvider;
     final serviceId = withProvider.modelConnection.serviceId;
-    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(
-      serviceId,
-    );
+    final isCodex = ModelProviderOAuthProfiles.isCodexProvider(serviceId);
     final providerType = _mapToTypeTable(modelProvider?.type);
 
     return WorkspaceModelSelectionWithConnectionEntity(

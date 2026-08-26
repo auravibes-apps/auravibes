@@ -39,10 +39,7 @@ double _relativeLuminance(Color c) =>
 /// body text minimum, and Lc 45 for large text at least 18pt.
 abstract final class ColorContrast {
   /// Computes the APCA perceived contrast score.
-  static double apcaLc({
-    required Color foreground,
-    required Color background,
-  }) {
+  static double apcaLc({required Color foreground, required Color background}) {
     var textLuminance = _relativeLuminance(foreground);
     var backgroundLuminance = _relativeLuminance(background);
 

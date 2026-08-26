@@ -151,10 +151,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
     }
 
     final content = orientation == Axis.horizontal
-        ? Row(
-            mainAxisSize: MainAxisSize.min,
-            children: children,
-          )
+        ? Row(mainAxisSize: MainAxisSize.min, children: children)
         : Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -478,8 +475,4 @@ enum AuraButtonGroupVariant {
   ghost,
 }
 
-enum _ButtonGroupMode {
-  single,
-  multi,
-  action,
-}
+enum _ButtonGroupMode { single, multi, action }

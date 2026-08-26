@@ -196,9 +196,7 @@ class AppApproveToolCallDataProvider
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(
-        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
-      ),
+      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
     onToolCallChanged();
   }

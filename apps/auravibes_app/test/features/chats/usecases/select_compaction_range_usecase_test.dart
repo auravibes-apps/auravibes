@@ -60,9 +60,7 @@ void main() {
 
     test('excludes error messages from compactable range', () {
       final messages = [
-        _makeMessage(
-          status: MessageStatus.error,
-        ),
+        _makeMessage(status: MessageStatus.error),
         _makeMessage(id: 'msg-2', isUser: false),
         _makeMessage(id: 'msg-3'),
         _makeMessage(id: 'msg-4', isUser: false),
@@ -78,9 +76,7 @@ void main() {
 
     test('excludes sending messages from compactable range', () {
       final messages = [
-        _makeMessage(
-          status: MessageStatus.sending,
-        ),
+        _makeMessage(status: MessageStatus.sending),
         _makeMessage(id: 'msg-2', isUser: false),
         _makeMessage(id: 'msg-3'),
         _makeMessage(id: 'msg-4', isUser: false),
@@ -96,9 +92,7 @@ void main() {
 
     test('excludes existing compaction summaries', () {
       final messages = [
-        _makeMessage(
-          metadata: const MessageMetadataEntity(),
-        ),
+        _makeMessage(metadata: const MessageMetadataEntity()),
         _makeMessage(id: 'msg-2', isUser: false),
         _makeMessage(id: 'msg-3'),
         _makeMessage(

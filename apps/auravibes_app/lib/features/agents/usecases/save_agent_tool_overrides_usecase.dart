@@ -44,10 +44,8 @@ class SaveAgentToolOverridesUsecase {
 
 final ProviderFamily<SaveAgentToolOverridesUsecase, String>
 saveAgentToolOverridesUsecaseProvider =
-    Provider.family<SaveAgentToolOverridesUsecase, String>(
-      (ref, workspaceId) {
-        return SaveAgentToolOverridesUsecase(
-          ref.watch(agentToolsRepositoryProvider(workspaceId)),
-        );
-      },
-    );
+    Provider.family<SaveAgentToolOverridesUsecase, String>((ref, workspaceId) {
+      return SaveAgentToolOverridesUsecase(
+        ref.watch(agentToolsRepositoryProvider(workspaceId)),
+      );
+    });

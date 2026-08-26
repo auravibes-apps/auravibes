@@ -9,11 +9,8 @@ import 'package:flutter/widgets.dart';
 
 class _DelayTween extends Tween<double> {
   static const _fullTurn = 2.0;
-  _DelayTween({
-    required this.delay,
-    required double begin,
-    required double end,
-  }) : super(begin: begin, end: end);
+  _DelayTween({required this.delay, required double begin, required double end})
+    : super(begin: begin, end: end);
 
   final double delay;
 

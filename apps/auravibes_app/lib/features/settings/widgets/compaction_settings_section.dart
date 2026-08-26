@@ -138,9 +138,7 @@ class _CompactionSettingsSectionState
             placeholder: Text(
               LocaleKeys.compaction_settings_usage_threshold_hint.tr(),
             ),
-            label: Text(
-              LocaleKeys.compaction_settings_usage_threshold.tr(),
-            ),
+            label: Text(LocaleKeys.compaction_settings_usage_threshold.tr()),
             keyboardType: TextInputType.number,
           ),
           AuraInput(

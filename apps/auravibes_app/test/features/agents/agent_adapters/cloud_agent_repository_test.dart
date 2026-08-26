@@ -191,22 +191,17 @@ void main() {
       hasLength(2),
     );
     expect(
-      captured.where(
-        (operation) => operation.resourceId == 'association-3',
-      ),
+      captured.where((operation) => operation.resourceId == 'association-3'),
       isEmpty,
     );
 
     captured.clear();
     await expectLater(repository.deleteAgent('agent-1'), completion(isTrue));
-    expect(
-      captured.map((operation) => operation.resourceKind),
-      [
-        WorkspaceResourceKind.agentAssociation,
-        WorkspaceResourceKind.agentAssociation,
-        WorkspaceResourceKind.agent,
-      ],
-    );
+    expect(captured.map((operation) => operation.resourceKind), [
+      WorkspaceResourceKind.agentAssociation,
+      WorkspaceResourceKind.agentAssociation,
+      WorkspaceResourceKind.agent,
+    ]);
   });
 }
 

@@ -82,25 +82,17 @@ void main() {
       },
     );
 
-    test(
-      'returns workspace defaults when conversationId is missing',
-      () async {
-        fixture.workspaceToolsRepository.workspaceTools = [tool1];
+    test('returns workspace defaults when conversationId is missing', () async {
+      fixture.workspaceToolsRepository.workspaceTools = [tool1];
 
-        final result = await fixture.container.read(
-          conversationToolsProvider(
-            workspaceId: 'workspace-1',
-          ).future,
-        );
+      final result = await fixture.container.read(
+        conversationToolsProvider(workspaceId: 'workspace-1').future,
+      );
 
-        expect(result.single.isEnabled, isTrue);
-        expect(
-          result.single.permissionMode,
-          ToolPermissionMode.alwaysAllow,
-        );
-        expect(fixture.conversationToolsRepository.lastConversationId, isNull);
-      },
-    );
+      expect(result.single.isEnabled, isTrue);
+      expect(result.single.permissionMode, ToolPermissionMode.alwaysAllow);
+      expect(fixture.conversationToolsRepository.lastConversationId, isNull);
+    });
 
     test('returns empty list when no workspace tools exist', () async {
       final result = await fixture.container.read(
@@ -117,14 +109,10 @@ void main() {
       fixture.workspaceToolsRepository.workspaceTools = [tool1, tool2];
 
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
       final _ = await fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).future,
+        conversationToolsProvider(workspaceId: 'workspace-1').future,
       );
 
       expect(notifier.getEnabledToolIds(), ['tool-1']);
@@ -132,9 +120,7 @@ void main() {
 
     test('getEnabledToolIds returns empty when state is loading', () {
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
 
       expect(notifier.getEnabledToolIds(), isEmpty);
@@ -142,9 +128,7 @@ void main() {
 
     test('getToolStates returns empty list when state is loading', () {
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
 
       expect(notifier.getToolStates(), isEmpty);
@@ -154,14 +138,10 @@ void main() {
       fixture.workspaceToolsRepository.workspaceTools = [tool1];
 
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
       final _ = await fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).future,
+        conversationToolsProvider(workspaceId: 'workspace-1').future,
       );
 
       final result = await notifier.toggleTool('tool-1');
@@ -172,20 +152,13 @@ void main() {
       fixture.workspaceToolsRepository.workspaceTools = [tool1];
 
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
       final _ = await fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).future,
+        conversationToolsProvider(workspaceId: 'workspace-1').future,
       );
 
-      final result = await notifier.setToolEnabled(
-        'tool-1',
-        isEnabled: true,
-      );
+      final result = await notifier.setToolEnabled('tool-1', isEnabled: true);
       expect(result, isFalse);
     });
 
@@ -193,14 +166,10 @@ void main() {
       fixture.workspaceToolsRepository.workspaceTools = [tool1];
 
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
       final _ = await fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).future,
+        conversationToolsProvider(workspaceId: 'workspace-1').future,
       );
 
       final result = await notifier.setToolPermission(
@@ -210,45 +179,37 @@ void main() {
       expect(result, isFalse);
     });
 
-    test(
-      'setToolEnabled updates state when conversationId is set',
-      () async {
-        fixture.workspaceToolsRepository.workspaceTools = [tool1, tool2];
-        fixture.conversationToolsRepository.setEnabledResult = true;
+    test('setToolEnabled updates state when conversationId is set', () async {
+      fixture.workspaceToolsRepository.workspaceTools = [tool1, tool2];
+      fixture.conversationToolsRepository.setEnabledResult = true;
 
-        final notifier = fixture.container.read(
-          conversationToolsProvider(
-            workspaceId: 'workspace-1',
-            conversationId: 'conv-1',
-          ).notifier,
-        );
-        final _ = await fixture.container.read(
-          conversationToolsProvider(
-            workspaceId: 'workspace-1',
-            conversationId: 'conv-1',
-          ).future,
-        );
+      final notifier = fixture.container.read(
+        conversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conv-1',
+        ).notifier,
+      );
+      final _ = await fixture.container.read(
+        conversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conv-1',
+        ).future,
+      );
 
-        final result = await notifier.setToolEnabled(
-          'tool-2',
-          isEnabled: true,
-        );
-        expect(result, isTrue);
+      final result = await notifier.setToolEnabled('tool-2', isEnabled: true);
+      expect(result, isTrue);
 
-        final state = fixture.container.read(
-          conversationToolsProvider(
-            workspaceId: 'workspace-1',
-            conversationId: 'conv-1',
-          ),
-        );
-        final tool2State =
-            (state.value ?? fail('Expected state.value to be non-null'))
-                .singleWhere(
-                  (t) => t.tool.id == 'tool-2',
-                );
-        expect(tool2State.isEnabled, isTrue);
-      },
-    );
+      final state = fixture.container.read(
+        conversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conv-1',
+        ),
+      );
+      final tool2State =
+          (state.value ?? fail('Expected state.value to be non-null'))
+              .singleWhere((t) => t.tool.id == 'tool-2');
+      expect(tool2State.isEnabled, isTrue);
+    });
 
     test('toggleTool flips enabled state', () async {
       fixture.workspaceToolsRepository.workspaceTools = [tool1];
@@ -288,14 +249,10 @@ void main() {
       fixture.workspaceToolsRepository.workspaceTools = [tool1, tool2];
 
       final notifier = fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).notifier,
+        conversationToolsProvider(workspaceId: 'workspace-1').notifier,
       );
       final _ = await fixture.container.read(
-        conversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).future,
+        conversationToolsProvider(workspaceId: 'workspace-1').future,
       );
 
       final states = notifier.getToolStates();
@@ -416,50 +373,41 @@ void main() {
         ).future,
       );
 
-      final result = await notifier.setToolEnabled(
-        'tool-1',
-        isEnabled: false,
-      );
+      final result = await notifier.setToolEnabled('tool-1', isEnabled: false);
       expect(result, isFalse);
     });
 
-    test(
-      'ignores conversation tool for unknown workspace tool id',
-      () async {
-        fixture.workspaceToolsRepository.workspaceTools = [tool1];
-        fixture.conversationToolsRepository.conversationTools = [
-          ConversationToolEntity(
-            conversationId: 'conv-1',
-            toolId: 'unknown-tool',
-            isEnabled: true,
-            permissionMode: ToolPermissionMode.alwaysAllow,
-            createdAt: createdAt,
-            updatedAt: createdAt,
-          ),
-        ];
+    test('ignores conversation tool for unknown workspace tool id', () async {
+      fixture.workspaceToolsRepository.workspaceTools = [tool1];
+      fixture.conversationToolsRepository.conversationTools = [
+        ConversationToolEntity(
+          conversationId: 'conv-1',
+          toolId: 'unknown-tool',
+          isEnabled: true,
+          permissionMode: ToolPermissionMode.alwaysAllow,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+        ),
+      ];
 
-        final result = await fixture.container.read(
-          conversationToolsProvider(
-            workspaceId: 'workspace-1',
-            conversationId: 'conv-1',
-          ).future,
-        );
+      final result = await fixture.container.read(
+        conversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conv-1',
+        ).future,
+      );
 
-        expect(result, hasLength(1));
-        expect(result.firstOrNull?.tool.id, 'tool-1');
-        expect(result.firstOrNull?.isEnabled, isTrue);
-      },
-    );
+      expect(result, hasLength(1));
+      expect(result.firstOrNull?.tool.id, 'tool-1');
+      expect(result.firstOrNull?.isEnabled, isTrue);
+    });
 
-    test(
-      'conversationToolsRepositoryProvider returns impl',
-      () {
-        final repo = fixture.container.read(
-          conversationToolsRepositoryProvider('workspace-1'),
-        );
-        expect(repo, isNotNull);
-      },
-    );
+    test('conversationToolsRepositoryProvider returns impl', () {
+      final repo = fixture.container.read(
+        conversationToolsRepositoryProvider('workspace-1'),
+      );
+      expect(repo, isNotNull);
+    });
   });
 
   group('ContextAwareToolsNotifier', () {
@@ -638,19 +586,17 @@ class _ConversationToolsNotifierFixture {
       workspaceToolsRepository: workspaceToolsRepository,
       container: ProviderContainer(
         overrides: [
-          conversationToolsRepositoryProvider('workspace-1').overrideWithValue(
-            conversationToolsRepository,
-          ),
-          conversationToolsRepositoryProvider('ws-1').overrideWithValue(
-            conversationToolsRepository,
-          ),
+          conversationToolsRepositoryProvider(
+            'workspace-1',
+          ).overrideWithValue(conversationToolsRepository),
+          conversationToolsRepositoryProvider(
+            'ws-1',
+          ).overrideWithValue(conversationToolsRepository),
           workspaceToolsRepositoryProvider(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
             ),
-          ).overrideWithValue(
-            workspaceToolsRepository,
-          ),
+          ).overrideWithValue(workspaceToolsRepository),
           workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
             const AsyncData(
               WorkspaceSession(

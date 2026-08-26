@@ -39,9 +39,7 @@ class AppToolCallActionsDataProvider
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(
-        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
-      ),
+      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
     onToolCallChanged();
 
@@ -73,9 +71,7 @@ class AppToolCallActionsDataProvider
 
     final _ = await messageRepository.patchMessage(
       messageId,
-      MessagePatch(
-        metadata: metadata.copyWith(toolCalls: updatedToolCalls),
-      ),
+      MessagePatch(metadata: metadata.copyWith(toolCalls: updatedToolCalls)),
     );
     onToolCallChanged();
     final parentId = activeSubAgents?.parentOf(message.conversationId);

@@ -78,10 +78,7 @@ class SkillsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openSkill(
-    BuildContext context,
-    String skillId,
-  ) async {
+  Future<void> _openSkill(BuildContext context, String skillId) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
       '/workspaces/$workspaceId/more/skills/$skillId',
@@ -350,10 +347,7 @@ class _SkillChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraBadge(
-      child: AuraText(
-        child: Text(label),
-        style: AuraTextStyle.caption,
-      ),
+      child: AuraText(child: Text(label), style: AuraTextStyle.caption),
       variant: AuraBadgeVariant.outlined,
       size: AuraBadgeSize.small,
     );

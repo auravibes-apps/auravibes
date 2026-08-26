@@ -96,10 +96,7 @@ class SelectorField<T> extends Field<T> {
     });
   }
 
-  static T _defaultValue<T>(
-    T? initialValue,
-    List<KnobSelector<T>> selectors,
-  ) {
+  static T _defaultValue<T>(T? initialValue, List<KnobSelector<T>> selectors) {
     if (initialValue != null) {
       return initialValue;
     }

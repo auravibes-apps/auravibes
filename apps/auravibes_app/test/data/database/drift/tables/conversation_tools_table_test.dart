@@ -42,9 +42,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(conversation_tools)',
-          )
+          .customSelect('PRAGMA table_info(conversation_tools)')
           .get();
     });
 

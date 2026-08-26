@@ -29,9 +29,7 @@ class CloudAccountAddScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const AuraText(
-            child: TextLocale(LocaleKeys.cloud_accounts_add_body),
-          ),
+          const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_add_body)),
           const AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_return_hint),
             style: AuraTextStyle.bodySmall,

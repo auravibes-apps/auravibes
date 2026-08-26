@@ -53,9 +53,7 @@ class ToolItemRow extends HookConsumerWidget {
                       ? context.auraColors.primary.withValues(alpha: 0.1)
                       : context.auraColors.surfaceVariant,
                   borderRadius: BorderRadius.all(
-                    Radius.circular(
-                      context.auraTheme.fromBorderRadius(.sm),
-                    ),
+                    Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
                   ),
                 ),
                 width: iconSize,

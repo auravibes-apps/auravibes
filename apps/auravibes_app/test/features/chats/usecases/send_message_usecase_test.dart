@@ -125,13 +125,11 @@ void main() {
           conversationId: any(named: 'conversationId'),
           context: any(named: 'context'),
         ),
-      ).thenAnswer(
-        (_) async {
-          await completer.future;
+      ).thenAnswer((_) async {
+        await completer.future;
 
-          return AgentIterationDecision.done;
-        },
-      );
+        return AgentIterationDecision.done;
+      });
 
       await fixture.usecase.sendFirstMessage(
         conversationId: 'conversation-1',

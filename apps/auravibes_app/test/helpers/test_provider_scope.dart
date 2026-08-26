@@ -14,9 +14,6 @@ class TestProviderScope extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope(
-      overrides: overrides,
-      child: child,
-    );
+    return ProviderScope(overrides: overrides, child: child);
   }
 }

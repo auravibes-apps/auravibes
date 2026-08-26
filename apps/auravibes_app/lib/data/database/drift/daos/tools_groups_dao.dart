@@ -16,9 +16,8 @@ class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
   /// Insert a new tools group.
   ///
   /// Returns the inserted row.
-  Future<ToolsGroupsTable> insertToolsGroup(
-    ToolsGroupsCompanion companion,
-  ) => into(toolsGroups).insertReturning(companion);
+  Future<ToolsGroupsTable> insertToolsGroup(ToolsGroupsCompanion companion) =>
+      into(toolsGroups).insertReturning(companion);
 
   /// Delete a tools group by ID.
   ///

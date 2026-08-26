@@ -181,10 +181,7 @@ void main() {
             required requestId,
             required expectedRevision,
           }) => Future(
-            () => deleted.add((
-              objectId: objectId,
-              revision: expectedRevision,
-            )),
+            () => deleted.add((objectId: objectId, revision: expectedRevision)),
           ),
       readBytes: (_) async => Uint8List.fromList([1]),
     );
@@ -290,9 +287,6 @@ void main() {
       expectedRevision: 2,
     );
 
-    expect(
-      received,
-      (objectId: 9, requestId: 'delete-1', expectedRevision: 2),
-    );
+    expect(received, (objectId: 9, requestId: 'delete-1', expectedRevision: 2));
   });
 }

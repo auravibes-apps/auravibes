@@ -56,10 +56,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
           enabled: !_isSubmitting,
         ),
         if (_errorKey case final errorKey?)
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            child: TextLocale(errorKey),
-          ),
+          AuraText(style: AuraTextStyle.bodySmall, child: TextLocale(errorKey)),
         AuraButton(
           onPressed: _login,
           child: const TextLocale(LocaleKeys.workspace_management_cloud_login),
@@ -82,10 +79,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
       await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
         final account = await ref
             .read(cloudAccountUseCasesProvider)
-            .login(
-              email: _email.text.trim(),
-              password: _password.text,
-            );
+            .login(email: _email.text.trim(), password: _password.text);
         ref.invalidate(cloudAccountsProvider);
         widget.onSignedIn(account);
       });

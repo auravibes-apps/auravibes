@@ -98,10 +98,7 @@ class _AuraTileState extends State<AuraTile> {
     } else {
       content = Row(
         children: [
-          if (leading != null) ...[
-            leading,
-            const AuraSizedBox(width: .sm),
-          ],
+          if (leading != null) ...[leading, const AuraSizedBox(width: .sm)],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
@@ -112,10 +109,7 @@ class _AuraTileState extends State<AuraTile> {
               child: widget.child,
             ),
           ),
-          if (trailing != null) ...[
-            const AuraSizedBox(width: .sm),
-            trailing,
-          ],
+          if (trailing != null) ...[const AuraSizedBox(width: .sm), trailing],
         ],
       );
     }
@@ -128,9 +122,7 @@ class _AuraTileState extends State<AuraTile> {
           BorderSide(color: _getBorderColor(auraColors)),
         ),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.lg),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
         ),
         boxShadow: _getBoxShadow(),
       ),

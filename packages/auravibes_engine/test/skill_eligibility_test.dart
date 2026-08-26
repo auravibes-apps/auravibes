@@ -20,11 +20,7 @@ void main() {
       isFalse,
     );
     expect(
-      isSkillLoadable(
-        isEnabled: true,
-        isLoaded: true,
-        isCredentialReady: true,
-      ),
+      isSkillLoadable(isEnabled: true, isLoaded: true, isCredentialReady: true),
       isFalse,
     );
     expect(

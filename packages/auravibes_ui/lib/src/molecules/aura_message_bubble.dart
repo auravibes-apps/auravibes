@@ -60,12 +60,8 @@ class AuraMessageBubble extends StatelessWidget {
             maxWidth: maxWidth ?? MediaQuery.sizeOf(context).width * 0.75,
           ),
           margin: EdgeInsets.only(
-            left: context.auraTheme.fromSpacing(
-              isUser ? .xl : .md,
-            ),
-            right: context.auraTheme.fromSpacing(
-              isUser ? .md : .xl,
-            ),
+            left: context.auraTheme.fromSpacing(isUser ? .xl : .md),
+            right: context.auraTheme.fromSpacing(isUser ? .md : .xl),
             bottom: context.auraTheme.fromSpacing(.sm),
           ),
           child: Column(
@@ -74,14 +70,10 @@ class AuraMessageBubble extends StatelessWidget {
                 : CrossAxisAlignment.start,
             children: [
               Container(
-                padding: _getPadding(
-                  spacing: context.auraTheme.spacing,
-                ),
+                padding: _getPadding(spacing: context.auraTheme.spacing),
                 decoration: _getDecoration(
                   auraColors,
-                  borderRadius: context.auraTheme.fromBorderRadius(
-                    .xl,
-                  ),
+                  borderRadius: context.auraTheme.fromBorderRadius(.xl),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,12 +98,8 @@ class AuraMessageBubble extends StatelessWidget {
                 ),
               ),
               if (status != AuraMessageDeliveryStatus.sent) ...[
-                SizedBox(
-                  height: context.auraTheme.fromSpacing(.xs) / 2,
-                ),
-                AuraMessageStatus(
-                  status: status,
-                ),
+                SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
+                AuraMessageStatus(status: status),
               ],
             ],
           ),
@@ -148,9 +136,7 @@ class AuraMessageBubble extends StatelessWidget {
       border: status == AuraMessageDeliveryStatus.error
           ? Border.fromBorderSide(BorderSide(color: auraColors.error))
           : null,
-      borderRadius: BorderRadius.all(
-        Radius.circular(borderRadius),
-      ),
+      borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
       boxShadow: [
         if (status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
       ],
@@ -202,16 +188,12 @@ class _AuraMessageBubbleContent extends StatelessWidget {
       ),
       AuraMessageContentType.image => ClipRRect(
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
         child: Image.network(
           content,
           errorBuilder: (context, error, stackTrace) => Container(
-            padding: EdgeInsets.all(
-              context.auraTheme.fromSpacing(.md),
-            ),
+            padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -234,11 +216,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
       AuraMessageContentType.file => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.attach_file,
-            size: _attachmentIconSize,
-            color: textColor,
-          ),
+          Icon(Icons.attach_file, size: _attachmentIconSize, color: textColor),
           const AuraSizedBox(width: .sm),
           Flexible(
             child: Text(

@@ -186,11 +186,7 @@ void main() {
         _cloudResource(
           kind: WorkspaceResourceKind.skillSetting,
           id: 'jina',
-          data: {
-            'id': 'jina',
-            'skillId': 'jina',
-            'isEnabled': true,
-          },
+          data: {'id': 'jina', 'skillId': 'jina', 'isEnabled': true},
         ),
       ]);
       final usecase = ListAvailableSkillsUsecase(

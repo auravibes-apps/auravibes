@@ -81,10 +81,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    final definition =
-        await SkillCredentialDefinitionsRepository(
-          database,
-        ).createDefinition(
+    final definition = await SkillCredentialDefinitionsRepository(database)
+        .createDefinition(
           workspace.id,
           const SkillCredentialDefinitionToCreate(
             title: 'GitHub Token',
@@ -182,9 +180,7 @@ void main() {
 
     expect(find.text('Delete model provider'), findsOneWidget);
     expect(
-      find.text(
-        'Delete provider "OpenAI Main"? This action cannot be undone.',
-      ),
+      find.text('Delete provider "OpenAI Main"? This action cannot be undone.'),
       findsOneWidget,
     );
     await tester.tap(find.text('Delete').last);
@@ -203,9 +199,7 @@ void main() {
             serviceId: 'notion-mcp',
             kind: ServiceConnectionKindTable.mcpServer,
             authenticationType: ServiceAuthenticationTypeTable.oauth2,
-            encryptedAuthValue: const Value(
-              '{"access_token":"secret-token"}',
-            ),
+            encryptedAuthValue: const Value('{"access_token":"secret-token"}'),
             metadataJson: Value(
               ServiceConnectionAuthCodec.encodeMetadata(
                 const ServiceConnectionMetadata(
@@ -263,9 +257,8 @@ Future<void> _pumpScreen(
             container: container,
             child: MaterialApp(
               home: ServiceConnectionsScreen(workspaceId: workspaceId),
-              builder: (context, child) => AuraSnackBarHost(
-                child: child ?? const SizedBox.shrink(),
-              ),
+              builder: (context, child) =>
+                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,

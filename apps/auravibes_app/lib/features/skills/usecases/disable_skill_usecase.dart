@@ -74,16 +74,14 @@ class DisableSkillUsecase {
 }
 
 final ProviderFamily<DisableSkillUsecase, String> disableSkillUsecaseProvider =
-    Provider.family<DisableSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<DisableSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return DisableSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-              : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return DisableSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+            : null,
+        cloudStore: cloud,
+      );
+    });

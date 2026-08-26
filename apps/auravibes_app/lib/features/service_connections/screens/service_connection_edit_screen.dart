@@ -144,9 +144,7 @@ class _ServiceConnectionEditScreenState
     }
     final credential = await ref
         .read(skillCredentialOperationsProvider(widget.workspaceId))
-        .getForEdit(
-          widget.connectionId,
-        );
+        .getForEdit(widget.connectionId);
     if (credential != null) {
       final definition = await ref.read(
         skillCredentialDefinitionProvider(
@@ -176,10 +174,7 @@ class _ServiceConnectionEditScreenState
   void _initialize(_ConnectionEditState state) {
     if (_initialized) return;
     switch (state) {
-      case _SkillCredentialEditState(
-        :final credential,
-        :final definition,
-      ):
+      case _SkillCredentialEditState(:final credential, :final definition):
         _nameController.text = credential.name;
         final attributes = SkillCredentialAttributeDefinition.parseMap(
           definition.attributesJson,
@@ -274,9 +269,7 @@ class _ServiceConnectionEditScreenState
       if (!context.mounted) return;
       final _ = AuraSnackBars.show(
         context: context,
-        content: const TextLocale(
-          LocaleKeys.service_connections_save_error,
-        ),
+        content: const TextLocale(LocaleKeys.service_connections_save_error),
         variant: AuraSnackBarVariant.error,
       );
     } finally {
@@ -393,9 +386,7 @@ class _SkillCredentialEditForm extends StatelessWidget {
               AuraInput(
                 controller: nameController,
                 label: Text(
-                  LocaleKeys.skill_credentials_name_label.tr(
-                    context: context,
-                  ),
+                  LocaleKeys.skill_credentials_name_label.tr(context: context),
                 ),
                 onChanged: (_) => onChanged(),
               ),
@@ -578,9 +569,7 @@ class _ModelProviderEditForm extends StatelessWidget {
                       ? LocaleKeys.skill_credentials_secret_saved.tr(
                           context: context,
                         )
-                      : '${LocaleKeys.skill_credentials_secret_saved.tr(
-                              context: context,
-                            )} '
+                      : '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)} '
                             '****$suffix',
                 ),
                 label: const TextLocale(
@@ -665,9 +654,7 @@ class _GenericServiceConnectionEditForm extends StatelessWidget {
                 controller: secretController,
                 placeholder: savedSecret
                     ? Text(
-                        '${LocaleKeys.skill_credentials_secret_saved.tr(
-                          context: context,
-                        )}$savedSecretSuffix',
+                        '${LocaleKeys.skill_credentials_secret_saved.tr(context: context)}$savedSecretSuffix',
                       )
                     : null,
                 label: Text(

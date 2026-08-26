@@ -186,9 +186,7 @@ class _NewChatUnavailable extends StatelessWidget {
               child: AuraColumn(
                 children: [
                   AuraIcon(Icons.cloud_off_outlined),
-                  TextLocale(
-                    LocaleKeys.workspace_management_cloud_unavailable,
-                  ),
+                  TextLocale(LocaleKeys.workspace_management_cloud_unavailable),
                 ],
                 spacing: .sm,
                 mainAxisSize: MainAxisSize.min,

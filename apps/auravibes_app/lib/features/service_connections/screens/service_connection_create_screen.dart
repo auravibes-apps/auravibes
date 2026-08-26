@@ -78,10 +78,7 @@ class _ServiceConnectionCreateScreenState
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: _TypeSelector(
-              value: _type,
-              onChanged: _onTypeChanged,
-            ),
+            child: _TypeSelector(value: _type, onChanged: _onTypeChanged),
           ),
           Expanded(
             child: switch (_type) {
@@ -483,9 +480,7 @@ class _AppSkillCredentialForm extends StatelessWidget {
               ),
               AuraInput(
                 controller: apiKeyController,
-                label: Text(
-                  _credentialValueLabel(context, selectedAppSkillId),
-                ),
+                label: Text(_credentialValueLabel(context, selectedAppSkillId)),
                 keyboardType: TextInputType.visiblePassword,
                 obscureText: true,
                 onChanged: onApiKeyChanged,

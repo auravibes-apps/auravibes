@@ -31,9 +31,7 @@ class MarkdownEditorToolbar extends StatelessWidget {
         children: [
           _ToolbarButton(
             icon: Icons.format_bold,
-            label: LocaleKeys.markdown_editor_toolbar_bold.tr(
-              context: context,
-            ),
+            label: LocaleKeys.markdown_editor_toolbar_bold.tr(context: context),
             onPressed: () => _wrapSelection('**', '**'),
           ),
           _ToolbarButton(
@@ -59,9 +57,7 @@ class MarkdownEditorToolbar extends StatelessWidget {
           ),
           _ToolbarButton(
             icon: Icons.code,
-            label: LocaleKeys.markdown_editor_toolbar_code.tr(
-              context: context,
-            ),
+            label: LocaleKeys.markdown_editor_toolbar_code.tr(context: context),
             onPressed: _formatCode,
           ),
           _ToolbarButton(

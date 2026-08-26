@@ -129,9 +129,7 @@ class McpFormNotifier extends _$McpFormNotifier {
     // Reset auth type if current selection is not available for new transport.
     final availableTypes = newState.availableAuthTypes;
     if (!availableTypes.contains(newState.authenticationType)) {
-      newState = newState.copyWith(
-        authenticationType: .none,
-      );
+      newState = newState.copyWith(authenticationType: .none);
     }
 
     state = newState;
@@ -205,9 +203,7 @@ class McpFormNotifier extends _$McpFormNotifier {
     try {
       final mcpToCreate = state.toCreateEntity();
       await ref
-          .read(
-            mcpConnectionProvider.notifier,
-          )
+          .read(mcpConnectionProvider.notifier)
           .addMcpServer(mcpToCreate, workspaceId: _workspaceId);
 
       setSubmitting(value: false);

@@ -27,9 +27,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
-        workspaceSessionForRouteProvider.overrideWith(
-          (_, _) async => session,
-        ),
+        workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
         ...overrides.cast(),
       ],
     );
@@ -189,9 +187,7 @@ void main() {
     });
 
     testWidgets('shows options menu button for each chat', (tester) async {
-      final conversations = [
-        _createConversation(title: 'Chat One'),
-      ];
+      final conversations = [_createConversation(title: 'Chat One')];
       final repo = _StubConversationRepository(
         conversationsStream: Stream.value(conversations),
       );
@@ -269,9 +265,7 @@ void main() {
     });
 
     testWidgets('uses streaming title when available', (tester) async {
-      final conversations = [
-        _createConversation(title: 'Original Title'),
-      ];
+      final conversations = [_createConversation(title: 'Original Title')];
       final repo = _StubConversationRepository(
         conversationsStream: Stream.value(conversations),
       );
@@ -282,9 +276,7 @@ void main() {
           workspaceId: 'ws-1',
           overrides: [
             conversationRepositoryProvider.overrideWithValue(repo),
-            streamingTitleProvider.overrideWith(
-              (ref, id) => 'Streamed Title',
-            ),
+            streamingTitleProvider.overrideWith((ref, id) => 'Streamed Title'),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
             ),

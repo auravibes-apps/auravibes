@@ -43,30 +43,24 @@ GoRouter router(Ref ref) {
       );
     },
     initialLocation: '/',
-    observers: [
-      routeObserver,
-    ],
+    observers: [routeObserver],
     navigatorKey: rootNavigatorKey,
   );
 }
 
-final routerInformationProvider = Provider<GoRouteInformationProvider>(
-  (ref) {
-    final router = ref.watch(routerProvider);
+final routerInformationProvider = Provider<GoRouteInformationProvider>((ref) {
+  final router = ref.watch(routerProvider);
 
-    return ref.listenAndDisposeChangeNotifier(router.routeInformationProvider);
-  },
-);
+  return ref.listenAndDisposeChangeNotifier(router.routeInformationProvider);
+});
 
-final currentRouteWorkspaceIdProvider = Provider<String?>(
-  (ref) {
-    final _ = ref.watch(routerProvider);
-    final routeInformationProvider = ref.watch(routerInformationProvider);
+final currentRouteWorkspaceIdProvider = Provider<String?>((ref) {
+  final _ = ref.watch(routerProvider);
+  final routeInformationProvider = ref.watch(routerInformationProvider);
 
-    return WorkspaceRouteResolver.matchWorkspaceId(
-      routeInformationProvider.value.uri,
-    );
-  },
-);
+  return WorkspaceRouteResolver.matchWorkspaceId(
+    routeInformationProvider.value.uri,
+  );
+});
 
 // Top-level API/provider declarations are required by their consumers.

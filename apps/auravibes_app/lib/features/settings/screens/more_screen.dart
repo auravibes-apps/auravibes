@@ -58,25 +58,19 @@ class MoreScreen extends StatelessWidget {
             icon: Icons.build_circle_outlined,
             titleKey: LocaleKeys.more_screen_tools_title,
             subtitleKey: LocaleKeys.more_screen_tools_subtitle,
-            onTap: () => context.push(
-              '/workspaces/$workspaceId/more/tools',
-            ),
+            onTap: () => context.push('/workspaces/$workspaceId/more/tools'),
           ),
           _SectionTile(
             icon: Icons.psychology_alt_outlined,
             titleKey: LocaleKeys.more_screen_skills_title,
             subtitleKey: LocaleKeys.more_screen_skills_subtitle,
-            onTap: () => context.push(
-              '/workspaces/$workspaceId/more/skills',
-            ),
+            onTap: () => context.push('/workspaces/$workspaceId/more/skills'),
           ),
           _SectionTile(
             icon: Icons.smart_toy_outlined,
             titleKey: LocaleKeys.more_screen_agents_title,
             subtitleKey: LocaleKeys.more_screen_agents_subtitle,
-            onTap: () => context.push(
-              '/workspaces/$workspaceId/more/agents',
-            ),
+            onTap: () => context.push('/workspaces/$workspaceId/more/agents'),
           ),
         ],
       ),

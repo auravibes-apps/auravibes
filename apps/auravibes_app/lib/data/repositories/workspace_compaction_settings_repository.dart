@@ -39,9 +39,7 @@ class WorkspaceCompactionSettingsRepository {
     return CompactionSettings.defaults;
   }
 
-  CompactionSettings _resolveEffective(
-    WorkspaceCompactionSettingsTable? row,
-  ) {
+  CompactionSettings _resolveEffective(WorkspaceCompactionSettingsTable? row) {
     if (row == null) return CompactionSettings.defaults;
 
     return CompactionSettings(

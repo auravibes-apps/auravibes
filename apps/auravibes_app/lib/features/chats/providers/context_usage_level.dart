@@ -19,9 +19,7 @@ ContextUsageData contextUsage(
     conversationUsedTokensProvider(workspaceId, conversationId),
   );
   final limitTokens = ref
-      .watch(
-        conversationContextLimitProvider(workspaceId, conversationId),
-      )
+      .watch(conversationContextLimitProvider(workspaceId, conversationId))
       .value;
 
   return ContextUsageData.compute(

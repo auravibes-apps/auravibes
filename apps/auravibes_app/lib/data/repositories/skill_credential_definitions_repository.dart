@@ -23,9 +23,7 @@ class SkillCredentialDefinitionsRepository {
   ) {
     return _dao
         .watchDefinitions(workspaceId)
-        .map(
-          (rows) => rows.map(_tableToEntity).toList(),
-        );
+        .map((rows) => rows.map(_tableToEntity).toList());
   }
 
   Future<SkillCredentialDefinitionEntity?> getDefinitionById(

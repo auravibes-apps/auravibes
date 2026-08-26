@@ -89,9 +89,7 @@ class _ChatConversationScreen extends HookConsumerWidget {
     );
 
     if (conversationAsync.isLoading && !conversationAsync.hasValue) {
-      return const AuraScreen(
-        child: Center(child: AuraSpinner()),
-      );
+      return const AuraScreen(child: Center(child: AuraSpinner()));
     }
 
     if (conversationAsync.hasError && !conversationAsync.hasValue) {
@@ -147,26 +145,18 @@ class _LoadedChatConversation extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stopRequested = useState(false);
 
-    final onToolsPress = useCallback(
-      () {
-        _showToolsModal(
-          context: context,
-          workspaceId: workspaceId,
-          conversationId: conversation.id,
-        );
-      },
-      [ref, workspaceId, conversation.id],
-    );
+    final onToolsPress = useCallback(() {
+      _showToolsModal(
+        context: context,
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
+      );
+    }, [ref, workspaceId, conversation.id]);
 
-    final onStop = useCallback(
-      () {
-        stopRequested.value = true;
-        unawaited(
-          _stopConversation(context, ref, workspaceId, conversation.id),
-        );
-      },
-      [ref, stopRequested],
-    );
+    final onStop = useCallback(() {
+      stopRequested.value = true;
+      unawaited(_stopConversation(context, ref, workspaceId, conversation.id));
+    }, [ref, stopRequested]);
 
     final onSendMessage = useCallback<Future<void> Function(ChatDraft)>(
       (draft) =>
@@ -174,12 +164,9 @@ class _LoadedChatConversation extends HookConsumerWidget {
       [ref],
     );
 
-    final onCompact = useCallback(
-      () {
-        unawaited(_manualCompact(context, ref, workspaceId, conversation.id));
-      },
-      [ref, conversation.id],
-    );
+    final onCompact = useCallback(() {
+      unawaited(_manualCompact(context, ref, workspaceId, conversation.id));
+    }, [ref, conversation.id]);
 
     final isCloud =
         ref.watch(workspaceSessionForRouteProvider(workspaceId)).value?.cloud !=
@@ -233,24 +220,18 @@ class _LoadedChatConversation extends HookConsumerWidget {
                       'awaitingApproval'
             : busyState?.isBusy ?? false) ||
         rateLimitRetryAt != null;
-    useEffect(
-      () {
+    useEffect(() {
+      stopRequested.value = false;
+
+      return null;
+    }, [conversation.id]);
+    useEffect(() {
+      if (!isInputBusy) {
         stopRequested.value = false;
+      }
 
-        return null;
-      },
-      [conversation.id],
-    );
-    useEffect(
-      () {
-        if (!isInputBusy) {
-          stopRequested.value = false;
-        }
-
-        return null;
-      },
-      [conversation.id, isInputBusy],
-    );
+      return null;
+    }, [conversation.id, isInputBusy]);
     final hidesStoppedRun = stopRequested.value && isInputBusy;
 
     return AuraScreen(
@@ -437,9 +418,7 @@ class _ChatControlsBar extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant,
-        border: Border(
-          bottom: BorderSide(color: auraColors.outlineVariant),
-        ),
+        border: Border(bottom: BorderSide(color: auraColors.outlineVariant)),
       ),
       child: SafeArea(
         top: false,
@@ -610,11 +589,7 @@ Future<void> _setModelWithAttachmentWarning({
   final supported =
       selectedModel?.workspaceModelSelection.modalitiesInput ?? [];
   final messages =
-      ref
-          .read(
-            chatMessagesProvider(workspaceId, conversationId),
-          )
-          .value ??
+      ref.read(chatMessagesProvider(workspaceId, conversationId)).value ??
       const [];
   final missing = <String>{};
   for (final message in messages) {
@@ -685,9 +660,7 @@ Future<void> _continueAgent(
   if ((busyState?.isBusy ?? false) || rateLimitRetryAt != null) return;
 
   try {
-    final cloud = await ref.read(
-      cloudTurnUsecaseProvider(workspaceId).future,
-    );
+    final cloud = await ref.read(cloudTurnUsecaseProvider(workspaceId).future);
     if (cloud != null) {
       final state = ref
           .read(
@@ -781,9 +754,7 @@ Future<void> _stopConversation(
     await ref
         .read(auraAgentServiceProvider)
         .agent
-        .stop(
-          conversationId: conversationId,
-        );
+        .stop(conversationId: conversationId);
   } on Object catch (error, stackTrace) {
     stopError = error;
     stopStackTrace = stackTrace;
@@ -799,9 +770,7 @@ Future<void> _stopConversation(
       await ref
           .read(auraAgentServiceProvider)
           .agent
-          .stop(
-            conversationId: childId,
-          );
+          .stop(conversationId: childId);
     } on Object catch (error, stackTrace) {
       stopError ??= error;
       stopStackTrace ??= stackTrace;
@@ -831,9 +800,7 @@ Future<void> _stopConversation(
 
     final _ = AuraSnackBars.show(
       context: context,
-      content: Text(
-        LocaleKeys.chats_screens_chat_conversation_stop_error.tr(),
-      ),
+      content: Text(LocaleKeys.chats_screens_chat_conversation_stop_error.tr()),
       variant: AuraSnackBarVariant.error,
     );
   }
@@ -860,9 +827,7 @@ Future<void> _sendMessage(
 
     final _ = AuraSnackBars.show(
       context: context,
-      content: Text(
-        LocaleKeys.chats_screens_chat_conversation_send_error.tr(),
-      ),
+      content: Text(LocaleKeys.chats_screens_chat_conversation_send_error.tr()),
       variant: AuraSnackBarVariant.error,
     );
   }

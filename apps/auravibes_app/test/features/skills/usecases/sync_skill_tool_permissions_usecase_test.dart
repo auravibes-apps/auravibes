@@ -133,10 +133,7 @@ void main() {
             groupId,
           )).single;
       final _ = await fixture.database.workspaceToolsDao
-          .setWorkspaceToolEnabledById(
-            created.id,
-            isEnabled: false,
-          );
+          .setWorkspaceToolEnabledById(created.id, isEnabled: false);
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolPermission(
             created.id,

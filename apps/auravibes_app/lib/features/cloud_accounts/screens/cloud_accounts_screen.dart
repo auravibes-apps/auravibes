@@ -65,9 +65,7 @@ class _AccountList extends ConsumerWidget {
     return AuraColumn(
       children: [
         if (accounts.isEmpty)
-          const AuraText(
-            child: TextLocale(LocaleKeys.cloud_accounts_empty),
-          ),
+          const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_empty)),
         AuraButton(
           onPressed: () => context.go(
             CloudAccountAddRoute(workspaceId: workspaceId).location,
@@ -141,10 +139,7 @@ class _AccountList extends ConsumerWidget {
     await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
       await ref
           .read(cloudAccountUseCasesProvider)
-          .remove(
-            serverUrl: account.serverUrl,
-            userId: account.userId,
-          );
+          .remove(serverUrl: account.serverUrl, userId: account.userId);
       ref
         ..invalidate(cloudAccountsProvider)
         ..invalidate(allWorkspacesProvider);

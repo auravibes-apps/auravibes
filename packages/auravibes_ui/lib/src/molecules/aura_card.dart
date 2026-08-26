@@ -81,21 +81,14 @@ class AuraCard extends StatelessWidget {
       ];
     }
 
-    final Widget cardContent = AuraPadding(
-      child: child,
-      padding: padding,
-    );
+    final Widget cardContent = AuraPadding(child: child, padding: padding);
     final cardRadius = context.auraTheme.fromBorderRadius(.xl);
 
     // Glass style implementation based on best practices. See
     // https://medium.com/@rohitsurage/build-beautiful-glassmorphism-ui-in-flutter-a-beginner-to-advanced-guide-023594a473b3.
     var card = isGlass
         ? ClipRRect(
-            borderRadius: BorderRadius.all(
-              Radius.circular(
-                cardRadius,
-              ),
-            ),
+            borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
             // ClipBehavior: Clip.hardEdge,.
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
@@ -110,11 +103,7 @@ class AuraCard extends StatelessWidget {
                     color: auraColors.background.withValues(alpha: 0.05),
                     width: _borderWidth,
                   ),
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(
-                      cardRadius,
-                    ),
-                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
                   gradient: LinearGradient(
                     begin: .topLeft,
                     end: .bottomCenter,
@@ -134,22 +123,14 @@ class AuraCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: backgroundColor,
               border: border,
-              borderRadius: BorderRadius.all(
-                Radius.circular(
-                  cardRadius,
-                ),
-              ),
+              borderRadius: BorderRadius.all(Radius.circular(cardRadius)),
               boxShadow: shadows,
             ),
             onPressed: onTap,
           );
 
     if (semanticLabel != null) {
-      card = Semantics(
-        child: card,
-        container: true,
-        label: semanticLabel,
-      );
+      card = Semantics(child: card, container: true, label: semanticLabel);
     }
 
     return card;

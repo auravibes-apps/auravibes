@@ -83,9 +83,7 @@ class MyApp extends ConsumerWidget {
       child: MaterialApp.router(
         routerConfig: routerConfig,
         builder: (context, child) => AuraSnackBarHost(
-          child: AuraText(
-            child: child ?? const SizedBox.shrink(),
-          ),
+          child: AuraText(child: child ?? const SizedBox.shrink()),
         ),
         title: AppFlavorConfig.title,
         theme: _auraMaterialTheme(lightTheme, Brightness.light),

@@ -24,18 +24,14 @@ void main() {
     final result = await CloudTurnUsecase(gateway).get('turn-1');
 
     expect(result, same(snapshot));
-    verify(
-      () => gateway.getTurn(turnId: 'turn-1'),
-    ).called(1);
+    verify(() => gateway.getTurn(turnId: 'turn-1')).called(1);
   });
 
   test('continues with the latest cloud conversation revision', () async {
     final gateway = _Gateway();
     final result = MockConversationMutationResult();
     final now = DateTime(2026);
-    when(
-      () => gateway.getConversation('conversation-1'),
-    ).thenAnswer(
+    when(() => gateway.getConversation('conversation-1')).thenAnswer(
       (_) async => ConversationSummary(
         id: 'conversation-1',
         title: 'Conversation',
@@ -53,9 +49,9 @@ void main() {
       ),
     ).thenAnswer((_) async => result);
 
-    final actual = await CloudTurnUsecase(gateway).continueConversation(
-      'conversation-1',
-    );
+    final actual = await CloudTurnUsecase(
+      gateway,
+    ).continueConversation('conversation-1');
 
     expect(actual, same(result));
     verify(
@@ -146,9 +142,9 @@ void main() {
           code: 'staleRevision',
         ),
       );
-      when(() => gateway.getTurn(turnId: 'turn-1')).thenAnswer(
-        (_) async => snapshot,
-      );
+      when(
+        () => gateway.getTurn(turnId: 'turn-1'),
+      ).thenAnswer((_) async => snapshot);
       when(
         () => gateway.submitToolDecision(
           requestId: any(named: 'requestId'),
@@ -210,9 +206,9 @@ void main() {
     when(() => pendingCall.id).thenReturn('call-1');
     when(() => pendingCall.status).thenReturn('pending');
     when(() => pendingCall.argumentsDigest).thenReturn('digest-1');
-    when(() => gateway.getTurn(turnId: 'turn-1')).thenAnswer(
-      (_) async => snapshot,
-    );
+    when(
+      () => gateway.getTurn(turnId: 'turn-1'),
+    ).thenAnswer((_) async => snapshot);
     when(
       () => gateway.submitToolDecision(
         requestId: any(named: 'requestId'),

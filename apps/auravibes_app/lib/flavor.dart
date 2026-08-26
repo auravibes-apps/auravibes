@@ -1,8 +1,4 @@
-enum Flavor {
-  prod,
-  dev,
-  beta,
-}
+enum Flavor { prod, dev, beta }
 
 class AppFlavorConfig {
   static Flavor? _appFlavor;

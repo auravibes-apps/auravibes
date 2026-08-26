@@ -58,10 +58,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
     state = const WorkspaceSwitchState();
   }
 
-  Future<void> _queueSwitch(
-    String workspaceId,
-    int switchGeneration,
-  ) async {
+  Future<void> _queueSwitch(String workspaceId, int switchGeneration) async {
     final previousSwitch = _switchQueue;
     final completion = Completer<void>();
     _switchQueue = completion.future;
@@ -79,10 +76,7 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
     }
   }
 
-  Future<void> _performSwitch(
-    String workspaceId,
-    int switchGeneration,
-  ) async {
+  Future<void> _performSwitch(String workspaceId, int switchGeneration) async {
     final startTime = DateTime.now();
 
     try {

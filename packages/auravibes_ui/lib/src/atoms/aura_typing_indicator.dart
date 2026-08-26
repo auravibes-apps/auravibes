@@ -97,10 +97,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     );
 
     if (!widget.showContainer) {
-      return Semantics(
-        child: content,
-        label: 'AI is typing',
-      );
+      return Semantics(child: content, label: 'AI is typing');
     }
 
     return Align(
@@ -111,9 +108,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
           color: auraColors.surfaceVariant,
           borderRadius:
               BorderRadius.all(
-                Radius.circular(
-                  context.auraTheme.fromBorderRadius(.lg),
-                ),
+                Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
               ).copyWith(
                 bottomLeft: Radius.circular(
                   context.auraTheme.fromBorderRadius(.sm),
@@ -126,10 +121,7 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
           right: context.auraTheme.fromSpacing(.xl),
           bottom: context.auraTheme.fromSpacing(.sm),
         ),
-        child: Semantics(
-          child: content,
-          label: 'AI is typing',
-        ),
+        child: Semantics(child: content, label: 'AI is typing'),
       ),
     );
   }
@@ -141,17 +133,10 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     final begin = index * _stagger;
     final end = begin + _animationSpan;
 
-    return Tween<double>(
-      begin: _initialScale,
-      end: 1,
-    ).animate(
+    return Tween<double>(begin: _initialScale, end: 1).animate(
       CurvedAnimation(
         parent: animationController,
-        curve: Interval(
-          begin,
-          end,
-          curve: Curves.easeInOut,
-        ),
+        curve: Interval(begin, end, curve: Curves.easeInOut),
       ),
     );
   }

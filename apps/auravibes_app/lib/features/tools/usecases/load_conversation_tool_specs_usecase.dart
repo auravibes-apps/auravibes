@@ -45,10 +45,7 @@ class LoadConversationToolSpecsUsecase {
       workspaceId: workspaceId,
     );
     final enabledTools = await _conversationToolsRepository
-        .getAvailableToolEntitiesForConversation(
-          conversationId,
-          workspaceId,
-        );
+        .getAvailableToolEntitiesForConversation(conversationId, workspaceId);
     final agentSkills =
         await _listConversationAgentSkillsUsecase?.call(
           conversationId: conversationId,
@@ -109,9 +106,7 @@ loadConversationToolSpecsUsecaseProvider =
       workspaceId,
     ) {
       final session = ref
-          .watch(
-            workspaceSessionForRouteProvider(workspaceId),
-          )
+          .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
       return LoadConversationToolSpecsUsecase(

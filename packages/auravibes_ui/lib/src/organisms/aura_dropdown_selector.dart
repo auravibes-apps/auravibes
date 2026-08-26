@@ -147,10 +147,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
         ? null
         : widget.options.firstWhere(
             (option) => option.value == value,
-            orElse: () => AuraDropdownOption<T>(
-              value: value,
-              child: const Text(''),
-            ),
+            orElse: () =>
+                AuraDropdownOption<T>(value: value, child: const Text('')),
           );
     final placeholder = widget.placeholder;
     final Widget displayText;
@@ -339,9 +337,7 @@ class _DropdownMenu<T> extends StatelessWidget {
         color: auraColors.surface,
         border: Border.fromBorderSide(BorderSide(color: auraColors.outline)),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.xl),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       constraints: const BoxConstraints(maxHeight: 300),
@@ -363,12 +359,8 @@ class _DropdownMenu<T> extends StatelessWidget {
                     AuraPressable(
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          vertical: context.auraTheme.fromSpacing(
-                            .sm,
-                          ),
-                          horizontal: context.auraTheme.fromSpacing(
-                            .md,
-                          ),
+                          vertical: context.auraTheme.fromSpacing(.sm),
+                          horizontal: context.auraTheme.fromSpacing(.md),
                         ),
                         child: Row(
                           children: [
@@ -411,9 +403,7 @@ class _DropdownMenu<T> extends StatelessWidget {
                             : DesignColors.transparent,
                         borderRadius: BorderRadius.all(
                           Radius.circular(
-                            context.auraTheme.fromBorderRadius(
-                              .sm,
-                            ),
+                            context.auraTheme.fromBorderRadius(.sm),
                           ),
                         ),
                       ),

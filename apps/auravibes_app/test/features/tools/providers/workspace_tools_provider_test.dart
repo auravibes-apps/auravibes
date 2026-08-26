@@ -121,18 +121,12 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<String?> getWorkspaceToolConfig(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) {
     throw UnimplementedError();
   }
 
   @override
-  Future<bool> removeWorkspaceTool(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<bool> removeWorkspaceTool(String workspaceId, String toolType) {
     throw UnimplementedError();
   }
 
@@ -210,9 +204,7 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1'), _tool(id: 't2', toolId: 'search')];
 
-      final result = await container.read(
-        workspaceToolsProvider('ws1').future,
-      );
+      final result = await container.read(workspaceToolsProvider('ws1').future);
       expect(result.length, 2);
       expect(result.firstOrNull?.id, 't1');
     });
@@ -222,22 +214,16 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
-      final _ = container.listen(
-        workspaceToolsProvider('ws1'),
-        (_, _) {
-          final _ = Object();
-        },
-        fireImmediately: true,
-      );
+      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
+        final _ = Object();
+      }, fireImmediately: true);
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
           .read(workspaceToolsProvider('ws1').notifier)
           .setToolEnabled('t1', isEnabled: false);
 
-      final result = await container.read(
-        workspaceToolsProvider('ws1').future,
-      );
+      final result = await container.read(workspaceToolsProvider('ws1').future);
       expect(result.firstOrNull?.isEnabled, isFalse);
     });
 
@@ -246,13 +232,9 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1'), _tool(id: 't2')];
 
-      final _ = container.listen(
-        workspaceToolsProvider('ws1'),
-        (_, _) {
-          final _ = Object();
-        },
-        fireImmediately: true,
-      );
+      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
+        final _ = Object();
+      }, fireImmediately: true);
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       final success = await container
@@ -268,13 +250,9 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
-      final _ = container.listen(
-        workspaceToolsProvider('ws1'),
-        (_, _) {
-          final _ = Object();
-        },
-        fireImmediately: true,
-      );
+      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
+        final _ = Object();
+      }, fireImmediately: true);
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -295,13 +273,9 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1', isEnabled: false)];
 
-      final _ = container.listen(
-        workspaceToolsProvider('ws1'),
-        (_, _) {
-          final _ = Object();
-        },
-        fireImmediately: true,
-      );
+      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
+        final _ = Object();
+      }, fireImmediately: true);
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -316,13 +290,9 @@ void main() {
       final container = fixture.container;
       repository.tools = [_tool(id: 't1')];
 
-      final _ = container.listen(
-        workspaceToolsProvider('ws1'),
-        (_, _) {
-          final _ = Object();
-        },
-        fireImmediately: true,
-      );
+      final _ = container.listen(workspaceToolsProvider('ws1'), (_, _) {
+        final _ = Object();
+      }, fireImmediately: true);
       final _ = await container.read(workspaceToolsProvider('ws1').future);
 
       await container
@@ -351,13 +321,9 @@ void main() {
       );
       addTearDown(failContainer.dispose);
 
-      final _ = failContainer.listen(
-        workspaceToolsProvider('ws1'),
-        (_, _) {
-          final _ = Object();
-        },
-        fireImmediately: true,
-      );
+      final _ = failContainer.listen(workspaceToolsProvider('ws1'), (_, _) {
+        final _ = Object();
+      }, fireImmediately: true);
       final _ = await failContainer.read(workspaceToolsProvider('ws1').future);
 
       final success = await failContainer
@@ -481,9 +447,7 @@ void main() {
 }
 
 class _WorkspaceToolsProviderFixture {
-  _WorkspaceToolsProviderFixture({
-    this.includeWorkspaceToolIndex = false,
-  });
+  _WorkspaceToolsProviderFixture({this.includeWorkspaceToolIndex = false});
 
   final bool includeWorkspaceToolIndex;
   _FakeWorkspaceToolsRepository? _repository;

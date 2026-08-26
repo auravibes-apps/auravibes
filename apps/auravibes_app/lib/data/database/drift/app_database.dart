@@ -166,10 +166,7 @@ class AppDatabase extends _$AppDatabase {
       AppStorageNamespace.forHashSource(dbHashSource);
 
   Future<void> _upgradeToSchema4(Migrator m) async {
-    await m.addColumn(
-      conversations,
-      conversations.parentConversationId,
-    );
+    await m.addColumn(conversations, conversations.parentConversationId);
     await m.createTable(messageAttachments);
   }
 

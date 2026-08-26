@@ -102,20 +102,14 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
         statusIcon = AnimatedBuilder(
           animation: scaleAnimation,
           builder: (context, child) {
-            return Transform.scale(
-              scale: scaleAnimation.value,
-              child: child,
-            );
+            return Transform.scale(scale: scaleAnimation.value, child: child);
           },
           child: statusIcon,
         );
       }
     }
 
-    return Container(
-      padding: EdgeInsets.all(_getPadding()),
-      child: statusIcon,
-    );
+    return Container(padding: EdgeInsets.all(_getPadding()), child: statusIcon);
   }
 
   void _setupAnimations() {
@@ -142,16 +136,9 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
       );
       _scaleController = scaleController;
 
-      final scaleAnimation =
-          Tween<double>(
-            begin: 0,
-            end: 1,
-          ).animate(
-            CurvedAnimation(
-              parent: scaleController,
-              curve: Curves.elasticOut,
-            ),
-          );
+      final scaleAnimation = Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
+      );
       _scaleAnimation = scaleAnimation;
 
       final _ = scaleController.forward();

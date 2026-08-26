@@ -73,9 +73,7 @@ class SkillsRepository {
         credentialDefinitionId: skill.clearCredentialDefinition
             ? const Value(null)
             : Value.absentIfNull(skill.credentialDefinitionId),
-        isCredentialOptional: Value.absentIfNull(
-          skill.isCredentialOptional,
-        ),
+        isCredentialOptional: Value.absentIfNull(skill.isCredentialOptional),
         isEnabled: Value.absentIfNull(skill.isEnabled),
       ),
     );

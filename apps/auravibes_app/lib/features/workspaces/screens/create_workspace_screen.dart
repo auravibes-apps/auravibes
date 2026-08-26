@@ -27,9 +27,8 @@ class CreateWorkspaceScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           CreateWorkspaceForm(
-            onCreated: (workspace) => context.go(
-              NewChatRoute(workspaceId: workspace.id).location,
-            ),
+            onCreated: (workspace) =>
+                context.go(NewChatRoute(workspaceId: workspace.id).location),
             onAddCloudAccount: () => context.go(
               CloudAccountAddRoute(
                 workspaceId: workspaceId,

@@ -8,9 +8,7 @@ part 'cloud_skill_store_provider.g.dart';
 @riverpod
 CloudSkillStore? cloudSkillStore(Ref ref, String workspaceId) {
   final session = ref
-      .watch(
-        workspaceSessionForRouteProvider(workspaceId),
-      )
+      .watch(workspaceSessionForRouteProvider(workspaceId))
       .requireValue;
   final cloud = session.cloud;
   if (cloud == null) return null;

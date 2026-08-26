@@ -96,15 +96,9 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             child: AnimatedContainer(
               decoration: BoxDecoration(
                 // Color: _getBackgroundColor(auraColors),.
-                border: Border.all(
-                  color: _getBorderColor(auraColors),
-                ),
+                border: Border.all(color: _getBorderColor(auraColors)),
                 borderRadius: BorderRadius.all(
-                  Radius.circular(
-                    context.auraTheme.fromBorderRadius(
-                      .xl,
-                    ),
-                  ),
+                  Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
                 ),
                 boxShadow: _getBoxShadow(auraColors),
               ),
@@ -115,11 +109,7 @@ class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
             decoration: BoxDecoration(
               color: _getBackgroundColor(auraColors),
               borderRadius: BorderRadius.all(
-                Radius.circular(
-                  context.auraTheme.fromBorderRadius(
-                    .xl,
-                  ),
-                ),
+                Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
               ),
               // Color: auraColors.primary,.
             ),

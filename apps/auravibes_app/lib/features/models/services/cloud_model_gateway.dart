@@ -96,21 +96,18 @@ class CloudModelGateway {
     required String name,
     required String providerId,
     String? url,
-  }) => CloudAppErrors.guardCall(
-    .model,
-    () {
-      final request = CreateModelConnectionRequest(
-        workspaceId: _workspaceId,
-        requestId: const Uuid().v4(),
-        connectionId: connectionId,
-        name: name,
-        providerId: providerId,
-        url: url,
-      );
+  }) => CloudAppErrors.guardCall(.model, () {
+    final request = CreateModelConnectionRequest(
+      workspaceId: _workspaceId,
+      requestId: const Uuid().v4(),
+      connectionId: connectionId,
+      name: name,
+      providerId: providerId,
+      url: url,
+    );
 
-      return _create?.call(request) ?? _client.modelConnection.create(request);
-    },
-  );
+    return _create?.call(request) ?? _client.modelConnection.create(request);
+  });
   Future<List<ModelConnectionView>> listModelConnections() {
     final request = ListModelConnectionsRequest(workspaceId: _workspaceId);
 
@@ -120,66 +117,54 @@ class CloudModelGateway {
     );
   }
 
-  Stream<List<ModelConnectionView>> watchModelConnections() =>
-      _stateGateway.watch(
-        const {'modelConnection', 'secretConfiguredState'},
-        () async {
-          final state = await _stateGateway.read(pages: const []);
+  Stream<List<ModelConnectionView>> watchModelConnections() => _stateGateway
+      .watch(const {'modelConnection', 'secretConfiguredState'}, () async {
+        final state = await _stateGateway.read(pages: const []);
 
-          return (
-            value: await listModelConnections(),
-            currentSequence: state.currentSequence,
-          );
-        },
-      );
+        return (
+          value: await listModelConnections(),
+          currentSequence: state.currentSequence,
+        );
+      });
   Future<ModelConnectionView> updateModelConnection({
     required String connectionId,
     required int expectedRevision,
     required String name,
     required String? url,
-  }) => CloudAppErrors.guardCall(
-    .model,
-    () {
-      final request = UpdateModelConnectionRequest(
-        workspaceId: _workspaceId,
-        requestId: const Uuid().v4(),
-        connectionId: connectionId,
-        expectedRevision: expectedRevision,
-        name: name,
-        url: url,
-      );
+  }) => CloudAppErrors.guardCall(.model, () {
+    final request = UpdateModelConnectionRequest(
+      workspaceId: _workspaceId,
+      requestId: const Uuid().v4(),
+      connectionId: connectionId,
+      expectedRevision: expectedRevision,
+      name: name,
+      url: url,
+    );
 
-      return _update?.call(request) ?? _client.modelConnection.update(request);
-    },
-  );
+    return _update?.call(request) ?? _client.modelConnection.update(request);
+  });
   Future<void> deleteModelConnection({
     required String connectionId,
     required int expectedRevision,
-  }) => CloudAppErrors.guardCall(
-    .model,
-    () {
-      final request = DeleteModelConnectionRequest(
-        workspaceId: _workspaceId,
-        requestId: const Uuid().v4(),
-        connectionId: connectionId,
-        expectedRevision: expectedRevision,
-      );
+  }) => CloudAppErrors.guardCall(.model, () {
+    final request = DeleteModelConnectionRequest(
+      workspaceId: _workspaceId,
+      requestId: const Uuid().v4(),
+      connectionId: connectionId,
+      expectedRevision: expectedRevision,
+    );
 
-      return _delete?.call(request) ?? _client.modelConnection.delete(request);
-    },
-  );
+    return _delete?.call(request) ?? _client.modelConnection.delete(request);
+  });
   Future<List<WorkspaceModelSelectionView>> listModelSelections() =>
-      CloudAppErrors.guardCall(
-        .model,
-        () {
-          final request = ListWorkspaceModelSelectionsRequest(
-            workspaceId: _workspaceId,
-          );
+      CloudAppErrors.guardCall(.model, () {
+        final request = ListWorkspaceModelSelectionsRequest(
+          workspaceId: _workspaceId,
+        );
 
-          return _listSelections?.call(request) ??
-              _client.modelConnection.listSelections(request);
-        },
-      );
+        return _listSelections?.call(request) ??
+            _client.modelConnection.listSelections(request);
+      });
   Stream<List<WorkspaceModelSelectionView>> watchModelSelections() =>
       _stateGateway.watch(
         const {'modelConnection', 'secretConfiguredState'},

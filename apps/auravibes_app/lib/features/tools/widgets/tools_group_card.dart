@@ -39,9 +39,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     final isExpanded = useState(false);
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.md)),
       child: AuraCard(
         child: AuraColumn(
           children: [
@@ -91,10 +89,7 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     ref
         .read(groupedToolsProvider(workspaceId).notifier)
-        .setMcpGroupEnabled(
-          group.id,
-          isEnabled: enabled,
-        );
+        .setMcpGroupEnabled(group.id, isEnabled: enabled);
   }
 
   Future<void> _handleReconnect(WidgetRef ref) async {
@@ -103,9 +98,7 @@ class ToolsGroupCard extends HookConsumerWidget {
 
     await ref
         .read(groupedToolsProvider(workspaceId).notifier)
-        .reconnectMcp(
-          mcpServerId,
-        );
+        .reconnectMcp(mcpServerId);
   }
 
   Future<void> _handleDelete(BuildContext context, WidgetRef ref) async {
@@ -126,9 +119,7 @@ class ToolsGroupCard extends HookConsumerWidget {
     if (confirmed ?? false) {
       await ref
           .read(groupedToolsProvider(workspaceId).notifier)
-          .deleteMcpGroup(
-            group.id,
-          );
+          .deleteMcpGroup(group.id);
     }
   }
 

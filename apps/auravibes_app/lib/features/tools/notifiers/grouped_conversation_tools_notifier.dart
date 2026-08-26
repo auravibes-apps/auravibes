@@ -29,10 +29,7 @@ class GroupedConversationToolsNotifier
     if (convId != null && convId.isNotEmpty) {
       await ref
           .read(syncSkillToolPermissionsUsecaseProvider)
-          .call(
-            conversationId: convId,
-            workspaceId: workspaceId,
-          );
+          .call(conversationId: convId, workspaceId: workspaceId);
     }
 
     // Get all conversation tool states.

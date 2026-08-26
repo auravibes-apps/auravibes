@@ -138,9 +138,7 @@ class CloudChatGateway {
         ),
       );
 
-  Future<ConversationSnapshot> getConversationSnapshot(
-    String conversationId,
-  ) =>
+  Future<ConversationSnapshot> getConversationSnapshot(String conversationId) =>
       _getConversationSnapshot?.call(conversationId) ??
       CloudAppErrors.guardCall(
         .conversation,

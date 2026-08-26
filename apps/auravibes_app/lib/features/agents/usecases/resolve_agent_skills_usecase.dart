@@ -93,20 +93,18 @@ class ResolvedAgentSkills {
 
 final ProviderFamily<ResolveAgentSkillsUsecase, String>
 resolveAgentSkillsUsecaseProvider =
-    Provider.family<ResolveAgentSkillsUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<ResolveAgentSkillsUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return ResolveAgentSkillsUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-              : null,
-          ref.watch(appSkillRegistryProvider),
-          cloud,
-        );
-      },
-    );
+      return ResolveAgentSkillsUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+            : null,
+        ref.watch(appSkillRegistryProvider),
+        cloud,
+      );
+    });
 
 extension AgentSkillEntityAvailableSkill on SkillEntity {
   AvailableSkill toAvailableSkill() {

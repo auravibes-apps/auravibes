@@ -66,9 +66,7 @@ class ConversationGroupHeader extends StatelessWidget {
             ),
             AuraIconButton.custom(
               child: AnimatedRotation(
-                child: const AuraIcon(
-                  Icons.keyboard_arrow_down,
-                ),
+                child: const AuraIcon(Icons.keyboard_arrow_down),
                 turns: isExpanded ? 0.5 : 0,
                 duration: const Duration(milliseconds: 200),
               ),
@@ -138,9 +136,7 @@ class _GroupIcon extends StatelessWidget {
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       width: ConversationGroupHeader._iconSize,

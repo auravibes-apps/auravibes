@@ -18,12 +18,8 @@ class AuraThemeWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        body: child,
-      ),
-      theme: ThemeData(
-        extensions: [AuraTheme.light],
-      ),
+      home: Scaffold(body: child),
+      theme: ThemeData(extensions: [AuraTheme.light]),
     );
   }
 }
@@ -100,9 +96,7 @@ void main() {
       );
 
       // The confirm button should have error styling.
-      final confirmButton = findAuraButtonByColorVariant(
-        AuraTint.error,
-      );
+      final confirmButton = findAuraButtonByColorVariant(AuraTint.error);
 
       expect(confirmButton, findsOneWidget);
     });

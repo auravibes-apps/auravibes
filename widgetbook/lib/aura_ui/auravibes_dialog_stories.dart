@@ -25,10 +25,7 @@ Widget confirmDialogUseCase(BuildContext context) {
 }
 
 class _ConfirmDialogDemo extends StatelessWidget {
-  const _ConfirmDialogDemo({
-    required this.isDestructive,
-    required this.tint,
-  });
+  const _ConfirmDialogDemo({required this.isDestructive, required this.tint});
 
   final bool isDestructive;
   final AuraTint? tint;

@@ -13,10 +13,7 @@ import 'package:flutter/material.dart';
 /// its own active snackbar.
 class AuraSnackBarHost extends StatefulWidget {
   /// Creates a snackbar host for [child].
-  const AuraSnackBarHost({
-    required this.child,
-    super.key,
-  });
+  const AuraSnackBarHost({required this.child, super.key});
 
   /// The subtree that can show Aura snackbars.
   final Widget child;
@@ -80,9 +77,7 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
       _activeSnackBar = snackbarWidget;
     });
 
-    return AuraSnackBarController(
-      dismissCallback: dismissWithCleanup,
-    );
+    return AuraSnackBarController(dismissCallback: dismissWithCleanup);
   }
 
   @override
@@ -94,10 +89,7 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
       child: Stack(
         alignment: Alignment.topLeft,
         fit: StackFit.passthrough,
-        children: [
-          widget.child,
-          ?activeSnackBar,
-        ],
+        children: [widget.child, ?activeSnackBar],
       ),
     );
   }
@@ -111,10 +103,7 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
 }
 
 class _AuraSnackBarHostScope extends InheritedWidget {
-  const _AuraSnackBarHostScope({
-    required this.state,
-    required super.child,
-  });
+  const _AuraSnackBarHostScope({required this.state, required super.child});
 
   final _AuraSnackBarHostState state;
 
@@ -148,9 +137,7 @@ enum AuraSnackBarVariant {
 /// control over the snackbar after it's been shown.
 class AuraSnackBarController {
   /// Creates a controller with the dismiss callback.
-  AuraSnackBarController({
-    required this._dismissCallback,
-  });
+  AuraSnackBarController({required this._dismissCallback});
 
   final void Function() _dismissCallback;
 
@@ -256,11 +243,8 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
     _animationController = animationController;
 
     // Set up slide animation (slide up from bottom).
-    _slideAnimation =
-        Tween<Offset>(
-          begin: const Offset(0, 1),
-          end: Offset.zero,
-        ).animate(
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
           CurvedAnimation(
             parent: animationController,
             curve: Curves.easeOutCubic,
@@ -268,16 +252,9 @@ class _AuraSnackBarOverlayEntryState extends State<_AuraSnackBarOverlayEntry>
         );
 
     // Set up fade animation.
-    _fadeAnimation =
-        Tween<double>(
-          begin: 0,
-          end: 1,
-        ).animate(
-          CurvedAnimation(
-            parent: animationController,
-            curve: Curves.easeOut,
-          ),
-        );
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: animationController, curve: Curves.easeOut),
+    );
 
     // Start entry animation.
     final _ = animationController.forward();

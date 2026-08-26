@@ -63,9 +63,7 @@ class ListAvailableSkillsUsecase {
     final userSkills = switch ((cloud: cloud, repository: skillsRepository)) {
       (cloud: final cloud?, repository: _) => await cloud.skills(),
       (cloud: _, repository: final repository?) =>
-        await repository.getWorkspaceSkills(
-          workspaceId,
-        ),
+        await repository.getWorkspaceSkills(workspaceId),
       _ => throw StateError('Skill store is unavailable'),
     };
     final conversationSkills = cloud == null
@@ -173,25 +171,21 @@ class ListAvailableSkillsUsecase {
 
 final ProviderFamily<ListAvailableSkillsUsecase, String>
 listAvailableSkillsUsecaseProvider =
-    Provider.family<ListAvailableSkillsUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<ListAvailableSkillsUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return ListAvailableSkillsUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(conversationSkillsRepositoryProvider)
-              : null,
-          cloud == null
-              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-              : null,
-          ref.watch(appSkillRegistryProvider),
-          ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
-          ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
-          cloud,
-        );
-      },
-    );
+      return ListAvailableSkillsUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+            : null,
+        ref.watch(appSkillRegistryProvider),
+        ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
+        ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
+        cloud,
+      );
+    });
 
 enum SkillLoadFilter {
   loadable,

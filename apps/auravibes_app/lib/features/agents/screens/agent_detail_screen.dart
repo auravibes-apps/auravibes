@@ -248,10 +248,8 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
       ..clear()
       ..addEntries(
         overrides.map(
-          (override) => MapEntry(
-            override.toolId,
-            override.permissionMode.agentMode,
-          ),
+          (override) =>
+              MapEntry(override.toolId, override.permissionMode.agentMode),
         ),
       );
   }
@@ -359,10 +357,7 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   Future<void> _saveToolOverrides(String agentId) {
     return ref
         .read(saveAgentToolOverridesUsecaseProvider(widget.workspaceId))
-        .call(
-          agentId: agentId,
-          permissionsByToolId: _toolPermissionModes,
-        );
+        .call(agentId: agentId, permissionsByToolId: _toolPermissionModes);
   }
 }
 
@@ -694,10 +689,7 @@ class _CardHeader extends StatelessWidget {
     return AuraRow(
       children: [
         Expanded(
-          child: AuraText(
-            child: title,
-            style: AuraTextStyle.heading5,
-          ),
+          child: AuraText(child: title, style: AuraTextStyle.heading5),
         ),
         AuraButton(
           onPressed: onAction,
@@ -1334,9 +1326,7 @@ class _CollapsibleToolSection extends StatelessWidget {
         children: [
           AuraTile(
             child: AuraColumn(
-              children: [
-                Text(title),
-              ],
+              children: [Text(title)],
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
             onTap: onToggle,
@@ -1500,9 +1490,7 @@ class _AgentToolPermissionTile extends StatelessWidget {
                   ),
                   AuraButtonGroupItem(
                     value: AgentToolPermissionMode.alwaysDeny,
-                    child: TextLocale(
-                      LocaleKeys.agents_tool_permission_deny,
-                    ),
+                    child: TextLocale(LocaleKeys.agents_tool_permission_deny),
                   ),
                 ],
                 selectedValue: value,

@@ -84,10 +84,7 @@ class AuraConfirmDialog extends StatelessWidget {
 /// Labels used by [AuraDialogs.confirm].
 class AuraConfirmDialogActions {
   /// Creates labels for confirmation dialog actions.
-  const AuraConfirmDialogActions({
-    this.confirmLabel,
-    this.cancelLabel,
-  });
+  const AuraConfirmDialogActions({this.confirmLabel, this.cancelLabel});
 
   /// Label for the confirm action.
   final Widget? confirmLabel;
@@ -132,13 +129,9 @@ abstract final class AuraDialogs {
         return FadeTransition(
           opacity: animation,
           child: ScaleTransition(
-            scale:
-                Tween<double>(
-                  begin: _transitionScale,
-                  end: 1,
-                ).animate(
-                  CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                ),
+            scale: Tween<double>(begin: _transitionScale, end: 1).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            ),
             child: child,
           ),
         );
@@ -173,10 +166,7 @@ abstract final class AuraDialogs {
           opacity: animation,
           child: ScaleTransition(
             scale: Tween<double>(begin: _transitionScale, end: 1).animate(
-              CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              ),
+              CurvedAnimation(parent: animation, curve: Curves.easeOut),
             ),
             child: child,
           ),

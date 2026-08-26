@@ -99,10 +99,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
               expression: tbl.createdAt,
               mode: OrderingMode.desc,
             ),
-            (tbl) => OrderingTerm(
-              expression: tbl.id,
-              mode: OrderingMode.desc,
-            ),
+            (tbl) => OrderingTerm(expression: tbl.id, mode: OrderingMode.desc),
           ])
           ..limit(1))
         .watchSingleOrNull();
@@ -119,11 +116,7 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   ) =>
       (select(messages)
             ..where((tbl) => tbl.conversationId.equals(conversationId))
-            ..orderBy([
-              (tbl) => OrderingTerm(
-                expression: tbl.createdAt,
-              ),
-            ])
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.createdAt)])
             ..limit(limit, offset: offset))
           .get();
 
@@ -254,10 +247,6 @@ class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
   _messagesByConversationQuery(String conversationId) {
     return (select(messages)
       ..where((tbl) => tbl.conversationId.equals(conversationId))
-      ..orderBy([
-        (tbl) => OrderingTerm(
-          expression: tbl.createdAt,
-        ),
-      ]));
+      ..orderBy([(tbl) => OrderingTerm(expression: tbl.createdAt)]));
   }
 }

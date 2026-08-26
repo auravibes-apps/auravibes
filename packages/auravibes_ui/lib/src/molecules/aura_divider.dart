@@ -81,32 +81,20 @@ class AuraDivider extends StatelessWidget {
     if (label != null) {
       return Container(
         height: height ?? context.auraTheme.fromSpacing(.xl),
-        margin: EdgeInsets.only(
-          left: indent,
-          right: endIndent,
-        ),
+        margin: EdgeInsets.only(left: indent, right: endIndent),
         child: Row(
           children: [
             Expanded(
-              child: Container(
-                color: dividerColor,
-                height: dividerThickness,
-              ),
+              child: Container(color: dividerColor, height: dividerThickness),
             ),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: context.auraTheme.fromSpacing(.md),
               ),
-              child: AuraText(
-                child: label,
-                style: AuraTextStyle.caption,
-              ),
+              child: AuraText(child: label, style: AuraTextStyle.caption),
             ),
             Expanded(
-              child: Container(
-                color: dividerColor,
-                height: dividerThickness,
-              ),
+              child: Container(color: dividerColor, height: dividerThickness),
             ),
           ],
         ),
@@ -116,30 +104,18 @@ class AuraDivider extends StatelessWidget {
     if (orientation == AuraDividerOrientation.vertical) {
       return Container(
         width: width ?? context.auraTheme.fromSpacing(.md),
-        margin: EdgeInsets.only(
-          top: indent,
-          bottom: endIndent,
-        ),
+        margin: EdgeInsets.only(top: indent, bottom: endIndent),
         child: Center(
-          child: Container(
-            color: dividerColor,
-            width: dividerThickness,
-          ),
+          child: Container(color: dividerColor, width: dividerThickness),
         ),
       );
     }
 
     return Container(
       height: height ?? context.auraTheme.fromSpacing(.md),
-      margin: EdgeInsets.only(
-        left: indent,
-        right: endIndent,
-      ),
+      margin: EdgeInsets.only(left: indent, right: endIndent),
       child: Center(
-        child: Container(
-          color: dividerColor,
-          height: dividerThickness,
-        ),
+        child: Container(color: dividerColor, height: dividerThickness),
       ),
     );
   }

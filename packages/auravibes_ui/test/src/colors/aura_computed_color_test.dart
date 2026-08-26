@@ -6,40 +6,27 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AuraComputedColor', () {
     test('brightness preset resolves to OKLCH lightness', () {
-      final light = AuraComputedColor(
-        hue: 180,
-      );
-      final dark = AuraComputedColor(
-        hue: 180,
-        brightness: AuraBrightness.dark,
-      );
+      final light = AuraComputedColor(hue: 180);
+      final dark = AuraComputedColor(hue: 180, brightness: AuraBrightness.dark);
       expect(light.lightness, AuraBrightness.light.lightness);
       expect(dark.lightness, AuraBrightness.dark.lightness);
     });
 
     test('withLightness constructor uses explicit L', () {
-      final c = AuraComputedColor.withLightness(
-        hue: 200,
-        lightness: 0.5,
-      );
+      final c = AuraComputedColor.withLightness(hue: 200, lightness: 0.5);
       expect(c.lightness, 0.5);
       expect(c.hue, 200);
     });
 
     test('inherits OKLCHColor.toColor round-trip', () {
-      final c = AuraComputedColor(
-        hue: 180,
-        brightness: AuraBrightness.dark,
-      );
+      final c = AuraComputedColor(hue: 180, brightness: AuraBrightness.dark);
       expect(c.toColor(), isA<Color>());
     });
 
     test(
       'onColor returns dark foreground for light surface meeting targetLc',
       () {
-        final surface = AuraComputedColor(
-          hue: 210,
-        );
+        final surface = AuraComputedColor(hue: 210);
         final on = surface.onColor();
         final lc = ColorContrast.apcaLc(
           foreground: on,

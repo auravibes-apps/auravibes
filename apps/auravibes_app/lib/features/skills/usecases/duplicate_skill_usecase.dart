@@ -89,10 +89,7 @@ class DuplicateSkillUsecase {
               .where((item) => item.title == title)
               .firstOrNull,
         (cloud: _, repository: final repository?) =>
-          await repository.getSkillByTitle(
-            workspaceId,
-            title,
-          ),
+          await repository.getSkillByTitle(workspaceId, title),
         _ => throw StateError('Skill store is unavailable'),
       };
       if (existing == null) return title;
@@ -111,15 +108,16 @@ class DuplicateSkillUsecase {
 }
 
 final ProviderFamily<DuplicateSkillUsecase, String>
-duplicateSkillUsecaseProvider = Provider.family<DuplicateSkillUsecase, String>(
-  (ref, workspaceId) {
-    final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+duplicateSkillUsecaseProvider = Provider.family<DuplicateSkillUsecase, String>((
+  ref,
+  workspaceId,
+) {
+  final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-    return DuplicateSkillUsecase(
-      cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-      cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
-      ref.watch(createSkillUsecaseProvider(workspaceId)),
-      cloudStore: cloud,
-    );
-  },
-);
+  return DuplicateSkillUsecase(
+    cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+    cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+    ref.watch(createSkillUsecaseProvider(workspaceId)),
+    cloudStore: cloud,
+  );
+});

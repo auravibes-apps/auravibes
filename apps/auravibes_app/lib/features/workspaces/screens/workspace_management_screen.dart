@@ -210,10 +210,7 @@ class _WorkspaceList extends ConsumerWidget {
     await WorkspaceManagementMutations.delete.run(ref, (_) {
       return ref
           .read(deleteWorkspaceUseCaseProvider)
-          .call(
-            id: workspace.id,
-            activeWorkspaceId: activeWorkspaceId,
-          );
+          .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
     });
     if (!context.mounted) return;
     if (ref.read(WorkspaceManagementMutations.delete) case MutationError(
@@ -690,9 +687,7 @@ void _openDetails(
   required String? cloudWorkspaceId,
 }) {
   final parsedId = int.tryParse(cloudWorkspaceId ?? '');
-  final workspaceId = GoRouterState.of(
-    context,
-  ).pathParameters['workspaceId'];
+  final workspaceId = GoRouterState.of(context).pathParameters['workspaceId'];
   if (accountId == null || parsedId == null || workspaceId == null) return;
 
   context.go(

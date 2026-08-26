@@ -43,10 +43,7 @@ void main() {
         now: now,
         translate: mockTranslate,
       );
-      expect(
-        result,
-        '${LocaleKeys.home_screen_date_formatting_minutes_ago}:1',
-      );
+      expect(result, '${LocaleKeys.home_screen_date_formatting_minutes_ago}:1');
     });
 
     test('59 minutes ago -> minutes ago with value 59', () {
@@ -69,10 +66,7 @@ void main() {
         now: now,
         translate: mockTranslate,
       );
-      expect(
-        result,
-        '${LocaleKeys.home_screen_date_formatting_hours_ago}:1',
-      );
+      expect(result, '${LocaleKeys.home_screen_date_formatting_hours_ago}:1');
     });
 
     test('23 hours ago -> hours ago with value 23', () {
@@ -82,10 +76,7 @@ void main() {
         now: now,
         translate: mockTranslate,
       );
-      expect(
-        result,
-        '${LocaleKeys.home_screen_date_formatting_hours_ago}:23',
-      );
+      expect(result, '${LocaleKeys.home_screen_date_formatting_hours_ago}:23');
     });
 
     test('24 hours ago -> days ago with value 1', () {
@@ -95,10 +86,7 @@ void main() {
         now: now,
         translate: mockTranslate,
       );
-      expect(
-        result,
-        '${LocaleKeys.home_screen_date_formatting_days_ago}:1',
-      );
+      expect(result, '${LocaleKeys.home_screen_date_formatting_days_ago}:1');
     });
 
     test('future timestamp -> just now', () {

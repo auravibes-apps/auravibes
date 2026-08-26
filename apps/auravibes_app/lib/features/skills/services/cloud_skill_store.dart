@@ -151,10 +151,7 @@ class CloudSkillStore {
       kind: WorkspaceResourceKind.skillTemplateTool,
       id: id,
       revision: resource.revision,
-      data: _toolData(
-        updated,
-        skillSlug: _data(skill)['slug'] as String,
-      ),
+      data: _toolData(updated, skillSlug: _data(skill)['slug'] as String),
     );
 
     return updated;
@@ -277,14 +274,13 @@ class CloudSkillStore {
   }
 
   Future<SkillCredentialForEdit?> credentialForEdit(String id) async {
-    final resource =
-        (await _active(
-          WorkspaceResourceKind.serviceConnection,
-        )).where((item) {
+    final resource = (await _active(WorkspaceResourceKind.serviceConnection))
+        .where((item) {
           if (item.resourceId != id) return false;
 
           return _data(item)['kind'] == 'skillCredential';
-        }).firstOrNull;
+        })
+        .firstOrNull;
     if (resource == null) return null;
     final credential = _credential(resource);
     final definition = await this.definition(credential.credentialDefinitionId);

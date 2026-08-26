@@ -16,9 +16,7 @@ enum ModelProvidersTableType {
   static ModelProvidersTableType? fromString(String value) {
     final lowerValue = value.toLowerCase();
 
-    return values.firstWhereOrNull(
-      (element) => element.value == lowerValue,
-    );
+    return values.firstWhereOrNull((element) => element.value == lowerValue);
   }
 
   final String value;

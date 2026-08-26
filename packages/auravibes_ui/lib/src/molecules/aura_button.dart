@@ -83,9 +83,7 @@ class AuraButton extends StatelessWidget {
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
           borderRadius: BorderRadius.all(
-            Radius.circular(
-              context.auraTheme.fromBorderRadius(.xl),
-            ),
+            Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
           ),
           boxShadow: _getBoxShadow(),
         ),

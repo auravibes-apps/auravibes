@@ -44,21 +44,15 @@ class ConversationToolTile extends HookConsumerWidget {
     );
     final toolId = toolState.tool.id;
 
-    final onToggle = useCallback(
-      () {
-        unawaited(toolsNotifier.toggleTool(toolId));
-      },
-      [toolsNotifier, toolId],
-    );
+    final onToggle = useCallback(() {
+      unawaited(toolsNotifier.toggleTool(toolId));
+    }, [toolsNotifier, toolId]);
 
     final onPermissionChanged = useCallback<void Function(ToolPermissionMode?)>(
       (mode) {
         if (mode == null) return;
         unawaited(
-          toolsNotifier.setToolPermission(
-            toolId,
-            permissionMode: mode,
-          ),
+          toolsNotifier.setToolPermission(toolId, permissionMode: mode),
         );
       },
       [toolsNotifier, toolId],
@@ -151,9 +145,7 @@ class _ToolIcon extends StatelessWidget {
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       width: iconSize,
@@ -176,9 +168,7 @@ class _ToolDescription extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(
-          child: toolState.tool.getNameWidget(),
-        ),
+        AuraText(child: toolState.tool.getNameWidget()),
         if (isWorkspaceEnabled)
           AuraText(
             child: DefaultTextStyle.merge(
@@ -219,10 +209,7 @@ class _ToolToggleIcon extends StatelessWidget {
     if (!isWorkspaceEnabled) {
       return const Opacity(
         opacity: 0.5,
-        child: AuraIcon(
-          Icons.block,
-          size: AuraIconSize.small,
-        ),
+        child: AuraIcon(Icons.block, size: AuraIconSize.small),
       );
     }
 
@@ -234,10 +221,7 @@ class _ToolToggleIcon extends StatelessWidget {
 }
 
 class _ToolPermissionSection extends StatelessWidget {
-  const _ToolPermissionSection({
-    required this.value,
-    required this.onChanged,
-  });
+  const _ToolPermissionSection({required this.value, required this.onChanged});
 
   final ToolPermissionMode value;
   final void Function(ToolPermissionMode?) onChanged;

@@ -105,11 +105,7 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
     } else {
       fab = FloatingActionButton(
-        child: Icon(
-          icon,
-          size: _getIconPixels(),
-          color: resolvedForeground,
-        ),
+        child: Icon(icon, size: _getIconPixels(), color: resolvedForeground),
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
         heroTag: heroTag,
@@ -122,28 +118,17 @@ class AuraFloatingActionButton extends StatelessWidget {
       );
 
       if (size == AuraFABSize.mini || size == AuraFABSize.large) {
-        fab = SizedBox(
-          width: _getFABSize(),
-          height: _getFABSize(),
-          child: fab,
-        );
+        fab = SizedBox(width: _getFABSize(), height: _getFABSize(), child: fab);
       }
     }
 
     final tooltip = this.tooltip;
     if (tooltip != null) {
-      fab = AuraTooltip(
-        message: tooltip,
-        child: fab,
-      );
+      fab = AuraTooltip(message: tooltip, child: fab);
     }
 
     if (semanticLabel != null) {
-      fab = Semantics(
-        child: fab,
-        button: true,
-        label: semanticLabel,
-      );
+      fab = Semantics(child: fab, button: true, label: semanticLabel);
     }
 
     return fab;

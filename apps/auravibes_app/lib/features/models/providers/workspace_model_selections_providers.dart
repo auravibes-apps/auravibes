@@ -14,10 +14,7 @@ part 'workspace_model_selections_providers.g.dart';
 
 @riverpod
 Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-listWorkspaceModelSelections(
-  Ref ref, {
-  required String workspaceId,
-}) async* {
+listWorkspaceModelSelections(Ref ref, {required String workspaceId}) async* {
   final workspaceModelSelectionRepository = await ref.watch(
     modelSelectionStoreProvider(workspaceId).future,
   );
@@ -59,31 +56,22 @@ _projectWorkspaceModelSelections({
     ..onListen = () {
       subscriptions
         ..add(
-          selections.listen(
-            (value) {
-              latestSelections = value;
-              emit();
-            },
-            onError: controller.addError,
-          ),
+          selections.listen((value) {
+            latestSelections = value;
+            emit();
+          }, onError: controller.addError),
         )
         ..add(
-          providers.listen(
-            (value) {
-              latestProviders = value;
-              emit();
-            },
-            onError: controller.addError,
-          ),
+          providers.listen((value) {
+            latestProviders = value;
+            emit();
+          }, onError: controller.addError),
         )
         ..add(
-          openAIModels.listen(
-            (value) {
-              latestOpenAIModels = value;
-              emit();
-            },
-            onError: controller.addError,
-          ),
+          openAIModels.listen((value) {
+            latestOpenAIModels = value;
+            emit();
+          }, onError: controller.addError),
         );
     }
     ..onCancel = () async {
@@ -203,9 +191,7 @@ _groupModelsByProvider(
   final sortedKeys = grouped.keys.toList()
     ..sort((left, right) => _compareProviderGroups(grouped, left, right));
 
-  return {
-    for (final key in sortedKeys) key: ?grouped[key],
-  };
+  return {for (final key in sortedKeys) key: ?grouped[key]};
 }
 
 int _compareProviderGroups(

@@ -7,9 +7,7 @@ void main() {
   group('SelectWorkspaceUsecase', () {
     test('persists and returns an explicit workspace selection', () async {
       final repository = await _createRepository();
-      final usecase = SelectWorkspaceUsecase(
-        selectionRepository: repository,
-      );
+      final usecase = SelectWorkspaceUsecase(selectionRepository: repository);
 
       final workspaceId = await usecase(workspaceId: 'ws-1');
 
@@ -19,9 +17,7 @@ void main() {
 
     test('rejects a workspace ID that cannot be a route segment', () async {
       final repository = await _createRepository();
-      final usecase = SelectWorkspaceUsecase(
-        selectionRepository: repository,
-      );
+      final usecase = SelectWorkspaceUsecase(selectionRepository: repository);
 
       await expectLater(
         usecase(workspaceId: 'workspace/other'),
@@ -32,9 +28,7 @@ void main() {
 
     test('rejects a dot-segment workspace ID', () async {
       final repository = await _createRepository();
-      final usecase = SelectWorkspaceUsecase(
-        selectionRepository: repository,
-      );
+      final usecase = SelectWorkspaceUsecase(selectionRepository: repository);
 
       await expectLater(
         usecase(workspaceId: '..'),
@@ -45,9 +39,7 @@ void main() {
 
     test('rejects a current-directory workspace ID', () async {
       final repository = await _createRepository();
-      final usecase = SelectWorkspaceUsecase(
-        selectionRepository: repository,
-      );
+      final usecase = SelectWorkspaceUsecase(selectionRepository: repository);
 
       await expectLater(
         usecase(workspaceId: '.'),
@@ -58,9 +50,7 @@ void main() {
 
     test('rejects an empty workspace ID', () async {
       final repository = await _createRepository();
-      final usecase = SelectWorkspaceUsecase(
-        selectionRepository: repository,
-      );
+      final usecase = SelectWorkspaceUsecase(selectionRepository: repository);
 
       await expectLater(
         usecase(workspaceId: ''),

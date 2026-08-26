@@ -67,10 +67,7 @@ class _ChatListEmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AuraIcon(
-              Icons.chat_outlined,
-              size: AuraIconSize.extraLarge,
-            ),
+            const AuraIcon(Icons.chat_outlined, size: AuraIconSize.extraLarge),
             const SizedBox(height: 16),
             const AuraText(
               child: TextLocale(

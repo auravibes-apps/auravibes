@@ -51,11 +51,7 @@ class AuraComputedColorScheme extends AuraColorScheme {
     }
 
     AuraComputedColor brand(double lightL, double darkL, double chroma) =>
-        color(
-          primaryHue,
-          l(lightL, darkL),
-          chroma,
-        );
+        color(primaryHue, l(lightL, darkL), chroma);
     final primary = brand(0.4, 0.78, 0.17);
     final primaryVariant = brand(0.3, 0.68, 0.15);
     final secondaryHue = (primaryHue + 180) % 360;
@@ -63,11 +59,7 @@ class AuraComputedColorScheme extends AuraColorScheme {
       double lightL,
       double darkL,
       double chroma,
-    ) => color(
-      secondaryHue,
-      l(lightL, darkL),
-      chroma,
-    );
+    ) => color(secondaryHue, l(lightL, darkL), chroma);
     final secondary = brandSecondary(0.4, 0.78, 0.17);
     final secondaryVariant = brandSecondary(0.3, 0.68, 0.15);
     final tertiaryHue = (primaryHue + 60) % 360;
@@ -75,19 +67,12 @@ class AuraComputedColorScheme extends AuraColorScheme {
       double lightL,
       double darkL,
       double chroma,
-    ) => color(
-      tertiaryHue,
-      l(lightL, darkL),
-      chroma,
-    );
+    ) => color(tertiaryHue, l(lightL, darkL), chroma);
     final tertiary = brandTertiary(0.4, 0.78, 0.17);
     final tertiaryVariant = brandTertiary(0.3, 0.68, 0.15);
 
-    AuraComputedColor neutral(double lightL, double darkL) => color(
-      primaryHue,
-      l(lightL, darkL),
-      0,
-    );
+    AuraComputedColor neutral(double lightL, double darkL) =>
+        color(primaryHue, l(lightL, darkL), 0);
     const surfaceLightness = 0.98;
     final surface = neutral(surfaceLightness, 0.18);
     final surfaceVariant = neutral(0.96, 0.22);

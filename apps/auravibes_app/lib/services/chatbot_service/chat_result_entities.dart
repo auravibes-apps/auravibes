@@ -45,10 +45,8 @@ extension ChatResultEntities on ChatResult<ChatMessage> {
   }
 
   Map<String, dynamic> get entityModelMetadata {
-    return <String, dynamic>{
-      ...metadata,
-      ...output.metadata,
-    }..removeWhere((_, value) => value == null);
+    return <String, dynamic>{...metadata, ...output.metadata}
+      ..removeWhere((_, value) => value == null);
   }
 
   MessageMetadataEntity? get entityMetadata {

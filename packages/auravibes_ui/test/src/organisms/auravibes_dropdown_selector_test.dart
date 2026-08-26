@@ -363,9 +363,7 @@ void main() {
       expect(find.text('Option 1'), findsNothing);
     });
 
-    testWidgets('keeps bottom dropdown inside viewport bounds', (
-      tester,
-    ) async {
+    testWidgets('keeps bottom dropdown inside viewport bounds', (tester) async {
       tester.view.physicalSize = const Size(400, 400);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);

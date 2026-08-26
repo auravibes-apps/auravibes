@@ -70,12 +70,7 @@ class AuraEdgeInsetsGeometry {
   final AuraSpacing bottom; // Compare properties.
 
   @override
-  int get hashCode => Object.hashAll([
-    left,
-    top,
-    right,
-    bottom,
-  ]);
+  int get hashCode => Object.hashAll([left, top, right, bottom]);
 
   @override
   bool operator ==(Object other) =>
@@ -100,11 +95,7 @@ class AuraEdgeInsetsGeometry {
 /// Padding for const.
 class AuraPadding extends StatelessWidget {
   /// Default constructor.
-  const AuraPadding({
-    required this.child,
-    this.padding = .base,
-    super.key,
-  });
+  const AuraPadding({required this.child, this.padding = .base, super.key});
 
   /// Pading chilg.
   final Widget child;
@@ -114,9 +105,6 @@ class AuraPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding._padding(context),
-      child: child,
-    );
+    return Padding(padding: padding._padding(context), child: child);
   }
 }

@@ -82,11 +82,6 @@ class AuraLoadingOverlay extends StatelessWidget {
 
     if (child == null) return overlay;
 
-    return Stack(
-      children: [
-        child,
-        overlay,
-      ],
-    );
+    return Stack(children: [child, overlay]);
   }
 }

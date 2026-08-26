@@ -74,9 +74,7 @@ void main() {
       database: database,
       encryptionService: EncryptionService(_FakeSecretKeyManager()),
     );
-    var conversationSkillsRepository = ConversationSkillsRepository(
-      database,
-    );
+    var conversationSkillsRepository = ConversationSkillsRepository(database);
     var serviceConnectionRepository = ServiceConnectionRepository(
       database,
       EncryptionService(_FakeSecretKeyManager()),
@@ -324,9 +322,7 @@ void main() {
       final usecase = duplicateSkillUsecase();
 
       final duplicate = await usecase.call(skill.id);
-      final duplicateTools = await toolsRepository.getSkillTools(
-        duplicate.id,
-      );
+      final duplicateTools = await toolsRepository.getSkillTools(duplicate.id);
 
       expect(duplicate.title, 'Example Services Copy');
       expect(duplicate.slug, 'example_services_copy');
@@ -360,11 +356,7 @@ void main() {
         );
 
         final loadedUserSkill = await conversationSkillsRepository
-            .setWorkspaceSkillLoaded(
-              conversation.id,
-              skill.id,
-              isLoaded: true,
-            );
+            .setWorkspaceSkillLoaded(conversation.id, skill.id, isLoaded: true);
         final loadedAppSkill = await conversationSkillsRepository
             .setAppSkillLoaded(
               conversation.id,
@@ -757,14 +749,8 @@ void main() {
               title: 'Example Service',
               slug: 'example_service',
               attributesJson: jsonEncode({
-                'api_key': {
-                  'description': 'API key',
-                  'optional': true,
-                },
-                'user_id': {
-                  'description': 'User id',
-                  'optional': true,
-                },
+                'api_key': {'description': 'API key', 'optional': true},
+                'user_id': {'description': 'User id', 'optional': true},
               }),
             ),
           );
@@ -840,9 +826,8 @@ void main() {
           const ResolveSkillUrlTemplate(),
           AppSkillHttpClientAdapter(urlService).execute,
         ),
-        (workspaceId) async => WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: workspaceId),
-        ),
+        (workspaceId) async =>
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -876,10 +861,7 @@ void main() {
         workspaceId: workspace.id,
         skillSlug: skill.slug,
         toolSlug: 'find_company',
-        arguments: {
-          'company_id': 'acme',
-          'credentialId': credential.id,
-        },
+        arguments: {'company_id': 'acme', 'credentialId': credential.id},
       );
 
       expect(spec.name, 'skill__user__example_services__find_company');
@@ -1095,52 +1077,49 @@ void main() {
       ]);
     });
 
-    test(
-      'renders optional Liquid fields in JSON template fields',
-      () {
-        const usecase = ResolveSkillUrlTemplate();
+    test('renders optional Liquid fields in JSON template fields', () {
+      const usecase = ResolveSkillUrlTemplate();
 
-        final request = usecase.call(
-          template: SkillUrlTemplate(
-            url: 'https://example.com',
-            headers: {
-              'X-User': [
-                '{% if credential.user_id %}',
-                '{{ credential.user_id }}',
-                '{% endif %}',
-              ].join(),
-            },
-            query: {
-              'user_id': [
-                '{% if credential.user_id %}',
-                '{{ credential.user_id }}',
-                '{% endif %}',
-              ].join(),
-            },
-            body: [
-              '{"level":2',
-              '{% if credential.user_id %},',
-              '"user_id":{{ credential.user_id | json }}',
-              '{% endif %}}',
+      final request = usecase.call(
+        template: SkillUrlTemplate(
+          url: 'https://example.com',
+          headers: {
+            'X-User': [
+              '{% if credential.user_id %}',
+              '{{ credential.user_id }}',
+              '{% endif %}',
             ].join(),
-          ),
-          inputs: const {},
-          credentials: const {},
-          inputDefinitions: const {},
-          credentialDefinitions: const {
-            'user_id': SkillCredentialAttributeDefinition(
-              description: 'Optional user id',
-              optional: true,
-            ),
           },
-        );
+          query: {
+            'user_id': [
+              '{% if credential.user_id %}',
+              '{{ credential.user_id }}',
+              '{% endif %}',
+            ].join(),
+          },
+          body: [
+            '{"level":2',
+            '{% if credential.user_id %},',
+            '"user_id":{{ credential.user_id | json }}',
+            '{% endif %}}',
+          ].join(),
+        ),
+        inputs: const {},
+        credentials: const {},
+        inputDefinitions: const {},
+        credentialDefinitions: const {
+          'user_id': SkillCredentialAttributeDefinition(
+            description: 'Optional user id',
+            optional: true,
+          ),
+        },
+      );
 
-        expect(request.url, 'https://example.com');
-        expect(request.headers, isNot(contains('X-User')));
-        final body = request.body ?? fail('body missing');
-        expect(jsonDecode(body), {'level': 2});
-      },
-    );
+      expect(request.url, 'https://example.com');
+      expect(request.headers, isNot(contains('X-User')));
+      final body = request.body ?? fail('body missing');
+      expect(jsonDecode(body), {'level': 2});
+    });
 
     test('resolves typed JSON body placeholders', () {
       const usecase = ResolveSkillUrlTemplate();
@@ -1272,10 +1251,7 @@ void main() {
           SkillCredentialToCreate(
             credentialDefinitionId: definition.id,
             name: 'Invalid Credential',
-            attributes: const {
-              'api_key': '',
-              'account_id': 'acct-123',
-            },
+            attributes: const {'api_key': '', 'account_id': 'acct-123'},
           ),
         ),
         throwsA(
@@ -1368,9 +1344,7 @@ void main() {
       await expectLater(
         skillCredentialsRepository.updateCredential(
           credential.id,
-          const SkillCredentialToUpdate(
-            clearSecretAttributeNames: {'api_key'},
-          ),
+          const SkillCredentialToUpdate(clearSecretAttributeNames: {'api_key'}),
         ),
         throwsA(
           isA<FormatException>().having(
@@ -1408,9 +1382,7 @@ void main() {
       final updated = await skillCredentialDefinitionsRepository
           .updateDefinition(
             definition.id,
-            const SkillCredentialDefinitionToUpdate(
-              title: 'Renamed Service',
-            ),
+            const SkillCredentialDefinitionToUpdate(title: 'Renamed Service'),
           );
       expect((await stream.next).map((item) => item.title), [updated.title]);
 
@@ -1524,10 +1496,7 @@ void main() {
             'query': {'token': '{credential:api_key}'},
           },
           'inputs': {
-            'company_id': {
-              'description': 'Company id',
-              'type': 'string',
-            },
+            'company_id': {'description': 'Company id', 'type': 'string'},
           },
           'requiresCredential': true,
         },
@@ -1587,10 +1556,7 @@ void main() {
       expect(definitionResult, containsPair('slug', 'example_service'));
       expect(
         definitionResult['attributes'],
-        containsPair(
-          'account_id',
-          containsPair('secret', false),
-        ),
+        containsPair('account_id', containsPair('secret', false)),
       );
       expect(skillResult, containsPair('slug', 'example_services'));
       expect(skillResult, containsPair('isCredentialOptional', true));
@@ -1788,30 +1754,21 @@ void main() {
       expect(foundDefinition, containsPair('slug', 'example_service'));
       expect(
         foundDefinition['attributes'],
-        containsPair(
-          'account_id',
-          containsPair('secret', false),
-        ),
+        containsPair('account_id', containsPair('secret', false)),
       );
       expect(updatedDefinition, containsPair('status', 'updated'));
       expect(
         updatedDefinition['attributes'],
         containsPair(
           'account_id',
-          allOf(
-            containsPair('optional', true),
-            containsPair('secret', false),
-          ),
+          allOf(containsPair('optional', true), containsPair('secret', false)),
         ),
       );
       expect(deletedTool, containsPair('status', 'deleted'));
       expect(deletedSkill, containsPair('status', 'deleted'));
       expect(deletedDefinition, containsPair('status', 'deleted'));
       expect(
-        await skillsRepository.getSkillBySlug(
-          workspace.id,
-          'example_services',
-        ),
+        await skillsRepository.getSkillBySlug(workspace.id, 'example_services'),
         null,
       );
       expect(
@@ -1872,10 +1829,7 @@ void main() {
                 'body': '{"filters":{{filters}}}',
               },
               'inputs': {
-                'filters': {
-                  'description': 'Search filters',
-                  'type': 'array',
-                },
+                'filters': {'description': 'Search filters', 'type': 'array'},
               },
             },
           ),
@@ -1924,10 +1878,7 @@ void main() {
                 )
                 as Map<String, Object?>;
         final definition = await skillCredentialDefinitionsRepository
-            .getDefinitionBySlug(
-              workspace.id,
-              'rescuegroups_api',
-            );
+            .getDefinitionBySlug(workspace.id, 'rescuegroups_api');
         final definitionId = (definition ?? fail('definition missing')).id;
         final credential = await skillCredentialsRepository.createCredential(
           workspace.id,
@@ -1966,9 +1917,7 @@ void main() {
                 'criteria': 'Dog',
               },
             ],
-            'fields': {
-              'animalGeneralSpecies': <String, Object?>{},
-            },
+            'fields': {'animalGeneralSpecies': <String, Object?>{}},
             'credentialId': credential.id,
           },
         );
@@ -1987,9 +1936,7 @@ void main() {
               },
             ],
           },
-          'fields': {
-            'animalGeneralSpecies': <String, Object?>{},
-          },
+          'fields': {'animalGeneralSpecies': <String, Object?>{}},
         });
       },
     );

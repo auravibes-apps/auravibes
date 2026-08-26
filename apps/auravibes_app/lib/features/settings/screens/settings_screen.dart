@@ -123,9 +123,7 @@ class SettingsScreen extends ConsumerWidget {
         options: const [
           AuraRadioOption(
             value: AppTheme.system,
-            label: TextLocale(
-              LocaleKeys.settings_screen_theme_system_default,
-            ),
+            label: TextLocale(LocaleKeys.settings_screen_theme_system_default),
           ),
           AuraRadioOption(
             value: AppTheme.light,
@@ -137,9 +135,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      dismissLabel: const TextLocale(
-        LocaleKeys.settings_screen_actions_cancel,
-      ),
+      dismissLabel: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
     );
   }
 }

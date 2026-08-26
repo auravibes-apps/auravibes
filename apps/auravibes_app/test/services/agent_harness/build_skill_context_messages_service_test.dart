@@ -40,9 +40,7 @@ void main() {
           conversationId: 'c',
           workspaceId: 'w',
         ),
-      ).thenAnswer(
-        (_) async => null,
-      );
+      ).thenAnswer((_) async => null);
       when(
         () => listAgentSkills.call(conversationId: 'c', workspaceId: 'w'),
       ).thenAnswer((_) async => const []);
@@ -156,9 +154,7 @@ void main() {
           conversationId: 'conversation-1',
           workspaceId: 'workspace-1',
         ),
-      ).thenAnswer(
-        (_) async => null,
-      );
+      ).thenAnswer((_) async => null);
       when(
         () => listAgentSkills.call(
           conversationId: 'conversation-1',

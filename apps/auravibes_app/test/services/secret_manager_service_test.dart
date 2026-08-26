@@ -45,9 +45,7 @@ void main() {
       'keeps default encryption key invisible to namespaced storage',
       () async {
         final values = <String, String>{};
-        when(
-          () => mockStorage.read(key: any(named: 'key')),
-        ).thenAnswer(
+        when(() => mockStorage.read(key: any(named: 'key'))).thenAnswer(
           (call) => Future.value(values[call.namedArguments[#key] as String]),
         );
         when(
@@ -112,9 +110,7 @@ void main() {
     });
 
     test('getOrCreateSecretKey loads existing key from storage', () async {
-      final existingKeyBase64 = base64Encode(
-        List<int>.generate(32, (i) => i),
-      );
+      final existingKeyBase64 = base64Encode(List<int>.generate(32, (i) => i));
       when(
         () => mockStorage.read(key: any(named: 'key')),
       ).thenAnswer((_) async => existingKeyBase64);

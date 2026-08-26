@@ -204,9 +204,7 @@ void main() {
         ).thenAnswer((_) async => connectionRow);
         when(
           () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 
@@ -255,9 +253,7 @@ void main() {
         ).thenAnswer((_) async => oauthRow);
         when(
           () => mockSelectionsDao.insertWorkspaceModelSelections(any()),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 
@@ -359,9 +355,7 @@ void main() {
             () => mockSelectionsDao.insertWorkspaceModelSelections(
               any<List<WorkspaceModelSelectionsCompanion>>(),
             ),
-          ).thenAnswer((
-            _,
-          ) async {
+          ).thenAnswer((_) async {
             return;
           });
 
@@ -637,9 +631,7 @@ void main() {
         ).thenAnswer((_) async => connectionRow);
         when(
           () => mockConnectionsDao.deleteModelConnection('conn-1'),
-        ).thenAnswer((
-          _,
-        ) async {
+        ).thenAnswer((_) async {
           return;
         });
 

@@ -18,9 +18,7 @@ final serverpodAuthStoreProvider = Provider<ServerpodAuthStore>((ref) {
 final cloudAccountsProvider = FutureProvider<List<CloudAccountSession>>((ref) {
   return ref
       .watch(serverpodAuthStoreProvider)
-      .listAccounts(
-        legacyServerUrl: AppEnvConfig.auravibesServerUrl,
-      );
+      .listAccounts(legacyServerUrl: AppEnvConfig.auravibesServerUrl);
 });
 
 final FutureProviderFamily<Client?, ({String accountId, String serverUrl})>
@@ -51,23 +49,24 @@ serverpodClientForAccountProvider =
 
 final FutureProviderFamily<Client, ({String accountId, String serverUrl})>
 serverpodClientForWorkspaceProvider =
-    FutureProvider.family<Client, ({String serverUrl, String accountId})>(
-      (ref, key) async {
-        final store = ref.watch(serverpodAuthStoreProvider);
-        final serverUrl = CloudAccountIdentity.canonicalServerOrigin(
-          key.serverUrl,
-        );
-        final client = Client(serverUrl);
-        final _ = ref.onDispose(client.close);
-        final sessionManager = ClientAuthSessionManager(
-          storage: store.authSuccessStorage(
-            serverUrl: serverUrl,
-            userId: key.accountId,
-          ),
-        );
-        client.authSessionManager = sessionManager;
-        final _ = await sessionManager.initialize();
+    FutureProvider.family<Client, ({String serverUrl, String accountId})>((
+      ref,
+      key,
+    ) async {
+      final store = ref.watch(serverpodAuthStoreProvider);
+      final serverUrl = CloudAccountIdentity.canonicalServerOrigin(
+        key.serverUrl,
+      );
+      final client = Client(serverUrl);
+      final _ = ref.onDispose(client.close);
+      final sessionManager = ClientAuthSessionManager(
+        storage: store.authSuccessStorage(
+          serverUrl: serverUrl,
+          userId: key.accountId,
+        ),
+      );
+      client.authSessionManager = sessionManager;
+      final _ = await sessionManager.initialize();
 
-        return client;
-      },
-    );
+      return client;
+    });

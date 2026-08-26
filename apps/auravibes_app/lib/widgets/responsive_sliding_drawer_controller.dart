@@ -420,9 +420,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
       return;
     }
-    _requiredController.animateTo(0, duration: _animationDuration).then((
-      _,
-    ) {
+    _requiredController.animateTo(0, duration: _animationDuration).then((_) {
       _isOpen = false;
     });
   }
@@ -434,9 +432,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
 
       return;
     }
-    _requiredController.animateTo(1, duration: _animationDuration).then((
-      _,
-    ) {
+    _requiredController.animateTo(1, duration: _animationDuration).then((_) {
       _isOpen = true;
     });
   }
@@ -499,10 +495,7 @@ class _ResponsiveSlidingDrawerState extends State<ResponsiveSlidingDrawer>
     _resizeOvershoot = 0.0;
     _desktopDrawerWidth =
         (_requiredDesktopDrawerWidth + (delta > 0 ? remaining : -remaining))
-            .clamp(
-              _desktopMinDrawerWidth,
-              _desktopMaxDrawerWidth,
-            );
+            .clamp(_desktopMinDrawerWidth, _desktopMaxDrawerWidth);
   }
 
   void _clampDesktopDrawerWidth() {

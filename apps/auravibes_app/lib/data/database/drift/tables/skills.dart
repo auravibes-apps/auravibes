@@ -8,11 +8,8 @@ import 'package:drift/drift.dart';
 
 @DataClassName('SkillsTable')
 class Skills extends Table with TableMixin {
-  TextColumn get workspaceId => text().references(
-    Workspaces,
-    #id,
-    onDelete: KeyAction.cascade,
-  )();
+  TextColumn get workspaceId =>
+      text().references(Workspaces, #id, onDelete: KeyAction.cascade)();
 
   TextColumn get source => textEnum<SkillSourceTable>()();
 

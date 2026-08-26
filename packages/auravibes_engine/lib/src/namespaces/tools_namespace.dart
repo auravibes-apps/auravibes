@@ -28,10 +28,7 @@ class ToolsNamespace<TTool extends Object> {
     );
   }
 
-  Future<void> skip({
-    required String toolCallId,
-    required String messageId,
-  }) {
+  Future<void> skip({required String toolCallId, required String messageId}) {
     return _skip.call(toolCallId: toolCallId, messageId: messageId);
   }
 

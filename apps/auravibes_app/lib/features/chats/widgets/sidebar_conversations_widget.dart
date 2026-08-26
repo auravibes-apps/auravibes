@@ -142,9 +142,7 @@ class _SidebarConversationsSectionHeader extends StatelessWidget {
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
       child: const AuraText(
-        child: TextLocale(
-          LocaleKeys.sidebar_recent_chats,
-        ),
+        child: TextLocale(LocaleKeys.sidebar_recent_chats),
         style: AuraTextStyle.caption,
       ),
     );
@@ -162,9 +160,7 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
       child: const AuraText(
-        child: TextLocale(
-          LocaleKeys.sidebar_no_recent_chats,
-        ),
+        child: TextLocale(LocaleKeys.sidebar_no_recent_chats),
         style: AuraTextStyle.bodySmall,
         textAlign: TextAlign.center,
       ),
@@ -188,9 +184,7 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
       ),
       child: AuraButton(
         onPressed: () => ChatsRoute(workspaceId: workspaceId).go(context),
-        child: const TextLocale(
-          LocaleKeys.sidebar_view_all_chats,
-        ),
+        child: const TextLocale(LocaleKeys.sidebar_view_all_chats),
         variant: AuraButtonVariant.ghost,
         size: AuraButtonSize.small,
         isFullWidth: true,
@@ -309,20 +303,14 @@ class _CompactingRow extends StatelessWidget {
       ),
       child: const AuraTile(
         child: AuraText(
-          child: TextLocale(
-            LocaleKeys.compaction_compacting_row_label,
-          ),
+          child: TextLocale(LocaleKeys.compaction_compacting_row_label),
           style: AuraTextStyle.bodySmall,
         ),
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
         leading: Padding(
           padding: EdgeInsets.all(4),
-          child: SizedBox(
-            width: 16,
-            height: 16,
-            child: AuraSpinner(),
-          ),
+          child: SizedBox(width: 16, height: 16, child: AuraSpinner()),
         ),
         enabled: false,
       ),

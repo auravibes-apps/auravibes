@@ -127,10 +127,8 @@ void main() {
           },
         );
 
-      final token =
-          await CodexOAuthService(
-            dio: dio,
-          ).authenticateWithDeviceCode(
+      final token = await CodexOAuthService(dio: dio)
+          .authenticateWithDeviceCode(
             onDeviceCode: (deviceCode) {
               shownCode = deviceCode;
             },
@@ -194,9 +192,9 @@ void main() {
         );
 
       await expectLater(
-        CodexOAuthService(dio: dio).authenticateWithDeviceCode(
-          isCancelled: () => true,
-        ),
+        CodexOAuthService(
+          dio: dio,
+        ).authenticateWithDeviceCode(isCancelled: () => true),
         throwsA(isA<CodexOAuthCanceledException>()),
       );
     });

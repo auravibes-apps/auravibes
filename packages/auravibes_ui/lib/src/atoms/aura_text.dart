@@ -32,14 +32,11 @@ class AuraText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tint = this.tint;
-    final textStyle =
-        AuraTextStyles.resolve(
-          style: style,
-          colors: context.auraColors,
-          typography: context.auraTheme.typography,
-        ).copyWith(
-          color: tint == null ? null : context.auraColors.colorFor(tint),
-        );
+    final textStyle = AuraTextStyles.resolve(
+      style: style,
+      colors: context.auraColors,
+      typography: context.auraTheme.typography,
+    ).copyWith(color: tint == null ? null : context.auraColors.colorFor(tint));
 
     final iconData = IconThemeData(
       size: textStyle.fontSize,

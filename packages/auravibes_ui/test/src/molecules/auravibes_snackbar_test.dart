@@ -36,9 +36,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -71,9 +69,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -104,9 +100,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -136,9 +130,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -168,9 +160,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -208,9 +198,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -266,9 +254,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -341,9 +327,7 @@ void main() {
               ],
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -382,9 +366,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -419,9 +401,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -451,9 +431,7 @@ void main() {
               },
             ),
           ),
-          theme: ThemeData(
-            extensions: [AuraTheme.light],
-          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
 
@@ -470,10 +448,7 @@ void main() {
 }
 
 class _SnackBarTestApp extends StatelessWidget {
-  const _SnackBarTestApp({
-    required this.home,
-    required this.theme,
-  });
+  const _SnackBarTestApp({required this.home, required this.theme});
 
   final Widget home;
   final ThemeData theme;
@@ -482,9 +457,8 @@ class _SnackBarTestApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: home,
-      builder: (context, child) => AuraSnackBarHost(
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) =>
+          AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
       theme: theme,
     );
   }

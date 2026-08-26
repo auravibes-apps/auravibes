@@ -18,10 +18,7 @@ abstract final class StreamingMessageMetadata {
       completionTokens: streaming.completionTokens ?? current?.completionTokens,
       totalTokens: streaming.totalTokens ?? current?.totalTokens,
       thinking: streaming.thinking ?? current?.thinking,
-      modelMetadata: {
-        ...?current?.modelMetadata,
-        ...streaming.modelMetadata,
-      },
+      modelMetadata: {...?current?.modelMetadata, ...streaming.modelMetadata},
     );
   }
 }

@@ -563,10 +563,7 @@ class _Fixture {
   final String workspaceId;
 
   ServiceConnectionRepository get serviceConnectionRepository {
-    return ServiceConnectionRepository(
-      database,
-      encryption,
-    );
+    return ServiceConnectionRepository(database, encryption);
   }
 
   Future<void> close() {

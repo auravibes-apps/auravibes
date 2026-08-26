@@ -39,41 +39,35 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
   Future<List<WorkspaceModelSelectionTable>> getByModelConnectionId(
     String modelConnectionId,
   ) {
-    return (select(workspaceModelSelections)..where(
-          (table) => table.modelConnectionId.equals(modelConnectionId),
-        ))
+    return (select(workspaceModelSelections)
+          ..where((table) => table.modelConnectionId.equals(modelConnectionId)))
         .get();
   }
 
   Future<int> deleteByIds(Set<String> ids) {
     if (ids.isEmpty) return Future.value(0);
 
-    return (delete(workspaceModelSelections)..where(
-          (table) => table.id.isIn(ids),
-        ))
-        .go();
+    return (delete(
+      workspaceModelSelections,
+    )..where((table) => table.id.isIn(ids))).go();
   }
 
   Future<List<WorkspaceModelSelectionWithConnection>>
   getAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
   }) {
-    return _queryWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds)
-        .map(
-          _mapJoin,
-        )
-        .get();
+    return _queryWorkspaceModelSelectionsByWorkspace(
+      workspaceIds: workspaceIds,
+    ).map(_mapJoin).get();
   }
 
   Stream<List<WorkspaceModelSelectionWithConnection>>
   watchAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
   }) {
-    return _queryWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds)
-        .map(
-          _mapJoin,
-        )
-        .watch();
+    return _queryWorkspaceModelSelectionsByWorkspace(
+      workspaceIds: workspaceIds,
+    ).map(_mapJoin).watch();
   }
 
   Future<WorkspaceModelSelectionWithConnection?> getWorkspaceModelSelectionById(
@@ -82,11 +76,7 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
     final query = (_queryJoins()
       ..where(workspaceModelSelections.id.equals(id)));
 
-    return query
-        .map(
-          _mapJoin,
-        )
-        .getSingleOrNull();
+    return query.map(_mapJoin).getSingleOrNull();
   }
 
   JoinedSelectStatement<HasResultSet, dynamic> _queryJoins() {

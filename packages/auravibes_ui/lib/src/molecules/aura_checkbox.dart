@@ -140,10 +140,7 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
 }
 
 class _CheckboxFocusState extends InheritedWidget {
-  const _CheckboxFocusState({
-    required this.isFocused,
-    required super.child,
-  });
+  const _CheckboxFocusState({required this.isFocused, required super.child});
 
   final bool isFocused;
 

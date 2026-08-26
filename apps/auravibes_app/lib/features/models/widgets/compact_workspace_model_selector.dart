@@ -347,11 +347,7 @@ class _ModelCompactChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             )
-          : Text(
-              selectedName,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+          : Text(selectedName, overflow: TextOverflow.ellipsis, maxLines: 1),
     );
   }
 }
@@ -423,10 +419,7 @@ class _ModelSheetOptionContent extends StatelessWidget {
           runSpacing: context.auraTheme.fromSpacing(.xs),
           children: [
             AuraBadge.text(
-              child: Text(
-                selection.modelId,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
               variant: AuraBadgeVariant.soft,
               size: AuraBadgeSize.small,
             ),
@@ -477,10 +470,7 @@ class _ModelOptionSubtitle extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           AuraText(
-            child: Text(
-              selection.modelId,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
             style: AuraTextStyle.bodySmall,
           ),
           AuraText(

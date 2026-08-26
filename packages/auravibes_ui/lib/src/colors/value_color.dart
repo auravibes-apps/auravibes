@@ -68,10 +68,8 @@ class LinearSrgbColor extends ValueColor {
   Vector get vector => Vector(red, green, blue);
 
   @override
-  ({Vector min, Vector max}) get validLimits => (
-    min: const Vector(0, 0, 0),
-    max: const Vector(1, 1, 1),
-  );
+  ({Vector min, Vector max}) get validLimits =>
+      (min: const Vector(0, 0, 0), max: const Vector(1, 1, 1));
 
   /// Converts to sRGB color space.
   RgbColor toRgb() => RgbColor(
@@ -212,10 +210,8 @@ class OklabColor extends ValueColor {
   /// Values outside this range represent colors that cannot be
   /// rendered in standard sRGB displays.
   @override
-  ({Vector min, Vector max}) get validLimits => (
-    min: const Vector(0, -0.4, -0.4),
-    max: const Vector(1, 0.4, 0.4),
-  );
+  ({Vector min, Vector max}) get validLimits =>
+      (min: const Vector(0, -0.4, -0.4), max: const Vector(1, 0.4, 0.4));
 
   /// Converts to OKLCH color space.
   OKLCHColor toLch() {

@@ -72,9 +72,7 @@ class ModelApiService {
   ) {
     final jsonData = response.data;
     if (response.statusCode != HttpStatus.ok || jsonData == null) {
-      throw Exception(
-        'API request failed with status ${response.statusCode}',
-      );
+      throw Exception('API request failed with status ${response.statusCode}');
     }
 
     return _fromCatalog(
@@ -161,30 +159,22 @@ class ApiProviderDto {
         : <String, dynamic>{};
 
     final models = modelsData.entries
-        .map(
-          (e) {
-            final modelJson = e.value;
-            if (modelJson is! Map<String, dynamic>) {
-              return null;
-            }
+        .map((e) {
+          final modelJson = e.value;
+          if (modelJson is! Map<String, dynamic>) {
+            return null;
+          }
 
-            return modelJson;
-          },
-        )
+          return modelJson;
+        })
         .nonNulls
         .map(
-          (e) => ApiModelEntity.fromJson(
-            modelProvider.id,
-            e,
-            canonicalModelIds,
-          ),
+          (e) =>
+              ApiModelEntity.fromJson(modelProvider.id, e, canonicalModelIds),
         )
         .toList();
 
-    return ApiProviderDto(
-      modelProvider: modelProvider,
-      models: models,
-    );
+    return ApiProviderDto(modelProvider: modelProvider, models: models);
   }
 
   final List<ApiModelEntity> models;

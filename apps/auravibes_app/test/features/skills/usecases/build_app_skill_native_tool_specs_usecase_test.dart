@@ -324,8 +324,5 @@ class _FakeAppSkillCandidates
 }
 
 AppSkillCredentialCandidate _candidate(String id, {String? name}) {
-  return AppSkillCredentialCandidate(
-    id: id,
-    name: name ?? id,
-  );
+  return AppSkillCredentialCandidate(id: id, name: name ?? id);
 }

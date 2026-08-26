@@ -93,18 +93,12 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                     ),
                   ],
                 ),
-                TypedGoRoute<ToolsRoute>(
-                  path: 'tools',
-                ),
-                TypedGoRoute<ModelsRoute>(
-                  path: 'models',
-                ),
+                TypedGoRoute<ToolsRoute>(path: 'tools'),
+                TypedGoRoute<ModelsRoute>(path: 'models'),
                 TypedGoRoute<ServiceConnectionsRoute>(
                   path: 'service-connections',
                   routes: [
-                    TypedGoRoute<ServiceConnectionCreateRoute>(
-                      path: 'new',
-                    ),
+                    TypedGoRoute<ServiceConnectionCreateRoute>(path: 'new'),
                     TypedGoRoute<ServiceConnectionEditRoute>(
                       path: ':connectionId',
                     ),
@@ -113,18 +107,14 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                 TypedGoRoute<SkillsRoute>(
                   path: 'skills',
                   routes: [
-                    TypedGoRoute<SkillCreateRoute>(
-                      path: 'new',
-                    ),
+                    TypedGoRoute<SkillCreateRoute>(path: 'new'),
                     TypedGoRoute<SkillToolCreateRoute>(
                       path: ':skillId/tools/new',
                     ),
                     TypedGoRoute<SkillToolEditRoute>(
                       path: ':skillId/tools/:toolId',
                     ),
-                    TypedGoRoute<SkillDetailRoute>(
-                      path: ':skillId',
-                    ),
+                    TypedGoRoute<SkillDetailRoute>(path: ':skillId'),
                   ],
                 ),
                 TypedGoRoute<SkillCredentialDefinitionsRoute>(
@@ -141,12 +131,8 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
                 TypedGoRoute<AgentsRoute>(
                   path: 'agents',
                   routes: [
-                    TypedGoRoute<AgentCreateRoute>(
-                      path: 'new',
-                    ),
-                    TypedGoRoute<AgentDetailRoute>(
-                      path: ':agentId',
-                    ),
+                    TypedGoRoute<AgentCreateRoute>(path: 'new'),
+                    TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
                   ],
                 ),
               ],
@@ -154,9 +140,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
           ],
         ),
         TypedStatefulShellBranch(
-          routes: [
-            TypedGoRoute<SettingsRoute>(path: 'settings'),
-          ],
+          routes: [TypedGoRoute<SettingsRoute>(path: 'settings')],
         ),
       ],
     ),
@@ -196,9 +180,7 @@ class MyShellRouteData extends StatefulShellRouteData {
   ) {
     final workspaceId = state.pathParameters['workspaceId'];
     if (workspaceId == null || workspaceId.isEmpty) {
-      throw StateError(
-        'workspaceId must be present in route pathParameters',
-      );
+      throw StateError('workspaceId must be present in route pathParameters');
     }
 
     return _WorkspaceSessionGate(

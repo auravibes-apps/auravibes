@@ -58,13 +58,10 @@ void main() {
         redirectUrl: 'https://example.com/callback',
       );
 
-      await runWithClient(
-        () async {
-          final result = await OAuthDiscoveryService.discoverOAuth(registrer);
-          expect(result, isNull);
-        },
-        () => MockClient((request) async => Response('{}', 404)),
-      );
+      await runWithClient(() async {
+        final result = await OAuthDiscoveryService.discoverOAuth(registrer);
+        expect(result, isNull);
+      }, () => MockClient((request) async => Response('{}', 404)));
     });
 
     test('discoverOAuth returns null for invalid URL', () async {

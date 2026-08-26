@@ -41,10 +41,7 @@ class ToolsGroupsRepository implements ToolsGroupsRepositoryContract {
   }
 
   @override
-  Future<bool> setToolsGroupEnabled(
-    String groupId, {
-    required bool isEnabled,
-  }) {
+  Future<bool> setToolsGroupEnabled(String groupId, {required bool isEnabled}) {
     return _database.toolsGroupsDao.setToolsGroupEnabled(
       groupId,
       isEnabled: isEnabled,

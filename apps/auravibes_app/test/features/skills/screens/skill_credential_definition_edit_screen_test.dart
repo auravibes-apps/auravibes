@@ -35,9 +35,8 @@ void main() {
                 workspaceId: workspaceId,
                 definitionId: definitionId,
               ),
-              builder: (context, child) => AuraSnackBarHost(
-                child: child ?? const SizedBox.shrink(),
-              ),
+              builder: (context, child) =>
+                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,

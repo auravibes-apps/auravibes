@@ -7,9 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
 void main() {
-  const local = WorkspaceSession(
-    LocalWorkspaceRef(localWorkspaceId: 'local'),
-  );
+  const local = WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'local'));
   const cloud = WorkspaceSession(
     CloudWorkspaceRef(
       localWorkspaceId: 'mirror',

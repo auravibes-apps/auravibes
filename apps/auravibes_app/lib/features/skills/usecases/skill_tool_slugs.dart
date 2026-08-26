@@ -61,29 +61,21 @@ class BuildAppSkillNativeToolSpecsUsecase {
         _conversationRepository != null && conversation == null;
     final isSubAgentConversation = conversation?.parentConversationId != null;
     final skillKeys = <String>{};
-    final runtimeSkills =
-        [
-              ...loadedSkills,
-              ...extraSkills,
-            ]
-            .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
-            .toList();
+    final runtimeSkills = [...loadedSkills, ...extraSkills]
+        .where((skill) => skillKeys.add('${skill.source.name}:${skill.id}'))
+        .toList();
     final hasSkillsManager = runtimeSkills.any(
       (skill) =>
           skill.source == SkillSource.app &&
           skill.slug == SkillToolSlugs.skillsManager,
     );
-    final specs = <ToolSpec>[
-      if (hasSkillsManager) ...skillsManagerToolSpecs,
-    ];
+    final specs = <ToolSpec>[if (hasSkillsManager) ...skillsManagerToolSpecs];
     final hasSubAgents = runtimeSkills.any(
       (skill) =>
           skill.source == SkillSource.app && skill.slug == agentsSkillSlug,
     );
     if (hasSubAgents && !isUnknownConversation && !isSubAgentConversation) {
-      final subAgentsSkill = _appSkillRegistry.getBySlug(
-        agentsSkillSlug,
-      );
+      final subAgentsSkill = _appSkillRegistry.getBySlug(agentsSkillSlug);
       if (subAgentsSkill != null) {
         specs.addAll(_appSkillToolSpecs(subAgentsSkill, const []));
       }

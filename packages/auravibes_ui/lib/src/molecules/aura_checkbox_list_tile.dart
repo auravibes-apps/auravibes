@@ -65,10 +65,7 @@ class AuraCheckboxListTile extends StatelessWidget {
                   AuraText(child: title),
                   if (subtitle != null) ...[
                     const SizedBox(height: 4),
-                    AuraText(
-                      child: subtitle,
-                      style: AuraTextStyle.bodySmall,
-                    ),
+                    AuraText(child: subtitle, style: AuraTextStyle.bodySmall),
                   ],
                 ],
               ),

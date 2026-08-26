@@ -81,10 +81,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       });
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to add MCP server with tools: $e',
-          e,
-        ),
+        McpServersException('Failed to add MCP server with tools: $e', e),
         stackTrace,
       );
     }
@@ -116,10 +113,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       });
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to delete MCP server: $e',
-          e,
-        ),
+        McpServersException('Failed to delete MCP server: $e', e),
         stackTrace,
       );
     }
@@ -185,10 +179,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       rethrow;
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to sync MCP tools: $e',
-          e,
-        ),
+        McpServersException('Failed to sync MCP tools: $e', e),
         stackTrace,
       );
     }
@@ -206,10 +197,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to get MCP servers for workspace: $e',
-          e,
-        ),
+        McpServersException('Failed to get MCP servers for workspace: $e', e),
         stackTrace,
       );
     }
@@ -245,10 +233,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       return _tableToEntity(result);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to get MCP server by ID: $e',
-          e,
-        ),
+        McpServersException('Failed to get MCP server by ID: $e', e),
         stackTrace,
       );
     }
@@ -277,10 +262,7 @@ class McpServersException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
   /// Creates a new McpServersException.
-  const McpServersException(
-    this.message, [
-    this.cause,
-  ]);
+  const McpServersException(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -299,10 +281,8 @@ class McpServersException implements Exception {
 /// Exception thrown when an MCP server is not found.
 class McpServerNotFoundException extends McpServersException {
   /// Creates a new McpServerNotFoundException.
-  const McpServerNotFoundException(
-    this.serverId, [
-    Exception? cause,
-  ]) : super('MCP server "$serverId" not found', cause);
+  const McpServerNotFoundException(this.serverId, [Exception? cause])
+    : super('MCP server "$serverId" not found', cause);
 
   /// ID of the MCP server that was not found.
   final String serverId;

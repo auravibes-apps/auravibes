@@ -8,10 +8,7 @@ import 'package:logging/logging.dart';
 void main() {
   test('translates every workspace error code', () {
     for (final code in CloudWorkspaceErrorCode.values) {
-      final error = _translate(
-        CloudWorkspaceException(code: code),
-        .workspace,
-      );
+      final error = _translate(CloudWorkspaceException(code: code), .workspace);
       expect(error.code, code.name);
       expect(error.localizationKey, isNotEmpty);
     }

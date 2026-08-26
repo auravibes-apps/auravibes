@@ -169,19 +169,13 @@ class _MessagesProvidersFixture {
     _container = ProviderContainer(
       overrides: [
         workspaceSessionProvider(
-          const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-          ),
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
         ).overrideWithValue(
-          const WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-          ),
+          const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
         ),
         workspaceSessionForRouteProvider('ws-1').overrideWithValue(
           const AsyncData(
-            WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: 'ws-1'),
-            ),
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
           ),
         ),
         conversationSelectedProvider.overrideWithValue('conv-1'),
@@ -273,28 +267,17 @@ void main() {
       );
       expect(messages, hasLength(1));
 
-      expect(
-        fixture.container.read(isMessageStreamingProvider('m1')),
-        isFalse,
-      );
+      expect(fixture.container.read(isMessageStreamingProvider('m1')), isFalse);
     });
 
     test('returns true when message is streaming', () async {
       fixture.container
-        ..listen(
-          chatMessagesProvider('ws-1', 'conv-1'),
-          (_, _) {
-            final _ = Object();
-          },
-          fireImmediately: true,
-        )
-        ..listen(
-          isMessageStreamingProvider('m1'),
-          (_, _) {
-            final _ = Object();
-          },
-          fireImmediately: true,
-        );
+        ..listen(chatMessagesProvider('ws-1', 'conv-1'), (_, _) {
+          final _ = Object();
+        }, fireImmediately: true)
+        ..listen(isMessageStreamingProvider('m1'), (_, _) {
+          final _ = Object();
+        }, fireImmediately: true);
       fixture.repository.emit([
         _message(id: 'm1', content: 'hi', isUser: true),
       ]);
@@ -305,10 +288,7 @@ void main() {
           .startSubscription(CompositeSubscription(), 'm1');
       await Future<void>.delayed(Duration.zero);
 
-      expect(
-        fixture.container.read(isMessageStreamingProvider('m1')),
-        isTrue,
-      );
+      expect(fixture.container.read(isMessageStreamingProvider('m1')), isTrue);
     });
   });
 
@@ -390,9 +370,7 @@ void main() {
   group('conversationQueuedDraftsProvider', () {
     test('returns empty list by default', () {
       final container = ProviderContainer(
-        overrides: [
-          conversationSelectedProvider.overrideWithValue('conv-1'),
-        ],
+        overrides: [conversationSelectedProvider.overrideWithValue('conv-1')],
       );
       addTearDown(container.dispose);
 

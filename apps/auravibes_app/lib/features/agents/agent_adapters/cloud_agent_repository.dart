@@ -85,10 +85,7 @@ class CloudAgentRepository implements AgentRepository {
   }
 
   @override
-  Future<AgentEntity> updateAgent(
-    String agentId,
-    AgentToUpdate agent,
-  ) async {
+  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
     final resources = await read();
     final associations = _agentSkillAssociations(resources, agentId);
     for (final resource in resources) {
@@ -116,10 +113,7 @@ class CloudAgentRepository implements AgentRepository {
     );
     _revisions[agentId] = resource.revision;
 
-    return _decode(
-      resource,
-      response.resources,
-    );
+    return _decode(resource, response.resources);
   }
 
   @override

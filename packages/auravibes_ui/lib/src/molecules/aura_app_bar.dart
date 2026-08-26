@@ -25,9 +25,8 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leading;
 
   @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (bottom?.preferredSize.height ?? 0),
-  );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -41,10 +40,7 @@ class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
               softWrap: false,
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
-              child: AuraText(
-                child: title,
-                style: AuraTextStyle.heading5,
-              ),
+              child: AuraText(child: title, style: AuraTextStyle.heading5),
             ),
       actions: actions,
       bottom: bottom,

@@ -96,9 +96,9 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
     final workspaceCapabilities = ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).select(
-        (session) => session.value?.capabilities,
-      ),
+      workspaceSessionForRouteProvider(
+        workspaceId,
+      ).select((session) => session.value?.capabilities),
     );
 
     final isTextEmpty = useListenableSelector(
@@ -123,12 +123,9 @@ class ChatInputWidget extends HookConsumerWidget {
       isEmpty: isEmpty,
     );
 
-    useEffect(
-      () {
-        return actions.disposeDraft;
-      },
-      const [],
-    );
+    useEffect(() {
+      return actions.disposeDraft;
+    }, const []);
 
     final shouldShowStopButton = showStopButton ?? isBusy;
     final supportsLocalAttachments =
@@ -349,9 +346,7 @@ class _ChatInputActions {
       (() async {
         try {
           final allowedExtensions =
-              ChatAttachmentModality.pickerAllowedExtensions(
-                modalitiesInput,
-              );
+              ChatAttachmentModality.pickerAllowedExtensions(modalitiesInput);
           final result = await fp.FilePicker.pickFiles(
             allowedExtensions: allowedExtensions,
             type: allowedExtensions == null
@@ -403,12 +398,11 @@ class _ChatInputActions {
           final startedAt = DateTime.now();
           isStartingRecording.value = false;
           recordingTimer.value?.cancel();
-          recordingTimer.value = Timer.periodic(
-            const Duration(seconds: 1),
-            (_) {
-              recordingElapsed.value = DateTime.now().difference(startedAt);
-            },
-          );
+          recordingTimer.value = Timer.periodic(const Duration(seconds: 1), (
+            _,
+          ) {
+            recordingElapsed.value = DateTime.now().difference(startedAt);
+          });
         } on Object catch (_) {
           clearRecordingState();
         }
@@ -829,11 +823,7 @@ class _RecordingIndicator extends StatelessWidget {
     return AuraText(
       child: Row(
         children: [
-          Icon(
-            Icons.graphic_eq,
-            size: 18,
-            color: colors.error,
-          ),
+          Icon(Icons.graphic_eq, size: 18, color: colors.error),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -857,10 +847,7 @@ String _formatElapsed(Duration elapsed) {
 
 abstract final class AttachmentDisplayNames {
   @visibleForTesting
-  static String unique(
-    String displayName,
-    Iterable<String> existingNames,
-  ) {
+  static String unique(String displayName, Iterable<String> existingNames) {
     if (!existingNames.contains(displayName)) return displayName;
 
     final extension = p.extension(displayName);

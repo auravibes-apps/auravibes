@@ -10,9 +10,7 @@ typedef WorkspaceStateRead =
       ReadWorkspaceStateRequest request,
     );
 typedef WorkspaceStreamSubscribe =
-    Stream<WorkspaceStreamEnvelope> Function(
-      WorkspaceSubscribeRequest request,
-    );
+    Stream<WorkspaceStreamEnvelope> Function(WorkspaceSubscribeRequest request);
 typedef WorkspaceSecretPut =
     Future<PutWorkspaceSecretResponse> Function(
       PutWorkspaceSecretRequest request,
@@ -174,17 +172,14 @@ class CloudWorkspaceStateGateway {
   Stream<List<WorkspaceResource>> watchResources(
     List<WorkspaceResourceKind> kinds, {
     int limit = _pageSize,
-  }) => watch(
-    kinds.map((kind) => kind.name).toSet(),
-    () async {
-      final snapshot = await _readAll(kinds, limit.clamp(1, _pageSize));
+  }) => watch(kinds.map((kind) => kind.name).toSet(), () async {
+    final snapshot = await _readAll(kinds, limit.clamp(1, _pageSize));
 
-      return (
-        value: snapshot.resources,
-        currentSequence: snapshot.currentSequence,
-      );
-    },
-  );
+    return (
+      value: snapshot.resources,
+      currentSequence: snapshot.currentSequence,
+    );
+  });
 
   Stream<T> watch<T>(
     Set<String> resourceKinds,
@@ -207,10 +202,7 @@ class CloudWorkspaceStateGateway {
         ),
       );
       try {
-        while (await Future.any([
-          events.moveNext(),
-          _disposedSignal.future,
-        ])) {
+        while (await Future.any([events.moveNext(), _disposedSignal.future])) {
           final event = events.current;
           if (event.sequence <= lastSequence) continue;
 
@@ -240,10 +232,7 @@ class CloudWorkspaceStateGateway {
         final _ = await events.cancel();
       }
       if (_disposed) return;
-      await Future.any([
-        _delay(reconnectDelay),
-        _disposedSignal.future,
-      ]);
+      await Future.any([_delay(reconnectDelay), _disposedSignal.future]);
       reconnectDelay = Duration(
         milliseconds: (reconnectDelay.inMilliseconds * 2).clamp(
           _initialReconnectDelay.inMilliseconds,

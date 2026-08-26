@@ -25,10 +25,7 @@ class ModelProviderServices {
         provider.url,
         fallback: 'https://api.openai.com/v1',
       );
-      final client = OpenAIClient.withApiKey(
-        provider.key,
-        baseUrl: baseUrl,
-      );
+      final client = OpenAIClient.withApiKey(provider.key, baseUrl: baseUrl);
 
       final modelsResponse = await client.models.list();
 

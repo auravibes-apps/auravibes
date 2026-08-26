@@ -195,9 +195,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
             onSave: () => _save(context),
           );
         }(),
-        AsyncLoading() => const Center(
-          child: AuraSpinner(),
-        ),
+        AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
           child: TextLocale(LocaleKeys.skills_tool_load_error),
         ),
@@ -312,9 +310,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       final inputsJson = _buildInputsJson();
       final requiresCredential =
           ref
-                  .read(
-                    skillDetailProvider(widget.workspaceId, widget.skillId),
-                  )
+                  .read(skillDetailProvider(widget.workspaceId, widget.skillId))
                   .value
                   ?.credentialDefinitionId !=
               null &&
@@ -588,15 +584,10 @@ class _SkillToolForm extends StatelessWidget {
                 ),
               AuraRow(
                 children: [
-                  AuraSwitch(
-                    value: isEnabled,
-                    onChanged: onEnabledChanged,
-                  ),
+                  AuraSwitch(value: isEnabled, onChanged: onEnabledChanged),
                   const Expanded(
                     child: AuraText(
-                      child: TextLocale(
-                        LocaleKeys.skills_screen_enabled_label,
-                      ),
+                      child: TextLocale(LocaleKeys.skills_screen_enabled_label),
                     ),
                   ),
                 ],
@@ -639,9 +630,7 @@ class _QueryFieldsSection extends StatelessWidget {
           child: TextLocale(LocaleKeys.skills_tool_query_section_title),
           style: AuraTextStyle.heading4,
         ),
-        const AuraText(
-          child: TextLocale(LocaleKeys.skills_tool_query_hint),
-        ),
+        const AuraText(child: TextLocale(LocaleKeys.skills_tool_query_hint)),
         for (final field in fields)
           Row(
             children: [
@@ -649,9 +638,7 @@ class _QueryFieldsSection extends StatelessWidget {
                 child: AuraInput(
                   controller: field.keyController,
                   label: Text(
-                    LocaleKeys.skills_tool_query_key_label.tr(
-                      context: context,
-                    ),
+                    LocaleKeys.skills_tool_query_key_label.tr(context: context),
                   ),
                 ),
               ),
@@ -716,9 +703,7 @@ class _InputFieldsSection extends StatelessWidget {
           child: TextLocale(LocaleKeys.skills_tool_inputs_section_title),
           style: AuraTextStyle.heading4,
         ),
-        const AuraText(
-          child: TextLocale(LocaleKeys.skills_tool_inputs_hint),
-        ),
+        const AuraText(child: TextLocale(LocaleKeys.skills_tool_inputs_hint)),
         for (final field in fields)
           AuraCard(
             child: AuraColumn(
@@ -893,9 +878,7 @@ class _ReadOnlyField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(
-          child: TextLocale(labelKey),
-        ),
+        AuraText(child: TextLocale(labelKey)),
         AuraSelectableText(value),
       ],
       spacing: AuraSpacing.xs,

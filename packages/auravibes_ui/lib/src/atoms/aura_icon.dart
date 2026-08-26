@@ -44,11 +44,7 @@ class AuraIcon extends StatelessWidget {
         : auraColors.colorFor(tint);
 
     return Semantics(
-      child: Icon(
-        icon,
-        size: _getIconSize(),
-        color: iconColor,
-      ),
+      child: Icon(icon, size: _getIconSize(), color: iconColor),
       label: semanticLabel,
     );
   }

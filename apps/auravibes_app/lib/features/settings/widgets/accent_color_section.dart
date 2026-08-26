@@ -26,16 +26,12 @@ class AccentColorSection extends ConsumerWidget {
             style: AuraTextStyle.heading6,
           ),
           const AuraText(
-            child: TextLocale(
-              LocaleKeys.settings_screen_accent_color_subtitle,
-            ),
+            child: TextLocale(LocaleKeys.settings_screen_accent_color_subtitle),
             style: AuraTextStyle.bodySmall,
           ),
           AuraTile(
             child: const AuraText(
-              child: TextLocale(
-                LocaleKeys.settings_screen_accent_color_title,
-              ),
+              child: TextLocale(LocaleKeys.settings_screen_accent_color_title),
               style: AuraTextStyle.bodyLarge,
             ),
             onTap: () => _showAccentDialog(context, ref, hue),
@@ -141,9 +137,7 @@ class _HueSlider extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             borderRadius: const BorderRadius.all(Radius.circular(6)),
-            gradient: LinearGradient(
-              colors: colors,
-            ),
+            gradient: LinearGradient(colors: colors),
           ),
           height: 12,
         ),

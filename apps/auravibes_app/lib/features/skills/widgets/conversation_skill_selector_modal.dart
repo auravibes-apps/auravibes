@@ -141,23 +141,16 @@ class _SkillSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(
-          child: TextLocale(titleKey),
-          style: AuraTextStyle.heading4,
-        ),
+        AuraText(child: TextLocale(titleKey), style: AuraTextStyle.heading4),
         if (skills.isEmpty)
-          AuraText(
-            child: TextLocale(emptyKey),
-          )
+          AuraText(child: TextLocale(emptyKey))
         else
           for (final skill in skills)
             AuraTile(
               child: AuraColumn(
                 children: [
                   AuraText(child: Text(skill.title)),
-                  AuraText(
-                    child: Text(skill.description),
-                  ),
+                  AuraText(child: Text(skill.description)),
                 ],
                 spacing: AuraSpacing.xs,
                 crossAxisAlignment: CrossAxisAlignment.start,

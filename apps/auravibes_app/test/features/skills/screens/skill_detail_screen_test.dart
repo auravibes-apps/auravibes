@@ -51,9 +51,8 @@ void main() {
                     skillId: value.skillId,
                     key: ValueKey('${value.workspaceId}:${value.skillId}'),
                   ),
-                  builder: (context, child) => AuraSnackBarHost(
-                    child: child ?? const SizedBox.shrink(),
-                  ),
+                  builder: (context, child) =>
+                      AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                   locale: context.locale,
                   localizationsDelegates: context.localizationDelegates,
                   supportedLocales: context.supportedLocales,
@@ -72,10 +71,7 @@ void main() {
     );
   }
 
-  Future<void> pumpUntilFound(
-    WidgetTester tester,
-    Finder finder,
-  ) async {
+  Future<void> pumpUntilFound(WidgetTester tester, Finder finder) async {
     for (var attempt = 0; attempt < 40; attempt++) {
       await tester.pump(const Duration(milliseconds: 200));
       if (finder.evaluate().isNotEmpty) return;
@@ -88,10 +84,8 @@ void main() {
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
     addTearDown(appSkillDatabase.close);
-    final appSkillWorkspace =
-        await WorkspaceRepository(
-          appSkillDatabase,
-        ).createWorkspace(
+    final appSkillWorkspace = await WorkspaceRepository(appSkillDatabase)
+        .createWorkspace(
           const WorkspaceToCreate(
             name: 'Test Workspace',
             type: WorkspaceType.local,
@@ -103,9 +97,9 @@ void main() {
     final appSkillContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(appSkillDatabase),
-        workspaceSessionProvider(appSkillSession).overrideWithValue(
+        workspaceSessionProvider(
           appSkillSession,
-        ),
+        ).overrideWithValue(appSkillSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider(appSkillWorkspace.id).overrideWithValue(null),
       ],
@@ -119,9 +113,7 @@ void main() {
       _FakeSecretKeyManager(),
     );
     final selectedCredentialWorkspace =
-        await WorkspaceRepository(
-          selectedCredentialDatabase,
-        ).createWorkspace(
+        await WorkspaceRepository(selectedCredentialDatabase).createWorkspace(
           const WorkspaceToCreate(
             name: 'Test Workspace',
             type: WorkspaceType.local,
@@ -134,9 +126,9 @@ void main() {
       overrides: [
         appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
         encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
-        workspaceSessionProvider(selectedCredentialSession).overrideWithValue(
+        workspaceSessionProvider(
           selectedCredentialSession,
-        ),
+        ).overrideWithValue(selectedCredentialSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider(
           selectedCredentialWorkspace.id,
@@ -155,9 +147,7 @@ void main() {
           ),
         );
     final skillWithDefinition =
-        await SkillsRepository(
-          selectedCredentialDatabase,
-        ).createSkill(
+        await SkillsRepository(selectedCredentialDatabase).createSkill(
           selectedCredentialWorkspace.id,
           SkillToCreate(
             kind: SkillKind.template,
@@ -189,10 +179,8 @@ void main() {
             attributesJson: '{"apiKey":{"description":"API key"}}',
           ),
         );
-    final optionalSkill =
-        await SkillsRepository(
-          selectedCredentialDatabase,
-        ).createSkill(
+    final optionalSkill = await SkillsRepository(selectedCredentialDatabase)
+        .createSkill(
           selectedCredentialWorkspace.id,
           SkillToCreate(
             kind: SkillKind.template,
@@ -208,9 +196,7 @@ void main() {
     );
     addTearDown(staleCredentialDatabase.close);
     final staleCredentialWorkspace =
-        await WorkspaceRepository(
-          staleCredentialDatabase,
-        ).createWorkspace(
+        await WorkspaceRepository(staleCredentialDatabase).createWorkspace(
           const WorkspaceToCreate(
             name: 'Test Workspace',
             type: WorkspaceType.local,
@@ -222,20 +208,18 @@ void main() {
     final staleCredentialContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
-        workspaceSessionProvider(staleCredentialSession).overrideWithValue(
+        workspaceSessionProvider(
           staleCredentialSession,
-        ),
+        ).overrideWithValue(staleCredentialSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider(staleCredentialWorkspace.id).overrideWithValue(
-          null,
-        ),
+        cloudSkillStoreProvider(
+          staleCredentialWorkspace.id,
+        ).overrideWithValue(null),
       ],
     );
     addTearDown(staleCredentialContainer.dispose);
     final skillWithStaleDefinition =
-        await SkillsRepository(
-          staleCredentialDatabase,
-        ).createSkill(
+        await SkillsRepository(staleCredentialDatabase).createSkill(
           staleCredentialWorkspace.id,
           const SkillToCreate(
             kind: SkillKind.template,

@@ -115,9 +115,7 @@ void main() {
         container
             .read(chatMessagesProvider('workspace-1', 'conversation-1'))
             .value,
-        [
-          _message(id: 'message-1', content: 'hello', isUser: true),
-        ],
+        [_message(id: 'message-1', content: 'hello', isUser: true)],
       );
       expect(_messageIds(container), ['message-1']);
 
@@ -141,13 +139,9 @@ void main() {
 
     test('applies streaming overlay only in message provider', () async {
       container
-        ..listen(
-          chatMessagesProvider('workspace-1', 'conversation-1'),
-          (_, _) {
-            final _ = Object();
-          },
-          fireImmediately: true,
-        )
+        ..listen(chatMessagesProvider('workspace-1', 'conversation-1'), (_, _) {
+          final _ = Object();
+        }, fireImmediately: true)
         ..listen(
           messageConversationByIdProvider(
             'workspace-1',
@@ -200,13 +194,12 @@ void main() {
       'uses latest assistant usage and replaces with streaming value',
       () async {
         container
-          ..listen(
-            chatMessagesProvider('workspace-1', 'conversation-1'),
-            (_, _) {
-              final _ = Object();
-            },
-            fireImmediately: true,
-          )
+          ..listen(chatMessagesProvider('workspace-1', 'conversation-1'), (
+            _,
+            _,
+          ) {
+            final _ = Object();
+          }, fireImmediately: true)
           ..listen(
             conversationUsedTokensProvider('workspace-1', 'conversation-1'),
             (_, _) {
@@ -571,9 +564,7 @@ class _FakeWorkspaceModelSelectionRepository
 
   @override
   Future<WorkspaceModelSelectionWithConnectionEntity?>
-  getWorkspaceModelSelectionById(
-    String id,
-  ) async {
+  getWorkspaceModelSelectionById(String id) async {
     return selectedModel;
   }
 
@@ -583,17 +574,13 @@ class _FakeWorkspaceModelSelectionRepository
 
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
-  getWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     throw UnimplementedError();
   }
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>>
-  watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter filter,
-  ) {
+  watchWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) {
     throw UnimplementedError();
   }
 

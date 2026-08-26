@@ -86,10 +86,7 @@ class _CloudAccountRegisterFormState
           ),
         ],
         if (_errorKey case final errorKey?)
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            child: TextLocale(errorKey),
-          ),
+          AuraText(style: AuraTextStyle.bodySmall, child: TextLocale(errorKey)),
         AuraButton(
           onPressed: _registerStep,
           child: TextLocale(

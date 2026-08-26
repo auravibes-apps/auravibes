@@ -281,18 +281,13 @@ void main() {
     final grouped = container.read(
       groupedToolsProvider('workspace-1').notifier,
     );
-    final _ = await container.read(
-      groupedToolsProvider('workspace-1').future,
-    );
+    final _ = await container.read(groupedToolsProvider('workspace-1').future);
     await grouped.setMcpGroupEnabled(groupId, isEnabled: false);
     await grouped.reconnectMcp('server-1');
     await grouped.deleteMcpGroup(groupId);
 
     expect(discoveries, 3);
-    expect(
-      resources.any((item) => item.resourceId == groupServerId),
-      isFalse,
-    );
+    expect(resources.any((item) => item.resourceId == groupServerId), isFalse);
     expect(
       resources.any(
         (item) =>

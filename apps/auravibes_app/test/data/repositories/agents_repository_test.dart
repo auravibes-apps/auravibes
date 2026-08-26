@@ -267,10 +267,8 @@ void main() {
         );
     final noAgentSkills =
         await ListConversationAgentSkillsUsecase(
-          (conversationId, _) =>
-              fixture.conversationRepository.getConversationById(
-                conversationId,
-              ),
+          (conversationId, _) => fixture.conversationRepository
+              .getConversationById(conversationId),
           (_) => fixture.agentsRepository,
           fixture.resolveAgentSkillsUsecase.call,
         ).call(

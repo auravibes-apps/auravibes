@@ -13,10 +13,7 @@ typedef ContinueSubAgentTurn =
     });
 
 typedef SubAgentChildStarted =
-    void Function({
-      required String parentId,
-      required String childId,
-    });
+    void Function({required String parentId, required String childId});
 
 class SubAgentRunner {
   const SubAgentRunner({

@@ -40,10 +40,7 @@ Stream<List<ServiceConnectionListItem>> serviceConnections(
       (models, services) => [
         ...models.map(ServiceConnectionListItem.fromModelConnection),
         ...services.map(
-          (connection) => _cloudServiceConnectionItem(
-            connection,
-            workspaceId,
-          ),
+          (connection) => _cloudServiceConnectionItem(connection, workspaceId),
         ),
       ]..sort((a, b) => a.name.compareTo(b.name)),
     );
@@ -54,9 +51,7 @@ Stream<List<ServiceConnectionListItem>> serviceConnections(
   final usecase = WatchServiceConnectionListItemsUsecase(
     ref.watch(appDatabaseProvider),
     ref.watch(modelConnectionRepositoryProvider),
-    ref.watch(
-      skillCredentialDefinitionsRepositoryProvider,
-    ),
+    ref.watch(skillCredentialDefinitionsRepositoryProvider),
     ref.watch(skillCredentialsRepositoryProvider),
     DateTime.now,
   );

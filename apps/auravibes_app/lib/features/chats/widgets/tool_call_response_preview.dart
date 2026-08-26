@@ -79,9 +79,7 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
         // Show more button (only if content exceeds max lines).
         if (_exceedsMaxLines && widget.showExpandButton)
           Padding(
-            padding: EdgeInsets.only(
-              top: context.auraTheme.fromSpacing(.xs),
-            ),
+            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
             child: AuraButton(
               onPressed: _showFullContent,
               child: const AuraRow(

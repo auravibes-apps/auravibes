@@ -96,10 +96,7 @@ class _ConnectionsList extends StatelessWidget {
       return Center(
         child: AuraColumn(
           children: [
-            const AuraIcon(
-              Icons.hub_outlined,
-              size: AuraIconSize.extraLarge,
-            ),
+            const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_title),
               style: AuraTextStyle.heading3,
@@ -154,9 +151,7 @@ class _ConnectionTile extends ConsumerWidget {
               child: Text(connection.name),
               style: AuraTextStyle.heading6,
             ),
-            AuraText(
-              child: Text(_subtitle(context)),
-            ),
+            AuraText(child: Text(_subtitle(context))),
             if (connection.kind == ServiceConnectionListItemKind.mcpServer)
               _ConnectionStatusBadge(status: connection.displayStatus),
             if (connection.metadataValues.isNotEmpty)
@@ -249,10 +244,7 @@ class _ConnectionTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmDelete(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final titleKey = switch (connection.kind) {
       ServiceConnectionListItemKind.modelProvider =>
         LocaleKeys.service_connections_delete_model_provider_title,
@@ -281,10 +273,7 @@ class _ConnectionTile extends ConsumerWidget {
       context: context,
       title: TextLocale(titleKey),
       message: Text(
-        confirmKey.tr(
-          namedArgs: {'name': connection.name},
-          context: context,
-        ),
+        confirmKey.tr(namedArgs: {'name': connection.name}, context: context),
       ),
       actions: const AuraConfirmDialogActions(
         confirmLabel: TextLocale(LocaleKeys.common_delete),
@@ -345,10 +334,7 @@ class _ConnectionTile extends ConsumerWidget {
     }
   }
 
-  Future<void> _reconnectMcpServer(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _reconnectMcpServer(BuildContext context, WidgetRef ref) async {
     final serverId = connection.mcpServerId;
     if (serverId == null) return;
 
@@ -508,10 +494,7 @@ String _statusLabel(
   return key.tr(context: context);
 }
 
-String _metadataLabel(
-  BuildContext context,
-  ServiceConnectionMetadataKey key,
-) {
+String _metadataLabel(BuildContext context, ServiceConnectionMetadataKey key) {
   final localeKey = switch (key) {
     ServiceConnectionMetadataKey.issuer =>
       LocaleKeys.service_connections_metadata_issuer,

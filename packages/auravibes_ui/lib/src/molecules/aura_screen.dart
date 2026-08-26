@@ -38,10 +38,7 @@ class AuraScreen extends StatelessWidget {
 
     var container = child;
     if (padding != null) {
-      container = AuraPadding(
-        child: container,
-        padding: padding,
-      );
+      container = AuraPadding(child: container, padding: padding);
     }
 
     var content = container;
@@ -58,18 +55,13 @@ class AuraScreen extends StatelessWidget {
     content = switch (variant) {
       AuraScreenVariation.standard => content,
       AuraScreenVariation.aurora => Stack(
-        children: [
-          const _AuroraBackground(),
-          content,
-        ],
+        children: [const _AuroraBackground(), content],
       ),
     };
 
     return Scaffold(
       appBar: appBar,
-      body: Portal(
-        child: content,
-      ),
+      body: Portal(child: content),
       backgroundColor: context.auraColors.background,
       extendBodyBehindAppBar: true,
     );

@@ -236,9 +236,7 @@ void main() {
     );
   });
 
-  testWidgets('shows file and hides photo attachment on macOS', (
-    tester,
-  ) async {
+  testWidgets('shows file and hides photo attachment on macOS', (tester) async {
     overridePlatform(TargetPlatform.macOS);
 
     await pumpAndInit(

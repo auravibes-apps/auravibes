@@ -47,10 +47,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    final _ =
-        await SkillCredentialDefinitionsRepository(
-          database,
-        ).createDefinition(
+    final _ = await SkillCredentialDefinitionsRepository(database)
+        .createDefinition(
           workspace.id,
           const SkillCredentialDefinitionToCreate(
             title: 'Example Service',
@@ -74,9 +72,8 @@ void main() {
         ),
         GoRoute(
           path: '/workspaces/:workspaceId/more/skills',
-          builder: (context, state) => SkillsScreen(
-            workspaceId: state.pathParameters['workspaceId']!,
-          ),
+          builder: (context, state) =>
+              SkillsScreen(workspaceId: state.pathParameters['workspaceId']!),
         ),
       ],
       initialLocation: '/workspaces/${workspace.id}/more/skills',
@@ -91,9 +88,8 @@ void main() {
               container: container,
               child: MaterialApp.router(
                 routerConfig: router,
-                builder: (context, child) => AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
+                builder: (context, child) =>
+                    AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
                 locale: context.locale,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
@@ -135,10 +131,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Edit content'));
     final _ = await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextFormField).last,
-      'Summarize text.',
-    );
+    await tester.enterText(find.byType(TextFormField).last, 'Summarize text.');
     await tester.tap(find.byIcon(Icons.save_outlined).last);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.save_outlined));

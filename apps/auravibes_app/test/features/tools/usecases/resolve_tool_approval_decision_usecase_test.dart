@@ -144,9 +144,7 @@ void main() {
               workspaceId: 'ws-1',
               toolId: 'skill-tool-1',
             ),
-          ).thenAnswer(
-            (_) async => ToolPermissionResult.needsConfirmation,
-          );
+          ).thenAnswer((_) async => ToolPermissionResult.needsConfirmation);
 
           final decision = await usecase(
             conversationId: 'conv-1',
@@ -386,9 +384,7 @@ void main() {
             workspaceId: 'ws-1',
             toolId: 'calc',
           ),
-        ).thenAnswer(
-          (_) async => ToolPermissionResult.disabledInConversation,
-        );
+        ).thenAnswer((_) async => ToolPermissionResult.disabledInConversation);
 
         final decision = await usecase(
           conversationId: 'conv-1',

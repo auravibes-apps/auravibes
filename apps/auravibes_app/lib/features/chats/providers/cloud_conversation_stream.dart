@@ -26,10 +26,7 @@ Stream<CloudConversationState> _watchCloudConversation(
     cloudWorkspaceStateGatewayProvider(session).future,
   );
   if (gateway == null) return;
-  yield* CloudConversationStream.watch(
-    CloudChatGateway(gateway),
-    key,
-  );
+  yield* CloudConversationStream.watch(CloudChatGateway(gateway), key);
 }
 
 /// Reconciles the local view from the authoritative snapshot after a stream

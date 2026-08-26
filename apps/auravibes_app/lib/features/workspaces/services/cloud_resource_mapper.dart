@@ -72,10 +72,7 @@ abstract final class CloudResourceMapper {
     ),
   };
 
-  static void _validate(
-    WorkspaceResourceKind kind,
-    Map<String, dynamic> data,
-  ) {
+  static void _validate(WorkspaceResourceKind kind, Map<String, dynamic> data) {
     final required = switch (kind) {
       .conversation || .message || .attachment => throw const FormatException(),
       .agent => const {'name': String, 'content': String, 'visibility': String},

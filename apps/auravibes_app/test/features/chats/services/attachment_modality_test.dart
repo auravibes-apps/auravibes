@@ -23,10 +23,14 @@ void main() {
       isTrue,
     );
     expect(ChatAttachmentModality.supportsFiles(modalities), isTrue);
-    expect(
-      ChatAttachmentModality.pickerAllowedExtensions(modalities),
-      ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif'],
-    );
+    expect(ChatAttachmentModality.pickerAllowedExtensions(modalities), [
+      'pdf',
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+    ]);
   });
 
   test('does not treat pdf support as generic file support', () {
@@ -55,41 +59,48 @@ void main() {
 
   test('allows enabled audio files in file picker', () {
     expect(ChatAttachmentModality.supportsFiles(['text', 'audio']), isTrue);
-    expect(
-      ChatAttachmentModality.pickerAllowedExtensions(['text', 'audio']),
-      ['mp3', 'wav'],
-    );
+    expect(ChatAttachmentModality.pickerAllowedExtensions(['text', 'audio']), [
+      'mp3',
+      'wav',
+    ]);
   });
 
   test('allows enabled image files in file picker', () {
     expect(ChatAttachmentModality.supportsFiles(['text', 'image']), isTrue);
-    expect(
-      ChatAttachmentModality.pickerAllowedExtensions(['text', 'image']),
-      ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    );
+    expect(ChatAttachmentModality.pickerAllowedExtensions(['text', 'image']), [
+      'jpg',
+      'jpeg',
+      'png',
+      'webp',
+      'gif',
+    ]);
   });
 
   test('allows enabled video files in file picker', () {
     expect(ChatAttachmentModality.supportsFiles(['text', 'video']), isTrue);
+    expect(ChatAttachmentModality.pickerAllowedExtensions(['text', 'video']), [
+      'mp4',
+      'mov',
+      'mkv',
+      'webm',
+    ]);
     expect(
-      ChatAttachmentModality.pickerAllowedExtensions(['text', 'video']),
-      ['mp4', 'mov', 'mkv', 'webm'],
-    );
-    expect(
-      ChatAttachmentModality.supports(
-        MessageAttachmentModality.file,
-        ['text', 'video'],
-        mimeType: 'video/mp4',
-      ),
+      ChatAttachmentModality.supports(MessageAttachmentModality.file, [
+        'text',
+        'video',
+      ], mimeType: 'video/mp4'),
       isTrue,
     );
   });
 
   test('combines picker extensions for specific file capabilities', () {
     expect(
-      ChatAttachmentModality.pickerAllowedExtensions(
-        ['text', 'image', 'audio', 'video'],
-      ),
+      ChatAttachmentModality.pickerAllowedExtensions([
+        'text',
+        'image',
+        'audio',
+        'video',
+      ]),
       [
         'jpg',
         'jpeg',

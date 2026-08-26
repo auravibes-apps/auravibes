@@ -99,19 +99,11 @@ void main() {
           'toolId': 'tool-1',
           'permissionMode': 'alwaysAsk',
         }),
-        _resource(
-          now,
-          'deleted',
-          {
-            'agentId': 'agent-1',
-            'toolId': 'tool-2',
-          },
-          deletedAt: now,
-        ),
-        _resource(now, 'skill', {
+        _resource(now, 'deleted', {
           'agentId': 'agent-1',
-          'skillId': 'skill-1',
-        }),
+          'toolId': 'tool-2',
+        }, deletedAt: now),
+        _resource(now, 'skill', {'agentId': 'agent-1', 'skillId': 'skill-1'}),
         _resource(now, 'other', {
           'agentId': 'agent-2',
           'toolId': 'tool-3',

@@ -86,15 +86,11 @@ class AddModelProviderWidget extends HookConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (showHeader)
-          _ModalHeader(
-            onClose: onCancel ?? () => Navigator.of(context).pop(),
-          ),
+          _ModalHeader(onClose: onCancel ?? () => Navigator.of(context).pop()),
         _SelectedModelHeader(workspaceId: workspaceId),
         Flexible(
           child: SingleChildScrollView(
-            padding: EdgeInsets.all(
-              context.auraTheme.fromSpacing(.lg),
-            ),
+            padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
             controller: scrollController,
             child: Form(
               key: formKey,
@@ -198,11 +194,7 @@ class AddModelProviderWidget extends HookConsumerWidget {
     cancelled.value = false;
     deviceCode.value = null;
     unawaited(
-      _submitForm(
-        context,
-        ref,
-        codexOAuthMethod: CodexOAuthMethod.browser,
-      ),
+      _submitForm(context, ref, codexOAuthMethod: CodexOAuthMethod.browser),
     );
   }
 
@@ -219,11 +211,8 @@ class AddModelProviderWidget extends HookConsumerWidget {
         context,
         ref,
         codexOAuthMethod: CodexOAuthMethod.deviceCode,
-        onCodexDeviceCode: (value) => _setCodexDeviceCode(
-          context,
-          deviceCode,
-          value,
-        ),
+        onCodexDeviceCode: (value) =>
+            _setCodexDeviceCode(context, deviceCode, value),
         isCodexDeviceCodeCancelled: () => cancelled.value,
       ),
     );
@@ -247,16 +236,12 @@ class _ModalHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.lg),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
       child: Row(
         children: [
           const Expanded(
             child: AuraText(
-              child: TextLocale(
-                LocaleKeys.models_screens_add_provider_title,
-              ),
+              child: TextLocale(LocaleKeys.models_screens_add_provider_title),
               style: AuraTextStyle.heading5,
             ),
           ),
@@ -273,10 +258,7 @@ class _ModalHeader extends StatelessWidget {
 
 /// API configuration section with key and URL.
 class _ApiConfigSection extends StatelessWidget {
-  const _ApiConfigSection({
-    required this.workspaceId,
-    required this.onSubmit,
-  });
+  const _ApiConfigSection({required this.workspaceId, required this.onSubmit});
 
   final String workspaceId;
   final VoidCallback onSubmit;
@@ -297,10 +279,7 @@ class _ApiConfigSection extends StatelessWidget {
 
 /// Reusable form section with title and content.
 class _HiddenSection extends HookWidget {
-  const _HiddenSection({
-    required this.title,
-    required this.child,
-  });
+  const _HiddenSection({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -332,10 +311,7 @@ class _HiddenSection extends HookWidget {
           ],
         ),
         const AuraSizedBox(height: .md),
-        Visibility(
-          child: child,
-          visible: visibilityState.value,
-        ),
+        Visibility(child: child, visible: visibilityState.value),
       ],
     );
   }
@@ -362,34 +338,24 @@ class _ErrorBanner extends ConsumerWidget {
     final errorColor = context.auraColors.error;
 
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         color: errorColor.withValues(alpha: 0.1),
-        border: Border.all(
-          color: errorColor,
-        ),
+        border: Border.all(color: errorColor),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 20,
-            color: errorColor,
-          ),
+          Icon(Icons.error_outline, size: 20, color: errorColor),
           const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
               error,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: errorColor,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: errorColor),
             ),
           ),
         ],
@@ -433,15 +399,13 @@ class _CreateButton extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
-      addCredentialsModelMutationProvider.select(
-        (value) => value.isPending,
-      ),
+      addCredentialsModelMutationProvider.select((value) => value.isPending),
     );
 
     final isValid = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => value.isValid(),
-      ),
+      addModelProviderStateProvider(
+        workspaceId,
+      ).select((value) => value.isValid()),
     );
     final disabled = isSubmitting || !isValid;
 
@@ -659,9 +623,7 @@ class _SelectModelProvider extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final models = ref
-        .watch(
-          apiModelProvidersProvider(workspaceId: workspaceId),
-        )
+        .watch(apiModelProvidersProvider(workspaceId: workspaceId))
         .value;
     final searchQuery = useState('');
     final addModelProvider = ref.watch(
@@ -669,28 +631,24 @@ class _SelectModelProvider extends HookConsumerWidget {
     );
 
     // Filter models based on search query using useMemoized.
-    final filteredModels = useMemoized(
-      () {
-        if (models == null) return <ApiModelProviderEntity>[];
+    final filteredModels = useMemoized(() {
+      if (models == null) return <ApiModelProviderEntity>[];
 
-        if (searchQuery.value.isEmpty) {
-          return models;
-        }
+      if (searchQuery.value.isEmpty) {
+        return models;
+      }
 
-        final query = searchQuery.value.toLowerCase();
+      final query = searchQuery.value.toLowerCase();
 
-        return models.where((model) {
-          return model.name.toLowerCase().contains(query);
-        }).toList();
-      },
-      [models, searchQuery.value],
-    );
+      return models.where((model) {
+        return model.name.toLowerCase().contains(query);
+      }).toList();
+    }, [models, searchQuery.value]);
 
     if (models == null) {
       return AuraButton(
-        onPressed: () => ref.invalidate(
-          apiModelProvidersProvider(workspaceId: workspaceId),
-        ),
+        onPressed: () =>
+            ref.invalidate(apiModelProvidersProvider(workspaceId: workspaceId)),
         child: const TextLocale(LocaleKeys.common_reload),
       );
     }
@@ -751,12 +709,8 @@ class _SelectModelProvider extends HookConsumerWidget {
                       child: Row(
                         mainAxisAlignment: .spaceBetween,
                         children: [
-                          ModelLogo(
-                            modelId: model.id,
-                          ),
-                          AuraText(
-                            child: Text(model.name),
-                          ),
+                          ModelLogo(modelId: model.id),
+                          AuraText(child: Text(model.name)),
                           if (isOAuthProvider)
                             const AuraText(
                               child: TextLocale(
@@ -789,9 +743,9 @@ class _SelectedModelHeader extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedModelId = ref.watch(
-      addModelProviderStateProvider(workspaceId).select(
-        (value) => value.modelId,
-      ),
+      addModelProviderStateProvider(
+        workspaceId,
+      ).select((value) => value.modelId),
     );
 
     final addModelProvider = ref.watch(
@@ -799,9 +753,7 @@ class _SelectedModelHeader extends HookConsumerWidget {
     );
 
     final models = ref
-        .watch(
-          apiModelProvidersProvider(workspaceId: workspaceId),
-        )
+        .watch(apiModelProvidersProvider(workspaceId: workspaceId))
         .value;
 
     if (selectedModelId == null || models == null) {

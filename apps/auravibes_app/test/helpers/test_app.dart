@@ -46,9 +46,7 @@ class _TestableAppState extends State<TestableApp> {
     _container = ProviderContainer(
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
-        workspaceSessionForRouteProvider.overrideWith(
-          (_, _) async => session,
-        ),
+        workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
         ...widget.overrides.cast(),
       ],
     );
@@ -69,9 +67,8 @@ class _TestableAppState extends State<TestableApp> {
         child: Builder(
           builder: (context) => MaterialApp(
             home: widget.child,
-            builder: (context, child) => AuraSnackBarHost(
-              child: child ?? const SizedBox.shrink(),
-            ),
+            builder: (context, child) =>
+                AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
             locale: context.locale,
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,

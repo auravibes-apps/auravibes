@@ -46,11 +46,9 @@ void main() {
         content: 'Summarize things.',
       ),
     );
-    await AppSkillWorkspaceSettingsRepository(database).setAppSkillEnabled(
-      workspace.id,
-      'skills_manager',
-      isEnabled: false,
-    );
+    await AppSkillWorkspaceSettingsRepository(
+      database,
+    ).setAppSkillEnabled(workspace.id, 'skills_manager', isEnabled: false);
     final _ = await database
         .into(database.tools)
         .insert(
@@ -61,9 +59,9 @@ void main() {
             isEnabled: const Value(true),
           ),
         );
-    final _ = await WorkspaceToolsRepository(database).getWorkspaceTools(
-      workspace.id,
-    );
+    final _ = await WorkspaceToolsRepository(
+      database,
+    ).getWorkspaceTools(workspace.id);
 
     return (database: database, workspace: workspace);
   }
@@ -93,9 +91,9 @@ void main() {
               ),
             ],
           ),
-          workspaceToolsRepositoryProvider(session).overrideWithValue(
-            WorkspaceToolsRepository(fixture.database),
-          ),
+          workspaceToolsRepositoryProvider(
+            session,
+          ).overrideWithValue(WorkspaceToolsRepository(fixture.database)),
         ],
         workspaceId: fixture.workspace.id,
         workspaceSession: session,

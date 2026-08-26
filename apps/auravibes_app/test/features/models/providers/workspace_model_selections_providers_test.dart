@@ -237,10 +237,7 @@ void main() {
 
       final result = await container.read(provider.future);
       expect(result, hasLength(1));
-      expect(
-        result.firstOrNull?.workspaceModelSelection.id,
-        'sel-1',
-      );
+      expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
     });
 
     test('emits updated selections after initial value', () async {
@@ -423,10 +420,9 @@ void main() {
 
       final result = await container.read(provider.future);
 
-      expect(
-        result.map((model) => model.workspaceModelSelection.modelId),
-        ['gpt-5.5'],
-      );
+      expect(result.map((model) => model.workspaceModelSelection.modelId), [
+        'gpt-5.5',
+      ]);
       expect(result.single.modelsProvider.id, 'openai-codex');
     });
 

@@ -20,9 +20,9 @@ void main() {
     () async {
       final container = ProviderContainer(
         overrides: [
-          cloudSkillStoreProvider(workspaceId).overrideWithValue(
-            _cloudStore(const []),
-          ),
+          cloudSkillStoreProvider(
+            workspaceId,
+          ).overrideWithValue(_cloudStore(const [])),
         ],
       );
       addTearDown(container.dispose);
@@ -142,9 +142,9 @@ void main() {
   test('returns null for an unknown cloud skill id', () async {
     final container = ProviderContainer(
       overrides: [
-        cloudSkillStoreProvider(workspaceId).overrideWithValue(
-          _cloudStore(const []),
-        ),
+        cloudSkillStoreProvider(
+          workspaceId,
+        ).overrideWithValue(_cloudStore(const [])),
       ],
     );
     addTearDown(container.dispose);

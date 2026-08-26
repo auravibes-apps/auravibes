@@ -53,9 +53,7 @@ void main() {
 
     testWidgets(
       'calls onChanged with toggled value when activated by keyboard',
-      (
-        tester,
-      ) async {
+      (tester) async {
         bool? selectedValue;
 
         await tester.pumpWidget(

@@ -28,24 +28,22 @@ class SkillCredentialOperations {
 
 final ProviderFamily<SkillCredentialOperations, String>
 skillCredentialOperationsProvider =
-    Provider.family<SkillCredentialOperations, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
-        if (cloud != null) {
-          return SkillCredentialOperations(
-            create: (_, value) => cloud.createCredential(value),
-            getForEdit: cloud.credentialForEdit,
-            update: cloud.updateCredential,
-            delete: cloud.deleteCredential,
-          );
-        }
-        final local = ref.watch(skillCredentialsRepositoryProvider);
-
+    Provider.family<SkillCredentialOperations, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+      if (cloud != null) {
         return SkillCredentialOperations(
-          create: local.createCredential,
-          getForEdit: local.getCredentialForEdit,
-          update: local.updateCredential,
-          delete: local.deleteCredential,
+          create: (_, value) => cloud.createCredential(value),
+          getForEdit: cloud.credentialForEdit,
+          update: cloud.updateCredential,
+          delete: cloud.deleteCredential,
         );
-      },
-    );
+      }
+      final local = ref.watch(skillCredentialsRepositoryProvider);
+
+      return SkillCredentialOperations(
+        create: local.createCredential,
+        getForEdit: local.getCredentialForEdit,
+        update: local.updateCredential,
+        delete: local.deleteCredential,
+      );
+    });

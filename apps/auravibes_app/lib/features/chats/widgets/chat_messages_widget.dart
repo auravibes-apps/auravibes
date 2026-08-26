@@ -68,10 +68,7 @@ class ChatMessagesWidget extends HookConsumerWidget {
             .value ??
         const <ConversationEntity>[];
     final compactionState = ref.watch(
-      conversationCompactionExecutionStateProvider(
-        workspaceId,
-        conversationId,
-      ),
+      conversationCompactionExecutionStateProvider(workspaceId, conversationId),
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
@@ -130,10 +127,7 @@ class _ChatMessageRow extends HookConsumerWidget {
       messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
     );
     final message = switch (baseMessage) {
-      final baseMessage? => _mergeStreamingResult(
-        baseMessage,
-        streamingResult,
-      ),
+      final baseMessage? => _mergeStreamingResult(baseMessage, streamingResult),
       null => ref.watch(
         messageConversationByIdProvider(
           workspaceId,
@@ -465,9 +459,7 @@ class _ToolCallWidget extends ConsumerWidget {
     final currentWorkspaceId = workspaceId;
     final displayNameAsync = currentWorkspaceId == null
         ? null
-        : ref.watch(
-            toolDisplayNameProvider(currentWorkspaceId, toolCall.name),
-          );
+        : ref.watch(toolDisplayNameProvider(currentWorkspaceId, toolCall.name));
     final displayName =
         displayNameAsync?.maybeWhen(
           data: (name) => name,
@@ -506,9 +498,7 @@ class _ToolCallWidget extends ConsumerWidget {
             children: [
               TextSpan(
                 text: displayName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (decodedArgs != null) ...[
                 const TextSpan(text: ' "'),
@@ -525,9 +515,7 @@ class _ToolCallWidget extends ConsumerWidget {
         ),
         if (decodedResponse != null)
           Padding(
-            padding: EdgeInsets.only(
-              top: context.auraTheme.fromSpacing(.xs),
-            ),
+            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
             child: ToolCallResponsePreview(
               toolName: toolCall.name,
               content: decodedResponse,
@@ -635,13 +623,11 @@ String? _activeSubAgentConversationId(
   }
 
   return ref.watch(
-    activeSubAgentRuntimeProvider.select(
-      (state) {
-        final childIds = state[parentConversationId] ?? const <String>{};
+    activeSubAgentRuntimeProvider.select((state) {
+      final childIds = state[parentConversationId] ?? const <String>{};
 
-        return childIds.length == 1 ? childIds.single : null;
-      },
-    ),
+      return childIds.length == 1 ? childIds.single : null;
+    }),
   );
 }
 
@@ -780,15 +766,9 @@ class _ErrorMessageWidget extends StatelessWidget {
     return AuraContainer(
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: iconSize,
-            color: auraColors.onError,
-          ),
+          Icon(Icons.error_outline, size: iconSize, color: auraColors.onError),
           const AuraSizedBox(width: .xs),
-          Flexible(
-            child: TextLocale(content),
-          ),
+          Flexible(child: TextLocale(content)),
         ],
       ),
       padding: .medium,
@@ -818,19 +798,14 @@ class _ToolCallStatusIndicator extends StatelessWidget {
     const textSize = 12.0;
 
     return Padding(
-      padding: EdgeInsets.only(
-        top: context.auraTheme.fromSpacing(.xs),
-      ),
+      padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: iconSize, color: color),
           const AuraSizedBox(width: .xs),
           DefaultTextStyle(
-            style: TextStyle(
-              color: color,
-              fontSize: textSize,
-            ),
+            style: TextStyle(color: color, fontSize: textSize),
             child: statusText,
           ),
         ],
@@ -852,11 +827,7 @@ class _CompactingIndicator extends StatelessWidget {
         children: [
           const Padding(
             padding: EdgeInsets.all(4),
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: AuraSpinner(),
-            ),
+            child: SizedBox(width: 16, height: 16, child: AuraSpinner()),
           ),
           const AuraSizedBox(width: .sm),
           Text(

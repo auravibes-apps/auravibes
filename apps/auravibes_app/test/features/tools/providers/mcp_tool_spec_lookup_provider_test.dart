@@ -10,11 +10,7 @@ ToolSpec? _fakeGetToolSpec({
   required String toolName,
 }) {
   if (mcpServerId == 'srv-1' && toolName == 'my-tool') {
-    return ToolSpec(
-      name: 'my-tool',
-      description: 'desc',
-      inputJsonSchema: {},
-    );
+    return ToolSpec(name: 'my-tool', description: 'desc', inputJsonSchema: {});
   }
 
   return null;
@@ -104,11 +100,7 @@ void main() {
       }) {
         final _ = (mcpServerId: mcpServerId, toolName: toolName);
 
-        return ToolSpec(
-          name: 'x',
-          description: 'd',
-          inputJsonSchema: {},
-        );
+        return ToolSpec(name: 'x', description: 'd', inputJsonSchema: {});
       }
 
       final lookup = McpToolSpecLookup(call: captured);
@@ -119,9 +111,7 @@ void main() {
     });
 
     test('McpToolSpecLookup is const constructible', () {
-      const lookup = McpToolSpecLookup(
-        call: _fakeGetToolSpec,
-      );
+      const lookup = McpToolSpecLookup(call: _fakeGetToolSpec);
       expect(lookup.call, isA<Function>());
     });
 

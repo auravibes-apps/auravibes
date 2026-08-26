@@ -7,9 +7,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
 class SelectPromptMessagesUsecase {
-  const SelectPromptMessagesUsecase({
-    required this.messageRepository,
-  });
+  const SelectPromptMessagesUsecase({required this.messageRepository});
 
   final MessageRepository messageRepository;
 

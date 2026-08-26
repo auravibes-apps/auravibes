@@ -229,8 +229,5 @@ Future<int> totalToolsCount(Ref ref, String workspaceId) async {
     groupedToolsProvider(workspaceId).future,
   );
 
-  return groupedTools.fold<int>(
-    0,
-    (sum, group) => sum + group.totalToolsCount,
-  );
+  return groupedTools.fold<int>(0, (sum, group) => sum + group.totalToolsCount);
 }

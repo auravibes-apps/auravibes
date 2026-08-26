@@ -32,14 +32,11 @@ class _FakeRepository implements WorkspaceRepository {
       _workspaces.firstWhereOrNull((w) => w.id == id);
 
   @override
-  Future<List<WorkspaceEntity>> getWorkspacesByType(
-    WorkspaceType type,
-  ) async => _workspaces.where((w) => w.type == type).toList();
+  Future<List<WorkspaceEntity>> getWorkspacesByType(WorkspaceType type) async =>
+      _workspaces.where((w) => w.type == type).toList();
 
   @override
-  Future<WorkspaceEntity> createWorkspace(
-    WorkspaceToCreate workspace,
-  ) async {
+  Future<WorkspaceEntity> createWorkspace(WorkspaceToCreate workspace) async {
     final entity = WorkspaceEntity(
       id: 'ws-${_nextId++}',
       name: workspace.name,
@@ -271,10 +268,7 @@ void main() {
     });
 
     test('edits workspace name successfully', () async {
-      final entity = await fixture.usecase.call(
-        id: 'ws-1',
-        name: 'New Name',
-      );
+      final entity = await fixture.usecase.call(id: 'ws-1', name: 'New Name');
 
       expect(entity.name, 'New Name');
     });
@@ -318,10 +312,7 @@ void main() {
         const WorkspaceToCreate(name: 'WS2', type: WorkspaceType.local),
       );
 
-      await fixture.usecase.call(
-        id: 'ws-1',
-        activeWorkspaceId: 'ws-2',
-      );
+      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-2');
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, hasLength(1));
@@ -332,10 +323,7 @@ void main() {
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
-      await fixture.usecase.call(
-        id: 'ws-1',
-        activeWorkspaceId: 'other',
-      );
+      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'other');
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);
@@ -359,10 +347,7 @@ void main() {
         const WorkspaceToCreate(name: 'Only', type: WorkspaceType.local),
       );
 
-      await fixture.usecase.call(
-        id: 'ws-1',
-        activeWorkspaceId: 'ws-1',
-      );
+      await fixture.usecase.call(id: 'ws-1', activeWorkspaceId: 'ws-1');
 
       final remaining = await fixture.repository.getAllWorkspaces();
       expect(remaining, isEmpty);

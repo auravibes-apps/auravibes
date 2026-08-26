@@ -73,11 +73,7 @@ void main() {
       test('returns only enabled tools', () async {
         when(
           () => fixture.mockToolsDao.getEnabledWorkspaceTools('ws-1'),
-        ).thenAnswer(
-          (_) async => [
-            createToolRow(id: 't1', toolId: 'url'),
-          ],
-        );
+        ).thenAnswer((_) async => [createToolRow(id: 't1', toolId: 'url')]);
 
         final result = await fixture.repository.getEnabledWorkspaceTools(
           'ws-1',
@@ -288,9 +284,7 @@ void main() {
         expect(result, true);
         verify(
           () => fixture.mockToolsDao.deleteWorkspaceToolById('tool-1'),
-        ).called(
-          1,
-        );
+        ).called(1);
       });
     });
 
@@ -421,11 +415,7 @@ void main() {
             'calculator',
             '{"new": "config"}',
           ),
-        ).thenAnswer(
-          (_) async => [
-            createToolRow(config: '{"new": "config"}'),
-          ],
-        );
+        ).thenAnswer((_) async => [createToolRow(config: '{"new": "config"}')]);
 
         final result = await fixture.repository.patchWorkspaceToolConfig(
           'ws-1',

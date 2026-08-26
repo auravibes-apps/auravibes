@@ -7,11 +7,7 @@ void main() {
     testWidgets('renders input field correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              placeholder: Text('Enter text'),
-            ),
-          ),
+          home: Scaffold(body: AuraInput(placeholder: Text('Enter text'))),
         ),
       );
 
@@ -24,11 +20,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              initialValue: initialValue,
-            ),
-          ),
+          home: Scaffold(body: AuraInput(initialValue: initialValue)),
         ),
       );
 
@@ -44,9 +36,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraInput(
-              onChanged: (value) => changedValue = value,
-            ),
+            body: AuraInput(onChanged: (value) => changedValue = value),
           ),
         ),
       );
@@ -61,9 +51,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: AuraInput(
-              onSubmitted: (value) => submittedValue = value,
-            ),
+            body: AuraInput(onSubmitted: (value) => submittedValue = value),
           ),
         ),
       );
@@ -78,11 +66,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              hint: Text(helperText),
-            ),
-          ),
+          home: Scaffold(body: AuraInput(hint: Text(helperText))),
         ),
       );
 
@@ -96,10 +80,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraInput(
-              hint: Text(helperText),
-              error: Text(errorText),
-            ),
+            body: AuraInput(hint: Text(helperText), error: Text(errorText)),
           ),
         ),
       );
@@ -110,13 +91,7 @@ void main() {
 
     testWidgets('disables input when enabled is false', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              enabled: false,
-            ),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraInput(enabled: false))),
       );
 
       final textField = tester.widget<TextFormField>(
@@ -127,13 +102,7 @@ void main() {
 
     testWidgets('makes input read-only when readOnly is true', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              readOnly: true,
-            ),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: AuraInput(readOnly: true))),
       );
 
       // Test that the input is read-only by checking if we can enter text.
@@ -145,10 +114,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraInput(
-              initialValue: 'password',
-              obscureText: true,
-            ),
+            body: AuraInput(initialValue: 'password', obscureText: true),
           ),
         ),
       );
@@ -166,11 +132,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              prefixIcon: prefixIcon,
-            ),
-          ),
+          home: Scaffold(body: AuraInput(prefixIcon: prefixIcon)),
         ),
       );
 
@@ -182,11 +144,7 @@ void main() {
 
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: AuraInput(
-              suffixIcon: suffixIcon,
-            ),
-          ),
+          home: Scaffold(body: AuraInput(suffixIcon: suffixIcon)),
         ),
       );
 
@@ -197,10 +155,7 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: AuraInput(
-              header: Text('Header'),
-              footer: Text('Footer'),
-            ),
+            body: AuraInput(header: Text('Header'), footer: Text('Footer')),
           ),
         ),
       );

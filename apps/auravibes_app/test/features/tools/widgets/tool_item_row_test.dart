@@ -59,9 +59,9 @@ class _Subject extends StatelessWidget {
         child: Material(child: child),
       ),
       overrides: [
-        workspaceToolsProvider(_workspaceId).overrideWith(
-          () => _MockWorkspaceToolsNotifier([_tool()]),
-        ),
+        workspaceToolsProvider(
+          _workspaceId,
+        ).overrideWith(() => _MockWorkspaceToolsNotifier([_tool()])),
         groupedToolsProvider(
           _workspaceId,
         ).overrideWith(() => _MockGroupedNotifier([])),
@@ -172,10 +172,7 @@ void main() {
 
     await pumpSubject(
       tester,
-      ToolItemRow(
-        tool: tool,
-        workspaceId: _workspaceId,
-      ),
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
     );
 
     await tester.tap(find.byType(IconButton).last);

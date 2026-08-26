@@ -75,9 +75,7 @@ class _AgentsList extends ConsumerWidget {
               child: TextLocale(LocaleKeys.agents_empty_title),
               style: AuraTextStyle.heading4,
             ),
-            const AuraText(
-              child: TextLocale(LocaleKeys.agents_empty_subtitle),
-            ),
+            const AuraText(child: TextLocale(LocaleKeys.agents_empty_subtitle)),
             AuraButton(
               onPressed: () => _openCreate(context),
               child: const TextLocale(LocaleKeys.agents_create),

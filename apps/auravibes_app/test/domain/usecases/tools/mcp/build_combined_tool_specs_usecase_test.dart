@@ -60,9 +60,7 @@ void main() {
       getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
     );
 
-    final result = await usecase.call([
-      _tool(id: 't1', toolId: 'calculator'),
-    ]);
+    final result = await usecase.call([_tool(id: 't1', toolId: 'calculator')]);
 
     expect(result, hasLength(1));
     expect(result.single.name, startsWith('built_in_'));
@@ -87,9 +85,7 @@ void main() {
       getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
     );
 
-    final result = await usecase.call([
-      _tool(id: 't2', toolId: 'url'),
-    ]);
+    final result = await usecase.call([_tool(id: 't2', toolId: 'url')]);
 
     expect(result, hasLength(1));
     expect(result.single.name, startsWith('native_'));
@@ -101,9 +97,7 @@ void main() {
       getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
     );
 
-    final result = await usecase.call([
-      _tool(id: 't1', toolId: 'some_tool'),
-    ]);
+    final result = await usecase.call([_tool(id: 't1', toolId: 'some_tool')]);
 
     expect(result, isEmpty);
   });

@@ -95,9 +95,7 @@ class ConversationRepository {
     );
 
     if (!updated) {
-      throw ConversationException(
-        'Failed to update conversation with ID $id',
-      );
+      throw ConversationException('Failed to update conversation with ID $id');
     }
 
     final updatedConversation = await _database.conversationDao
@@ -118,9 +116,7 @@ class ConversationRepository {
     final attachmentPaths = await _attachmentPathsForConversation(id);
     final deleted = await _database.conversationDao.deleteConversation(id);
     if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map(_deleteAttachmentFile),
-      );
+      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
     }
 
     return deleted;
@@ -130,9 +126,7 @@ class ConversationRepository {
     final rows = await (_database.select(_database.messageAttachments).join([
       innerJoin(
         _database.messages,
-        _database.messages.id.equalsExp(
-          _database.messageAttachments.messageId,
-        ),
+        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
       ),
     ])..where(_database.messages.conversationId.equals(id))).get();
 

@@ -33,31 +33,22 @@ class McpTransportTypeSSE extends McpTransportType {
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': 'sse',
-    };
+    return {'type': 'sse'};
   }
 }
 
 class McpTransportTypeStreamableHttp extends McpTransportType {
-  const McpTransportTypeStreamableHttp({
-    this.useHttp2 = false,
-  });
+  const McpTransportTypeStreamableHttp({this.useHttp2 = false});
 
   factory McpTransportTypeStreamableHttp.fromJson(Map<String, dynamic> json) {
-    return McpTransportTypeStreamableHttp(
-      useHttp2: json.get('useHttp2'),
-    );
+    return McpTransportTypeStreamableHttp(useHttp2: json.get('useHttp2'));
   }
 
   final bool useHttp2;
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': 'streamableHttp',
-      'useHttp2': useHttp2,
-    };
+    return {'type': 'streamableHttp', 'useHttp2': useHttp2};
   }
 }
 
@@ -261,16 +252,9 @@ abstract class McpServerEntity extends McpServerToCreate
   const McpServerEntity._() : super._();
 }
 
-enum McpAuthenticationTypeOptions {
-  none,
-  oauth,
-  bearerToken,
-}
+enum McpAuthenticationTypeOptions { none, oauth, bearerToken }
 
-enum McpTransportTypeOptions {
-  streamableHttp,
-  sse,
-}
+enum McpTransportTypeOptions { streamableHttp, sse }
 
 @Freezed(toStringOverride: false)
 abstract class McpServerFormToCreate with _$McpServerFormToCreate {

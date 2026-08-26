@@ -42,9 +42,7 @@ void main() {
       overrides: [
         workspaceSessionProvider(
           const WorkspaceSession(workspace),
-        ).overrideWithValue(
-          const WorkspaceSession(workspace),
-        ),
+        ).overrideWithValue(const WorkspaceSession(workspace)),
         workspaceSessionForRouteProvider.overrideWith(
           (_, _) async => const WorkspaceSession(workspace),
         ),
