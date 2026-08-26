@@ -75,10 +75,7 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
     return _tableToEntity(table);
   }
 
-  Future<bool> isWorkspaceToolEnabled(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<bool> isWorkspaceToolEnabled(String workspaceId, String toolType) {
     return _dao.isWorkspaceToolEnabledByToolId(workspaceId, toolType);
   }
 
@@ -89,7 +86,7 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
       );
     }
 
-    return _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
+    return await _dao.deleteWorkspaceToolByToolId(workspaceId, toolType);
   }
 
   @override
@@ -129,10 +126,7 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
     return true;
   }
 
-  Future<String?> getWorkspaceToolConfig(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) {
     return _dao.getWorkspaceToolConfigByToolId(workspaceId, toolType);
   }
 

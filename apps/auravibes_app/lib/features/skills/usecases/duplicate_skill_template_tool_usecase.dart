@@ -30,7 +30,7 @@ class DuplicateSkillTemplateToolUsecase {
 
     final title = await _copyTitle(tool);
 
-    return createSkillTemplateToolUsecase.call(
+    return await createSkillTemplateToolUsecase.call(
       tool.skillId,
       SkillTemplateToolToCreate(
         templateType: tool.templateType,
@@ -57,10 +57,7 @@ class DuplicateSkillTemplateToolUsecase {
           tool.skillId,
         )).where((item) => item.slug == slug).firstOrNull,
         (cloud: _, repository: final repository?) =>
-          await repository.getToolBySlug(
-            tool.skillId,
-            slug,
-          ),
+          await repository.getToolBySlug(tool.skillId, slug),
         _ => throw StateError('Skill template tool store is unavailable'),
       };
       if (existing == null) return title;
@@ -71,18 +68,17 @@ class DuplicateSkillTemplateToolUsecase {
 
 final ProviderFamily<DuplicateSkillTemplateToolUsecase, String>
 duplicateSkillTemplateToolUsecaseProvider =
-    Provider.family<DuplicateSkillTemplateToolUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<DuplicateSkillTemplateToolUsecase, String>((
+      ref,
+      workspaceId,
+    ) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return DuplicateSkillTemplateToolUsecase(
-          cloud == null
-              ? ref.watch(skillTemplateToolsRepositoryProvider)
-              : null,
-          createSkillTemplateToolUsecase: ref.watch(
-            createSkillTemplateToolUsecaseProvider(workspaceId),
-          ),
-          cloudStore: cloud,
-        );
-      },
-    );
+      return DuplicateSkillTemplateToolUsecase(
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        createSkillTemplateToolUsecase: ref.watch(
+          createSkillTemplateToolUsecaseProvider(workspaceId),
+        ),
+        cloudStore: cloud,
+      );
+    });

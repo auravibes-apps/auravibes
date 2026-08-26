@@ -116,7 +116,7 @@ class _CapturingRepo implements ConversationToolsRepository {
   Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
     String conversationId,
     String workspaceId,
-  ) async => onGetTools(conversationId, workspaceId);
+  ) => onGetTools(conversationId, workspaceId);
 
   @override
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
@@ -147,10 +147,7 @@ void main() {
       () async {
         final syncUsecase = MockSyncSkillToolPermissionsUsecase();
         when(
-          () => syncUsecase.call(
-            conversationId: 'conv-1',
-            workspaceId: 'ws-1',
-          ),
+          () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
         ).thenAnswer((_) => Future<void>.value());
         final usecase = LoadConversationToolSpecsUsecase(
           conversationToolsRepository: _FakeConversationToolsRepository([]),
@@ -167,21 +164,14 @@ void main() {
 
         expect(result.map((spec) => spec.name), [runSubAgentToolName]);
         verify(
-          () => syncUsecase.call(
-            conversationId: 'conv-1',
-            workspaceId: 'ws-1',
-          ),
+          () => syncUsecase.call(conversationId: 'conv-1', workspaceId: 'ws-1'),
         ).called(1);
       },
     );
 
     test('returns tool specs from build combined usecase', () async {
       final specs = [
-        ToolSpec(
-          name: 'tool-1',
-          description: 'desc',
-          inputJsonSchema: {},
-        ),
+        ToolSpec(name: 'tool-1', description: 'desc', inputJsonSchema: {}),
       ];
 
       final usecase = LoadConversationToolSpecsUsecase(
@@ -266,10 +256,7 @@ void main() {
             _FakeBuildDynamicSkillToolSpecsUsecase([]),
         syncSkillToolPermissionsUsecase: NoopSyncSkillToolPermissionsUsecase(),
       );
-      expect(
-        usecase,
-        isA<LoadConversationToolSpecsUsecase>(),
-      );
+      expect(usecase, isA<LoadConversationToolSpecsUsecase>());
     });
 
     test('passes tools from repo to build usecase', () async {

@@ -56,9 +56,7 @@ class OAuthAuthenticate {
   /// Returns the OAuth token on success.
   /// Throws an exception if OAuth discovery fails or authentication is
   /// cancelled.
-  Future<OAuthTokenModel> authenticate(
-    OAuthDiscoveryResult oAuthResult,
-  ) async {
+  Future<OAuthTokenModel> authenticate(OAuthDiscoveryResult oAuthResult) async {
     final _ = await PublicUrlGuard.requireHttpsUri(
       oAuthResult.authorizationUrl,
     );
@@ -75,12 +73,9 @@ class OAuthAuthenticate {
 
     final result = await _authenticateInBrowser(uri);
 
-    final code = validateGetCode(
-      urlResult: result,
-      stateParam: stateParam,
-    );
+    final code = validateGetCode(urlResult: result, stateParam: stateParam);
 
-    return exchangeCodeForToken(
+    return await exchangeCodeForToken(
       code: code,
       oAuthResult: oAuthResult,
       codeVerifier: codeVerifier,

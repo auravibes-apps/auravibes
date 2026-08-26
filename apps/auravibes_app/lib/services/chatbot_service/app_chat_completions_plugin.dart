@@ -57,8 +57,8 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
         final transport = _transport;
 
         return context.streamingRequested
-            ? codec.stream(transport, body, context.sendChunk)
-            : codec.complete(transport, body);
+            ? await codec.stream(transport, body, context.sendChunk)
+            : await codec.complete(transport, body);
       },
       metadata: {'model': ?info?.toJson()},
     );
@@ -75,10 +75,7 @@ class AppChatCompletionsPlugin extends GenkitPlugin {
     }
     final normalized = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
     final request =
-        http.Request(
-            'POST',
-            Uri.parse(normalized).resolve('chat/completions'),
-          )
+        http.Request('POST', Uri.parse(normalized).resolve('chat/completions'))
           ..headers.addAll({
             'authorization': 'Bearer ${apiKey.trim()}',
             'content-type': 'application/json',

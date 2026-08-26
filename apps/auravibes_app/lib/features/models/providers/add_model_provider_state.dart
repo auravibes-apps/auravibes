@@ -43,28 +43,20 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   void setName(String newName) {
-    state = state.copyWith(
-      name: newName,
-    );
+    state = state.copyWith(name: newName);
   }
 
   void setKey(String newKey) {
-    state = state.copyWith(
-      key: newKey,
-    );
+    state = state.copyWith(key: newKey);
   }
 
   void setModel(String? newValue) {
     final models = ref
-        .watch(
-          apiModelProvidersProvider(workspaceId: _workspaceId),
-        )
+        .watch(apiModelProvidersProvider(workspaceId: _workspaceId))
         .value;
-    final model = models?.firstWhereOrNull(
-      (element) {
-        return element.id == newValue;
-      },
-    );
+    final model = models?.firstWhereOrNull((element) {
+      return element.id == newValue;
+    });
     final nextAuthMode = ModelProviderOAuthProfiles.isCodexProvider(newValue)
         ? ModelProviderAuthMode.oauth2
         : ModelProviderAuthMode.apiKey;
@@ -82,9 +74,7 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   void setUrl(String? newUrl) {
-    state = state.copyWith(
-      url: newUrl,
-    );
+    state = state.copyWith(url: newUrl);
   }
 
   Future<ModelConnectionEntity?> addModelProvider({
@@ -137,9 +127,9 @@ class AddModelProviderState extends _$AddModelProviderState {
               url: state.url,
             ),
           );
-          final oauth = await CloudModelGateway(gateway).startCodexOAuth(
-            connectionId: connection.id,
-          );
+          final oauth = await CloudModelGateway(
+            gateway,
+          ).startCodexOAuth(connectionId: connection.id);
           await ref.read(openCodexAuthorizationProvider)(
             Uri.parse(oauth.authorizationUrl),
           );
@@ -209,7 +199,7 @@ class AddModelProviderState extends _$AddModelProviderState {
       _ => await oauthService.authenticateWithBrowser(),
     };
 
-    return repo.createModelConnection(
+    return await repo.createModelConnection(
       ModelConnectionToCreate(
         name: name,
         workspaceId: _workspaceId,

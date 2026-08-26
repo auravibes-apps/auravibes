@@ -276,7 +276,7 @@ class AppResolvedToolProvider
         operation,
       );
 
-      return operation.valueOrCancellation();
+      return await operation.valueOrCancellation();
     }
 
     if (skillSlug != SkillToolSlugs.skillsManager) {
@@ -296,7 +296,7 @@ class AppResolvedToolProvider
         operation,
       );
 
-      return operation.valueOrCancellation();
+      return await operation.valueOrCancellation();
     }
 
     final usecase = runSkillsManagerToolUsecase?.call(workspaceId);
@@ -318,9 +318,7 @@ class AppResolvedToolProvider
   }
 }
 
-agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(
-  ResolvedTool tool,
-) {
+agent.AgentResolvedToolExecution<ResolvedTool> _toExecution(ResolvedTool tool) {
   return agent.AgentResolvedToolExecution(
     descriptor: _toAgentDescriptor(tool),
     tool: tool,
@@ -430,7 +428,7 @@ Future<Object?> _runSkillControlTool({
   required _SkillControlToolDependencies dependencies,
 }) async {
   if (toolIdentifier == SkillToolNames.listCredentials) {
-    return _listSkillCredentials(
+    return await _listSkillCredentials(
       workspaceId: workspaceId,
       conversationId: conversationId,
       arguments: arguments,
@@ -570,10 +568,7 @@ Future<Object> _listSkillCredentials({
       'skillSlug': skillSlug,
       'credentials': [
         for (final credential in credentials)
-          {
-            'id': credential.id,
-            'name': credential.name,
-          },
+          {'id': credential.id, 'name': credential.name},
       ],
     };
   }
@@ -590,97 +585,73 @@ Future<Object> _listSkillCredentials({
     'skillSlug': skill.slug,
     'credentials': [
       for (final credential in credentials)
-        {
-          'id': credential.id,
-          'name': credential.name,
-        },
+        {'id': credential.id, 'name': credential.name},
     ],
   };
 }
 
 final Provider<ResolvedToolService>
-resolvedToolServiceProvider = Provider<ResolvedToolService>(
-  (ref) {
-    final agentCancellationRuntime = ref.watch(
-      agentCancellationRuntimeProvider,
-    );
-    final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
+resolvedToolServiceProvider = Provider<ResolvedToolService>((ref) {
+  final agentCancellationRuntime = ref.watch(agentCancellationRuntimeProvider);
+  final activeSubAgents = ref.watch(activeSubAgentRuntimeProvider.notifier);
 
-    return ResolvedToolService(
-      agentCancellationRuntime: agentCancellationRuntime,
-      mcpToolCaller: ref.watch(mcpToolCallerProvider),
-      conversationRepository: ref.watch(conversationRepositoryProvider),
-      loadConversationSkillUsecase: (workspaceId) => ref.read(
-        loadConversationSkillUsecaseProvider(workspaceId),
+  return ResolvedToolService(
+    agentCancellationRuntime: agentCancellationRuntime,
+    mcpToolCaller: ref.watch(mcpToolCallerProvider),
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    loadConversationSkillUsecase: (workspaceId) =>
+        ref.read(loadConversationSkillUsecaseProvider(workspaceId)),
+    unloadConversationSkillUsecase: (workspaceId) =>
+        ref.read(unloadConversationSkillUsecaseProvider(workspaceId)),
+    runSkillTemplateToolUsecase: ref.watch(runSkillTemplateToolUsecaseProvider),
+    runAppSkillToolUsecase: ref.watch(runAppSkillToolUsecaseProvider),
+    runSkillsManagerToolUsecase: (workspaceId) =>
+        ref.read(runSkillsManagerToolUsecaseProvider(workspaceId)),
+    listAvailableSkillsUsecase: (workspaceId) =>
+        ref.read(listAvailableSkillsUsecaseProvider(workspaceId)),
+    listAppSkillCredentialCandidatesUsecase: ref.watch(
+      listAppSkillCredentialCandidatesUsecaseProvider,
+    ),
+    appSkillRegistry: ref.watch(appSkillRegistryProvider),
+    skillCredentialsRepository: ref.watch(skillCredentialsRepositoryProvider),
+    subAgentRunner: agent.SubAgentRunner(
+      agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
+      conversationStore: AppSubAgentConversationStore(
+        ref.watch(conversationRepositoryProvider),
       ),
-      unloadConversationSkillUsecase: (workspaceId) => ref.read(
-        unloadConversationSkillUsecaseProvider(workspaceId),
+      messageStore: AppSubAgentMessageStore(
+        ref.watch(messageRepositoryProvider),
       ),
-      runSkillTemplateToolUsecase: ref.watch(
-        runSkillTemplateToolUsecaseProvider,
-      ),
-      runAppSkillToolUsecase: ref.watch(
-        runAppSkillToolUsecaseProvider,
-      ),
-      runSkillsManagerToolUsecase: (workspaceId) => ref.read(
-        runSkillsManagerToolUsecaseProvider(workspaceId),
-      ),
-      listAvailableSkillsUsecase: (workspaceId) => ref.read(
-        listAvailableSkillsUsecaseProvider(workspaceId),
-      ),
-      listAppSkillCredentialCandidatesUsecase: ref.watch(
-        listAppSkillCredentialCandidatesUsecaseProvider,
-      ),
-      appSkillRegistry: ref.watch(appSkillRegistryProvider),
-      skillCredentialsRepository: ref.watch(
-        skillCredentialsRepositoryProvider,
-      ),
-      subAgentRunner: agent.SubAgentRunner(
-        agentCatalog: AppSubAgentCatalog(ref.watch(agentsRepositoryProvider)),
-        conversationStore: AppSubAgentConversationStore(
-          ref.watch(conversationRepositoryProvider),
-        ),
-        messageStore: AppSubAgentMessageStore(
-          ref.watch(messageRepositoryProvider),
-        ),
-        startRequest: activeSubAgents.start,
-        continueAgentTurn: ({required conversationId, required context}) {
-          return ref
-              .read(appAgentServiceProvider)
-              .call(
-                conversationId: conversationId,
-                context: context,
-              );
-        },
-        onChildStarted: ({required parentId, required childId}) {
-          agentCancellationRuntime.registerCleanup(parentId, () {
-            if (activeSubAgents.parentOf(childId) != parentId) return;
+      startRequest: activeSubAgents.start,
+      continueAgentTurn: ({required conversationId, required context}) {
+        return ref
+            .read(appAgentServiceProvider)
+            .call(conversationId: conversationId, context: context);
+      },
+      onChildStarted: ({required parentId, required childId}) {
+        agentCancellationRuntime.registerCleanup(parentId, () {
+          if (activeSubAgents.parentOf(childId) != parentId) return;
 
-            agentCancellationRuntime.requestStopOnStart(childId);
-            activeSubAgents.finish(
-              parentId: parentId,
-              childId: childId,
-              status: agent.SubAgentCompletionStatus.stopped,
-            );
-          });
+          agentCancellationRuntime.requestStopOnStart(childId);
+          activeSubAgents.finish(
+            parentId: parentId,
+            childId: childId,
+            status: agent.SubAgentCompletionStatus.stopped,
+          );
+        });
+      },
+    ),
+    onSkillsManagerToolSuccess:
+        ({required workspaceId, required toolSlug, required result}) {
+          _invalidateSkillsManagerToolState(
+            ref,
+            workspaceId: workspaceId,
+            toolSlug: toolSlug,
+            result: result,
+          );
         },
-      ),
-      onSkillsManagerToolSuccess:
-          ({
-            required workspaceId,
-            required toolSlug,
-            required result,
-          }) {
-            _invalidateSkillsManagerToolState(
-              ref,
-              workspaceId: workspaceId,
-              toolSlug: toolSlug,
-              result: result,
-            );
-          },
-    );
-  },
-);
+  );
+});
 
 void _invalidateSkillsManagerToolState(
   Ref ref, {

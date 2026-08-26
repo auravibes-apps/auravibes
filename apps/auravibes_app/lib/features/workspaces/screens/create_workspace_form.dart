@@ -163,7 +163,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
 
   Future<WorkspaceEntity> _createWorkspace(String name) async {
     if (_targetAccountId == _localTarget) {
-      return ref.read(createWorkspaceUseCaseProvider).call(name: name);
+      return await ref.read(createWorkspaceUseCaseProvider).call(name: name);
     }
 
     final useCases = await ref.read(
@@ -175,7 +175,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
       );
     }
 
-    return useCases.create(name);
+    return await useCases.create(name);
   }
 
   String _workspaceError(WorkspaceException error) {

@@ -35,10 +35,7 @@ class CreateSkillCredentialDefinitionUsecase {
             .where((item) => item.slug == slug)
             .firstOrNull,
       (cloud: _, repository: final repository?) =>
-        await repository.getDefinitionBySlug(
-          workspaceId,
-          slug,
-        ),
+        await repository.getDefinitionBySlug(workspaceId, slug),
       _ => throw StateError('Credential definition store is unavailable'),
     };
     if (existing != null) {
@@ -47,26 +44,27 @@ class CreateSkillCredentialDefinitionUsecase {
       );
     }
 
-    if (cloud != null) return cloud.createDefinition(definition);
+    if (cloud != null) return await cloud.createDefinition(definition);
     if (repository == null) {
       throw StateError('Credential definition store is unavailable');
     }
 
-    return repository.createDefinition(workspaceId, definition);
+    return await repository.createDefinition(workspaceId, definition);
   }
 }
 
 final ProviderFamily<CreateSkillCredentialDefinitionUsecase, String>
 createSkillCredentialDefinitionUsecaseProvider =
-    Provider.family<CreateSkillCredentialDefinitionUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<CreateSkillCredentialDefinitionUsecase, String>((
+      ref,
+      workspaceId,
+    ) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return CreateSkillCredentialDefinitionUsecase(
-          cloud == null
-              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-              : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return CreateSkillCredentialDefinitionUsecase(
+        cloud == null
+            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+        cloudStore: cloud,
+      );
+    });

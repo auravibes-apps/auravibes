@@ -87,12 +87,7 @@ class UrlService {
         ),
       );
     } on Object catch (error, stackTrace) {
-      await _handleRequestError(
-        error,
-        stackTrace,
-        completer,
-        stopwatch,
-      );
+      await _handleRequestError(error, stackTrace, completer, stopwatch);
     }
   }
 
@@ -173,7 +168,7 @@ class UrlService {
 
   Future<String> _readErrorResponseBody(Object? data, String? message) async =>
       switch (data) {
-        ResponseBody() => _readResponseBody(data),
+        ResponseBody() => await _readResponseBody(data),
         List<int>() => _decodeErrorBytes(data),
         _ => _truncateText(data?.toString() ?? message ?? ''),
       };
@@ -246,7 +241,7 @@ class UrlService {
       cancelOnError: true,
     );
 
-    return completer.future;
+    return await completer.future;
   }
 
   String _truncateText(String body) {

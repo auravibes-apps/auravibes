@@ -204,9 +204,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
   /// Disconnect from a specific MCP server without deleting.
   void disconnectMcpServer(String serverId) {
     if (_isCloud) return;
-    final index = state.indexWhere(
-      (c) => c.server.id == serverId,
-    );
+    final index = state.indexWhere((c) => c.server.id == serverId);
     if (index == -1) return;
 
     final connection = state[index];
@@ -333,7 +331,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       throw Exception('MCP server not connected: $mcpServerId');
     }
 
-    return _requiredMcpManager.callToolString(
+    return await _requiredMcpManager.callToolString(
       client,
       toolIdentifier: toolIdentifier,
       arguments: arguments,
@@ -358,15 +356,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       return;
     }
     final manager = _requiredMcpManager;
-    final serverInfo =
-        await BuildMcpServerToCreateUseCase(
-          authenticator: OAuthAuthenticate(
-            callbackUrlScheme: 'me-auravibes',
-            clientName: 'Aura Vibes MCP Client',
-          ),
-        ).call(
-          serverToCreate,
-        );
+    final serverInfo = await BuildMcpServerToCreateUseCase(
+      authenticator: OAuthAuthenticate(
+        callbackUrlScheme: 'me-auravibes',
+        clientName: 'Aura Vibes MCP Client',
+      ),
+    ).call(serverToCreate);
 
     final serviceConnectionRepository = ref.read(
       serviceConnectionRepositoryProvider,
@@ -570,9 +565,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
     }
 
     // Check if already in state.
-    final existingIndex = state.indexWhere(
-      (c) => c.server.id == server.id,
-    );
+    final existingIndex = state.indexWhere((c) => c.server.id == server.id);
 
     // Add or update state to "connecting.".
     if (existingIndex >= 0) {
@@ -602,13 +595,9 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       final serverToConnect = server.copyWith(
         authenticationType: authenticationType,
       );
-      connectedClient = await _requiredMcpManager.connectMcp(
-        serverToConnect,
-      );
+      connectedClient = await _requiredMcpManager.connectMcp(serverToConnect);
 
-      final mcpTools = await _requiredMcpManager.getTools(
-        connectedClient,
-      );
+      final mcpTools = await _requiredMcpManager.getTools(connectedClient);
       if (_isDisposed) {
         return;
       }
@@ -659,9 +648,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       return;
     }
 
-    final index = state.indexWhere(
-      (c) => c.server.id == serverId,
-    );
+    final index = state.indexWhere((c) => c.server.id == serverId);
     if (index == -1) return;
 
     _setState([
@@ -723,19 +710,13 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
         currentTools: tools,
       );
     } on Exception catch (e, stackTrace) {
-      _logger.warning(
-        'Failed to sync MCP tools to database',
-        e,
-        stackTrace,
-      );
+      _logger.warning('Failed to sync MCP tools to database', e, stackTrace);
     }
   }
 
   McpServersRepositoryContract _repositoryFor(String workspaceId) {
     final session = ref
-        .read(
-          workspaceSessionForRouteProvider(workspaceId),
-        )
+        .read(workspaceSessionForRouteProvider(workspaceId))
         .requireValue;
 
     return ref.read(mcpServersRepositoryProvider(session));

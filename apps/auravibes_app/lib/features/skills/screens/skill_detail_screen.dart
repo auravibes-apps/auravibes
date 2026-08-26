@@ -37,11 +37,7 @@ import 'package:textf/textf.dart';
 const _skillDescriptionMaxCharacters = 1024;
 
 class SkillDetailScreen extends ConsumerStatefulWidget {
-  const SkillDetailScreen({
-    required this.workspaceId,
-    this.skillId,
-    super.key,
-  });
+  const SkillDetailScreen({required this.workspaceId, this.skillId, super.key});
 
   final String workspaceId;
   final String? skillId;
@@ -219,9 +215,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       if (!context.mounted) return;
       final _ = AuraSnackBars.show(
         context: context,
-        content: Text(
-          LocaleKeys.skills_screen_save_error.tr(context: context),
-        ),
+        content: Text(LocaleKeys.skills_screen_save_error.tr(context: context)),
         variant: AuraSnackBarVariant.error,
       );
     } finally {
@@ -294,9 +288,7 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
       if (!context.mounted) return;
       final _ = AuraSnackBars.show(
         context: context,
-        content: Text(
-          LocaleKeys.skills_screen_save_error.tr(context: context),
-        ),
+        content: Text(LocaleKeys.skills_screen_save_error.tr(context: context)),
         variant: AuraSnackBarVariant.error,
       );
     } finally {
@@ -478,10 +470,7 @@ class _SkillDetailForm extends StatelessWidget {
         ],
         if (detail != null && detail.isUserSkill) ...[
           const SizedBox(height: 12),
-          _SkillToolsCard(
-            workspaceId: workspaceId,
-            skillId: detail.id,
-          ),
+          _SkillToolsCard(workspaceId: workspaceId, skillId: detail.id),
         ],
         if (detail != null &&
             !detail.isUserSkill &&
@@ -495,10 +484,7 @@ class _SkillDetailForm extends StatelessWidget {
 }
 
 class _SkillToolsCard extends ConsumerWidget {
-  const _SkillToolsCard({
-    required this.workspaceId,
-    required this.skillId,
-  });
+  const _SkillToolsCard({required this.workspaceId, required this.skillId});
 
   final String workspaceId;
   final String skillId;
@@ -542,9 +528,7 @@ class _SkillToolsCard extends ConsumerWidget {
                             child: AuraColumn(
                               children: [
                                 AuraText(child: Text(tool.title)),
-                                AuraText(
-                                  child: Text(tool.slug),
-                                ),
+                                AuraText(child: Text(tool.slug)),
                               ],
                               spacing: .xs,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,11 +544,8 @@ class _SkillToolsCard extends ConsumerWidget {
                                 ),
                                 AuraIconButton(
                                   icon: Icons.delete_outline,
-                                  onPressed: () => _confirmDeleteTool(
-                                    context,
-                                    ref,
-                                    tool,
-                                  ),
+                                  onPressed: () =>
+                                      _confirmDeleteTool(context, ref, tool),
                                 ),
                                 const AuraIcon(Icons.chevron_right),
                               ],
@@ -832,9 +813,10 @@ class _SkillCredentialsHint extends ConsumerWidget {
           onCreateCredential: () => _openCredentialCreate(context),
         ),
       (definition: AsyncLoading(), credentials: _) ||
-      (definition: _, credentials: AsyncLoading()) => const AuraSpinner(
-        size: AuraSpinnerSize.small,
-      ),
+      (
+        definition: _,
+        credentials: AsyncLoading(),
+      ) => const AuraSpinner(size: AuraSpinnerSize.small),
       (definition: AsyncError(), credentials: _) ||
       (definition: _, credentials: AsyncError()) => const AuraText(
         child: TextLocale(LocaleKeys.skill_credentials_load_error),
@@ -844,18 +826,12 @@ class _SkillCredentialsHint extends ConsumerWidget {
   }
 
   Future<void> _openCredentialCreate(BuildContext context) async {
-    final container = ProviderScope.containerOf(
-      context,
-      listen: false,
-    );
-    final result =
-        await ServiceConnectionCreateRoute(
-          workspaceId: workspaceId,
-          type: 'skillCredential',
-          credentialDefinitionId: credentialDefinitionId,
-        ).push<bool>(
-          context,
-        );
+    final container = ProviderScope.containerOf(context, listen: false);
+    final result = await ServiceConnectionCreateRoute(
+      workspaceId: workspaceId,
+      type: 'skillCredential',
+      credentialDefinitionId: credentialDefinitionId,
+    ).push<bool>(context);
     if (!context.mounted) return;
     if (result == true) {
       _scheduleCredentialRefresh(
@@ -970,17 +946,12 @@ class _AppSkillCredentialsHintState
   Future<List<AppSkillCredentialCandidate>> _load() async {
     final appSkill = ref
         .read(appSkillRegistryProvider)
-        .getByIdentifier(
-          widget.appSkillId,
-        );
+        .getByIdentifier(widget.appSkillId);
     if (appSkill == null) return const [];
 
-    return ref
+    return await ref
         .read(listAppSkillCredentialCandidatesUsecaseProvider)
-        .call(
-          workspaceId: widget.workspaceId,
-          skill: appSkill,
-        );
+        .call(workspaceId: widget.workspaceId, skill: appSkill);
   }
 
   Future<void> _openCredentialCreate(BuildContext context) async {
@@ -1062,9 +1033,7 @@ class _MissingCredentialHint extends StatelessWidget {
         ),
         AuraButton(
           onPressed: onCreateCredential,
-          child: const TextLocale(
-            LocaleKeys.skill_credentials_add_title,
-          ),
+          child: const TextLocale(LocaleKeys.skill_credentials_add_title),
           size: AuraButtonSize.small,
         ),
       ],
@@ -1082,9 +1051,7 @@ class _ReadOnlyField extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(
-          child: TextLocale(labelKey),
-        ),
+        AuraText(child: TextLocale(labelKey)),
         AuraSelectableText(value),
       ],
       spacing: .xs,

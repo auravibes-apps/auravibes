@@ -42,22 +42,20 @@ class CreateSkillUsecase {
       );
     }
 
-    if (cloud != null) return cloud.createSkill(skill);
+    if (cloud != null) return await cloud.createSkill(skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
 
-    return repository.createSkill(workspaceId, skill);
+    return await repository.createSkill(workspaceId, skill);
   }
 }
 
 final ProviderFamily<CreateSkillUsecase, String> createSkillUsecaseProvider =
-    Provider.family<CreateSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<CreateSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return CreateSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return CreateSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloudStore: cloud,
+      );
+    });

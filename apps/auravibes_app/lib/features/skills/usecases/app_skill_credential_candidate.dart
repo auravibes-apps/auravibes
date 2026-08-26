@@ -12,10 +12,7 @@ typedef CloudServiceConnectionsReader =
     Future<List<CloudServiceConnection>?> Function(String workspaceId);
 
 class AppSkillCredentialCandidate {
-  const AppSkillCredentialCandidate({
-    required this.id,
-    required this.name,
-  });
+  const AppSkillCredentialCandidate({required this.id, required this.name});
 
   final String id;
   final String name;
@@ -116,7 +113,7 @@ final listAppSkillCredentialCandidatesUsecaseProvider =
             throw StateError('Cloud workspace gateway is unavailable.');
           }
 
-          return CloudServiceConnectionUsecases(
+          return await CloudServiceConnectionUsecases(
             CloudWorkspaceResourceStore(gateway),
           ).watch().first;
         },

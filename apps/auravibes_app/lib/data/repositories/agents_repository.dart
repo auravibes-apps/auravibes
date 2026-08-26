@@ -19,16 +19,14 @@ class AgentsRepository implements AgentRepository {
   Stream<List<AgentEntity>> watchAgentsByWorkspace(String workspaceId) {
     return _database.agentsDao
         .watchAgentsByWorkspace(workspaceId)
-        .asyncMap(
-          _mapAgentRows,
-        );
+        .asyncMap(_mapAgentRows);
   }
 
   @override
   Future<List<AgentEntity>> getAgentsByWorkspace(String workspaceId) async {
     final rows = await _database.agentsDao.getAgentsByWorkspace(workspaceId);
 
-    return _mapAgentRows(rows);
+    return await _mapAgentRows(rows);
   }
 
   @override
@@ -36,7 +34,7 @@ class AgentsRepository implements AgentRepository {
     final row = await _database.agentsDao.getAgentById(agentId);
     if (row == null) return null;
 
-    return _mapToAgent(row);
+    return await _mapToAgent(row);
   }
 
   @override
@@ -58,7 +56,7 @@ class AgentsRepository implements AgentRepository {
       agent.skills.map(_mapSkillRefToCompanion).toList(),
     );
 
-    return _mapToAgent(created);
+    return await _mapToAgent(created);
   }
 
   @override
@@ -78,13 +76,12 @@ class AgentsRepository implements AgentRepository {
       agent.skills.map(_mapSkillRefToCompanion).toList(),
     );
 
-    return _mapToAgent(updated);
+    return await _mapToAgent(updated);
   }
 
   @override
-  Future<bool> deleteAgent(String agentId) => _database.agentsDao.deleteAgent(
-    agentId,
-  );
+  Future<bool> deleteAgent(String agentId) =>
+      _database.agentsDao.deleteAgent(agentId);
 
   void _validateAgentToCreate(AgentToCreate agent) {
     if (!agent.isValid) {
@@ -141,10 +138,7 @@ class AgentsRepository implements AgentRepository {
     ];
   }
 
-  AgentEntity _mapAgentRow(
-    AgentsTable table,
-    List<AgentSkillsTable> skills,
-  ) {
+  AgentEntity _mapAgentRow(AgentsTable table, List<AgentSkillsTable> skills) {
     return AgentEntity(
       id: table.id,
       workspaceId: table.workspaceId,

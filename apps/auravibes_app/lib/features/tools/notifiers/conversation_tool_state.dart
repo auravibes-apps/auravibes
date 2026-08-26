@@ -60,9 +60,8 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
       _workspaceIdValue ??
       (throw StateError('Conversation tools are not initialized'));
 
-  ConversationToolsRepository get _repository => ref.read(
-    conversationToolsRepositoryProvider(_workspaceId),
-  );
+  ConversationToolsRepository get _repository =>
+      ref.read(conversationToolsRepositoryProvider(_workspaceId));
 
   @override
   Future<List<ConversationToolState>> build({
@@ -71,9 +70,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
   }) async {
     _workspaceIdValue = workspaceId;
     final session = ref
-        .watch(
-          workspaceSessionForRouteProvider(workspaceId),
-        )
+        .watch(workspaceSessionForRouteProvider(workspaceId))
         .requireValue;
     final workspaceToolsRepository = ref.watch(
       workspaceToolsRepositoryProvider(session),
@@ -122,21 +119,16 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     final currentState = state.value;
     if (currentState == null) return false;
 
-    final index = currentState.indexWhere(
-      (t) => t.tool.id == toolId,
-    );
+    final index = currentState.indexWhere((t) => t.tool.id == toolId);
     if (index == -1) return false;
 
     final currentToolState = currentState[index];
 
-    return setToolEnabled(toolId, isEnabled: !currentToolState.isEnabled);
+    return await setToolEnabled(toolId, isEnabled: !currentToolState.isEnabled);
   }
 
   /// Enable or disable a conversation tool.
-  Future<bool> setToolEnabled(
-    String toolId, {
-    required bool isEnabled,
-  }) {
+  Future<bool> setToolEnabled(String toolId, {required bool isEnabled}) {
     return _updateConversationTool(
       toolId: toolId,
       persist: (convId) => _repository.setConversationToolEnabled(
@@ -191,9 +183,7 @@ class ConversationToolsNotifier extends _$ConversationToolsNotifier {
     final success = await persist(convId);
     final currentList = state.value;
     if (success && currentList != null) {
-      final index = currentList.indexWhere(
-        (t) => t.tool.id == toolId,
-      );
+      final index = currentList.indexWhere((t) => t.tool.id == toolId);
       if (index != -1) {
         final updatedList = List<ConversationToolState>.of(currentList);
         updatedList[index] = patch(currentList[index]);
@@ -215,9 +205,8 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
       _workspaceIdValue ??
       (throw StateError('Context-aware tools are not initialized'));
 
-  ConversationToolsRepository get _repository => ref.read(
-    conversationToolsRepositoryProvider(_workspaceId),
-  );
+  ConversationToolsRepository get _repository =>
+      ref.read(conversationToolsRepositoryProvider(_workspaceId));
 
   @override
   Future<List<String>> build({
@@ -226,7 +215,7 @@ class ContextAwareToolsNotifier extends _$ContextAwareToolsNotifier {
   }) async {
     _workspaceIdValue = workspaceId;
 
-    return _getContextAwareTools();
+    return await _getContextAwareTools();
   }
 
   /// Refresh the context-aware tools list.
@@ -260,9 +249,8 @@ class ContextAwareToolEntitiesNotifier
       _workspaceIdValue ??
       (throw StateError('Context-aware tool entities are not initialized'));
 
-  ConversationToolsRepository get _repository => ref.read(
-    conversationToolsRepositoryProvider(_workspaceId),
-  );
+  ConversationToolsRepository get _repository =>
+      ref.read(conversationToolsRepositoryProvider(_workspaceId));
 
   @override
   Future<List<WorkspaceToolEntity>> build({
@@ -271,7 +259,7 @@ class ContextAwareToolEntitiesNotifier
   }) async {
     _workspaceIdValue = workspaceId;
 
-    return _getContextAwareToolEntities();
+    return await _getContextAwareToolEntities();
   }
 
   /// Refresh the context-aware tools list.

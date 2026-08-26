@@ -55,7 +55,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
     _repository = repository;
     _workspaceId = workspaceId;
 
-    return repository.getWorkspaceTools(workspaceId);
+    return await repository.getWorkspaceTools(workspaceId);
   }
 
   /// Add a new built-in tool to the workspace.
@@ -69,10 +69,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
   }
 
   /// Enable or disable a workspace tool by its database ID.
-  Future<void> setToolEnabled(
-    String id, {
-    required bool isEnabled,
-  }) async {
+  Future<void> setToolEnabled(String id, {required bool isEnabled}) async {
     final newTool = await _requiredRepository.setToolEnabledById(
       id,
       isEnabled: isEnabled,
@@ -128,9 +125,7 @@ class WorkspaceToolsNotifier extends _$WorkspaceToolsNotifier {
 
   void _removeToolsByIds(List<String> toolIds) {
     if (state case AsyncData(:final value)) {
-      state = AsyncData(
-        value.where((wt) => !toolIds.contains(wt.id)).toList(),
-      );
+      state = AsyncData(value.where((wt) => !toolIds.contains(wt.id)).toList());
     }
   }
 }

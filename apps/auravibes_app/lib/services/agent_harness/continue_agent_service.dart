@@ -96,7 +96,7 @@ class ContinueAgentService
       'supportsToolCalls=${selectedModel.supportsToolCalls}',
     );
 
-    return _continueWithValidatedInput(
+    return await _continueWithValidatedInput(
       conversationId: conversationId,
       context: context,
       foundModel: preparedInput.model,
@@ -260,9 +260,7 @@ class ContinueAgentService
     }
   }
 
-  Future<void> _markPendingUsersSent(
-    List<String> pendingUserMessageIds,
-  ) async {
+  Future<void> _markPendingUsersSent(List<String> pendingUserMessageIds) async {
     for (final pendingUserMessageId in pendingUserMessageIds) {
       final _ = await messageRepository.patchMessage(
         pendingUserMessageId,
@@ -390,9 +388,7 @@ class ContinueAgentService
           MessageEntity,
           ChatMessage,
           ToolSpec
-        >(
-          provider: agentContinuationProvider,
-        )
+        >(provider: agentContinuationProvider)
         .call(conversationId: conversationId);
   }
 
@@ -414,22 +410,19 @@ class ContinueAgentService
   }
 }
 
-final continueAgentServiceProvider = Provider<ContinueAgentService>(
-  (ref) {
-    return ContinueAgentService(
-      chatbotService: ref.watch(chatbotServiceProvider),
-      messageRepository: ref.watch(messageRepositoryProvider),
-      agentContinuationProvider: ref.watch(appAgentContinuationProvider),
-      messagesStreamingRuntime: ref.watch(messagesStreamingRuntimeProvider),
-      conversationStreamingRuntime: ref.watch(
-        conversationStreamingRuntimeProvider,
-      ),
-      agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
-    );
-  },
-  dependencies: [appAgentContinuationProvider],
-);
+final continueAgentServiceProvider = Provider<ContinueAgentService>((ref) {
+  return ContinueAgentService(
+    chatbotService: ref.watch(chatbotServiceProvider),
+    messageRepository: ref.watch(messageRepositoryProvider),
+    agentContinuationProvider: ref.watch(appAgentContinuationProvider),
+    messagesStreamingRuntime: ref.watch(messagesStreamingRuntimeProvider),
+    conversationStreamingRuntime: ref.watch(
+      conversationStreamingRuntimeProvider,
+    ),
+    agentCancellationRuntime: ref.watch(agentCancellationRuntimeProvider),
+    monitoringService: ref.watch(monitoringServiceProvider),
+  );
+}, dependencies: [appAgentContinuationProvider]);
 
 class _AppChunkSink implements AgentChunkSink<ChatResult<ChatMessage>> {
   const _AppChunkSink(this._controller, this._future);

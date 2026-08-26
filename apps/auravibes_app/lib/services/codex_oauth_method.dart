@@ -102,7 +102,7 @@ class CodexOAuthService {
       isCancelled: isCancelled,
     );
 
-    return exchangeCodeForToken(
+    return await exchangeCodeForToken(
       code: _requiredString(authorization, 'authorization_code'),
       redirectUri: deviceCallback,
       codeVerifier: _requiredString(authorization, 'code_verifier'),
@@ -174,7 +174,7 @@ class CodexOAuthService {
     try {
       return await HttpServer.bind(InternetAddress.loopbackIPv4, defaultPort);
     } on SocketException {
-      return HttpServer.bind(InternetAddress.loopbackIPv4, fallbackPort);
+      return await HttpServer.bind(InternetAddress.loopbackIPv4, fallbackPort);
     }
   }
 
@@ -253,10 +253,7 @@ class CodexOAuthService {
       }
       final response = await _dio.post<Object?>(
         '${ModelProviderOAuthProfiles.issuer}/api/accounts/deviceauth/token',
-        data: {
-          'device_auth_id': deviceAuthId,
-          'user_code': userCode,
-        },
+        data: {'device_auth_id': deviceAuthId, 'user_code': userCode},
         options: Options(
           headers: const {'Content-Type': _jsonContentType},
           responseType: ResponseType.json,

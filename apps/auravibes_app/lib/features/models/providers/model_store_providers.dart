@@ -20,7 +20,9 @@ Future<ModelConnectionStore> modelConnectionStore(
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
   );
-  if (gateway == null) return ref.watch(modelConnectionRepositoryProvider);
+  if (gateway == null) {
+    return await ref.watch(modelConnectionRepositoryProvider);
+  }
 
   return CloudModelStore(
     workspaceId,
@@ -55,7 +57,7 @@ Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
   final gateway = await ref.watch(
     cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
   );
-  if (gateway == null) return ref.watch(apiModelRepositoryProvider);
+  if (gateway == null) return await ref.watch(apiModelRepositoryProvider);
 
   return CloudModelCatalogStore(CloudModelGateway(gateway));
 }

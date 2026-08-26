@@ -80,7 +80,7 @@ class SyncSkillToolPermissionsUsecase {
       ),
     ];
 
-    return database.transaction(() async {
+    return await database.transaction(() async {
       final group = await _ensureSkillToolsGroup(workspaceId);
       final existing = await database.workspaceToolsDao.getToolsByGroupId(
         group.id,
@@ -119,7 +119,7 @@ class SyncSkillToolPermissionsUsecase {
       }
 
       if (insertedTool) {
-        return database.workspaceToolsDao.getToolsByGroupId(group.id);
+        return await database.workspaceToolsDao.getToolsByGroupId(group.id);
       }
 
       return existing;
@@ -133,7 +133,7 @@ class SyncSkillToolPermissionsUsecase {
     );
     if (existing != null) return existing;
 
-    return database.toolsGroupsDao.insertToolsGroup(
+    return await database.toolsGroupsDao.insertToolsGroup(
       ToolsGroupsCompanion.insert(
         workspaceId: workspaceId,
         name: SkillToolPermissionConstants.skillToolsGroupName,

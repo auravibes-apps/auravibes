@@ -46,22 +46,20 @@ class UpdateSkillUsecase {
     }
 
     final cloud = cloudStore;
-    if (cloud != null) return cloud.updateSkill(skillId, skill);
+    if (cloud != null) return await cloud.updateSkill(skillId, skill);
     final repository = _skillsRepository;
     if (repository == null) throw StateError('Skill store is unavailable');
 
-    return repository.updateSkill(skillId, skill);
+    return await repository.updateSkill(skillId, skill);
   }
 }
 
 final ProviderFamily<UpdateSkillUsecase, String> updateSkillUsecaseProvider =
-    Provider.family<UpdateSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<UpdateSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return UpdateSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return UpdateSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloudStore: cloud,
+      );
+    });

@@ -74,7 +74,7 @@ class LoadConversationSkillUsecase {
         );
       }
       if (cloud != null) {
-        return cloud.setConversationSkill(
+        return await cloud.setConversationSkill(
           conversationId,
           userSkill.id,
           selected: true,
@@ -103,10 +103,7 @@ class LoadConversationSkillUsecase {
                     (throw StateError(
                       'App skill settings store is unavailable',
                     )))
-                .isAppSkillEnabled(
-                  workspaceId,
-                  appSkill.identifier,
-                )
+                .isAppSkillEnabled(workspaceId, appSkill.identifier)
           : await cloud.isAppSkillEnabled(appSkill.identifier);
       if (!isEnabled) {
         throw const LoadConversationSkillException(
@@ -124,7 +121,7 @@ class LoadConversationSkillUsecase {
         );
       }
       if (cloud != null) {
-        return cloud.setConversationSkill(
+        return await cloud.setConversationSkill(
           conversationId,
           appSkill.identifier,
           selected: true,
@@ -151,22 +148,18 @@ class LoadConversationSkillUsecase {
 
 final ProviderFamily<LoadConversationSkillUsecase, String>
 loadConversationSkillUsecaseProvider =
-    Provider.family<LoadConversationSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<LoadConversationSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return LoadConversationSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(conversationSkillsRepositoryProvider)
-              : null,
-          cloud == null
-              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-              : null,
-          ref.watch(appSkillRegistryProvider),
-          ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
-          ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
-          cloud,
-        );
-      },
-    );
+      return LoadConversationSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null ? ref.watch(conversationSkillsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+            : null,
+        ref.watch(appSkillRegistryProvider),
+        ref.watch(checkSkillCredentialReadinessUsecaseProvider(workspaceId)),
+        ref.watch(listAppSkillCredentialCandidatesUsecaseProvider),
+        cloud,
+      );
+    });

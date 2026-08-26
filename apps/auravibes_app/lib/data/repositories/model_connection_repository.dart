@@ -44,7 +44,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
     ModelConnectionToCreate modelConnection,
   ) async {
     if (modelConnection.authMode == ModelProviderAuthMode.oauth2) {
-      return _createOAuthModelConnection(modelConnection);
+      return await _createOAuthModelConnection(modelConnection);
     }
 
     final modelProvider = await _database.apiModelProvidersDao.getProviderById(
@@ -94,9 +94,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
       );
 
       final workspaceModelSelections = models
-          .map(
-            (model) => model.copyWith(modelConnectionId: created.id),
-          )
+          .map((model) => model.copyWith(modelConnectionId: created.id))
           .toList();
 
       await _database.workspaceModelSelectionsDao
@@ -187,9 +185,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
   Future<void> deleteModelConnection(String modelConnectionId) async {
     // Verify the model connection exists before attempting deletion.
     final modelConnection = await _database.modelConnectionsDao
-        .getModelConnectionById(
-          modelConnectionId,
-        );
+        .getModelConnectionById(modelConnectionId);
     if (modelConnection == null) {
       throw ModelConnectionException(
         'Model connection with ID "$modelConnectionId" not found',
@@ -318,9 +314,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
         _decodeApiKey(
           await _encryptionService.decrypt(
             existingEncryptedKey ??
-                (throw const ModelConnectionException(
-                  _missingApiKeyMessage,
-                )),
+                (throw const ModelConnectionException(_missingApiKeyMessage)),
           ),
         );
     final hasUrlUpdate = modelConnection.url != null;
@@ -356,8 +350,8 @@ class ModelConnectionRepository implements ModelConnectionStore {
   Future<String?> _updatedEncryptedKey(
     String? key,
     String? existingEncryptedKey,
-  ) async {
-    if (key == null) return existingEncryptedKey;
+  ) {
+    if (key == null) return Future.value(existingEncryptedKey);
 
     return _encryptionService.encrypt(
       ServiceConnectionAuthCodec.encodeSecret(

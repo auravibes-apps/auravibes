@@ -58,11 +58,7 @@ Stream<List<MessageEntity>> chatMessagesByConversation(
         .watchMessagesByConversation(conversationId);
   }
 
-  return _cloudMessages(
-    ref,
-    workspaceId,
-    conversationId,
-  );
+  return _cloudMessages(ref, workspaceId, conversationId);
 }
 
 Stream<List<MessageEntity>> _cloudMessages(
@@ -72,9 +68,10 @@ Stream<List<MessageEntity>> _cloudMessages(
 ) {
   final controller = StreamController<List<MessageEntity>>();
   final subscription = ref.listen(
-    cloudConversationStateProvider(
-      (workspaceId: workspaceId, conversationId: conversationId),
-    ),
+    cloudConversationStateProvider((
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+    )),
     (_, next) {
       switch (next) {
         case AsyncData(:final value):
@@ -129,9 +126,7 @@ MessageEntity _readCloudMessage(ConversationMessageView message) =>
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
       metadata:
-          MessageMetadataEntity.fromJsonString(
-            message.metadataJson,
-          )?.copyWith(
+          MessageMetadataEntity.fromJsonString(message.metadataJson)?.copyWith(
             toolCalls: message.toolCalls
                 .map(
                   (call) => MessageToolCallEntity(
@@ -274,12 +269,10 @@ Future<ConversationBusyState> conversationBusyState(
   );
   if (session.cloud != null) {
     final projection = ref.watch(
-      cloudConversationStateProvider(
-        (
-          workspaceId: workspaceId,
-          conversationId: conversationId,
-        ),
-      ),
+      cloudConversationStateProvider((
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+      )),
     );
 
     return ConversationBusyState.cloud(
@@ -304,7 +297,7 @@ Future<ConversationBusyState> conversationBusyState(
 
   final usecase = ref.watch(getConversationBusyStateUsecaseProvider);
 
-  return usecase.call(
+  return await usecase.call(
     conversationId: conversationId,
     isCompacting: isCompacting,
   );
@@ -470,7 +463,7 @@ Future<List<PendingToolCall>> pendingToolCalls(
             ).future,
           ))?.workspaceId;
 
-      return _pendingToolCallsForConversation(
+      return await _pendingToolCallsForConversation(
         ref,
         conversationId: sourceConversationId,
         workspaceId: sourceWorkspaceId,

@@ -19,58 +19,55 @@ AgentsRepository agentsRepository(Ref ref) {
 }
 
 final ProviderFamily<AgentRepository, String> agentRepositoryProvider =
-    Provider.family<AgentRepository, String>(
-      (ref, workspaceId) {
-        final session = ref
-            .watch(
-              workspaceSessionForRouteProvider(workspaceId),
-            )
-            .requireValue;
-        if (session.cloud == null) {
-          return ref.watch(agentsRepositoryProvider);
-        }
-        final gateway = ref.watch(
-          cloudWorkspaceStateGatewayProvider(session).future,
-        );
+    Provider.family<AgentRepository, String>((ref, workspaceId) {
+      final session = ref
+          .watch(workspaceSessionForRouteProvider(workspaceId))
+          .requireValue;
+      if (session.cloud == null) {
+        return ref.watch(agentsRepositoryProvider);
+      }
+      final gateway = ref.watch(
+        cloudWorkspaceStateGatewayProvider(session).future,
+      );
 
-        return CloudAgentRepository(
-          patch: ({required requestId, required operations}) async {
-            final cloud = await gateway;
-            if (cloud == null) {
-              throw StateError('Cloud workspace gateway unavailable');
-            }
+      return CloudAgentRepository(
+        patch: ({required requestId, required operations}) async {
+          final cloud = await gateway;
+          if (cloud == null) {
+            throw StateError('Cloud workspace gateway unavailable');
+          }
 
-            return cloud.patch(requestId: requestId, operations: operations);
-          },
-          workspaceId: session.workspace.localWorkspaceId,
-          read: () async {
-            final cloud = await gateway;
-            if (cloud == null) return const [];
-            final response = await cloud.read(
-              pages: [
-                WorkspaceResourcePageRequest(
-                  resourceKind: WorkspaceResourceKind.agent,
-                  limit: 100,
-                ),
-                WorkspaceResourcePageRequest(
-                  resourceKind: WorkspaceResourceKind.agentAssociation,
-                  limit: 100,
-                ),
-              ],
-            );
+          return await cloud.patch(
+            requestId: requestId,
+            operations: operations,
+          );
+        },
+        workspaceId: session.workspace.localWorkspaceId,
+        read: () async {
+          final cloud = await gateway;
+          if (cloud == null) return const [];
+          final response = await cloud.read(
+            pages: [
+              WorkspaceResourcePageRequest(
+                resourceKind: WorkspaceResourceKind.agent,
+                limit: 100,
+              ),
+              WorkspaceResourcePageRequest(
+                resourceKind: WorkspaceResourceKind.agentAssociation,
+                limit: 100,
+              ),
+            ],
+          );
 
-            return response.pages.expand((page) => page.resources).toList();
-          },
-        );
-      },
-    );
+          return response.pages.expand((page) => page.resources).toList();
+        },
+      );
+    });
 
 @riverpod
 AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
   final session = ref
-      .watch(
-        workspaceSessionForRouteProvider(workspaceId),
-      )
+      .watch(workspaceSessionForRouteProvider(workspaceId))
       .requireValue;
   if (session.cloud != null) {
     return CloudAgentToolsRepository(
@@ -82,7 +79,7 @@ AgentToolsRepositoryContract agentToolsRepository(Ref ref, String workspaceId) {
           throw StateError('Cloud workspace gateway unavailable');
         }
 
-        return cloud.patch(requestId: requestId, operations: operations);
+        return await cloud.patch(requestId: requestId, operations: operations);
       },
       read: () async {
         final cloud = await ref.read(

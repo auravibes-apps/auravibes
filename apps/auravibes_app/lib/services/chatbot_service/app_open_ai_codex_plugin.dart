@@ -49,7 +49,7 @@ class AppOpenAICodexPlugin extends GenkitPlugin {
           stream: context.streamingRequested,
         );
         if (!context.streamingRequested) {
-          return codec.complete(_transport, body);
+          return await codec.complete(_transport, body);
         }
 
         var sentChunks = false;

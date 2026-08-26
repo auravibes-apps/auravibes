@@ -432,10 +432,7 @@ class RunSkillsManagerToolUsecase {
       (cloud: final cloud?, repository: _) =>
         (await cloud.skills()).where((item) => item.slug == slug).firstOrNull,
       (cloud: _, repository: final repository?) =>
-        await repository.getSkillBySlug(
-          workspaceId,
-          slug,
-        ),
+        await repository.getSkillBySlug(workspaceId, slug),
       _ => throw StateError('Skill store is unavailable'),
     };
     if (skill == null || skill.source != SkillSource.user) {
@@ -513,7 +510,7 @@ class RunSkillsManagerToolUsecase {
       throw StateError('Credential definition store is unavailable');
     }
 
-    return repository.getDefinitionBySlug(workspaceId, slug);
+    return await repository.getDefinitionBySlug(workspaceId, slug);
   }
 
   SkillsRepository _skillsRepositoryOrThrow() {
@@ -680,35 +677,27 @@ class RunSkillsManagerToolUsecase {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return repository.getToolBySlug(skillId, slug);
+    return await repository.getToolBySlug(skillId, slug);
   }
 }
 
 final ProviderFamily<RunSkillsManagerToolUsecase, String>
 runSkillsManagerToolUsecaseProvider =
-    Provider.family<RunSkillsManagerToolUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<RunSkillsManagerToolUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return RunSkillsManagerToolUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(skillTemplateToolsRepositoryProvider)
-              : null,
-          cloud == null
-              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-              : null,
-          ref.watch(createSkillUsecaseProvider(workspaceId)),
-          ref.watch(updateSkillUsecaseProvider(workspaceId)),
-          ref.watch(createSkillTemplateToolUsecaseProvider(workspaceId)),
-          ref.watch(updateSkillTemplateToolUsecaseProvider(workspaceId)),
-          ref.watch(
-            createSkillCredentialDefinitionUsecaseProvider(workspaceId),
-          ),
-          ref.watch(
-            updateSkillCredentialDefinitionUsecaseProvider(workspaceId),
-          ),
-          cloudStore: cloud,
-        );
-      },
-    );
+      return RunSkillsManagerToolUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+        ref.watch(createSkillUsecaseProvider(workspaceId)),
+        ref.watch(updateSkillUsecaseProvider(workspaceId)),
+        ref.watch(createSkillTemplateToolUsecaseProvider(workspaceId)),
+        ref.watch(updateSkillTemplateToolUsecaseProvider(workspaceId)),
+        ref.watch(createSkillCredentialDefinitionUsecaseProvider(workspaceId)),
+        ref.watch(updateSkillCredentialDefinitionUsecaseProvider(workspaceId)),
+        cloudStore: cloud,
+      );
+    });

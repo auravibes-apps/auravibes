@@ -47,9 +47,9 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
       return updated;
     }
 
-    return into(workspaceCompactionSettings).insertReturning(
-      companion.copyWith(workspaceId: Value(workspaceId)),
-    );
+    return await into(
+      workspaceCompactionSettings,
+    ).insertReturning(companion.copyWith(workspaceId: Value(workspaceId)));
   }
 
   Future<void> deleteByWorkspaceId(String workspaceId) async {

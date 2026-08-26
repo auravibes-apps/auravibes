@@ -19,9 +19,7 @@ class BuildCombinedToolSpecsUseCase {
   })
   _getMcpToolSpec;
 
-  Future<List<ToolSpec>> call(
-    List<WorkspaceToolEntity> enabledTools,
-  ) async {
+  Future<List<ToolSpec>> call(List<WorkspaceToolEntity> enabledTools) async {
     final toolSpecs = <ToolSpec>[];
 
     for (final workspaceTool in enabledTools) {
@@ -39,7 +37,7 @@ class BuildCombinedToolSpecsUseCase {
     final nativeSpec = _buildNativeToolSpec(workspaceTool);
     if (nativeSpec != null) return nativeSpec;
 
-    return _buildMcpToolSpec(workspaceTool);
+    return await _buildMcpToolSpec(workspaceTool);
   }
 
   ToolSpec? _buildBuiltInToolSpec(WorkspaceToolEntity workspaceTool) {
@@ -88,9 +86,7 @@ class BuildCombinedToolSpecsUseCase {
       return null;
     }
 
-    final toolGroup = await _getToolsGroupById(
-      workspaceToolsGroupId,
-    );
+    final toolGroup = await _getToolsGroupById(workspaceToolsGroupId);
     final mcpServerId = toolGroup?.mcpServerId;
     if (mcpServerId == null) return null;
 

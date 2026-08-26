@@ -36,7 +36,7 @@ class SecretKeyManager {
     if (cachedKey != null) return cachedKey;
 
     final pendingKey = _pendingKey;
-    if (pendingKey != null) return pendingKey;
+    if (pendingKey != null) return await pendingKey;
 
     final newPendingKey = _loadOrCreateSecretKey();
     _pendingKey = newPendingKey;

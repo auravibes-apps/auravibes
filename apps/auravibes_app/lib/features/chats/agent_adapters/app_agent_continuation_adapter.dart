@@ -73,7 +73,7 @@ class AppAgentContinuationAdapter
     final workspaceId = _workspaceIdsByModelId[modelId];
     if (workspaceId == null) return null;
 
-    return (await modelSelectionStore(workspaceId)).getById(modelId);
+    return await (await modelSelectionStore(workspaceId)).getById(modelId);
   }
 
   @override
@@ -130,10 +130,7 @@ class AppAgentContinuationAdapter
   }) {
     return (loadConversationToolSpecsUsecaseForWorkspace?.call(workspaceId) ??
             loadConversationToolSpecsUsecase)
-        .call(
-          conversationId: conversationId,
-          workspaceId: workspaceId,
-        );
+        .call(conversationId: conversationId, workspaceId: workspaceId);
   }
 
   @override
@@ -172,29 +169,23 @@ class AppAgentContinuationAdapter
   }
 }
 
-final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>(
-  (
-    ref,
-  ) {
-    return AppAgentContinuationAdapter(
-      conversationRepository: ref.watch(conversationRepositoryProvider),
-      modelSelectionStore: (workspaceId) => ref.read(
-        modelSelectionStoreProvider(workspaceId).future,
-      ),
-      apiModelRepository: ref.watch(apiModelRepositoryProvider),
-      selectPromptMessagesUsecase: ref.watch(
-        selectPromptMessagesUsecaseProvider,
-      ),
-      buildSkillContextMessagesUsecase: ref.watch(
-        buildSkillContextMessagesServiceProvider,
-      ),
-      loadConversationToolSpecsUsecase: throw UnimplementedError(),
-      loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) => ref.read(
-        loadConversationToolSpecsUsecaseProvider(workspaceId),
-      ),
-    );
-  },
-);
+final appAgentContinuationProvider = Provider<AppAgentContinuationAdapter>((
+  ref,
+) {
+  return AppAgentContinuationAdapter(
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    modelSelectionStore: (workspaceId) =>
+        ref.read(modelSelectionStoreProvider(workspaceId).future),
+    apiModelRepository: ref.watch(apiModelRepositoryProvider),
+    selectPromptMessagesUsecase: ref.watch(selectPromptMessagesUsecaseProvider),
+    buildSkillContextMessagesUsecase: ref.watch(
+      buildSkillContextMessagesServiceProvider,
+    ),
+    loadConversationToolSpecsUsecase: throw UnimplementedError(),
+    loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
+        ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
+  );
+});
 
 extension on ChatMessage {
   bool get isSkillContext => metadata['kind'] == skillContextMetadataKind;

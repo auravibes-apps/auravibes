@@ -45,11 +45,7 @@ class ProviderFactory {
             baseUrl: baseUrl ?? 'https://openrouter.ai/api/v1',
             apiKey: apiKey,
             codec: _openRouterCodec(),
-            models: [
-              ChatCompletionsModelDefinition(
-                name: modelId,
-              ),
-            ],
+            models: [ChatCompletionsModelDefinition(name: modelId)],
           )
         else if (runtime.runtime == ProviderRuntime.codexOAuth)
           AppOpenAICodexPlugin(
@@ -65,17 +61,10 @@ class ProviderFactory {
             baseUrl: baseUrl,
             apiKey: apiKey,
             codec: _openAICompatReasoningCodec(),
-            models: [
-              ChatCompletionsModelDefinition(
-                name: modelId,
-              ),
-            ],
+            models: [ChatCompletionsModelDefinition(name: modelId)],
           )
         else
-          openAI(
-            apiKey: apiKey,
-            baseUrl: baseUrl,
-          ),
+          openAI(apiKey: apiKey, baseUrl: baseUrl),
       ],
     );
   }
@@ -113,10 +102,7 @@ class ProviderFactory {
     final runtime = _runtimeSelection(config, config.modelConnection.url);
     if (runtime.runtime != ProviderRuntime.anthropic) {
       if (runtime.runtime == ProviderRuntime.openAiReasoning) {
-        return OpenAICompatReasoningOptions(
-              reasoningType: 'enabled',
-            )
-            as T;
+        return OpenAICompatReasoningOptions(reasoningType: 'enabled') as T;
       }
 
       return null;
@@ -146,7 +132,7 @@ class ProviderFactory {
         throw const FormatException('OAuth token resolver is not configured.');
       }
 
-      return resolver(config.modelConnection.id);
+      return await resolver(config.modelConnection.id);
     }
 
     if (!config.modelConnection.hasKey) {

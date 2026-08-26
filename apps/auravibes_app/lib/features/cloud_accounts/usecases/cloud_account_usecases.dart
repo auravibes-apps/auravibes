@@ -25,7 +25,7 @@ class CloudAccountUseCases {
     final client = _newClient();
     final auth = await client.emailIdp.login(email: email, password: password);
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<UuidValue> startRegistration({required String email}) {
@@ -52,7 +52,7 @@ class CloudAccountUseCases {
       password: password,
     );
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<UuidValue> startPasswordReset({required String email}) {

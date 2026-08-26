@@ -50,9 +50,9 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   }
 
   Stream<List<ApiModelProvidersTable>> watchAllProviders() {
-    return select(apiModelProviders).watch().map(
-      (providers) => providers.sorted(_sortProviders),
-    );
+    return select(
+      apiModelProviders,
+    ).watch().map((providers) => providers.sorted(_sortProviders));
   }
 
   /// Retrieves a provider by its ID.
@@ -138,7 +138,7 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   /// Returns the list of inserted providers.
   Future<List<ApiModelProvidersTable>> batchUpsertProviders(
     List<ApiModelProvidersCompanion> providers,
-  ) async {
+  ) {
     return transaction(() async {
       return [for (final provider in providers) await upsertProvider(provider)];
     });

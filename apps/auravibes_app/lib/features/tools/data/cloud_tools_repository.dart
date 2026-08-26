@@ -80,9 +80,7 @@ class CloudToolsRepository
   })?
   _create;
   final Future<void> Function({required String mcpServerId})? _delete;
-  final Future<DiscoverMcpServerResult> Function({
-    required String mcpServerId,
-  })?
+  final Future<DiscoverMcpServerResult> Function({required String mcpServerId})?
   _discover;
 
   Future<CloudWorkspaceStateGateway> get _gateway async =>
@@ -130,9 +128,7 @@ class CloudToolsRepository
     required McpServerFormToCreate server,
   }) async {
     WorkspaceCapabilities.cloud
-      ..require(
-        supported: server.transport is McpTransportTypeStreamableHttp,
-      )
+      ..require(supported: server.transport is McpTransportTypeStreamableHttp)
       ..require(
         supported:
             server.authenticationType != McpAuthenticationTypeOptions.oauth,
@@ -171,9 +167,11 @@ class CloudToolsRepository
 
   Future<DiscoverMcpServerResult> discoverMcpServer(String id) async {
     final discover = _discover;
-    if (discover != null) return discover(mcpServerId: id);
+    if (discover != null) return await discover(mcpServerId: id);
 
-    return CloudMcpGateway(await _gateway).discoverMcpServer(mcpServerId: id);
+    return await CloudMcpGateway(
+      await _gateway,
+    ).discoverMcpServer(mcpServerId: id);
   }
 
   @override
@@ -303,7 +301,7 @@ class CloudToolsRepository
     final value = await getToolsGroupById(id);
     if (value == null) return false;
 
-    return removeMcpServer(value.mcpServerId);
+    return await removeMcpServer(value.mcpServerId);
   }
 
   @override
@@ -440,7 +438,7 @@ class CloudToolsRepository
   }) async {
     final create = _create;
     if (create != null) {
-      return create(
+      return await create(
         requestId: requestId,
         name: name,
         url: url,
@@ -451,7 +449,7 @@ class CloudToolsRepository
       );
     }
 
-    return CloudMcpGateway(await _gateway).createMcpServer(
+    return await CloudMcpGateway(await _gateway).createMcpServer(
       requestId: requestId,
       name: name,
       url: url,
@@ -486,10 +484,10 @@ class CloudToolsRepository
     final requestId = const UuidV7().generate();
     final patch = _patchState;
     if (patch != null) {
-      return patch(requestId: requestId, operations: operations);
+      return await patch(requestId: requestId, operations: operations);
     }
 
-    return (await _gateway).patch(
+    return await (await _gateway).patch(
       requestId: requestId,
       operations: operations,
     );
@@ -499,9 +497,9 @@ class CloudToolsRepository
     List<WorkspaceResourcePageRequest> pages,
   ) async {
     final read = _readState;
-    if (read != null) return read(pages: pages);
+    if (read != null) return await read(pages: pages);
 
-    return (await _gateway).read(pages: pages);
+    return await (await _gateway).read(pages: pages);
   }
 
   PermissionAccess _access(Object? value) =>

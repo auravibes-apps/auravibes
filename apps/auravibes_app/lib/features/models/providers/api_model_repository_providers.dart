@@ -40,16 +40,11 @@ ModelSyncService modelSyncService(Ref ref) {
     apiService: apiService,
   );
 
-  final service = ModelSyncService(
-    syncApiModelsUseCase: syncApiModelsUseCase,
-  );
+  final service = ModelSyncService(syncApiModelsUseCase: syncApiModelsUseCase);
 
-  final timer = Timer.periodic(
-    const Duration(hours: 5),
-    (_) {
-      service.performFullSync();
-    },
-  );
+  final timer = Timer.periodic(const Duration(hours: 5), (_) {
+    service.performFullSync();
+  });
 
   final _ = ref.onDispose(timer.cancel);
 
@@ -100,7 +95,7 @@ Future<List<ApiModelEntity>> getAllModels(
     modelCatalogStoreProvider(workspaceId).future,
   );
 
-  return catalog.getAllModels();
+  return await catalog.getAllModels();
 }
 
 @riverpod
@@ -115,7 +110,7 @@ Future<ApiModelEntity?> getModelByProviderAndModelId(
     modelCatalogStoreProvider(workspaceId).future,
   );
 
-  return catalog.getModelByProviderAndModelId(providerId, modelId);
+  return await catalog.getModelByProviderAndModelId(providerId, modelId);
 }
 
 @riverpod
@@ -128,6 +123,6 @@ Future<List<ApiModelEntity>> getModelsByProvider(
     modelCatalogStoreProvider(workspaceId).future,
   );
 
-  return catalog.getModelsByProvider(providerId);
+  return await catalog.getModelsByProvider(providerId);
 }
 // Top-level API/provider declarations are required by their consumers.

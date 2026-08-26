@@ -34,7 +34,7 @@ class SkillCredentialsRepository {
       credentialDefinitionId: credentialDefinitionId,
     );
 
-    return Future.wait(rows.map(_tableToEntity));
+    return await Future.wait(rows.map(_tableToEntity));
   }
 
   Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
@@ -42,16 +42,14 @@ class SkillCredentialsRepository {
   ) {
     return _dao
         .watchCredentialsForWorkspace(workspaceId)
-        .asyncMap(
-          (rows) => Future.wait(rows.map(_tableToEntity)),
-        );
+        .asyncMap((rows) => Future.wait(rows.map(_tableToEntity)));
   }
 
   Future<SkillCredentialEntity?> getCredentialById(String credentialId) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
 
-    return _tableToEntity(row);
+    return await _tableToEntity(row);
   }
 
   Future<Map<String, String>> readCredentialAttributes(
@@ -62,10 +60,7 @@ class SkillCredentialsRepository {
       throw SkillCredentialsException.notFound(credentialId);
     }
 
-    return {
-      ..._nonSecretAttributes(row),
-      ...await _secretAttributes(row),
-    };
+    return {..._nonSecretAttributes(row), ...await _secretAttributes(row)};
   }
 
   Future<SkillCredentialForEdit?> getCredentialForEdit(
@@ -128,7 +123,7 @@ class SkillCredentialsRepository {
       ),
     );
 
-    return _tableToEntity(row);
+    return await _tableToEntity(row);
   }
 
   Future<SkillCredentialEntity> updateCredential(
@@ -174,7 +169,7 @@ class SkillCredentialsRepository {
       throw SkillCredentialsException.notFound(credentialId);
     }
 
-    return _tableToEntity(updated);
+    return await _tableToEntity(updated);
   }
 
   Future<void> deleteCredential(String credentialId) async {

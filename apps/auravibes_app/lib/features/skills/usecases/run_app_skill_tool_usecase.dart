@@ -131,19 +131,19 @@ class RunAppSkillToolUsecase {
       throw StateError('Credential is not available for this app skill tool.');
     }
     if (trimmed.startsWith('skill:')) {
-      return _skillCredentialsRepository.readCredentialAttributes(
+      return await _skillCredentialsRepository.readCredentialAttributes(
         trimmed.replaceFirst('skill:', ''),
       );
     }
     if (trimmed.startsWith('service:')) {
-      return _serviceConnectionAttributes(
+      return await _serviceConnectionAttributes(
         workspaceId: workspaceId,
         connectionId: trimmed.replaceFirst('service:', ''),
         skill: skill,
       );
     }
     if (trimmed.startsWith('model:')) {
-      return _serviceConnectionAttributes(
+      return await _serviceConnectionAttributes(
         workspaceId: workspaceId,
         connectionId: trimmed.replaceFirst('model:', ''),
         skill: skill,
@@ -158,9 +158,7 @@ class RunAppSkillToolUsecase {
     required String connectionId,
     required AppSkillDefinition skill,
   }) async {
-    final connection = await _serviceConnectionRepository.getById(
-      connectionId,
-    );
+    final connection = await _serviceConnectionRepository.getById(connectionId);
     if (connection == null ||
         connection.workspaceId != workspaceId ||
         !connection.isEnabled) {
@@ -214,7 +212,7 @@ class RunAppSkillToolUsecase {
     final service = _oauthCredentialService;
     if (service == null) return fallbackAccessToken;
 
-    return service.getValidAccessToken(connectionId);
+    return await service.getValidAccessToken(connectionId);
   }
 }
 

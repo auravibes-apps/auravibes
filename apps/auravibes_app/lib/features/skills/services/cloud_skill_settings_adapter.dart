@@ -72,7 +72,10 @@ class CloudSkillSettingsAdapter {
   ) async {
     final state = await watchCompactionSettingsState().first;
 
-    return saveCompactionSettings(settings, expectedRevision: state.revision);
+    return await saveCompactionSettings(
+      settings,
+      expectedRevision: state.revision,
+    );
   }
 
   Future<void> resetCompactionSettings() async {
