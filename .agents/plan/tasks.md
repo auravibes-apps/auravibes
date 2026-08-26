@@ -152,7 +152,10 @@ and the newest `/tmp/auravibes-dcl.json`. Never repeat a completed wave.
   tests; UI CI passed 559 tests.
 - DCL was rerun after the final provider-builder change and still reports no
   issues.
-- `validate:quick` analyzer step passes, but its repository-wide format step
-  still reports 510 pre-existing files as unformatted. All 79 Dart files
-  changed in this migration pass the same formatter check; no unrelated files
-  were mass-reformatted.
+- Initial migration validation found 510 pre-existing formatter differences;
+  all 79 migration-touched Dart files already passed formatting. The later
+  repository formatting commit addressed the remaining baseline differences.
+- Follow-up formatting commit `aa0ad4a7` reformatted the repository. Two tool
+  files were still outside that commit; `266b4471` formatted them. The full
+  `dart format --line-length 80 --output=none --set-exit-if-changed .` gate now
+  passes with zero changes.
