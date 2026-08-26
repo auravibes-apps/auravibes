@@ -402,7 +402,7 @@ final class MessageConversationByIdProvider
 }
 
 String _$messageConversationByIdHash() =>
-    r'0f7f71a784e999cdede187ddd2aa4549e9eefc94';
+    r'0db0999ea1c75f1d0ac51132767ec9d1a3029098';
 
 final class MessageConversationByIdFamily extends $Family
     with $FunctionalFamilyOverride<MessageEntity?, (String, String, String)> {
@@ -564,7 +564,7 @@ final class ConversationBusyStateProvider
 }
 
 String _$conversationBusyStateHash() =>
-    r'a0ade899c719b719ca9fa55c7eedaed993938317';
+    r'2ccd444f8c0f64261bb91b714fac7bc685193e3a';
 
 final class ConversationBusyStateFamily extends $Family
     with
@@ -999,7 +999,7 @@ final class PendingToolCallsProvider
   }
 }
 
-String _$pendingToolCallsHash() => r'f9ea905059a7b1781032ed844500aa4d3aaba2a1';
+String _$pendingToolCallsHash() => r'14af85a9fb3c354b535d70c03d0fda8b93c6abb3';
 
 final class PendingToolCallsFamily extends $Family
     with

@@ -243,6 +243,7 @@ class LocalChatAttachmentServiceIo {
 // ignore: unused-code, conditional export implementation used on IO platforms.
 typedef LocalChatAttachmentService = LocalChatAttachmentServiceIo;
 
+// ignore: unused-code, conditional export implementation used on IO platforms.
 final localChatAttachmentServiceProvider = Provider<LocalChatAttachmentService>(
   (ref) => LocalChatAttachmentServiceIo(
     storageNamespace: ref.watch(appStorageNamespaceProvider),

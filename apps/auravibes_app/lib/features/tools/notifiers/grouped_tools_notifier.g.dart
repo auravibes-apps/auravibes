@@ -109,24 +109,20 @@ final class ToolsGroupsRepositoryFamily extends $Family
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all tools groups for the current workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches tool groups for the current workspace, groups tools
+/// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+/// tools, enriches MCP groups with connection state, and sorts default, error,
+/// and newest groups first.
 
 @ProviderFor(GroupedToolsNotifier)
 final groupedToolsProvider = GroupedToolsNotifierFamily._();
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all tools groups for the current workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches tool groups for the current workspace, groups tools
+/// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+/// tools, enriches MCP groups with connection state, and sorts default, error,
+/// and newest groups first.
 final class GroupedToolsNotifierProvider
     extends
         $AsyncNotifierProvider<
@@ -135,12 +131,10 @@ final class GroupedToolsNotifierProvider
         > {
   /// Provider that groups tools by their workspaceToolsGroupId.
   ///
-  /// This provider:
-  /// - Fetches all tools groups for the current workspace
-  /// - Groups tools by their workspaceToolsGroupId
-  /// - Creates a "Built-in Tools" virtual group for tools without a group
-  /// - Enriches MCP groups with their connection state
-  /// - Sorts groups: Default first, then MCP errors, then by creation date
+  /// This provider fetches tool groups for the current workspace, groups tools
+  /// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+  /// tools, enriches MCP groups with connection state, and sorts default, error,
+  /// and newest groups first.
   GroupedToolsNotifierProvider._({
     required GroupedToolsNotifierFamily super.from,
     required String super.argument,
@@ -182,12 +176,10 @@ String _$groupedToolsNotifierHash() =>
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all tools groups for the current workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches tool groups for the current workspace, groups tools
+/// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+/// tools, enriches MCP groups with connection state, and sorts default, error,
+/// and newest groups first.
 
 final class GroupedToolsNotifierFamily extends $Family
     with
@@ -209,12 +201,10 @@ final class GroupedToolsNotifierFamily extends $Family
 
   /// Provider that groups tools by their workspaceToolsGroupId.
   ///
-  /// This provider:
-  /// - Fetches all tools groups for the current workspace
-  /// - Groups tools by their workspaceToolsGroupId
-  /// - Creates a "Built-in Tools" virtual group for tools without a group
-  /// - Enriches MCP groups with their connection state
-  /// - Sorts groups: Default first, then MCP errors, then by creation date
+  /// This provider fetches tool groups for the current workspace, groups tools
+  /// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+  /// tools, enriches MCP groups with connection state, and sorts default, error,
+  /// and newest groups first.
 
   GroupedToolsNotifierProvider call(String workspaceId) =>
       GroupedToolsNotifierProvider._(argument: workspaceId, from: this);
@@ -225,12 +215,10 @@ final class GroupedToolsNotifierFamily extends $Family
 
 /// Provider that groups tools by their workspaceToolsGroupId.
 ///
-/// This provider:
-/// - Fetches all tools groups for the current workspace
-/// - Groups tools by their workspaceToolsGroupId
-/// - Creates a "Built-in Tools" virtual group for tools without a group
-/// - Enriches MCP groups with their connection state
-/// - Sorts groups: Default first, then MCP errors, then by creation date
+/// This provider fetches tool groups for the current workspace, groups tools
+/// by workspaceToolsGroupId, creates a Built-in Tools group for ungrouped
+/// tools, enriches MCP groups with connection state, and sorts default, error,
+/// and newest groups first.
 
 abstract class _$GroupedToolsNotifier
     extends $AsyncNotifier<List<ToolsGroupWithTools>> {
