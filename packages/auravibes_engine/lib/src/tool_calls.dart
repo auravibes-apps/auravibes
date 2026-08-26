@@ -188,7 +188,7 @@ class AgentToolCallLoader<TTool extends Object> {
       if (!messages[i].isUser) continue;
 
       userCount++;
-      if (userCount == 2) return i + 1;
+      if (userCount == 1) return i + 1;
     }
 
     return 0;

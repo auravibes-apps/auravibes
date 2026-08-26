@@ -45,7 +45,7 @@ void main() {
   );
 
   test(
-    'partitions runnable, missing, and previously failed tool calls',
+    'allows explicit retry after a new user message',
     () async {
       const usecase = AgentToolCallLoader<String>(
         provider: _FakeAgentToolCallProvider(
@@ -93,11 +93,49 @@ void main() {
 
       expect(result.messageId, 'assistant-2');
       expect(result.hasToolCalls, true);
-      expect(result.toolsToRun.single.id, 'run-1');
+      expect(result.toolsToRun.map((tool) => tool.id), ['run-1', 'failed-1']);
       expect(result.notFoundToolCallIds, ['missing-1']);
-      expect(result.previouslyFailedToolCallIds, ['failed-1']);
+      expect(result.previouslyFailedToolCallIds, isEmpty);
     },
   );
+
+  test('blocks repeated failed call within same user turn', () async {
+    const usecase = AgentToolCallLoader<String>(
+      provider: _FakeAgentToolCallProvider(
+        messages: [
+          AgentToolMessage(id: 'user-1', isUser: true),
+          AgentToolMessage(
+            id: 'assistant-1',
+            isUser: false,
+            toolCalls: [
+              AgentMessageToolCall(
+                id: 'old-failed',
+                name: 'fail_once',
+                argumentsRaw: '{}',
+                lifecycle: AgentToolCallLifecycle.failed,
+              ),
+            ],
+          ),
+          AgentToolMessage(
+            id: 'assistant-2',
+            isUser: false,
+            toolCalls: [
+              AgentMessageToolCall(
+                id: 'retry',
+                name: 'fail_once',
+                argumentsRaw: '{}',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final result = await usecase(conversationId: 'conversation-1');
+
+    expect(result.toolsToRun, isEmpty);
+    expect(result.previouslyFailedToolCallIds, ['retry']);
+  });
 }
 
 class _FakeAgentToolCallProvider implements AgentToolCallProvider<String> {

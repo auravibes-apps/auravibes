@@ -65,5 +65,9 @@ final auraAgentServiceProvider = Provider<agent.AuraAgentService<ResolvedTool>>(
       ),
     );
   },
-  dependencies: [agentToolResumeServiceProvider],
+  dependencies: [
+    agentToolResumeServiceProvider,
+    appAgentDataProvider,
+    appAgentModelProvider,
+  ],
 );

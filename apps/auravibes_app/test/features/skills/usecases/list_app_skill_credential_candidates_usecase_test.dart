@@ -141,7 +141,7 @@ void main() {
   });
 
   test(
-    'cloud eligibility excludes local callbacks and keeps server tools',
+    'eligibility includes service callbacks but excludes control callbacks',
     () async {
       final repository = _ServiceConnectionRepository();
       final usecase = ListAppSkillCredentialCandidatesUsecase(
@@ -160,6 +160,9 @@ void main() {
       final jina =
           registry.getByIdentifier('jina') ??
           (throw StateError('Jina must be registered.'));
+      final duckDuckGo =
+          registry.getByIdentifier('duckduckgo') ??
+          (throw StateError('DuckDuckGo must be registered.'));
 
       expect(
         await usecase.hasUsableNativeTool(
@@ -186,6 +189,13 @@ void main() {
         await usecase.hasUsableNativeTool(
           workspaceId: 'workspace-1',
           skill: jina,
+        ),
+        isTrue,
+      );
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: duckDuckGo,
         ),
         isTrue,
       );

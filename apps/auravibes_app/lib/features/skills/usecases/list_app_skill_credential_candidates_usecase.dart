@@ -78,12 +78,19 @@ class ListAppSkillCredentialCandidatesUsecase {
   }) async {
     if (skill.identifier == agentsSkillSlug) return true;
 
-    final serverNativeTools = skill.nativeTools
-        .where((tool) => tool.urlTemplate != null)
+    final isServiceSkill = serviceSkillDefinitions.any(
+      (candidate) => candidate.identifier == skill.identifier,
+    );
+    final usableNativeTools = skill.nativeTools
+        .where(
+          (tool) =>
+              tool.urlTemplate != null ||
+              (isServiceSkill && tool.callback != null),
+        )
         .toList(growable: false);
-    if (serverNativeTools.isEmpty) return false;
+    if (usableNativeTools.isEmpty) return false;
 
-    if (serverNativeTools.any((tool) => !tool.requiresCredential)) {
+    if (usableNativeTools.any((tool) => !tool.requiresCredential)) {
       return true;
     }
 
