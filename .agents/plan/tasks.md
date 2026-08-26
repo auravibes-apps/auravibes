@@ -130,3 +130,17 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 
 After compaction read this ledger, the attached goal, `git log`, `git status`,
 and the newest `/tmp/auravibes-dcl.json`. Never repeat a completed wave.
+
+## Very Good Analysis 11 migration — 2026-08-25
+
+- Requested update is `very_good_analysis: ^11.0.0-rc.1` in the workspace root
+  and `packages/auravibes_engine`; `fvm dart pub get` resolves `11.0.0-rc.1`
+  and raises the package SDK floor to Dart 3.13.0.
+- The release adds `async_return_with_no_await`, exposing 140 app diagnostics,
+  8 engine/test diagnostics, and 5 obsolete `one_member_abstracts` ignores.
+- Fixes are split by disjoint ownership across app data/services, app features,
+  and engine/tests. No new suppressions or rule changes are allowed.
+- App and engine source/test scopes are clean under fatal analyzer runs. The
+  upgraded rule also exposed one obsolete UI `one_member_abstracts` ignore and
+  one trailing-comma callback shape; both were removed/fixed without new
+  suppressions. Final DCL and repository gates remain pending.
