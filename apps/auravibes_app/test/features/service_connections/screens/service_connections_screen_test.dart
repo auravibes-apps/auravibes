@@ -103,6 +103,22 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Model providers'), findsOneWidget);
+    expect(find.text('Skill credentials'), findsOneWidget);
+    expect(find.text('MCP servers'), findsOneWidget);
+
+    await tester.tap(find.text('Model providers'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Main Token'), findsNothing);
+    expect(find.text('No connections for Model providers'), findsOneWidget);
+
+    await tester.tap(find.text('Skill credentials'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Main Token'), findsOneWidget);
+    await tester.tap(find.text('All'));
+    final _ = await tester.pumpAndSettle();
+
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));

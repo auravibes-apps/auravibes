@@ -20,7 +20,7 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
-      child: ListView(
+      child: AuraList(
         children: [
           _SectionTile(
             icon: Icons.workspaces_outlined,
