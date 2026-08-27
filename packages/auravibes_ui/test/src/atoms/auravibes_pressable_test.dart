@@ -47,17 +47,14 @@ Color _stateLayerColor(WidgetTester tester) {
     find.byType(AnimatedContainer),
   );
 
+  // Flutter normalizes AnimatedContainer(color: ...) into decoration.
   final decoration = layer.decoration;
-  if (decoration is! BoxDecoration) {
-    fail('Expected the state layer to use a BoxDecoration.');
+  if (decoration is BoxDecoration) {
+    final color = decoration.color;
+    if (color != null) return color;
   }
 
-  final color = decoration.color;
-  if (color == null) {
-    fail('Expected the state layer to have a color.');
-  }
-
-  return color;
+  fail('Expected the state layer to have a color.');
 }
 
 Widget _host() {

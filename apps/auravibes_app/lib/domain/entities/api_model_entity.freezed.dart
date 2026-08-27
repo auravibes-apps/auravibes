@@ -20,7 +20,7 @@ mixin _$ApiModelEntity {
  String get id;/// Human-readable name of the model.
  String get name;/// Maximum context window size.
  int get limitContext;/// Maximum output tokens.
- int get limitOutput; List<String> get modalitiesInput; List<String> get modalitiesOutput;/// models.dev model family identifier.
+ int get limitOutput; List<String> get modalitiesInput; List<String> get modalitiesOutput;/// Models.dev model family identifier.
  String? get family;/// Cost per 1M input tokens.
  double? get costInput;/// Cost per 1M cache read tokens.
  double? get costCacheRead;/// Cost per 1M output tokens.
@@ -263,7 +263,7 @@ class _ApiModelEntity extends ApiModelEntity {
   return EqualUnmodifiableListView(_modalitiesOutput);
 }
 
-/// models.dev model family identifier.
+/// Models.dev model family identifier.
 @override final  String? family;
 /// Cost per 1M input tokens.
 @override final  double? costInput;

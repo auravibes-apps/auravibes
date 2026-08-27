@@ -148,7 +148,7 @@ final class WorkspaceSessionForRouteProvider
 }
 
 String _$workspaceSessionForRouteHash() =>
-    r'8fc38222353456640586554b4a7e4b033e0ff0ce';
+    r'fdbecb263fffd877c0a8994c9455c6aae55538de';
 
 final class WorkspaceSessionForRouteFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<WorkspaceSession>, String> {

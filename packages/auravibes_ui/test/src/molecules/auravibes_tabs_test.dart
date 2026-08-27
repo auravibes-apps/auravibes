@@ -104,6 +104,27 @@ void main() {
       expect(callbackCount, 0);
     });
 
+    testWidgets('uses rendered selection for controlled taps', (tester) async {
+      var callbackCount = 0;
+      await tester.pumpWidget(
+        _host(
+          AuraTabs(
+            items: _items,
+            selectedIndex: 0,
+            onChanged: (_) => callbackCount++,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Second'));
+      await tester.pump();
+      await tester.tap(find.text('Second'));
+
+      expect(callbackCount, 2);
+      expect(find.text('First content'), findsOneWidget);
+      expect(find.text('Second content'), findsNothing);
+    });
+
     testWidgets('clamps invalid selection indexes', (tester) async {
       await tester.pumpWidget(
         _host(const AuraTabs(items: _items, initialIndex: 99)),
@@ -122,6 +143,15 @@ void main() {
 
       expect(find.byType(AuraPressable), findsNothing);
       expect(find.byType(AuraText), findsNothing);
+    });
+
+    testWidgets('supports shrink-wrapped layouts', (tester) async {
+      await tester.pumpWidget(
+        _host(const SingleChildScrollView(child: AuraTabs(items: _items))),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('First content'), findsOneWidget);
     });
 
     testWidgets('uses initial selection when items become available', (
@@ -264,15 +294,13 @@ Widget _host(Widget child) {
 }
 
 Color _indicatorColor(WidgetTester tester, Finder finder) {
-  final decoration = tester.widget<AnimatedContainer>(finder).decoration;
-  if (decoration is! BoxDecoration) {
-    fail('Expected a colored tab indicator.');
+  final layer = tester.widget<AnimatedContainer>(finder);
+  // Flutter normalizes AnimatedContainer(color: ...) into decoration.
+  final decoration = layer.decoration;
+  if (decoration is BoxDecoration) {
+    final color = decoration.color;
+    if (color != null) return color;
   }
 
-  final color = decoration.color;
-  if (color == null) {
-    fail('Expected a colored tab indicator.');
-  }
-
-  return color;
+  fail('Expected a colored tab indicator.');
 }

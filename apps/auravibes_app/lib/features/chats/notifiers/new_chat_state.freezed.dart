@@ -15,8 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NewChatState {
 
- String? get modelId;/// Stores the provider ID (or name-equivalent).
-/// - for display and filtering models
+ String? get modelId;/// Stores the provider ID (or name equivalent) for displaying and
+/// filtering models.
  String? get providerId; String? get agentId; bool get isLoading;
 /// Create a copy of NewChatState
 /// with the given fields replaced by the non-null parameter values.
@@ -216,8 +216,8 @@ class _NewChatState implements NewChatState {
   
 
 @override final  String? modelId;
-/// Stores the provider ID (or name-equivalent).
-/// - for display and filtering models
+/// Stores the provider ID (or name equivalent) for displaying and
+/// filtering models.
 @override final  String? providerId;
 @override final  String? agentId;
 @override@JsonKey() final  bool isLoading;

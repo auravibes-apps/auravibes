@@ -70,6 +70,7 @@ class _AuraTabsState extends State<AuraTabs> {
     );
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -81,7 +82,7 @@ class _AuraTabsState extends State<AuraTabs> {
           ),
         ),
         const AuraDivider(height: 1, thickness: DesignBorderWidth.thin),
-        Expanded(
+        Flexible(
           child: Semantics(
             child: AuraContainer(
               child: IndexedStack(
@@ -155,9 +156,15 @@ class _AuraTabsState extends State<AuraTabs> {
   }
 
   void _select(int index) {
-    if (index == _selectedIndex) return;
+    final selectedIndex = _normalizeIndex(
+      widget.selectedIndex ?? _selectedIndex,
+      widget.items.length,
+    );
+    if (index == selectedIndex) return;
 
-    setState(() => _selectedIndex = index);
+    if (widget.selectedIndex == null) {
+      setState(() => _selectedIndex = index);
+    }
     widget.onChanged?.call(index);
   }
 
