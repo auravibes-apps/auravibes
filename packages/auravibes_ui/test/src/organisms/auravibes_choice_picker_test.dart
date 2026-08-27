@@ -261,6 +261,7 @@ void main() {
       final optionFinder = find.bySemanticsLabel('First choice');
       final optionNode = tester.getSemantics(optionFinder);
       expect(optionNode.label, contains('First choice'));
+      expect(find.bySemanticsLabel('First'), findsNothing);
       expect(optionNode.flagsCollection.isChecked, ui.CheckedState.isTrue);
       expect(optionNode.flagsCollection.isEnabled, ui.Tristate.isTrue);
       expect(tester.getSize(optionFinder).width, greaterThanOrEqualTo(44));

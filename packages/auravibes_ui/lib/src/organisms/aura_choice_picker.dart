@@ -43,9 +43,9 @@ enum AuraChoicePickerVariant {
 ///
 /// The widget does not keep selection state. Callers must update [value] in
 /// response to [onChanged]. In [AuraChoicePickerVariant.mutuallyExclusive]
-/// mode, callbacks contain zero or one value. In multiple-selection mode,
-/// [maxAllowedSelections] prevents adding values beyond the limit while still
-/// allowing selected values to be removed.
+/// mode, callbacks contain exactly one value when invoked. In
+/// multiple-selection mode, [maxAllowedSelections] prevents adding values
+/// beyond the limit while still allowing selected values to be removed.
 class AuraChoicePicker<T> extends StatelessWidget {
   /// Creates an Aura choice picker.
   const AuraChoicePicker({
@@ -181,6 +181,9 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final label = option.semanticLabel == null
+        ? option.label
+        : ExcludeSemantics(child: option.label);
     final control = switch (variant) {
       AuraChoicePickerVariant.mutuallyExclusive => AuraRadio<T>(
         value: option.value,
@@ -208,6 +211,7 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
             ),
             onTap: _isInteractive ? _handleChange : null,
             behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
           ),
           const AuraSizedBox(width: .sm),
           Expanded(
@@ -220,12 +224,13 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Opacity(
                     opacity: _isInteractive ? 1 : 0.6,
-                    child: option.label,
+                    child: label,
                   ),
                 ),
               ),
               onTap: _isInteractive ? _handleChange : null,
               behavior: HitTestBehavior.opaque,
+              excludeFromSemantics: true,
             ),
           ),
         ],
