@@ -10,19 +10,47 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-/// A static set of selectable tabs with one child per tab.
-class AuraTabs extends StatefulWidget {
-  /// Creates Aura tabs.
+/// A selectable Aura tab strip with optional content.
+///
+/// Use [AuraTabs] when each tab owns content. Use [AuraTabs.selector] when the
+/// tab strip selects a value and the caller renders content separately.
+class AuraTabs<T> extends StatefulWidget {
+  /// Creates Aura tabs with one child per tab.
   const AuraTabs({
     required this.items,
     super.key,
     this.initialIndex = 0,
     this.selectedIndex,
     this.onChanged,
-  });
+  }) : options = const [],
+       value = null,
+       initialValue = null,
+       _selectorOnChanged = null,
+       _mode = _AuraTabsMode.content;
+
+  /// Creates value-selecting tabs without tab children.
+  const AuraTabs.selector({
+    required this.options,
+    this.value,
+    this.initialValue,
+    ValueChanged<T>? onChanged,
+    super.key,
+  }) : assert(
+         value == null || initialValue == null,
+         'Use either value or initialValue, not both.',
+       ),
+       items = const [],
+       initialIndex = 0,
+       selectedIndex = null,
+       onChanged = null,
+       _selectorOnChanged = onChanged,
+       _mode = _AuraTabsMode.selector;
 
   /// The tab title widgets and content.
   final List<AuraTabItem> items;
+
+  /// The value-selecting options for [AuraTabs.selector].
+  final List<AuraTabOption<T>> options;
 
   /// The initially selected tab for uncontrolled use.
   final int initialIndex;
@@ -34,25 +62,52 @@ class AuraTabs extends StatefulWidget {
   /// Called when the selected tab changes.
   final ValueChanged<int>? onChanged;
 
+  /// The selected value for [AuraTabs.selector].
+  final T? value;
+
+  /// The initial value for uncontrolled [AuraTabs.selector] use.
+  final T? initialValue;
+
+  final ValueChanged<T>? _selectorOnChanged;
+  final _AuraTabsMode _mode;
+
   @override
-  State<AuraTabs> createState() => _AuraTabsState();
+  State<AuraTabs<T>> createState() => _AuraTabsState<T>();
 }
 
-class _AuraTabsState extends State<AuraTabs> {
+enum _AuraTabsMode { content, selector }
+
+class _AuraTabsState<T> extends State<AuraTabs<T>> {
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = _normalizeIndex(
-      widget.selectedIndex ?? widget.initialIndex,
-      widget.items.length,
-    );
+    _selectedIndex = _initialIndex();
   }
 
   @override
-  void didUpdateWidget(covariant AuraTabs oldWidget) {
+  void didUpdateWidget(covariant AuraTabs<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (widget._mode != oldWidget._mode) {
+      _selectedIndex = _initialIndex();
+
+      return;
+    }
+
+    if (widget._mode == _AuraTabsMode.selector) {
+      final options = widget.options;
+      if (widget.value != null) {
+        _selectedIndex = _indexForValue(widget.value, options);
+      } else if (oldWidget.options.isEmpty && options.isNotEmpty) {
+        _selectedIndex = _indexForValue(widget.initialValue, options);
+      } else {
+        _selectedIndex = _normalizeIndex(_selectedIndex, options.length);
+      }
+
+      return;
+    }
 
     final requestedIndex =
         widget.selectedIndex ??
@@ -62,6 +117,18 @@ class _AuraTabsState extends State<AuraTabs> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget._mode == _AuraTabsMode.selector) {
+      final options = widget.options;
+      if (options.isEmpty) return const SizedBox.shrink();
+
+      return _AuraTabBar(
+        titles: [for (final option in options) option.title],
+        semanticLabels: [for (final option in options) option.semanticLabel],
+        selectedIndex: _selectedOptionIndex(options),
+        onChanged: _select,
+      );
+    }
+
     if (widget.items.isEmpty) return const SizedBox.shrink();
 
     final selectedIndex = _normalizeIndex(
@@ -72,16 +139,12 @@ class _AuraTabsState extends State<AuraTabs> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var index = 0; index < widget.items.length; index++)
-                _buildTab(context, index, selectedIndex),
-            ],
-          ),
+        _AuraTabBar(
+          titles: [for (final item in widget.items) item.title],
+          semanticLabels: [for (final item in widget.items) item.semanticLabel],
+          selectedIndex: selectedIndex,
+          onChanged: _select,
         ),
-        const AuraDivider(height: 1, thickness: DesignBorderWidth.thin),
         Flexible(
           child: Semantics(
             child: AuraContainer(
@@ -97,11 +160,107 @@ class _AuraTabsState extends State<AuraTabs> {
     );
   }
 
-  Widget _buildTab(BuildContext context, int index, int selectedIndex) {
-    final item = widget.items[index];
+  void _select(int index) {
+    if (widget._mode == _AuraTabsMode.selector) {
+      final options = widget.options;
+      final selectedIndex = _selectedOptionIndex(options);
+      if (index == selectedIndex) return;
+
+      if (widget.value == null) {
+        setState(() => _selectedIndex = index);
+      }
+      widget._selectorOnChanged?.call(options[index].value);
+
+      return;
+    }
+
+    final selectedIndex = _normalizeIndex(
+      widget.selectedIndex ?? _selectedIndex,
+      widget.items.length,
+    );
+    if (index == selectedIndex) return;
+
+    if (widget.selectedIndex == null) {
+      setState(() => _selectedIndex = index);
+    }
+    widget.onChanged?.call(index);
+  }
+
+  int _initialIndex() {
+    if (widget._mode == _AuraTabsMode.selector) {
+      final options = widget.options;
+
+      return _indexForValue(widget.value ?? widget.initialValue, options);
+    }
+
+    return _normalizeIndex(
+      widget.selectedIndex ?? widget.initialIndex,
+      widget.items.length,
+    );
+  }
+
+  int _selectedOptionIndex(List<AuraTabOption<T>> options) {
+    if (widget.value != null) {
+      return _indexForValue(widget.value, options);
+    }
+
+    return _normalizeIndex(_selectedIndex, options.length);
+  }
+
+  int _indexForValue(T? value, List<AuraTabOption<T>> options) {
+    if (value == null) return 0;
+
+    final index = options.indexWhere((option) => option.value == value);
+
+    return index < 0 ? 0 : index;
+  }
+
+  int _normalizeIndex(int index, int length) {
+    if (length == 0 || index < 0) return 0;
+    if (index >= length) return length - 1;
+
+    return index;
+  }
+}
+
+class _AuraTabBar extends StatelessWidget {
+  const _AuraTabBar({
+    required this.titles,
+    required this.semanticLabels,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
+
+  final List<Widget> titles;
+  final List<String?> semanticLabels;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var index = 0; index < titles.length; index++)
+                _buildTab(context, index),
+            ],
+          ),
+        ),
+        const AuraDivider(height: 1, thickness: DesignBorderWidth.thin),
+      ],
+    );
+  }
+
+  Widget _buildTab(BuildContext context, int index) {
     final isSelected = index == selectedIndex;
     final auraColors = context.auraColors;
     final borderRadius = context.auraTheme.fromBorderRadius(.md);
+    final title = titles[index];
 
     return Semantics(
       child: Stack(
@@ -113,7 +272,7 @@ class _AuraTabsState extends State<AuraTabs> {
               child: AuraPadding(
                 child: Center(
                   child: AuraText(
-                    child: item.title,
+                    child: title,
                     style: AuraTextStyle.bodySmall,
                     tint: isSelected ? AuraTint.primary : null,
                   ),
@@ -128,7 +287,7 @@ class _AuraTabsState extends State<AuraTabs> {
                   : DesignColors.transparent,
               borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
             ),
-            onPressed: () => _select(index),
+            onPressed: () => onChanged(index),
           ),
           Positioned(
             left: 0,
@@ -149,30 +308,10 @@ class _AuraTabsState extends State<AuraTabs> {
       ),
       container: true,
       selected: isSelected,
-      label: item.semanticLabel ?? _textSemanticLabel(item.title),
-      onTap: () => _select(index),
+      label: semanticLabels[index] ?? _textSemanticLabel(title),
+      onTap: () => onChanged(index),
       role: SemanticsRole.tab,
     );
-  }
-
-  void _select(int index) {
-    final selectedIndex = _normalizeIndex(
-      widget.selectedIndex ?? _selectedIndex,
-      widget.items.length,
-    );
-    if (index == selectedIndex) return;
-
-    if (widget.selectedIndex == null) {
-      setState(() => _selectedIndex = index);
-    }
-    widget.onChanged?.call(index);
-  }
-
-  int _normalizeIndex(int index, int length) {
-    if (length == 0 || index < 0) return 0;
-    if (index >= length) return length - 1;
-
-    return index;
   }
 
   String? _textSemanticLabel(Widget title) {
@@ -196,6 +335,25 @@ class AuraTabItem {
 
   /// The content shown when this tab is selected.
   final Widget child;
+
+  /// An accessible label for title widgets that do not expose their own label.
+  final String? semanticLabel;
+}
+
+/// Defines one value-selecting tab option.
+class AuraTabOption<T> {
+  /// Creates a value-selecting tab option.
+  const AuraTabOption({
+    required this.value,
+    required this.title,
+    this.semanticLabel,
+  });
+
+  /// The value emitted when this option is selected.
+  final T value;
+
+  /// The widget shown in the tab bar.
+  final Widget title;
 
   /// An accessible label for title widgets that do not expose their own label.
   final String? semanticLabel;

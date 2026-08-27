@@ -122,6 +122,7 @@
     "save_error": "Unable to save connection",
     "empty_title": "No connections",
     "empty_subtitle": "Add a model provider or skill credential to connect this workspace.",
+    "empty_filter": "No connections for {type}",
     "delete_credential_title": "Delete skill credential",
     "delete_credential_confirm": "Delete credential \"{name}\"? This action cannot be undone.",
     "delete_credential_error": "Unable to delete skill credential",
@@ -132,6 +133,12 @@
     "candidate": {
       "model_provider": "Model provider {serviceId}",
       "app_skill": "Service skill {serviceId}"
+    },
+    "filter": {
+      "all": "All",
+      "model_providers": "Model providers",
+      "skill_credentials": "Skill credentials",
+      "mcp_servers": "MCP servers"
     },
     "type": {
       "model_provider": "Model Provider",

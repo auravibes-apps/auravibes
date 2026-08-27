@@ -47,7 +47,7 @@ Color _stateLayerColor(WidgetTester tester) {
     find.byType(AnimatedContainer),
   );
 
-  // Flutter normalizes AnimatedContainer(color: ...) into decoration.
+  // AnimatedContainer's color shorthand is normalized into decoration.
   final decoration = layer.decoration;
   if (decoration is BoxDecoration) {
     final color = decoration.color;

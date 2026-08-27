@@ -2,6 +2,7 @@ import 'dart:ui' show PointerDeviceKind, SemanticsRole, Tristate;
 
 import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
+import 'package:auravibes_ui/src/molecules/aura_container.dart';
 import 'package:auravibes_ui/src/molecules/aura_tabs.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
@@ -12,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AuraTabs', () {
     testWidgets('renders tab labels and selected content', (tester) async {
-      await tester.pumpWidget(_host(const AuraTabs(items: _items)));
+      await tester.pumpWidget(_host(const AuraTabs<void>(items: _items)));
 
       expect(find.text('First'), findsOneWidget);
       expect(find.text('Second'), findsOneWidget);
@@ -26,7 +27,7 @@ void main() {
       final semantics = tester.ensureSemantics();
       await tester.pumpWidget(
         _host(
-          const AuraTabs(
+          const AuraTabs<void>(
             items: [
               AuraTabItem(
                 title: Icon(Icons.info),
@@ -48,11 +49,63 @@ void main() {
 
     testWidgets('uses initial selection', (tester) async {
       await tester.pumpWidget(
-        _host(const AuraTabs(items: _items, initialIndex: 1)),
+        _host(const AuraTabs<void>(items: _items, initialIndex: 1)),
       );
 
       expect(find.text('First content'), findsNothing);
       expect(find.text('Second content'), findsOneWidget);
+    });
+
+    testWidgets('selector emits generic values without rendering children', (
+      tester,
+    ) async {
+      String? selectedValue;
+      await tester.pumpWidget(
+        _host(
+          AuraTabs<String>.selector(
+            options: const [
+              AuraTabOption(value: 'first', title: Text('First')),
+              AuraTabOption(value: 'second', title: Text('Second')),
+            ],
+            initialValue: 'second',
+            onChanged: (value) => selectedValue = value,
+          ),
+        ),
+      );
+
+      expect(find.text('First'), findsOneWidget);
+      expect(find.text('Second'), findsOneWidget);
+      expect(find.byType(AuraContainer), findsNothing);
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('Second').first)
+            .flagsCollection
+            .isSelected,
+        Tristate.isTrue,
+      );
+
+      await tester.tap(find.text('First'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(selectedValue, 'first');
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('First').first)
+            .flagsCollection
+            .isSelected,
+        Tristate.isTrue,
+      );
+    });
+
+    testWidgets('selector renders no tabs for an empty option list', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _host(const AuraTabs<String>.selector(options: [])),
+      );
+
+      expect(find.byType(AuraPressable), findsNothing);
+      expect(find.byType(AuraText), findsNothing);
     });
 
     testWidgets('calls onChanged and shows selected content after a tap', (
@@ -61,7 +114,10 @@ void main() {
       int? selectedIndex;
       await tester.pumpWidget(
         _host(
-          AuraTabs(items: _items, onChanged: (index) => selectedIndex = index),
+          AuraTabs<void>(
+            items: _items,
+            onChanged: (index) => selectedIndex = index,
+          ),
         ),
       );
 
@@ -80,7 +136,7 @@ void main() {
 
       await tester.pumpWidget(
         _host(
-          AuraTabs(
+          AuraTabs<void>(
             items: _items,
             selectedIndex: selectedIndex,
             onChanged: (_) => callbackCount++,
@@ -91,7 +147,7 @@ void main() {
       selectedIndex = 1;
       await tester.pumpWidget(
         _host(
-          AuraTabs(
+          AuraTabs<void>(
             items: _items,
             selectedIndex: selectedIndex,
             onChanged: (_) => callbackCount++,
@@ -108,7 +164,7 @@ void main() {
       var callbackCount = 0;
       await tester.pumpWidget(
         _host(
-          AuraTabs(
+          AuraTabs<void>(
             items: _items,
             selectedIndex: 0,
             onChanged: (_) => callbackCount++,
@@ -127,19 +183,19 @@ void main() {
 
     testWidgets('clamps invalid selection indexes', (tester) async {
       await tester.pumpWidget(
-        _host(const AuraTabs(items: _items, initialIndex: 99)),
+        _host(const AuraTabs<void>(items: _items, initialIndex: 99)),
       );
       expect(find.text('Second content'), findsOneWidget);
 
       await tester.pumpWidget(
-        _host(const AuraTabs(items: _items, selectedIndex: -1)),
+        _host(const AuraTabs<void>(items: _items, selectedIndex: -1)),
       );
       final _ = await tester.pumpAndSettle();
       expect(find.text('First content'), findsOneWidget);
     });
 
     testWidgets('renders no tabs for an empty item list', (tester) async {
-      await tester.pumpWidget(_host(const AuraTabs(items: [])));
+      await tester.pumpWidget(_host(const AuraTabs<void>(items: [])));
 
       expect(find.byType(AuraPressable), findsNothing);
       expect(find.byType(AuraText), findsNothing);
@@ -147,7 +203,9 @@ void main() {
 
     testWidgets('supports shrink-wrapped layouts', (tester) async {
       await tester.pumpWidget(
-        _host(const SingleChildScrollView(child: AuraTabs(items: _items))),
+        _host(
+          const SingleChildScrollView(child: AuraTabs<void>(items: _items)),
+        ),
       );
 
       expect(tester.takeException(), isNull);
@@ -157,9 +215,9 @@ void main() {
     testWidgets('uses initial selection when items become available', (
       tester,
     ) async {
-      await tester.pumpWidget(_host(const AuraTabs(items: [])));
+      await tester.pumpWidget(_host(const AuraTabs<void>(items: [])));
       await tester.pumpWidget(
-        _host(const AuraTabs(items: _items, initialIndex: 1)),
+        _host(const AuraTabs<void>(items: _items, initialIndex: 1)),
       );
 
       expect(find.text('Second content'), findsOneWidget);
@@ -172,7 +230,10 @@ void main() {
       int? selectedIndex;
       await tester.pumpWidget(
         _host(
-          AuraTabs(items: _items, onChanged: (index) => selectedIndex = index),
+          AuraTabs<void>(
+            items: _items,
+            onChanged: (index) => selectedIndex = index,
+          ),
         ),
       );
 
@@ -192,7 +253,7 @@ void main() {
     });
 
     testWidgets('uses Aura theme colors for tab styling', (tester) async {
-      await tester.pumpWidget(_host(const AuraTabs(items: _items)));
+      await tester.pumpWidget(_host(const AuraTabs<void>(items: _items)));
 
       final pressables = tester.widgetList<AuraPressable>(
         find.byType(AuraPressable),
@@ -210,7 +271,7 @@ void main() {
     testWidgets('keeps tab targets and indicators sized to each tab', (
       tester,
     ) async {
-      await tester.pumpWidget(_host(const AuraTabs(items: _items)));
+      await tester.pumpWidget(_host(const AuraTabs<void>(items: _items)));
 
       final firstTab = find.byType(AuraPressable).first;
       final firstStateLayer = find.descendant(
@@ -253,7 +314,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _host(const AuraTabs(items: _items, initialIndex: 1)),
+        _host(const AuraTabs<void>(items: _items, initialIndex: 1)),
       );
 
       final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -295,7 +356,7 @@ Widget _host(Widget child) {
 
 Color _indicatorColor(WidgetTester tester, Finder finder) {
   final layer = tester.widget<AnimatedContainer>(finder);
-  // Flutter normalizes AnimatedContainer(color: ...) into decoration.
+  // AnimatedContainer's color shorthand is normalized into decoration.
   final decoration = layer.decoration;
   if (decoration is BoxDecoration) {
     final color = decoration.color;

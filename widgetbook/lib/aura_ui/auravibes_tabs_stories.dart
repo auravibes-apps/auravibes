@@ -8,20 +8,20 @@ Widget basicTabsUseCase(BuildContext context) {
   return SizedBox(
     width: 420,
     height: 320,
-    child: AuraTabs(
+    child: AuraTabs<void>(
       items: const [
         AuraTabItem(
-          title: AuraText(child: Text('Overview')),
+          title: Text('Overview'),
           child: Center(child: Text('Overview content')),
           semanticLabel: 'Overview',
         ),
         AuraTabItem(
-          title: AuraText(child: Text('Details')),
+          title: Text('Details'),
           child: Center(child: Text('Details content')),
           semanticLabel: 'Details',
         ),
         AuraTabItem(
-          title: AuraText(child: Text('Activity')),
+          title: Text('Activity'),
           child: Center(child: Text('Activity content')),
           semanticLabel: 'Activity',
         ),
@@ -32,6 +32,42 @@ Widget basicTabsUseCase(BuildContext context) {
         min: 0,
         max: 2,
       ),
+    ),
+  );
+}
+
+enum _SelectorTab { overview, details, activity }
+
+@widgetbook.UseCase(name: 'Selector Tabs', type: AuraTabs)
+Widget selectorTabsUseCase(BuildContext _) {
+  var selected = _SelectorTab.overview;
+
+  return SizedBox(
+    width: 420,
+    child: StatefulBuilder(
+      builder: (context, setState) {
+        return AuraTabs<_SelectorTab>.selector(
+          options: const [
+            AuraTabOption(
+              value: _SelectorTab.overview,
+              title: Text('Overview'),
+              semanticLabel: 'Overview',
+            ),
+            AuraTabOption(
+              value: _SelectorTab.details,
+              title: Text('Details'),
+              semanticLabel: 'Details',
+            ),
+            AuraTabOption(
+              value: _SelectorTab.activity,
+              title: Text('Activity'),
+              semanticLabel: 'Activity',
+            ),
+          ],
+          value: selected,
+          onChanged: (value) => setState(() => selected = value),
+        );
+      },
     ),
   );
 }

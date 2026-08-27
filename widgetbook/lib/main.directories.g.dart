@@ -351,6 +351,11 @@ final directories = <_widgetbook.WidgetbookNode>[
             builder: _widgetbook_workspace_aura_ui_auravibes_tabs_stories
                 .basicTabsUseCase,
           ),
+          _widgetbook.WidgetbookUseCase(
+            name: 'Selector Tabs',
+            builder: _widgetbook_workspace_aura_ui_auravibes_tabs_stories
+                .selectorTabsUseCase,
+          ),
         ],
       ),
     ],

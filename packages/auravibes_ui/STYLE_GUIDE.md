@@ -180,9 +180,12 @@ any persistent surface fill in `decoration`.
 
 ### Tabs
 
-`AuraTabs` is a static compositional control. Each item owns a title and child;
-selection changes content and calls the callback. It does not route, load,
-persist, or bind server data.
+`AuraTabs` supports two static modes. The default mode gives each item a title
+and child; selection changes content and calls the index callback. The
+`AuraTabs.selector` mode gives each option a title and generic value; it renders
+only the tab strip and calls the value callback so the caller can render or
+bind content separately. Neither mode routes, loads, persists, or binds server
+data.
 
 For the underline-tab pattern:
 
