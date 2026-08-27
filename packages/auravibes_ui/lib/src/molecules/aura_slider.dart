@@ -158,6 +158,7 @@ class _AuraSliderState extends State<AuraSlider> {
                         width,
                         widget.min,
                         widget.max,
+                        effectiveValue,
                       ),
                     )
                   : null,
@@ -168,6 +169,7 @@ class _AuraSliderState extends State<AuraSlider> {
                         width,
                         widget.min,
                         widget.max,
+                        effectiveValue,
                       ),
                     )
                   : null,
@@ -179,7 +181,7 @@ class _AuraSliderState extends State<AuraSlider> {
       enabled: isEnabled,
       slider: true,
       label: widget.semanticLabel,
-      value: isEnabled ? effectiveValue.toString() : null,
+      value: effectiveValue.toString(),
       increasedValue: isEnabled ? increasedValue.toString() : null,
       decreasedValue: isEnabled ? decreasedValue.toString() : null,
       onIncrease: isEnabled ? increase : null,
@@ -201,9 +203,15 @@ double _thumbPosition(double value, double width, double min, double max) {
   return trackStart + (trackEnd - trackStart) * fraction;
 }
 
-double _valueAtPosition(double position, double width, double min, double max) {
+double _valueAtPosition(
+  double position,
+  double width,
+  double min,
+  double max,
+  double currentValue,
+) {
   if (min == max || !width.isFinite || width <= _thumbDiameter) {
-    return min;
+    return currentValue;
   }
   final fraction = ((position - _thumbRadius) / (width - _thumbDiameter)).clamp(
     0.0,

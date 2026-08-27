@@ -283,7 +283,10 @@ class _CompactionSettingsSectionState
     const defaults = CompactionSettings.defaults;
     if (!mounted) return;
     setState(() {
-      _usagePercentageThreshold = defaults.usagePercentageThreshold;
+      _usagePercentageThreshold = defaults.usagePercentageThreshold.clamp(
+        5,
+        100,
+      );
       _autoEnabled = defaults.autoCompactionEnabled;
       _requiredRemainingController.text = '${defaults.remainingTokenThreshold}';
       _validationError = null;
