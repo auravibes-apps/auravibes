@@ -157,7 +157,16 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
   final ValueChanged<List<T>>? onChanged;
   final AuraTint? tint;
 
-  bool get _isSelected => selectedValues.contains(option.value);
+  T? get _mutuallyExclusiveValue => selectedValues.firstOrNull;
+
+  bool get _isSelected {
+    if (variant == AuraChoicePickerVariant.mutuallyExclusive) {
+      return selectedValues.isNotEmpty &&
+          _mutuallyExclusiveValue == option.value;
+    }
+
+    return selectedValues.contains(option.value);
+  }
 
   bool get _isInteractive {
     if (option.disabled || onChanged == null) return false;
@@ -175,7 +184,7 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
     final control = switch (variant) {
       AuraChoicePickerVariant.mutuallyExclusive => AuraRadio<T>(
         value: option.value,
-        groupValue: _isSelected ? option.value : null,
+        groupValue: _mutuallyExclusiveValue,
         onChanged: _isInteractive ? (_) => _handleChange() : null,
         tint: tint,
         disabled: option.disabled,

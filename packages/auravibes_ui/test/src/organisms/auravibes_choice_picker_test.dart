@@ -33,6 +33,59 @@ void main() {
       expect(changedValues, ['second']);
     });
 
+    testWidgets('uses only the first value in mutually exclusive mode', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        _buildApp(
+          const AuraChoicePicker<String>(
+            options: [
+              AuraChoiceOption(
+                value: 'first',
+                label: Text('First'),
+                semanticLabel: 'First choice',
+              ),
+              AuraChoiceOption(
+                value: 'second',
+                label: Text('Second'),
+                semanticLabel: 'Second choice',
+              ),
+            ],
+            value: ['first', 'second'],
+            onChanged: _noopChanged,
+          ),
+        ),
+      );
+
+      final radios = find.byType(AuraRadio<String>);
+      expect(
+        tester.widget<AuraRadio<String>>(radios.at(0)).groupValue,
+        'first',
+      );
+      expect(
+        tester.widget<AuraRadio<String>>(radios.at(1)).groupValue,
+        'first',
+      );
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('First choice'))
+            .flagsCollection
+            .isChecked,
+        ui.CheckedState.isTrue,
+      );
+      expect(
+        tester
+            .getSemantics(find.bySemanticsLabel('Second choice'))
+            .flagsCollection
+            .isChecked,
+        ui.CheckedState.isFalse,
+      );
+
+      semantics.dispose();
+    });
+
     testWidgets('supports controlled multiple selections', (tester) async {
       var selectedValues = <String>['first'];
 

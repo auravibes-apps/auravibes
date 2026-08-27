@@ -11,14 +11,7 @@ void main() {
     testWidgets('does not use Material Checkbox widget', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: false,
-              onChanged: (_) {
-                final _ = Object();
-              },
-            ),
-          ),
+          home: Scaffold(body: AuraCheckbox(value: false, onChanged: (_) {})),
           theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
@@ -56,14 +49,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: true,
-              onChanged: (_) {
-                final _ = Object();
-              },
-            ),
-          ),
+          home: Scaffold(body: AuraCheckbox(value: true, onChanged: (_) {})),
           theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
