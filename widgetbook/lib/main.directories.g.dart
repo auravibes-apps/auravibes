@@ -49,6 +49,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_screen_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_screen_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_selectable_text_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_selectable_text_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_slider_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_slider_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_snackbar_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_snackbar_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_spinner_stories.dart'
@@ -326,6 +328,16 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Aura Screen',
             builder: _widgetbook_workspace_aura_ui_auravibes_screen_stories
                 .defaultAuraScreenUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraSlider',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Default',
+            builder: _widgetbook_workspace_aura_ui_auravibes_slider_stories
+                .auraSliderUseCase,
           ),
         ],
       ),
