@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/widgets.dart';
 
-/// Pessable implementation of auravibes.
+/// A reusable Aura pressable surface with pointer and keyboard feedback.
 class AuraPressable extends StatefulWidget {
   /// Constructor.
   const AuraPressable({
@@ -21,7 +21,10 @@ class AuraPressable extends StatefulWidget {
   /// Child.
   final Widget child;
 
-  /// Color.
+  /// Base color for the hover and pressed state layers.
+  ///
+  /// The alpha channel is ignored. Aura applies an 8% hover/focus layer and
+  /// a 16% pressed layer so callers can pass a resolved theme color.
   final Color color;
 
   /// Decoration.
@@ -48,7 +51,8 @@ class AuraPressable extends StatefulWidget {
 
 /// AuraPressableState.
 class AuraPressableState extends State<AuraPressable> {
-  static const _pressedAlphaDivisor = 2.0;
+  static const _hoverAlpha = 0.08;
+  static const _pressedAlpha = 0.16;
   // Our state.
   bool _hovering = false;
   bool _focused = false;
@@ -65,16 +69,16 @@ class AuraPressableState extends State<AuraPressable> {
   Widget build(BuildContext context) {
     final auraTheme = context.auraTheme;
     final auraColors = context.auraColors;
-    final selectedColor = widget.color;
+    final stateLayerColor = widget.color;
     final canChangeColor = (widget.onPressed != null);
     final pressed = _pressDown && canChangeColor;
     final highlighted = (_hovering || _focused) && canChangeColor;
 
     double alpha = 0;
     if (pressed) {
-      alpha = selectedColor.a;
+      alpha = _pressedAlpha;
     } else if (highlighted) {
-      alpha = selectedColor.a / _pressedAlphaDivisor;
+      alpha = _hoverAlpha;
     }
     if (widget.onPressed == null) {
       return Container(
@@ -112,7 +116,7 @@ class AuraPressableState extends State<AuraPressable> {
             child: Container(
               decoration: widget.decoration,
               child: AnimatedContainer(
-                color: selectedColor.withValues(alpha: alpha),
+                color: stateLayerColor.withValues(alpha: alpha),
                 child: widget.child,
                 duration: auraTheme.animation.normal,
               ),

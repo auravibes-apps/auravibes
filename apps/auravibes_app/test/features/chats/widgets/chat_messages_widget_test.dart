@@ -745,6 +745,18 @@ void main() {
       expect(find.byIcon(Icons.compress_outlined), findsOneWidget);
       expect(find.text('Automatic'), findsOneWidget);
       expect(find.text('Summary of older messages'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.info_outline));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Compaction Details'), findsOneWidget);
+      expect(find.text('Close'), findsOneWidget);
+
+      await tester.tap(find.text('Close'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Compaction Details'), findsNothing);
+      expect(find.text('Summary of older messages'), findsOneWidget);
     });
 
     testWidgets('renders error widget for non-user system error message', (

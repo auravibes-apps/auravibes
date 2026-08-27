@@ -117,23 +117,27 @@ class SettingsScreen extends ConsumerWidget {
     AuraDialogs.alert(
       context: context,
       title: const TextLocale(LocaleKeys.settings_screen_theme_title),
-      message: AuraRadioGroup<AppTheme>(
-        value: currentTheme,
-        onChanged: onThemeChanged,
+      message: AuraChoicePicker<AppTheme>(
         options: const [
-          AuraRadioOption(
+          AuraChoiceOption(
             value: AppTheme.system,
             label: TextLocale(LocaleKeys.settings_screen_theme_system_default),
           ),
-          AuraRadioOption(
+          AuraChoiceOption(
             value: AppTheme.light,
             label: TextLocale(LocaleKeys.settings_screen_theme_light),
           ),
-          AuraRadioOption(
+          AuraChoiceOption(
             value: AppTheme.dark,
             label: TextLocale(LocaleKeys.settings_screen_theme_dark),
           ),
         ],
+        value: [currentTheme],
+        onChanged: (values) {
+          final selected = values.firstOrNull;
+          if (selected == null) return;
+          onThemeChanged(selected);
+        },
       ),
       dismissLabel: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
     );

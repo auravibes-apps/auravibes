@@ -210,7 +210,7 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
       return _getActiveColor(context);
     }
 
-    return auraColors.outline;
+    return auraColors.onSurfaceVariant;
   }
 
   void _select() {

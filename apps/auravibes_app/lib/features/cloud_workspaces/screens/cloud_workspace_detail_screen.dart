@@ -513,24 +513,26 @@ Future<_InviteRequest?> _invitePrompt(
           children: [
             TextField(controller: controller, autofocus: true),
             if (allowAdmin)
-              DropdownButton<String>(
-                value: role,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(
+              AuraChoicePicker<String>(
+                options: const [
+                  AuraChoiceOption(
                     value: 'member',
-                    child: TextLocale(
+                    label: TextLocale(
                       LocaleKeys.workspace_management_cloud_role_member,
                     ),
                   ),
-                  DropdownMenuItem(
+                  AuraChoiceOption(
                     value: 'admin',
-                    child: TextLocale(
+                    label: TextLocale(
                       LocaleKeys.workspace_management_cloud_role_admin,
                     ),
                   ),
                 ],
-                onChanged: (value) => setState(() => role = value ?? 'member'),
+                value: [role],
+                onChanged: (values) {
+                  if (values.isEmpty) return;
+                  setState(() => role = values.first);
+                },
               ),
           ],
         ),

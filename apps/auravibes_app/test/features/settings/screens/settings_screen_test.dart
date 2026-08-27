@@ -68,7 +68,7 @@ void main() {
       await tester.tap(themeTiles.first);
       final _ = await tester.pumpAndSettle();
 
-      expect(find.byType(AuraRadioGroup<AppTheme>), findsOneWidget);
+      expect(find.byType(AuraChoicePicker<AppTheme>), findsOneWidget);
     });
 
     testWidgets('changing theme keeps settings screen visible', (tester) async {
@@ -112,7 +112,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.byType(AuraRadioGroup<AppTheme>), findsNothing);
+      expect(find.byType(AuraChoicePicker<AppTheme>), findsNothing);
     });
   });
 }

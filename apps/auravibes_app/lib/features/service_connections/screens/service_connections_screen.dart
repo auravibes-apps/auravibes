@@ -18,6 +18,8 @@ final _logger = Logger('service_connections_screen');
 const _mcpCredentialsDeleteError =
     'MCP credentials cannot be deleted from this screen.';
 
+enum _ConnectionFilter { all, modelProviders, skillCredentials, mcpServers }
+
 class ServiceConnectionsScreen extends ConsumerWidget {
   static const _tagSpacing = 6.0;
   const ServiceConnectionsScreen({required this.workspaceId, super.key});
@@ -81,7 +83,7 @@ class ServiceConnectionsScreen extends ConsumerWidget {
   }
 }
 
-class _ConnectionsList extends StatelessWidget {
+class _ConnectionsList extends StatefulWidget {
   const _ConnectionsList({
     required this.connections,
     required this.onAddConnection,
@@ -91,8 +93,15 @@ class _ConnectionsList extends StatelessWidget {
   final VoidCallback onAddConnection;
 
   @override
+  State<_ConnectionsList> createState() => _ConnectionsListState();
+}
+
+class _ConnectionsListState extends State<_ConnectionsList> {
+  _ConnectionFilter _selectedFilter = _ConnectionFilter.all;
+
+  @override
   Widget build(BuildContext context) {
-    if (connections.isEmpty) {
+    if (widget.connections.isEmpty) {
       return Center(
         child: AuraColumn(
           children: [
@@ -104,6 +113,114 @@ class _ConnectionsList extends StatelessWidget {
             const AuraText(
               child: TextLocale(LocaleKeys.service_connections_empty_subtitle),
               textAlign: TextAlign.center,
+            ),
+            AuraButton(
+              onPressed: widget.onAddConnection,
+              child: const TextLocale(LocaleKeys.service_connections_add),
+            ),
+          ],
+          mainAxisAlignment: MainAxisAlignment.center,
+        ),
+      );
+    }
+
+    final kind = switch (_selectedFilter) {
+      _ConnectionFilter.all => null,
+      _ConnectionFilter.modelProviders =>
+        ServiceConnectionListItemKind.modelProvider,
+      _ConnectionFilter.skillCredentials =>
+        ServiceConnectionListItemKind.skillCredential,
+      _ConnectionFilter.mcpServers => ServiceConnectionListItemKind.mcpServer,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AuraTabs<_ConnectionFilter>.selector(
+          options: [
+            AuraTabOption(
+              value: _ConnectionFilter.all,
+              title: const TextLocale(
+                LocaleKeys.service_connections_filter_all,
+              ),
+              semanticLabel: _connectionFilterLabel(context, null),
+            ),
+            AuraTabOption(
+              value: _ConnectionFilter.modelProviders,
+              title: const TextLocale(
+                LocaleKeys.service_connections_filter_model_providers,
+              ),
+              semanticLabel: _connectionFilterLabel(
+                context,
+                ServiceConnectionListItemKind.modelProvider,
+              ),
+            ),
+            AuraTabOption(
+              value: _ConnectionFilter.skillCredentials,
+              title: const TextLocale(
+                LocaleKeys.service_connections_filter_skill_credentials,
+              ),
+              semanticLabel: _connectionFilterLabel(
+                context,
+                ServiceConnectionListItemKind.skillCredential,
+              ),
+            ),
+            AuraTabOption(
+              value: _ConnectionFilter.mcpServers,
+              title: const TextLocale(
+                LocaleKeys.service_connections_filter_mcp_servers,
+              ),
+              semanticLabel: _connectionFilterLabel(
+                context,
+                ServiceConnectionListItemKind.mcpServer,
+              ),
+            ),
+          ],
+          value: _selectedFilter,
+          onChanged: (filter) => setState(() => _selectedFilter = filter),
+        ),
+        Expanded(
+          child: _ConnectionsTab(
+            connections: widget.connections,
+            onAddConnection: widget.onAddConnection,
+            kind: kind,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ConnectionsTab extends StatelessWidget {
+  const _ConnectionsTab({
+    required this.connections,
+    required this.onAddConnection,
+    this.kind,
+  });
+
+  final List<ServiceConnectionListItem> connections;
+  final VoidCallback onAddConnection;
+  final ServiceConnectionListItemKind? kind;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleConnections = kind == null
+        ? connections
+        : connections.where((connection) => connection.kind == kind).toList();
+
+    if (visibleConnections.isEmpty) {
+      return Center(
+        child: AuraColumn(
+          children: [
+            const AuraIcon(Icons.hub_outlined, size: AuraIconSize.extraLarge),
+            AuraText(
+              child: Text(
+                LocaleKeys.service_connections_empty_filter.tr(
+                  namedArgs: {'type': _connectionFilterLabel(context, kind)},
+                  context: context,
+                ),
+              ),
+              style: AuraTextStyle.heading3,
             ),
             AuraButton(
               onPressed: onAddConnection,
@@ -118,12 +235,31 @@ class _ConnectionsList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(12),
       itemBuilder: (context, index) {
-        return _ConnectionTile(connection: connections[index]);
+        return _ConnectionTile(connection: visibleConnections[index]);
       },
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemCount: connections.length,
+      itemCount: visibleConnections.length,
     );
   }
+}
+
+String _connectionFilterLabel(
+  BuildContext context,
+  ServiceConnectionListItemKind? kind,
+) {
+  return switch (kind) {
+    null => LocaleKeys.service_connections_filter_all.tr(context: context),
+    ServiceConnectionListItemKind.modelProvider =>
+      LocaleKeys.service_connections_filter_model_providers.tr(
+        context: context,
+      ),
+    ServiceConnectionListItemKind.skillCredential =>
+      LocaleKeys.service_connections_filter_skill_credentials.tr(
+        context: context,
+      ),
+    ServiceConnectionListItemKind.mcpServer =>
+      LocaleKeys.service_connections_filter_mcp_servers.tr(context: context),
+  };
 }
 
 class _ConnectionTile extends ConsumerWidget {

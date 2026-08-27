@@ -330,35 +330,39 @@ class _TypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AuraDropdownSelector<ServiceConnectionCreateType>(
+    return AuraChoicePicker<ServiceConnectionCreateType>(
       options: [
-        AuraDropdownOption(
+        AuraChoiceOption(
           value: ServiceConnectionCreateType.modelProvider,
-          child: Text(
+          label: Text(
             LocaleKeys.service_connections_type_model_provider.tr(
               context: context,
             ),
           ),
         ),
-        AuraDropdownOption(
+        AuraChoiceOption(
           value: ServiceConnectionCreateType.skillCredential,
-          child: Text(
+          label: Text(
             LocaleKeys.service_connections_type_skill_credential.tr(
               context: context,
             ),
           ),
         ),
-        AuraDropdownOption(
+        AuraChoiceOption(
           value: ServiceConnectionCreateType.appSkillCredential,
-          child: Text(
+          label: Text(
             LocaleKeys.service_connections_type_app_skill_credential.tr(
               context: context,
             ),
           ),
         ),
       ],
-      value: value,
-      onChanged: onChanged,
+      value: [value],
+      onChanged: (values) {
+        final selected = values.firstOrNull;
+        if (selected == null) return;
+        onChanged(selected);
+      },
       label: Text(
         LocaleKeys.service_connections_create_type_label.tr(context: context),
       ),

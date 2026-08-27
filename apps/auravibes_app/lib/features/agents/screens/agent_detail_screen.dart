@@ -517,26 +517,27 @@ class _PromptCard extends StatelessWidget {
               AuraSwitch(value: isEnabled, onChanged: onEnabledChanged),
             ],
           ),
-          AuraRadioGroup<AgentVisibility>(
-            value: visibility,
-            onChanged: (value) {
-              if (value == null) return;
-              onVisibilityChanged(value);
-            },
+          AuraChoicePicker<AgentVisibility>(
             options: const [
-              AuraRadioOption(
+              AuraChoiceOption(
                 value: AgentVisibility.chatSelector,
                 label: TextLocale(LocaleKeys.agents_visibility_chat_selector),
               ),
-              AuraRadioOption(
+              AuraChoiceOption(
                 value: AgentVisibility.subAgentList,
                 label: TextLocale(LocaleKeys.agents_visibility_sub_agent_list),
               ),
-              AuraRadioOption(
+              AuraChoiceOption(
                 value: AgentVisibility.both,
                 label: TextLocale(LocaleKeys.agents_visibility_both),
               ),
             ],
+            value: [visibility],
+            onChanged: (values) {
+              final selected = values.firstOrNull;
+              if (selected == null) return;
+              onVisibilityChanged(selected);
+            },
             label: const AuraText(
               child: TextLocale(LocaleKeys.agents_visibility_label),
             ),

@@ -11,14 +11,7 @@ void main() {
     testWidgets('does not use Material Checkbox widget', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: AuraCheckbox(
-              value: false,
-              onChanged: (_) {
-                final _ = Object();
-              },
-            ),
-          ),
+          home: Scaffold(body: AuraCheckbox(value: false, onChanged: (_) {})),
           theme: ThemeData(extensions: [AuraTheme.light]),
         ),
       );
@@ -49,6 +42,26 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(selectedValue, isTrue);
+    });
+
+    testWidgets('renders selected mark without a Material icon font', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: AuraCheckbox(value: true, onChanged: (_) {})),
+          theme: ThemeData(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      expect(find.byType(Icon), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(AuraCheckbox),
+          matching: find.byType(CustomPaint),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets(

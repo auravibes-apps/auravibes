@@ -28,19 +28,11 @@ class CompactionSettingsSection extends ConsumerStatefulWidget {
 
 class _CompactionSettingsSectionState
     extends ConsumerState<CompactionSettingsSection> {
-  TextEditingController? _usageController;
   TextEditingController? _remainingController;
+  int _usagePercentageThreshold =
+      CompactionSettings.defaults.usagePercentageThreshold;
   bool _autoEnabled = false;
   String? _validationError;
-
-  TextEditingController get _requiredUsageController {
-    final controller = _usageController;
-    if (controller == null) {
-      throw StateError('_usageController is not initialized');
-    }
-
-    return controller;
-  }
 
   TextEditingController get _requiredRemainingController {
     final controller = _remainingController;
@@ -58,9 +50,7 @@ class _CompactionSettingsSectionState
       compactionSettingsProvider(widget.workspaceId),
     );
     final settings = settingsAsync.asData?.value ?? CompactionSettings.defaults;
-    _usageController = TextEditingController(
-      text: '${settings.usagePercentageThreshold}',
-    );
+    _usagePercentageThreshold = settings.usagePercentageThreshold.clamp(5, 100);
     _remainingController = TextEditingController(
       text: '${settings.remainingTokenThreshold}',
     );
@@ -69,7 +59,6 @@ class _CompactionSettingsSectionState
 
   @override
   void dispose() {
-    _usageController?.dispose();
     _remainingController?.dispose();
     super.dispose();
   }
@@ -79,9 +68,14 @@ class _CompactionSettingsSectionState
     ref.listen(compactionSettingsProvider(widget.workspaceId), (_, next) {
       final settings = next.asData?.value;
       if (settings == null) return;
-      _requiredUsageController.text = '${settings.usagePercentageThreshold}';
       _requiredRemainingController.text = '${settings.remainingTokenThreshold}';
-      setState(() => _autoEnabled = settings.autoCompactionEnabled);
+      setState(() {
+        _usagePercentageThreshold = settings.usagePercentageThreshold.clamp(
+          5,
+          100,
+        );
+        _autoEnabled = settings.autoCompactionEnabled;
+      });
     });
 
     return AuraCard(
@@ -133,13 +127,36 @@ class _CompactionSettingsSectionState
                 ),
               ),
             ),
-          AuraInput(
-            controller: _requiredUsageController,
-            placeholder: Text(
-              LocaleKeys.compaction_settings_usage_threshold_hint.tr(),
-            ),
-            label: Text(LocaleKeys.compaction_settings_usage_threshold.tr()),
-            keyboardType: TextInputType.number,
+          AuraColumn(
+            children: [
+              AuraRow(
+                children: [
+                  const Expanded(
+                    child: AuraText(
+                      child: TextLocale(
+                        LocaleKeys.compaction_settings_usage_threshold,
+                      ),
+                    ),
+                  ),
+                  AuraText(
+                    child: Text('$_usagePercentageThreshold%'),
+                    style: AuraTextStyle.bodyLarge,
+                  ),
+                ],
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              AuraSlider(
+                value: _usagePercentageThreshold.toDouble(),
+                onChanged: (value) =>
+                    setState(() => _usagePercentageThreshold = value.round()),
+                min: 5,
+                max: 100,
+                semanticLabel: LocaleKeys.compaction_settings_usage_threshold
+                    .tr(),
+              ),
+            ],
+            spacing: .xs,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
           ),
           AuraInput(
             controller: _requiredRemainingController,
@@ -181,10 +198,9 @@ class _CompactionSettingsSectionState
   Future<void> _save() async {
     setState(() => _validationError = null);
 
-    final usage = int.tryParse(_requiredUsageController.text);
     final remaining = int.tryParse(_requiredRemainingController.text);
 
-    if (usage == null || remaining == null) {
+    if (remaining == null) {
       setState(() {
         _validationError = LocaleKeys
             .compaction_settings_validation_settings_invalid
@@ -196,7 +212,7 @@ class _CompactionSettingsSectionState
 
     final settings = CompactionSettings(
       autoCompactionEnabled: _autoEnabled,
-      usagePercentageThreshold: usage,
+      usagePercentageThreshold: _usagePercentageThreshold,
       remainingTokenThreshold: remaining,
     );
 
@@ -267,8 +283,11 @@ class _CompactionSettingsSectionState
     const defaults = CompactionSettings.defaults;
     if (!mounted) return;
     setState(() {
+      _usagePercentageThreshold = defaults.usagePercentageThreshold.clamp(
+        5,
+        100,
+      );
       _autoEnabled = defaults.autoCompactionEnabled;
-      _requiredUsageController.text = '${defaults.usagePercentageThreshold}';
       _requiredRemainingController.text = '${defaults.remainingTokenThreshold}';
       _validationError = null;
     });

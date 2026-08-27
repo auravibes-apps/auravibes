@@ -64,7 +64,31 @@ class AuraCheckbox extends StatelessWidget {
   }
 }
 
-const _checkIcon = IconData(0xe5ca, fontFamily: 'MaterialIcons');
+class _CheckboxMarkPainter extends CustomPainter {
+  const _CheckboxMarkPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 2;
+    final path = Path()
+      ..moveTo(size.width * 0.1, size.height * 0.5)
+      ..lineTo(size.width * 0.4, size.height * 0.8)
+      ..lineTo(size.width * 0.9, size.height * 0.2);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_CheckboxMarkPainter oldDelegate) {
+    return color != oldDelegate.color;
+  }
+}
 
 class _CheckboxInteraction extends StatefulWidget {
   const _CheckboxInteraction({
@@ -159,7 +183,7 @@ class _CheckboxFocusState extends InheritedWidget {
 
 class _CheckboxVisual extends StatelessWidget {
   static const _boxSize = 24.0;
-  static const _checkIconSize = 12.0;
+  static const _checkMarkSize = 12.0;
   const _CheckboxVisual({
     required this.value,
     required this.tint,
@@ -188,10 +212,14 @@ class _CheckboxVisual extends StatelessWidget {
       width: _boxSize,
       height: _boxSize,
       child: value
-          ? Icon(
-              _checkIcon,
-              size: _checkIconSize,
-              color: auraColors.onTint(tint ?? AuraTint.primary),
+          ? SizedBox(
+              width: _checkMarkSize,
+              height: _checkMarkSize,
+              child: CustomPaint(
+                painter: _CheckboxMarkPainter(
+                  color: auraColors.onTint(tint ?? AuraTint.primary),
+                ),
+              ),
             )
           : null,
       duration: context.auraTheme.animation.fast,
