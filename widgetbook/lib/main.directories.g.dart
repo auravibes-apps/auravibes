@@ -23,6 +23,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_checkbox_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_checkbox_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_container_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_container_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_date_time_input_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_date_time_input_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_dialog_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_dialog_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_divider_stories.dart'
@@ -429,6 +431,17 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Confirm Dialog',
             builder: _widgetbook_workspace_aura_ui_auravibes_dialog_stories
                 .confirmDialogUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraDateTimeInput',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Date and Time',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_date_time_input_stories
+                    .dateTimeInputUseCase,
           ),
         ],
       ),
