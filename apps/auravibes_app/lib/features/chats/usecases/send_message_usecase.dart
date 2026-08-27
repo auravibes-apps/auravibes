@@ -163,105 +163,109 @@ extension SendMessageUsecaseNewConversation on SendMessageUsecase {
   }
 }
 
-final ProviderFamily<SendMessageUsecase, String> sendMessageUsecaseProvider =
-    Provider.family<SendMessageUsecase, String>((ref, workspaceId) {
-      final session = ref
-          .watch(workspaceSessionForRouteProvider(workspaceId))
-          .requireValue;
-      session.capabilities.require(
-        supported: session.capabilities.agentExecution,
-      );
-      if (session.cloud != null) {
-        return SendMessageUsecase.cloud((conversationId, draft) async {
-          session.capabilities.require(
-            supported:
-                draft.attachments.isEmpty || session.capabilities.attachments,
-          );
-          final gateway = await ref.read(
-            cloudWorkspaceStateGatewayProvider(session).future,
-          );
-          final attachments = await ref.read(
-            cloudChatAttachmentUsecaseProvider(workspaceId).future,
-          );
-          if (gateway == null) {
-            throw const UnsupportedWorkspaceCapabilityException();
-          }
-          final chat = CloudChatGateway(gateway);
-          final projection = await chat.getConversationSnapshot(conversationId);
-          _logger.info(
-            'Cloud send snapshot: conversationId=$conversationId, '
-            'sequence=${projection.sequence}, '
-            'projectionRevision=${projection.conversation.projectionRevision}, '
-            'executionState=${projection.conversation.executionState}.',
-          );
-          final requestId = const UuidV7().generate();
-          final uploadedObjects =
-              await attachments?.uploadDraftResults(
-                attachments: draft.attachments,
-              ) ??
-              const [];
-          final snapshot = await (() async {
-            try {
-              final queued = await chat.queueConversationMessage(
-                requestId: requestId,
-                conversationId: conversationId,
-                expectedProjectionRevision:
-                    projection.conversation.projectionRevision,
-                clientMessageId: const UuidV7().generate(),
-                content: draft.text,
-                attachmentIds: uploadedObjects
-                    .map((object) => '${object.objectId}')
-                    .toList(growable: false),
-              );
-              _logger.info(
-                'Cloud message queued: conversationId=$conversationId, '
-                'sequence=${queued.sequence}, '
-                'projectionRevision='
-                '${queued.conversation.projectionRevision}, '
-                'executionState=${queued.conversation.executionState}, '
-                'attachmentCount=${uploadedObjects.length}.',
-              );
-
-              return queued;
-            } on Object catch (error, stackTrace) {
-              await attachments?.deleteUploaded(uploadedObjects);
-              Error.throwWithStackTrace(error, stackTrace);
-            }
-          })();
-          if (snapshot.conversation.executionState == 'idle') {
-            _logger.info(
-              'Cloud execution start requested: '
-              'conversationId=$conversationId, '
-              'projectionRevision=${snapshot.conversation.projectionRevision}.',
-            );
-            final execution = await chat.continueConversation(
-              requestId: const UuidV7().generate(),
+final ProviderFamily<SendMessageUsecase, String>
+sendMessageUsecaseProvider = Provider.family<SendMessageUsecase, String>(
+  // Keep callback and scoped dependencies as distinct arguments.
+  (ref, workspaceId) {
+    final session = ref
+        .watch(workspaceSessionForRouteProvider(workspaceId))
+        .requireValue;
+    session.capabilities.require(
+      supported: session.capabilities.agentExecution,
+    );
+    if (session.cloud != null) {
+      return SendMessageUsecase.cloud((conversationId, draft) async {
+        session.capabilities.require(
+          supported:
+              draft.attachments.isEmpty || session.capabilities.attachments,
+        );
+        final gateway = await ref.read(
+          cloudWorkspaceStateGatewayProvider(session).future,
+        );
+        final attachments = await ref.read(
+          cloudChatAttachmentUsecaseProvider(workspaceId).future,
+        );
+        if (gateway == null) {
+          throw const UnsupportedWorkspaceCapabilityException();
+        }
+        final chat = CloudChatGateway(gateway);
+        final projection = await chat.getConversationSnapshot(conversationId);
+        _logger.info(
+          'Cloud send snapshot: conversationId=$conversationId, '
+          'sequence=${projection.sequence}, '
+          'projectionRevision=${projection.conversation.projectionRevision}, '
+          'executionState=${projection.conversation.executionState}.',
+        );
+        final requestId = const UuidV7().generate();
+        final uploadedObjects =
+            await attachments?.uploadDraftResults(
+              attachments: draft.attachments,
+            ) ??
+            const [];
+        final snapshot = await (() async {
+          try {
+            final queued = await chat.queueConversationMessage(
+              requestId: requestId,
               conversationId: conversationId,
               expectedProjectionRevision:
-                  snapshot.conversation.projectionRevision,
+                  projection.conversation.projectionRevision,
+              clientMessageId: const UuidV7().generate(),
+              content: draft.text,
+              attachmentIds: uploadedObjects
+                  .map((object) => '${object.objectId}')
+                  .toList(growable: false),
             );
             _logger.info(
-              'Cloud execution start acknowledged: '
-              'conversationId=$conversationId, sequence=${execution.sequence}, '
-              'executionState=${execution.conversation.executionState}, '
-              'activeExecutionId=${execution.activeExecution?.id}.',
+              'Cloud message queued: conversationId=$conversationId, '
+              'sequence=${queued.sequence}, '
+              'projectionRevision='
+              '${queued.conversation.projectionRevision}, '
+              'executionState=${queued.conversation.executionState}, '
+              'attachmentCount=${uploadedObjects.length}.',
             );
+
+            return queued;
+          } on Object catch (error, stackTrace) {
+            await attachments?.deleteUploaded(uploadedObjects);
+            Error.throwWithStackTrace(error, stackTrace);
           }
-          ref.invalidate(
-            chatMessagesByConversationProvider(workspaceId, conversationId),
+        })();
+        if (snapshot.conversation.executionState == 'idle') {
+          _logger.info(
+            'Cloud execution start requested: '
+            'conversationId=$conversationId, '
+            'projectionRevision=${snapshot.conversation.projectionRevision}.',
           );
+          final execution = await chat.continueConversation(
+            requestId: const UuidV7().generate(),
+            conversationId: conversationId,
+            expectedProjectionRevision:
+                snapshot.conversation.projectionRevision,
+          );
+          _logger.info(
+            'Cloud execution start acknowledged: '
+            'conversationId=$conversationId, sequence=${execution.sequence}, '
+            'executionState=${execution.conversation.executionState}, '
+            'activeExecutionId=${execution.activeExecution?.id}.',
+          );
+        }
+        ref.invalidate(
+          chatMessagesByConversationProvider(workspaceId, conversationId),
+        );
 
-          return;
-        });
-      }
-      final agentService = ref.watch(auraAgentServiceProvider);
+        return;
+      });
+    }
+    final agentService = ref.watch(auraAgentServiceProvider);
 
-      return SendMessageUsecase(
-        continueAgentTurn: agentService.agent.continueTurn,
-        messageRepository: ref.watch(messageRepositoryProvider),
-        getConversationBusyStateUsecase: ref.watch(
-          getConversationBusyStateUsecaseProvider,
-        ),
-        sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
-      );
-    });
+    return SendMessageUsecase(
+      continueAgentTurn: agentService.agent.continueTurn,
+      messageRepository: ref.watch(messageRepositoryProvider),
+      getConversationBusyStateUsecase: ref.watch(
+        getConversationBusyStateUsecaseProvider,
+      ),
+      sendQueueRuntime: ref.watch(conversationSendQueueRuntimeProvider),
+    );
+  },
+  dependencies: [auraAgentServiceProvider],
+);

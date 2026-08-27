@@ -9,6 +9,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  async: ^2.13.0
   auravibes_engine:
     path: ../../packages/auravibes_engine
   cryptography: ^2.9.0

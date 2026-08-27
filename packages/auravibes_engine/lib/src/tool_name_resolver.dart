@@ -1,3 +1,5 @@
+import 'package:auravibes_engine/src/skills/skill_command.dart';
+
 enum AgentResolvedToolKind {
   builtIn,
   mcp,
@@ -118,7 +120,9 @@ class AgentResolvedToolName {
 }
 
 class AgentToolNameResolver {
-  const AgentToolNameResolver({this.skillControlToolNames = const <String>{}});
+  const AgentToolNameResolver({
+    this.skillControlToolNames = skillCommandToolNames,
+  });
 
   final Set<String> skillControlToolNames;
 

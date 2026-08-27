@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/services/monitoring_service.dart';
+import 'package:riverpod/riverpod.dart' show Ref;
 import 'package:riverpod/src/providers/provider.dart';
 
 class SendNewMessageUsecase {
@@ -99,11 +100,7 @@ class SendNewMessageUsecase {
   }
 }
 
-final ProviderFamily<SendNewMessageUsecase, String>
-sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>((
-  ref,
-  workspaceId,
-) {
+SendNewMessageUsecase _sendNewMessageUsecase(Ref ref, String workspaceId) {
   final isCloud =
       ref
           .watch(workspaceSessionForRouteProvider(workspaceId))
@@ -143,4 +140,10 @@ sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>((
           }
         : null,
   );
-});
+}
+
+final ProviderFamily<SendNewMessageUsecase, String>
+sendNewMessageUsecaseProvider = Provider.family<SendNewMessageUsecase, String>(
+  _sendNewMessageUsecase,
+  dependencies: [sendMessageUsecaseProvider],
+);

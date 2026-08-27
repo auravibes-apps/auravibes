@@ -39,6 +39,7 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
     required String workspaceId,
     required String toolCallId,
     required TTool resolvedTool,
+    required String argumentsRaw,
   });
 
   Future<Object?> runResolvedTool({
@@ -116,6 +117,7 @@ class AgentToolExecutionService<TTool extends Object> {
         workspaceId: workspaceId,
         toolCallId: toolToCall.id,
         resolvedTool: toolToCall.tool,
+        argumentsRaw: toolToCall.argumentsRaw,
       );
 
       switch (decision.permissionResult) {

@@ -101,12 +101,13 @@ class AppAgentToolResumeProvider implements agent.AgentToolResumeProvider {
   }
 }
 
-final agentToolResumeServiceProvider = Provider<AgentToolResumeService>((ref) {
-  return AgentToolResumeService(
+final agentToolResumeServiceProvider = Provider<AgentToolResumeService>(
+  (ref) => AgentToolResumeService(
     messageRepository: ref.watch(messageRepositoryProvider),
     conversationRepository: ref.watch(conversationRepositoryProvider),
     toolExecutionService: ref.watch(agentToolExecutionServiceProvider),
     agentService: ref.watch(appAgentServiceProvider),
     activeSubAgents: ref.watch(activeSubAgentRuntimeProvider.notifier),
-  );
-});
+  ),
+  dependencies: [appAgentServiceProvider],
+);

@@ -9,7 +9,17 @@ import 'conversation_host_effects.dart';
 
 enum ServerToolDisposition { completed, awaitingApproval }
 
-enum ServerToolReplayAction { execute, pause, recover, skip }
+enum ServerToolReplayAction { execute, pause, skip }
+
+// Exceeds current 90s provider and 30s skill I/O bounds; tolerates clock drift.
+// ponytail: timestamp lease; add owner tokens if tool runtimes exceed this bound.
+const serverToolRunningRecoveryTimeout = Duration(minutes: 2);
+
+bool serverToolRunningIsStale({
+  required DateTime updatedAt,
+  required DateTime now,
+  Duration timeout = serverToolRunningRecoveryTimeout,
+}) => !updatedAt.add(timeout).isAfter(now);
 
 String serverToolExecutionFailureCode(Object error) => switch (error) {
   FormatException() => 'invalid_request',
@@ -21,7 +31,7 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
     descriptor.kind == AgentResolvedToolKind.mcp ||
     descriptor.kind == AgentResolvedToolKind.skillTemplate ||
     (descriptor.kind == AgentResolvedToolKind.skillControl &&
-        skillControlToolNames.contains(descriptor.toolIdentifier)) ||
+        skillCommandToolNames.contains(descriptor.toolIdentifier)) ||
     (descriptor.kind == AgentResolvedToolKind.skillNative &&
         (descriptor.skillSlug == agentsSkillSlug ||
             serviceSkillDefinitions.any(
@@ -30,7 +40,7 @@ bool serverToolIsExecutable(AgentResolvedToolName descriptor) =>
                   skill.nativeTools.any(
                     (tool) =>
                         tool.slug == descriptor.toolIdentifier &&
-                        tool.urlTemplate != null,
+                        (tool.urlTemplate != null || tool.callback != null),
                   ),
             )));
 
@@ -39,7 +49,164 @@ bool isCloudToolEnabled({
   Map<String, dynamic>? toolGroupData,
 }) => toolData['isEnabled'] != false && toolGroupData?['isEnabled'] != false;
 
+Set<String> cloudAuthorizedSkillIds({
+  required Conversation conversation,
+  required Iterable<WorkspaceResource> resources,
+}) {
+  final ids = resources
+      .where(
+        (resource) =>
+            resource.resourceKind ==
+            WorkspaceResourceKind.conversationSkillSelection,
+      )
+      .map((resource) => jsonDecode(resource.data) as Map<String, dynamic>)
+      .where((data) => data['conversationId'] == conversation.stableId)
+      .map((data) => data['skillId'])
+      .whereType<String>()
+      .toSet();
+  final agentId = conversation.agentId;
+  if (agentId == null) return ids;
+  final agent = resources
+      .where(
+        (resource) =>
+            resource.resourceKind == WorkspaceResourceKind.agent &&
+            resource.resourceId == agentId,
+      )
+      .lastOrNull;
+  if (agent == null) return ids;
+  final agentData = jsonDecode(agent.data) as Map<String, dynamic>;
+  final isChild = conversation.parentConversationStableId != null;
+  final visibility = agentData['visibility'];
+  if (agentData['isEnabled'] == false ||
+      (isChild && visibility == 'chatSelector') ||
+      (!isChild && visibility == 'subAgentList')) {
+    return ids;
+  }
+  ids.addAll(
+    resources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.agentAssociation,
+        )
+        .map((resource) => jsonDecode(resource.data) as Map<String, dynamic>)
+        .where((data) => data['agentId'] == agentId)
+        .map((data) => data['skillId'])
+        .whereType<String>(),
+  );
+  return ids;
+}
+
 List<ServerResolvedTool> materializeCloudSkillControlTools({
+  required Set<String> selectedSkillIds,
+  required Iterable<Map<String, dynamic>> userSkills,
+  Iterable<Map<String, dynamic>> templateTools = const [],
+  required Iterable<Map<String, dynamic>> appSkillSettings,
+  Iterable<Map<String, dynamic>> serviceConnections = const [],
+  required bool isChildConversation,
+}) => _materializeCloudSkillControlToolsBody(
+  selectedSkillIds: selectedSkillIds,
+  userSkills: userSkills,
+  templateTools: templateTools,
+  appSkillSettings: appSkillSettings,
+  serviceConnections: serviceConnections,
+  isChildConversation: isChildConversation,
+);
+
+List<ServerResolvedTool> fixedCloudSkillCommandTools() =>
+    buildSkillCommandToolSpecs()
+        .map(
+          (spec) => ServerResolvedTool(
+            descriptor: AgentResolvedToolName.skillControl(
+              toolIdentifier: spec.name,
+            ),
+            spec: spec,
+          ),
+        )
+        .toList(growable: false);
+
+Future<SkillManifest?> buildCloudSkillManifest({
+  required String slug,
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<ServerResolvedTool> tools,
+}) async {
+  final userSkill = userSkills
+      .where((skill) => skill['slug'] == slug && skill['isEnabled'] != false)
+      .firstOrNull;
+  final appSkill = serviceSkillDefinitions
+      .where((skill) => skill.slug == slug || skill.identifier == slug)
+      .firstOrNull;
+  final title = switch ((userSkill?['title'], appSkill)) {
+    (final String value, _) => value,
+    (_, final AppSkillDefinition value) => value.title,
+    _ when slug == agentsSkillSlug => agentsSkillTitle,
+    _ => null,
+  };
+  final instructions = switch ((userSkill?['content'], appSkill)) {
+    (final String value, _) => value,
+    (_, final AppSkillDefinition value) => value.content,
+    _ when slug == agentsSkillSlug => agentsSkillContent,
+    _ => null,
+  };
+  if (title == null || instructions == null) return null;
+  final manifestTools =
+      tools
+          .where((tool) => tool.descriptor.skillSlug == slug)
+          .map(
+            (tool) => SkillManifestTool(
+              name: tool.descriptor.toolIdentifier,
+              description: tool.spec.description,
+              inputJsonSchema: tool.spec.inputJsonSchema,
+            ),
+          )
+          .toList()
+        ..sort((left, right) => left.name.compareTo(right.name));
+  final canonical = jsonEncode({
+    'identity': userSkill?['id'] ?? appSkill?.identifier ?? slug,
+    'slug': slug,
+    'title': title,
+    'instructions': instructions,
+    'tools': manifestTools.map((tool) => tool.toJson()).toList(),
+  });
+  final hash = await Sha256().hash(utf8.encode(canonical));
+  return SkillManifest(
+    slug: slug,
+    title: title,
+    instructions: instructions,
+    revision: base64UrlEncode(hash.bytes),
+    tools: manifestTools,
+  );
+}
+
+Future<ServerResolvedTool> resolveCloudSkillCommandTarget({
+  required SkillCommandTarget command,
+  required Iterable<Map<String, dynamic>> userSkills,
+  required Iterable<ServerResolvedTool> tools,
+}) async {
+  final target = tools
+      .where(
+        (candidate) =>
+            candidate.descriptor.skillSlug == command.skill &&
+            candidate.descriptor.toolIdentifier == command.tool,
+      )
+      .singleOrNull;
+  if (target == null) {
+    throw StateError('Skill tool is not loaded or configured.');
+  }
+  final manifest = await buildCloudSkillManifest(
+    slug: command.skill,
+    userSkills: userSkills,
+    tools: tools,
+  );
+  if (manifest == null || manifest.revision != command.revision) {
+    throw FormatException(
+      'Skill manifest changed; call load_skill or list_skills to refresh: ${command.skill}',
+    );
+  }
+  validateToolArguments(target.spec.inputJsonSchema, command.args);
+  return target;
+}
+
+List<ServerResolvedTool> _materializeCloudSkillControlToolsBody({
   required Set<String> selectedSkillIds,
   required Iterable<Map<String, dynamic>> userSkills,
   Iterable<Map<String, dynamic>> templateTools = const [],
@@ -57,7 +224,7 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
     for (final skill in serviceSkillDefinitions)
       if (cloudAppSkillEnabled(skill.identifier, appSkillSettings) &&
           cloudServiceSkillReady(skill, serviceConnections))
-        skill.identifier,
+        skill.slug,
   ];
   final selected = <String>[
     for (final skill in userSkills)
@@ -69,21 +236,40 @@ List<ServerResolvedTool> materializeCloudSkillControlTools({
     for (final skill in serviceSkillDefinitions)
       if (selectedSkillIds.contains(skill.identifier) ||
           selectedSkillIds.contains(skill.slug))
-        skill.identifier,
+        skill.slug,
   ];
-  final loadable = selectable
-      .where((slug) => !selected.contains(slug))
-      .toSet()
-      .toList(growable: false);
-  return buildSkillControlToolSpecs(
-        loadableSkillSlugs: loadable,
-        loadedSkillSlugs: selected,
-      )
+  final loadable =
+      selectable
+          .where((slug) => !selected.contains(slug))
+          .toSet()
+          .toList(growable: false)
+        ..sort();
+  selected.sort();
+  return <(String, List<String>)>[
+        (loadSkillToolName, loadable),
+        (unloadSkillToolName, selected),
+      ]
       .map((spec) {
         final descriptor = AgentResolvedToolName.skillControl(
-          toolIdentifier: spec.name,
+          toolIdentifier: spec.$1,
         );
-        return ServerResolvedTool(descriptor: descriptor, spec: spec);
+        return ServerResolvedTool(
+          descriptor: descriptor,
+          spec: ToolSpec(
+            name: spec.$1,
+            description: spec.$1 == loadSkillToolName
+                ? 'Load one skill for the current conversation.'
+                : 'Unload one skill from the current conversation.',
+            inputJsonSchema: {
+              'type': 'object',
+              'properties': {
+                'slug': {'type': 'string', 'enum': spec.$2},
+              },
+              'required': ['slug'],
+              'additionalProperties': false,
+            },
+          ),
+        );
       })
       .toList(growable: false);
 }
@@ -187,7 +373,7 @@ List<ServerResolvedTool> materializeCloudSkillTools({
     }
     final credentialIds = _serviceCredentialIds(skill, serviceConnections);
     for (final tool in skill.nativeTools) {
-      if (tool.urlTemplate == null ||
+      if ((tool.urlTemplate == null && tool.callback == null) ||
           (tool.requiresCredential && credentialIds.isEmpty)) {
         continue;
       }
@@ -310,7 +496,7 @@ bool cloudServiceSkillReady(
   Iterable<Map<String, dynamic>> serviceConnections,
 ) => skill.nativeTools.any(
   (tool) =>
-      tool.urlTemplate != null &&
+      (tool.urlTemplate != null || tool.callback != null) &&
       (!tool.requiresCredential ||
           serviceConnections.any(
             (connection) =>
@@ -339,20 +525,58 @@ AgentToolPermissionResult resolveCloudToolPermission({
 
 AgentToolPermissionResult defaultCloudToolPermission(
   AgentResolvedToolName descriptor,
-) =>
-    (descriptor.isSkill ||
-            descriptor.kind == AgentResolvedToolKind.skillControl) &&
-        serverToolIsExecutable(descriptor)
-    ? AgentToolPermissionResult.needsConfirmation
-    : AgentToolPermissionResult.notConfigured;
+) {
+  if (descriptor.kind == AgentResolvedToolKind.skillControl &&
+      descriptor.toolIdentifier == listSkillsToolName) {
+    return AgentToolPermissionResult.granted;
+  }
+  if ((descriptor.isSkill ||
+          descriptor.kind == AgentResolvedToolKind.skillControl) &&
+      serverToolIsExecutable(descriptor)) {
+    return AgentToolPermissionResult.needsConfirmation;
+  }
+  return AgentToolPermissionResult.notConfigured;
+}
 
 ServerToolReplayAction serverToolReplayAction(String status) =>
     switch (status) {
       'approved' => ServerToolReplayAction.execute,
       'pending' => ServerToolReplayAction.pause,
-      'running' => ServerToolReplayAction.recover,
+      'running' => ServerToolReplayAction.skip,
       _ => ServerToolReplayAction.skip,
     };
+
+bool serverToolStatusCanBeClaimed(String status) => status == 'approved';
+
+bool serverToolCallCanTransition({
+  required String currentStatus,
+  required int currentRevision,
+  required String expectedStatus,
+  required int expectedRevision,
+}) => currentStatus == expectedStatus && currentRevision == expectedRevision;
+
+bool serverToolRunningCanRecover({
+  required String currentStatus,
+  required int currentRevision,
+  required DateTime updatedAt,
+  required DateTime now,
+  required int expectedRevision,
+}) =>
+    serverToolCallCanTransition(
+      currentStatus: currentStatus,
+      currentRevision: currentRevision,
+      expectedStatus: 'running',
+      expectedRevision: expectedRevision,
+    ) &&
+    serverToolRunningIsStale(updatedAt: updatedAt, now: now);
+
+bool serverToolPermissionAllowsExecution({
+  required AgentToolPermissionResult permission,
+  required String? persistedStatus,
+}) =>
+    permission == AgentToolPermissionResult.granted ||
+    (persistedStatus == 'approved' &&
+        permission == AgentToolPermissionResult.needsConfirmation);
 
 class ServerResolvedTool {
   const ServerResolvedTool({required this.descriptor, required this.spec});
@@ -385,9 +609,10 @@ typedef ServerToolExecutor =
 class ServerToolRuntime {
   ServerToolRuntime({
     this._resolver = const AgentToolNameResolver(
-      skillControlToolNames: skillControlToolNames,
+      skillControlToolNames: skillCommandToolNames,
     ),
     this._executor,
+    this.beforeApprovedClaim,
     this.cancellationProbe = const DatabaseConversationCancellationProbe(),
   });
 
@@ -395,6 +620,7 @@ class ServerToolRuntime {
 
   final AgentToolNameResolver _resolver;
   final ServerToolExecutor? _executor;
+  final Future<void> Function()? beforeApprovedClaim;
   final ConversationCancellationProbe cancellationProbe;
 
   Future<List<ServerResolvedTool>> loadTools(
@@ -418,17 +644,7 @@ class ServerToolRuntime {
         .map((data) => data['toolId'])
         .whereType<String>()
         .toSet();
-    final selectedSkillIds = resources
-        .where(
-          (resource) =>
-              resource.resourceKind ==
-              WorkspaceResourceKind.conversationSkillSelection,
-        )
-        .map(_data)
-        .where((data) => data['conversationId'] == conversationStableId)
-        .map((data) => data['skillId'])
-        .whereType<String>()
-        .toSet();
+
     final toolGroups = {
       for (final resource in resources.where(
         (resource) => resource.resourceKind == WorkspaceResourceKind.toolGroup,
@@ -456,28 +672,49 @@ class ServerToolRuntime {
         .map(_tool)
         .whereType<ServerResolvedTool>()
         .toList(growable: false);
+
+    return [
+      ...genericTools,
+      ...fixedCloudSkillCommandTools(),
+    ];
+  }
+
+  Future<
+    ({List<ServerResolvedTool> tools, List<Map<String, dynamic>> userSkills})
+  >
+  _skillTargets(
+    Session session, {
+    required int workspaceId,
+    required String conversationStableId,
+  }) async {
+    final resources = await WorkspaceResource.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) & table.deletedAt.equals(null),
+    );
     final conversation = await Conversation.db.findFirstRow(
       session,
       where: (table) =>
           table.workspaceId.equals(workspaceId) &
           table.stableId.equals(conversationStableId),
     );
-    final serviceConnections = resources
-        .where(
-          (resource) =>
-              resource.resourceKind == WorkspaceResourceKind.serviceConnection,
-        )
-        .map((resource) => {'id': resource.resourceId, ..._data(resource)});
+    final selectedSkillIds = conversation == null
+        ? <String>{}
+        : cloudAuthorizedSkillIds(
+            conversation: conversation,
+            resources: resources,
+          );
     final userSkills = resources
         .where(
           (resource) =>
               resource.resourceKind == WorkspaceResourceKind.skill &&
               _data(resource)['source'] != 'app',
         )
-        .map((resource) => {'id': resource.resourceId, ..._data(resource)});
-    return [
-      ...genericTools,
-      ...materializeCloudSkillTools(
+        .map((resource) => {'id': resource.resourceId, ..._data(resource)})
+        .toList(growable: false);
+    return (
+      userSkills: userSkills,
+      tools: materializeCloudSkillTools(
         selectedSkillIds: selectedSkillIds,
         userSkills: userSkills,
         templateTools: resources
@@ -493,29 +730,16 @@ class ServerToolRuntime {
                   resource.resourceKind == WorkspaceResourceKind.skillSetting,
             )
             .map(_data),
-        serviceConnections: serviceConnections,
-        isChildConversation: conversation?.parentConversationStableId != null,
-      ),
-      ...materializeCloudSkillControlTools(
-        selectedSkillIds: selectedSkillIds,
-        userSkills: userSkills,
-        templateTools: resources
+        serviceConnections: resources
             .where(
               (resource) =>
                   resource.resourceKind ==
-                  WorkspaceResourceKind.skillTemplateTool,
+                  WorkspaceResourceKind.serviceConnection,
             )
             .map((resource) => {'id': resource.resourceId, ..._data(resource)}),
-        appSkillSettings: resources
-            .where(
-              (resource) =>
-                  resource.resourceKind == WorkspaceResourceKind.skillSetting,
-            )
-            .map(_data),
-        serviceConnections: serviceConnections,
         isChildConversation: conversation?.parentConversationStableId != null,
       ),
-    ];
+    );
   }
 
   Future<ServerToolDisposition> handle(
@@ -535,7 +759,7 @@ class ServerToolRuntime {
             workspaceId: turn.workspaceId,
             conversationStableId: conversation.stableId,
           );
-    final tool = currentTools
+    var tool = currentTools
         .where((candidate) => candidate.spec.name == request.name)
         .firstOrNull;
     final argumentsJson = jsonEncode(request.arguments);
@@ -547,7 +771,17 @@ class ServerToolRuntime {
           table.stableId.equals(request.id),
     );
     if (existing != null) {
-      if (existing.name != request.name ||
+      final persistedDescriptor = _resolver.resolve(existing.name);
+      final storedArguments = _jsonMap(existing.argumentsJson);
+      final storedCommand = _skillCommandOrNull(storedArguments);
+      final isNestedSkillCall =
+          (persistedDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
+              persistedDescriptor?.kind == AgentResolvedToolKind.skillNative) &&
+          storedCommand != null;
+      if ((!isNestedSkillCall && existing.name != request.name) ||
+          (isNestedSkillCall &&
+              request.name != callSkillToolName &&
+              request.name != existing.name) ||
           (existing.decision == null && existing.argumentsDigest != digest)) {
         throw const FormatException('Tool call identity changed.');
       }
@@ -556,24 +790,50 @@ class ServerToolRuntime {
         return ServerToolDisposition.awaitingApproval;
       }
       if (replay == ServerToolReplayAction.skip) {
-        return ServerToolDisposition.completed;
-      }
-      if (replay == ServerToolReplayAction.recover) {
-        await _finish(
-          session,
-          existing,
-          'executionError',
-          _boundedJson({
-            'error': 'Tool execution was interrupted before completion.',
-          }),
-        );
+        if (existing.status == 'running') {
+          await _recoverStaleRunning(session, existing);
+        }
         return ServerToolDisposition.completed;
       }
       request = ServerToolRequest(
         id: request.id,
-        name: request.name,
-        arguments: _jsonMap(existing.argumentsJson),
+        name: isNestedSkillCall ? callSkillToolName : request.name,
+        arguments: storedArguments,
       );
+      if (isNestedSkillCall) {
+        tool = currentTools
+            .where((candidate) => candidate.spec.name == callSkillToolName)
+            .singleOrNull;
+      }
+    }
+
+    final legacyDescriptor = _resolver.resolve(request.name);
+    if (tool == null &&
+        existing != null &&
+        (legacyDescriptor?.kind == AgentResolvedToolKind.skillTemplate ||
+            legacyDescriptor?.kind == AgentResolvedToolKind.skillNative)) {
+      try {
+        final state = await _skillTargets(
+          session,
+          workspaceId: turn.workspaceId,
+          conversationStableId: conversation!.stableId,
+        );
+        tool = state.tools
+            .where((candidate) => candidate.spec.name == request.name)
+            .singleOrNull;
+        if (tool == null) {
+          throw const FormatException('Tool is no longer available.');
+        }
+        validateToolArguments(tool.spec.inputJsonSchema, request.arguments);
+      } on Object catch (error) {
+        await _finish(
+          session,
+          existing,
+          'executionError',
+          _boundedJson({'error': '$error'}),
+        );
+        return ServerToolDisposition.completed;
+      }
     }
 
     if (tool == null) {
@@ -597,7 +857,80 @@ class ServerToolRuntime {
       );
       return ServerToolDisposition.completed;
     }
-    if (!serverToolIsExecutable(tool.descriptor)) {
+    var executionRequest = request;
+    var permissionDescriptor = tool.descriptor;
+    if (request.name == callSkillToolName) {
+      try {
+        final state = await _skillTargets(
+          session,
+          workspaceId: turn.workspaceId,
+          conversationStableId: conversation!.stableId,
+        );
+        final command = _skillCommandOrNull(request.arguments);
+        final resolvedTarget = await resolveEffectiveToolApprovalTarget(
+          requestedTarget: tool.descriptor,
+          arguments: request.arguments,
+          resolveSkillTarget: (command) async =>
+              (await resolveCloudSkillCommandTarget(
+                command: command,
+                userSkills: state.userSkills,
+                tools: state.tools,
+              )).descriptor,
+        );
+        if (resolvedTarget == null || command == null) {
+          await _insertResolved(
+            session,
+            turn: turn,
+            messageId: messageId,
+            request: request,
+            argumentsJson: argumentsJson,
+            digest: digest,
+            status: AgentToolPermissionResult.notConfigured.name,
+          );
+          return ServerToolDisposition.completed;
+        }
+        permissionDescriptor = resolvedTarget;
+        if (existing != null &&
+            existing.name != permissionDescriptor.fullName) {
+          throw const FormatException('Tool call identity changed.');
+        }
+        tool = state.tools
+            .where(
+              (candidate) =>
+                  candidate.descriptor.fullName ==
+                  permissionDescriptor.fullName,
+            )
+            .singleOrNull;
+        if (tool == null) {
+          throw const FormatException('Tool is no longer available.');
+        }
+        executionRequest = ServerToolRequest(
+          id: request.id,
+          name: permissionDescriptor.fullName,
+          arguments: Map<String, dynamic>.from(command.args),
+        );
+      } on Object catch (error) {
+        final call =
+            existing ??
+            await _insertResolved(
+              session,
+              turn: turn,
+              messageId: messageId,
+              request: request,
+              argumentsJson: argumentsJson,
+              digest: digest,
+              status: 'executionError',
+            );
+        await _finish(
+          session,
+          call,
+          'executionError',
+          _boundedJson({'error': '$error'}),
+        );
+        return ServerToolDisposition.completed;
+      }
+    }
+    if (!serverToolIsExecutable(permissionDescriptor)) {
       if (existing != null) {
         await _finish(
           session,
@@ -621,16 +954,23 @@ class ServerToolRuntime {
     final permission = await _permission(
       session,
       workspaceId: turn.workspaceId,
-      descriptor: tool.descriptor,
+      descriptor: permissionDescriptor,
       agentId: conversation?.agentId,
     );
+    final persistedRequest = request.name == callSkillToolName
+        ? ServerToolRequest(
+            id: request.id,
+            name: permissionDescriptor.fullName,
+            arguments: request.arguments,
+          )
+        : request;
     if (existing == null &&
         permission == AgentToolPermissionResult.needsConfirmation) {
       await _insertResolved(
         session,
         turn: turn,
         messageId: messageId,
-        request: request,
+        request: persistedRequest,
         argumentsJson: argumentsJson,
         digest: digest,
         status: 'pending',
@@ -642,40 +982,44 @@ class ServerToolRuntime {
         session,
         turn: turn,
         messageId: messageId,
-        request: request,
+        request: persistedRequest,
         argumentsJson: argumentsJson,
         digest: digest,
         status: permission.name,
       );
       return ServerToolDisposition.completed;
     }
-    if (existing != null && permission != AgentToolPermissionResult.granted) {
-      await _finish(
-        session,
-        existing,
-        permission.name,
-        _boundedJson({'error': 'Tool permission is no longer granted.'}),
-      );
+    if (!serverToolPermissionAllowsExecution(
+      permission: permission,
+      persistedStatus: existing?.status,
+    )) {
+      if (existing != null) {
+        await _finish(
+          session,
+          existing,
+          permission.name,
+          _boundedJson({'error': 'Tool permission is no longer granted.'}),
+        );
+      }
       return ServerToolDisposition.completed;
     }
 
-    final call =
-        existing ??
-        await _insertResolved(
-          session,
-          turn: turn,
-          messageId: messageId,
-          request: request,
-          argumentsJson: argumentsJson,
-          digest: digest,
-          status: 'running',
-        );
-    if (existing != null) {
-      await ConversationToolCall.db.updateRow(
+    ConversationToolCall? call;
+    if (existing == null) {
+      call = await _insertResolved(
         session,
-        existing.copyWith(status: 'running', updatedAt: DateTime.now().toUtc()),
+        turn: turn,
+        messageId: messageId,
+        request: persistedRequest,
+        argumentsJson: argumentsJson,
+        digest: digest,
+        status: 'running',
       );
+    } else {
+      await beforeApprovedClaim?.call();
+      call = await _claimApproved(session, existing);
     }
+    if (call == null) return ServerToolDisposition.completed;
     final executor = _executor;
     if (executor == null) {
       throw StateError('Server tool executor is not configured.');
@@ -684,7 +1028,7 @@ class ServerToolRuntime {
       throw const ConversationCancelledException();
     }
     try {
-      final result = await executor(session, turn, tool, request);
+      final result = await executor(session, turn, tool, executionRequest);
       await _finish(session, call, 'success', _boundedJson(result));
     } on Object catch (error) {
       await _finish(session, call, 'executionError', null);
@@ -803,22 +1147,98 @@ class ServerToolRuntime {
     );
   }
 
+  Future<ConversationToolCall?> _claimApproved(
+    Session session,
+    ConversationToolCall call,
+  ) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findFirstRow(
+      session,
+      where: (table) =>
+          table.id.equals(call.id) & table.status.equals('approved'),
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null || !serverToolStatusCanBeClaimed(current.status)) {
+      return null;
+    }
+    return ConversationToolCall.db.updateRow(
+      session,
+      current.copyWith(
+        status: 'running',
+        revision: current.revision + 1,
+        updatedAt: DateTime.now().toUtc(),
+      ),
+      transaction: transaction,
+    );
+  });
+
   Future<void> _finish(
     Session session,
     ConversationToolCall call,
     String status,
     String? result,
-  ) async {
+  ) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findById(
+      session,
+      call.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    if (current == null ||
+        !serverToolCallCanTransition(
+          currentStatus: current.status,
+          currentRevision: current.revision,
+          expectedStatus: call.status,
+          expectedRevision: call.revision,
+        )) {
+      return;
+    }
     await ConversationToolCall.db.updateRow(
       session,
-      call.copyWith(
+      current.copyWith(
         status: status,
         resultJson: result,
-        revision: call.revision + 1,
+        revision: current.revision + 1,
         updatedAt: DateTime.now().toUtc(),
       ),
+      transaction: transaction,
     );
-  }
+  });
+
+  Future<void> _recoverStaleRunning(
+    Session session,
+    ConversationToolCall call,
+  ) => session.db.transaction((transaction) async {
+    final current = await ConversationToolCall.db.findById(
+      session,
+      call.id!,
+      transaction: transaction,
+      lockMode: LockMode.forUpdate,
+    );
+    final now = DateTime.now().toUtc();
+    if (current == null ||
+        !serverToolRunningCanRecover(
+          currentStatus: current.status,
+          currentRevision: current.revision,
+          updatedAt: current.updatedAt,
+          now: now,
+          expectedRevision: call.revision,
+        )) {
+      return;
+    }
+    await ConversationToolCall.db.updateRow(
+      session,
+      current.copyWith(
+        status: 'executionError',
+        resultJson: _boundedJson({
+          'error': 'Tool execution was interrupted before completion.',
+        }),
+        revision: current.revision + 1,
+        updatedAt: now,
+      ),
+      transaction: transaction,
+    );
+  });
 
   Map<String, dynamic> _data(WorkspaceResource resource) {
     final value = jsonDecode(resource.data);
@@ -835,6 +1255,14 @@ class ServerToolRuntime {
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) throw const FormatException();
     return decoded;
+  }
+
+  SkillCommandTarget? _skillCommandOrNull(Map<String, dynamic> arguments) {
+    try {
+      return SkillCommandTarget.fromArguments(arguments);
+    } on FormatException {
+      return null;
+    }
   }
 
   String _boundedJson(Object? value) {

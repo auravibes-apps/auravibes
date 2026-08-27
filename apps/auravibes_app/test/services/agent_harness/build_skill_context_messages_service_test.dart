@@ -2,13 +2,81 @@ import 'package:auravibes_app/domain/entities/agent_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/build_skill_context_messages_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 void main() {
   group('BuildSkillContextMessagesService', () {
+    test('attaches loaded manifest by skill slug', () async {
+      final listUseCase = _MockListAvailableSkillsUsecase();
+      final listAgentSkills = _MockListConversationAgentSkillsUsecase();
+      final buildManifests = _MockBuildLoadedSkillManifestsUsecase();
+      final usecase = BuildSkillContextMessagesService(
+        listUseCase.call,
+        listAgentSkills,
+        buildManifests,
+      );
+      const skill = AvailableSkill(
+        source: SkillSource.user,
+        id: 'skill-1',
+        slug: 'research',
+        title: 'Research',
+        description: '',
+        content: 'Use primary sources.',
+        kind: SkillKind.template,
+      );
+      when(
+        () => listUseCase.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          filter: SkillLoadFilter.loaded,
+        ),
+      ).thenAnswer((_) async => const [skill]);
+      when(
+        () => listAgentSkills.loadSelectedAgent(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => null);
+      when(
+        () => listAgentSkills.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer((_) async => const []);
+      when(
+        () => buildManifests.call(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+        ),
+      ).thenAnswer(
+        (_) async => [
+          SkillManifest(
+            slug: 'research',
+            title: 'Research',
+            instructions: 'Use primary sources.',
+            revision: 'r1',
+            tools: const [],
+          ),
+        ],
+      );
+
+      final messages = await usecase.call(
+        conversationId: 'conversation-1',
+        workspaceId: 'workspace-1',
+      );
+
+      expect(messages.single.content, contains('<skill_manifest>'));
+      expect(
+        messages.single.content,
+        contains('&quot;revision&quot;:&quot;r1&quot;'),
+      );
+    });
+
     test('escapes XML special characters in skill title and content', () async {
       final listUseCase = _MockListAvailableSkillsUsecase();
       final listAgentSkills = _MockListConversationAgentSkillsUsecase();
@@ -177,3 +245,6 @@ class _MockListAvailableSkillsUsecase extends Mock
 
 class _MockListConversationAgentSkillsUsecase extends Mock
     implements ListConversationAgentSkillsUsecase {}
+
+class _MockBuildLoadedSkillManifestsUsecase extends Mock
+    implements BuildLoadedSkillManifestsUsecase {}

@@ -32,6 +32,7 @@ void main() {
       );
 
       expect(provider.calls, [
+        'resolve:conversation-1:calculator',
         'grant:conversation-1:calculator',
         'running:message-1:tool-1',
         'run:1+1',
@@ -125,7 +126,14 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
   }
 
   @override
-  String? resolveTool(String toolName) => resolvedTool;
+  Future<String?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async {
+    calls.add('resolve:$conversationId:$toolName');
+
+    return resolvedTool;
+  }
 
   @override
   Future<void> grantToolForConversation({

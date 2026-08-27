@@ -120,8 +120,12 @@ Map<String, Object?> materializeSkillToolSchema(
 
 List<ToolSpec> uniqueToolSpecs(Iterable<ToolSpec> specs) {
   final names = <String>{};
-  return [
-    for (final spec in specs)
-      if (names.add(spec.name)) spec,
-  ];
+  final unique = <ToolSpec>[];
+  for (final spec in specs) {
+    if (!names.add(spec.name)) {
+      throw StateError('Duplicate tool name: ${spec.name}');
+    }
+    unique.add(spec);
+  }
+  return unique;
 }

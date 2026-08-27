@@ -1,23 +1,24 @@
 // Required: Existing argument values intentionally repeat.
-import 'package:auravibes_app/features/skills/usecases/build_dynamic_skill_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
 class ToolResolverService {
-  static const _defaultResolver = AgentToolNameResolver(
-    skillControlToolNames: {
-      loadSkillToolName,
-      unloadSkillToolName,
-      SkillToolNames.listCredentials,
-    },
-  );
   const ToolResolverService([this._resolver = _defaultResolver]);
+
+  static const _defaultResolver = AgentToolNameResolver();
 
   final AgentToolNameResolver _resolver;
 
-  ResolvedTool? resolveTool(String compositeToolName) {
+  ResolvedTool? resolveTool(
+    String modelToolName,
+    ToolCatalog<ResolvedTool> catalog,
+  ) {
+    return catalog.resolve(modelToolName) ?? _resolveLegacyName(modelToolName);
+  }
+
+  ResolvedTool? _resolveLegacyName(String compositeToolName) {
     if (compositeToolName == listAgentsToolName) {
       return ResolvedTool.skillNative(
         tableId: compositeToolName,
@@ -38,8 +39,8 @@ class ToolResolverService {
     if (resolved == null) return null;
 
     return switch (resolved.kind) {
-      AgentResolvedToolKind.skillControl => ResolvedTool.skillControl(
-        toolIdentifier: resolved.toolIdentifier,
+      AgentResolvedToolKind.skillControl => ResolvedTool.skillCommand(
+        commandName: resolved.toolIdentifier,
       ),
       AgentResolvedToolKind.skillNative => ResolvedTool.skillNative(
         tableId: resolved.tableId,

@@ -261,7 +261,7 @@ void main() {
       );
 
       test(
-        'recovery records an interrupted running tool without reexecution',
+        'recovery terminalizes only a stale running tool without reexecution',
         () async {
           final fixture = await prepareExecution();
           final staged = await stageAwaitingApproval(fixture, calls: 1);
@@ -274,7 +274,9 @@ void main() {
             existing.copyWith(
               status: 'running',
               decision: 'approve',
-              updatedAt: DateTime.now().toUtc(),
+              updatedAt: DateTime.now().toUtc().subtract(
+                serverToolRunningRecoveryTimeout,
+              ),
             ),
           );
           var executions = 0;
@@ -305,6 +307,49 @@ void main() {
           expect(recovered.resultJson, contains('interrupted'));
         },
       );
+
+      test('active running tool remains owned and non-terminal', () async {
+        final fixture = await prepareExecution();
+        final staged = await stageAwaitingApproval(fixture, calls: 1);
+        final existing = (await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals(staged.toolCallIds.single),
+        ))!;
+        await ConversationToolCall.db.updateRow(
+          fixture.database,
+          existing.copyWith(
+            status: 'running',
+            decision: 'approve',
+            revision: 2,
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+        var executions = 0;
+
+        await ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            executions++;
+            return {'unexpected': true};
+          },
+        ).handle(
+          fixture.database,
+          turn: staged.turn,
+          messageId: existing.messageId,
+          request: ServerToolRequest(
+            id: existing.stableId,
+            name: existing.name,
+            arguments: const {},
+          ),
+        );
+
+        final active = (await ConversationToolCall.db.findById(
+          fixture.database,
+          existing.id!,
+        ))!;
+        expect(executions, 0);
+        expect(active.status, 'running');
+        expect(active.revision, 2);
+      });
 
       test(
         'removed approved tool resolves its existing durable call',

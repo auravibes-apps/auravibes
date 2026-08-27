@@ -14,7 +14,12 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentIterationDecision;
+    show
+        AgentIterationDecision,
+        AgentResolvedToolName,
+        AgentToolPermissionResult,
+        SkillCommandTarget,
+        callSkillToolName;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -141,6 +146,206 @@ void main() {
       );
 
       expect(decision.permissionResult.name, 'granted');
+    });
+
+    group('effective approval targets', () {
+      AppAllowedToolsDataProvider providerWith(
+        ResolveSkillCommandTarget? resolveSkillTarget,
+      ) {
+        return AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+          resolveSkillCommandTarget: resolveSkillTarget,
+          resolvedToolService: ResolvedToolService(
+            agentCancellationRuntime: agentCancellationRuntime,
+            mcpToolCaller:
+                ({
+                  required mcpServerId,
+                  required toolIdentifier,
+                  required arguments,
+                }) async => 'unused',
+          ),
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        );
+      }
+
+      test(
+        'passes exact resolved call_skill_tool target to approval',
+        () async {
+          final wrapper = ResolvedTool.skillCommand(
+            commandName: callSkillToolName,
+          );
+          SkillCommandTarget? resolvedCommand;
+          final provider = providerWith(({
+            required conversationId,
+            required workspaceId,
+            required command,
+          }) async {
+            resolvedCommand = command;
+
+            return AgentResolvedToolName.skillNative(
+              tableId: 'search',
+              skillSlug: 'duckduckgo',
+              toolIdentifier: 'search',
+            );
+          });
+          when(
+            () => resolveToolApprovalDecision(
+              conversationId: 'conversation-1',
+              workspaceId: 'workspace-1',
+              toolCallId: 'tool-call-1',
+              resolvedTool: any(named: 'resolvedTool'),
+            ),
+          ).thenAnswer(
+            (_) async => const ToolApprovalDecision(
+              toolCallId: 'tool-call-1',
+              permissionResult: ToolPermissionResult.granted,
+            ),
+          );
+
+          final decision = await provider.resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: wrapper,
+            argumentsRaw:
+                '{"skill":"duckduckgo","tool":"search",'
+                '"args":{},"revision":"rev-1"}',
+          );
+
+          final approvalTool =
+              verify(
+                    () => resolveToolApprovalDecision(
+                      conversationId: 'conversation-1',
+                      workspaceId: 'workspace-1',
+                      toolCallId: 'tool-call-1',
+                      resolvedTool: captureAny(named: 'resolvedTool'),
+                    ),
+                  ).captured.single
+                  as ResolvedTool;
+          expect(approvalTool.fullName, 'skill__app__duckduckgo__search');
+          expect(resolvedCommand?.skill, 'duckduckgo');
+          expect(resolvedCommand?.tool, 'search');
+          expect(decision.permissionResult, AgentToolPermissionResult.granted);
+        },
+      );
+
+      test('returns notConfigured for malformed call_skill_tool', () async {
+        var resolvedTarget = false;
+        final provider = providerWith(({
+          required conversationId,
+          required workspaceId,
+          required command,
+        }) async {
+          resolvedTarget = true;
+
+          return AgentResolvedToolName.skillNative(
+            tableId: 'search',
+            skillSlug: 'duckduckgo',
+            toolIdentifier: 'search',
+          );
+        });
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: ResolvedTool.skillCommand(
+            commandName: callSkillToolName,
+          ),
+          argumentsRaw: '{"skill":"duckduckgo"}',
+        );
+
+        expect(
+          decision.permissionResult,
+          AgentToolPermissionResult.notConfigured,
+        );
+        expect(resolvedTarget, isFalse);
+        final _ = verifyNever(
+          () => resolveToolApprovalDecision(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolCallId: any(named: 'toolCallId'),
+            resolvedTool: any(named: 'resolvedTool'),
+          ),
+        );
+      });
+
+      test('returns notConfigured for unresolved call_skill_tool', () async {
+        final provider = providerWith(
+          ({
+            required conversationId,
+            required workspaceId,
+            required command,
+          }) async => null,
+        );
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: ResolvedTool.skillCommand(
+            commandName: callSkillToolName,
+          ),
+          argumentsRaw:
+              '{"skill":"duckduckgo","tool":"search",'
+              '"args":{},"revision":"rev-1"}',
+        );
+
+        expect(
+          decision.permissionResult,
+          AgentToolPermissionResult.notConfigured,
+        );
+        final _ = verifyNever(
+          () => resolveToolApprovalDecision(
+            conversationId: any(named: 'conversationId'),
+            workspaceId: any(named: 'workspaceId'),
+            toolCallId: any(named: 'toolCallId'),
+            resolvedTool: any(named: 'resolvedTool'),
+          ),
+        );
+      });
+
+      test('passes direct tool to approval unchanged', () async {
+        final directTool = ResolvedTool.skillNative(
+          tableId: 'search',
+          skillSlug: 'duckduckgo',
+          toolIdentifier: 'search',
+        );
+        final provider = providerWith(null);
+        when(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: directTool,
+          ),
+        ).thenAnswer(
+          (_) async => const ToolApprovalDecision(
+            toolCallId: 'tool-call-1',
+            permissionResult: ToolPermissionResult.granted,
+          ),
+        );
+
+        final decision = await provider.resolveToolApprovalDecision(
+          conversationId: 'conversation-1',
+          workspaceId: 'workspace-1',
+          toolCallId: 'tool-call-1',
+          resolvedTool: directTool,
+        );
+
+        verify(
+          () => resolveToolApprovalDecision(
+            conversationId: 'conversation-1',
+            workspaceId: 'workspace-1',
+            toolCallId: 'tool-call-1',
+            resolvedTool: directTool,
+          ),
+        ).called(1);
+        expect(decision.permissionResult, AgentToolPermissionResult.granted);
+      });
     });
 
     test('passes raw argument maps to MCP tools', () async {

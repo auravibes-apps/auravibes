@@ -7,6 +7,7 @@ enum ResolvedToolType {
   mcp,
   native,
   skillControl,
+  skillCommand,
   skillNative,
   skillTemplate,
 }
@@ -26,6 +27,7 @@ class ResolvedTool {
     this.nativeTool,
     this.skillSlug,
     this.skillToolSlug,
+    this.target,
   });
 
   /// Creates a resolved built-in tool.
@@ -78,6 +80,18 @@ class ResolvedTool {
     );
   }
 
+  factory ResolvedTool.skillCommand({
+    required String commandName,
+    AgentResolvedToolName? target,
+  }) {
+    return ResolvedTool._(
+      type: ResolvedToolType.skillCommand,
+      tableId: commandName,
+      toolIdentifier: commandName,
+      target: target,
+    );
+  }
+
   factory ResolvedTool.skillTemplate({
     required String tableId,
     required String skillSlug,
@@ -126,6 +140,8 @@ class ResolvedTool {
 
   final String? skillToolSlug;
 
+  final AgentResolvedToolName? target;
+
   bool get isBuiltIn => type == ResolvedToolType.builtIn;
 
   bool get isMcp => type == ResolvedToolType.mcp;
@@ -134,11 +150,15 @@ class ResolvedTool {
 
   bool get isSkillControl => type == ResolvedToolType.skillControl;
 
+  bool get isSkillCommand => type == ResolvedToolType.skillCommand;
+
   bool get isSkillNative => type == ResolvedToolType.skillNative;
 
   bool get isSkillTemplate => type == ResolvedToolType.skillTemplate;
 
   String get fullName => switch ((type: type, skillSlug: skillSlug)) {
+    (type: ResolvedToolType.skillCommand, skillSlug: _) =>
+      target?.fullName ?? toolIdentifier,
     (type: ResolvedToolType.skillTemplate, skillSlug: final skillSlug?) =>
       AgentResolvedToolName.skillTemplate(
         tableId: tableId,

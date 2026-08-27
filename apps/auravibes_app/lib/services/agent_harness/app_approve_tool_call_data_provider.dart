@@ -9,6 +9,7 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/features/tools/usecases/tool_approval_decision.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
@@ -25,25 +26,44 @@ class AppApproveToolCallDataProvider
   const AppApproveToolCallDataProvider({
     required this.messageRepository,
     required this.conversationRepository,
-    required this.conversationToolsRepository,
-    required this.resolveToolApprovalDecisionUsecase,
+    this.conversationToolsRepository,
+    this.resolveToolApprovalDecisionUsecase,
     this.conversationToolsRepositoryForWorkspace,
     this.resolveToolApprovalDecisionUsecaseForWorkspace,
+    this.loadConversationToolSpecsUsecase,
+    this.loadConversationToolSpecsUsecaseForWorkspace,
     required this.toolResolverService,
     required this.agentToolResumeService,
     required this.runResolvedToolUsecase,
     required this.agentCancellationRuntime,
     required this.onToolCallChanged,
-  });
+  }) : assert(
+         conversationToolsRepository != null ||
+             conversationToolsRepositoryForWorkspace != null,
+         'A conversation tools repository is required.',
+       ),
+       assert(
+         resolveToolApprovalDecisionUsecase != null ||
+             resolveToolApprovalDecisionUsecaseForWorkspace != null,
+         'A tool approval usecase is required.',
+       ),
+       assert(
+         loadConversationToolSpecsUsecase != null ||
+             loadConversationToolSpecsUsecaseForWorkspace != null,
+         'A conversation tool specs usecase is required.',
+       );
 
   final MessageRepository messageRepository;
   final ConversationRepository conversationRepository;
-  final ConversationToolsRepository conversationToolsRepository;
-  final ResolveToolApprovalDecisionUsecase resolveToolApprovalDecisionUsecase;
+  final ConversationToolsRepository? conversationToolsRepository;
+  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase;
   final ConversationToolsRepository Function(String workspaceId)?
   conversationToolsRepositoryForWorkspace;
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
   resolveToolApprovalDecisionUsecaseForWorkspace;
+  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase;
+  final LoadConversationToolSpecsUsecase Function(String workspaceId)?
+  loadConversationToolSpecsUsecaseForWorkspace;
   final ToolResolverService toolResolverService;
   final AgentToolResumeService agentToolResumeService;
   final ResolvedToolService runResolvedToolUsecase;
@@ -71,8 +91,33 @@ class AppApproveToolCallDataProvider
   }
 
   @override
-  ResolvedTool? resolveTool(String toolName) {
-    return toolResolverService.resolveTool(toolName);
+  Future<ResolvedTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async {
+    final conversation = await conversationRepository.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      return toolResolverService.resolveTool(
+        toolName,
+        agent.buildToolCatalog<ResolvedTool>([]),
+      );
+    }
+    final loadToolSpecs =
+        loadConversationToolSpecsUsecaseForWorkspace?.call(
+          conversation.workspaceId,
+        ) ??
+        loadConversationToolSpecsUsecase;
+    if (loadToolSpecs == null) {
+      throw StateError('Conversation tool specs usecase is unavailable.');
+    }
+    final catalog = await loadToolSpecs.buildCatalog(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+    );
+
+    return toolResolverService.resolveTool(toolName, catalog);
   }
 
   @override
@@ -84,28 +129,34 @@ class AppApproveToolCallDataProvider
       conversationId,
     );
     if (conversation == null) return;
-    final permissionTableId =
-        await (resolveToolApprovalDecisionUsecaseForWorkspace?.call(
-                  conversation.workspaceId,
-                ) ??
-                resolveToolApprovalDecisionUsecase)
-            .resolvePermissionTableId(
-              conversationId: conversationId,
-              workspaceId: conversation.workspaceId,
-              resolvedTool: tool,
-            );
+    final approvalUsecase =
+        resolveToolApprovalDecisionUsecaseForWorkspace?.call(
+          conversation.workspaceId,
+        ) ??
+        resolveToolApprovalDecisionUsecase;
+    if (approvalUsecase == null) {
+      throw StateError('Tool approval usecase is unavailable.');
+    }
+    final permissionTableId = await approvalUsecase.resolvePermissionTableId(
+      conversationId: conversationId,
+      workspaceId: conversation.workspaceId,
+      resolvedTool: tool,
+    );
     if (permissionTableId == null) return;
 
-    final _ =
-        await (conversationToolsRepositoryForWorkspace?.call(
-                  conversation.workspaceId,
-                ) ??
-                conversationToolsRepository)
-            .setConversationToolPermission(
-              conversationId,
-              permissionTableId,
-              permissionMode: ToolPermissionMode.alwaysAllow,
-            );
+    final toolsRepository =
+        conversationToolsRepositoryForWorkspace?.call(
+          conversation.workspaceId,
+        ) ??
+        conversationToolsRepository;
+    if (toolsRepository == null) {
+      throw StateError('Conversation tools repository is unavailable.');
+    }
+    final _ = await toolsRepository.setConversationToolPermission(
+      conversationId,
+      permissionTableId,
+      permissionMode: ToolPermissionMode.alwaysAllow,
+    );
   }
 
   @override

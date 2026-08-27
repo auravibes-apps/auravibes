@@ -1,5 +1,6 @@
 import 'package:auravibes_app/features/agents/usecases/list_conversation_agent_skills_usecase.dart';
 import 'package:auravibes_app/features/skills/models/available_skill.dart';
+import 'package:auravibes_app/features/skills/usecases/build_loaded_skill_manifests_usecase.dart';
 import 'package:auravibes_app/features/skills/usecases/list_available_skills_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
@@ -9,8 +10,9 @@ class BuildSkillContextMessagesService {
   static const _builder = agent.BuildSkillContextMessages();
   const BuildSkillContextMessagesService(
     this._listAvailableSkillsUsecase,
-    this._listConversationAgentSkillsUsecase,
-  );
+    this._listConversationAgentSkillsUsecase, [
+    this._buildLoadedSkillManifestsUsecase,
+  ]);
 
   final Future<List<AvailableSkill>> Function({
     required String conversationId,
@@ -19,6 +21,7 @@ class BuildSkillContextMessagesService {
   })
   _listAvailableSkillsUsecase;
   final ListConversationAgentSkillsUsecase _listConversationAgentSkillsUsecase;
+  final BuildLoadedSkillManifestsUsecase? _buildLoadedSkillManifestsUsecase;
 
   Future<List<ChatMessage>> call({
     required String conversationId,
@@ -38,6 +41,16 @@ class BuildSkillContextMessagesService {
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
+    final manifests =
+        await _buildLoadedSkillManifestsUsecase?.call(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+          extraSkills: agentSkills,
+        ) ??
+        const <SkillManifest>[];
+    final manifestsBySlug = {
+      for (final manifest in manifests) manifest.slug: manifest,
+    };
     final agentMessages = _builder.compose(
       agentContent: selectedAgent?.content,
       conversationSkills: [
@@ -46,6 +59,7 @@ class BuildSkillContextMessagesService {
             title: skill.title,
             content: skill.content,
             identity: '${skill.source.name}:${skill.id}',
+            manifest: manifestsBySlug[skill.slug],
           ),
       ],
       agentSkills: [
@@ -54,6 +68,7 @@ class BuildSkillContextMessagesService {
             title: skill.title,
             content: skill.content,
             identity: '${skill.source.name}:${skill.id}',
+            manifest: manifestsBySlug[skill.slug],
           ),
       ],
     );
@@ -86,5 +101,6 @@ final buildSkillContextMessagesServiceProvider =
                   filter: filter,
                 ),
         ref.watch(listConversationAgentSkillsUsecaseProvider),
+        ref.watch(buildLoadedSkillManifestsUsecaseProvider),
       );
     });

@@ -292,7 +292,7 @@ void main() {
     );
 
     test(
-      'loads a ready credential-free user template skill and exposes its tool',
+      'skill load state does not change provider tool schemas',
       () async {
         final fixture = await prepare();
         final now = DateTime.now().toUtc();
@@ -338,6 +338,7 @@ void main() {
           (tool) => tool.spec.name == loadSkillToolName,
         );
 
+        final beforeSpecs = [for (final tool in controls) tool.spec];
         final result = await const ServerToolExecutorService().call(
           fixture.database,
           fixture.turn,
@@ -367,10 +368,135 @@ void main() {
           workspaceId: fixture.workspaceId,
           conversationStableId: 'conversation-1',
         );
+        expect([for (final tool in selectedTools) tool.spec], beforeSpecs);
         expect(
           selectedTools.map((tool) => tool.spec.name),
-          contains('skill__user__research__search'),
+          containsAll(skillCommandToolNames),
         );
+        expect(
+          selectedTools.any((tool) => tool.spec.name.startsWith('skill__')),
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'historical direct skill call replays without exposing its schema',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+        await insert(WorkspaceResourceKind.skill, 'research', const {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        });
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          const {
+            'id': 'research-search',
+            'skillId': 'research',
+            'skillSlug': 'research',
+            'toolSlug': 'search',
+            'description': 'Search.',
+            'isEnabled': true,
+            'requiresCredential': false,
+            'inputsJson': '[]',
+            'templateJson': '{}',
+          },
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysAllow',
+            'isEnabled': true,
+          },
+        );
+        await ConversationToolCall.db.insertRow(
+          fixture.database,
+          ConversationToolCall(
+            workspaceId: fixture.workspaceId,
+            conversationId: fixture.conversationId,
+            turnId: fixture.turn.id!,
+            messageId: assistant.id!,
+            stableId: 'historical-direct-call',
+            name: 'skill__user__research__search',
+            argumentsJson: '{}',
+            argumentsDigest: 'historical',
+            status: 'approved',
+            decision: 'approve',
+            revision: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        var executions = 0;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, tool, request) async {
+            executions++;
+            expect(tool.descriptor.toolIdentifier, 'search');
+            expect(request.id, 'historical-direct-call');
+            return {'ok': true};
+          },
+        );
+
+        final advertised = await runtime.loadTools(
+          fixture.database,
+          workspaceId: fixture.workspaceId,
+          conversationStableId: 'conversation-1',
+        );
+        expect(
+          advertised.any((tool) => tool.spec.name.startsWith('skill__')),
+          isFalse,
+        );
+        await runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: const ServerToolRequest(
+            id: 'historical-direct-call',
+            name: 'skill__user__research__search',
+            arguments: {},
+          ),
+        );
+
+        final persisted = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('historical-direct-call'),
+        );
+        expect(executions, 1);
+        expect(persisted?.status, 'success');
+        expect(persisted?.resultJson, contains('ok'));
       },
     );
 
@@ -450,6 +576,312 @@ void main() {
         expect(executions, 0);
         expect(resolved.status, 'toolNotFound');
         expect(resolved.resultJson, contains('no longer available'));
+      },
+    );
+
+    test(
+      'unloaded dispatched skill is rejected before executor side effects',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        var executions = 0;
+        final runtime = ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            executions++;
+            return {'unexpected': true};
+          },
+        );
+
+        expect(
+          await runtime.handle(
+            fixture.database,
+            turn: fixture.turn,
+            messageId: assistant.id!,
+            request: const ServerToolRequest(
+              id: 'call-unloaded-skill',
+              name: callSkillToolName,
+              arguments: {
+                'skill': 'research',
+                'tool': 'search',
+                'args': <String, Object?>{},
+                'revision': 'stale',
+              },
+            ),
+          ),
+          ServerToolDisposition.completed,
+        );
+
+        final call = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('call-unloaded-skill'),
+        );
+        expect(executions, 0);
+        expect(call?.status, 'executionError');
+        expect(call?.resultJson, contains('not loaded'));
+      },
+    );
+
+    test(
+      'dispatched skill uses underlying denied permission before execution',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final now = DateTime.now().toUtc();
+        const skill = {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        };
+        const template = {
+          'id': 'research-search',
+          'skillId': 'research',
+          'skillSlug': 'research',
+          'toolSlug': 'search',
+          'description': 'Search.',
+          'isEnabled': true,
+          'requiresCredential': false,
+          'inputsJson': '[]',
+          'templateJson': '{}',
+        };
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+        await insert(WorkspaceResourceKind.skill, 'research', skill);
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          template,
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        await insert(
+          WorkspaceResourceKind.toolPermission,
+          'research-search-permission',
+          const {
+            'toolId': 'research-search',
+            'permissionMode': 'alwaysDeny',
+            'isEnabled': true,
+          },
+        );
+        final tools = materializeCloudSkillTools(
+          selectedSkillIds: const {'research'},
+          userSkills: const [skill],
+          templateTools: const [template],
+          appSkillSettings: const [],
+          isChildConversation: false,
+        );
+        final manifest = await buildCloudSkillManifest(
+          slug: 'research',
+          userSkills: const [skill],
+          tools: tools,
+        );
+        var executions = 0;
+
+        await ServerToolRuntime(
+          executor: (_, _, _, _) async {
+            executions++;
+            return {'unexpected': true};
+          },
+        ).handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'call-denied-skill',
+            name: callSkillToolName,
+            arguments: {
+              'skill': 'research',
+              'tool': 'search',
+              'args': <String, Object?>{},
+              'revision': manifest!.revision,
+            },
+          ),
+        );
+
+        final call = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('call-denied-skill'),
+        );
+        expect(executions, 0);
+        expect(
+          call?.status,
+          AgentToolPermissionResult.disabledInWorkspace.name,
+        );
+      },
+    );
+
+    test(
+      'approved dispatched skill resumes with authoritative nested arguments',
+      () async {
+        final fixture = await prepare();
+        final assistant = fixture.messages.singleWhere(
+          (message) => message.id == fixture.turn.assistantMessageId,
+        );
+        final now = DateTime.now().toUtc();
+        Future<void> insert(
+          WorkspaceResourceKind kind,
+          String id,
+          Map<String, Object?> data,
+        ) => WorkspaceResource.db
+            .insertRow(
+              fixture.database,
+              WorkspaceResource(
+                workspaceId: fixture.workspaceId,
+                resourceKind: kind,
+                resourceId: id,
+                data: jsonEncode(data),
+                revision: 1,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            )
+            .then((_) {});
+        const skill = {
+          'id': 'research',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Search primary sources.',
+          'isEnabled': true,
+        };
+        const template = {
+          'id': 'research-search',
+          'skillId': 'research',
+          'skillSlug': 'research',
+          'toolSlug': 'search',
+          'description': 'Search.',
+          'isEnabled': true,
+          'requiresCredential': false,
+          'inputsJson': '[{"name":"query","type":"string","required":true}]',
+          'templateJson': '{"url":"https://example.com?q={{query}}"}',
+        };
+        await insert(WorkspaceResourceKind.skill, 'research', skill);
+        await insert(
+          WorkspaceResourceKind.skillTemplateTool,
+          'research-search',
+          template,
+        );
+        await insert(
+          WorkspaceResourceKind.conversationSkillSelection,
+          'conversation-1:research',
+          const {'conversationId': 'conversation-1', 'skillId': 'research'},
+        );
+        final tools = materializeCloudSkillTools(
+          selectedSkillIds: const {'research'},
+          userSkills: const [skill],
+          templateTools: const [template],
+          appSkillSettings: const [],
+          isChildConversation: false,
+        );
+        final manifest = await buildCloudSkillManifest(
+          slug: 'research',
+          userSkills: const [skill],
+          tools: tools,
+        );
+        final wrapperArguments = {
+          'skill': 'research',
+          'tool': 'search',
+          'args': <String, Object?>{'query': 'nested query'},
+          'revision': manifest!.revision,
+        };
+        Map<String, dynamic>? executedArguments;
+        final claimsReached = Completer<void>();
+        final releaseClaims = Completer<void>();
+        var claimWaiters = 0;
+        var executorInvocations = 0;
+        final runtime = ServerToolRuntime(
+          beforeApprovedClaim: () async {
+            claimWaiters++;
+            if (claimWaiters == 2) claimsReached.complete();
+            await releaseClaims.future;
+          },
+          executor: (_, _, tool, request) async {
+            executorInvocations++;
+            expect(tool.descriptor.fullName, 'skill__user__research__search');
+            executedArguments = request.arguments;
+            return {'ok': true};
+          },
+        );
+
+        expect(
+          await runtime.handle(
+            fixture.database,
+            turn: fixture.turn,
+            messageId: assistant.id!,
+            request: ServerToolRequest(
+              id: 'approved-nested-args',
+              name: callSkillToolName,
+              arguments: wrapperArguments,
+            ),
+          ),
+          ServerToolDisposition.awaitingApproval,
+        );
+        final pending = (await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('approved-nested-args'),
+        ))!;
+        expect(pending.name, 'skill__user__research__search');
+        expect(jsonDecode(pending.argumentsJson), wrapperArguments);
+        await ConversationToolCall.db.updateRow(
+          fixture.database,
+          pending.copyWith(
+            status: 'approved',
+            decision: 'approve',
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
+
+        Future<ServerToolDisposition> resume() => runtime.handle(
+          fixture.database,
+          turn: fixture.turn,
+          messageId: assistant.id!,
+          request: ServerToolRequest(
+            id: 'approved-nested-args',
+            name: callSkillToolName,
+            arguments: wrapperArguments,
+          ),
+        );
+        final firstResume = resume();
+        final secondResume = resume();
+        await claimsReached.future;
+        releaseClaims.complete();
+        final dispositions = await Future.wait([firstResume, secondResume]);
+        expect(
+          dispositions,
+          everyElement(ServerToolDisposition.completed),
+        );
+
+        expect(executedArguments, {'query': 'nested query'});
+
+        expect(executorInvocations, 1);
+        final completed = await ConversationToolCall.db.findFirstRow(
+          fixture.database,
+          where: (table) => table.stableId.equals('approved-nested-args'),
+        );
+        expect(completed?.status, 'success');
       },
     );
 

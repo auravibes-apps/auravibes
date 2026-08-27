@@ -122,7 +122,10 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
   required Iterable<ConversationMessage> messages,
   required Iterable<ConversationToolCall> calls,
 }) {
-  final callsById = {for (final call in calls) call.stableId: call};
+  final callsById = {
+    for (final call in calls.where((call) => call.status != 'running'))
+      call.stableId: call,
+  };
   final replayedCallIds = <String>{};
   final exchanges = <Map<String, dynamic>>[];
   for (final message in messages) {
@@ -164,7 +167,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
     }
   }
   final unbatchedCalls = calls
-      .where((call) => !replayedCallIds.contains(call.stableId))
+      .where(
+        (call) =>
+            call.status != 'running' &&
+            !replayedCallIds.contains(call.stableId),
+      )
       .toList(growable: false);
   if (unbatchedCalls.isNotEmpty) {
     exchanges.addAll(
@@ -344,8 +351,14 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
           awaitingApproval: true,
         );
       }
+
+      if (completedCalls.any((call) => call.status == 'running')) {
+        throw const ConversationEngineConfigurationException(
+          'tool_execution_in_progress',
+        );
+      }
       final resolvedCalls = completedCalls
-          .where((call) => call.status != 'pending')
+          .where((call) => call.status != 'pending' && call.status != 'running')
           .toList(growable: false);
       final persistedMessages = await ConversationMessage.db.find(
         session,
@@ -575,11 +588,13 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
         session,
         job.workspaceId,
         conversationSkillIds,
+        isChildConversation: conversation.parentConversationStableId != null,
       ),
       agentSkills: await _skillsForIds(
         session,
         job.workspaceId,
         agentContext.skillIds,
+        isChildConversation: conversation.parentConversationStableId != null,
       ),
     );
   }
@@ -630,8 +645,9 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
   Future<List<AgentSkill>> _skillsForIds(
     Session session,
     int workspaceId,
-    Iterable<String> skillIds,
-  ) async {
+    Iterable<String> skillIds, {
+    required bool isChildConversation,
+  }) async {
     final skills = <AgentSkill>[];
     for (final skillId in skillIds) {
       final skill = await _activeResource(
@@ -693,7 +709,64 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
           cloudServiceSkillReady(definition, serviceConnections);
     });
     skills.addAll(cloudAppSkillsForIds(enabledAppSkillIds));
-    return skills;
+    final userSkills = appResources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skill &&
+              _jsonObject(resource.data)['source'] != 'app',
+        )
+        .map(
+          (resource) => {
+            'id': resource.resourceId,
+            ..._jsonObject(resource.data),
+          },
+        )
+        .toList(growable: false);
+    final targets = materializeCloudSkillTools(
+      selectedSkillIds: skillIds.toSet(),
+      userSkills: userSkills,
+      templateTools: appResources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.skillTemplateTool,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonObject(resource.data),
+            },
+          ),
+      appSkillSettings: appSettings,
+      serviceConnections: serviceConnections,
+      isChildConversation: isChildConversation,
+    );
+    final withManifests = <AgentSkill>[];
+    for (final skill in skills) {
+      final user = userSkills
+          .where((candidate) => candidate['id'] == skill.identity)
+          .firstOrNull;
+      final app = serviceSkillDefinitions
+          .where((candidate) => candidate.identifier == skill.identity)
+          .firstOrNull;
+      final slug = user?['slug'] as String? ?? app?.slug ?? skill.identity;
+      final manifest = slug == null
+          ? null
+          : await buildCloudSkillManifest(
+              slug: slug,
+              userSkills: userSkills,
+              tools: targets,
+            );
+      withManifests.add(
+        AgentSkill(
+          title: skill.title,
+          content: skill.content,
+          identity: skill.identity,
+          manifest: manifest,
+        ),
+      );
+    }
+    return withManifests;
   }
 
   Future<WorkspaceResource?> _activeResource(

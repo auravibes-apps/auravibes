@@ -20,7 +20,10 @@ abstract interface class ApproveToolCallProvider<TTool extends Object> {
     required String toolCallId,
   });
 
-  TTool? resolveTool(String toolName);
+  Future<TTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  });
 
   Future<void> grantToolForConversation({
     required String conversationId,
@@ -87,7 +90,10 @@ class ApproveToolCallService<TTool extends Object> {
     );
     if (toolCall == null) return;
 
-    final tool = provider.resolveTool(toolCall.name);
+    final tool = await provider.resolveTool(
+      conversationId: toolCall.conversationId,
+      toolName: toolCall.name,
+    );
     if (tool == null) {
       await provider.updateToolCallResult(
         messageId: messageId,

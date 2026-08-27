@@ -102,7 +102,12 @@ class AgentToolExecutionDispatcher<TTool extends Object> {
 
       return AgentToolExecutionResult(
         resultStatus: AgentToolResultStatus.success,
-        responseRaw: result.toString(),
+        responseRaw: switch (result) {
+          final String value => value,
+          final Map<Object?, Object?> value => jsonEncode(value),
+          final List<Object?> value => jsonEncode(value),
+          _ => result.toString(),
+        },
       );
     } on FormatException catch (error, stackTrace) {
       logToolExecutionError(
