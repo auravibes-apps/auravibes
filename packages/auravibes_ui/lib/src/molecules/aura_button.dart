@@ -51,30 +51,33 @@ class AuraButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final content = isLoading
+        ? AuraLoadingCircle(
+            tint: tint ?? AuraTint.primary,
+            size: 20,
+            itemBuilder: (context, _) => DecoratedBox(
+              decoration: BoxDecoration(
+                color: _getLoadingColor(auraColors),
+                shape: BoxShape.circle,
+              ),
+            ),
+          )
+        : DefaultTextStyle(
+            style: _getTextStyle(
+              auraColors,
+              typography: context.auraTheme.typography,
+            ),
+            child: child,
+          );
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       child: AuraPressable(
         child: AuraPadding(
           child: Center(
-            child: isLoading
-                ? AuraLoadingCircle(
-                    tint: tint ?? AuraTint.primary,
-                    size: 20,
-                    itemBuilder: (context, _) => DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _getLoadingColor(auraColors),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  )
-                : DefaultTextStyle(
-                    style: _getTextStyle(
-                      auraColors,
-                      typography: context.auraTheme.typography,
-                    ),
-                    child: child,
-                  ),
+            widthFactor: isFullWidth ? null : 1,
+            heightFactor: 1,
+            child: content,
           ),
           padding: _getPadding(),
         ),

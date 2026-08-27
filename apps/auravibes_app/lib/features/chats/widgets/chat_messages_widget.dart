@@ -668,20 +668,6 @@ String? _subAgentTitle(MessageToolCallEntity toolCall) {
   return null;
 }
 
-void _showCompactionDetails(BuildContext context, MessageEntity message) {
-  showDialog<void>(
-    context: context,
-    builder: (_) => AuraAlertDialog(
-      title: const SizedBox.shrink(),
-      message: SizedBox(
-        width: MediaQuery.sizeOf(context).width * 0.8,
-        child: CompactedMessageDetails(message: message),
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_close),
-    ),
-  );
-}
-
 class _CompactedMessageWidget extends StatelessWidget {
   const _CompactedMessageWidget({required this.message, super.key});
 
@@ -701,8 +687,8 @@ class _CompactedMessageWidget extends StatelessWidget {
       _ => LocaleKeys.compaction_compacted_widget_label.tr(),
     };
 
-    return GestureDetector(
-      child: AuraContainer(
+    return AuraModal(
+      entryPointChild: AuraContainer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -747,7 +733,22 @@ class _CompactedMessageWidget extends StatelessWidget {
         variant: AuraContainerVariant.surfaceVariant,
         borderRadius: containerBorderRadius,
       ),
-      onTap: () => _showCompactionDetails(context, message),
+      contentChild: Builder(
+        builder: (modalContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: CompactedMessageDetails(message: message)),
+            AuraButton(
+              onPressed: () =>
+                  Navigator.of(modalContext, rootNavigator: true).pop(),
+              child: const TextLocale(LocaleKeys.common_close),
+              variant: AuraButtonVariant.text,
+            ),
+          ],
+        ),
+      ),
+      barrierLabel: LocaleKeys.common_close.tr(),
+      semanticLabel: LocaleKeys.compaction_compacted_details_title.tr(),
     );
   }
 }

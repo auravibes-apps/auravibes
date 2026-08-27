@@ -41,6 +41,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_message_bubble_stories.da
     as _widgetbook_workspace_aura_ui_auravibes_message_bubble_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_message_status_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_message_status_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_modal_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_modal_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_popup_menu_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_popup_menu_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_radio_group_stories.dart'
@@ -437,6 +439,16 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Input',
             builder: _widgetbook_workspace_aura_ui_auravibes_input_stories
                 .basicInputUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraModal',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Modal',
+            builder: _widgetbook_workspace_aura_ui_auravibes_modal_stories
+                .modalUseCase,
           ),
         ],
       ),
