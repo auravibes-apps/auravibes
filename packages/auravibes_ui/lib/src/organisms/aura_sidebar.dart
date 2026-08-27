@@ -161,7 +161,7 @@ class _AuraSidebarItem extends StatelessWidget {
         ),
         padding: .small,
       ),
-      color: colors.primary.withValues(alpha: 0.8),
+      color: colors.primary,
       decoration: BoxDecoration(
         color: selected
             ? colors.primary.withValues(alpha: _selectedAlpha)

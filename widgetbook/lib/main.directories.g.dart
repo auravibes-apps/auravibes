@@ -59,6 +59,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_spinner_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_spinner_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_switch_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_switch_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_tabs_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_tabs_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_text_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_text_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_tile_stories.dart'
@@ -350,6 +352,21 @@ final directories = <_widgetbook.WidgetbookNode>[
             name: 'Aura Screen',
             builder: _widgetbook_workspace_aura_ui_auravibes_screen_stories
                 .defaultAuraScreenUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraTabs',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Basic Tabs',
+            builder: _widgetbook_workspace_aura_ui_auravibes_tabs_stories
+                .basicTabsUseCase,
+          ),
+          _widgetbook.WidgetbookUseCase(
+            name: 'Selector Tabs',
+            builder: _widgetbook_workspace_aura_ui_auravibes_tabs_stories
+                .selectorTabsUseCase,
           ),
         ],
       ),
