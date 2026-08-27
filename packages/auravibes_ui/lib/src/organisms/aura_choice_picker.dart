@@ -203,8 +203,10 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
           const AuraSizedBox(width: .sm),
           Expanded(
             child: GestureDetector(
-              child: SizedBox(
-                height: _choicePickerTapTarget,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: _choicePickerTapTarget,
+                ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Opacity(

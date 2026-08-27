@@ -165,6 +165,22 @@ void main() {
       expect(find.byType(AuraCheckbox), findsNothing);
     });
 
+    testWidgets('allows multiline option labels to expand', (tester) async {
+      const label = 'First\nSecond\nThird\nFourth';
+
+      await tester.pumpWidget(
+        _buildApp(
+          const AuraChoicePicker<String>(
+            options: [AuraChoiceOption(value: 'first', label: Text(label))],
+            value: [],
+            onChanged: _noopChanged,
+          ),
+        ),
+      );
+
+      expect(tester.getSize(find.text(label)).height, greaterThan(44));
+    });
+
     testWidgets('exposes group and option accessibility semantics', (
       tester,
     ) async {
