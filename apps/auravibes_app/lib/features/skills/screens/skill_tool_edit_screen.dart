@@ -526,29 +526,30 @@ class _SkillToolForm extends StatelessWidget {
                 onAdd: onAddQueryField,
                 onRemove: onRemoveQueryField,
               ),
-              AuraDropdownSelector<SkillUrlTemplateBodyFormat>(
+              AuraChoicePicker<SkillUrlTemplateBodyFormat>(
                 options: [
-                  AuraDropdownOption(
+                  AuraChoiceOption(
                     value: SkillUrlTemplateBodyFormat.json,
-                    child: Text(
+                    label: Text(
                       LocaleKeys.skills_tool_body_format_json.tr(
                         context: context,
                       ),
                     ),
                   ),
-                  AuraDropdownOption(
+                  AuraChoiceOption(
                     value: SkillUrlTemplateBodyFormat.text,
-                    child: Text(
+                    label: Text(
                       LocaleKeys.skills_tool_body_format_text.tr(
                         context: context,
                       ),
                     ),
                   ),
                 ],
-                value: bodyFormat,
-                onChanged: (value) {
-                  if (value == null) return;
-                  onBodyFormatChanged(value);
+                value: [bodyFormat],
+                onChanged: (values) {
+                  final selected = values.firstOrNull;
+                  if (selected == null) return;
+                  onBodyFormatChanged(selected);
                 },
                 label: Text(
                   LocaleKeys.skills_tool_body_format_label.tr(context: context),

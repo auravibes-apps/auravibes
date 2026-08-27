@@ -21,6 +21,8 @@ import 'package:widgetbook_workspace/aura_ui/auravibes_card_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_card_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_checkbox_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_checkbox_stories;
+import 'package:widgetbook_workspace/aura_ui/auravibes_choice_picker_stories.dart'
+    as _widgetbook_workspace_aura_ui_auravibes_choice_picker_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_container_stories.dart'
     as _widgetbook_workspace_aura_ui_auravibes_container_stories;
 import 'package:widgetbook_workspace/aura_ui/auravibes_date_time_input_stories.dart'
@@ -421,6 +423,17 @@ final directories = <_widgetbook.WidgetbookNode>[
             builder:
                 _widgetbook_workspace_aura_ui_auravibes_button_group_stories
                     .buttonGroupSingleUseCase,
+          ),
+        ],
+      ),
+      _widgetbook.WidgetbookComponent(
+        name: 'AuraChoicePicker',
+        useCases: [
+          _widgetbook.WidgetbookUseCase(
+            name: 'Choice Picker',
+            builder:
+                _widgetbook_workspace_aura_ui_auravibes_choice_picker_stories
+                    .choicePickerUseCase,
           ),
         ],
       ),

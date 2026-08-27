@@ -12,6 +12,7 @@
 
 // Export all organism components here.
 export 'aura_button_group.dart';
+export 'aura_choice_picker.dart';
 export 'aura_confirm_dialog.dart';
 export 'aura_date_time_input.dart';
 export 'aura_dropdown_selector.dart';
