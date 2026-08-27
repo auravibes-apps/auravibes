@@ -15,6 +15,7 @@ export 'aura_button_group.dart';
 export 'aura_confirm_dialog.dart';
 export 'aura_dropdown_selector.dart';
 export 'aura_input.dart';
+export 'aura_modal.dart';
 export 'aura_popup_menu_controller.dart'
     show
         AuraPopupMenu,

@@ -126,6 +126,21 @@ Completed rule commits: `4a0401c9` (Wave 1), `26de7e08` (Wave 2),
 - Generated files remain untouched. Current app and UI fatal analyzers are
   clean; final repository-wide gates remain to be run once.
 
+## AuraModal review follow-up — 2026-08-27
+
+- Fix modal route duplication and non-tap pointer activation while preserving
+  the existing interactive-child entry point behavior.
+- Preserve AuraButton label centering under tight parent constraints.
+- Add focused regressions, then run package button/modal tests and the app chat
+  widget test.
+- Status: complete. Modal and button focused tests pass; app chat widget test
+  passes; focused fatal analyzer and formatter pass.
+- Theme inheritance follow-up: capture caller `InheritedTheme` values into the
+  modal route; dark-theme regression and live Widgetbook verification pass.
+- Vertical sizing follow-up: keep the default AuraButton intrinsic in loose
+  parent constraints; add a regression test and verify the modal story. Status:
+  complete; focused tests, analyzer, formatter, and live Widgetbook pass.
+
 ## Recovery protocol
 
 After compaction read this ledger, the attached goal, `git log`, `git status`,
