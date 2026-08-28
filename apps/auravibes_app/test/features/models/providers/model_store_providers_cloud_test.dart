@@ -65,4 +65,28 @@ void main() {
     gateway.complete(null);
     expect(await store, isNot(isA<CloudModelStore>()));
   });
+
+  test(
+    'keeps pending model store resolution alive without listeners',
+    () async {
+      final gateway = Completer<CloudWorkspaceStateGateway?>();
+      final container = ProviderContainer(
+        overrides: [
+          cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
+            (_, _) => gateway.future,
+          ),
+          workspaceModelSelectionRepositoryProvider.overrideWithValue(
+            MockWorkspaceModelSelectionRepository(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final store = container.read(modelSelectionStoreProvider('local').future);
+      await container.pump();
+      gateway.complete(null);
+
+      expect(await store, isNot(isA<CloudModelStore>()));
+    },
+  );
 }

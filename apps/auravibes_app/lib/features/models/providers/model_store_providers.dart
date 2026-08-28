@@ -17,17 +17,22 @@ Future<ModelConnectionStore> modelConnectionStore(
   Ref ref,
   String workspaceId,
 ) async {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-  );
-  if (gateway == null) {
-    return await ref.read(modelConnectionRepositoryProvider);
-  }
+  final keepAlive = ref.keepAlive();
+  try {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+    );
+    if (gateway == null) {
+      return await ref.watch(modelConnectionRepositoryProvider);
+    }
 
-  return CloudModelStore(
-    workspaceId,
-    CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-  );
+    return CloudModelStore(
+      workspaceId,
+      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
+    );
+  } finally {
+    keepAlive.close();
+  }
 }
 
 @riverpod
@@ -36,30 +41,40 @@ Future<ModelSelectionStore> modelSelectionStore(
   Ref ref,
   String workspaceId,
 ) async {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-  );
-  if (gateway == null) {
-    return _LocalModelSelectionStore(
-      ref.read(workspaceModelSelectionRepositoryProvider),
+  final keepAlive = ref.keepAlive();
+  try {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
     );
-  }
+    if (gateway == null) {
+      return _LocalModelSelectionStore(
+        ref.watch(workspaceModelSelectionRepositoryProvider),
+      );
+    }
 
-  return CloudModelStore(
-    workspaceId,
-    CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-  );
+    return CloudModelStore(
+      workspaceId,
+      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
+    );
+  } finally {
+    keepAlive.close();
+  }
 }
 
 @riverpod
 // ignore: prefer-static-class (required framework top-level declaration)
 Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-  );
-  if (gateway == null) return await ref.read(apiModelRepositoryProvider);
+  final keepAlive = ref.keepAlive();
+  try {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+    );
+    if (gateway == null) return await ref.watch(apiModelRepositoryProvider);
 
-  return CloudModelCatalogStore(CloudModelGateway(gateway));
+    return CloudModelCatalogStore(CloudModelGateway(gateway));
+  } finally {
+    keepAlive.close();
+  }
 }
 
 // Top-level API/provider declarations are required by their consumers.

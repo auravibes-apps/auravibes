@@ -305,16 +305,17 @@ class _ChatInputActions {
       try {
         await sendResult;
       } on Object catch (error, stackTrace) {
+        _logger.warning('Failed to send draft', error, stackTrace);
+        if (!ref.context.mounted) return;
         if (controller.text.isEmpty && attachments.value.isEmpty) {
           controller.text = message;
           attachments.value = draftAttachments;
         }
-        _logger.warning('Failed to send draft', error, stackTrace);
 
         return;
       }
     } finally {
-      isSending.value = false;
+      if (ref.context.mounted) isSending.value = false;
     }
   }
 
