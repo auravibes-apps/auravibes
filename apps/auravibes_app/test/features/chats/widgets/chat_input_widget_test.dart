@@ -160,6 +160,24 @@ void main() {
     sendCompleter.complete();
   });
 
+  testWidgets('does not update sending state after unmount', (tester) async {
+    final sendCompleter = Completer<void>();
+
+    await pumpAndInit(
+      tester,
+      buildSubject(onSendMessage: (_) => sendCompleter.future),
+    );
+
+    await tester.enterText(find.byType(EditableText), 'Hello agent');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_upward).hitTestable());
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    sendCompleter.complete();
+    await tester.pump();
+  });
+
   testWidgets('shows tools button when onToolsPress provided', (tester) async {
     await pumpAndInit(
       tester,
