@@ -22,6 +22,7 @@ class AuraButton extends StatelessWidget {
     this.isLoading = false,
     this.isFullWidth = false,
     this.disabled = false,
+    this.semanticLabel,
   });
 
   /// The callback that is called when the button is tapped.
@@ -47,6 +48,9 @@ class AuraButton extends StatelessWidget {
 
   /// The tint of the button.
   final AuraTint? tint;
+
+  /// A semantic label for the button.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +95,7 @@ class AuraButton extends StatelessWidget {
           boxShadow: _getBoxShadow(),
         ),
         onPressed: (disabled || isLoading) ? null : onPressed,
+        semanticLabel: semanticLabel,
       ),
     );
   }

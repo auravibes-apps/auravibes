@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_image.dart';
 import 'package:auravibes_ui/src/atoms/aura_spinner.dart';
@@ -36,6 +38,20 @@ void main() {
       final image = tester.widget<Image>(find.byType(Image));
 
       expect(image.fit, BoxFit.cover);
+    });
+
+    testWidgets('uses a caller-provided image provider', (tester) async {
+      final provider = MemoryImage(Uint8List.fromList(const [0, 1, 2]));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraImage(url: 'unused', imageProvider: provider),
+          ),
+        ),
+      );
+
+      expect(tester.widget<Image>(find.byType(Image)).image, same(provider));
     });
 
     testWidgets('exposes semantic label', (tester) async {
@@ -83,6 +99,22 @@ void main() {
       final _ = await tester.pumpAndSettle();
 
       expect(find.byType(AuraIcon), findsOneWidget);
+    });
+
+    testWidgets('labels the image error state', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: AuraImage(
+              url: 'http://127.0.0.1:1/missing-image.png',
+              errorSemanticLabel: 'Preview unavailable',
+            ),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('Preview unavailable'), findsOneWidget);
     });
   });
 }

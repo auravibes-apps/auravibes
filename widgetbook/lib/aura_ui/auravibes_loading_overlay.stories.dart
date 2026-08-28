@@ -1,0 +1,69 @@
+import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/material.dart';
+import 'package:widgetbook/widgetbook.dart';
+import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
+
+part 'auravibes_loading_overlay.stories.g.dart';
+
+class _LoadingOverlayInput {
+  const _LoadingOverlayInput({required this.isLoading, required this.message});
+
+  final bool isLoading;
+  final String? message;
+}
+
+const component = ComponentMeta(name: 'AuraLoadingOverlay');
+const meta = Meta(LoadingOverlayDemo.new, argsType: _LoadingOverlayInput.new);
+
+final _Defaults loadingOverlayDefaults = _Defaults(
+  builder: (context, args) =>
+      LoadingOverlayDemo(isLoading: args.isLoading, message: args.message),
+);
+
+final $LoadingOverlay = _Story(
+  name: 'Loading Overlay',
+  setup: (context, child, args) =>
+      SizedBox(width: 360, height: 300, child: child),
+  args: _Args(
+    isLoading: BoolArg(true, name: 'Loading'),
+    message: NullableStringArg('Loading workspace', name: 'Message'),
+  ),
+  scenarios: [
+    _Scenario(
+      name: 'Compact Phone',
+      modes: [ViewportMode(compactPhoneViewport)],
+    ),
+    _Scenario(name: 'Arabic', modes: [AuraArabicLocaleMode()]),
+    _Scenario(name: 'Large Text', modes: [TextScaleMode(2)]),
+  ],
+);
+
+/// Demonstrates loading content with an optional message and accessible state.
+class LoadingOverlayDemo extends StatelessWidget {
+  const LoadingOverlayDemo({
+    required this.isLoading,
+    required this.message,
+    super.key,
+  });
+
+  final bool isLoading;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraLoadingOverlay(
+      isLoading: isLoading,
+      message: message,
+      semanticLabel: message ?? 'Loading workspace',
+      child: ColoredBox(
+        color: context.auraColors.surfaceVariant,
+        child: Center(
+          child: Text(
+            'Workspace content',
+            style: TextStyle(color: context.auraColors.onSurface),
+          ),
+        ),
+      ),
+    );
+  }
+}

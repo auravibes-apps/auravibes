@@ -23,6 +23,7 @@ class AuraSwitch extends StatefulWidget {
     this.size = AuraSwitchSize.base,
     this.disabled = false,
     this.isLoading = false,
+    this.semanticLabel = 'Switch',
   });
 
   /// Whether the switch is on or off.
@@ -41,6 +42,9 @@ class AuraSwitch extends StatefulWidget {
 
   /// Whether the switch is in a loading state.
   final bool isLoading;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 
   @override
   State<AuraSwitch> createState() => _AuraSwitchState();
@@ -86,6 +90,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
     void handleToggle() => onChanged?.call(!widget.value);
 
     return Semantics(
+      label: widget.semanticLabel,
       child: FocusableActionDetector(
         enabled: isInteractive,
         actions: {
@@ -103,7 +108,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
             : SystemMouseCursors.basic,
         child: GestureDetector(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             child: Center(
               child: AnimatedContainer(
                 padding: EdgeInsets.all(thumbPadding),

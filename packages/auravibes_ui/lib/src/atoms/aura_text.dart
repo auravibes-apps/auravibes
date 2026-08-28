@@ -23,7 +23,7 @@ class AuraText extends StatelessWidget {
   /// The style variant to apply to the text.
   final AuraTextStyle style;
 
-  /// Aligmnet.
+  /// Optional text alignment.
   final TextAlign? textAlign;
 
   /// Optional accent tint.

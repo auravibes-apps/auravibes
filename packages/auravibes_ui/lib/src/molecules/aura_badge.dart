@@ -31,7 +31,7 @@ class AuraBadge extends StatelessWidget {
          variant: variant,
          size: size,
          semanticLabel: semanticLabel,
-         child: AuraText(
+         child: _AuraBadgeText(
            child: child,
            style: size == AuraBadgeSize.small
                ? AuraTextStyle.caption
@@ -52,7 +52,7 @@ class AuraBadge extends StatelessWidget {
          variant: variant,
          size: size,
          semanticLabel: semanticLabel ?? '$count notifications',
-         child: AuraText(
+         child: _AuraBadgeText(
            child: Text(count > maxCount ? '$maxCount+' : count.toString()),
            style: size == AuraBadgeSize.small
                ? AuraTextStyle.caption
@@ -88,6 +88,7 @@ class AuraBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final foreground = _getForegroundColor(auraColors);
 
     Widget badge = Container(
       padding: _getPadding(spacing: context.auraTheme.spacing),
@@ -102,10 +103,13 @@ class AuraBadge extends StatelessWidget {
       ),
       child: DefaultTextStyle(
         style: TextStyle(
-          color: _getForegroundColor(auraColors),
+          color: foreground,
           fontWeight: context.auraTheme.typography.fontWeightMedium,
         ),
-        child: child,
+        child: IconTheme(
+          data: IconThemeData(color: foreground),
+          child: child,
+        ),
       ),
     );
 
@@ -195,6 +199,29 @@ class AuraBadge extends StatelessWidget {
 
   Color _getOutlinedForegroundColor(AuraColorScheme colors) {
     return colors.mutedForeground;
+  }
+}
+
+class _AuraBadgeText extends StatelessWidget {
+  const _AuraBadgeText({required this.child, required this.style});
+
+  final Widget child;
+  final AuraTextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = DefaultTextStyle.of(context).style.color;
+
+    return AuraText(
+      child: IconTheme(
+        data: IconThemeData(color: foreground),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: foreground),
+          child: child,
+        ),
+      ),
+      style: style,
+    );
   }
 }
 

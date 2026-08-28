@@ -71,6 +71,7 @@ class AuraRadioOption<T> {
     required this.label,
     this.subtitle,
     this.disabled = false,
+    this.semanticLabel,
   });
 
   /// The value this option represents.
@@ -84,6 +85,9 @@ class AuraRadioOption<T> {
 
   /// Whether this option is disabled.
   final bool disabled;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 }
 
 /// An individual radio button that communicates with its parent group.
@@ -114,6 +118,7 @@ class AuraRadio<T> extends StatefulWidget {
     super.key,
     this.tint,
     this.disabled = false,
+    this.semanticLabel = 'Radio button',
   });
 
   /// The value represented by this radio button.
@@ -133,6 +138,9 @@ class AuraRadio<T> extends StatefulWidget {
   /// Whether the radio button is disabled.
   final bool disabled;
 
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
+
   @override
   State<AuraRadio<T>> createState() => _AuraRadioState<T>();
 }
@@ -150,6 +158,7 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
     final borderColor = _getBorderColor(context, isDisabled);
 
     return Semantics(
+      label: widget.semanticLabel,
       child: FocusableActionDetector(
         enabled: !isDisabled,
         shortcuts: const {
@@ -171,22 +180,29 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
             ? SystemMouseCursors.forbidden
             : SystemMouseCursors.click,
         child: GestureDetector(
-          child: Opacity(
-            opacity: isDisabled ? 0.6 : 1.0,
-            child: SizedBox(
-              width: _radioSize,
-              height: _radioSize,
-              child: CustomPaint(
-                painter: _RadioPainter(
-                  isSelected: isSelected,
-                  isFocused: _isFocused,
-                  color: effectiveColor,
-                  borderColor: borderColor,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: Opacity(
+                opacity: isDisabled ? 0.6 : 1.0,
+                child: SizedBox(
+                  width: _radioSize,
+                  height: _radioSize,
+                  child: CustomPaint(
+                    painter: _RadioPainter(
+                      isSelected: isSelected,
+                      isFocused: _isFocused,
+                      color: effectiveColor,
+                      borderColor: borderColor,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
           onTap: isDisabled ? null : _select,
+          excludeFromSemantics: true,
           behavior: HitTestBehavior.opaque,
         ),
       ),

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
+// ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'chat_result.dart';
@@ -9,7 +9,6 @@ part of 'chat_result.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -64,7 +63,7 @@ class _$ChatResultCopyWithImpl<T,$Res>
 /// Create a copy of ChatResult
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? output = freezed,Object? finishReason = null,Object? usage = freezed,Object? metadata = null,Object? thinking = freezed,}) {
-  return _then(ChatResult(
+  return _then(_self.copyWith(
 output: freezed == output ? _self.output : output // ignore: cast_nullable_to_non_nullable
 as T,finishReason: null == finishReason ? _self.finishReason : finishReason // ignore: cast_nullable_to_non_nullable
 as ChatFinishReason,usage: freezed == usage ? _self.usage : usage // ignore: cast_nullable_to_non_nullable
@@ -223,7 +222,7 @@ return $default(_that.output,_that.finishReason,_that.usage,_that.metadata,_that
 
 
 class _ChatResult<T> implements ChatResult<T> {
-  const _ChatResult({required this.output, this.finishReason = ChatFinishReason.unspecified, this.usage,  Map<String, dynamic> metadata = const <String, dynamic>{}, this.thinking}): _metadata = metadata;
+  const _ChatResult({required this.output, this.finishReason = ChatFinishReason.unspecified, this.usage, final  Map<String, dynamic> metadata = const <String, dynamic>{}, this.thinking}): _metadata = metadata;
   
 
 @override final  T output;
@@ -363,7 +362,7 @@ class _$ChatMessageCopyWithImpl<$Res>
 /// Create a copy of ChatMessage
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? role = null,Object? content = null,Object? parts = null,Object? metadata = null,}) {
-  return _then(ChatMessage(
+  return _then(_self.copyWith(
 role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as ChatMessageRole,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,parts: null == parts ? _self.parts : parts // ignore: cast_nullable_to_non_nullable
@@ -509,7 +508,7 @@ return $default(_that.role,_that.content,_that.parts,_that.metadata);case _:
 
 
 class _ChatMessage extends ChatMessage {
-  const _ChatMessage({required this.role, this.content = '',  List<Part> parts = const <Part>[],  Map<String, dynamic> metadata = const <String, dynamic>{}}): _parts = parts,_metadata = metadata,super._();
+  const _ChatMessage({required this.role, this.content = '', final  List<Part> parts = const <Part>[], final  Map<String, dynamic> metadata = const <String, dynamic>{}}): _parts = parts,_metadata = metadata,super._();
   
 
 @override final  ChatMessageRole role;
@@ -641,7 +640,7 @@ class _$LanguageModelUsageCopyWithImpl<$Res>
 /// Create a copy of LanguageModelUsage
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? promptTokens = freezed,Object? responseTokens = freezed,Object? totalTokens = freezed,}) {
-  return _then(LanguageModelUsage(
+  return _then(_self.copyWith(
 promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
 as int?,responseTokens: freezed == responseTokens ? _self.responseTokens : responseTokens // ignore: cast_nullable_to_non_nullable
 as int?,totalTokens: freezed == totalTokens ? _self.totalTokens : totalTokens // ignore: cast_nullable_to_non_nullable

@@ -26,6 +26,8 @@ class AuraTile extends StatefulWidget {
     this.leading,
     this.trailing,
     this.enabled = true,
+    this.expand = true,
+    this.semanticLabel,
   });
 
   /// The callback that is called when the tile is tapped.
@@ -51,6 +53,12 @@ class AuraTile extends StatefulWidget {
 
   /// Whether the tile is enabled for interaction.
   final bool enabled;
+
+  /// Whether the tile expands to the available width.
+  final bool expand;
+
+  /// A semantic label for interactive tiles.
+  final String? semanticLabel;
 
   @override
   State<AuraTile> createState() => _AuraTileState();
@@ -130,35 +138,47 @@ class _AuraTileState extends State<AuraTile> {
       duration: auraTheme.animation.normal,
     );
 
-    return SizedBox(
-      width: double.infinity,
-      child: FocusableActionDetector(
-        enabled: _canInteract,
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              widget.onTap?.call();
+    final tileContent = FocusableActionDetector(
+      enabled: _canInteract,
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            widget.onTap?.call();
 
-              return null;
-            },
-          ),
-        },
-        onShowFocusHighlight: (value) => setState(() => _focused = value),
-        onShowHoverHighlight: (value) => setState(() => _hovered = value),
-        mouseCursor: _canInteract
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.basic,
-        child: GestureDetector(
-          child: tile,
-          onTapDown: _canInteract
-              ? (_) => setState(() => _pressed = true)
-              : null,
-          onTapUp: _canInteract ? (_) => _clearPressed() : null,
-          onTap: _canInteract ? widget.onTap : null,
-          onTapCancel: _clearPressed,
-          behavior: HitTestBehavior.opaque,
+            return null;
+          },
         ),
+      },
+      onShowFocusHighlight: (value) => setState(() => _focused = value),
+      onShowHoverHighlight: (value) => setState(() => _hovered = value),
+      mouseCursor: _canInteract
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        child: tile,
+        onTapDown: _canInteract ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: _canInteract ? (_) => _clearPressed() : null,
+        onTap: _canInteract ? widget.onTap : null,
+        onTapCancel: _clearPressed,
+        excludeFromSemantics: true,
+        behavior: HitTestBehavior.opaque,
       ),
+    );
+
+    final sizedTile = widget.expand
+        ? SizedBox(width: double.infinity, child: tileContent)
+        : tileContent;
+
+    if (!_canInteract) return sizedTile;
+
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: widget.semanticLabel ?? 'Tile',
+      button: true,
+      enabled: true,
+      onTap: widget.onTap,
+      child: sizedTile,
     );
   }
 

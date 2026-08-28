@@ -1,5 +1,4 @@
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
-import 'package:auravibes_ui/src/atoms/aura_tooltip.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
@@ -71,6 +70,7 @@ class AuraFloatingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final labelText = text;
+    final tooltip = this.tooltip;
     final resolvedTint = tint ?? AuraTint.primary;
     final resolvedBackground = auraColors.colorFor(resolvedTint);
     final resolvedForeground = auraColors.onTint(resolvedTint);
@@ -91,6 +91,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         hoverElevation: _getHoverElevation(),
         highlightElevation: _getHighlightElevation(),
         onPressed: onPressed,
+        tooltip: tooltip,
         shape: shape,
         icon: Icon(icon, color: resolvedForeground),
         label: AuraText(
@@ -114,6 +115,7 @@ class AuraFloatingActionButton extends StatelessWidget {
         hoverElevation: _getHoverElevation(),
         highlightElevation: _getHighlightElevation(),
         onPressed: onPressed,
+        tooltip: tooltip,
         shape: shape,
       );
 
@@ -122,16 +124,16 @@ class AuraFloatingActionButton extends StatelessWidget {
       }
     }
 
-    final tooltip = this.tooltip;
-    if (tooltip != null) {
-      fab = AuraTooltip(message: tooltip, child: fab);
-    }
-
-    if (semanticLabel != null) {
-      fab = Semantics(child: fab, button: true, label: semanticLabel);
-    }
-
-    return fab;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+      child: Semantics(
+        child: fab,
+        button: true,
+        enabled: onPressed != null,
+        label: semanticLabel ?? tooltip ?? 'Floating action button',
+        onTap: onPressed,
+      ),
+    );
   }
 
   double _getFABSize() {

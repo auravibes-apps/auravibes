@@ -1,0 +1,78 @@
+import 'package:auravibes_ui/ui.dart';
+import 'package:flutter/material.dart';
+import 'package:widgetbook/widgetbook.dart';
+import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
+
+part 'auravibes_pressable.stories.g.dart';
+
+class _PressableInput {
+  const _PressableInput({required this.label, required this.enabled});
+
+  final String label;
+  final bool enabled;
+}
+
+const component = ComponentMeta(name: 'AuraPressable');
+const meta = Meta(PressableDemo.new, argsType: _PressableInput.new);
+
+final _Defaults pressableDefaults = _Defaults(
+  builder: (context, args) =>
+      PressableDemo(label: args.label, enabled: args.enabled),
+);
+
+final $Pressable = _Story(
+  name: 'Pressable',
+  setup: (context, child, args) =>
+      Padding(padding: const EdgeInsets.all(24), child: child),
+  args: _Args(
+    label: StringArg('Press me', name: 'Label'),
+    enabled: BoolArg(true, name: 'Enabled'),
+  ),
+  scenarios: [
+    _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),
+    _Scenario(
+      name: 'Pressed',
+      run: (tester, args) async {
+        await tester.tap(find.byType(AuraPressable));
+        await tester.pump(const Duration(milliseconds: 200));
+      },
+    ),
+  ],
+);
+
+/// Demonstrates keyboard and pointer feedback on a reusable pressable surface.
+class PressableDemo extends StatefulWidget {
+  const PressableDemo({required this.label, required this.enabled, super.key});
+
+  final String label;
+  final bool enabled;
+
+  @override
+  State<PressableDemo> createState() => _PressableDemoState();
+}
+
+class _PressableDemoState extends State<PressableDemo> {
+  var _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AuraPressable(
+      color: context.auraColors.primary,
+      semanticLabel: widget.label,
+      padding: const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: .lg,
+        vertical: .sm,
+      ),
+      decoration: BoxDecoration(
+        color: context.auraColors.surface,
+        border: Border.all(color: context.auraColors.outline),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      onPressed: widget.enabled ? () => setState(() => _pressed = true) : null,
+      child: Text(
+        _pressed ? 'Pressed' : widget.label,
+        style: TextStyle(color: context.auraColors.onSurface),
+      ),
+    );
+  }
+}

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
+// ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'mcp_connection_status.dart';
@@ -9,7 +9,6 @@ part of 'mcp_connection_status.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -69,7 +68,7 @@ class _$McpConnectionStateCopyWithImpl<$Res>
 /// Create a copy of McpConnectionState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? server = null,Object? status = null,Object? client = freezed,Object? tools = null,Object? errorMessage = freezed,}) {
-  return _then(McpConnectionState(
+  return _then(_self.copyWith(
 server: null == server ? _self.server : server // ignore: cast_nullable_to_non_nullable
 as McpServerEntity,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as McpConnectionStatus,client: freezed == client ? _self.client : client // ignore: cast_nullable_to_non_nullable
@@ -225,7 +224,7 @@ return $default(_that.server,_that.status,_that.client,_that.tools,_that.errorMe
 
 
 class _McpConnectionState extends McpConnectionState {
-  const _McpConnectionState({required this.server, required this.status, this.client,  List<McpToolInfo> tools = const [], this.errorMessage}): _tools = tools,super._();
+  const _McpConnectionState({required this.server, required this.status, this.client, final  List<McpToolInfo> tools = const [], this.errorMessage}): _tools = tools,super._();
   
 
 /// The MCP server configuration.

@@ -283,6 +283,10 @@ void main() {
       );
 
       expect(tester.getSize(firstTab).height, 48);
+      final tabs = find.byType(AuraPressable);
+      for (var index = 0; index < tabs.evaluate().length; index++) {
+        expect(tester.getSize(tabs.at(index)).width, greaterThanOrEqualTo(48));
+      }
       expect(tester.getSize(firstIndicator).height, 2);
       expect(
         tester.getSize(firstIndicator).width,

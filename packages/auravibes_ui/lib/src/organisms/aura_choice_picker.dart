@@ -5,7 +5,7 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-const _choicePickerTapTarget = 44.0;
+const _choicePickerTapTarget = 48.0;
 
 /// A labeled value that can be selected by [AuraChoicePicker].
 class AuraChoiceOption<T> {
@@ -191,12 +191,14 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
         onChanged: _isInteractive ? (_) => _handleChange() : null,
         tint: tint,
         disabled: option.disabled,
+        semanticLabel: option.semanticLabel ?? 'Choice',
       ),
       AuraChoicePickerVariant.multipleSelection => AuraCheckbox(
         value: _isSelected,
         onChanged: _isInteractive ? (_) => _handleChange() : null,
         tint: tint,
         disabled: option.disabled,
+        semanticLabel: option.semanticLabel ?? 'Choice',
       ),
     };
 
@@ -221,7 +223,7 @@ class _AuraChoicePickerOption<T> extends StatelessWidget {
                   minHeight: _choicePickerTapTarget,
                 ),
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: AlignmentDirectional.centerStart,
                   child: Opacity(
                     opacity: _isInteractive ? 1 : 0.6,
                     child: label,

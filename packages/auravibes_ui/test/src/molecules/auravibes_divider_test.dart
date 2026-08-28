@@ -17,29 +17,20 @@ void main() {
       ); // Outer and inner container.
     });
 
-    testWidgets('applies custom height correctly', (tester) async {
-      const customHeight = 32.0;
-
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: AuraDivider(height: customHeight)),
-        ),
-      );
-
-      final outerContainer = tester.widget<Container>(
-        find.byType(Container).first,
-      );
-      expect(outerContainer.constraints?.maxHeight, customHeight);
-    });
-
-    testWidgets('applies custom thickness correctly', (tester) async {
-      const customThickness = 4.0;
+    testWidgets('thickness controls line and area', (tester) async {
+      const customThickness = 32.0;
 
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(body: AuraDivider(thickness: customThickness)),
         ),
       );
+
+      final outerContainer = tester.widget<Container>(
+        find.byType(Container).first,
+      );
+      expect(outerContainer.constraints?.minHeight, customThickness);
+      expect(outerContainer.constraints?.maxHeight, customThickness);
 
       final innerContainer = tester.widget<Container>(
         find.byType(Container).last,
@@ -75,7 +66,10 @@ void main() {
       final outerContainer = tester.widget<Container>(
         find.byType(Container).first,
       );
-      expect(outerContainer.margin, const EdgeInsets.only(left: indent));
+      expect(
+        outerContainer.margin,
+        const EdgeInsetsDirectional.only(start: indent),
+      );
     });
 
     testWidgets('applies endIndent correctly', (tester) async {
@@ -90,7 +84,10 @@ void main() {
       final outerContainer = tester.widget<Container>(
         find.byType(Container).first,
       );
-      expect(outerContainer.margin, const EdgeInsets.only(right: endIndent));
+      expect(
+        outerContainer.margin,
+        const EdgeInsetsDirectional.only(end: endIndent),
+      );
     });
 
     group('AuraDivider.vertical', () {
@@ -102,19 +99,22 @@ void main() {
         expect(find.byType(Container), findsNWidgets(2));
       });
 
-      testWidgets('applies custom width correctly', (tester) async {
-        const customWidth = 32.0;
+      testWidgets('thickness controls line and area', (tester) async {
+        const customThickness = 32.0;
 
         await tester.pumpWidget(
           const MaterialApp(
-            home: Scaffold(body: AuraDivider.vertical(width: customWidth)),
+            home: Scaffold(
+              body: AuraDivider.vertical(thickness: customThickness),
+            ),
           ),
         );
 
         final outerContainer = tester.widget<Container>(
           find.byType(Container).first,
         );
-        expect(outerContainer.constraints?.maxWidth, customWidth);
+        expect(outerContainer.constraints?.minWidth, customThickness);
+        expect(outerContainer.constraints?.maxWidth, customThickness);
       });
 
       testWidgets('applies vertical indent correctly', (tester) async {
@@ -149,8 +149,8 @@ void main() {
         expect(find.byType(Expanded), findsNWidgets(2)); // Two line segments.
       });
 
-      testWidgets('applies custom height to labeled divider', (tester) async {
-        const customHeight = 48.0;
+      testWidgets('uses thickness as minimum label area', (tester) async {
+        const customThickness = 48.0;
         const labelText = 'SECTION';
 
         await tester.pumpWidget(
@@ -158,7 +158,7 @@ void main() {
             home: Scaffold(
               body: AuraDivider.withLabel(
                 label: Text(labelText),
-                height: customHeight,
+                thickness: customThickness,
               ),
             ),
           ),
@@ -167,7 +167,7 @@ void main() {
         final outerContainer = tester.widget<Container>(
           find.ancestor(of: find.byType(Row), matching: find.byType(Container)),
         );
-        expect(outerContainer.constraints?.maxHeight, customHeight);
+        expect(outerContainer.constraints?.minHeight, customThickness);
       });
     });
 
