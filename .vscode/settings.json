@@ -6,7 +6,7 @@
     "https://codemagic.io/codemagic-schema.json": "codemagic.yaml"
   },
   "dart.sdkPath": ".fvm/flutter_sdk/bin/cache/dart-sdk",
-  "dart.flutterSdkPath": ".fvm/versions/3.47.1",
+  "dart.flutterSdkPath": ".fvm/versions/3.47.2",
   "dart.lineLength": 80,
   "dart.previewFlutterUiGuides": true,
   "search.exclude": {
