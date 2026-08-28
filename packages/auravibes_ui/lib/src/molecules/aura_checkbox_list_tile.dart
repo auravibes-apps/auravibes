@@ -16,6 +16,7 @@ class AuraCheckboxListTile extends StatelessWidget {
     this.tint,
     this.disabled = false,
     this.autofocus = false,
+    this.semanticLabel = 'Checkbox',
   });
 
   /// Whether the checkbox is selected.
@@ -39,44 +40,50 @@ class AuraCheckboxListTile extends StatelessWidget {
   /// Whether this checkbox tile should request focus when built.
   final bool autofocus;
 
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
     final subtitle = this.subtitle;
 
-    return Semantics(
-      child: GestureDetector(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AuraCheckbox(
-              value: value,
-              onChanged: isDisabled ? null : onChanged,
-              tint: tint,
-              disabled: isDisabled,
-              autofocus: autofocus,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AuraText(child: title),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    AuraText(child: subtitle, style: AuraTextStyle.bodySmall),
-                  ],
-                ],
+    return MergeSemantics(
+      child: Semantics(
+        label: semanticLabel,
+        container: true,
+        child: GestureDetector(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AuraCheckbox(
+                value: value,
+                onChanged: isDisabled ? null : onChanged,
+                tint: tint,
+                disabled: isDisabled,
+                autofocus: autofocus,
+                semanticLabel: semanticLabel,
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AuraText(child: title),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      AuraText(child: subtitle, style: AuraTextStyle.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          onTap: isDisabled ? null : () => onChanged?.call(!value),
+          behavior: HitTestBehavior.opaque,
         ),
-        onTap: isDisabled ? null : () => onChanged?.call(!value),
-        behavior: HitTestBehavior.opaque,
       ),
-      enabled: !isDisabled,
-      checked: value,
     );
   }
 }

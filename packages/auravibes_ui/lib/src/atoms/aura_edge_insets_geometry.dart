@@ -97,7 +97,7 @@ class AuraPadding extends StatelessWidget {
   /// Default constructor.
   const AuraPadding({required this.child, this.padding = .base, super.key});
 
-  /// Pading chilg.
+  /// The widget below this padding.
   final Widget child;
 
   /// Spacing for padding.

@@ -5,6 +5,7 @@
 /// styling across the application.
 library;
 
+// Compatibility exports retained for existing AuraVibes consumers.
 export 'package:flutter_portal/flutter_portal.dart' show Portal;
 export 'package:gpt_markdown/gpt_markdown.dart' show GptMarkdown;
 

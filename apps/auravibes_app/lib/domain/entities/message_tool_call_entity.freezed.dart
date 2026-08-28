@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
+// ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'message_tool_call_entity.dart';
@@ -9,7 +9,6 @@ part of 'message_tool_call_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -72,7 +71,7 @@ class _$MessageToolCallEntityCopyWithImpl<$Res>
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? argumentsRaw = null,Object? argumentsDigest = freezed,Object? turnId = freezed,Object? turnRevision = freezed,Object? responseRaw = freezed,Object? resultStatus = freezed,}) {
-  return _then(MessageToolCallEntity(
+  return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,argumentsRaw: null == argumentsRaw ? _self.argumentsRaw : argumentsRaw // ignore: cast_nullable_to_non_nullable
@@ -358,7 +357,7 @@ class _$MessageAttachmentEntityCopyWithImpl<$Res>
 /// Create a copy of MessageAttachmentEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? messageId = null,Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,Object? createdAt = null,Object? updatedAt = null,}) {
-  return _then(MessageAttachmentEntity(
+  return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,messageId: null == messageId ? _self.messageId : messageId // ignore: cast_nullable_to_non_nullable
 as String,localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
@@ -642,7 +641,7 @@ class _$MessageAttachmentToCreateCopyWithImpl<$Res>
 /// Create a copy of MessageAttachmentToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? localPath = null,Object? fileName = null,Object? displayName = null,Object? mimeType = null,Object? modality = null,Object? sizeBytes = null,}) {
-  return _then(MessageAttachmentToCreate(
+  return _then(_self.copyWith(
 localPath: null == localPath ? _self.localPath : localPath // ignore: cast_nullable_to_non_nullable
 as String,fileName: null == fileName ? _self.fileName : fileName // ignore: cast_nullable_to_non_nullable
 as String,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
@@ -917,7 +916,7 @@ class _$MessageMetadataEntityCopyWithImpl<$Res>
 /// Create a copy of MessageMetadataEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? toolCalls = null,Object? promptTokens = freezed,Object? completionTokens = freezed,Object? totalTokens = freezed,Object? thinking = freezed,Object? modelMetadata = null,Object? metadataVersion = null,Object? isCompactionSummary = null,Object? compactionKind = freezed,Object? compactedFromMessageId = freezed,Object? compactedThroughMessageId = freezed,Object? compactedMessageIds = null,Object? compactionCreatedAt = freezed,}) {
-  return _then(MessageMetadataEntity(
+  return _then(_self.copyWith(
 toolCalls: null == toolCalls ? _self.toolCalls : toolCalls // ignore: cast_nullable_to_non_nullable
 as List<MessageToolCallEntity>,promptTokens: freezed == promptTokens ? _self.promptTokens : promptTokens // ignore: cast_nullable_to_non_nullable
 as int?,completionTokens: freezed == completionTokens ? _self.completionTokens : completionTokens // ignore: cast_nullable_to_non_nullable
@@ -1072,7 +1071,7 @@ return $default(_that.toolCalls,_that.promptTokens,_that.completionTokens,_that.
 @JsonSerializable()
 
 class _MessageMetadataEntity extends MessageMetadataEntity {
-  const _MessageMetadataEntity({ List<MessageToolCallEntity> toolCalls = const <MessageToolCallEntity>[], this.promptTokens, this.completionTokens, this.totalTokens, this.thinking,  Map<String, Object?> modelMetadata = const <String, Object?>{}, this.metadataVersion = 1, this.isCompactionSummary = false, this.compactionKind, this.compactedFromMessageId, this.compactedThroughMessageId,  List<String> compactedMessageIds = const <String>[], this.compactionCreatedAt}): _toolCalls = toolCalls,_modelMetadata = modelMetadata,_compactedMessageIds = compactedMessageIds,super._();
+  const _MessageMetadataEntity({final  List<MessageToolCallEntity> toolCalls = const <MessageToolCallEntity>[], this.promptTokens, this.completionTokens, this.totalTokens, this.thinking, final  Map<String, Object?> modelMetadata = const <String, Object?>{}, this.metadataVersion = 1, this.isCompactionSummary = false, this.compactionKind, this.compactedFromMessageId, this.compactedThroughMessageId, final  List<String> compactedMessageIds = const <String>[], this.compactionCreatedAt}): _toolCalls = toolCalls,_modelMetadata = modelMetadata,_compactedMessageIds = compactedMessageIds,super._();
   factory _MessageMetadataEntity.fromJson(Map<String, dynamic> json) => _$MessageMetadataEntityFromJson(json);
 
  final  List<MessageToolCallEntity> _toolCalls;
@@ -1240,7 +1239,7 @@ class _$MessageEntityCopyWithImpl<$Res>
 /// Create a copy of MessageEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? createdAt = null,Object? updatedAt = null,Object? metadata = freezed,Object? attachments = null,}) {
-  return _then(MessageEntity(
+  return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -1404,7 +1403,7 @@ return $default(_that.id,_that.conversationId,_that.content,_that.messageType,_t
 
 
 class _MessageEntity extends MessageEntity {
-  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata,  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[]}): _attachments = attachments,super._();
+  const _MessageEntity({required this.id, required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, required this.createdAt, required this.updatedAt, this.metadata, final  List<MessageAttachmentEntity> attachments = const <MessageAttachmentEntity>[]}): _attachments = attachments,super._();
   
 
 /// Unique identifier for the message.
@@ -1568,7 +1567,7 @@ class _$MessageToCreateCopyWithImpl<$Res>
 /// Create a copy of MessageToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? content = null,Object? messageType = null,Object? isUser = null,Object? status = null,Object? metadata = freezed,Object? attachments = null,}) {
-  return _then(MessageToCreate(
+  return _then(_self.copyWith(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,messageType: null == messageType ? _self.messageType : messageType // ignore: cast_nullable_to_non_nullable
@@ -1717,7 +1716,7 @@ return $default(_that.conversationId,_that.content,_that.messageType,_that.isUse
 
 
 class _MessageToCreate extends MessageToCreate {
-  const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.metadata,  List<MessageAttachmentToCreate> attachments = const <MessageAttachmentToCreate>[]}): _attachments = attachments,super._();
+  const _MessageToCreate({required this.conversationId, required this.content, required this.messageType, required this.isUser, required this.status, this.metadata, final  List<MessageAttachmentToCreate> attachments = const <MessageAttachmentToCreate>[]}): _attachments = attachments,super._();
   
 
 /// ID of the conversation this message belongs to.
@@ -1856,7 +1855,7 @@ class _$MessagePatchCopyWithImpl<$Res>
 /// Create a copy of MessagePatch
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? content = freezed,Object? metadata = freezed,Object? status = freezed,}) {
-  return _then(MessagePatch(
+  return _then(_self.copyWith(
 content: freezed == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String?,metadata: freezed == metadata ? _self.metadata : metadata // ignore: cast_nullable_to_non_nullable
 as MessageMetadataEntity?,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
@@ -2145,7 +2144,7 @@ class _$ToolToCallCopyWithImpl<$Res>
 /// Create a copy of ToolToCall
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? tool = null,Object? id = null,Object? argumentsRaw = null,}) {
-  return _then(ToolToCall(
+  return _then(_self.copyWith(
 tool: null == tool ? _self.tool : tool // ignore: cast_nullable_to_non_nullable
 as ResolvedTool,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,argumentsRaw: null == argumentsRaw ? _self.argumentsRaw : argumentsRaw // ignore: cast_nullable_to_non_nullable

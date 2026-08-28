@@ -10,7 +10,7 @@ export 'aura_radio_list_tile.dart';
 
 /// A container managing mutually exclusive radio selections.
 class AuraRadioGroup<T> extends StatelessWidget {
-  static const double _kRadioVisualSize = 24;
+  static const double _kRadioTapTargetSize = 48;
 
   /// Creates an AuraRadioGroup widget.
   const AuraRadioGroup({
@@ -58,7 +58,10 @@ class AuraRadioGroup<T> extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          label,
+          DefaultTextStyle.merge(
+            style: TextStyle(color: context.auraColors.onSurface),
+            child: label,
+          ),
           const AuraSizedBox(height: .sm),
           optionsWidget,
         ],
@@ -140,45 +143,60 @@ class _AuraRadioOption<T> extends StatelessWidget {
     final onTap = onChanged == null || option.disabled
         ? null
         : () => onChanged(option.value);
+    final labelWidget = DefaultTextStyle.merge(
+      style: TextStyle(color: context.auraColors.onSurface),
+      child: option.label,
+    );
     final row = Row(
       mainAxisSize: shrinkWrap ? MainAxisSize.min : MainAxisSize.max,
       children: [
-        AuraRadio<T>(
-          value: option.value,
-          groupValue: groupValue,
-          onChanged: onChanged,
-          tint: tint,
-          disabled: option.disabled,
+        ExcludeSemantics(
+          child: AuraRadio<T>(
+            value: option.value,
+            groupValue: groupValue,
+            onChanged: onChanged,
+            tint: tint,
+            disabled: option.disabled,
+            semanticLabel: option.semanticLabel,
+          ),
         ),
         const AuraSizedBox(width: .sm),
-        Flexible(child: option.label),
+        if (shrinkWrap) labelWidget else Flexible(child: labelWidget),
       ],
     );
 
-    if (shrinkWrap) {
-      return GestureDetector(
+    final interactiveRow = Semantics(
+      excludeSemantics: true,
+      label: option.semanticLabel ?? 'Radio button',
+      enabled: onTap != null,
+      checked: option.value == groupValue,
+      inMutuallyExclusiveGroup: true,
+      onTap: onTap,
+      child: GestureDetector(
         child: row,
         onTap: onTap,
+        excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
-      );
-    }
+      ),
+    );
+
+    if (shrinkWrap) return interactiveRow;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          child: row,
-          onTap: onTap,
-          behavior: HitTestBehavior.opaque,
-        ),
+        interactiveRow,
         if (option.subtitle != null)
           Padding(
-            padding: EdgeInsets.only(
-              left:
-                  AuraRadioGroup._kRadioVisualSize +
+            padding: EdgeInsetsDirectional.only(
+              start:
+                  AuraRadioGroup._kRadioTapTargetSize +
                   context.auraTheme.fromSpacing(.sm),
             ),
-            child: option.subtitle,
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: context.auraColors.onSurfaceVariant),
+              child: option.subtitle!,
+            ),
           ),
       ],
     );

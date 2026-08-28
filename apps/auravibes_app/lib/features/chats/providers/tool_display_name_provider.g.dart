@@ -12,6 +12,8 @@ part of 'tool_display_name_provider.dart';
 ///
 /// For MCP tools, fetches the original server name from the database.
 /// For built-in tools, formats the tool identifier.
+/// Callers may pass a presentation-only effective target while retaining the
+/// original tool-call identity for approval actions.
 /// Uses Riverpod's family caching to avoid repeated lookups.
 
 @ProviderFor(toolDisplayName)
@@ -21,6 +23,8 @@ final toolDisplayNameProvider = ToolDisplayNameFamily._();
 ///
 /// For MCP tools, fetches the original server name from the database.
 /// For built-in tools, formats the tool identifier.
+/// Callers may pass a presentation-only effective target while retaining the
+/// original tool-call identity for approval actions.
 /// Uses Riverpod's family caching to avoid repeated lookups.
 
 final class ToolDisplayNameProvider
@@ -30,6 +34,8 @@ final class ToolDisplayNameProvider
   ///
   /// For MCP tools, fetches the original server name from the database.
   /// For built-in tools, formats the tool identifier.
+  /// Callers may pass a presentation-only effective target while retaining the
+  /// original tool-call identity for approval actions.
   /// Uses Riverpod's family caching to avoid repeated lookups.
   ToolDisplayNameProvider._({
     required ToolDisplayNameFamily super.from,
@@ -74,12 +80,14 @@ final class ToolDisplayNameProvider
   }
 }
 
-String _$toolDisplayNameHash() => r'7a7d088a9c67007baed1882042a2e43632297c85';
+String _$toolDisplayNameHash() => r'a2d60f753622038ffd5b28a489439538de6577c5';
 
 /// Provides a human-friendly display name for a tool composite ID.
 ///
 /// For MCP tools, fetches the original server name from the database.
 /// For built-in tools, formats the tool identifier.
+/// Callers may pass a presentation-only effective target while retaining the
+/// original tool-call identity for approval actions.
 /// Uses Riverpod's family caching to avoid repeated lookups.
 
 final class ToolDisplayNameFamily extends $Family
@@ -97,6 +105,8 @@ final class ToolDisplayNameFamily extends $Family
   ///
   /// For MCP tools, fetches the original server name from the database.
   /// For built-in tools, formats the tool identifier.
+  /// Callers may pass a presentation-only effective target while retaining the
+  /// original tool-call identity for approval actions.
   /// Uses Riverpod's family caching to avoid repeated lookups.
 
   ToolDisplayNameProvider call(String workspaceId, String compositeToolId) =>

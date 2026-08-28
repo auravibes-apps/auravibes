@@ -13,7 +13,9 @@ class AuraLoadingOverlay extends StatelessWidget {
     this.message,
     this.backgroundColor,
     this.spinnerSize = AuraSpinnerSize.large,
+    this.spinnerTint,
     this.spinnerColor,
+    this.semanticLabel,
   });
 
   /// Whether the loading overlay is visible.
@@ -31,8 +33,14 @@ class AuraLoadingOverlay extends StatelessWidget {
   /// The size of the loading spinner.
   final AuraSpinnerSize spinnerSize;
 
-  /// The color of the loading spinner.
+  /// The tint of the spinner.
+  final AuraTint? spinnerTint;
+
+  /// The tint of the loading spinner.
   final Color? spinnerColor;
+
+  /// A semantic label announced while loading.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -44,38 +52,51 @@ class AuraLoadingOverlay extends StatelessWidget {
     final auraTheme = context.auraTheme;
     final typography = auraTheme.typography;
     final message = this.message;
-    final overlay = ColoredBox(
-      color: backgroundColor ?? auraColors.scrim,
-      child: Center(
-        child: Container(
-          padding: EdgeInsets.all(auraTheme.fromSpacing(.xl)),
-          decoration: BoxDecoration(
-            color: auraColors.surface,
-            borderRadius: BorderRadius.all(
-              Radius.circular(auraTheme.fromBorderRadius(.lg)),
+    final overlay = Semantics(
+      container: true,
+      liveRegion: true,
+      label: semanticLabel ?? message ?? 'Loading',
+      child: ColoredBox(
+        color: backgroundColor ?? auraColors.scrim,
+        child: Center(
+          child: Container(
+            padding: EdgeInsets.all(auraTheme.fromSpacing(.xl)),
+            decoration: BoxDecoration(
+              color: auraColors.surface,
+              borderRadius: BorderRadius.all(
+                Radius.circular(auraTheme.fromBorderRadius(.lg)),
+              ),
+              boxShadow: const [DesignShadows.lg],
             ),
-            boxShadow: const [DesignShadows.lg],
-          ),
-          child: message != null
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AuraSpinner(size: spinnerSize, color: spinnerColor),
-                    SizedBox(height: auraTheme.fromSpacing(.md)),
-                    Text(
-                      message,
-                      style: TextStyle(
-                        color: auraColors.onSurfaceVariant,
-                        fontSize: typography.fontSizeLg,
-                        fontWeight: typography.fontWeightRegular,
-                        fontFamily: typography.bodyFontFamily,
+            child: message != null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AuraSpinner(
+                        size: spinnerSize,
+                        tint: spinnerTint,
+                        color: spinnerColor,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                )
-              : AuraSpinner(size: spinnerSize, color: spinnerColor),
+                      SizedBox(height: auraTheme.fromSpacing(.md)),
+                      Text(
+                        message,
+                        style: TextStyle(
+                          color: auraColors.onSurfaceVariant,
+                          fontSize: typography.fontSizeLg,
+                          fontWeight: typography.fontWeightRegular,
+                          fontFamily: typography.bodyFontFamily,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  )
+                : AuraSpinner(
+                    size: spinnerSize,
+                    tint: spinnerTint,
+                    color: spinnerColor,
+                  ),
+          ),
         ),
       ),
     );

@@ -16,6 +16,8 @@ class AuraImage extends StatelessWidget {
     super.key,
     this.fit = BoxFit.fill,
     this.semanticLabel,
+    this.imageProvider,
+    this.errorSemanticLabel = 'Image failed to load',
   });
 
   /// The URL of the image to display.
@@ -27,11 +29,17 @@ class AuraImage extends StatelessWidget {
   /// Accessibility text for the image.
   final String? semanticLabel;
 
+  /// Optional local image provider used instead of [url].
+  final ImageProvider<Object>? imageProvider;
+
+  /// Accessibility text for the error state.
+  final String? errorSemanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final semanticLabel = this.semanticLabel;
-    final image = Image.network(
-      url,
+    final image = Image(
+      image: imageProvider ?? NetworkImage(url),
       frameBuilder: _frameBuilder,
       errorBuilder: _errorBuilder,
       semanticLabel: semanticLabel,
@@ -61,12 +69,17 @@ class AuraImage extends StatelessWidget {
   }
 
   Widget _errorBuilder(BuildContext context, Object _, StackTrace? _) {
-    return ColoredBox(
-      color: context.auraColors.surfaceVariant,
-      child: const Center(
-        child: AuraPadding(
-          child: AuraIcon(_brokenImageIcon, tint: AuraTint.error),
-          padding: AuraEdgeInsetsGeometry.medium,
+    return Semantics(
+      container: true,
+      image: true,
+      label: errorSemanticLabel,
+      child: ColoredBox(
+        color: context.auraColors.surfaceVariant,
+        child: const Center(
+          child: AuraPadding(
+            child: AuraIcon(_brokenImageIcon, tint: AuraTint.error),
+            padding: AuraEdgeInsetsGeometry.medium,
+          ),
         ),
       ),
     );

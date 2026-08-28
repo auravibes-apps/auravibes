@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 export 'aura_loading_overlay.dart';
@@ -9,6 +10,7 @@ class AuraSpinner extends StatelessWidget {
   const AuraSpinner({
     super.key,
     this.size = AuraSpinnerSize.medium,
+    this.tint,
     this.color,
     this.strokeWidth,
     this.semanticLabel,
@@ -17,7 +19,10 @@ class AuraSpinner extends StatelessWidget {
   /// The size of the spinner.
   final AuraSpinnerSize size;
 
-  /// The color of the spinner. If null, uses the primary color.
+  /// The tint of the spinner. If null, uses the primary tint.
+  final AuraTint? tint;
+
+  /// Legacy explicit color override. Prefer [tint] for theme-aware colors.
   final Color? color;
 
   /// The width of the spinner stroke. If null, uses a default based on size.
@@ -33,7 +38,7 @@ class AuraSpinner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final spinnerColor = color ?? auraColors.primary;
+    final spinnerColor = color ?? auraColors.colorFor(tint ?? AuraTint.primary);
 
     return SizedBox(
       width: _getSpinnerSize(),

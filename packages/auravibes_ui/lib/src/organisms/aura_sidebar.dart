@@ -68,7 +68,9 @@ class AuraSidebar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.auraColors.surface,
-        border: Border(right: BorderSide(color: context.auraColors.outline)),
+        border: BorderDirectional(
+          end: BorderSide(color: context.auraColors.outline),
+        ),
         boxShadow: [
           BoxShadow(
             color: context.auraColors.shadow.withValues(alpha: _shadowAlpha),
@@ -82,7 +84,7 @@ class AuraSidebar extends StatelessWidget {
         children: [
           if (header != null) header else const AuraSizedBox(height: .lg),
           Expanded(child: ListView(children: [navigation, ?middleSection])),
-          SafeArea(top: false, right: false, child: footerNavigation),
+          SafeArea(top: false, child: footerNavigation),
 
           if (footer != null)
             Padding(
@@ -104,6 +106,7 @@ class AuraSidebar extends StatelessWidget {
         icon: item.icon,
         onTap: () => onNavigationTap(index),
         selected: index == selectedIndex,
+        semanticLabel: item.semanticLabel ?? 'Navigation item',
       ),
       padding: const .symmetric(horizontal: .sm, vertical: .xs),
     );
@@ -120,6 +123,7 @@ class AuraNavigationData {
     required this.icon,
     required this.label,
     this.footer = false,
+    this.semanticLabel,
   });
 
   /// Icon to display for the navigation item.
@@ -130,6 +134,9 @@ class AuraNavigationData {
 
   /// Whether this item belongs to the footer section.
   final bool footer;
+
+  /// An accessibility label for this navigation item.
+  final String? semanticLabel;
 }
 
 class _AuraSidebarItem extends StatelessWidget {
@@ -138,6 +145,7 @@ class _AuraSidebarItem extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
+    required this.semanticLabel,
     this.selected = false,
   });
 
@@ -148,6 +156,8 @@ class _AuraSidebarItem extends StatelessWidget {
   final bool selected;
 
   final void Function() onTap;
+
+  final String semanticLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -171,6 +181,7 @@ class _AuraSidebarItem extends StatelessWidget {
         ),
       ),
       onPressed: onTap,
+      semanticLabel: semanticLabel,
     );
   }
 }

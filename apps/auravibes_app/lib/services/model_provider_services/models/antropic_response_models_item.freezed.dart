@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
+// ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'antropic_response_models_item.dart';
@@ -9,7 +9,6 @@ part of 'antropic_response_models_item.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -67,7 +66,7 @@ class _$AntropicResponseModelsItemCopyWithImpl<$Res>
 /// Create a copy of AntropicResponseModelsItem
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? displayName = null,Object? id = null,Object? type = null,Object? createdAt = null,}) {
-  return _then(AntropicResponseModelsItem(
+  return _then(_self.copyWith(
 displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
@@ -337,7 +336,7 @@ class _$AntropicResponseModelsErrorMessageCopyWithImpl<$Res>
 /// Create a copy of AntropicResponseModelsErrorMessage
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? type = null,}) {
-  return _then(AntropicResponseModelsErrorMessage(
+  return _then(_self.copyWith(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String,
@@ -715,7 +714,7 @@ return error(_that.error,_that.requestId,_that.type);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)
 class AntropicResponseModelsData implements AntropicResponseModels {
-  const AntropicResponseModelsData({required  List<AntropicResponseModelsItem> data, required this.firstId, required this.hasMore, required this.lastId}): _data = data;
+  const AntropicResponseModelsData({required final  List<AntropicResponseModelsItem> data, required this.firstId, required this.hasMore, required this.lastId}): _data = data;
   
 
  final  List<AntropicResponseModelsItem> _data;

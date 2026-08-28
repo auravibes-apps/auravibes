@@ -63,6 +63,23 @@ void main() {
       expect(changedValue, initialValue);
     });
 
+    testWidgets('uses a fixed clock for an empty picker', (tester) async {
+      final fixedNow = DateTime(2026, 8, 28, 14, 30);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: AuraDateTimeInput(now: () => fixedNow)),
+        ),
+      );
+
+      await tester.tap(find.byType(AuraDateTimeInput));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('2026-08'), findsOneWidget);
+      expect(find.text('14').last, findsOneWidget);
+      expect(find.text('30').last, findsOneWidget);
+    });
+
     testWidgets('does not propagate a cancelled selection', (tester) async {
       DateTime? changedValue;
 

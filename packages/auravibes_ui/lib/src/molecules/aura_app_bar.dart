@@ -1,4 +1,5 @@
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_text.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// App bar following the Aura design system.

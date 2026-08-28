@@ -17,7 +17,7 @@ class AuraModal extends StatefulWidget {
     required this.barrierLabel,
     super.key,
     this.barrierDismissible = true,
-    this.semanticLabel,
+    this.semanticLabel = 'Open modal',
   });
 
   /// The child that opens the modal when tapped or keyboard-activated.
@@ -66,6 +66,9 @@ class _AuraModalState extends State<AuraModal> {
         },
         mouseCursor: SystemMouseCursors.click,
         child: Semantics(
+          container: true,
+          excludeSemantics: true,
+          label: 'Open modal',
           child: widget.entryPointChild,
           enabled: true,
           button: true,

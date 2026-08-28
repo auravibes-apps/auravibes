@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
+// ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'skill_template_tool_entity.dart';
@@ -9,7 +9,6 @@ part of 'skill_template_tool_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
-// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -64,7 +63,7 @@ class _$SkillTemplateToolEntityCopyWithImpl<$Res>
 /// Create a copy of SkillTemplateToolEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? skillId = null,Object? templateType = null,Object? title = null,Object? description = null,Object? slug = null,Object? templateJson = null,Object? inputsJson = null,Object? isEnabled = null,Object? requiresCredential = null,Object? createdAt = null,Object? updatedAt = null,}) {
-  return _then(SkillTemplateToolEntity(
+  return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,skillId: null == skillId ? _self.skillId : skillId // ignore: cast_nullable_to_non_nullable
 as String,templateType: null == templateType ? _self.templateType : templateType // ignore: cast_nullable_to_non_nullable
@@ -354,7 +353,7 @@ class _$SkillTemplateToolToCreateCopyWithImpl<$Res>
 /// Create a copy of SkillTemplateToolToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? templateType = null,Object? title = null,Object? description = null,Object? templateJson = null,Object? inputsJson = null,Object? requiresCredential = null,Object? isEnabled = null,}) {
-  return _then(SkillTemplateToolToCreate(
+  return _then(_self.copyWith(
 templateType: null == templateType ? _self.templateType : templateType // ignore: cast_nullable_to_non_nullable
 as SkillTemplateToolType,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
@@ -629,7 +628,7 @@ class _$SkillTemplateToolToUpdateCopyWithImpl<$Res>
 /// Create a copy of SkillTemplateToolToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? title = freezed,Object? description = freezed,Object? templateJson = freezed,Object? inputsJson = freezed,Object? requiresCredential = freezed,Object? isEnabled = freezed,}) {
-  return _then(SkillTemplateToolToUpdate(
+  return _then(_self.copyWith(
 title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,templateJson: freezed == templateJson ? _self.templateJson : templateJson // ignore: cast_nullable_to_non_nullable

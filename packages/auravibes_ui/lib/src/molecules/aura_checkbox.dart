@@ -18,6 +18,7 @@ class AuraCheckbox extends StatelessWidget {
     this.tint,
     this.disabled = false,
     this.autofocus = false,
+    this.semanticLabel = 'Checkbox',
   });
 
   /// Whether the checkbox is selected.
@@ -35,11 +36,15 @@ class AuraCheckbox extends StatelessWidget {
   /// Whether this checkbox should request focus when built.
   final bool autofocus;
 
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
 
     return Semantics(
+      label: semanticLabel,
       child: _CheckboxInteraction(
         value: value,
         isDisabled: isDisabled,
@@ -137,16 +142,23 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
               ? SystemMouseCursors.click
               : SystemMouseCursors.forbidden,
           child: GestureDetector(
-            child: Opacity(
-              opacity: widget.isDisabled ? 0.6 : 1,
-              child: _CheckboxFocusState(
-                isFocused: _isFocused,
-                child: widget.child,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: Opacity(
+                  opacity: widget.isDisabled ? 0.6 : 1,
+                  child: _CheckboxFocusState(
+                    isFocused: _isFocused,
+                    child: widget.child,
+                  ),
+                ),
               ),
             ),
             onTap: isInteractive
                 ? () => widget.onChanged?.call(!widget.value)
                 : null,
+            excludeFromSemantics: true,
             behavior: HitTestBehavior.opaque,
           ),
         ),

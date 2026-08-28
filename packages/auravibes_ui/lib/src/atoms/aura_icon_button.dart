@@ -80,8 +80,10 @@ class AuraIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
-    final buttonSize = _getButtonSize();
+    final buttonSize = _getButtonSize().clamp(48.0, double.infinity);
     final iconSize = _getIconSize();
+    final tooltip = this.tooltip;
+    final effectiveSemanticLabel = semanticLabel ?? tooltip ?? 'Icon button';
 
     final foregroundColor = _getIconColor(auraColors);
     final iconContent =
@@ -90,7 +92,7 @@ class AuraIconButton extends StatelessWidget {
           icon ?? (throw StateError('AuraIconButton requires icon or child')),
           size: iconSize,
           color: foregroundColor,
-          semanticLabel: semanticLabel,
+          semanticLabel: effectiveSemanticLabel,
         );
 
     Widget button = SizedBox(
@@ -99,12 +101,15 @@ class AuraIconButton extends StatelessWidget {
       child: IconButton(
         iconSize: iconSize,
         padding: EdgeInsets.zero,
+        alignment: Alignment.center,
         onPressed: disabled ? null : onPressed,
         constraints: BoxConstraints(
           minWidth: buttonSize,
           minHeight: buttonSize,
         ),
         style: IconButton.styleFrom(
+          alignment: Alignment.center,
+          padding: EdgeInsets.zero,
           foregroundColor: foregroundColor,
           backgroundColor: _getBackgroundColor(auraColors),
           elevation: variant == AuraIconButtonVariant.elevated ? 2 : 0,
@@ -121,7 +126,6 @@ class AuraIconButton extends StatelessWidget {
       ),
     );
 
-    final tooltip = this.tooltip;
     if (tooltip != null) {
       button = AuraTooltip(message: tooltip, child: button);
     }

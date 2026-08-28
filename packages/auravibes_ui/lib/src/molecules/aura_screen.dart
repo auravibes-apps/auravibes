@@ -3,8 +3,11 @@
 
 import 'dart:ui';
 
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
+import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_portal/flutter_portal.dart' show Portal;
 
 export 'aura_app_bar.dart';
 
@@ -19,7 +22,7 @@ class AuraScreen extends StatelessWidget {
     super.key,
   });
 
-  /// Chilg.
+  /// The screen body.
   final Widget child;
 
   /// App bar.

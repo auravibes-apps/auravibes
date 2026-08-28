@@ -15,6 +15,8 @@ class AuraTypingIndicator extends StatefulWidget {
     this.color,
     this.showContainer = true,
     this.animationDuration = const Duration(milliseconds: 600),
+    this.manageAlignment = true,
+    this.semanticLabel = 'AI is typing',
   });
 
   /// The size of the typing indicator.
@@ -28,6 +30,12 @@ class AuraTypingIndicator extends StatefulWidget {
 
   /// The duration of the animation cycle.
   final Duration animationDuration;
+
+  /// Whether the indicator manages its chat-side placement.
+  final bool manageAlignment;
+
+  /// A semantic label announced while typing.
+  final String? semanticLabel;
 
   @override
   State<AuraTypingIndicator> createState() => _AuraTypingIndicatorState();
@@ -97,33 +105,36 @@ class _AuraTypingIndicatorState extends State<AuraTypingIndicator>
     );
 
     if (!widget.showContainer) {
-      return Semantics(child: content, label: 'AI is typing');
+      return Semantics(child: content, label: widget.semanticLabel);
     }
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: _getContainerPadding(spacing: context.auraTheme.spacing),
-        decoration: BoxDecoration(
-          color: auraColors.surfaceVariant,
-          borderRadius:
-              BorderRadius.all(
-                Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
-              ).copyWith(
-                bottomLeft: Radius.circular(
-                  context.auraTheme.fromBorderRadius(.sm),
-                ),
+    final indicator = Container(
+      padding: _getContainerPadding(spacing: context.auraTheme.spacing),
+      decoration: BoxDecoration(
+        color: auraColors.surfaceVariant,
+        borderRadius:
+            BorderRadius.all(
+              Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
+            ).copyWith(
+              bottomLeft: Radius.circular(
+                context.auraTheme.fromBorderRadius(.sm),
               ),
-          boxShadow: const [DesignShadows.sm],
-        ),
-        margin: EdgeInsets.only(
-          left: context.auraTheme.fromSpacing(.md),
-          right: context.auraTheme.fromSpacing(.xl),
-          bottom: context.auraTheme.fromSpacing(.sm),
-        ),
-        child: Semantics(child: content, label: 'AI is typing'),
+            ),
+        boxShadow: const [DesignShadows.sm],
       ),
+      margin: widget.manageAlignment
+          ? EdgeInsetsDirectional.only(
+              start: context.auraTheme.fromSpacing(.md),
+              end: context.auraTheme.fromSpacing(.xl),
+              bottom: context.auraTheme.fromSpacing(.sm),
+            )
+          : EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.sm)),
+      child: Semantics(child: content, label: widget.semanticLabel),
     );
+
+    if (!widget.manageAlignment) return indicator;
+
+    return Align(alignment: AlignmentDirectional.centerStart, child: indicator);
   }
 
   Animation<double> _buildDotAnimation(

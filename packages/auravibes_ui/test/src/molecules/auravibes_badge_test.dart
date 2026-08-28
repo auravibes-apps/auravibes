@@ -35,6 +35,31 @@ void main() {
       expect(decoration.color, DesignColors.primaryBase);
     });
 
+    testWidgets('uses readable foreground for text in dark theme', (
+      tester,
+    ) async {
+      TextStyle? contentStyle;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraBadge.text(
+              child: Builder(
+                builder: (context) {
+                  contentStyle = DefaultTextStyle.of(context).style;
+
+                  return const Text('Dark');
+                },
+              ),
+            ),
+          ),
+          theme: ThemeData(extensions: [AuraTheme.dark]),
+        ),
+      );
+
+      expect(contentStyle?.color, AuraTheme.dark.colors.onPrimary);
+    });
+
     testWidgets('applies secondary variant styling correctly', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

@@ -538,7 +538,7 @@ FontWeight _lerpFontWeight(FontWeight a, FontWeight b, double t) {
 /// Color scheme that adapts to light and dark themes.
 @immutable
 class AuraColorScheme {
-  static const _lightnessLight = 0.6;
+  static const _lightnessLight = 0.45;
   static const _lightnessDark = 0.4;
   static const _standardChroma = 0.2;
 
@@ -641,25 +641,25 @@ class AuraColorScheme {
         lightness: _lightnessDark,
         chroma: _standardChroma,
       ).toColor(),
-      onError = Colors.black,
+      onError = Colors.white,
       warning = OKLCHColor(
         hue: HueColorValues.warning,
         lightness: _lightnessDark,
         chroma: _standardChroma,
       ).toColor(),
-      onWarning = Colors.black,
+      onWarning = Colors.white,
       success = OKLCHColor(
         hue: HueColorValues.success,
         lightness: _lightnessDark,
         chroma: _standardChroma,
       ).toColor(),
-      onSuccess = Colors.black,
+      onSuccess = Colors.white,
       info = OKLCHColor(
         hue: HueColorValues.info,
         lightness: _lightnessDark,
         chroma: _standardChroma,
       ).toColor(),
-      onInfo = Colors.black,
+      onInfo = Colors.white,
       outline = DesignColors.neutral600,
       outlineVariant = DesignColors.neutral700,
       shadow = const Color(0xFF000000),

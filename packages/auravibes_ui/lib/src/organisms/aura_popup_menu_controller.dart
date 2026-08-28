@@ -1,4 +1,5 @@
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_tile.dart';
+import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
@@ -156,56 +157,57 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      child: PortalTarget(
-        visible: _visible,
-        portalFollower: GestureDetector(
-          onTap: close,
-          behavior: HitTestBehavior.opaque,
-        ),
-        child: PortalTarget(
-          visible: _visible,
-          anchor: const Aligned(
-            follower: .topCenter,
-            target: .bottomCenter,
-            portal: .bottomCenter,
-            shiftToWithinBound: .new(x: true, y: true),
-          ),
-          portalFollower: TapRegion(
-            child: FocusScope(
-              node: _requiredMenuFocusScopeNode,
-              child: SizedBox(
-                width: 200,
-                child: AuraCard(
-                  child: _AuraPopupMenuCloseScope(
-                    close: close,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: .start,
-                      children: widget.items
-                          .map((e) => Builder(builder: e.build))
-                          .toList(),
-                    ),
-                  ),
-                  padding: .none,
-                  style: AuraCardStyle.border,
+    return PortalTarget(
+      visible: _visible,
+      anchor: const Aligned(
+        follower: .topCenter,
+        target: .bottomCenter,
+        portal: .bottomCenter,
+        shiftToWithinBound: .new(x: true, y: true),
+      ),
+      portalFollower: TapRegion(
+        child: FocusScope(
+          node: _requiredMenuFocusScopeNode,
+          child: SizedBox(
+            width: 200,
+            child: AuraCard(
+              child: _AuraPopupMenuCloseScope(
+                close: close,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: .start,
+                  children: widget.items
+                      .map((e) => Builder(builder: e.build))
+                      .toList(),
                 ),
               ),
+              padding: .none,
+              style: AuraCardStyle.border,
             ),
-            onTapOutside: (_) => close(),
-            groupId: this,
           ),
-          child: TapRegion(child: widget.child, groupId: this),
         ),
+        onTapOutside: (_) => close(),
+        groupId: this,
       ),
-      focusNode: _requiredFocusNode,
-      onKeyEvent: _handleMenuKeyEvent,
-      skipTraversal: true,
-      descendantsAreFocusable: true,
+      child: Focus(
+        child: TapRegion(child: widget.child, groupId: this),
+        focusNode: _requiredFocusNode,
+        onKeyEvent: _handleMenuKeyEvent,
+        descendantsAreFocusable: false,
+      ),
     );
   }
 
-  KeyEventResult _handleMenuKeyEvent(FocusNode _, KeyEvent event) {
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        node == _requiredFocusNode &&
+        (event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.space)) {
+      toggle();
+
+      return KeyEventResult.handled;
+    }
+
     if (event is KeyDownEvent &&
         event.logicalKey == LogicalKeyboardKey.escape &&
         _visible) {
@@ -310,6 +312,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
       variant: variant,
       leading: leading,
       trailing: trailing,
+      semanticLabel: 'Menu item',
     );
   }
 }

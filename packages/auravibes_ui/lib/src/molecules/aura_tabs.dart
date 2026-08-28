@@ -251,7 +251,7 @@ class _AuraTabBar extends StatelessWidget {
             ],
           ),
         ),
-        const AuraDivider(height: 1, thickness: DesignBorderWidth.thin),
+        const AuraDivider(thickness: DesignBorderWidth.thin),
       ],
     );
   }
@@ -262,49 +262,60 @@ class _AuraTabBar extends StatelessWidget {
     final borderRadius = context.auraTheme.fromBorderRadius(.md);
     final title = titles[index];
 
-    return Semantics(
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          AuraPressable(
-            child: AuraSizedBox(
-              height: .xl2,
-              child: AuraPadding(
-                child: Center(
-                  child: AuraText(
-                    child: title,
-                    style: AuraTextStyle.bodySmall,
-                    tint: isSelected ? AuraTint.primary : null,
+    final tab = Semantics(
+      excludeSemantics: true,
+      child: IntrinsicWidth(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AuraPressable(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 48),
+                  child: AuraSizedBox(
+                    height: .xl2,
+                    child: AuraPadding(
+                      child: Center(
+                        child: AuraText(
+                          child: title,
+                          style: AuraTextStyle.bodySmall,
+                          tint: isSelected ? AuraTint.primary : null,
+                        ),
+                      ),
+                      padding: const AuraEdgeInsetsGeometry.horizontal(.md),
+                    ),
                   ),
                 ),
-                padding: const AuraEdgeInsetsGeometry.horizontal(.md),
+                color: auraColors.primary,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? auraColors.primary.withValues(alpha: 0.08)
+                      : DesignColors.transparent,
+                  borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+                ),
+                onPressed: () => onChanged(index),
+                semanticLabel:
+                    semanticLabels[index] ?? _textSemanticLabel(title) ?? 'Tab',
               ),
-            ),
-            color: auraColors.primary,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? auraColors.primary.withValues(alpha: 0.08)
-                  : DesignColors.transparent,
-              borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
-            ),
-            onPressed: () => onChanged(index),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: IgnorePointer(
-              child: AnimatedContainer(
-                key: ValueKey('aura-tabs-indicator-$index'),
-                color: isSelected
-                    ? auraColors.primary
-                    : DesignColors.transparent,
-                height: DesignBorderWidth.medium,
-                duration: context.auraTheme.animation.normal,
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: IgnorePointer(
+                  child: AnimatedContainer(
+                    key: ValueKey('aura-tabs-indicator-$index'),
+                    color: isSelected
+                        ? auraColors.primary
+                        : DesignColors.transparent,
+                    height: DesignBorderWidth.medium,
+                    duration: context.auraTheme.animation.normal,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
       container: true,
       selected: isSelected,
@@ -312,6 +323,8 @@ class _AuraTabBar extends StatelessWidget {
       onTap: () => onChanged(index),
       role: SemanticsRole.tab,
     );
+
+    return tab;
   }
 
   String? _textSemanticLabel(Widget title) {

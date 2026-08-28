@@ -61,6 +61,20 @@ void main() {
       expect(submittedValue, 'Submitted text');
     });
 
+    testWidgets('enforces the configured maximum length', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: AuraInput(maxLength: 5))),
+      );
+
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.maxLength, 5);
+
+      await tester.enterText(find.byType(TextFormField), '123456789');
+
+      expect(find.text('12345'), findsOneWidget);
+      expect(find.text('123456789'), findsNothing);
+    });
+
     testWidgets('displays helper text correctly', (tester) async {
       const helperText = 'This is helper text';
 

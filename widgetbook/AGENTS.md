@@ -9,8 +9,8 @@
 ## Stories
 
 - Add stories under `lib/aura_ui/` for Aura UI components.
-- Use `@widgetbook.UseCase` for component examples.
-- Use knobs for component inputs that designers or reviewers need to vary.
+- Use `Meta` and typed `Arg` values for component examples.
+- Keep story files named `*.stories.dart` with generated `*.stories.g.dart` parts.
 - Keep callbacks as intentional no-ops unless interaction state is the story being demonstrated.
 - Prefer small top-level helpers when they keep a story readable.
 - Do not duplicate business-specific copy from the app; use neutral component example text.
@@ -18,7 +18,7 @@
 ## Theme And Generated Files
 
 - Keep Widgetbook themes aligned with `AuraTheme.light` and `AuraTheme.dark`.
-- Do not hand-edit `lib/main.directories.g.dart`.
+- Do not hand-edit `lib/components.g.dart` or story generated parts.
 - After adding, renaming, or removing stories, run the Widgetbook generator through the repo generation command: `fvm dart run melos run generate`.
 
 ## Verification

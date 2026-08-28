@@ -12,8 +12,10 @@ class AuraMessageStatus extends StatefulWidget {
     required this.status,
     super.key,
     this.size = AuraMessageStatusSize.medium,
+    this.tint,
     this.color,
     this.showAnimation = true,
+    this.semanticLabel,
   });
 
   /// The current message status.
@@ -22,12 +24,17 @@ class AuraMessageStatus extends StatefulWidget {
   /// The size of the status indicator.
   final AuraMessageStatusSize size;
 
-  /// Custom color for the status indicator. If null, uses status-appropriate
-  /// colors.
+  /// Tint for the status indicator. If null, uses status-appropriate colors.
+  final AuraTint? tint;
+
+  /// Legacy explicit color override. Prefer [tint] for theme-aware colors.
   final Color? color;
 
   /// Whether to show animations for status changes.
   final bool showAnimation;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 
   @override
   State<AuraMessageStatus> createState() => _AuraMessageStatusState();
@@ -71,7 +78,11 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final icon = _getStatusIcon();
-    final color = widget.color ?? _getStatusColor(auraColors);
+    final color =
+        widget.color ??
+        (widget.tint == null
+            ? _getStatusColor(auraColors)
+            : auraColors.colorFor(widget.tint!));
 
     Widget statusIcon = Icon(
       icon,
@@ -196,6 +207,9 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   }
 
   String _getSemanticLabel() {
+    final semanticLabel = widget.semanticLabel;
+    if (semanticLabel != null) return semanticLabel;
+
     return switch (widget.status) {
       AuraMessageDeliveryStatus.sending => 'Message is being sent',
       AuraMessageDeliveryStatus.unfinished =>

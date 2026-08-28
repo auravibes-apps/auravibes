@@ -174,10 +174,13 @@ abstract final class AuraSnackBars {
     final backgroundColor = _getBackgroundColor(variant, colors);
     final foregroundColor = _getForegroundColor(variant, colors);
 
-    // Validate duration is within bounds (1-60 seconds).
-    final validatedDuration = Duration(
-      seconds: duration.inSeconds.clamp(1, 60),
-    );
+    // Validate duration is within bounds (1-60 seconds) without discarding
+    // subsecond precision.
+    final validatedDuration = duration < const Duration(seconds: 1)
+        ? const Duration(seconds: 1)
+        : duration > const Duration(seconds: 60)
+        ? const Duration(seconds: 60)
+        : duration;
 
     return host.show(
       backgroundColor: backgroundColor,

@@ -50,6 +50,41 @@ void main() {
       expect(find.text('Test message'), findsOneWidget);
     });
 
+    testWidgets('preserves subsecond duration while enforcing bounds', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _SnackBarTestApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                return ElevatedButton(
+                  onPressed: () {
+                    final _ = AuraSnackBars.show(
+                      context: context,
+                      content: const Text('Timed message'),
+                      duration: const Duration(milliseconds: 1500),
+                    );
+                  },
+                  child: const Text('Show'),
+                );
+              },
+            ),
+          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      await tester.tap(find.text('Show'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1100));
+      expect(find.text('Timed message'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      expect(find.text('Timed message'), findsNothing);
+    });
+
     testWidgets('displays snackbar with success variant', (tester) async {
       await tester.pumpWidget(
         _SnackBarTestApp(

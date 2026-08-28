@@ -40,7 +40,7 @@ dependencies:
   genkit_anthropic: ^0.2.11
   genkit_openai: ^0.3.7
   go_router: ^17.3.0
-  hooks_riverpod: 3.4.2
+  hooks_riverpod: 3.3.2
   http: ^1.6.0
   image_picker: ^1.2.3
   intl: ^0.20.2
@@ -55,8 +55,8 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.6
   record: ^7.1.1
-  riverpod: 3.4.2
-  riverpod_annotation: 4.0.6
+  riverpod: 3.3.2
+  riverpod_annotation: 4.0.3
   rxdart: ^0.28.0
   schemantic: ^0.2.0
   serverpod_auth_core_client: 4.0.0-beta.0
@@ -69,17 +69,17 @@ dev_dependencies:
   # Code generation for JSON serialization
   build_runner: ^2.15.0
   # Code generation for Drift
-  drift_dev: ^2.34.0
+  drift_dev: 2.34.0
   flutter_flavorizr: ^2.5.0
   flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
-  freezed: 4.0.0-dev.3
+  freezed: 3.2.6-dev.1
   go_router_builder: ^4.3.0
   json_serializable: ^6.14.0
   mocktail: ^1.0.4
   nock: ^1.2.3
-  riverpod_generator: 4.0.8
+  riverpod_generator: 4.0.4
   sqlite3: ^3.3.4
 dependency_overrides:
   # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)

@@ -15,6 +15,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
     this.subtitle,
     this.tint,
     this.disabled = false,
+    this.semanticLabel = 'Radio button',
   });
 
   /// The value represented by this tile.
@@ -38,61 +39,79 @@ class AuraRadioListTile<T> extends StatelessWidget {
   /// Whether the tile is disabled.
   final bool disabled;
 
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
     final subtitle = this.subtitle;
 
-    return MouseRegion(
-      cursor: isDisabled
-          ? SystemMouseCursors.forbidden
-          : SystemMouseCursors.click,
-      child: GestureDetector(
-        child: Opacity(
-          opacity: isDisabled ? 0.6 : 1.0,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AuraRadio<T>(
-                value: value,
-                groupValue: groupValue,
-                onChanged: isDisabled ? null : onChanged,
-                tint: tint,
-                disabled: isDisabled,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DefaultTextStyle(
-                      style:
-                          Theme.of(context).textTheme.bodyMedium ??
-                          const TextStyle(fontSize: 16),
-                      child: title,
-                    ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
+    final onTap = isDisabled ? null : () => onChanged?.call(value);
+
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: semanticLabel ?? 'Radio button',
+      enabled: !isDisabled,
+      checked: value == groupValue,
+      inMutuallyExclusiveGroup: true,
+      onTap: onTap,
+      child: MouseRegion(
+        cursor: isDisabled
+            ? SystemMouseCursors.forbidden
+            : SystemMouseCursors.click,
+        child: GestureDetector(
+          excludeFromSemantics: true,
+          behavior: HitTestBehavior.opaque,
+          child: Opacity(
+            opacity: isDisabled ? 0.6 : 1.0,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(
+                  child: AuraRadio<T>(
+                    value: value,
+                    groupValue: groupValue,
+                    onChanged: isDisabled ? null : onChanged,
+                    tint: tint,
+                    disabled: isDisabled,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       DefaultTextStyle(
                         style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: context.auraColors.onSurfaceVariant,
-                            ) ??
-                            TextStyle(
-                              color: context.auraColors.onSurfaceVariant,
-                              fontSize: 14,
-                            ),
-                        child: subtitle,
+                            Theme.of(context).textTheme.bodyMedium ??
+                            const TextStyle(fontSize: 16),
+                        child: title,
                       ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        DefaultTextStyle(
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: context.auraColors.onSurfaceVariant,
+                              ) ??
+                              TextStyle(
+                                color: context.auraColors.onSurfaceVariant,
+                                fontSize: 14,
+                              ),
+                          child: subtitle,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          onTap: onTap,
         ),
-        onTap: isDisabled ? null : () => onChanged?.call(value),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/widgets.dart';
 
 /// A reusable Aura pressable surface with pointer and keyboard feedback.
@@ -16,6 +17,7 @@ class AuraPressable extends StatefulWidget {
     this.onFocusChange,
     this.clipBehavior = Clip.hardEdge,
     this.padding,
+    this.semanticLabel,
   });
 
   /// Child.
@@ -44,6 +46,9 @@ class AuraPressable extends StatefulWidget {
 
   /// Optional padding to apply around the pressable widget.
   final AuraEdgeInsetsGeometry? padding;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 
   @override
   AuraPressableState createState() => AuraPressableState();
@@ -90,51 +95,61 @@ class AuraPressableState extends State<AuraPressable> {
       );
     }
 
-    return FocusableActionDetector(
-      actions: {
-        ActivateIntent: CallbackAction<ActivateIntent>(
-          onInvoke: (_) {
-            widget.onPressed?.call();
+    return Semantics(
+      label: widget.semanticLabel ?? 'Button',
+      button: true,
+      enabled: true,
+      onTap: widget.onPressed,
+      child: FocusableActionDetector(
+        actions: {
+          ActivateIntent: CallbackAction<ActivateIntent>(
+            onInvoke: (_) {
+              widget.onPressed?.call();
 
-            return null;
-          },
-        ),
-      },
-      onShowFocusHighlight: (value) => setState(() => _focused = value),
-      onShowHoverHighlight: (value) => setState(() => _hovering = value),
-      onFocusChange: _onFocusChange,
-      mouseCursor: SystemMouseCursors.click,
-      child: CustomPaint(
-        foregroundPainter: _focused
-            ? _AuraPressableFocusRingPainter(
-                color: auraColors.primary,
-                decoration: widget.decoration,
-              )
-            : null,
-        child: GestureDetector(
-          child: AuraPadding(
-            child: Container(
-              decoration: widget.decoration,
-              child: AnimatedContainer(
-                color: stateLayerColor.withValues(alpha: alpha),
-                child: widget.child,
-                duration: auraTheme.animation.normal,
-              ),
-              clipBehavior: widget.decoration == null
-                  ? Clip.none
-                  : widget.clipBehavior ?? Clip.none,
-            ),
-            padding: widget.padding ?? .none,
+              return null;
+            },
           ),
-          onTapDown: (_) => _onPressed(),
-          onTapUp: (_) {
-            _timer?.cancel();
-            _timer = Timer(auraTheme.animation.normal, _onExitPressed);
-          },
-          onTap: widget.onPressed,
-          onTapCancel: _onExitPressed,
-          onLongPress: widget.onLongPress,
-          behavior: HitTestBehavior.translucent,
+        },
+        onShowFocusHighlight: (value) => setState(() => _focused = value),
+        onShowHoverHighlight: (value) => setState(() => _hovering = value),
+        onFocusChange: _onFocusChange,
+        mouseCursor: SystemMouseCursors.click,
+        child: CustomPaint(
+          foregroundPainter: _focused
+              ? _AuraPressableFocusRingPainter(
+                  color: auraColors.primary,
+                  decoration: widget.decoration,
+                )
+              : null,
+          child: GestureDetector(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              child: AuraPadding(
+                child: Container(
+                  decoration: widget.decoration,
+                  child: AnimatedContainer(
+                    color: stateLayerColor.withValues(alpha: alpha),
+                    child: widget.child,
+                    duration: auraTheme.animation.normal,
+                  ),
+                  clipBehavior: widget.decoration == null
+                      ? Clip.none
+                      : widget.clipBehavior ?? Clip.none,
+                ),
+                padding: widget.padding ?? .none,
+              ),
+            ),
+            onTapDown: (_) => _onPressed(),
+            onTapUp: (_) {
+              _timer?.cancel();
+              _timer = Timer(auraTheme.animation.normal, _onExitPressed);
+            },
+            onTap: widget.onPressed,
+            onTapCancel: _onExitPressed,
+            onLongPress: widget.onLongPress,
+            excludeFromSemantics: true,
+            behavior: HitTestBehavior.translucent,
+          ),
         ),
       ),
     );

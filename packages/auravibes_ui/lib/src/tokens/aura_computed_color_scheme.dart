@@ -79,10 +79,10 @@ class AuraComputedColorScheme extends AuraColorScheme {
     final background = neutral(0.94, 0.15);
     final outline = neutral(0.65, 0.45);
     const outlineVariantLightness = 0.8;
-    const outlineVariantChroma = 0.3;
+    const outlineVariantDarkLightness = 0.3;
     final outlineVariant = neutral(
       outlineVariantLightness,
-      outlineVariantChroma,
+      outlineVariantDarkLightness,
     );
 
     const semanticLightness = 0.3;

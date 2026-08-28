@@ -207,7 +207,6 @@ class _AuraInputState extends State<AuraInput> {
                       isDense: false,
                       contentPadding: EdgeInsets.zero,
                       border: InputBorder.none,
-                      semanticCounterText: widget.semanticLabel,
                     ),
                     keyboardType: widget.keyboardType,
                     textInputAction: widget.textInputAction,

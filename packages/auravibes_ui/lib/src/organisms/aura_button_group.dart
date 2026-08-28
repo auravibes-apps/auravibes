@@ -247,41 +247,60 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
       cursor: widget.disabled || widget.isLoading
           ? SystemMouseCursors.basic
           : SystemMouseCursors.click,
-      child: GestureDetector(
-        child: AnimatedContainer(
-          padding: padding,
-          decoration: BoxDecoration(color: backgroundColor, border: border),
-          child: widget.isLoading
-              ? AuraLoadingCircle(
-                  tint: AuraTint.primary,
-                  size: _getLoadingSize(),
-                  itemBuilder: (context, _) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: _getForegroundColor(),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                )
-              : DefaultTextStyle(
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontSize: _getFontSize(),
-                    fontWeight: widget.auraTheme.typography.fontWeightMedium,
-                  ),
-                  child: IconTheme(
-                    data: IconThemeData(
-                      size: _getIconSize(),
-                      color: foregroundColor,
-                    ),
-                    child: widget.item.child,
-                  ),
-                ),
-          duration: widget.auraTheme.animation.normal,
-        ),
-        onTapDown: (_) => setState(() => _isPressed = true),
-        onTapUp: (_) => setState(() => _isPressed = false),
+      child: Semantics(
+        container: true,
+        excludeSemantics: true,
+        label: widget.item.semanticLabel ?? 'Button',
+        button: widget.mode == _ButtonGroupMode.action,
+        selected: widget.isSelected,
+        enabled: !widget.disabled && !widget.isLoading,
         onTap: widget.onTap,
-        onTapCancel: () => setState(() => _isPressed = false),
+        child: SizedBox(
+          height: 48,
+          child: Center(
+            child: GestureDetector(
+              excludeFromSemantics: true,
+              child: AnimatedContainer(
+                padding: padding,
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  border: border,
+                ),
+                child: widget.isLoading
+                    ? AuraLoadingCircle(
+                        tint: AuraTint.primary,
+                        size: _getLoadingSize(),
+                        itemBuilder: (context, _) => DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: _getForegroundColor(),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : DefaultTextStyle(
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: _getFontSize(),
+                          fontWeight:
+                              widget.auraTheme.typography.fontWeightMedium,
+                        ),
+                        child: IconTheme(
+                          data: IconThemeData(
+                            size: _getIconSize(),
+                            color: foregroundColor,
+                          ),
+                          child: widget.item.child,
+                        ),
+                      ),
+                duration: widget.auraTheme.animation.normal,
+              ),
+              onTapDown: (_) => setState(() => _isPressed = true),
+              onTapUp: (_) => setState(() => _isPressed = false),
+              onTap: widget.onTap,
+              onTapCancel: () => setState(() => _isPressed = false),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -436,6 +455,7 @@ class AuraButtonGroupItem<T> {
     required this.child,
     this.disabled = false,
     this.isLoading = false,
+    this.semanticLabel,
   });
 
   /// The value associated with this item.
@@ -449,6 +469,9 @@ class AuraButtonGroupItem<T> {
 
   /// Whether this specific item is in a loading state.
   final bool isLoading;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 }
 
 /// The size of an [AuraButtonGroup].

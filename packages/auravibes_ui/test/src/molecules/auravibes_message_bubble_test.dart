@@ -32,7 +32,7 @@ void main() {
       );
 
       final align = tester.widget<Align>(find.byType(Align));
-      expect(align.alignment, Alignment.centerRight);
+      expect(align.alignment, AlignmentDirectional.centerEnd);
 
       // Find the message container with decoration.
       final containers = tester.widgetList<Container>(find.byType(Container));
@@ -72,6 +72,45 @@ void main() {
       );
 
       expect(find.text('5m ago'), findsOneWidget);
+    });
+
+    testWidgets('uses the supplied clock for deterministic timestamps', (
+      tester,
+    ) async {
+      final now = DateTime(2026, 8, 28, 12);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraMessageBubble(
+              content: 'Fixed timestamp',
+              isUser: true,
+              timestamp: DateTime(2026, 8, 28, 11, 55),
+              now: () => now,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('5m ago'), findsOneWidget);
+    });
+
+    testWidgets('maps user bubble placement directionally in RTL', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(
+              body: AuraMessageBubble(content: 'RTL message', isUser: true),
+            ),
+          ),
+        ),
+      );
+
+      final message = tester.getRect(find.text('RTL message'));
+      expect(message.center.dx, lessThan(400));
     });
 
     testWidgets('shows status indicator for user messages', (tester) async {
