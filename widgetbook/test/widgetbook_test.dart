@@ -15,7 +15,7 @@ Future<void> main() async {
 
   final outputDirectory = Directory('build/.widgetbook');
   if (outputDirectory.existsSync()) {
-    await outputDirectory.delete(recursive: true);
+    final _ = await outputDirectory.delete(recursive: true);
   }
 
   final widgetbookTests = testWidgetbook(createWidgetbookConfig());

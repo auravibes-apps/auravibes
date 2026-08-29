@@ -19,9 +19,9 @@ final _Defaults listDefaults = _Defaults(
     children: [
       for (var index = 0; index < args.itemCount; index++)
         Container(
+          color: context.auraColors.surfaceVariant,
           width: args.direction == Axis.horizontal ? 160 : null,
           height: 72,
-          color: context.auraColors.surfaceVariant,
           child: Center(
             child: Text(
               'Item ${index + 1}',

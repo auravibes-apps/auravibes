@@ -74,6 +74,8 @@ class AuraMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final timestamp = this.timestamp;
+    final startSpacing = isUser ? AuraSpacing.xl : AuraSpacing.md;
+    final endSpacing = isUser ? AuraSpacing.md : AuraSpacing.xl;
 
     final bubble = GestureDetector(
       child: Container(
@@ -82,8 +84,8 @@ class AuraMessageBubble extends StatelessWidget {
         ),
         margin: manageAlignment
             ? EdgeInsetsDirectional.only(
-                start: context.auraTheme.fromSpacing(isUser ? .xl : .md),
-                end: context.auraTheme.fromSpacing(isUser ? .md : .xl),
+                start: context.auraTheme.fromSpacing(startSpacing),
+                end: context.auraTheme.fromSpacing(endSpacing),
                 bottom: context.auraTheme.fromSpacing(.sm),
               )
             : EdgeInsets.only(bottom: context.auraTheme.fromSpacing(.sm)),
@@ -104,21 +106,21 @@ class AuraMessageBubble extends StatelessWidget {
                   _AuraMessageBubbleContent(
                     content: content,
                     contentType: contentType,
-                    imageProvider: imageProvider,
-                    imageSemanticLabel: imageSemanticLabel,
-                    imageErrorLabel: imageErrorLabel,
                     textColor: isUser
                         ? auraColors.onPrimary
                         : auraColors.onSurface,
+                    imageProvider: imageProvider,
+                    imageSemanticLabel: imageSemanticLabel,
+                    imageErrorLabel: imageErrorLabel,
                   ),
                   if (timestamp != null) ...[
                     const AuraSizedBox(height: .xs),
                     _AuraMessageBubbleTimestamp(
                       timestamp: timestamp,
-                      now: now,
                       textColor: isUser
                           ? auraColors.onPrimary.withValues(alpha: 0.7)
                           : auraColors.onSurfaceVariant,
+                      now: now,
                     ),
                   ],
                 ],
@@ -232,7 +234,6 @@ class _AuraMessageBubbleContent extends StatelessWidget {
         ),
         child: Image(
           image: imageProvider ?? NetworkImage(content),
-          semanticLabel: imageSemanticLabel,
           errorBuilder: (context, error, stackTrace) => Container(
             padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
             child: Row(
@@ -248,6 +249,7 @@ class _AuraMessageBubbleContent extends StatelessWidget {
               ],
             ),
           ),
+          semanticLabel: imageSemanticLabel,
           fit: BoxFit.cover,
         ),
       ),

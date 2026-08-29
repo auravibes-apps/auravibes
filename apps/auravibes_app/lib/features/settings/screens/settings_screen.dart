@@ -108,8 +108,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppTheme currentTheme,
   ) {
-    void onThemeChanged(AppTheme? value) {
-      if (value == null) return;
+    void onThemeChanged(AppTheme value) {
       Navigator.of(context, rootNavigator: true).pop();
       ref.read(themeProvider.notifier).setTheme(value);
     }

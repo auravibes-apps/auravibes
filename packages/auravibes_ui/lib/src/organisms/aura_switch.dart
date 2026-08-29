@@ -90,7 +90,6 @@ class _AuraSwitchState extends State<AuraSwitch> {
     void handleToggle() => onChanged?.call(!widget.value);
 
     return Semantics(
-      label: widget.semanticLabel,
       child: FocusableActionDetector(
         enabled: isInteractive,
         actions: {
@@ -165,6 +164,7 @@ class _AuraSwitchState extends State<AuraSwitch> {
       ),
       enabled: isInteractive,
       toggled: widget.value,
+      label: widget.semanticLabel,
     );
   }
 

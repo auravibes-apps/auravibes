@@ -13,23 +13,35 @@ void main() {
     for (final entry in schemes.entries) {
       final colors = entry.value;
       final failures = <String>[];
-      final pairs = <String, (Color, Color)>{
-        'primary': (colors.onPrimary, colors.primary),
-        'secondary': (colors.onSecondary, colors.secondary),
-        'tertiary': (colors.onTertiary, colors.tertiary),
-        'error': (colors.onError, colors.error),
-        'warning': (colors.onWarning, colors.warning),
-        'success': (colors.onSuccess, colors.success),
-        'info': (colors.onInfo, colors.info),
-        'surface': (colors.onSurface, colors.surface),
-        'surface variant': (colors.onSurfaceVariant, colors.surfaceVariant),
-        'background': (colors.onBackground, colors.background),
+      final pairs = <String, ({Color foreground, Color background})>{
+        'primary': (foreground: colors.onPrimary, background: colors.primary),
+        'secondary': (
+          foreground: colors.onSecondary,
+          background: colors.secondary,
+        ),
+        'tertiary': (
+          foreground: colors.onTertiary,
+          background: colors.tertiary,
+        ),
+        'error': (foreground: colors.onError, background: colors.error),
+        'warning': (foreground: colors.onWarning, background: colors.warning),
+        'success': (foreground: colors.onSuccess, background: colors.success),
+        'info': (foreground: colors.onInfo, background: colors.info),
+        'surface': (foreground: colors.onSurface, background: colors.surface),
+        'surface variant': (
+          foreground: colors.onSurfaceVariant,
+          background: colors.surfaceVariant,
+        ),
+        'background': (
+          foreground: colors.onBackground,
+          background: colors.background,
+        ),
       };
 
       for (final pair in pairs.entries) {
         final ratio = ColorContrast.wcagContrastRatio(
-          pair.value.$1,
-          pair.value.$2,
+          pair.value.foreground,
+          pair.value.background,
         );
         if (ratio < 4.5) failures.add('${pair.key}: $ratio');
       }

@@ -140,6 +140,7 @@ class _AuraRadioOption<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onChanged = this.onChanged;
+    final subtitle = option.subtitle;
     final onTap = onChanged == null || option.disabled
         ? null
         : () => onChanged(option.value);
@@ -166,18 +167,18 @@ class _AuraRadioOption<T> extends StatelessWidget {
     );
 
     final interactiveRow = Semantics(
-      excludeSemantics: true,
-      label: option.semanticLabel ?? 'Radio button',
-      enabled: onTap != null,
-      checked: option.value == groupValue,
-      inMutuallyExclusiveGroup: true,
-      onTap: onTap,
       child: GestureDetector(
         child: row,
         onTap: onTap,
-        excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
       ),
+      excludeSemantics: true,
+      enabled: onTap != null,
+      checked: option.value == groupValue,
+      inMutuallyExclusiveGroup: true,
+      label: option.semanticLabel ?? 'Radio button',
+      onTap: onTap,
     );
 
     if (shrinkWrap) return interactiveRow;
@@ -186,7 +187,7 @@ class _AuraRadioOption<T> extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         interactiveRow,
-        if (option.subtitle != null)
+        if (subtitle != null)
           Padding(
             padding: EdgeInsetsDirectional.only(
               start:
@@ -195,7 +196,7 @@ class _AuraRadioOption<T> extends StatelessWidget {
             ),
             child: DefaultTextStyle.merge(
               style: TextStyle(color: context.auraColors.onSurfaceVariant),
-              child: option.subtitle!,
+              child: subtitle,
             ),
           ),
       ],

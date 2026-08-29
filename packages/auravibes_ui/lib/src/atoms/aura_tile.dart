@@ -160,8 +160,8 @@ class _AuraTileState extends State<AuraTile> {
         onTapUp: _canInteract ? (_) => _clearPressed() : null,
         onTap: _canInteract ? widget.onTap : null,
         onTapCancel: _clearPressed,
-        excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
       ),
     );
 
@@ -172,13 +172,13 @@ class _AuraTileState extends State<AuraTile> {
     if (!_canInteract) return sizedTile;
 
     return Semantics(
+      child: sizedTile,
       container: true,
       excludeSemantics: true,
-      label: widget.semanticLabel ?? 'Tile',
-      button: true,
       enabled: true,
+      button: true,
+      label: widget.semanticLabel ?? 'Tile',
       onTap: widget.onTap,
-      child: sizedTile,
     );
   }
 

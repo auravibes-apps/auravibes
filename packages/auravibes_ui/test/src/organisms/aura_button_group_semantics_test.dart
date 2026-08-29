@@ -2,8 +2,6 @@ import 'package:auravibes_ui/src/organisms/aura_button_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/semantics.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -23,7 +21,9 @@ void main() {
                 semanticLabel: 'Save changes',
               ),
             ],
-            onPressed: (_) {},
+            onPressed: (_) {
+              return;
+            },
           ),
         ),
       );
@@ -64,11 +64,15 @@ void main() {
       ),
     );
 
-    Color textColor(String label) => tester
-        .renderObject<RenderParagraph>(find.text(label))
-        .text
-        .style!
-        .color!;
+    Color textColor(String label) {
+      final style = tester
+          .renderObject<RenderParagraph>(find.text(label))
+          .text
+          .style;
+
+      return style?.color ??
+          (throw StateError('Missing text color for $label'));
+    }
 
     expect(textColor('Save'), AuraTheme.light.colors.onPrimary);
     expect(textColor('Open'), AuraTheme.light.colors.primary);
@@ -82,9 +86,21 @@ void main() {
     final layers = tester.widgetList<AnimatedContainer>(
       find.byType(AnimatedContainer),
     );
-    Color layerColor(AnimatedContainer layer) =>
-        (layer.decoration! as BoxDecoration).color!;
-    expect(layerColor(layers.elementAt(0)), Colors.transparent);
+    Color layerColor(AnimatedContainer layer) {
+      final decoration = layer.decoration;
+      if (decoration is! BoxDecoration) {
+        throw StateError('Missing button layer color');
+      }
+      final color = decoration.color;
+      if (color == null) throw StateError('Missing button layer color');
+
+      return color;
+    }
+
+    expect(
+      layerColor(layers.firstOrNull ?? (throw StateError('Missing layer'))),
+      Colors.transparent,
+    );
     expect(layerColor(layers.elementAt(1)), AuraTheme.light.colors.primary);
   });
 }

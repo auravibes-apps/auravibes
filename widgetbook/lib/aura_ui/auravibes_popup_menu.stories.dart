@@ -20,8 +20,8 @@ final _Defaults popupMenuDefaults = _Defaults(
     return AuraPopupMenu(
       child: AuraIconButton(
         icon: Icons.more_vert,
-        tooltip: 'Open popup menu',
         onPressed: controller.toggle,
+        tooltip: 'Open popup menu',
       ),
       items: const [
         AuraPopupMenuItem(title: Text('Item 1'), onTap: noopCallback),

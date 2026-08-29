@@ -103,7 +103,12 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
+  await tester.scrollUntilVisible(
+    finder,
+    100,
+    scrollable: find.byType(Scrollable).first,
+  );
+  final _ = await tester.pumpAndSettle();
   await tester.tap(finder);
 }
 

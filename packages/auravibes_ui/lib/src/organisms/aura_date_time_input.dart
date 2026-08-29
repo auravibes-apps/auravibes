@@ -141,7 +141,7 @@ class AuraDateTimeInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AuraDateTimeInputHost(input: this);
 
-  Widget _buildField(BuildContext context, VoidCallback onTap) {
+  Widget _buildField(BuildContext _, VoidCallback onTap) {
     final displayValue = _displayValue();
 
     return Semantics(

@@ -78,11 +78,12 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
     final icon = _getStatusIcon();
+    final tint = widget.tint;
     final color =
         widget.color ??
-        (widget.tint == null
+        (tint == null
             ? _getStatusColor(auraColors)
-            : auraColors.colorFor(widget.tint!));
+            : auraColors.colorFor(tint));
 
     Widget statusIcon = Icon(
       icon,

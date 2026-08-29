@@ -53,8 +53,6 @@ class LoadingOverlayDemo extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuraLoadingOverlay(
       isLoading: isLoading,
-      message: message,
-      semanticLabel: message ?? 'Loading workspace',
       child: ColoredBox(
         color: context.auraColors.surfaceVariant,
         child: Center(
@@ -64,6 +62,8 @@ class LoadingOverlayDemo extends StatelessWidget {
           ),
         ),
       ),
+      message: message,
+      semanticLabel: message ?? 'Loading workspace',
     );
   }
 }

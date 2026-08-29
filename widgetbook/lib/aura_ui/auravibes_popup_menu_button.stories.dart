@@ -40,12 +40,12 @@ class PopupMenuButtonDemo extends StatelessWidget {
     return const Align(
       alignment: AlignmentDirectional.topEnd,
       child: AuraPopupMenuButton(
-        tooltip: 'More actions',
         items: [
           AuraPopupMenuItem(title: Text('Edit'), onTap: noopCallback),
           AuraPopupMenuItem(title: Text('Duplicate'), onTap: noopCallback),
           AuraPopupMenuItem(title: Text('Delete'), onTap: noopCallback),
         ],
+        tooltip: 'More actions',
       ),
     );
   }

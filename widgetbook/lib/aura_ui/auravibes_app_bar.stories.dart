@@ -55,20 +55,20 @@ class AppBarDemo extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AuraAppBar(
       title: Text(title),
-      leading: showLeading
-          ? const AuraIconButton(
-              icon: Icons.menu,
-              tooltip: 'Open menu',
-              onPressed: noopCallback,
-            )
-          : null,
       actions: const [
         AuraIconButton(
           icon: Icons.notifications_none,
-          tooltip: 'Notifications',
           onPressed: noopCallback,
+          tooltip: 'Notifications',
         ),
       ],
+      leading: showLeading
+          ? const AuraIconButton(
+              icon: Icons.menu,
+              onPressed: noopCallback,
+              tooltip: 'Open menu',
+            )
+          : null,
     );
   }
 }

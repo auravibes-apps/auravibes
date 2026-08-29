@@ -44,7 +44,6 @@ class AuraCheckbox extends StatelessWidget {
     final isDisabled = disabled || onChanged == null;
 
     return Semantics(
-      label: semanticLabel,
       child: _CheckboxInteraction(
         value: value,
         isDisabled: isDisabled,
@@ -158,8 +157,8 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
             onTap: isInteractive
                 ? () => widget.onChanged?.call(!widget.value)
                 : null,
-            excludeFromSemantics: true,
             behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
           ),
         ),
       ),

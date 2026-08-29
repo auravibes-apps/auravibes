@@ -48,7 +48,7 @@ class _DropdownInputArgs extends StoryArgs<DropdownDemo> {
   _DropdownInputArgs({
     Arg<int?>? selectedIndex,
     Arg<bool>? enabled,
-    Arg<bool>? required,
+    Arg<bool>? isRequired,
     Arg<bool>? showError,
     Arg<String>? label,
   }) : this.selectedIndexArg = $initArg(
@@ -57,14 +57,14 @@ class _DropdownInputArgs extends StoryArgs<DropdownDemo> {
          NullableIntArg(null),
        )!,
        this.enabledArg = $initArg('enabled', enabled, BoolArg(false))!,
-       this.requiredArg = $initArg('required', required, BoolArg(false))!,
+       this.isRequiredArg = $initArg('isRequired', isRequired, BoolArg(false))!,
        this.showErrorArg = $initArg('showError', showError, BoolArg(false))!,
        this.labelArg = $initArg('label', label, StringArg(''))!;
 
   _DropdownInputArgs.fixed({
     int? selectedIndex = null,
     bool enabled = false,
-    bool required = false,
+    bool isRequired = false,
     bool showError = false,
     String label = '',
   }) : this.selectedIndexArg = $initArg(
@@ -73,7 +73,11 @@ class _DropdownInputArgs extends StoryArgs<DropdownDemo> {
          null,
        ),
        this.enabledArg = $initArg('enabled', Arg.fixed(enabled), null)!,
-       this.requiredArg = $initArg('required', Arg.fixed(required), null)!,
+       this.isRequiredArg = $initArg(
+         'isRequired',
+         Arg.fixed(isRequired),
+         null,
+       )!,
        this.showErrorArg = $initArg('showError', Arg.fixed(showError), null)!,
        this.labelArg = $initArg('label', Arg.fixed(label), null)!;
 
@@ -81,7 +85,7 @@ class _DropdownInputArgs extends StoryArgs<DropdownDemo> {
 
   final Arg<bool> enabledArg;
 
-  final Arg<bool> requiredArg;
+  final Arg<bool> isRequiredArg;
 
   final Arg<bool> showErrorArg;
 
@@ -91,7 +95,7 @@ class _DropdownInputArgs extends StoryArgs<DropdownDemo> {
 
   bool get enabled => enabledArg.value;
 
-  bool get required => requiredArg.value;
+  bool get isRequired => isRequiredArg.value;
 
   bool get showError => showErrorArg.value;
 
@@ -101,7 +105,7 @@ class _DropdownInputArgs extends StoryArgs<DropdownDemo> {
   List<Arg?> get list => [
     selectedIndexArg,
     enabledArg,
-    requiredArg,
+    isRequiredArg,
     showErrorArg,
     labelArg,
   ];

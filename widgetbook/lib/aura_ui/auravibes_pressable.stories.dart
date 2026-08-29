@@ -57,22 +57,22 @@ class _PressableDemoState extends State<PressableDemo> {
   @override
   Widget build(BuildContext context) {
     return AuraPressable(
-      color: context.auraColors.primary,
-      semanticLabel: widget.label,
-      padding: const AuraEdgeInsetsGeometry.symmetric(
-        horizontal: .lg,
-        vertical: .sm,
-      ),
-      decoration: BoxDecoration(
-        color: context.auraColors.surface,
-        border: Border.all(color: context.auraColors.outline),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      onPressed: widget.enabled ? () => setState(() => _pressed = true) : null,
       child: Text(
         _pressed ? 'Pressed' : widget.label,
         style: TextStyle(color: context.auraColors.onSurface),
       ),
+      color: context.auraColors.primary,
+      decoration: BoxDecoration(
+        color: context.auraColors.surface,
+        border: Border.all(color: context.auraColors.outline),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+      ),
+      onPressed: widget.enabled ? () => setState(() => _pressed = true) : null,
+      padding: const AuraEdgeInsetsGeometry.symmetric(
+        horizontal: .lg,
+        vertical: .sm,
+      ),
+      semanticLabel: widget.label,
     );
   }
 }

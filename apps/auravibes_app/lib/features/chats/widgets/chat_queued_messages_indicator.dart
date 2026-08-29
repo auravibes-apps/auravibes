@@ -60,7 +60,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
               ),
             ],
           ),
-          const AuraDivider(height: 1),
+          const AuraDivider(),
           for (final (index, draft) in queuedDrafts.indexed)
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -95,8 +95,7 @@ class ChatQueuedMessagesIndicator extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (index < queuedDrafts.length - 1)
-                  const AuraDivider(height: 1),
+                if (index < queuedDrafts.length - 1) const AuraDivider(),
               ],
             ),
         ],

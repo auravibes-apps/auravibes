@@ -248,18 +248,10 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
           ? SystemMouseCursors.basic
           : SystemMouseCursors.click,
       child: Semantics(
-        container: true,
-        excludeSemantics: true,
-        label: widget.item.semanticLabel ?? 'Button',
-        button: widget.mode == _ButtonGroupMode.action,
-        selected: widget.isSelected,
-        enabled: !widget.disabled && !widget.isLoading,
-        onTap: widget.onTap,
         child: SizedBox(
           height: 48,
           child: Center(
             child: GestureDetector(
-              excludeFromSemantics: true,
               child: AnimatedContainer(
                 padding: padding,
                 decoration: BoxDecoration(
@@ -298,9 +290,17 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
               onTapUp: (_) => setState(() => _isPressed = false),
               onTap: widget.onTap,
               onTapCancel: () => setState(() => _isPressed = false),
+              excludeFromSemantics: true,
             ),
           ),
         ),
+        container: true,
+        excludeSemantics: true,
+        enabled: !widget.disabled && !widget.isLoading,
+        selected: widget.isSelected,
+        button: widget.mode == _ButtonGroupMode.action,
+        label: widget.item.semanticLabel ?? 'Button',
+        onTap: widget.onTap,
       ),
     );
   }

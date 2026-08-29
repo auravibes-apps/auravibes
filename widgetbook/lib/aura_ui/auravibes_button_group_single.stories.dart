@@ -78,7 +78,6 @@ class _SingleSelectionDemoState extends State<SingleSelectionDemo> {
       mainAxisSize: MainAxisSize.min,
       children: [
         AuraButtonGroup<String>.single(
-          key: ValueKey(_selectedValue),
           items: const [
             AuraButtonGroupItem(
               value: 'option1',
@@ -98,6 +97,7 @@ class _SingleSelectionDemoState extends State<SingleSelectionDemo> {
           ],
           selectedValue: _selectedValue,
           onChanged: (value) => setState(() => _selectedValue = value),
+          key: ValueKey(_selectedValue),
           size: widget.size,
           variant: widget.variant,
           orientation: widget.orientation,

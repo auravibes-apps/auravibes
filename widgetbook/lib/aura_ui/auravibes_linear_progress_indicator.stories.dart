@@ -32,15 +32,6 @@ const meta = Meta(
 
 final $Progress = _Story(
   name: 'Progress',
-  builder: (context, args) => AuraLinearProgressIndicator(
-    value: args.value,
-    height: args.height,
-    tint: args.tint,
-    backgroundAlpha: args.backgroundAlpha,
-    borderRadius: args.borderRadius,
-    semanticLabel: args.semanticLabel,
-    semanticValue: args.semanticValue,
-  ),
   setup: (context, child, args) => SizedBox(
     width: 360,
     child: Padding(padding: const EdgeInsets.all(24), child: child),
@@ -68,6 +59,15 @@ final $Progress = _Story(
     ),
     semanticLabel: StringArg('Upload progress', name: 'Semantic Label'),
     semanticValue: StringArg('65 percent', name: 'Semantic Value'),
+  ),
+  builder: (context, args) => AuraLinearProgressIndicator(
+    value: args.value,
+    height: args.height,
+    tint: args.tint,
+    backgroundAlpha: args.backgroundAlpha,
+    borderRadius: args.borderRadius,
+    semanticLabel: args.semanticLabel,
+    semanticValue: args.semanticValue,
   ),
   scenarios: [
     _Scenario(name: 'RTL', modes: [AuraDirectionalityMode(TextDirection.rtl)]),

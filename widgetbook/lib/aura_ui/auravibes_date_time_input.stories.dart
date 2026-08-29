@@ -108,8 +108,8 @@ class _DateTimeInputDemoState extends State<DateTimeInputDemo> {
         enableTime: widget.enableTime,
         enabled: widget.enabled,
         semanticLabel: 'Date and time',
-        now: () => DateTime(2026, 8, 28, 12),
         onChanged: (value) => setState(() => _value = value),
+        now: () => DateTime(2026, 8, 28, 12),
       ),
     );
   }

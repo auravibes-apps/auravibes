@@ -176,11 +176,12 @@ abstract final class AuraSnackBars {
 
     // Validate duration is within bounds (1-60 seconds) without discarding
     // subsecond precision.
-    final validatedDuration = duration < const Duration(seconds: 1)
-        ? const Duration(seconds: 1)
-        : duration > const Duration(seconds: 60)
-        ? const Duration(seconds: 60)
-        : duration;
+    var validatedDuration = duration;
+    if (duration < const Duration(seconds: 1)) {
+      validatedDuration = const Duration(seconds: 1);
+    } else if (duration > const Duration(seconds: 60)) {
+      validatedDuration = const Duration(seconds: 60);
+    }
 
     return host.show(
       backgroundColor: backgroundColor,
