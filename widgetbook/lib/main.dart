@@ -5,6 +5,8 @@ import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 import 'package:widgetbook_workspace/components.g.dart';
 
+const _auraLocales = <Locale>[Locale('en'), Locale('es'), Locale('ar')];
+
 void main() {
   final _ = WidgetsFlutterBinding.ensureInitialized();
   runWidgetbook(createWidgetbookConfig());
@@ -18,10 +20,7 @@ Config createWidgetbookConfig() {
       TextScaleAddon(),
       SemanticsAddon(),
       TimeDilationAddon(),
-      LocaleAddon(
-        const [Locale('en'), Locale('es'), Locale('ar')],
-        auraLocalizationDelegates,
-      ),
+      LocaleAddon(_auraLocales, auraLocalizationDelegates),
       AuraDirectionalityAddon(),
       ViewportAddon([
         Viewports.none,

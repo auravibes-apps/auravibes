@@ -187,8 +187,8 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
             optionBuilder: widget.optionBuilder,
           ),
         ),
-        groupId: this,
         onTapOutside: (_) => _closeDropdown(),
+        groupId: this,
       ),
       child: Focus(
         child: TapRegion(

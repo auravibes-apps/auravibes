@@ -70,9 +70,6 @@ class AuraImage extends StatelessWidget {
 
   Widget _errorBuilder(BuildContext context, Object _, StackTrace? _) {
     return Semantics(
-      container: true,
-      image: true,
-      label: errorSemanticLabel,
       child: ColoredBox(
         color: context.auraColors.surfaceVariant,
         child: const Center(
@@ -82,6 +79,9 @@ class AuraImage extends StatelessWidget {
           ),
         ),
       ),
+      container: true,
+      image: true,
+      label: errorSemanticLabel,
     );
   }
 }

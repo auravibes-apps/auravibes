@@ -53,9 +53,6 @@ class AuraLoadingOverlay extends StatelessWidget {
     final typography = auraTheme.typography;
     final message = this.message;
     final overlay = Semantics(
-      container: true,
-      liveRegion: true,
-      label: semanticLabel ?? message ?? 'Loading',
       child: ColoredBox(
         color: backgroundColor ?? auraColors.scrim,
         child: Center(
@@ -99,6 +96,9 @@ class AuraLoadingOverlay extends StatelessWidget {
           ),
         ),
       ),
+      container: true,
+      liveRegion: true,
+      label: semanticLabel ?? message ?? 'Loading',
     );
 
     if (child == null) return overlay;

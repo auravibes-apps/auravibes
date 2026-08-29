@@ -49,70 +49,72 @@ class AuraRadioListTile<T> extends StatelessWidget {
 
     final onTap = isDisabled ? null : () => onChanged?.call(value);
 
+    final radioTile = MouseRegion(
+      cursor: isDisabled
+          ? SystemMouseCursors.forbidden
+          : SystemMouseCursors.click,
+      child: GestureDetector(
+        child: Opacity(
+          opacity: isDisabled ? 0.6 : 1.0,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(
+                child: AuraRadio<T>(
+                  value: value,
+                  groupValue: groupValue,
+                  onChanged: isDisabled ? null : onChanged,
+                  tint: tint,
+                  disabled: isDisabled,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DefaultTextStyle(
+                      style:
+                          Theme.of(context).textTheme.bodyMedium ??
+                          const TextStyle(fontSize: 16),
+                      child: title,
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      DefaultTextStyle(
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: context.auraColors.onSurfaceVariant,
+                            ) ??
+                            TextStyle(
+                              color: context.auraColors.onSurfaceVariant,
+                              fontSize: 14,
+                            ),
+                        child: subtitle,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+      ),
+    );
+
     return Semantics(
+      child: radioTile,
       container: true,
       excludeSemantics: true,
-      label: semanticLabel ?? 'Radio button',
       enabled: !isDisabled,
       checked: value == groupValue,
       inMutuallyExclusiveGroup: true,
+      label: semanticLabel ?? 'Radio button',
       onTap: onTap,
-      child: MouseRegion(
-        cursor: isDisabled
-            ? SystemMouseCursors.forbidden
-            : SystemMouseCursors.click,
-        child: GestureDetector(
-          excludeFromSemantics: true,
-          behavior: HitTestBehavior.opaque,
-          child: Opacity(
-            opacity: isDisabled ? 0.6 : 1.0,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ExcludeSemantics(
-                  child: AuraRadio<T>(
-                    value: value,
-                    groupValue: groupValue,
-                    onChanged: isDisabled ? null : onChanged,
-                    tint: tint,
-                    disabled: isDisabled,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DefaultTextStyle(
-                        style:
-                            Theme.of(context).textTheme.bodyMedium ??
-                            const TextStyle(fontSize: 16),
-                        child: title,
-                      ),
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        DefaultTextStyle(
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: context.auraColors.onSurfaceVariant,
-                              ) ??
-                              TextStyle(
-                                color: context.auraColors.onSurfaceVariant,
-                                fontSize: 14,
-                              ),
-                          child: subtitle,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          onTap: onTap,
-        ),
-      ),
     );
   }
 }

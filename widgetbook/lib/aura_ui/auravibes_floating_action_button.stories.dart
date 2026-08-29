@@ -37,8 +37,8 @@ final $RegularFAB = _Story(
       labelBuilder: auraIconLabel,
     ),
     size: EnumArg(AuraFABSize.regular, values: AuraFABSize.values),
-    tooltip: NullableStringArg('Tooltip', name: 'Tooltip'),
     semanticLabel: StringArg('Create item', name: 'Semantic Label'),
+    tooltip: NullableStringArg('Tooltip', name: 'Tooltip'),
   ),
   scenarios: [
     _Scenario(
@@ -62,8 +62,8 @@ final $ExtendedFAB = _ExtendedStory(
       labelBuilder: auraIconLabel,
     ),
     text: StringArg('Create New', name: 'Text'),
-    tooltip: NullableStringArg('Tooltip', name: 'Tooltip'),
     semanticLabel: StringArg('Create item', name: 'Semantic Label'),
+    tooltip: NullableStringArg('Tooltip', name: 'Tooltip'),
   ),
   scenarios: [
     _ExtendedScenario(

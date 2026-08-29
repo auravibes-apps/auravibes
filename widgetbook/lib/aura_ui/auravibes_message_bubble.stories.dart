@@ -163,8 +163,8 @@ class _MessageBubbleDemoState extends State<MessageBubbleDemo> {
               : null,
           maxWidth: widget.maxWidth,
           manageAlignment: false,
-          imageProvider: widget.imageProvider,
           now: widget.now,
+          imageProvider: widget.imageProvider,
         ),
         if (_lastInteraction case final interaction?)
           Center(child: Text('Last interaction: $interaction')),

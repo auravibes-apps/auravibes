@@ -68,16 +68,12 @@ class AuraDividerStory extends Story<AuraDivider, AuraDividerArgs> {
 class AuraDividerArgs extends StoryArgs<AuraDivider> {
   AuraDividerArgs({
     Arg<Key?>? key,
-    Arg<double?>? thickness,
+    Arg<double>? thickness,
     Arg<AuraTint?>? color,
     Arg<double>? indent,
     Arg<double>? endIndent,
   }) : this.keyArg = $initArg('key', key, null),
-       this.thicknessArg = $initArg(
-         'thickness',
-         thickness,
-         NullableDoubleArg(null),
-       )!,
+       this.thicknessArg = $initArg('thickness', thickness, DoubleArg(1))!,
        this.colorArg = $initArg(
          'color',
          color,
@@ -88,16 +84,12 @@ class AuraDividerArgs extends StoryArgs<AuraDivider> {
 
   AuraDividerArgs.fixed({
     Key? key,
-    double? thickness = null,
+    double thickness = 1,
     AuraTint? color = null,
     double indent = 0,
     double endIndent = 0,
   }) : this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
-       this.thicknessArg = $initArg(
-         'thickness',
-         thickness == null ? null : Arg.fixed(thickness),
-         null,
-       ),
+       this.thicknessArg = $initArg('thickness', Arg.fixed(thickness), null)!,
        this.colorArg = $initArg(
          'color',
          color == null ? null : Arg.fixed(color),
@@ -108,7 +100,7 @@ class AuraDividerArgs extends StoryArgs<AuraDivider> {
 
   final Arg<Key?>? keyArg;
 
-  final Arg<double?>? thicknessArg;
+  final Arg<double> thicknessArg;
 
   final Arg<AuraTint?>? colorArg;
 
@@ -118,7 +110,7 @@ class AuraDividerArgs extends StoryArgs<AuraDivider> {
 
   Key? get key => keyArg?.value;
 
-  double? get thickness => thicknessArg?.value;
+  double get thickness => thicknessArg.value;
 
   AuraTint? get color => colorArg?.value;
 
@@ -169,16 +161,12 @@ class AuraDividerVerticalStory
 class AuraDividerVerticalArgs extends StoryArgs<AuraDivider> {
   AuraDividerVerticalArgs({
     Arg<Key?>? key,
-    Arg<double?>? thickness,
+    Arg<double>? thickness,
     Arg<AuraTint?>? color,
     Arg<double>? indent,
     Arg<double>? endIndent,
   }) : this.keyArg = $initArg('key', key, null),
-       this.thicknessArg = $initArg(
-         'thickness',
-         thickness,
-         NullableDoubleArg(null),
-       )!,
+       this.thicknessArg = $initArg('thickness', thickness, DoubleArg(1))!,
        this.colorArg = $initArg(
          'color',
          color,
@@ -189,16 +177,12 @@ class AuraDividerVerticalArgs extends StoryArgs<AuraDivider> {
 
   AuraDividerVerticalArgs.fixed({
     Key? key,
-    double? thickness = null,
+    double thickness = 1,
     AuraTint? color = null,
     double indent = 0,
     double endIndent = 0,
   }) : this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
-       this.thicknessArg = $initArg(
-         'thickness',
-         thickness == null ? null : Arg.fixed(thickness),
-         null,
-       ),
+       this.thicknessArg = $initArg('thickness', Arg.fixed(thickness), null)!,
        this.colorArg = $initArg(
          'color',
          color == null ? null : Arg.fixed(color),
@@ -209,7 +193,7 @@ class AuraDividerVerticalArgs extends StoryArgs<AuraDivider> {
 
   final Arg<Key?>? keyArg;
 
-  final Arg<double?>? thicknessArg;
+  final Arg<double> thicknessArg;
 
   final Arg<AuraTint?>? colorArg;
 
@@ -219,7 +203,7 @@ class AuraDividerVerticalArgs extends StoryArgs<AuraDivider> {
 
   Key? get key => keyArg?.value;
 
-  double? get thickness => thicknessArg?.value;
+  double get thickness => thicknessArg.value;
 
   AuraTint? get color => colorArg?.value;
 
@@ -272,17 +256,13 @@ class AuraDividerWithLabelArgs extends StoryArgs<AuraDivider> {
   AuraDividerWithLabelArgs({
     Arg<Widget?>? label,
     Arg<Key?>? key,
-    Arg<double?>? thickness,
+    Arg<double>? thickness,
     Arg<AuraTint?>? color,
     Arg<double>? indent,
     Arg<double>? endIndent,
   }) : this.labelArg = $initArg('label', label, null),
        this.keyArg = $initArg('key', key, null),
-       this.thicknessArg = $initArg(
-         'thickness',
-         thickness,
-         NullableDoubleArg(null),
-       )!,
+       this.thicknessArg = $initArg('thickness', thickness, DoubleArg(1))!,
        this.colorArg = $initArg(
          'color',
          color,
@@ -294,7 +274,7 @@ class AuraDividerWithLabelArgs extends StoryArgs<AuraDivider> {
   AuraDividerWithLabelArgs.fixed({
     Widget? label,
     Key? key,
-    double? thickness = null,
+    double thickness = 1,
     AuraTint? color = null,
     double indent = 0,
     double endIndent = 0,
@@ -304,11 +284,7 @@ class AuraDividerWithLabelArgs extends StoryArgs<AuraDivider> {
          null,
        ),
        this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
-       this.thicknessArg = $initArg(
-         'thickness',
-         thickness == null ? null : Arg.fixed(thickness),
-         null,
-       ),
+       this.thicknessArg = $initArg('thickness', Arg.fixed(thickness), null)!,
        this.colorArg = $initArg(
          'color',
          color == null ? null : Arg.fixed(color),
@@ -321,7 +297,7 @@ class AuraDividerWithLabelArgs extends StoryArgs<AuraDivider> {
 
   final Arg<Key?>? keyArg;
 
-  final Arg<double?>? thicknessArg;
+  final Arg<double> thicknessArg;
 
   final Arg<AuraTint?>? colorArg;
 
@@ -333,7 +309,7 @@ class AuraDividerWithLabelArgs extends StoryArgs<AuraDivider> {
 
   Key? get key => keyArg?.value;
 
-  double? get thickness => thicknessArg?.value;
+  double get thickness => thicknessArg.value;
 
   AuraTint? get color => colorArg?.value;
 

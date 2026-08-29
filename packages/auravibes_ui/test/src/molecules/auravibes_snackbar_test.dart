@@ -81,7 +81,7 @@ void main() {
       expect(find.text('Timed message'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+      final _ = await tester.pumpAndSettle();
       expect(find.text('Timed message'), findsNothing);
     });
 

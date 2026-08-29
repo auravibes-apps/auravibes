@@ -16,7 +16,7 @@ final $HorizontalDivider = _Story(
     child: child,
   ),
   args: _Args(
-    thickness: NullableDoubleArg(
+    thickness: DoubleArg(
       1,
       name: 'Thickness',
       style: const SliderDoubleArgStyle(min: 0, max: 10, divisions: 10),
@@ -41,7 +41,7 @@ final $VerticalDivider = _VerticalStory(
     child: child,
   ),
   args: _VerticalArgs(
-    thickness: NullableDoubleArg(
+    thickness: DoubleArg(
       1,
       name: 'Thickness',
       style: const SliderDoubleArgStyle(min: 0, max: 10, divisions: 10),
@@ -67,7 +67,7 @@ final $DividerWithLabel = _WithLabelStory(
   ),
   args: _WithLabelArgs(
     label: Arg.fixed(const Text('Section 1')),
-    thickness: NullableDoubleArg(
+    thickness: DoubleArg(
       1,
       name: 'Thickness',
       style: const SliderDoubleArgStyle(min: 0, max: 10, divisions: 10),

@@ -96,10 +96,6 @@ class AuraPressableState extends State<AuraPressable> {
     }
 
     return Semantics(
-      label: widget.semanticLabel ?? 'Button',
-      button: true,
-      enabled: true,
-      onTap: widget.onPressed,
       child: FocusableActionDetector(
         actions: {
           ActivateIntent: CallbackAction<ActivateIntent>(
@@ -147,11 +143,15 @@ class AuraPressableState extends State<AuraPressable> {
             onTap: widget.onPressed,
             onTapCancel: _onExitPressed,
             onLongPress: widget.onLongPress,
-            excludeFromSemantics: true,
             behavior: HitTestBehavior.translucent,
+            excludeFromSemantics: true,
           ),
         ),
       ),
+      enabled: true,
+      button: true,
+      label: widget.semanticLabel ?? 'Button',
+      onTap: widget.onPressed,
     );
   }
 

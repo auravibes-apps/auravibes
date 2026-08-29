@@ -105,8 +105,8 @@ class AuraSidebar extends StatelessWidget {
         label: isExpanded ? item.label : const SizedBox.shrink(),
         icon: item.icon,
         onTap: () => onNavigationTap(index),
-        selected: index == selectedIndex,
         semanticLabel: item.semanticLabel ?? 'Navigation item',
+        selected: index == selectedIndex,
       ),
       padding: const .symmetric(horizontal: .sm, vertical: .xs),
     );

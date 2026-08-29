@@ -9,14 +9,14 @@ class _DropdownInput {
   const _DropdownInput({
     required this.selectedIndex,
     required this.enabled,
-    required this.required,
+    required this.isRequired,
     required this.showError,
     required this.label,
   });
 
   final int? selectedIndex;
   final bool enabled;
-  final bool required;
+  final bool isRequired;
   final bool showError;
   final String label;
 }
@@ -28,7 +28,7 @@ final _Defaults dropdownDefaults = _Defaults(
   builder: (context, args) => DropdownDemo(
     selectedIndex: args.selectedIndex,
     enabled: args.enabled,
-    required: args.required,
+    isRequired: args.isRequired,
     showError: args.showError,
     label: args.label,
   ),
@@ -40,7 +40,7 @@ final $Dropdown = _Story(
   args: _Args(
     selectedIndex: NullableIntArg(0, name: 'Selected Index'),
     enabled: BoolArg(true, name: 'Enabled'),
-    required: BoolArg(false, name: 'Required'),
+    isRequired: BoolArg(false, name: 'Required'),
     showError: BoolArg(false, name: 'Show Error'),
     label: StringArg('Plan', name: 'Label'),
   ),
@@ -70,7 +70,7 @@ class DropdownDemo extends StatefulWidget {
   const DropdownDemo({
     required this.selectedIndex,
     required this.enabled,
-    required this.required,
+    required this.isRequired,
     required this.showError,
     required this.label,
     super.key,
@@ -78,7 +78,7 @@ class DropdownDemo extends StatefulWidget {
 
   final int? selectedIndex;
   final bool enabled;
-  final bool required;
+  final bool isRequired;
   final bool showError;
   final String label;
 
@@ -106,6 +106,7 @@ class _DropdownDemoState extends State<DropdownDemo> {
   @override
   Widget build(BuildContext context) {
     const options = ['Free', 'Pro', 'Enterprise'];
+    final selectedIndex = _selectedIndex;
 
     return AuraDropdownSelector<String>(
       options: [
@@ -116,7 +117,7 @@ class _DropdownDemoState extends State<DropdownDemo> {
             semanticLabel: option,
           ),
       ],
-      value: _selectedIndex == null ? null : options[_selectedIndex!],
+      value: selectedIndex == null ? null : options[selectedIndex],
       onChanged: (value) => setState(() {
         _selectedIndex = value == null ? null : options.indexOf(value);
       }),
@@ -124,7 +125,7 @@ class _DropdownDemoState extends State<DropdownDemo> {
       label: Text(widget.label),
       hint: const Text('Choose the plan for this workspace'),
       error: widget.showError ? const Text('Select a plan') : null,
-      isRequired: widget.required,
+      isRequired: widget.isRequired,
       isEnabled: widget.enabled,
       semanticLabel: widget.label,
     );

@@ -158,7 +158,6 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
     final borderColor = _getBorderColor(context, isDisabled);
 
     return Semantics(
-      label: widget.semanticLabel,
       child: FocusableActionDetector(
         enabled: !isDisabled,
         shortcuts: const {
@@ -202,13 +201,14 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
             ),
           ),
           onTap: isDisabled ? null : _select,
-          excludeFromSemantics: true,
           behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
         ),
       ),
       enabled: !isDisabled,
       checked: isSelected,
       inMutuallyExclusiveGroup: true,
+      label: widget.semanticLabel,
       onTap: isDisabled ? null : _select,
     );
   }

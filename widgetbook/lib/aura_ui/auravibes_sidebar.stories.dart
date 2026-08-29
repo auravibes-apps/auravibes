@@ -14,6 +14,7 @@ class _SidebarInput {
 
 int _clampSidebarIndex(int index) {
   if (index < 0) return 0;
+
   return index > 2 ? 2 : index;
 }
 
@@ -65,7 +66,13 @@ class SidebarDemo extends StatefulWidget {
 }
 
 class _SidebarDemoState extends State<SidebarDemo> {
-  late int _selectedIndex = _clampSidebarIndex(widget.selectedIndex);
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = _clampSidebarIndex(widget.selectedIndex);
+  }
 
   @override
   void didUpdateWidget(covariant SidebarDemo oldWidget) {
@@ -78,13 +85,6 @@ class _SidebarDemoState extends State<SidebarDemo> {
   @override
   Widget build(BuildContext context) {
     return AuraSidebar(
-      isExpanded: widget.expanded,
-      selectedIndex: _selectedIndex,
-      onNavigationTap: (index) => setState(() => _selectedIndex = index),
-      header: const Padding(
-        padding: EdgeInsets.all(16),
-        child: AuraText(child: Text('Navigation')),
-      ),
       navigationItems: const [
         AuraNavigationData(
           icon: Icon(Icons.home),
@@ -102,6 +102,13 @@ class _SidebarDemoState extends State<SidebarDemo> {
           semanticLabel: 'Settings navigation',
         ),
       ],
+      onNavigationTap: (index) => setState(() => _selectedIndex = index),
+      isExpanded: widget.expanded,
+      selectedIndex: _selectedIndex,
+      header: const Padding(
+        padding: EdgeInsets.all(16),
+        child: AuraText(child: Text('Navigation')),
+      ),
     );
   }
 }

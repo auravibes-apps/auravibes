@@ -251,7 +251,7 @@ class _AuraTabBar extends StatelessWidget {
             ],
           ),
         ),
-        const AuraDivider(thickness: DesignBorderWidth.thin),
+        const AuraDivider(),
       ],
     );
   }
@@ -262,8 +262,7 @@ class _AuraTabBar extends StatelessWidget {
     final borderRadius = context.auraTheme.fromBorderRadius(.md);
     final title = titles[index];
 
-    final tab = Semantics(
-      excludeSemantics: true,
+    return Semantics(
       child: IntrinsicWidth(
         child: ConstrainedBox(
           constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -318,13 +317,12 @@ class _AuraTabBar extends StatelessWidget {
         ),
       ),
       container: true,
+      excludeSemantics: true,
       selected: isSelected,
       label: semanticLabels[index] ?? _textSemanticLabel(title),
       onTap: () => onChanged(index),
       role: SemanticsRole.tab,
     );
-
-    return tab;
   }
 
   String? _textSemanticLabel(Widget title) {

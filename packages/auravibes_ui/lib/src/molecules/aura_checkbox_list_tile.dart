@@ -50,8 +50,6 @@ class AuraCheckboxListTile extends StatelessWidget {
 
     return MergeSemantics(
       child: Semantics(
-        label: semanticLabel,
-        container: true,
         child: GestureDetector(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,6 +81,8 @@ class AuraCheckboxListTile extends StatelessWidget {
           onTap: isDisabled ? null : () => onChanged?.call(!value),
           behavior: HitTestBehavior.opaque,
         ),
+        container: true,
+        label: semanticLabel,
       ),
     );
   }

@@ -83,6 +83,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     Widget fab;
     if (size == AuraFABSize.extended && labelText != null) {
       fab = FloatingActionButton.extended(
+        tooltip: tooltip,
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
         heroTag: heroTag,
@@ -91,7 +92,6 @@ class AuraFloatingActionButton extends StatelessWidget {
         hoverElevation: _getHoverElevation(),
         highlightElevation: _getHighlightElevation(),
         onPressed: onPressed,
-        tooltip: tooltip,
         shape: shape,
         icon: Icon(icon, color: resolvedForeground),
         label: AuraText(
@@ -107,6 +107,7 @@ class AuraFloatingActionButton extends StatelessWidget {
     } else {
       fab = FloatingActionButton(
         child: Icon(icon, size: _getIconPixels(), color: resolvedForeground),
+        tooltip: tooltip,
         foregroundColor: resolvedForeground,
         backgroundColor: resolvedBackground,
         heroTag: heroTag,
@@ -115,7 +116,6 @@ class AuraFloatingActionButton extends StatelessWidget {
         hoverElevation: _getHoverElevation(),
         highlightElevation: _getHighlightElevation(),
         onPressed: onPressed,
-        tooltip: tooltip,
         shape: shape,
       );
 
@@ -128,8 +128,8 @@ class AuraFloatingActionButton extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
       child: Semantics(
         child: fab,
-        button: true,
         enabled: onPressed != null,
+        button: true,
         label: semanticLabel ?? tooltip ?? 'Floating action button',
         onTap: onPressed,
       ),

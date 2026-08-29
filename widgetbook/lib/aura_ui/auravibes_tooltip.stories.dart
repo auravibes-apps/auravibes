@@ -33,8 +33,8 @@ final _Defaults tooltipDefaults = _Defaults(
     message: args.message,
     child: IconButton(
       onPressed: noopCallback,
-      icon: const Icon(Icons.info_outline),
       tooltip: args.message,
+      icon: const Icon(Icons.info_outline),
     ),
     tint: args.tint,
     showDuration: Duration(milliseconds: args.showDurationMs.toInt()),

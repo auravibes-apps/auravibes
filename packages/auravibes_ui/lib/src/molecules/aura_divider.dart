@@ -11,7 +11,7 @@ class AuraDivider extends StatelessWidget {
   /// Creates a horizontal Aura divider.
   const AuraDivider({
     super.key,
-    this.thickness,
+    this.thickness = 1,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
@@ -21,7 +21,7 @@ class AuraDivider extends StatelessWidget {
   /// Creates a vertical Aura divider.
   const AuraDivider.vertical({
     super.key,
-    this.thickness,
+    this.thickness = 1,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
@@ -32,7 +32,7 @@ class AuraDivider extends StatelessWidget {
   const AuraDivider.withLabel({
     required this.label,
     super.key,
-    this.thickness,
+    this.thickness = 1,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
@@ -42,7 +42,7 @@ class AuraDivider extends StatelessWidget {
   final AuraDividerOrientation orientation;
 
   /// The thickness of the divider line and its cross-axis area.
-  final double? thickness;
+  final double thickness;
 
   /// The tint of the divider line.
   final AuraTint? color;
@@ -63,7 +63,7 @@ class AuraDivider extends StatelessWidget {
     final dividerColor = color == null
         ? auraTheme.colors.outline
         : auraTheme.colors.colorFor(color);
-    final dividerThickness = thickness ?? DesignBorderWidth.thin;
+    final dividerThickness = thickness;
 
     final label = this.label;
     if (label != null) {
