@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'model_connection_entity.dart';
@@ -9,6 +9,7 @@ part of 'model_connection_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $ModelConnectionEntityCopyWith<ModelConnectionEntity> get copyWith => _$ModelCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
+  final _this = this as ModelConnectionEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.hasKey, _this.hasKey) || other.hasKey == _this.hasKey)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix)&&(identical(other.oauthMetadata, _this.oauthMetadata) || other.oauthMetadata == _this.oauthMetadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,modelId,createdAt,updatedAt,workspaceId,hasKey,authMode,url,keySuffix,oauthMetadata);
+int get hashCode {
+  final _this = this as ModelConnectionEntity;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.modelId,_this.createdAt,_this.updatedAt,_this.workspaceId,_this.hasKey,_this.authMode,_this.url,_this.keySuffix,_this.oauthMetadata);
+}
 
 @override
 String toString() {
-  return 'ModelConnectionEntity(id: $id, name: $name, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
+  final _this = this as ModelConnectionEntity;
+  return 'ModelConnectionEntity(id: ${_this.id}, name: ${_this.name}, modelId: ${_this.modelId}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, workspaceId: ${_this.workspaceId}, hasKey: ${_this.hasKey}, authMode: ${_this.authMode}, url: ${_this.url}, keySuffix: ${_this.keySuffix}, oauthMetadata: ${_this.oauthMetadata})';
 }
 
 
@@ -63,7 +69,7 @@ class _$ModelConnectionEntityCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,Object? oauthMetadata = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -241,16 +247,18 @@ _$ModelConnectionEntityCopyWith<_ModelConnectionEntity> get copyWith => __$Model
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,modelId,createdAt,updatedAt,workspaceId,hasKey,authMode,url,keySuffix,oauthMetadata);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,modelId,createdAt,updatedAt,workspaceId,hasKey,authMode,url,keySuffix,oauthMetadata);
+}
 
 @override
 String toString() {
-  return 'ModelConnectionEntity(id: $id, name: $name, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
+    return 'ModelConnectionEntity(id: $id, name: $name, modelId: $modelId, createdAt: $createdAt, updatedAt: $updatedAt, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix, oauthMetadata: $oauthMetadata)';
 }
 
 
@@ -312,16 +320,21 @@ $ModelConnectionToCreateCopyWith<ModelConnectionToCreate> get copyWith => _$Mode
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.oauthToken, oauthToken) || other.oauthToken == oauthToken)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata)&&const DeepCollectionEquality().equals(other.modelIds, modelIds));
+  final _this = this as ModelConnectionToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.oauthToken, _this.oauthToken) || other.oauthToken == _this.oauthToken)&&(identical(other.oauthMetadata, _this.oauthMetadata) || other.oauthMetadata == _this.oauthMetadata)&&const DeepCollectionEquality().equals(other.modelIds, _this.modelIds));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,workspaceId,modelId,authMode,key,url,oauthToken,oauthMetadata,const DeepCollectionEquality().hash(modelIds));
+int get hashCode {
+  final _this = this as ModelConnectionToCreate;
+  return Object.hash(runtimeType,_this.name,_this.workspaceId,_this.modelId,_this.authMode,_this.key,_this.url,_this.oauthToken,_this.oauthMetadata,const DeepCollectionEquality().hash(_this.modelIds));
+}
 
 @override
 String toString() {
-  return 'ModelConnectionToCreate(name: $name, workspaceId: $workspaceId, modelId: $modelId, authMode: $authMode, key: $key, url: $url, oauthToken: $oauthToken, oauthMetadata: $oauthMetadata, modelIds: $modelIds)';
+  final _this = this as ModelConnectionToCreate;
+  return 'ModelConnectionToCreate(name: ${_this.name}, workspaceId: ${_this.workspaceId}, modelId: ${_this.modelId}, authMode: ${_this.authMode}, key: ${_this.key}, url: ${_this.url}, oauthToken: ${_this.oauthToken}, oauthMetadata: ${_this.oauthMetadata}, modelIds: ${_this.modelIds})';
 }
 
 
@@ -350,7 +363,7 @@ class _$ModelConnectionToCreateCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? workspaceId = null,Object? modelId = null,Object? authMode = null,Object? key = null,Object? url = freezed,Object? oauthToken = freezed,Object? oauthMetadata = freezed,Object? modelIds = null,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -513,7 +526,7 @@ return $default(_that.name,_that.workspaceId,_that.modelId,_that.authMode,_that.
 
 
 class _ModelConnectionToCreate implements ModelConnectionToCreate {
-  const _ModelConnectionToCreate({required this.name, required this.workspaceId, required this.modelId, this.authMode = ModelProviderAuthMode.apiKey, this.key = '', this.url, this.oauthToken, this.oauthMetadata, final  List<String> modelIds = const []}): assert(authMode == ModelProviderAuthMode.oauth2 || key != "", 'API-key connections require a non-empty key.'),_modelIds = modelIds;
+  const _ModelConnectionToCreate({required this.name, required this.workspaceId, required this.modelId, this.authMode = ModelProviderAuthMode.apiKey, this.key = '', this.url, this.oauthToken, this.oauthMetadata,  List<String> modelIds = const []}): assert(authMode == ModelProviderAuthMode.oauth2 || key != "", 'API-key connections require a non-empty key.'),_modelIds = modelIds;
   
 
 @override final  String name;
@@ -542,16 +555,18 @@ _$ModelConnectionToCreateCopyWith<_ModelConnectionToCreate> get copyWith => __$M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.oauthToken, oauthToken) || other.oauthToken == oauthToken)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata)&&const DeepCollectionEquality().equals(other._modelIds, _modelIds));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.oauthToken, oauthToken) || other.oauthToken == oauthToken)&&(identical(other.oauthMetadata, oauthMetadata) || other.oauthMetadata == oauthMetadata)&&const DeepCollectionEquality().equals(other.modelIds, _modelIds));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,workspaceId,modelId,authMode,key,url,oauthToken,oauthMetadata,const DeepCollectionEquality().hash(_modelIds));
+int get hashCode {
+    return Object.hash(runtimeType,name,workspaceId,modelId,authMode,key,url,oauthToken,oauthMetadata,const DeepCollectionEquality().hash(_modelIds));
+}
 
 @override
 String toString() {
-  return 'ModelConnectionToCreate(name: $name, workspaceId: $workspaceId, modelId: $modelId, authMode: $authMode, key: $key, url: $url, oauthToken: $oauthToken, oauthMetadata: $oauthMetadata, modelIds: $modelIds)';
+    return 'ModelConnectionToCreate(name: $name, workspaceId: $workspaceId, modelId: $modelId, authMode: $authMode, key: $key, url: $url, oauthToken: $oauthToken, oauthMetadata: $oauthMetadata, modelIds: $modelIds)';
 }
 
 
@@ -623,16 +638,21 @@ $ModelConnectionForEditCopyWith<ModelConnectionForEdit> get copyWith => _$ModelC
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+  final _this = this as ModelConnectionForEdit;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionForEdit&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.hasKey, _this.hasKey) || other.hasKey == _this.hasKey)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,authMode,url,keySuffix);
+int get hashCode {
+  final _this = this as ModelConnectionForEdit;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.modelId,_this.workspaceId,_this.hasKey,_this.authMode,_this.url,_this.keySuffix);
+}
 
 @override
 String toString() {
-  return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix)';
+  final _this = this as ModelConnectionForEdit;
+  return 'ModelConnectionForEdit(id: ${_this.id}, name: ${_this.name}, modelId: ${_this.modelId}, workspaceId: ${_this.workspaceId}, hasKey: ${_this.hasKey}, authMode: ${_this.authMode}, url: ${_this.url}, keySuffix: ${_this.keySuffix})';
 }
 
 
@@ -661,7 +681,7 @@ class _$ModelConnectionForEditCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionForEdit
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? modelId = null,Object? workspaceId = null,Object? hasKey = null,Object? authMode = null,Object? url = freezed,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionForEdit(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,modelId: null == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
@@ -833,16 +853,18 @@ _$ModelConnectionForEditCopyWith<_ModelConnectionForEdit> get copyWith => __$Mod
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.hasKey, hasKey) || other.hasKey == hasKey)&&(identical(other.authMode, authMode) || other.authMode == authMode)&&(identical(other.url, url) || other.url == url)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,authMode,url,keySuffix);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,modelId,workspaceId,hasKey,authMode,url,keySuffix);
+}
 
 @override
 String toString() {
-  return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix)';
+    return 'ModelConnectionForEdit(id: $id, name: $name, modelId: $modelId, workspaceId: $workspaceId, hasKey: $hasKey, authMode: $authMode, url: $url, keySuffix: $keySuffix)';
 }
 
 
@@ -901,16 +923,21 @@ $ModelConnectionToUpdateCopyWith<ModelConnectionToUpdate> get copyWith => _$Mode
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
+  final _this = this as ModelConnectionToUpdate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionToUpdate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.url, _this.url) || other.url == _this.url));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,key,url);
+int get hashCode {
+  final _this = this as ModelConnectionToUpdate;
+  return Object.hash(runtimeType,_this.name,_this.key,_this.url);
+}
 
 @override
 String toString() {
-  return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
+  final _this = this as ModelConnectionToUpdate;
+  return 'ModelConnectionToUpdate(name: ${_this.name}, key: ${_this.key}, url: ${_this.url})';
 }
 
 
@@ -939,7 +966,7 @@ class _$ModelConnectionToUpdateCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? key = freezed,Object? url = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionToUpdate(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
 as String?,url: freezed == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -1101,16 +1128,18 @@ _$ModelConnectionToUpdateCopyWith<_ModelConnectionToUpdate> get copyWith => __$M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,key,url);
+int get hashCode {
+    return Object.hash(runtimeType,name,key,url);
+}
 
 @override
 String toString() {
-  return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
+    return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
 }
 
 
@@ -1164,16 +1193,21 @@ $ModelConnectionFilterCopyWith<ModelConnectionFilter> get copyWith => _$ModelCon
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionFilter&&const DeepCollectionEquality().equals(other.workspaces, workspaces));
+  final _this = this as ModelConnectionFilter;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ModelConnectionFilter&&const DeepCollectionEquality().equals(other.workspaces, _this.workspaces));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(workspaces));
+int get hashCode {
+  final _this = this as ModelConnectionFilter;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.workspaces));
+}
 
 @override
 String toString() {
-  return 'ModelConnectionFilter(workspaces: $workspaces)';
+  final _this = this as ModelConnectionFilter;
+  return 'ModelConnectionFilter(workspaces: ${_this.workspaces})';
 }
 
 
@@ -1202,7 +1236,7 @@ class _$ModelConnectionFilterCopyWithImpl<$Res>
 /// Create a copy of ModelConnectionFilter
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? workspaces = null,}) {
-  return _then(_self.copyWith(
+  return _then(ModelConnectionFilter(
 workspaces: null == workspaces ? _self.workspaces : workspaces // ignore: cast_nullable_to_non_nullable
 as List<String>,
   ));
@@ -1345,7 +1379,7 @@ return $default(_that.workspaces);case _:
 
 
 class _ModelConnectionFilter implements ModelConnectionFilter {
-  const _ModelConnectionFilter({final  List<String> workspaces = const []}): _workspaces = workspaces;
+  const _ModelConnectionFilter({ List<String> workspaces = const []}): _workspaces = workspaces;
   
 
  final  List<String> _workspaces;
@@ -1366,16 +1400,18 @@ _$ModelConnectionFilterCopyWith<_ModelConnectionFilter> get copyWith => __$Model
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionFilter&&const DeepCollectionEquality().equals(other._workspaces, _workspaces));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ModelConnectionFilter&&const DeepCollectionEquality().equals(other.workspaces, _workspaces));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_workspaces));
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_workspaces));
+}
 
 @override
 String toString() {
-  return 'ModelConnectionFilter(workspaces: $workspaces)';
+    return 'ModelConnectionFilter(workspaces: $workspaces)';
 }
 
 

@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'mcp_connection_status.dart';
@@ -9,6 +9,7 @@ part of 'mcp_connection_status.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -30,16 +31,21 @@ $McpConnectionStateCopyWith<McpConnectionState> get copyWith => _$McpConnectionS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpConnectionState&&(identical(other.server, server) || other.server == server)&&(identical(other.status, status) || other.status == status)&&(identical(other.client, client) || other.client == client)&&const DeepCollectionEquality().equals(other.tools, tools)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  final _this = this as McpConnectionState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpConnectionState&&(identical(other.server, _this.server) || other.server == _this.server)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.client, _this.client) || other.client == _this.client)&&const DeepCollectionEquality().equals(other.tools, _this.tools)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(tools),errorMessage);
+int get hashCode {
+  final _this = this as McpConnectionState;
+  return Object.hash(runtimeType,_this.server,_this.status,_this.client,const DeepCollectionEquality().hash(_this.tools),_this.errorMessage);
+}
 
 @override
 String toString() {
-  return 'McpConnectionState(server: $server, status: $status, client: $client, tools: $tools, errorMessage: $errorMessage)';
+  final _this = this as McpConnectionState;
+  return 'McpConnectionState(server: ${_this.server}, status: ${_this.status}, client: ${_this.client}, tools: ${_this.tools}, errorMessage: ${_this.errorMessage})';
 }
 
 
@@ -68,7 +74,7 @@ class _$McpConnectionStateCopyWithImpl<$Res>
 /// Create a copy of McpConnectionState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? server = null,Object? status = null,Object? client = freezed,Object? tools = null,Object? errorMessage = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(McpConnectionState(
 server: null == server ? _self.server : server // ignore: cast_nullable_to_non_nullable
 as McpServerEntity,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as McpConnectionStatus,client: freezed == client ? _self.client : client // ignore: cast_nullable_to_non_nullable
@@ -224,7 +230,7 @@ return $default(_that.server,_that.status,_that.client,_that.tools,_that.errorMe
 
 
 class _McpConnectionState extends McpConnectionState {
-  const _McpConnectionState({required this.server, required this.status, this.client, final  List<McpToolInfo> tools = const [], this.errorMessage}): _tools = tools,super._();
+  const _McpConnectionState({required this.server, required this.status, this.client,  List<McpToolInfo> tools = const [], this.errorMessage}): _tools = tools,super._();
   
 
 /// The MCP server configuration.
@@ -255,16 +261,18 @@ _$McpConnectionStateCopyWith<_McpConnectionState> get copyWith => __$McpConnecti
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpConnectionState&&(identical(other.server, server) || other.server == server)&&(identical(other.status, status) || other.status == status)&&(identical(other.client, client) || other.client == client)&&const DeepCollectionEquality().equals(other._tools, _tools)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpConnectionState&&(identical(other.server, server) || other.server == server)&&(identical(other.status, status) || other.status == status)&&(identical(other.client, client) || other.client == client)&&const DeepCollectionEquality().equals(other.tools, _tools)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(_tools),errorMessage);
+int get hashCode {
+    return Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(_tools),errorMessage);
+}
 
 @override
 String toString() {
-  return 'McpConnectionState(server: $server, status: $status, client: $client, tools: $tools, errorMessage: $errorMessage)';
+    return 'McpConnectionState(server: $server, status: $status, client: $client, tools: $tools, errorMessage: $errorMessage)';
 }
 
 

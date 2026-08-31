@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'api_model_entity.dart';
@@ -9,6 +9,7 @@ part of 'api_model_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -39,16 +40,21 @@ $ApiModelEntityCopyWith<ApiModelEntity> get copyWith => _$ApiModelEntityCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+  final _this = this as ApiModelEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelEntity&&(identical(other.modelProvider, _this.modelProvider) || other.modelProvider == _this.modelProvider)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.limitContext, _this.limitContext) || other.limitContext == _this.limitContext)&&(identical(other.limitOutput, _this.limitOutput) || other.limitOutput == _this.limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _this.modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _this.modalitiesOutput)&&(identical(other.family, _this.family) || other.family == _this.family)&&(identical(other.costInput, _this.costInput) || other.costInput == _this.costInput)&&(identical(other.costCacheRead, _this.costCacheRead) || other.costCacheRead == _this.costCacheRead)&&(identical(other.costOutput, _this.costOutput) || other.costOutput == _this.costOutput)&&(identical(other.openWeights, _this.openWeights) || other.openWeights == _this.openWeights)&&(identical(other.supportsReasoning, _this.supportsReasoning) || other.supportsReasoning == _this.supportsReasoning)&&(identical(other.isCanonical, _this.isCanonical) || other.isCanonical == _this.isCanonical)&&(identical(other.supportsPriorityMode, _this.supportsPriorityMode) || other.supportsPriorityMode == _this.supportsPriorityMode)&&(identical(other.supportsToolCalls, _this.supportsToolCalls) || other.supportsToolCalls == _this.supportsToolCalls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(modalitiesInput),const DeepCollectionEquality().hash(modalitiesOutput),family,costInput,costCacheRead,costOutput,openWeights,supportsReasoning,isCanonical,supportsPriorityMode,supportsToolCalls);
+int get hashCode {
+  final _this = this as ApiModelEntity;
+  return Object.hash(runtimeType,_this.modelProvider,_this.id,_this.name,_this.limitContext,_this.limitOutput,const DeepCollectionEquality().hash(_this.modalitiesInput),const DeepCollectionEquality().hash(_this.modalitiesOutput),_this.family,_this.costInput,_this.costCacheRead,_this.costOutput,_this.openWeights,_this.supportsReasoning,_this.isCanonical,_this.supportsPriorityMode,_this.supportsToolCalls);
+}
 
 @override
 String toString() {
-  return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls)';
+  final _this = this as ApiModelEntity;
+  return 'ApiModelEntity(modelProvider: ${_this.modelProvider}, id: ${_this.id}, name: ${_this.name}, limitContext: ${_this.limitContext}, limitOutput: ${_this.limitOutput}, modalitiesInput: ${_this.modalitiesInput}, modalitiesOutput: ${_this.modalitiesOutput}, family: ${_this.family}, costInput: ${_this.costInput}, costCacheRead: ${_this.costCacheRead}, costOutput: ${_this.costOutput}, openWeights: ${_this.openWeights}, supportsReasoning: ${_this.supportsReasoning}, isCanonical: ${_this.isCanonical}, supportsPriorityMode: ${_this.supportsPriorityMode}, supportsToolCalls: ${_this.supportsToolCalls})';
 }
 
 
@@ -77,7 +83,7 @@ class _$ApiModelEntityCopyWithImpl<$Res>
 /// Create a copy of ApiModelEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? modelProvider = null,Object? id = null,Object? name = null,Object? limitContext = null,Object? limitOutput = null,Object? modalitiesInput = null,Object? modalitiesOutput = null,Object? family = freezed,Object? costInput = freezed,Object? costCacheRead = freezed,Object? costOutput = freezed,Object? openWeights = freezed,Object? supportsReasoning = null,Object? isCanonical = null,Object? supportsPriorityMode = null,Object? supportsToolCalls = null,}) {
-  return _then(_self.copyWith(
+  return _then(ApiModelEntity(
 modelProvider: null == modelProvider ? _self.modelProvider : modelProvider // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -235,7 +241,7 @@ return $default(_that.modelProvider,_that.id,_that.name,_that.limitContext,_that
 
 
 class _ApiModelEntity extends ApiModelEntity {
-  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required final  List<String> modalitiesInput, required final  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false, this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,super._();
+  const _ApiModelEntity({required this.modelProvider, required this.id, required this.name, required this.limitContext, required this.limitOutput, required  List<String> modalitiesInput, required  List<String> modalitiesOutput, this.family, this.costInput, this.costCacheRead, this.costOutput, this.openWeights, this.supportsReasoning = false, this.isCanonical = true, this.supportsPriorityMode = false, this.supportsToolCalls = false}): _modalitiesInput = modalitiesInput,_modalitiesOutput = modalitiesOutput,super._();
   
 
 /// ID of the provider that offers this model.
@@ -291,16 +297,18 @@ _$ApiModelEntityCopyWith<_ApiModelEntity> get copyWith => __$ApiModelEntityCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other._modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other._modalitiesOutput, _modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelEntity&&(identical(other.modelProvider, modelProvider) || other.modelProvider == modelProvider)&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.limitContext, limitContext) || other.limitContext == limitContext)&&(identical(other.limitOutput, limitOutput) || other.limitOutput == limitOutput)&&const DeepCollectionEquality().equals(other.modalitiesInput, _modalitiesInput)&&const DeepCollectionEquality().equals(other.modalitiesOutput, _modalitiesOutput)&&(identical(other.family, family) || other.family == family)&&(identical(other.costInput, costInput) || other.costInput == costInput)&&(identical(other.costCacheRead, costCacheRead) || other.costCacheRead == costCacheRead)&&(identical(other.costOutput, costOutput) || other.costOutput == costOutput)&&(identical(other.openWeights, openWeights) || other.openWeights == openWeights)&&(identical(other.supportsReasoning, supportsReasoning) || other.supportsReasoning == supportsReasoning)&&(identical(other.isCanonical, isCanonical) || other.isCanonical == isCanonical)&&(identical(other.supportsPriorityMode, supportsPriorityMode) || other.supportsPriorityMode == supportsPriorityMode)&&(identical(other.supportsToolCalls, supportsToolCalls) || other.supportsToolCalls == supportsToolCalls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),family,costInput,costCacheRead,costOutput,openWeights,supportsReasoning,isCanonical,supportsPriorityMode,supportsToolCalls);
+int get hashCode {
+    return Object.hash(runtimeType,modelProvider,id,name,limitContext,limitOutput,const DeepCollectionEquality().hash(_modalitiesInput),const DeepCollectionEquality().hash(_modalitiesOutput),family,costInput,costCacheRead,costOutput,openWeights,supportsReasoning,isCanonical,supportsPriorityMode,supportsToolCalls);
+}
 
 @override
 String toString() {
-  return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls)';
+    return 'ApiModelEntity(modelProvider: $modelProvider, id: $id, name: $name, limitContext: $limitContext, limitOutput: $limitOutput, modalitiesInput: $modalitiesInput, modalitiesOutput: $modalitiesOutput, family: $family, costInput: $costInput, costCacheRead: $costCacheRead, costOutput: $costOutput, openWeights: $openWeights, supportsReasoning: $supportsReasoning, isCanonical: $isCanonical, supportsPriorityMode: $supportsPriorityMode, supportsToolCalls: $supportsToolCalls)';
 }
 
 

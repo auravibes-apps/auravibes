@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'skill_credential_entity.dart';
@@ -9,6 +9,7 @@ part of 'skill_credential_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $SkillCredentialEntityCopyWith<SkillCredentialEntity> get copyWith => _$SkillCre
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.attributes, attributes)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+  final _this = this as SkillCredentialEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.name, _this.name) || other.name == _this.name)&&const DeepCollectionEquality().equals(other.attributes, _this.attributes)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,credentialDefinitionId,name,const DeepCollectionEquality().hash(attributes),isEnabled,createdAt,updatedAt,keySuffix);
+int get hashCode {
+  final _this = this as SkillCredentialEntity;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.credentialDefinitionId,_this.name,const DeepCollectionEquality().hash(_this.attributes),_this.isEnabled,_this.createdAt,_this.updatedAt,_this.keySuffix);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialEntity(id: $id, workspaceId: $workspaceId, credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt, keySuffix: $keySuffix)';
+  final _this = this as SkillCredentialEntity;
+  return 'SkillCredentialEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, credentialDefinitionId: ${_this.credentialDefinitionId}, name: ${_this.name}, attributes: ${_this.attributes}, isEnabled: ${_this.isEnabled}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, keySuffix: ${_this.keySuffix})';
 }
 
 
@@ -63,7 +69,7 @@ class _$SkillCredentialEntityCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? credentialDefinitionId = null,Object? name = null,Object? attributes = null,Object? isEnabled = null,Object? createdAt = null,Object? updatedAt = null,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,credentialDefinitionId: null == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
@@ -214,7 +220,7 @@ return $default(_that.id,_that.workspaceId,_that.credentialDefinitionId,_that.na
 
 
 class _SkillCredentialEntity extends SkillCredentialEntity {
-  const _SkillCredentialEntity({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required final  Map<String, String> attributes, required this.isEnabled, required this.createdAt, required this.updatedAt, this.keySuffix}): _attributes = attributes,super._();
+  const _SkillCredentialEntity({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required  Map<String, String> attributes, required this.isEnabled, required this.createdAt, required this.updatedAt, this.keySuffix}): _attributes = attributes,super._();
   
 
 @override final  String id;
@@ -243,16 +249,18 @@ _$SkillCredentialEntityCopyWith<_SkillCredentialEntity> get copyWith => __$Skill
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other._attributes, _attributes)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.attributes, _attributes)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,credentialDefinitionId,name,const DeepCollectionEquality().hash(_attributes),isEnabled,createdAt,updatedAt,keySuffix);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,credentialDefinitionId,name,const DeepCollectionEquality().hash(_attributes),isEnabled,createdAt,updatedAt,keySuffix);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialEntity(id: $id, workspaceId: $workspaceId, credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt, keySuffix: $keySuffix)';
+    return 'SkillCredentialEntity(id: $id, workspaceId: $workspaceId, credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes, isEnabled: $isEnabled, createdAt: $createdAt, updatedAt: $updatedAt, keySuffix: $keySuffix)';
 }
 
 
@@ -312,16 +320,21 @@ $SkillCredentialToCreateCopyWith<SkillCredentialToCreate> get copyWith => _$Skil
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialToCreate&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.attributes, attributes));
+  final _this = this as SkillCredentialToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialToCreate&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.name, _this.name) || other.name == _this.name)&&const DeepCollectionEquality().equals(other.attributes, _this.attributes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,credentialDefinitionId,name,const DeepCollectionEquality().hash(attributes));
+int get hashCode {
+  final _this = this as SkillCredentialToCreate;
+  return Object.hash(runtimeType,_this.credentialDefinitionId,_this.name,const DeepCollectionEquality().hash(_this.attributes));
+}
 
 @override
 String toString() {
-  return 'SkillCredentialToCreate(credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes)';
+  final _this = this as SkillCredentialToCreate;
+  return 'SkillCredentialToCreate(credentialDefinitionId: ${_this.credentialDefinitionId}, name: ${_this.name}, attributes: ${_this.attributes})';
 }
 
 
@@ -350,7 +363,7 @@ class _$SkillCredentialToCreateCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? credentialDefinitionId = null,Object? name = null,Object? attributes = null,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialToCreate(
 credentialDefinitionId: null == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,attributes: null == attributes ? _self.attributes : attributes // ignore: cast_nullable_to_non_nullable
@@ -495,7 +508,7 @@ return $default(_that.credentialDefinitionId,_that.name,_that.attributes);case _
 
 
 class _SkillCredentialToCreate extends SkillCredentialToCreate {
-  const _SkillCredentialToCreate({required this.credentialDefinitionId, required this.name, required final  Map<String, String> attributes}): _attributes = attributes,super._();
+  const _SkillCredentialToCreate({required this.credentialDefinitionId, required this.name, required  Map<String, String> attributes}): _attributes = attributes,super._();
   
 
 @override final  String credentialDefinitionId;
@@ -518,16 +531,18 @@ _$SkillCredentialToCreateCopyWith<_SkillCredentialToCreate> get copyWith => __$S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialToCreate&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other._attributes, _attributes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialToCreate&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.attributes, _attributes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,credentialDefinitionId,name,const DeepCollectionEquality().hash(_attributes));
+int get hashCode {
+    return Object.hash(runtimeType,credentialDefinitionId,name,const DeepCollectionEquality().hash(_attributes));
+}
 
 @override
 String toString() {
-  return 'SkillCredentialToCreate(credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes)';
+    return 'SkillCredentialToCreate(credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes)';
 }
 
 
@@ -581,16 +596,21 @@ $SkillCredentialSecretStateCopyWith<SkillCredentialSecretState> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialSecretState&&(identical(other.hasValue, hasValue) || other.hasValue == hasValue)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+  final _this = this as SkillCredentialSecretState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialSecretState&&(identical(other.hasValue, _this.hasValue) || other.hasValue == _this.hasValue)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,hasValue,keySuffix);
+int get hashCode {
+  final _this = this as SkillCredentialSecretState;
+  return Object.hash(runtimeType,_this.hasValue,_this.keySuffix);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialSecretState(hasValue: $hasValue, keySuffix: $keySuffix)';
+  final _this = this as SkillCredentialSecretState;
+  return 'SkillCredentialSecretState(hasValue: ${_this.hasValue}, keySuffix: ${_this.keySuffix})';
 }
 
 
@@ -619,7 +639,7 @@ class _$SkillCredentialSecretStateCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialSecretState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? hasValue = null,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialSecretState(
 hasValue: null == hasValue ? _self.hasValue : hasValue // ignore: cast_nullable_to_non_nullable
 as bool,keySuffix: freezed == keySuffix ? _self.keySuffix : keySuffix // ignore: cast_nullable_to_non_nullable
 as String?,
@@ -779,16 +799,18 @@ _$SkillCredentialSecretStateCopyWith<_SkillCredentialSecretState> get copyWith =
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialSecretState&&(identical(other.hasValue, hasValue) || other.hasValue == hasValue)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialSecretState&&(identical(other.hasValue, hasValue) || other.hasValue == hasValue)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,hasValue,keySuffix);
+int get hashCode {
+    return Object.hash(runtimeType,hasValue,keySuffix);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialSecretState(hasValue: $hasValue, keySuffix: $keySuffix)';
+    return 'SkillCredentialSecretState(hasValue: $hasValue, keySuffix: $keySuffix)';
 }
 
 
@@ -841,16 +863,21 @@ $SkillCredentialForEditCopyWith<SkillCredentialForEdit> get copyWith => _$SkillC
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.nonSecretAttributes, nonSecretAttributes)&&const DeepCollectionEquality().equals(other.secretAttributes, secretAttributes)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+  final _this = this as SkillCredentialForEdit;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialForEdit&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.credentialDefinitionId, _this.credentialDefinitionId) || other.credentialDefinitionId == _this.credentialDefinitionId)&&(identical(other.name, _this.name) || other.name == _this.name)&&const DeepCollectionEquality().equals(other.nonSecretAttributes, _this.nonSecretAttributes)&&const DeepCollectionEquality().equals(other.secretAttributes, _this.secretAttributes)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.keySuffix, _this.keySuffix) || other.keySuffix == _this.keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,credentialDefinitionId,name,const DeepCollectionEquality().hash(nonSecretAttributes),const DeepCollectionEquality().hash(secretAttributes),isEnabled,keySuffix);
+int get hashCode {
+  final _this = this as SkillCredentialForEdit;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.credentialDefinitionId,_this.name,const DeepCollectionEquality().hash(_this.nonSecretAttributes),const DeepCollectionEquality().hash(_this.secretAttributes),_this.isEnabled,_this.keySuffix);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialForEdit(id: $id, workspaceId: $workspaceId, credentialDefinitionId: $credentialDefinitionId, name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, isEnabled: $isEnabled, keySuffix: $keySuffix)';
+  final _this = this as SkillCredentialForEdit;
+  return 'SkillCredentialForEdit(id: ${_this.id}, workspaceId: ${_this.workspaceId}, credentialDefinitionId: ${_this.credentialDefinitionId}, name: ${_this.name}, nonSecretAttributes: ${_this.nonSecretAttributes}, secretAttributes: ${_this.secretAttributes}, isEnabled: ${_this.isEnabled}, keySuffix: ${_this.keySuffix})';
 }
 
 
@@ -879,7 +906,7 @@ class _$SkillCredentialForEditCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialForEdit
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? credentialDefinitionId = null,Object? name = null,Object? nonSecretAttributes = null,Object? secretAttributes = null,Object? isEnabled = null,Object? keySuffix = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialForEdit(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,credentialDefinitionId: null == credentialDefinitionId ? _self.credentialDefinitionId : credentialDefinitionId // ignore: cast_nullable_to_non_nullable
@@ -1029,7 +1056,7 @@ return $default(_that.id,_that.workspaceId,_that.credentialDefinitionId,_that.na
 
 
 class _SkillCredentialForEdit extends SkillCredentialForEdit {
-  const _SkillCredentialForEdit({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required final  Map<String, String> nonSecretAttributes, required final  Map<String, SkillCredentialSecretState> secretAttributes, required this.isEnabled, this.keySuffix}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,super._();
+  const _SkillCredentialForEdit({required this.id, required this.workspaceId, required this.credentialDefinitionId, required this.name, required  Map<String, String> nonSecretAttributes, required  Map<String, SkillCredentialSecretState> secretAttributes, required this.isEnabled, this.keySuffix}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,super._();
   
 
 @override final  String id;
@@ -1063,16 +1090,18 @@ _$SkillCredentialForEditCopyWith<_SkillCredentialForEdit> get copyWith => __$Ski
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other._nonSecretAttributes, _nonSecretAttributes)&&const DeepCollectionEquality().equals(other._secretAttributes, _secretAttributes)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialForEdit&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.credentialDefinitionId, credentialDefinitionId) || other.credentialDefinitionId == credentialDefinitionId)&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.nonSecretAttributes, _nonSecretAttributes)&&const DeepCollectionEquality().equals(other.secretAttributes, _secretAttributes)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.keySuffix, keySuffix) || other.keySuffix == keySuffix));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,credentialDefinitionId,name,const DeepCollectionEquality().hash(_nonSecretAttributes),const DeepCollectionEquality().hash(_secretAttributes),isEnabled,keySuffix);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,credentialDefinitionId,name,const DeepCollectionEquality().hash(_nonSecretAttributes),const DeepCollectionEquality().hash(_secretAttributes),isEnabled,keySuffix);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialForEdit(id: $id, workspaceId: $workspaceId, credentialDefinitionId: $credentialDefinitionId, name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, isEnabled: $isEnabled, keySuffix: $keySuffix)';
+    return 'SkillCredentialForEdit(id: $id, workspaceId: $workspaceId, credentialDefinitionId: $credentialDefinitionId, name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, isEnabled: $isEnabled, keySuffix: $keySuffix)';
 }
 
 
@@ -1131,16 +1160,21 @@ $SkillCredentialToUpdateCopyWith<SkillCredentialToUpdate> get copyWith => _$Skil
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialToUpdate&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.nonSecretAttributes, nonSecretAttributes)&&const DeepCollectionEquality().equals(other.secretAttributes, secretAttributes)&&const DeepCollectionEquality().equals(other.clearSecretAttributeNames, clearSecretAttributeNames));
+  final _this = this as SkillCredentialToUpdate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialToUpdate&&(identical(other.name, _this.name) || other.name == _this.name)&&const DeepCollectionEquality().equals(other.nonSecretAttributes, _this.nonSecretAttributes)&&const DeepCollectionEquality().equals(other.secretAttributes, _this.secretAttributes)&&const DeepCollectionEquality().equals(other.clearSecretAttributeNames, _this.clearSecretAttributeNames));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,const DeepCollectionEquality().hash(nonSecretAttributes),const DeepCollectionEquality().hash(secretAttributes),const DeepCollectionEquality().hash(clearSecretAttributeNames));
+int get hashCode {
+  final _this = this as SkillCredentialToUpdate;
+  return Object.hash(runtimeType,_this.name,const DeepCollectionEquality().hash(_this.nonSecretAttributes),const DeepCollectionEquality().hash(_this.secretAttributes),const DeepCollectionEquality().hash(_this.clearSecretAttributeNames));
+}
 
 @override
 String toString() {
-  return 'SkillCredentialToUpdate(name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, clearSecretAttributeNames: $clearSecretAttributeNames)';
+  final _this = this as SkillCredentialToUpdate;
+  return 'SkillCredentialToUpdate(name: ${_this.name}, nonSecretAttributes: ${_this.nonSecretAttributes}, secretAttributes: ${_this.secretAttributes}, clearSecretAttributeNames: ${_this.clearSecretAttributeNames})';
 }
 
 
@@ -1169,7 +1203,7 @@ class _$SkillCredentialToUpdateCopyWithImpl<$Res>
 /// Create a copy of SkillCredentialToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? nonSecretAttributes = null,Object? secretAttributes = null,Object? clearSecretAttributeNames = null,}) {
-  return _then(_self.copyWith(
+  return _then(SkillCredentialToUpdate(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,nonSecretAttributes: null == nonSecretAttributes ? _self.nonSecretAttributes : nonSecretAttributes // ignore: cast_nullable_to_non_nullable
 as Map<String, String>,secretAttributes: null == secretAttributes ? _self.secretAttributes : secretAttributes // ignore: cast_nullable_to_non_nullable
@@ -1315,7 +1349,7 @@ return $default(_that.name,_that.nonSecretAttributes,_that.secretAttributes,_tha
 
 
 class _SkillCredentialToUpdate extends SkillCredentialToUpdate {
-  const _SkillCredentialToUpdate({this.name, final  Map<String, String> nonSecretAttributes = const {}, final  Map<String, String> secretAttributes = const {}, final  Set<String> clearSecretAttributeNames = const {}}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,_clearSecretAttributeNames = clearSecretAttributeNames,super._();
+  const _SkillCredentialToUpdate({this.name,  Map<String, String> nonSecretAttributes = const {},  Map<String, String> secretAttributes = const {},  Set<String> clearSecretAttributeNames = const {}}): _nonSecretAttributes = nonSecretAttributes,_secretAttributes = secretAttributes,_clearSecretAttributeNames = clearSecretAttributeNames,super._();
   
 
 @override final  String? name;
@@ -1351,16 +1385,18 @@ _$SkillCredentialToUpdateCopyWith<_SkillCredentialToUpdate> get copyWith => __$S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialToUpdate&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other._nonSecretAttributes, _nonSecretAttributes)&&const DeepCollectionEquality().equals(other._secretAttributes, _secretAttributes)&&const DeepCollectionEquality().equals(other._clearSecretAttributeNames, _clearSecretAttributeNames));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialToUpdate&&(identical(other.name, name) || other.name == name)&&const DeepCollectionEquality().equals(other.nonSecretAttributes, _nonSecretAttributes)&&const DeepCollectionEquality().equals(other.secretAttributes, _secretAttributes)&&const DeepCollectionEquality().equals(other.clearSecretAttributeNames, _clearSecretAttributeNames));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,const DeepCollectionEquality().hash(_nonSecretAttributes),const DeepCollectionEquality().hash(_secretAttributes),const DeepCollectionEquality().hash(_clearSecretAttributeNames));
+int get hashCode {
+    return Object.hash(runtimeType,name,const DeepCollectionEquality().hash(_nonSecretAttributes),const DeepCollectionEquality().hash(_secretAttributes),const DeepCollectionEquality().hash(_clearSecretAttributeNames));
+}
 
 @override
 String toString() {
-  return 'SkillCredentialToUpdate(name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, clearSecretAttributeNames: $clearSecretAttributeNames)';
+    return 'SkillCredentialToUpdate(name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, clearSecretAttributeNames: $clearSecretAttributeNames)';
 }
 
 

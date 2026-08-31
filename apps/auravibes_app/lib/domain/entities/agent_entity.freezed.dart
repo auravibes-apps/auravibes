@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'agent_entity.dart';
@@ -9,6 +9,7 @@ part of 'agent_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $AgentEntityCopyWith<AgentEntity> get copyWith => _$AgentEntityCopyWithImpl<Agen
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.skills, skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility));
+  final _this = this as AgentEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.content, _this.content) || other.content == _this.content)&&const DeepCollectionEquality().equals(other.skills, _this.skills)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.visibility, _this.visibility) || other.visibility == _this.visibility));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(skills),createdAt,updatedAt,description,isEnabled,visibility);
+int get hashCode {
+  final _this = this as AgentEntity;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.content,const DeepCollectionEquality().hash(_this.skills),_this.createdAt,_this.updatedAt,_this.description,_this.isEnabled,_this.visibility);
+}
 
 @override
 String toString() {
-  return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled, visibility: $visibility)';
+  final _this = this as AgentEntity;
+  return 'AgentEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, content: ${_this.content}, skills: ${_this.skills}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, description: ${_this.description}, isEnabled: ${_this.isEnabled}, visibility: ${_this.visibility})';
 }
 
 
@@ -63,7 +69,7 @@ class _$AgentEntityCopyWithImpl<$Res>
 /// Create a copy of AgentEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? workspaceId = null,Object? name = null,Object? content = null,Object? skills = null,Object? createdAt = null,Object? updatedAt = null,Object? description = null,Object? isEnabled = null,Object? visibility = null,}) {
-  return _then(_self.copyWith(
+  return _then(AgentEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -215,7 +221,7 @@ return $default(_that.id,_that.workspaceId,_that.name,_that.content,_that.skills
 
 
 class _AgentEntity extends AgentEntity {
-  const _AgentEntity({required this.id, required this.workspaceId, required this.name, required this.content, required final  List<AgentSkillRef> skills, required this.createdAt, required this.updatedAt, this.description = '', this.isEnabled = true, this.visibility = AgentVisibility.both}): _skills = skills,super._();
+  const _AgentEntity({required this.id, required this.workspaceId, required this.name, required this.content, required  List<AgentSkillRef> skills, required this.createdAt, required this.updatedAt, this.description = '', this.isEnabled = true, this.visibility = AgentVisibility.both}): _skills = skills,super._();
   
 
 @override final  String id;
@@ -245,16 +251,18 @@ _$AgentEntityCopyWith<_AgentEntity> get copyWith => __$AgentEntityCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._skills, _skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.skills, _skills)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(_skills),createdAt,updatedAt,description,isEnabled,visibility);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,name,content,const DeepCollectionEquality().hash(_skills),createdAt,updatedAt,description,isEnabled,visibility);
+}
 
 @override
 String toString() {
-  return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled, visibility: $visibility)';
+    return 'AgentEntity(id: $id, workspaceId: $workspaceId, name: $name, content: $content, skills: $skills, createdAt: $createdAt, updatedAt: $updatedAt, description: $description, isEnabled: $isEnabled, visibility: $visibility)';
 }
 
 
@@ -315,16 +323,21 @@ $AgentToCreateCopyWith<AgentToCreate> get copyWith => _$AgentToCreateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other.skills, skills));
+  final _this = this as AgentToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.visibility, _this.visibility) || other.visibility == _this.visibility)&&const DeepCollectionEquality().equals(other.skills, _this.skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(skills));
+int get hashCode {
+  final _this = this as AgentToCreate;
+  return Object.hash(runtimeType,_this.name,_this.description,_this.content,_this.isEnabled,_this.visibility,const DeepCollectionEquality().hash(_this.skills));
+}
 
 @override
 String toString() {
-  return 'AgentToCreate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
+  final _this = this as AgentToCreate;
+  return 'AgentToCreate(name: ${_this.name}, description: ${_this.description}, content: ${_this.content}, isEnabled: ${_this.isEnabled}, visibility: ${_this.visibility}, skills: ${_this.skills})';
 }
 
 
@@ -353,7 +366,7 @@ class _$AgentToCreateCopyWithImpl<$Res>
 /// Create a copy of AgentToCreate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? visibility = null,Object? skills = null,}) {
-  return _then(_self.copyWith(
+  return _then(AgentToCreate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -501,7 +514,7 @@ return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that
 
 
 class _AgentToCreate extends AgentToCreate {
-  const _AgentToCreate({required this.name, required this.description, required this.content, this.isEnabled = true, this.visibility = AgentVisibility.both, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
+  const _AgentToCreate({required this.name, required this.description, required this.content, this.isEnabled = true, this.visibility = AgentVisibility.both,  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
   
 
 @override final  String name;
@@ -527,16 +540,18 @@ _$AgentToCreateCopyWith<_AgentToCreate> get copyWith => __$AgentToCreateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other._skills, _skills));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other.skills, _skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(_skills));
+int get hashCode {
+    return Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(_skills));
+}
 
 @override
 String toString() {
-  return 'AgentToCreate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
+    return 'AgentToCreate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
 }
 
 
@@ -593,16 +608,21 @@ $AgentToUpdateCopyWith<AgentToUpdate> get copyWith => _$AgentToUpdateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other.skills, skills));
+  final _this = this as AgentToUpdate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentToUpdate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.visibility, _this.visibility) || other.visibility == _this.visibility)&&const DeepCollectionEquality().equals(other.skills, _this.skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(skills));
+int get hashCode {
+  final _this = this as AgentToUpdate;
+  return Object.hash(runtimeType,_this.name,_this.description,_this.content,_this.isEnabled,_this.visibility,const DeepCollectionEquality().hash(_this.skills));
+}
 
 @override
 String toString() {
-  return 'AgentToUpdate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
+  final _this = this as AgentToUpdate;
+  return 'AgentToUpdate(name: ${_this.name}, description: ${_this.description}, content: ${_this.content}, isEnabled: ${_this.isEnabled}, visibility: ${_this.visibility}, skills: ${_this.skills})';
 }
 
 
@@ -631,7 +651,7 @@ class _$AgentToUpdateCopyWithImpl<$Res>
 /// Create a copy of AgentToUpdate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? content = null,Object? isEnabled = null,Object? visibility = null,Object? skills = null,}) {
-  return _then(_self.copyWith(
+  return _then(AgentToUpdate(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -779,7 +799,7 @@ return $default(_that.name,_that.description,_that.content,_that.isEnabled,_that
 
 
 class _AgentToUpdate extends AgentToUpdate {
-  const _AgentToUpdate({required this.name, required this.description, required this.content, this.isEnabled = true, this.visibility = AgentVisibility.both, final  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
+  const _AgentToUpdate({required this.name, required this.description, required this.content, this.isEnabled = true, this.visibility = AgentVisibility.both,  List<AgentSkillRef> skills = const []}): _skills = skills,super._();
   
 
 @override final  String name;
@@ -805,16 +825,18 @@ _$AgentToUpdateCopyWith<_AgentToUpdate> get copyWith => __$AgentToUpdateCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other._skills, _skills));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AgentToUpdate&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.content, content) || other.content == content)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.visibility, visibility) || other.visibility == visibility)&&const DeepCollectionEquality().equals(other.skills, _skills));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(_skills));
+int get hashCode {
+    return Object.hash(runtimeType,name,description,content,isEnabled,visibility,const DeepCollectionEquality().hash(_skills));
+}
 
 @override
 String toString() {
-  return 'AgentToUpdate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
+    return 'AgentToUpdate(name: $name, description: $description, content: $content, isEnabled: $isEnabled, visibility: $visibility, skills: $skills)';
 }
 
 
@@ -866,7 +888,7 @@ mixin _$AgentSkillRef {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentSkillRef);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AgentSkillRef);
 }
 
 
@@ -875,7 +897,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'AgentSkillRef()';
+    return 'AgentSkillRef()';
 }
 
 
@@ -1036,16 +1058,18 @@ $UserAgentSkillRefCopyWith<UserAgentSkillRef> get copyWith => _$UserAgentSkillRe
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserAgentSkillRef&&(identical(other.skillId, skillId) || other.skillId == skillId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is UserAgentSkillRef&&(identical(other.skillId, skillId) || other.skillId == skillId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,skillId);
+int get hashCode {
+    return Object.hash(runtimeType,skillId);
+}
 
 @override
 String toString() {
-  return 'AgentSkillRef.user(skillId: $skillId)';
+    return 'AgentSkillRef.user(skillId: $skillId)';
 }
 
 
@@ -1102,16 +1126,18 @@ $AppAgentSkillRefCopyWith<AppAgentSkillRef> get copyWith => _$AppAgentSkillRefCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppAgentSkillRef&&(identical(other.identifier, identifier) || other.identifier == identifier));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AppAgentSkillRef&&(identical(other.identifier, identifier) || other.identifier == identifier));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,identifier);
+int get hashCode {
+    return Object.hash(runtimeType,identifier);
+}
 
 @override
 String toString() {
-  return 'AgentSkillRef.app(identifier: $identifier)';
+    return 'AgentSkillRef.app(identifier: $identifier)';
 }
 
 
