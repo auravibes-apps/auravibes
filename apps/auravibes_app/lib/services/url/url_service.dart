@@ -187,8 +187,7 @@ class UrlService {
       return '';
     }
 
-    final buffer = StringBuffer();
-    var receivedChars = 0;
+    final bytes = <int>[];
     StreamSubscription<List<int>>? subscription;
     final completer = Completer<String>();
 
@@ -204,28 +203,18 @@ class UrlService {
           return;
         }
 
-        final remainingChars = _maxResponseSize - receivedChars;
-        if (remainingChars <= 0) {
-          buffer.write(_truncatedSuffix);
-          completer.complete(buffer.toString());
-          unawaited(cancelSubscription());
+        final remainingBytes = _maxResponseSize - bytes.length;
+        if (chunk.length <= remainingBytes) {
+          bytes.addAll(chunk);
 
           return;
         }
 
-        final decodedChunk = utf8.decode(chunk, allowMalformed: true);
-        if (decodedChunk.length <= remainingChars) {
-          buffer.write(decodedChunk);
-          receivedChars += decodedChunk.length;
-
-          return;
-        }
-
-        buffer
-          ..write(decodedChunk.firstCharacters(remainingChars))
-          ..write(_truncatedSuffix);
-        receivedChars += remainingChars;
-        completer.complete(buffer.toString());
+        bytes.addAll(chunk.sublist(0, remainingBytes));
+        completer.complete(
+          '${_decodeResponseBytes(bytes, trimIncompleteSequence: true)}'
+          '$_truncatedSuffix',
+        );
         unawaited(cancelSubscription());
       },
       onError: (Object error, StackTrace stackTrace) {
@@ -235,7 +224,7 @@ class UrlService {
       },
       onDone: () {
         if (!completer.isCompleted) {
-          completer.complete(buffer.toString());
+          completer.complete(_decodeResponseBytes(bytes));
         }
       },
       cancelOnError: true,
@@ -243,6 +232,54 @@ class UrlService {
 
     return await completer.future;
   }
+
+  String _decodeResponseBytes(
+    List<int> bytes, {
+    bool trimIncompleteSequence = false,
+  }) {
+    return const Utf8Decoder(allowMalformed: true).convert(
+      bytes,
+      0,
+      trimIncompleteSequence ? _utf8PrefixLength(bytes) : null,
+    );
+  }
+
+  int _utf8PrefixLength(List<int> bytes) {
+    if (bytes.isEmpty) return 0;
+
+    var continuationBytes = 0;
+    for (
+      var index = bytes.length - 1;
+      index >= 0 && _isUtf8ContinuationByte(bytes[index]);
+      index--
+    ) {
+      continuationBytes++;
+    }
+    if (continuationBytes == 0) {
+      final sequenceLength = _utf8SequenceLength(bytes.last);
+
+      return sequenceLength > 1 ? bytes.length - 1 : bytes.length;
+    }
+
+    final leadIndex = bytes.length - continuationBytes - 1;
+    if (leadIndex < 0) return bytes.length;
+
+    final sequenceLength = _utf8SequenceLength(bytes[leadIndex]);
+
+    return sequenceLength == 0 || continuationBytes >= sequenceLength - 1
+        ? bytes.length
+        : leadIndex;
+  }
+
+  bool _isUtf8ContinuationByte(int byte) => byte >= 0x80 && byte <= 0xBF;
+
+  int _utf8SequenceLength(int byte) => switch (byte) {
+    <= 0x7F => 1,
+    >= 0xC2 && <= 0xDF => 2,
+    >= 0xE0 && <= 0xEF => 3,
+    >= 0xF0 && <= 0xF4 => 4,
+    _ => 0,
+  };
 
   String _truncateText(String body) {
     if (body.length <= _maxResponseSize) {

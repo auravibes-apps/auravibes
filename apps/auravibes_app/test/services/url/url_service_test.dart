@@ -1,6 +1,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:auravibes_app/services/url/url_service.dart';
@@ -429,6 +430,67 @@ void main() {
 
       expect(response.body, contains('[truncated]'));
       expect(response.body, isNot(contains('overflow')));
+    });
+
+    test('caps streamed response bodies by UTF-8 bytes', () async {
+      final largeBody = String.fromCharCode(0x20AC) * (1024 * 1024 + 1);
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody.fromString(largeBody, 200);
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      final replacementCharacter = String.fromCharCode(0xFFFD);
+      expect(response.body, contains('[truncated]'));
+      expect(response.body, isNot(contains(replacementCharacter)));
+      expect(utf8.encode(response.body).length, lessThan(1024 * 1024 + 100));
+    });
+
+    test('preserves UTF-8 code points split across response chunks', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody(
+            Stream<Uint8List>.fromIterable([
+              Uint8List.fromList([0xE2]),
+              Uint8List.fromList([0x82, 0xAC]),
+            ]),
+            200,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      expect(response.body, String.fromCharCode(0x20AC));
+    });
+
+    test('preserves malformed trailing bytes on normal completion', () async {
+      final adapter = _FakeHttpClientAdapter(
+        onFetch: (options, _, _) async {
+          return ResponseBody(
+            Stream<Uint8List>.value(Uint8List.fromList([0xE2])),
+            200,
+          );
+        },
+      );
+      final dio = Dio()..httpClientAdapter = adapter;
+      final service = UrlService(dio: dio);
+
+      final response = await service
+          .execute(const UrlRequest(url: 'https://example.com'))
+          .value;
+
+      expect(response.body, String.fromCharCode(0xFFFD));
     });
 
     test('includes elapsed duration in response', () async {
