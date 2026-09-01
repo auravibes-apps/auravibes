@@ -62,15 +62,15 @@ class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
   static const List<AuraChoiceOption<String>> _options = [
     AuraChoiceOption(
       value: 'email',
-      label: AuraText(style: .bodySmall, child: Text('Email')),
+      label: AuraText(child: Text('Email'), style: .bodySmall),
     ),
     AuraChoiceOption(
       value: 'phone',
-      label: AuraText(style: .bodySmall, child: Text('Phone')),
+      label: AuraText(child: Text('Phone'), style: .bodySmall),
     ),
     AuraChoiceOption(
       value: 'post',
-      label: AuraText(style: .bodySmall, child: Text('Post')),
+      label: AuraText(child: Text('Post'), style: .bodySmall),
       disabled: true,
     ),
   ];
