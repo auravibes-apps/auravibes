@@ -246,6 +246,24 @@ void main() {
     expect(changedTest.packages, {
       'packages/core': ['test/unrelated_test.dart'],
     });
+
+    final helperSources = {
+      ..._sources,
+      'packages/core/test/test_helper.dart': 'class TestHelper {}',
+      'packages/core/test/behavior_test.dart':
+          '''import 'test_helper.dart';\nvoid main() {}''',
+    };
+    final changedHelper = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('packages/core/test/test_helper.dart'),
+      ],
+      headSources: helperSources,
+      baseSources: helperSources,
+      packageRoots: _roots,
+    );
+    expect(changedHelper.packages, {
+      'packages/core': ['test/behavior_test.dart'],
+    });
   });
 
   test('uses marker scope for Serverpod package with nonstandard root/name', () {
@@ -575,7 +593,59 @@ void main() {
           },
     );
     expect(code, isNonZero);
+    expect(
+      await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/test_helper.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              launches++;
+
+              return 0;
+            },
+      ),
+      isNonZero,
+    );
     expect(launches, 0);
+  });
+
+  test('full runner excludes helper files from explicit test paths', () async {
+    final root = await _runnerFixture();
+    addTearDown(() => root.delete(recursive: true));
+    var capturedArguments = <String>[];
+
+    final code = await runSelectedTests(
+      SelectionResult(
+        mode: SelectionMode.full,
+        packages: const {},
+        reason: 'global',
+      ),
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            capturedArguments = arguments;
+
+            return 0;
+          },
+    );
+
+    expect(code, 0);
+    expect(capturedArguments, contains('test/behavior_test.dart'));
+    expect(capturedArguments, isNot(contains('test/test_helper.dart')));
   });
 
   test('runner selects Flutter command and propagates failure', () async {
@@ -809,6 +879,8 @@ ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
       .writeAsString('void main() {}');
   final _ = await File('${package.path}/test/features/example_test.dart')
       .writeAsString('void main() {}');
+  final _ = await File('${package.path}/test/test_helper.dart')
+      .writeAsString('class TestHelper {}');
   if (serverpod) {
     final _ = await File(
       '${package.path}/test/integration/test_tools/serverpod_test_tools.dart',

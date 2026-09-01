@@ -749,7 +749,10 @@ Future<List<String>> _testFiles(_Package package) async {
   )) {
     if (entity is! File || !entity.path.endsWith('.dart')) continue;
     final relative = _relativePath(package.absoluteRoot, entity.path);
-    if (_allowedTestPath(relative, package.serverpod)) paths.add(relative);
+    if (_isTestEntrypoint(relative) &&
+        _allowedTestPath(relative, package.serverpod)) {
+      paths.add(relative);
+    }
   }
 
   return paths..sort();
@@ -763,7 +766,7 @@ Future<String> _validateTestPath(_Package package, String path) async {
     throw FormatException('Invalid selected test path: $path');
   }
   final relative = _normalizePath(path);
-  if (!relative.endsWith('.dart') ||
+  if (!_isTestEntrypoint(relative) ||
       !_allowedTestPath(relative, package.serverpod)) {
     throw FormatException('Invalid selected test path: $path');
   }
@@ -789,6 +792,8 @@ bool _allowedTestPath(String path, bool serverpod) =>
     (!serverpod ||
         path.startsWith('test/features/') ||
         path.startsWith('test/migrations/'));
+
+bool _isTestEntrypoint(String path) => path.endsWith('_test.dart');
 
 _Command _command(
   _TestGroup group, {
@@ -1120,7 +1125,7 @@ Set<String> _currentTestCandidates(
 
 bool _isCandidateTest(String path, String root, {required bool serverpod}) {
   final prefix = '$root/test/';
-  if (!path.startsWith(prefix) || !path.endsWith('.dart')) return false;
+  if (!path.startsWith(prefix) || !_isTestEntrypoint(path)) return false;
   final relative = path._slice(root.length + 1);
   if (relative.startsWith('test/integration/')) return false;
   if (serverpod) {
