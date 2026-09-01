@@ -34,12 +34,12 @@ dependencies:
   flutter_hooks: ^0.21.3+1
   flutter_secure_storage: ^10.3.1
   flutter_svg: ^2.3.0
-  flutter_web_auth_2: ^6.0.0-alpha.4
+  flutter_web_auth_2: ^6.0.0-alpha.7
   freezed_annotation: ^3.1.0
   genkit: ^0.15.1
   genkit_anthropic: ^0.2.11
   genkit_openai: ^0.3.7
-  go_router: ^17.3.0
+  go_router: ^17.5.0
   hooks_riverpod: 3.4.2
   http: ^1.6.0
   image_picker: ^1.2.3
@@ -47,8 +47,8 @@ dependencies:
   json_annotation: ^4.12.0
   logging: ^1.3.0
   math_expressions: ^3.1.0
-  mcp_client: ^2.0.0
-  mime: ^2.0.0
+  mcp_client: ^2.2.1
+  mime: ^2.1.0
   openai_dart: ^5.0.0
 
   # Other dependencies
@@ -67,7 +67,7 @@ dependencies:
   uuid: ^4.5.3
 dev_dependencies:
   # Code generation for JSON serialization
-  build_runner: ^2.15.0
+  build_runner: ^2.16.0
   # Code generation for Drift
   drift_dev: 2.34.5
   flutter_flavorizr: ^2.5.0
@@ -75,12 +75,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   freezed: 4.0.1
-  go_router_builder: ^4.3.0
+  go_router_builder: ^4.4.1
   json_serializable: ^6.14.0
   mocktail: ^1.0.4
   nock: ^1.2.3
   riverpod_generator: 4.0.8
-  sqlite3: ^3.3.4
+  sqlite3: ^3.5.2
 dependency_overrides:
   # Pin to 0.2.0: 0.3.0 Package.swift declares iOS 12 but uses CryptoKit (iOS 13+)
   flutter_secure_storage_darwin: 0.2.0

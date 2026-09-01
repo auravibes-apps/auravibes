@@ -13,10 +13,10 @@ workspace:
 
 dev_dependencies:
   analyzer: ^13.0.0
-  dart_code_linter: ^4.2.0
+  dart_code_linter: ^4.3.0
   dependency_validator: ^5.0.5
   import_sorter: ^5.0.0-releasecandidate.1
-  melos: ^8.1.0
+  melos: ^8.6.0
   riverpod_lint: 3.1.8
   test: 1.31.1
   very_good_analysis: ^11.0.0-rc.1
