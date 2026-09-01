@@ -25,32 +25,21 @@ import 'package:rxdart/rxdart.dart';
 
 final _logger = Logger('continue_agent_service');
 
-class ContinueAgentService
-    implements AgentStreamProvider<ChatResult<ChatMessage>> {
-  ContinueAgentService({
-    required this.chatbotService,
-    required this.messageRepository,
-    required this.agentContinuationProvider,
-    required this.messagesStreamingRuntime,
-    required this.conversationStreamingRuntime,
-    required this.agentCancellationRuntime,
-    required this.monitoringService,
-  });
-
-  final ChatbotService chatbotService;
-  final MessageRepository messageRepository;
-  final AgentContinuationProvider<
+class ContinueAgentService({
+  required final ChatbotService chatbotService,
+  required final MessageRepository messageRepository,
+  required final AgentContinuationProvider<
     WorkspaceModelSelectionWithConnectionEntity,
     MessageEntity,
     ChatMessage,
     ToolSpec
   >
-  agentContinuationProvider;
-  final MessagesStreamingRuntime messagesStreamingRuntime;
-  final ConversationStreamingRuntime conversationStreamingRuntime;
-  final AgentCancellationRuntime agentCancellationRuntime;
-  final MonitoringService monitoringService;
-
+  agentContinuationProvider,
+  required final MessagesStreamingRuntime messagesStreamingRuntime,
+  required final ConversationStreamingRuntime conversationStreamingRuntime,
+  required final AgentCancellationRuntime agentCancellationRuntime,
+  required final MonitoringService monitoringService,
+}) implements AgentStreamProvider<ChatResult<ChatMessage>> {
   @override
   void removeConversationStreaming(String conversationId) {
     conversationStreamingRuntime.remove(conversationId);
@@ -429,12 +418,10 @@ final continueAgentServiceProvider = Provider<ContinueAgentService>(
   dependencies: [appAgentContinuationProvider],
 );
 
-class _AppChunkSink implements AgentChunkSink<ChatResult<ChatMessage>> {
-  const _AppChunkSink(this._controller, this._future);
-
-  final StreamController<ChatResult<ChatMessage>> _controller;
-  final Future<void> _future;
-
+class const _AppChunkSink(
+  final StreamController<ChatResult<ChatMessage>> _controller,
+  final Future<void> _future,
+) implements AgentChunkSink<ChatResult<ChatMessage>> {
   @override
   void add(ChatResult<ChatMessage> chunk) {
     _controller.add(chunk);

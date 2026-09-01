@@ -13,8 +13,10 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_test/serverpod_test.dart' as _i1;
 import 'package:serverpod/serverpod.dart' as _i2;
+
 import 'dart:io' as _i3;
 import 'dart:async' as _i4;
+
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i5;
 import 'package:auravibes_server/src/generated/features/accounts/models/account_summary.dart'
@@ -69,7 +71,9 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _i30;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_subscribe_request.dart'
     as _i31;
+
 import 'dart:convert' as _i32;
+
 import 'package:auravibes_server/src/generated/features/conversations/models/edit_pending_conversation_message_request.dart'
     as _i33;
 import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
@@ -396,16 +400,10 @@ class _InternalTestEndpoints extends TestEndpoints
   }
 }
 
-class _EmailIdpEndpoint {
-  _EmailIdpEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _EmailIdpEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i5.AuthSuccess> login(
     _i1.TestSessionBuilder sessionBuilder, {
     required String email,
@@ -428,12 +426,10 @@ class _EmailIdpEndpoint {
           }),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i5.AuthSuccess>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i5.AuthSuccess>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -459,12 +455,10 @@ class _EmailIdpEndpoint {
           parameters: _i1.testObjectToJson({'email': email}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i2.UuidValue>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i2.UuidValue>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -494,12 +488,10 @@ class _EmailIdpEndpoint {
           }),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<String>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<String>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -529,12 +521,10 @@ class _EmailIdpEndpoint {
           }),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i5.AuthSuccess>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i5.AuthSuccess>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -560,12 +550,10 @@ class _EmailIdpEndpoint {
           parameters: _i1.testObjectToJson({'email': email}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i2.UuidValue>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i2.UuidValue>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -595,12 +583,10 @@ class _EmailIdpEndpoint {
           }),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<String>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<String>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -630,12 +616,10 @@ class _EmailIdpEndpoint {
           }),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -658,12 +642,10 @@ class _EmailIdpEndpoint {
           parameters: _i1.testObjectToJson({}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<bool>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<bool>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -672,16 +654,10 @@ class _EmailIdpEndpoint {
   }
 }
 
-class _JwtRefreshEndpoint {
-  _JwtRefreshEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _JwtRefreshEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i5.AuthSuccess> refreshAccessToken(
     _i1.TestSessionBuilder sessionBuilder, {
     required String refreshToken,
@@ -700,12 +676,10 @@ class _JwtRefreshEndpoint {
           parameters: _i1.testObjectToJson({'refreshToken': refreshToken}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i5.AuthSuccess>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i5.AuthSuccess>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -714,16 +688,10 @@ class _JwtRefreshEndpoint {
   }
 }
 
-class _AccountEndpoint {
-  _AccountEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _AccountEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i6.AccountSummary> currentUser(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
@@ -741,12 +709,10 @@ class _AccountEndpoint {
           parameters: _i1.testObjectToJson({}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i6.AccountSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i6.AccountSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -755,16 +721,10 @@ class _AccountEndpoint {
   }
 }
 
-class _CodexOAuthEndpoint {
-  _CodexOAuthEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _CodexOAuthEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i7.StartCodexOAuthResult> start(
     _i1.TestSessionBuilder sessionBuilder,
     _i8.StartCodexOAuthRequest request,
@@ -783,12 +743,10 @@ class _CodexOAuthEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i7.StartCodexOAuthResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i7.StartCodexOAuthResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -814,12 +772,10 @@ class _CodexOAuthEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i9.CompleteCodexOAuthResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i9.CompleteCodexOAuthResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -828,16 +784,10 @@ class _CodexOAuthEndpoint {
   }
 }
 
-class _ConversationEndpoint {
-  _ConversationEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _ConversationEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i11.ConversationSummary> create(
     _i1.TestSessionBuilder sessionBuilder,
     _i12.CreateConversationRequest request,
@@ -856,12 +806,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i11.ConversationSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i11.ConversationSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -887,12 +835,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i11.ConversationSummary>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i11.ConversationSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -918,12 +864,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i14.ConversationPage>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i14.ConversationPage>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -949,12 +893,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i11.ConversationSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i11.ConversationSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -980,12 +922,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i16.ConversationMessageView>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i16.ConversationMessageView>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1011,12 +951,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i11.ConversationSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i11.ConversationSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1042,12 +980,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1073,12 +1009,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i20.StartTurnResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i20.StartTurnResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1104,12 +1038,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i22.ConversationMutationResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i22.ConversationMutationResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1135,12 +1067,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i24.TurnSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i24.TurnSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1166,12 +1096,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1197,12 +1125,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1228,12 +1154,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1259,12 +1183,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1327,12 +1249,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1358,12 +1278,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1389,12 +1307,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1420,12 +1336,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i26.ConversationSnapshot>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i26.ConversationSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1451,12 +1365,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i22.ConversationMutationResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i22.ConversationMutationResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1482,12 +1394,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i22.ConversationMutationResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i22.ConversationMutationResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1513,12 +1423,10 @@ class _ConversationEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i22.ConversationMutationResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i22.ConversationMutationResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1527,16 +1435,10 @@ class _ConversationEndpoint {
   }
 }
 
-class _McpServerEndpoint {
-  _McpServerEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _McpServerEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i40.CreateMcpServerResult> create(
     _i1.TestSessionBuilder sessionBuilder,
     _i41.CreateMcpServerRequest request,
@@ -1555,12 +1457,10 @@ class _McpServerEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i40.CreateMcpServerResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i40.CreateMcpServerResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1586,12 +1486,10 @@ class _McpServerEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1617,12 +1515,10 @@ class _McpServerEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i43.DiscoverMcpServerResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i43.DiscoverMcpServerResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1631,16 +1527,10 @@ class _McpServerEndpoint {
   }
 }
 
-class _ModelConnectionEndpoint {
-  _ModelConnectionEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _ModelConnectionEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<List<_i45.ApiModelProvider>> listCatalogProviders(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
@@ -1658,12 +1548,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i45.ApiModelProvider>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i45.ApiModelProvider>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1689,12 +1577,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'providerId': providerId}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i46.ApiModel>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i46.ApiModel>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1720,12 +1606,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i47.ModelConnectionView>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i47.ModelConnectionView>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1751,12 +1635,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i47.ModelConnectionView>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i47.ModelConnectionView>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1782,12 +1664,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i47.ModelConnectionView>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i47.ModelConnectionView>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1813,12 +1693,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1844,12 +1722,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i52.WorkspaceModelSelectionView>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i52.WorkspaceModelSelectionView>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1875,12 +1751,10 @@ class _ModelConnectionEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i54.ModelSyncResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i54.ModelSyncResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1889,16 +1763,10 @@ class _ModelConnectionEndpoint {
   }
 }
 
-class _ObjectEndpoint {
-  _ObjectEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _ObjectEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i56.BeginUploadResult> beginUpload(
     _i1.TestSessionBuilder sessionBuilder,
     _i57.BeginUploadRequest request,
@@ -1917,12 +1785,10 @@ class _ObjectEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i56.BeginUploadResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i56.BeginUploadResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1948,12 +1814,10 @@ class _ObjectEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i58.ObjectResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i58.ObjectResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1979,12 +1843,10 @@ class _ObjectEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i60.GetDownloadResult>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i60.GetDownloadResult>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2010,12 +1872,10 @@ class _ObjectEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2024,16 +1884,10 @@ class _ObjectEndpoint {
   }
 }
 
-class _WorkspaceStreamEndpoint {
-  _WorkspaceStreamEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _WorkspaceStreamEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Stream<_i63.WorkspaceStreamEnvelope> subscribe(
     _i1.TestSessionBuilder sessionBuilder,
     _i64.WorkspaceSubscribeRequest request,
@@ -2072,16 +1926,10 @@ class _WorkspaceStreamEndpoint {
   }
 }
 
-class _WorkspaceSecretEndpoint {
-  _WorkspaceSecretEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _WorkspaceSecretEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i65.PutWorkspaceSecretResponse> put(
     _i1.TestSessionBuilder sessionBuilder,
     _i66.PutWorkspaceSecretRequest request,
@@ -2100,12 +1948,10 @@ class _WorkspaceSecretEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i65.PutWorkspaceSecretResponse>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i65.PutWorkspaceSecretResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2114,16 +1960,10 @@ class _WorkspaceSecretEndpoint {
   }
 }
 
-class _WorkspaceStateEndpoint {
-  _WorkspaceStateEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _WorkspaceStateEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<_i67.ReadWorkspaceStateResponse> read(
     _i1.TestSessionBuilder sessionBuilder,
     _i68.ReadWorkspaceStateRequest request,
@@ -2142,12 +1982,10 @@ class _WorkspaceStateEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i67.ReadWorkspaceStateResponse>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i67.ReadWorkspaceStateResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2173,12 +2011,10 @@ class _WorkspaceStateEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i69.PatchWorkspaceStateResponse>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i69.PatchWorkspaceStateResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2204,12 +2040,10 @@ class _WorkspaceStateEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i71.MutateWorkspaceCredentialResponse>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i71.MutateWorkspaceCredentialResponse>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2218,16 +2052,10 @@ class _WorkspaceStateEndpoint {
   }
 }
 
-class _CloudWorkspaceEndpoint {
-  _CloudWorkspaceEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
-
-  final _i2.EndpointDispatch _endpointDispatch;
-
-  final _i2.SerializationManager _serializationManager;
-
+class _CloudWorkspaceEndpoint(
+  final _i2.EndpointDispatch _endpointDispatch,
+  final _i2.SerializationManager _serializationManager,
+) {
   _i4.Future<List<_i73.CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
@@ -2245,12 +2073,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i73.CloudWorkspaceSummary>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i73.CloudWorkspaceSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2275,12 +2101,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i74.PendingWorkspaceInviteSummary>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i74.PendingWorkspaceInviteSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2306,12 +2130,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i75.CloudWorkspaceDetail>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i75.CloudWorkspaceDetail>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2337,12 +2159,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i77.CloudWorkspaceMemberSummary>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i77.CloudWorkspaceMemberSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2368,12 +2188,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<List<_i79.CloudWorkspaceInviteSummary>>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<List<_i79.CloudWorkspaceInviteSummary>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2399,12 +2217,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i73.CloudWorkspaceSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i73.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2430,12 +2246,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i74.PendingWorkspaceInviteSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i74.PendingWorkspaceInviteSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2461,12 +2275,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i79.CloudWorkspaceInviteSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i79.CloudWorkspaceInviteSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2492,12 +2304,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2523,12 +2333,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i73.CloudWorkspaceSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i73.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2554,12 +2362,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2585,12 +2391,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<_i73.CloudWorkspaceSummary>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<_i73.CloudWorkspaceSummary>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2616,12 +2420,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2647,12 +2449,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2678,12 +2478,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2709,12 +2507,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -2740,12 +2536,10 @@ class _CloudWorkspaceEndpoint {
           parameters: _i1.testObjectToJson({'request': request}),
           serializationManager: _serializationManager,
         );
-        var _localReturnValue =
-            await (_localCallContext.method.call(
-                  _localUniqueSession,
-                  _localCallContext.arguments,
-                )
-                as _i4.Future<void>);
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _i4.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

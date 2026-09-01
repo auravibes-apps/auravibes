@@ -7,10 +7,9 @@ import 'package:drift/drift.dart';
 part 'workspace_compaction_settings_dao.g.dart';
 
 @DriftAccessor(tables: [WorkspaceCompactionSettings])
-class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
+class WorkspaceCompactionSettingsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceCompactionSettingsDaoMixin {
-  WorkspaceCompactionSettingsDao(super.attachedDatabase);
-
   Future<WorkspaceCompactionSettingsTable?> getByWorkspaceId(
     String workspaceId,
   ) {
@@ -47,9 +46,8 @@ class WorkspaceCompactionSettingsDao extends DatabaseAccessor<AppDatabase>
       return updated;
     }
 
-    return await into(
-      workspaceCompactionSettings,
-    ).insertReturning(companion.copyWith(workspaceId: Value(workspaceId)));
+    return await into(workspaceCompactionSettings)
+        .insertReturning(companion.copyWith(workspaceId: Value(workspaceId)));
   }
 
   Future<void> deleteByWorkspaceId(String workspaceId) async {

@@ -17,7 +17,7 @@ import 'package:flutter/material.dart';
 /// ```
 class AuraSelectableText extends StatelessWidget {
   /// Creates an Aura selectable text widget.
-  const AuraSelectableText(
+  const new(
     this.data, {
     super.key,
     this.style = AuraTextStyle.body,

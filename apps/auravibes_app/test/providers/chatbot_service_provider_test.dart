@@ -56,7 +56,7 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
 }
 
 class _MockServiceConnectionRepository extends Mock
-    implements ServiceConnectionRepository {}
+    implements ServiceConnectionRepository;
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();

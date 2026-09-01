@@ -8,19 +8,13 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:crypto/crypto.dart';
 import 'package:riverpod/riverpod.dart';
 
-class BuildLoadedSkillManifestsUsecase {
-  const BuildLoadedSkillManifestsUsecase(
-    this._listAvailableSkillsUsecase,
-    this._buildSkillTemplateToolSpecsUsecase,
-    this._buildAppSkillNativeToolSpecsUsecase,
-  );
-
+class const BuildLoadedSkillManifestsUsecase(
   final ListAvailableSkillsUsecase Function(String workspaceId)
-  _listAvailableSkillsUsecase;
-  final BuildSkillTemplateToolSpecsUsecase _buildSkillTemplateToolSpecsUsecase;
+  _listAvailableSkillsUsecase,
+  final BuildSkillTemplateToolSpecsUsecase _buildSkillTemplateToolSpecsUsecase,
   final BuildAppSkillNativeToolSpecsUsecase
-  _buildAppSkillNativeToolSpecsUsecase;
-
+  _buildAppSkillNativeToolSpecsUsecase,
+) {
   Future<List<SkillManifest>> call({
     required String conversationId,
     required String workspaceId,

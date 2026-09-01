@@ -37,7 +37,7 @@ int _sortProviders(ApiModelProvidersTable a, ApiModelProvidersTable b) {
 class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
     with _$ApiModelProvidersDaoMixin {
   /// Creates a new [ApiModelProvidersDao] instance.
-  ApiModelProvidersDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Retrieves all API model providers from the database.
   ///
@@ -50,9 +50,9 @@ class ApiModelProvidersDao extends DatabaseAccessor<AppDatabase>
   }
 
   Stream<List<ApiModelProvidersTable>> watchAllProviders() {
-    return select(
-      apiModelProviders,
-    ).watch().map((providers) => providers.sorted(_sortProviders));
+    return select(apiModelProviders)
+        .watch()
+        .map((providers) => providers.sorted(_sortProviders));
   }
 
   /// Retrieves a provider by its ID.

@@ -12,18 +12,15 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ReorderPendingConversationMessageRequest
-    implements _i1.SerializableModel {
-  ReorderPendingConversationMessageRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.conversationId,
-    required this.expectedProjectionRevision,
-    required this.messageId,
-    this.beforeMessageId,
-  });
-
-  factory ReorderPendingConversationMessageRequest({
+abstract class ReorderPendingConversationMessageRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var String conversationId,
+  required var int expectedProjectionRevision,
+  required var String messageId,
+  var String? beforeMessageId,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -32,7 +29,7 @@ abstract class ReorderPendingConversationMessageRequest
     String? beforeMessageId,
   }) = _ReorderPendingConversationMessageRequestImpl;
 
-  factory ReorderPendingConversationMessageRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ReorderPendingConversationMessageRequest(
@@ -45,18 +42,6 @@ abstract class ReorderPendingConversationMessageRequest
       beforeMessageId: jsonSerialization['beforeMessageId'] as String?,
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  String conversationId;
-
-  int expectedProjectionRevision;
-
-  String messageId;
-
-  String? beforeMessageId;
 
   /// Returns a shallow copy of this [ReorderPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
@@ -88,25 +73,25 @@ abstract class ReorderPendingConversationMessageRequest
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ReorderPendingConversationMessageRequestImpl
-    extends ReorderPendingConversationMessageRequest {
-  _ReorderPendingConversationMessageRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required String conversationId,
-    required int expectedProjectionRevision,
-    required String messageId,
-    String? beforeMessageId,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         conversationId: conversationId,
-         expectedProjectionRevision: expectedProjectionRevision,
-         messageId: messageId,
-         beforeMessageId: beforeMessageId,
-       );
+class _ReorderPendingConversationMessageRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required String conversationId,
+  required int expectedProjectionRevision,
+  required String messageId,
+  String? beforeMessageId,
+}) extends ReorderPendingConversationMessageRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+        messageId: messageId,
+        beforeMessageId: beforeMessageId,
+      );
 
   /// Returns a shallow copy of this [ReorderPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.

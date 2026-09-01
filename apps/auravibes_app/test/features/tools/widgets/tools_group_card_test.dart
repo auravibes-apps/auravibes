@@ -51,11 +51,8 @@ ToolsGroupEntity _group({
   );
 }
 
-class _MockGroupedNotifier extends GroupedToolsNotifier {
-  _MockGroupedNotifier(this.groups);
-
-  final List<ToolsGroupWithTools> groups;
-
+class _MockGroupedNotifier(final List<ToolsGroupWithTools> groups)
+    extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 
@@ -83,20 +80,15 @@ class _MockMcpConnectionNotifier extends McpConnectionNotifier {
   }
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.child});
-
-  final Widget child;
-
+class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
           mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
-          groupedToolsProvider(
-            _workspaceId,
-          ).overrideWith(() => _MockGroupedNotifier([])),
+          groupedToolsProvider(_workspaceId)
+              .overrideWith(() => _MockGroupedNotifier([])),
         ],
         child: MaterialApp(
           home: Theme(

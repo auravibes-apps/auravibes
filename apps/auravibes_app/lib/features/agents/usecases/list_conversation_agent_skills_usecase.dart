@@ -9,27 +9,22 @@ import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod/riverpod.dart';
 
-typedef LoadAgentConversation =
-    Future<ConversationEntity?> Function(String id, String workspaceId);
+typedef LoadAgentConversation = Future<ConversationEntity?> Function(
+  String id,
+  String workspaceId,
+);
 
-typedef ResolveAgentSkills =
-    Future<ResolvedAgentSkills> Function({
-      required String workspaceId,
-      required List<AgentSkillRef> refs,
-    });
+typedef ResolveAgentSkills = Future<ResolvedAgentSkills> Function({
+  required String workspaceId,
+  required List<AgentSkillRef> refs,
+});
 
-class ListConversationAgentSkillsUsecase {
-  const ListConversationAgentSkillsUsecase(
-    this._loadConversation,
-    this._agentRepositoryForWorkspace,
-    this._resolveAgentSkillsUsecase,
-  );
-
-  final LoadAgentConversation _loadConversation;
+class const ListConversationAgentSkillsUsecase(
+  final LoadAgentConversation _loadConversation,
   final AgentRepository Function(String workspaceId)
-  _agentRepositoryForWorkspace;
-  final ResolveAgentSkills _resolveAgentSkillsUsecase;
-
+  _agentRepositoryForWorkspace,
+  final ResolveAgentSkills _resolveAgentSkillsUsecase,
+) {
   Future<List<AvailableSkill>> call({
     required String conversationId,
     required String workspaceId,
@@ -57,9 +52,8 @@ class ListConversationAgentSkillsUsecase {
     final agentId = conversation?.agentId;
     if (agentId == null) return null;
 
-    final agent = await _agentRepositoryForWorkspace(
-      workspaceId,
-    ).getAgentById(agentId);
+    final agent = await _agentRepositoryForWorkspace(workspaceId)
+        .getAgentById(agentId);
     if (agent == null || agent.workspaceId != workspaceId) return null;
     if (!agent.isEnabled) return null;
 
@@ -90,9 +84,8 @@ final listConversationAgentSkillsUsecaseProvider =
             cloudWorkspaceStateGatewayProvider(session).future,
           );
           if (cloud == null) return null;
-          final conversation = await CloudChatGateway(
-            cloud,
-          ).getConversation(conversationId);
+          final conversation = await CloudChatGateway(cloud)
+              .getConversation(conversationId);
 
           return ConversationEntity(
             id: conversation.id,

@@ -11,22 +11,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/conversations/models/conversation_summary.dart'
     as _i2;
+
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class ConversationPage implements _i1.SerializableModel {
-  ConversationPage._({
-    required this.conversations,
-    this.nextCursor,
-  });
-
-  factory ConversationPage({
+abstract class ConversationPage._({
+  required var List<_i2.ConversationSummary> conversations,
+  var String? nextCursor,
+}) implements _i1.SerializableModel {
+  factory({
     required List<_i2.ConversationSummary> conversations,
     String? nextCursor,
   }) = _ConversationPageImpl;
 
-  factory ConversationPage.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationPage(
       conversations: _i3.Protocol().deserialize<List<_i2.ConversationSummary>>(
         jsonSerialization['conversations'],
@@ -34,10 +34,6 @@ abstract class ConversationPage implements _i1.SerializableModel {
       nextCursor: jsonSerialization['nextCursor'] as String?,
     );
   }
-
-  List<_i2.ConversationSummary> conversations;
-
-  String? nextCursor;
 
   /// Returns a shallow copy of this [ConversationPage]
   /// with some or all fields replaced by the given arguments.
@@ -61,16 +57,17 @@ abstract class ConversationPage implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationPageImpl extends ConversationPage {
-  _ConversationPageImpl({
-    required List<_i2.ConversationSummary> conversations,
-    String? nextCursor,
-  }) : super._(
-         conversations: conversations,
-         nextCursor: nextCursor,
-       );
+class _ConversationPageImpl({
+  required List<_i2.ConversationSummary> conversations,
+  String? nextCursor,
+}) extends ConversationPage {
+  this
+    : super._(
+        conversations: conversations,
+        nextCursor: nextCursor,
+      );
 
   /// Returns a shallow copy of this [ConversationPage]
   /// with some or all fields replaced by the given arguments.

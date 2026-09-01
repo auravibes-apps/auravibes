@@ -49,22 +49,14 @@ final $ActionClickable = _Story(
 );
 
 /// Demonstrates an action button group and reports the last pressed action.
-class ActionDemo extends StatefulWidget {
-  const ActionDemo({
-    super.key,
-    required this.size,
-    required this.variant,
-    required this.orientation,
-    required this.disabled,
-    required this.isLoading,
-  });
-
-  final AuraButtonGroupSize size;
-  final AuraButtonGroupVariant variant;
-  final Axis orientation;
-  final bool disabled;
-  final bool isLoading;
-
+class const ActionDemo({
+  super.key,
+  required final AuraButtonGroupSize size,
+  required final AuraButtonGroupVariant variant,
+  required final Axis orientation,
+  required final bool disabled,
+  required final bool isLoading,
+}) extends StatefulWidget {
   @override
   State<ActionDemo> createState() => _ActionDemoState();
 }

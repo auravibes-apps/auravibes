@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// that the AI is processing or typing a response.
 class AuraTypingIndicator extends StatefulWidget {
   /// Creates a Aura typing indicator.
-  const AuraTypingIndicator({
+  const new({
     super.key,
     this.size = AuraTypingIndicatorSize.medium,
     this.color,

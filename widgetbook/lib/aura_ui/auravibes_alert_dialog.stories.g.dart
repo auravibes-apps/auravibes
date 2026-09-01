@@ -21,8 +21,7 @@ final AlertDialogDemoComponent =
       name: component.name ?? 'AlertDialogDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates the alert dialog trigger and dismissible dialog content.''',
+      docComment: r'''Demonstrates the alert dialog trigger and dismissible dialog content.''',
       stories: [$AlertDialog..$generatedName = 'AlertDialog'],
     );
 typedef AlertDialogDemoScenario =

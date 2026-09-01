@@ -12,9 +12,7 @@ import 'package:characters/characters.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as parser;
 
-class UrlContentTransformer {
-  const UrlContentTransformer();
-
+class const UrlContentTransformer() {
   static const int maxOutputLength = 1024 * 1024;
   static const _truncationSuffix = '\n... [truncated]';
 

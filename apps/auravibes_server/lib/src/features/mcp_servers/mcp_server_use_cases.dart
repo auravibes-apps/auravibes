@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:cryptography/cryptography.dart';
 import 'package:serverpod/serverpod.dart';
 
@@ -11,13 +12,11 @@ import 'mcp_server_policy.dart';
 import 'mcp_server_probe.dart';
 import 'mcp_server_repository.dart';
 
-class McpServerUseCases {
+class McpServerUseCases(
+  final McpServerRepository _repository,
+  final McpServerProbe _probe,
+) {
   static const _endpointCreate = 'mcpServer.create';
-  McpServerUseCases(this._repository, this._probe);
-
-  final McpServerRepository _repository;
-  final McpServerProbe _probe;
-
   Future<CreateMcpServerResult> create(
     Session session, {
     required String userId,
@@ -519,13 +518,8 @@ class McpServerUseCases {
       secret.length <= 4 ? secret : secret.substring(secret.length - 4);
 }
 
-class _McpMetadata {
-  const _McpMetadata({
-    required this.url,
-    required this.transport,
-    required this.useHttp2,
-  });
-  final String url;
-  final String transport;
-  final bool useHttp2;
-}
+class const _McpMetadata({
+  required final String url,
+  required final String transport,
+  required final bool useHttp2,
+});

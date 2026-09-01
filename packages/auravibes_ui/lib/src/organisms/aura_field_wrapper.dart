@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 /// with borders, background colors, focus states, and error handling.
 class AuraFieldWrapper extends StatefulWidget {
   /// Creates a Aura field wrapper.
-  const AuraFieldWrapper({
+  const new({
     required this.child,
     super.key,
     this.label,

@@ -25,8 +25,7 @@ final AuraFloatingActionButtonComponent =
     Component<AuraFloatingActionButton, StoryArgs<AuraFloatingActionButton>>(
       name: 'AuraFloatingActionButton',
       path: 'aura_ui',
-      docComment:
-          r'''A customizable floating action button component following the Aura design
+      docComment: r'''A customizable floating action button component following the Aura design
 system.
 
 This FAB supports different sizes, icons, extended variants with text,

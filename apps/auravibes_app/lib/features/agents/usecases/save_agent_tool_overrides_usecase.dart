@@ -4,11 +4,9 @@ import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class SaveAgentToolOverridesUsecase {
-  const SaveAgentToolOverridesUsecase(this._repository);
-
-  final AgentToolsRepositoryContract _repository;
-
+class const SaveAgentToolOverridesUsecase(
+  final AgentToolsRepositoryContract _repository,
+) {
   Future<void> call({
     required String agentId,
     required Map<String, AgentToolPermissionMode> permissionsByToolId,

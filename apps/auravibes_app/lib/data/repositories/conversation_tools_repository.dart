@@ -10,12 +10,11 @@ import 'package:auravibes_app/domain/enums/tool_permission_result.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 
 /// Implementation of the ConversationToolsRepository.
-class ConversationToolsRepository {
-  ConversationToolsRepository(this._database, this._workspaceToolsRepository)
-    : _dao = _database.conversationToolsDao;
-  final AppDatabase _database;
-  final WorkspaceToolsRepository _workspaceToolsRepository;
-  final ConversationToolsDao _dao;
+class ConversationToolsRepository(
+  final AppDatabase _database,
+  final WorkspaceToolsRepository _workspaceToolsRepository,
+) {
+  final ConversationToolsDao _dao = _database.conversationToolsDao;
 
   Future<List<ConversationToolEntity>> getConversationTools(
     String conversationId,
@@ -448,11 +447,7 @@ class ConversationToolsRepository {
 /// Base exception for conversation tools-related operations.
 class ConversationToolsException implements Exception {
   /// Creates a new ConversationToolsException.
-  const ConversationToolsException(
-    this.message, {
-    this.localizationKey,
-    this.cause,
-  });
+  const new(this.message, {this.localizationKey, this.cause});
 
   /// Error message describing the exception.
   final String message;
@@ -474,23 +469,18 @@ class ConversationToolsException implements Exception {
 /// Exception thrown when conversation tool validation fails.
 class ConversationToolsValidationException extends ConversationToolsException {
   /// Creates a new ConversationToolsValidationException.
-  const ConversationToolsValidationException(
-    super.message, {
-    super.localizationKey,
-    super.cause,
-  });
+  const new(super.message, {super.localizationKey, super.cause});
 
   /// Creates a validation exception for a missing conversation.
-  const ConversationToolsValidationException.conversationNotFound(
-    String conversationId,
-  ) : super(
+  const new conversationNotFound(String conversationId)
+    : super(
         'Conversation not found: $conversationId',
         localizationKey:
             LocaleKeys.chats_screens_chat_conversation_error_not_found,
       );
 
   /// Creates a validation exception for a missing tool.
-  const ConversationToolsValidationException.toolNotFound(String toolId)
+  const new toolNotFound(String toolId)
     : super(
         'Tool not found: $toolId',
         localizationKey: LocaleKeys.tool_call_status_tool_not_found,

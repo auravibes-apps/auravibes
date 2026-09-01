@@ -5,12 +5,10 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_loading_overlay.stories.g.dart';
 
-class _LoadingOverlayInput {
-  const _LoadingOverlayInput({required this.isLoading, required this.message});
-
-  final bool isLoading;
-  final String? message;
-}
+class const _LoadingOverlayInput({
+  required final bool isLoading,
+  required final String? message,
+});
 
 const component = ComponentMeta(name: 'AuraLoadingOverlay');
 const meta = Meta(LoadingOverlayDemo.new, argsType: _LoadingOverlayInput.new);
@@ -39,16 +37,11 @@ final $LoadingOverlay = _Story(
 );
 
 /// Demonstrates loading content with an optional message and accessible state.
-class LoadingOverlayDemo extends StatelessWidget {
-  const LoadingOverlayDemo({
-    required this.isLoading,
-    required this.message,
-    super.key,
-  });
-
-  final bool isLoading;
-  final String? message;
-
+class const LoadingOverlayDemo({
+  required final bool isLoading,
+  required final String? message,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraLoadingOverlay(

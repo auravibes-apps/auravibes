@@ -15,25 +15,20 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:riverpod/src/providers/provider.dart';
 
-class LoadConversationToolSpecsUsecase {
-  const LoadConversationToolSpecsUsecase({
-    required this._conversationToolsRepository,
-    required this._buildCombinedToolSpecsUseCase,
-    required this._buildDynamicSkillToolSpecsUsecase,
-    required this._syncSkillToolPermissionsUsecase,
-    // ponytail: Compatibility only; manifests now own materialization.
-    // ignore: avoid_unused_constructor_parameters
-    BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
-    // Native materializer remains accepted by legacy direct callers.
-    // ignore: avoid_unused_constructor_parameters
-    BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase,
-  });
-
-  final ConversationToolsRepository _conversationToolsRepository;
-  final BuildCombinedToolSpecsUseCase _buildCombinedToolSpecsUseCase;
-  final BuildDynamicSkillToolSpecsUsecase _buildDynamicSkillToolSpecsUsecase;
-  final SyncSkillToolPermissionsUsecase _syncSkillToolPermissionsUsecase;
-
+class const LoadConversationToolSpecsUsecase({
+  required final ConversationToolsRepository _conversationToolsRepository,
+  required final BuildCombinedToolSpecsUseCase _buildCombinedToolSpecsUseCase,
+  required final BuildDynamicSkillToolSpecsUsecase
+  _buildDynamicSkillToolSpecsUsecase,
+  required final SyncSkillToolPermissionsUsecase
+  _syncSkillToolPermissionsUsecase,
+  // ponytail: Compatibility only; manifests now own materialization.
+  // ignore: avoid_unused_constructor_parameters
+  BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
+  // Native materializer remains accepted by legacy direct callers.
+  // ignore: avoid_unused_constructor_parameters
+  BuildAppSkillNativeToolSpecsUsecase? buildAppSkillNativeToolSpecsUsecase,
+}) {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,

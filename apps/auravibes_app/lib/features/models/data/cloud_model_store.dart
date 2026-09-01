@@ -11,12 +11,10 @@ import 'package:auravibes_app/features/models/usecases/cloud_model_connection_us
 import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudModelStore implements ModelConnectionStore, ModelSelectionStore {
-  CloudModelStore(this._workspaceId, this._usecases);
-
-  final String _workspaceId;
-  final CloudModelConnectionUsecases _usecases;
-
+class CloudModelStore(
+  final String _workspaceId,
+  final CloudModelConnectionUsecases _usecases,
+) implements ModelConnectionStore, ModelSelectionStore {
   @override
   Stream<List<ModelConnectionEntity>> watchModelConnections(
     ModelConnectionFilter filter,
@@ -169,12 +167,9 @@ class CloudModelStore implements ModelConnectionStore, ModelSelectionStore {
   );
 }
 
-class CloudModelCatalogStore implements ModelCatalogStore {
+class const CloudModelCatalogStore(final CloudModelGateway _gateway)
+    implements ModelCatalogStore {
   static const _pollInterval = Duration(minutes: 15);
-  const CloudModelCatalogStore(this._gateway);
-
-  final CloudModelGateway _gateway;
-
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async =>
       (await _gateway.listModelCatalogProviders())
@@ -191,15 +186,16 @@ class CloudModelCatalogStore implements ModelCatalogStore {
   Future<ApiModelEntity?> getModelByProviderAndModelId(
     String providerId,
     String modelId,
-  ) async => (await getModelsByProvider(
-    providerId,
-  )).where((model) => model.id == modelId).firstOrNull;
+  ) async =>
+      (await getModelsByProvider(providerId))
+          .where((model) => model.id == modelId)
+          .firstOrNull;
 
   @override
   Future<List<ApiModelEntity>> getModelsByProvider(String providerId) async =>
-      (await _gateway.listModelCatalogModels(
-        providerId: providerId,
-      )).map(_model).toList(growable: false);
+      (await _gateway.listModelCatalogModels(providerId: providerId))
+          .map(_model)
+          .toList(growable: false);
 
   @override
   Stream<List<ApiModelProviderEntity>> watchAllProviders() =>

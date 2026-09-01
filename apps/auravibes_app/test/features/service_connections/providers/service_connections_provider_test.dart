@@ -203,11 +203,10 @@ ProviderContainer _container({
   );
 }
 
-class _FakeModelConnectionRepository implements ModelConnectionRepository {
-  _FakeModelConnectionRepository(List<ModelConnectionEntity> initial)
-    : _subject = BehaviorSubject.seeded(initial);
-
-  final BehaviorSubject<List<ModelConnectionEntity>> _subject;
+class _FakeModelConnectionRepository(List<ModelConnectionEntity> initial)
+    implements ModelConnectionRepository {
+  final BehaviorSubject<List<ModelConnectionEntity>> _subject =
+      BehaviorSubject.seeded(initial);
   ModelConnectionFilter? watchedFilter;
 
   List<ModelConnectionEntity> get current => _subject.value;
@@ -262,12 +261,10 @@ class _FakeModelConnectionRepository implements ModelConnectionRepository {
   }
 }
 
-class _FakeDefinitionsRepository
+class _FakeDefinitionsRepository(List<SkillCredentialDefinitionEntity> initial)
     implements SkillCredentialDefinitionsRepository {
-  _FakeDefinitionsRepository(List<SkillCredentialDefinitionEntity> initial)
-    : _subject = BehaviorSubject.seeded(initial);
-
-  final BehaviorSubject<List<SkillCredentialDefinitionEntity>> _subject;
+  final BehaviorSubject<List<SkillCredentialDefinitionEntity>> _subject =
+      BehaviorSubject.seeded(initial);
   String? watchedWorkspaceId;
 
   Future<void> dispose() => _subject.close();
@@ -325,11 +322,10 @@ class _FakeDefinitionsRepository
   }
 }
 
-class _FakeCredentialsRepository implements SkillCredentialsRepository {
-  _FakeCredentialsRepository(List<SkillCredentialEntity> initial)
-    : _subject = BehaviorSubject.seeded(initial);
-
-  final BehaviorSubject<List<SkillCredentialEntity>> _subject;
+class _FakeCredentialsRepository(List<SkillCredentialEntity> initial)
+    implements SkillCredentialsRepository {
+  final BehaviorSubject<List<SkillCredentialEntity>> _subject =
+      BehaviorSubject.seeded(initial);
   String? watchedWorkspaceId;
 
   Future<void> dispose() => _subject.close();

@@ -9,18 +9,14 @@ const _thumbRadius = 10.0;
 const double _thumbDiameter = _thumbRadius * 2;
 const _semanticStepCount = 20.0;
 
-class _AuraSliderIncreaseIntent extends Intent {
-  const _AuraSliderIncreaseIntent();
-}
+class const _AuraSliderIncreaseIntent() extends Intent;
 
-class _AuraSliderDecreaseIntent extends Intent {
-  const _AuraSliderDecreaseIntent();
-}
+class const _AuraSliderDecreaseIntent() extends Intent;
 
 /// A controlled, themed slider for selecting a numeric value.
 class AuraSlider extends StatefulWidget {
   /// Creates a slider with [value] constrained to [min] and [max].
-  const AuraSlider({
+  const new({
     required this.value,
     required this.onChanged,
     super.key,
@@ -221,21 +217,13 @@ double _valueAtPosition(
   return min + (max - min) * fraction;
 }
 
-class _AuraSliderPainter extends CustomPainter {
-  const _AuraSliderPainter({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.activeColor,
-    required this.inactiveColor,
-  });
-
-  final double value;
-  final double min;
-  final double max;
-  final Color activeColor;
-  final Color inactiveColor;
-
+class const _AuraSliderPainter({
+  required final double value,
+  required final double min,
+  required final double max,
+  required final Color activeColor,
+  required final Color inactiveColor,
+}) extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final centerY = size.height / 2;
@@ -289,15 +277,10 @@ class _AuraSliderPainter extends CustomPainter {
       inactiveColor != oldDelegate.inactiveColor;
 }
 
-class _AuraSliderFocusRingPainter extends CustomPainter {
-  const _AuraSliderFocusRingPainter({
-    required this.thumbX,
-    required this.color,
-  });
-
-  final double thumbX;
-  final Color color;
-
+class const _AuraSliderFocusRingPainter({
+  required final double thumbX,
+  required final Color color,
+}) extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final focusPaint = Paint()

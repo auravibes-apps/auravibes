@@ -127,9 +127,9 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
 }
 
 class _IntroFixture {
-  _IntroFixture() : this._(AppDatabase(connection: NativeDatabase.memory()));
+  new() : this._(AppDatabase(connection: NativeDatabase.memory()));
 
-  _IntroFixture._(this.database)
+  new _(this.database)
     : container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),

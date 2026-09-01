@@ -6,15 +6,10 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class CheckSkillCredentialReadinessUsecase {
-  const CheckSkillCredentialReadinessUsecase(
-    this._skillCredentialsRepository, {
-    this.cloudStore,
-  });
-  final CloudSkillStore? cloudStore;
-
-  final SkillCredentialsRepository? _skillCredentialsRepository;
-
+class const CheckSkillCredentialReadinessUsecase(
+  final SkillCredentialsRepository? _skillCredentialsRepository, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<bool> call({
     required String workspaceId,
     required SkillEntity skill,

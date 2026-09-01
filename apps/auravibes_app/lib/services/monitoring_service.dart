@@ -6,7 +6,7 @@ import 'package:riverpod/riverpod.dart';
 
 class MonitoringService {
   static const _maxLogFieldLength = 500;
-  MonitoringService({
+  new({
     ValueSetter<String>? debugLogger,
     this.enableConsoleLogging = kDebugMode,
   }) : _debugLogger = debugLogger ?? _defaultDebugLogger;
@@ -30,9 +30,9 @@ class MonitoringService {
   }
 
   String _sanitize(Object value) {
-    final normalized = LogRedaction.redact(
-      value,
-    ).replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized = LogRedaction.redact(value)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
 
     if (normalized.length <= _maxLogFieldLength) {
       return normalized;

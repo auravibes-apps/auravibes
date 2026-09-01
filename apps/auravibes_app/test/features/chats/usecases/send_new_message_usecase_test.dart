@@ -66,9 +66,8 @@ class _SendNewMessageUsecaseFixture {
       () => workspaceModelSelectionRepo.getWorkspaceModelSelectionById(any()),
     ).thenAnswer((_) async => modelSelection);
 
-    when(
-      () => conversationRepo.createConversation(any()),
-    ).thenAnswer((_) async => newConversation);
+    when(() => conversationRepo.createConversation(any()))
+        .thenAnswer((_) async => newConversation);
     when(
       () => sendMessageUsecase.call(
         conversationId: any(named: 'conversationId'),
@@ -164,9 +163,9 @@ void main() {
 
       expect(result.id, 'conv-1');
       expect(
-        () => verify(
-          () => fixture.conversationRepo.createConversation(any()),
-        ).called(1),
+        () =>
+            verify(() => fixture.conversationRepo.createConversation(any()))
+                .called(1),
         returnsNormally,
       );
     });

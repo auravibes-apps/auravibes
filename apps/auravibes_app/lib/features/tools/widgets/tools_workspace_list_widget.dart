@@ -12,11 +12,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// Shows the Built-in Tools default group, MCP groups with connection status,
 /// and custom tool groups. Groups are sorted with the default group first,
 /// MCP groups with errors next, and remaining groups by newest creation date.
-class ToolsWorkspaceListWidget extends ConsumerWidget {
-  const ToolsWorkspaceListWidget({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const ToolsWorkspaceListWidget({
+  required final String workspaceId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupedToolsAsync = ref.watch(groupedToolsProvider(workspaceId));

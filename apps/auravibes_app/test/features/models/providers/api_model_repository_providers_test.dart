@@ -13,11 +13,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _FakeApiModelRepository implements ApiModelRepository {
-  _FakeApiModelRepository({this.providers = const [], this.models = const []});
-  final List<ApiModelProviderEntity> providers;
-  final List<ApiModelEntity> models;
-
+class _FakeApiModelRepository({
+  final List<ApiModelProviderEntity> providers = const [],
+  final List<ApiModelEntity> models = const [],
+}) implements ApiModelRepository {
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async => providers;
 

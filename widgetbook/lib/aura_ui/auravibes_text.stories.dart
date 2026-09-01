@@ -6,19 +6,12 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_text.stories.g.dart';
 
-class _TextInput {
-  const _TextInput({
-    required this.text,
-    required this.style,
-    required this.textAlign,
-    required this.tint,
-  });
-
-  final String text;
-  final AuraTextStyle style;
-  final TextAlign? textAlign;
-  final AuraTint? tint;
-}
+class const _TextInput({
+  required final String text,
+  required final AuraTextStyle style,
+  required final TextAlign? textAlign,
+  required final AuraTint? tint,
+});
 
 const meta = Meta(AuraText.new, argsType: _TextInput.new);
 

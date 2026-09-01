@@ -10,15 +10,10 @@ import 'package:auravibes_app/features/settings/providers/workspace_compaction_s
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-class ShouldCompactConversationUsecase {
-  const ShouldCompactConversationUsecase({
-    required this.messageRepository,
-    required this.settingsRepository,
-  });
-
-  final MessageRepository messageRepository;
-  final WorkspaceCompactionSettingsRepository settingsRepository;
-
+class const ShouldCompactConversationUsecase({
+  required final MessageRepository messageRepository,
+  required final WorkspaceCompactionSettingsRepository settingsRepository,
+}) {
   Future<CompactionDecision> call({
     required String conversationId,
     required String workspaceId,

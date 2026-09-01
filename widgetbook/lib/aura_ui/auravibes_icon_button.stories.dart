@@ -23,21 +23,13 @@ const _iconValues = <IconData>[
   Icons.lock,
 ];
 
-class _IconButtonInput {
-  const _IconButtonInput({
-    required this.icon,
-    required this.disabled,
-    required this.size,
-    required this.variant,
-    required this.tooltip,
-  });
-
-  final IconData icon;
-  final bool disabled;
-  final AuraIconSize size;
-  final AuraIconButtonVariant variant;
-  final String tooltip;
-}
+class const _IconButtonInput({
+  required final IconData icon,
+  required final bool disabled,
+  required final AuraIconSize size,
+  required final AuraIconButtonVariant variant,
+  required final String tooltip,
+});
 
 const component = ComponentMeta(name: 'AuraIconButton');
 const meta = Meta(AuraIconButton.new, argsType: _IconButtonInput.new);
@@ -46,9 +38,8 @@ final _Defaults iconButtonDefaults = _Defaults(
   builder: (context, args) => AuraIconButton(
     icon: args.icon,
     onPressed: () {
-      final _ = ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Icon button pressed!')));
+      final _ = ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Icon button pressed!')));
     },
     disabled: args.disabled,
     size: args.size,

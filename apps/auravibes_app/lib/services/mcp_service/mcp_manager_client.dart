@@ -4,11 +4,10 @@ import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_sdk_adapter.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
-class McpManagerClient {
-  McpManagerClient._(this._client, {this._tokenManager});
-  final mcp.Client _client;
-  final mcp.OAuthTokenManager? _tokenManager;
-
+class McpManagerClient._(
+  final mcp.Client _client, {
+  final mcp.OAuthTokenManager? _tokenManager,
+}) {
   Stream<OAuthTokenEntity>? get onTokenUpdate =>
       _tokenManager?.onTokenUpdate.map(
         (mcpToken) => OAuthTokenEntity(

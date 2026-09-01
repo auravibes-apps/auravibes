@@ -11,22 +11,15 @@ import 'package:riverpod/riverpod.dart';
 typedef CloudServiceConnectionsReader =
     Future<List<CloudServiceConnection>?> Function(String workspaceId);
 
-class AppSkillCredentialCandidate {
-  const AppSkillCredentialCandidate({required this.id, required this.name});
+class const AppSkillCredentialCandidate({
+  required final String id,
+  required final String name,
+});
 
-  final String id;
-  final String name;
-}
-
-class ListAppSkillCredentialCandidatesUsecase {
-  const ListAppSkillCredentialCandidatesUsecase(
-    this._serviceConnectionRepository, {
-    this._cloudServiceConnectionsReader,
-  });
-
-  final ServiceConnectionRepository Function() _serviceConnectionRepository;
-  final CloudServiceConnectionsReader? _cloudServiceConnectionsReader;
-
+class const ListAppSkillCredentialCandidatesUsecase(
+  final ServiceConnectionRepository Function() _serviceConnectionRepository, {
+  final CloudServiceConnectionsReader? _cloudServiceConnectionsReader,
+}) {
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,
     required AppSkillDefinition skill,

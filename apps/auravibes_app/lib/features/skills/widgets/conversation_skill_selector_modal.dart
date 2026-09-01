@@ -11,16 +11,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ConversationSkillSelectorModal extends ConsumerWidget {
-  const ConversationSkillSelectorModal({
-    required this.workspaceId,
-    required this.conversationId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-
+class const ConversationSkillSelectorModal({
+  required final String workspaceId,
+  required final String conversationId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectorAsync = ref.watch(
@@ -84,17 +79,11 @@ class ConversationSkillSelectorModal extends ConsumerWidget {
   }
 }
 
-class _SelectorContent extends StatelessWidget {
-  const _SelectorContent({
-    required this.state,
-    required this.onLoad,
-    required this.onUnload,
-  });
-
-  final ConversationSkillSelectorState state;
-  final ValueChanged<AvailableSkill> onLoad;
-  final ValueChanged<AvailableSkill> onUnload;
-
+class const _SelectorContent({
+  required final ConversationSkillSelectorState state,
+  required final ValueChanged<AvailableSkill> onLoad,
+  required final ValueChanged<AvailableSkill> onUnload,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -122,21 +111,13 @@ class _SelectorContent extends StatelessWidget {
   }
 }
 
-class _SkillSection extends StatelessWidget {
-  const _SkillSection({
-    required this.titleKey,
-    required this.emptyKey,
-    required this.skills,
-    required this.actionIcon,
-    required this.onPressed,
-  });
-
-  final String titleKey;
-  final String emptyKey;
-  final List<AvailableSkill> skills;
-  final IconData actionIcon;
-  final ValueChanged<AvailableSkill> onPressed;
-
+class const _SkillSection({
+  required final String titleKey,
+  required final String emptyKey,
+  required final List<AvailableSkill> skills,
+  required final IconData actionIcon,
+  required final ValueChanged<AvailableSkill> onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(

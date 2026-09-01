@@ -80,7 +80,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
   static final Logger _logger = Logger('AuraSidebarWrapper');
 
   /// Creates a Aura sidebar widget.
-  const AuraSidebarWrapper({
+  const new({
     required this.navigationShell,
     required this.workspaceId,
     super.key,

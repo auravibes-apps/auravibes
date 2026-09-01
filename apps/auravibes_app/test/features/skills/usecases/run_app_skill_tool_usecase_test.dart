@@ -83,9 +83,8 @@ void main() {
     test('executes SearXNG URL template with base URL credential', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       var capturedRequest = const UrlRequest(url: '');
-      when(
-        () => serviceConnections.getById('connection-1'),
-      ).thenAnswer((_) async => _serviceConnection());
+      when(() => serviceConnections.getById('connection-1'))
+          .thenAnswer((_) async => _serviceConnection());
       when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(
           apiKey: 'https://search.example.com',
@@ -121,9 +120,8 @@ void main() {
       () async {
         final serviceConnections = _MockServiceConnectionRepository();
         final urlService = _MockUrlService();
-        when(
-          () => serviceConnections.getById('connection-1'),
-        ).thenAnswer((_) async => _serviceConnection());
+        when(() => serviceConnections.getById('connection-1'))
+            .thenAnswer((_) async => _serviceConnection());
         when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
           (_) async => const ServiceConnectionSecretApiKey(
             apiKey: 'http://localhost:8080',
@@ -156,9 +154,8 @@ void main() {
       () async {
         final serviceConnections = _MockServiceConnectionRepository();
         var capturedRequest = const UrlRequest(url: '');
-        when(
-          () => serviceConnections.getById('connection-1'),
-        ).thenAnswer((_) async => _serviceConnection());
+        when(() => serviceConnections.getById('connection-1'))
+            .thenAnswer((_) async => _serviceConnection());
         when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
           (_) async => const ServiceConnectionSecretApiKey(apiKey: 'brave-key'),
         );
@@ -196,9 +193,8 @@ void main() {
     test('executes POST URL template body', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       var capturedRequest = const UrlRequest(url: '');
-      when(
-        () => serviceConnections.getById('connection-1'),
-      ).thenAnswer((_) async => _serviceConnection());
+      when(() => serviceConnections.getById('connection-1'))
+          .thenAnswer((_) async => _serviceConnection());
       when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(apiKey: 'synthetic'),
       );
@@ -230,9 +226,8 @@ void main() {
     test('executes pending Exa contents URL template', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       var capturedRequest = const UrlRequest(url: '');
-      when(
-        () => serviceConnections.getById('connection-1'),
-      ).thenAnswer((_) async => _serviceConnection());
+      when(() => serviceConnections.getById('connection-1'))
+          .thenAnswer((_) async => _serviceConnection());
       when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(apiKey: 'exa-key'),
       );
@@ -267,9 +262,8 @@ void main() {
     test('executes pending OpenAI callback request', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       var capturedRequest = const UrlRequest(url: '');
-      when(
-        () => serviceConnections.getById('connection-1'),
-      ).thenAnswer((_) async => _serviceConnection());
+      when(() => serviceConnections.getById('connection-1'))
+          .thenAnswer((_) async => _serviceConnection());
       when(() => serviceConnections.readSecret('connection-1')).thenAnswer(
         (_) async => const ServiceConnectionSecretApiKey(apiKey: 'openai-key'),
       );
@@ -341,9 +335,8 @@ void main() {
           refreshToken: 'refresh-token',
         ),
       );
-      when(
-        () => oauthCredentials.getValidAccessToken('codex-connection'),
-      ).thenAnswer((_) async => 'fresh-token');
+      when(() => oauthCredentials.getValidAccessToken('codex-connection'))
+          .thenAnswer((_) async => 'fresh-token');
       final usecase = _usecase(
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
@@ -410,24 +403,22 @@ void main() {
     test('aggregates Codex annotation events into final sources', () async {
       final serviceConnections = _MockServiceConnectionRepository();
       final oauthCredentials = _MockOAuthCredentialService();
-      when(
-        () => serviceConnections.getById('codex-annotation-connection'),
-      ).thenAnswer(
-        (_) async => _serviceConnection(
-          authenticationType: ServiceConnectionAuthenticationType.oauth2,
-          metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
-            const ServiceConnectionMetadata(provider: 'openai-codex'),
-          ),
-        ),
-      );
-      when(
-        () => serviceConnections.readSecret('codex-annotation-connection'),
-      ).thenAnswer(
-        (_) async => const ServiceConnectionSecretOAuth2(
-          accessToken: 'stale-token',
-          refreshToken: 'refresh-token',
-        ),
-      );
+      when(() => serviceConnections.getById('codex-annotation-connection'))
+          .thenAnswer(
+            (_) async => _serviceConnection(
+              authenticationType: ServiceConnectionAuthenticationType.oauth2,
+              metadataJson: ServiceConnectionAuthCodec.encodeMetadata(
+                const ServiceConnectionMetadata(provider: 'openai-codex'),
+              ),
+            ),
+          );
+      when(() => serviceConnections.readSecret('codex-annotation-connection'))
+          .thenAnswer(
+            (_) async => const ServiceConnectionSecretOAuth2(
+              accessToken: 'stale-token',
+              refreshToken: 'refresh-token',
+            ),
+          );
       when(
         () =>
             oauthCredentials.getValidAccessToken('codex-annotation-connection'),
@@ -476,17 +467,15 @@ data: [DONE]
           ),
         ),
       );
-      when(
-        () => serviceConnections.readSecret('codex-sse-connection'),
-      ).thenAnswer(
-        (_) async => const ServiceConnectionSecretOAuth2(
-          accessToken: 'stale-token',
-          refreshToken: 'refresh-token',
-        ),
-      );
-      when(
-        () => oauthCredentials.getValidAccessToken('codex-sse-connection'),
-      ).thenAnswer((_) async => 'fresh-token');
+      when(() => serviceConnections.readSecret('codex-sse-connection'))
+          .thenAnswer(
+            (_) async => const ServiceConnectionSecretOAuth2(
+              accessToken: 'stale-token',
+              refreshToken: 'refresh-token',
+            ),
+          );
+      when(() => oauthCredentials.getValidAccessToken('codex-sse-connection'))
+          .thenAnswer((_) async => 'fresh-token');
       final usecase = _usecase(
         serviceConnections: serviceConnections,
         oauthCredentials: oauthCredentials,
@@ -572,12 +561,9 @@ RunAppSkillToolUsecase _usecase({
   );
 }
 
-class _FakeAppSkillCandidates
-    implements ListAppSkillCredentialCandidatesUsecase {
-  const _FakeAppSkillCandidates(this.candidatesBySlug);
-
-  final Map<String, List<AppSkillCredentialCandidate>> candidatesBySlug;
-
+class const _FakeAppSkillCandidates(
+  final Map<String, List<AppSkillCredentialCandidate>> candidatesBySlug,
+) implements ListAppSkillCredentialCandidatesUsecase {
   @override
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,
@@ -645,15 +631,15 @@ ServiceConnectionEntity _serviceConnection({
 }
 
 class _MockServiceConnectionRepository extends Mock
-    implements ServiceConnectionRepository {}
+    implements ServiceConnectionRepository;
 
 class _MockSkillCredentialsRepository extends Mock
-    implements SkillCredentialsRepository {}
+    implements SkillCredentialsRepository;
 
-class _MockUrlService extends Mock implements UrlService {}
+class _MockUrlService extends Mock implements UrlService;
 
 class _MockOAuthCredentialService extends Mock
-    implements OAuthCredentialService {}
+    implements OAuthCredentialService;
 
 typedef AppSearchUrlExecutor = Future<UrlResponse> Function(UrlRequest request);
 

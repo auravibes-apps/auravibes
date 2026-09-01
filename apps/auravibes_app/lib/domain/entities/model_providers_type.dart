@@ -6,13 +6,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'model_providers_type.freezed.dart';
 part 'model_providers_type.g.dart';
 
-enum ModelProvidersType {
+enum ModelProvidersType(final String value) {
   openai('openai'),
   anthropic('anthropic'),
-  openrouter('openrouter');
-
-  const ModelProvidersType(this.value);
-  final String value;
+  openrouter('openrouter'),
 }
 
 /// Entity representing an API model provider in the Aura application.
@@ -20,9 +17,9 @@ enum ModelProvidersType {
 /// A provider is a company or service that offers AI models,
 /// such as OpenAI, Anthropic, Google, etc.
 @freezed
-abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
+abstract class const ApiModelProviderEntity._() with _$ApiModelProviderEntity {
   /// Creates a new ApiModelProviderEntity instance.
-  const factory ApiModelProviderEntity({
+  const factory({
     /// Unique identifier for the provider.
     required String id,
 
@@ -38,15 +35,13 @@ abstract class ApiModelProviderEntity with _$ApiModelProviderEntity {
     String? doc,
   }) = _ApiModelProviderEntity;
 
-  factory ApiModelProviderEntity.fromJson(Map<String, dynamic> json) =>
-      ApiModelProviderEntity(
-        id: json.get('id'),
-        name: json.get('name'),
-        type: _getType(json),
-        url: json.get('api'),
-        doc: json.get('doc'),
-      );
-  const ApiModelProviderEntity._();
+  factory fromJson(Map<String, dynamic> json) => ApiModelProviderEntity(
+    id: json.get('id'),
+    name: json.get('name'),
+    type: _getType(json),
+    url: json.get('api'),
+    doc: json.get('doc'),
+  );
 
   /// Returns true if the provider has a URL.
   bool get hasUrl => url?.isNotEmpty ?? false;

@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'conversation_dao.g.dart';
 
 @DriftAccessor(tables: [Conversations])
-class ConversationDao extends DatabaseAccessor<AppDatabase>
+class ConversationDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$ConversationDaoMixin {
-  ConversationDao(super.attachedDatabase);
-
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => into(conversations).insertReturning(conversation);

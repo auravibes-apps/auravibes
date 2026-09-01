@@ -14,7 +14,7 @@ class AuraCard extends StatelessWidget {
   static const _borderWidth = 1.5;
 
   /// Creates a Aura card.
-  const AuraCard({
+  const new({
     required this.child,
     super.key,
     this.padding = .medium,

@@ -71,9 +71,8 @@ void main() {
 
     group('getEnabledWorkspaceTools', () {
       test('returns only enabled tools', () async {
-        when(
-          () => fixture.mockToolsDao.getEnabledWorkspaceTools('ws-1'),
-        ).thenAnswer((_) async => [createToolRow(id: 't1', toolId: 'url')]);
+        when(() => fixture.mockToolsDao.getEnabledWorkspaceTools('ws-1'))
+            .thenAnswer((_) async => [createToolRow(id: 't1', toolId: 'url')]);
 
         final result = await fixture.repository.getEnabledWorkspaceTools(
           'ws-1',
@@ -110,9 +109,8 @@ void main() {
           () =>
               fixture.mockToolsDao.getWorkspaceToolByToolId('ws-1', 'unknown'),
         ).thenAnswer((_) async => null);
-        when(
-          () => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'unknown'),
-        ).thenAnswer((_) async => null);
+        when(() => fixture.mockToolsDao.getWorkspaceTool('ws-1', 'unknown'))
+            .thenAnswer((_) async => null);
 
         final result = await fixture.repository.getWorkspaceTool(
           'ws-1',
@@ -273,26 +271,23 @@ void main() {
 
     group('removeWorkspaceToolById', () {
       test('delegates to dao', () async {
-        when(
-          () => fixture.mockToolsDao.deleteWorkspaceToolById('tool-1'),
-        ).thenAnswer((_) async => true);
+        when(() => fixture.mockToolsDao.deleteWorkspaceToolById('tool-1'))
+            .thenAnswer((_) async => true);
 
         final result = await fixture.repository.removeWorkspaceToolById(
           'tool-1',
         );
 
         expect(result, true);
-        verify(
-          () => fixture.mockToolsDao.deleteWorkspaceToolById('tool-1'),
-        ).called(1);
+        verify(() => fixture.mockToolsDao.deleteWorkspaceToolById('tool-1'))
+            .called(1);
       });
     });
 
     group('getWorkspaceToolsCount', () {
       test('returns count from dao', () async {
-        when(
-          () => fixture.mockToolsDao.getWorkspaceToolsCount('ws-1'),
-        ).thenAnswer((_) async => 5);
+        when(() => fixture.mockToolsDao.getWorkspaceToolsCount('ws-1'))
+            .thenAnswer((_) async => 5);
 
         final result = await fixture.repository.getWorkspaceToolsCount('ws-1');
 
@@ -302,9 +297,8 @@ void main() {
 
     group('getEnabledWorkspaceToolsCount', () {
       test('returns enabled count from dao', () async {
-        when(
-          () => fixture.mockToolsDao.getEnabledWorkspaceToolsCount('ws-1'),
-        ).thenAnswer((_) async => 3);
+        when(() => fixture.mockToolsDao.getEnabledWorkspaceToolsCount('ws-1'))
+            .thenAnswer((_) async => 3);
 
         final result = await fixture.repository.getEnabledWorkspaceToolsCount(
           'ws-1',
@@ -316,17 +310,16 @@ void main() {
 
     group('validateWorkspaceToolSetting', () {
       test('returns true for valid workspace and tool', () async {
-        when(
-          () => fixture.mockWorkspaceDao.getWorkspaceById('ws-1'),
-        ).thenAnswer(
-          (_) async => WorkspacesTable(
-            id: 'ws-1',
-            createdAt: now,
-            updatedAt: now,
-            name: 'Test',
-            type: WorkspaceType.local,
-          ),
-        );
+        when(() => fixture.mockWorkspaceDao.getWorkspaceById('ws-1'))
+            .thenAnswer(
+              (_) async => WorkspacesTable(
+                id: 'ws-1',
+                createdAt: now,
+                updatedAt: now,
+                name: 'Test',
+                type: WorkspaceType.local,
+              ),
+            );
 
         final result = await fixture.repository.validateWorkspaceToolSetting(
           'ws-1',
@@ -337,9 +330,8 @@ void main() {
       });
 
       test('throws when workspace not found', () async {
-        when(
-          () => fixture.mockWorkspaceDao.getWorkspaceById('nonexistent'),
-        ).thenAnswer((_) async => null);
+        when(() => fixture.mockWorkspaceDao.getWorkspaceById('nonexistent'))
+            .thenAnswer((_) async => null);
 
         await expectLater(
           fixture.repository.validateWorkspaceToolSetting(
@@ -351,17 +343,16 @@ void main() {
       });
 
       test('throws for invalid tool type', () async {
-        when(
-          () => fixture.mockWorkspaceDao.getWorkspaceById('ws-1'),
-        ).thenAnswer(
-          (_) async => WorkspacesTable(
-            id: 'ws-1',
-            createdAt: now,
-            updatedAt: now,
-            name: 'Test',
-            type: WorkspaceType.local,
-          ),
-        );
+        when(() => fixture.mockWorkspaceDao.getWorkspaceById('ws-1'))
+            .thenAnswer(
+              (_) async => WorkspacesTable(
+                id: 'ws-1',
+                createdAt: now,
+                updatedAt: now,
+                name: 'Test',
+                type: WorkspaceType.local,
+              ),
+            );
 
         await expectLater(
           fixture.repository.validateWorkspaceToolSetting(
@@ -621,11 +612,11 @@ class _WorkspaceToolsRepositoryFixture {
   }
 }
 
-class _TestAppDatabase extends AppDatabase {
-  _TestAppDatabase(this._toolsDao, this._workspaceDao)
-    : super(connection: DatabaseConnection(NativeDatabase.memory()));
-  final WorkspaceToolsDao _toolsDao;
-  final WorkspaceDao _workspaceDao;
+class _TestAppDatabase(
+  final WorkspaceToolsDao _toolsDao,
+  final WorkspaceDao _workspaceDao,
+) extends AppDatabase {
+  this : super(connection: DatabaseConnection(NativeDatabase.memory()));
 
   @override
   WorkspaceToolsDao get workspaceToolsDao => _toolsDao;

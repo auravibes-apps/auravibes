@@ -2,10 +2,9 @@
 import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 
-enum UserToolType {
+enum UserToolType(final String value) {
   calculator('calculator');
 
-  const UserToolType(this.value);
   static UserToolType? fromValue(String value) {
     for (final enumVariant in UserToolType.values) {
       if (enumVariant.name == value) return enumVariant;
@@ -13,14 +12,10 @@ enum UserToolType {
 
     return null;
   }
-
-  final String value;
 }
 
 /// Represents an available tool in the app.
-abstract class UserToolEntity<Input, Options, Output> {
-  const UserToolEntity();
-
+abstract class const UserToolEntity<Input, Options, Output>() {
   /// Type identifier for the tool.
   UserToolType get type;
 

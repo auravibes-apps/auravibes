@@ -4,9 +4,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../../generated/protocol.dart';
 
-class VirtualWorkspaceModelSelectionId {
-  const VirtualWorkspaceModelSelectionId._();
-
+class const VirtualWorkspaceModelSelectionId._() {
   static const _prefix = 'wms1.';
 
   static String encode({
@@ -38,29 +36,17 @@ class VirtualWorkspaceModelSelectionId {
       utf8.decode(base64Url.decode(base64Url.normalize(value)));
 }
 
-class VirtualWorkspaceModelSelectionIdentity {
-  const VirtualWorkspaceModelSelectionIdentity({
-    required this.connectionId,
-    required this.modelId,
-  });
+class const VirtualWorkspaceModelSelectionIdentity({
+  required final String connectionId,
+  required final String modelId,
+});
 
-  final String connectionId;
-  final String modelId;
-}
+class const ResolvedVirtualWorkspaceModelSelection({
+  required final WorkspaceModelConnection connection,
+  required final ApiModel model,
+});
 
-class ResolvedVirtualWorkspaceModelSelection {
-  const ResolvedVirtualWorkspaceModelSelection({
-    required this.connection,
-    required this.model,
-  });
-
-  final WorkspaceModelConnection connection;
-  final ApiModel model;
-}
-
-class VirtualWorkspaceModelSelectionResolver {
-  const VirtualWorkspaceModelSelectionResolver();
-
+class const VirtualWorkspaceModelSelectionResolver() {
   Future<ResolvedVirtualWorkspaceModelSelection?> resolve(
     Session session, {
     required int workspaceId,

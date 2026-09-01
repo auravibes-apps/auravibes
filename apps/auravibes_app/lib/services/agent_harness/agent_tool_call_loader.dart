@@ -19,39 +19,32 @@ typedef ToolToCall = agent.AgentToolToCall<ResolvedTool>;
 typedef LoadLatestMessageToolCallsResult =
     agent.LoadLatestMessageToolCallsResult<ResolvedTool>;
 
-class AgentToolCallLoader extends agent.AgentToolCallLoader<ResolvedTool> {
-  AgentToolCallLoader({
-    required MessageRepository messageRepository,
-    required ConversationRepository conversationRepository,
-    required LoadConversationToolSpecsUsecase Function(String workspaceId)
-    loadConversationToolSpecsUsecaseForWorkspace,
-    required ToolResolverService toolResolverService,
-  }) : super(
-         provider: AppAgentToolCallProvider(
-           messageRepository: messageRepository,
-           conversationRepository: conversationRepository,
-           loadConversationToolSpecsUsecaseForWorkspace:
-               loadConversationToolSpecsUsecaseForWorkspace,
-           toolResolverService: toolResolverService,
-         ),
-       );
+class AgentToolCallLoader({
+  required MessageRepository messageRepository,
+  required ConversationRepository conversationRepository,
+  required LoadConversationToolSpecsUsecase Function(String workspaceId)
+  loadConversationToolSpecsUsecaseForWorkspace,
+  required ToolResolverService toolResolverService,
+}) extends agent.AgentToolCallLoader<ResolvedTool> {
+  this
+    : super(
+        provider: AppAgentToolCallProvider(
+          messageRepository: messageRepository,
+          conversationRepository: conversationRepository,
+          loadConversationToolSpecsUsecaseForWorkspace:
+              loadConversationToolSpecsUsecaseForWorkspace,
+          toolResolverService: toolResolverService,
+        ),
+      );
 }
 
-class AppAgentToolCallProvider
-    implements agent.AgentToolCallProvider<ResolvedTool> {
-  const AppAgentToolCallProvider({
-    required this.messageRepository,
-    required this.conversationRepository,
-    required this.loadConversationToolSpecsUsecaseForWorkspace,
-    required this.toolResolverService,
-  });
-
-  final MessageRepository messageRepository;
-  final ConversationRepository conversationRepository;
-  final LoadConversationToolSpecsUsecase Function(String workspaceId)
-  loadConversationToolSpecsUsecaseForWorkspace;
-  final ToolResolverService toolResolverService;
-
+class const AppAgentToolCallProvider({
+  required final MessageRepository messageRepository,
+  required final ConversationRepository conversationRepository,
+  required final LoadConversationToolSpecsUsecase Function(String workspaceId)
+  loadConversationToolSpecsUsecaseForWorkspace,
+  required final ToolResolverService toolResolverService,
+}) implements agent.AgentToolCallProvider<ResolvedTool> {
   @override
   Future<List<agent.AgentToolMessage>> loadMessages(
     String conversationId,

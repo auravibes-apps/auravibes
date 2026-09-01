@@ -6,25 +6,15 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_tile.stories.g.dart';
 
-class _TileInput {
-  const _TileInput({
-    required this.childText,
-    required this.variant,
-    required this.size,
-    required this.isLoading,
-    required this.showLeadingIcon,
-    required this.showTrailingIcon,
-    required this.enabled,
-  });
-
-  final String childText;
-  final AuraTileVariant variant;
-  final AuraTileSize size;
-  final bool isLoading;
-  final bool showLeadingIcon;
-  final bool showTrailingIcon;
-  final bool enabled;
-}
+class const _TileInput({
+  required final String childText,
+  required final AuraTileVariant variant,
+  required final AuraTileSize size,
+  required final bool isLoading,
+  required final bool showLeadingIcon,
+  required final bool showTrailingIcon,
+  required final bool enabled,
+});
 
 const meta = Meta(AuraTile.new, argsType: _TileInput.new);
 

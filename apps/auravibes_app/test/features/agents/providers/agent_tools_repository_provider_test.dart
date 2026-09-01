@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _AppDatabase extends Mock implements AppDatabase {}
+class _AppDatabase extends Mock implements AppDatabase;
 
 void main() {
   test('cloud provider resolves before local Drift construction', () {
@@ -64,9 +64,8 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionForRouteProvider(
-          'cloud',
-        ).overrideWithValue(const AsyncData(WorkspaceSession(workspace))),
+        workspaceSessionForRouteProvider('cloud')
+            .overrideWithValue(const AsyncData(WorkspaceSession(workspace))),
         cloudWorkspaceStateGatewayProvider.overrideWith(
           (_, _) async => gateway,
         ),
@@ -107,9 +106,8 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionForRouteProvider(
-          'cloud',
-        ).overrideWithValue(const AsyncData(WorkspaceSession(workspace))),
+        workspaceSessionForRouteProvider('cloud')
+            .overrideWithValue(const AsyncData(WorkspaceSession(workspace))),
         cloudWorkspaceStateGatewayProvider.overrideWith(
           (_, _) async => gateway,
         ),

@@ -10,14 +10,10 @@ export 'workspace_selection.dart';
 
 part 'resolve_workspace_selection_usecase.g.dart';
 
-class ResolveWorkspaceSelectionUsecase {
-  ResolveWorkspaceSelectionUsecase({
-    required this._loadWorkspaces,
-    required this._selectionRepository,
-  });
-
-  final Future<List<WorkspaceEntity>> Function() _loadWorkspaces;
-  final WorkspaceSelectionRepository _selectionRepository;
+class ResolveWorkspaceSelectionUsecase({
+  required final Future<List<WorkspaceEntity>> Function() _loadWorkspaces,
+  required final WorkspaceSelectionRepository _selectionRepository,
+}) {
   final _logger = Logger('ResolveWorkspaceSelectionUsecase');
 
   Future<WorkspaceSelection?> call() async {

@@ -7,14 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SkillCredentialDefinitionsScreen extends ConsumerWidget {
-  const SkillCredentialDefinitionsScreen({
-    required this.workspaceId,
-    super.key,
-  });
-
-  final String workspaceId;
-
+class const SkillCredentialDefinitionsScreen({
+  required final String workspaceId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final definitionsAsync = ref.watch(

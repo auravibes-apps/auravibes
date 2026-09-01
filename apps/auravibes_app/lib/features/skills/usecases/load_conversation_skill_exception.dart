@@ -13,36 +13,23 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 
 import 'package:riverpod/src/providers/provider.dart';
 
-class LoadConversationSkillException implements Exception {
-  const LoadConversationSkillException(this.localizationKey);
-
-  final String localizationKey;
-
+class const LoadConversationSkillException(final String localizationKey)
+    implements Exception {
   @override
   String toString() => localizationKey;
 }
 
-class LoadConversationSkillUsecase {
-  const LoadConversationSkillUsecase(
-    this._skillsRepository,
-    this._conversationSkillsRepository,
-    this._appSkillSettingsRepository,
-    this._appSkillRegistry, [
-    this._checkSkillCredentialReadinessUsecase,
-    this._listAppSkillCredentialCandidatesUsecase,
-    this.cloudStore,
-  ]);
-  final CloudSkillStore? cloudStore;
-
-  final SkillsRepository? _skillsRepository;
-  final ConversationSkillsRepository? _conversationSkillsRepository;
-  final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository;
-  final AppSkillRegistry _appSkillRegistry;
+class const LoadConversationSkillUsecase(
+  final SkillsRepository? _skillsRepository,
+  final ConversationSkillsRepository? _conversationSkillsRepository,
+  final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository,
+  final AppSkillRegistry _appSkillRegistry, [
   final CheckSkillCredentialReadinessUsecase?
-  _checkSkillCredentialReadinessUsecase;
+  _checkSkillCredentialReadinessUsecase,
   final ListAppSkillCredentialCandidatesUsecase?
-  _listAppSkillCredentialCandidatesUsecase;
-
+  _listAppSkillCredentialCandidatesUsecase,
+  final CloudSkillStore? cloudStore,
+]) {
   Future<void> call({
     required String conversationId,
     required String workspaceId,

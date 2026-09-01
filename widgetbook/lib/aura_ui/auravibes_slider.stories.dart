@@ -37,12 +37,11 @@ final $Default = _Story(
 );
 
 /// Demonstrates an interactive slider with enabled and tinted states.
-class SliderDemo extends StatefulWidget {
-  const SliderDemo({super.key, required this.enabled, required this.tint});
-
-  final bool enabled;
-  final AuraTint tint;
-
+class const SliderDemo({
+  super.key,
+  required final bool enabled,
+  required final AuraTint tint,
+}) extends StatefulWidget {
   @override
   State<SliderDemo> createState() => _SliderDemoState();
 }

@@ -58,15 +58,10 @@ abstract interface class AgentStreamProvider<TChunk> {
   void trackCancellationStreamError(Object error, StackTrace stackTrace);
 }
 
-class AgentStreamService<TChunk> {
-  const AgentStreamService({
-    required this.cancellationEffects,
-    required this.provider,
-  });
-
-  final AgentCancellationEffects cancellationEffects;
-  final AgentStreamProvider<TChunk> provider;
-
+class const AgentStreamService<TChunk>({
+  required final AgentCancellationEffects cancellationEffects,
+  required final AgentStreamProvider<TChunk> provider,
+}) {
   Future<ContinueAgentResult> call({
     required String conversationId,
     required Stream<TChunk> responseStream,
@@ -338,14 +333,10 @@ class AgentStreamService<TChunk> {
   }
 }
 
-class _ContinueAgentStreamState<TChunk> {
-  _ContinueAgentStreamState({
-    required this.conversationId,
-    required this.pendingUserMessageIds,
-  });
-
-  final String conversationId;
-  final List<String> pendingUserMessageIds;
+class _ContinueAgentStreamState<TChunk>({
+  required final String conversationId,
+  required final List<String> pendingUserMessageIds,
+}) {
   final Completer<void> responseCompleter = Completer<void>();
 
   TChunk? accumulatedResult;

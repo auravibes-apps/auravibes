@@ -99,8 +99,7 @@ void main() {
       [
         {
           'role': 'user',
-          'content':
-              '<skill><name>Research</name><content>Use primary sources.</content></skill>',
+          'content': '<skill><name>Research</name><content>Use primary sources.</content></skill>',
         },
       ],
     );

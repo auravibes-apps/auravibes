@@ -147,7 +147,7 @@ String? mapLegacyRoute(Uri uri, {required String fallbackWorkspaceId}) {
     return location;
   }
 
-  return Uri.parse(
-    location,
-  ).replace(query: uri.query, fragment: uri.fragment).toString();
+  return Uri.parse(location)
+      .replace(query: uri.query, fragment: uri.fragment)
+      .toString();
 }

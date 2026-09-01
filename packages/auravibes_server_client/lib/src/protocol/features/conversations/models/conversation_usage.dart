@@ -12,19 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationUsage implements _i1.SerializableModel {
-  ConversationUsage._({
-    this.id,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.turnId,
-    required this.inputTokens,
-    required this.outputTokens,
-    required this.totalTokens,
-    required this.createdAt,
-  });
-
-  factory ConversationUsage({
+abstract class ConversationUsage._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int conversationId,
+  required var int turnId,
+  required var int inputTokens,
+  required var int outputTokens,
+  required var int totalTokens,
+  required var DateTime createdAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -35,7 +36,7 @@ abstract class ConversationUsage implements _i1.SerializableModel {
     required DateTime createdAt,
   }) = _ConversationUsageImpl;
 
-  factory ConversationUsage.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationUsage(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -49,25 +50,6 @@ abstract class ConversationUsage implements _i1.SerializableModel {
       ),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int conversationId;
-
-  int turnId;
-
-  int inputTokens;
-
-  int outputTokens;
-
-  int totalTokens;
-
-  DateTime createdAt;
 
   /// Returns a shallow copy of this [ConversationUsage]
   /// with some or all fields replaced by the given arguments.
@@ -103,28 +85,29 @@ abstract class ConversationUsage implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationUsageImpl extends ConversationUsage {
-  _ConversationUsageImpl({
-    int? id,
-    required int workspaceId,
-    required int conversationId,
-    required int turnId,
-    required int inputTokens,
-    required int outputTokens,
-    required int totalTokens,
-    required DateTime createdAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         turnId: turnId,
-         inputTokens: inputTokens,
-         outputTokens: outputTokens,
-         totalTokens: totalTokens,
-         createdAt: createdAt,
-       );
+class _ConversationUsageImpl({
+  int? id,
+  required int workspaceId,
+  required int conversationId,
+  required int turnId,
+  required int inputTokens,
+  required int outputTokens,
+  required int totalTokens,
+  required DateTime createdAt,
+}) extends ConversationUsage {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        turnId: turnId,
+        inputTokens: inputTokens,
+        outputTokens: outputTokens,
+        totalTokens: totalTokens,
+        createdAt: createdAt,
+      );
 
   /// Returns a shallow copy of this [ConversationUsage]
   /// with some or all fields replaced by the given arguments.

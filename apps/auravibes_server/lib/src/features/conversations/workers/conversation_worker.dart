@@ -12,37 +12,32 @@ import '../engine/conversation_host_effects.dart';
 
 import 'conversation_job_leases.dart';
 
-typedef ConversationJobPublisher =
-    Future<void> Function(Session session, ConversationJob job);
-typedef ConversationJobLeaseRenewer =
-    Future<ConversationJob> Function(int jobId, String leaseToken);
-typedef ConversationRenewalTimer =
-    Timer Function(Duration duration, void Function() callback);
+typedef ConversationJobPublisher = Future<void> Function(
+  Session session,
+  ConversationJob job,
+);
+typedef ConversationJobLeaseRenewer = Future<ConversationJob> Function(
+  int jobId,
+  String leaseToken,
+);
+typedef ConversationRenewalTimer = Timer Function(
+  Duration duration,
+  void Function() callback,
+);
 typedef ConversationApprovalPauseBarrier = Future<void> Function();
 
-class ConversationWorker {
-  const ConversationWorker({
-    this.host = const ServerConversationEngineHost(),
-    this.leases = const ConversationJobLeases(),
-    this.publishConversationJob = SyncWakeups.publishConversationJob,
-    this.renewLease,
-    this.renewalInterval = const Duration(seconds: 15),
-    this.renewalRetryDelay = const Duration(seconds: 1),
-    this.renewalTimer = Timer.new,
-    this.beforePauseForApproval,
-    this.afterApprovalTurnLock,
-  });
-
-  final ConversationEngineHost host;
-  final ConversationJobLeases leases;
-  final ConversationJobPublisher publishConversationJob;
-  final ConversationJobLeaseRenewer? renewLease;
-  final Duration renewalInterval;
-  final Duration renewalRetryDelay;
-  final ConversationRenewalTimer renewalTimer;
-  final ConversationApprovalPauseBarrier? beforePauseForApproval;
-  final ConversationApprovalPauseBarrier? afterApprovalTurnLock;
-
+class const ConversationWorker({
+  final ConversationEngineHost host = const ServerConversationEngineHost(),
+  final ConversationJobLeases leases = const ConversationJobLeases(),
+  final ConversationJobPublisher publishConversationJob =
+      SyncWakeups.publishConversationJob,
+  final ConversationJobLeaseRenewer? renewLease,
+  final Duration renewalInterval = const Duration(seconds: 15),
+  final Duration renewalRetryDelay = const Duration(seconds: 1),
+  final ConversationRenewalTimer renewalTimer = Timer.new,
+  final ConversationApprovalPauseBarrier? beforePauseForApproval,
+  final ConversationApprovalPauseBarrier? afterApprovalTurnLock,
+}) {
   Future<bool> runOnce(
     Session session, {
     required String workerId,

@@ -21,54 +21,40 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('approve_tool_call_service');
 
-class AppApproveToolCallDataProvider
-    implements agent.ApproveToolCallProvider<ResolvedTool> {
-  const AppApproveToolCallDataProvider({
-    required this.messageRepository,
-    required this.conversationRepository,
-    this.conversationToolsRepository,
-    this.resolveToolApprovalDecisionUsecase,
-    this.conversationToolsRepositoryForWorkspace,
-    this.resolveToolApprovalDecisionUsecaseForWorkspace,
-    this.loadConversationToolSpecsUsecase,
-    this.loadConversationToolSpecsUsecaseForWorkspace,
-    required this.toolResolverService,
-    required this.agentToolResumeService,
-    required this.runResolvedToolUsecase,
-    required this.agentCancellationRuntime,
-    required this.onToolCallChanged,
-  }) : assert(
-         conversationToolsRepository != null ||
-             conversationToolsRepositoryForWorkspace != null,
-         'A conversation tools repository is required.',
-       ),
-       assert(
-         resolveToolApprovalDecisionUsecase != null ||
-             resolveToolApprovalDecisionUsecaseForWorkspace != null,
-         'A tool approval usecase is required.',
-       ),
-       assert(
-         loadConversationToolSpecsUsecase != null ||
-             loadConversationToolSpecsUsecaseForWorkspace != null,
-         'A conversation tool specs usecase is required.',
-       );
-
-  final MessageRepository messageRepository;
-  final ConversationRepository conversationRepository;
-  final ConversationToolsRepository? conversationToolsRepository;
-  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase;
+class const AppApproveToolCallDataProvider({
+  required final MessageRepository messageRepository,
+  required final ConversationRepository conversationRepository,
+  final ConversationToolsRepository? conversationToolsRepository,
+  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase,
   final ConversationToolsRepository Function(String workspaceId)?
-  conversationToolsRepositoryForWorkspace;
+  conversationToolsRepositoryForWorkspace,
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
-  resolveToolApprovalDecisionUsecaseForWorkspace;
-  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase;
+  resolveToolApprovalDecisionUsecaseForWorkspace,
+  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
-  loadConversationToolSpecsUsecaseForWorkspace;
-  final ToolResolverService toolResolverService;
-  final AgentToolResumeService agentToolResumeService;
-  final ResolvedToolService runResolvedToolUsecase;
-  final AgentCancellationRuntime agentCancellationRuntime;
-  final void Function() onToolCallChanged;
+  loadConversationToolSpecsUsecaseForWorkspace,
+  required final ToolResolverService toolResolverService,
+  required final AgentToolResumeService agentToolResumeService,
+  required final ResolvedToolService runResolvedToolUsecase,
+  required final AgentCancellationRuntime agentCancellationRuntime,
+  required final void Function() onToolCallChanged,
+}) implements agent.ApproveToolCallProvider<ResolvedTool> {
+  this
+    : assert(
+        conversationToolsRepository != null ||
+            conversationToolsRepositoryForWorkspace != null,
+        'A conversation tools repository is required.',
+      ),
+      assert(
+        resolveToolApprovalDecisionUsecase != null ||
+            resolveToolApprovalDecisionUsecaseForWorkspace != null,
+        'A tool approval usecase is required.',
+      ),
+      assert(
+        loadConversationToolSpecsUsecase != null ||
+            loadConversationToolSpecsUsecaseForWorkspace != null,
+        'A conversation tool specs usecase is required.',
+      );
 
   @override
   Future<agent.AgentApprovableToolCall?> loadToolCall({

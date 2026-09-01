@@ -2,11 +2,8 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/domain/entities/conversation_skill_entity.dart';
 
-class ConversationSkillsRepository {
-  ConversationSkillsRepository(AppDatabase database)
-    : _dao = database.conversationSkillsDao;
-
-  final ConversationSkillsDao _dao;
+class ConversationSkillsRepository(AppDatabase database) {
+  final ConversationSkillsDao _dao = database.conversationSkillsDao;
 
   Future<List<ConversationSkillEntity>> getConversationSkills(
     String conversationId,

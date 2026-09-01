@@ -10,20 +10,20 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:characters/characters.dart';
 import 'package:uuid/v7.dart';
 
-class CloudSkillStore {
-  CloudSkillStore(this._store, this.workspaceId);
-  final String workspaceId;
-
-  final CloudWorkspaceResourceStore _store;
-
+class CloudSkillStore(
+  final CloudWorkspaceResourceStore _store,
+  final String workspaceId,
+) {
   Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
-      (await _active(
-        WorkspaceResourceKind.skillDefinition,
-      )).map(_definition).toList();
+      (await _active(WorkspaceResourceKind.skillDefinition))
+          .map(_definition)
+          .toList();
 
-  Future<SkillEntity?> skill(String id) async => (await _active(
-    WorkspaceResourceKind.skill,
-  )).where((item) => item.resourceId == id).map(_skill).firstOrNull;
+  Future<SkillEntity?> skill(String id) async =>
+      (await _active(WorkspaceResourceKind.skill))
+          .where((item) => item.resourceId == id)
+          .map(_skill)
+          .firstOrNull;
 
   Future<SkillEntity> createSkill(SkillToCreate value) async {
     final now = DateTime.now().toUtc();
@@ -83,13 +83,16 @@ class CloudSkillStore {
       _delete(WorkspaceResourceKind.skill, id);
 
   Future<List<SkillTemplateToolEntity>> tools(String skillId) async =>
-      (await _active(
-        WorkspaceResourceKind.skillTemplateTool,
-      )).where((item) => _data(item)['skillId'] == skillId).map(_tool).toList();
+      (await _active(WorkspaceResourceKind.skillTemplateTool))
+          .where((item) => _data(item)['skillId'] == skillId)
+          .map(_tool)
+          .toList();
 
-  Future<SkillTemplateToolEntity?> tool(String id) async => (await _active(
-    WorkspaceResourceKind.skillTemplateTool,
-  )).where((item) => item.resourceId == id).map(_tool).firstOrNull;
+  Future<SkillTemplateToolEntity?> tool(String id) async =>
+      (await _active(WorkspaceResourceKind.skillTemplateTool))
+          .where((item) => item.resourceId == id)
+          .map(_tool)
+          .firstOrNull;
 
   Future<SkillTemplateToolEntity> createTool(
     String skillId,
@@ -164,9 +167,10 @@ class CloudSkillStore {
       (await _active(WorkspaceResourceKind.skill)).map(_skill).toList();
 
   Future<SkillCredentialDefinitionEntity?> definition(String id) async =>
-      (await _active(
-        WorkspaceResourceKind.skillDefinition,
-      )).where((item) => item.resourceId == id).map(_definition).firstOrNull;
+      (await _active(WorkspaceResourceKind.skillDefinition))
+          .where((item) => item.resourceId == id)
+          .map(_definition)
+          .firstOrNull;
 
   Future<SkillCredentialDefinitionEntity> createDefinition(
     SkillCredentialDefinitionToCreate value,
@@ -499,16 +503,17 @@ class CloudSkillStore {
 
   Future<List<({String skillId})>> selectionResources(
     String conversationId,
-  ) async => (await _active(WorkspaceResourceKind.conversationSkillSelection))
-      .map(_data)
-      .where((data) => data['conversationId'] == conversationId)
-      .map((data) => (skillId: data['skillId'] as String))
-      .toList();
+  ) async =>
+      (await _active(WorkspaceResourceKind.conversationSkillSelection))
+          .map(_data)
+          .where((data) => data['conversationId'] == conversationId)
+          .map((data) => (skillId: data['skillId'] as String))
+          .toList();
 
   Future<bool> isAppSkillEnabled(String id) async {
-    final setting = (await _active(
-      WorkspaceResourceKind.skillSetting,
-    )).where((item) => item.resourceId == id).firstOrNull;
+    final setting = (await _active(WorkspaceResourceKind.skillSetting))
+        .where((item) => item.resourceId == id)
+        .firstOrNull;
 
     return setting == null
         ? id == 'skills_manager' || id == agentsSkillSlug

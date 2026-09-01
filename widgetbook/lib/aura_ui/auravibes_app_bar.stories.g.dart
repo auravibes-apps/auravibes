@@ -20,8 +20,7 @@ final AppBarDemoComponent = Component<AppBarDemo, StoryArgs<AppBarDemo>>(
   name: component.name ?? 'AppBarDemo',
   path: component.path ?? 'aura_ui',
   docsBuilder: component.docsBuilder,
-  docComment:
-      r'''Demonstrates the Aura app bar with editable title and leading action.''',
+  docComment: r'''Demonstrates the Aura app bar with editable title and leading action.''',
   stories: [$AppBar..$generatedName = 'AppBar'],
 );
 typedef AppBarDemoScenario = Scenario<AppBarDemo, _AppBarInputArgs>;

@@ -10,7 +10,7 @@ const _choicePickerTapTarget = 48.0;
 /// A labeled value that can be selected by [AuraChoicePicker].
 class AuraChoiceOption<T> {
   /// Creates a choice option.
-  const AuraChoiceOption({
+  const new({
     required this.value,
     required this.label,
     this.disabled = false,
@@ -48,7 +48,7 @@ enum AuraChoicePickerVariant {
 /// beyond the limit while still allowing selected values to be removed.
 class AuraChoicePicker<T> extends StatelessWidget {
   /// Creates an Aura choice picker.
-  const AuraChoicePicker({
+  const new({
     required this.options,
     required this.value,
     required this.onChanged,
@@ -122,8 +122,9 @@ class AuraChoicePicker<T> extends StatelessWidget {
             ],
           );
 
-    result = DefaultTextStyle.merge(
-      style: TextStyle(color: context.auraColors.onSurface),
+    result = DefaultTextStyle(
+      style: DefaultTextStyle.of(context).style
+          .copyWith(color: context.auraColors.onSurface),
       child: result,
     );
 
@@ -140,23 +141,14 @@ class AuraChoicePicker<T> extends StatelessWidget {
   }
 }
 
-class _AuraChoicePickerOption<T> extends StatelessWidget {
-  const _AuraChoicePickerOption({
-    required this.option,
-    required this.selectedValues,
-    required this.variant,
-    required this.maxAllowedSelections,
-    required this.onChanged,
-    required this.tint,
-  });
-
-  final AuraChoiceOption<T> option;
-  final List<T> selectedValues;
-  final AuraChoicePickerVariant variant;
-  final int? maxAllowedSelections;
-  final ValueChanged<List<T>>? onChanged;
-  final AuraTint? tint;
-
+class const _AuraChoicePickerOption<T>({
+  required final AuraChoiceOption<T> option,
+  required final List<T> selectedValues,
+  required final AuraChoicePickerVariant variant,
+  required final int? maxAllowedSelections,
+  required final ValueChanged<List<T>>? onChanged,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
   T? get _mutuallyExclusiveValue => selectedValues.firstOrNull;
 
   bool get _isSelected {

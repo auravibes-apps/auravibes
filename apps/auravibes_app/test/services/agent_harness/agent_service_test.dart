@@ -226,8 +226,7 @@ void main() {
               context,
               const AgentIterationContext(
                 origin: .userMessage,
-                ackMessageIds:
-                    [], // ignore: avoid_redundant_argument_values - Explicit empty ack expectation for review clarity.
+                ackMessageIds: [], // ignore: avoid_redundant_argument_values - Explicit empty ack expectation for review clarity.
               ),
             );
           }
@@ -450,36 +449,34 @@ void main() {
             conversationId: 'conversation-1',
             draft: const ChatDraft(text: 'Queued follow-up'),
           );
-      when(() => fixture.messageRepository.createMessage(any())).thenAnswer((
-        _,
-      ) async {
-        fixture.agentCancellationRuntime.requestStop('conversation-1');
+      when(() => fixture.messageRepository.createMessage(any()))
+          .thenAnswer((_) async {
+            fixture.agentCancellationRuntime.requestStop('conversation-1');
 
-        return MessageEntity(
-          id: 'queued-user-1',
-          conversationId: 'conversation-1',
-          content: 'Queued follow-up',
-          messageType: MessageType.text,
-          isUser: true,
-          status: MessageStatus.sending,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
-        );
-      });
-      when(
-        () => fixture.messageRepository.patchMessage(any(), any()),
-      ).thenAnswer(
-        (_) async => MessageEntity(
-          id: 'queued-user-1',
-          conversationId: 'conversation-1',
-          content: 'Queued follow-up',
-          messageType: MessageType.text,
-          isUser: true,
-          status: MessageStatus.sent,
-          createdAt: DateTime(2025),
-          updatedAt: DateTime(2025),
-        ),
-      );
+            return MessageEntity(
+              id: 'queued-user-1',
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+              messageType: MessageType.text,
+              isUser: true,
+              status: MessageStatus.sending,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            );
+          });
+      when(() => fixture.messageRepository.patchMessage(any(), any()))
+          .thenAnswer(
+            (_) async => MessageEntity(
+              id: 'queued-user-1',
+              conversationId: 'conversation-1',
+              content: 'Queued follow-up',
+              messageType: MessageType.text,
+              isUser: true,
+              status: MessageStatus.sent,
+              createdAt: DateTime(2025),
+              updatedAt: DateTime(2025),
+            ),
+          );
 
       final result = await fixture.usecase.call(
         conversationId: 'conversation-1',
@@ -704,22 +701,21 @@ void main() {
         });
 
         var createdCount = 0;
-        when(() => fixture.messageRepository.createMessage(any())).thenAnswer((
-          _,
-        ) async {
-          createdCount += 1;
+        when(() => fixture.messageRepository.createMessage(any()))
+            .thenAnswer((_) async {
+              createdCount += 1;
 
-          return MessageEntity(
-            id: 'queued-user-$createdCount',
-            conversationId: 'conversation-1',
-            content: 'Queued follow-up $createdCount',
-            messageType: MessageType.text,
-            isUser: true,
-            status: MessageStatus.sending,
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
-          );
-        });
+              return MessageEntity(
+                id: 'queued-user-$createdCount',
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up $createdCount',
+                messageType: MessageType.text,
+                isUser: true,
+                status: MessageStatus.sending,
+                createdAt: DateTime(2025),
+                updatedAt: DateTime(2025),
+              );
+            });
 
         final result = await fixture.usecase.call(
           conversationId: 'conversation-1',
@@ -907,36 +903,34 @@ void main() {
               conversationId: 'conversation-1',
               draft: const ChatDraft(text: 'Queued follow-up'),
             );
-        when(() => fixture.messageRepository.createMessage(any())).thenAnswer((
-          _,
-        ) async {
-          fixture.agentCancellationRuntime.requestStop('conversation-1');
+        when(() => fixture.messageRepository.createMessage(any()))
+            .thenAnswer((_) async {
+              fixture.agentCancellationRuntime.requestStop('conversation-1');
 
-          return MessageEntity(
-            id: 'queued-user-1',
-            conversationId: 'conversation-1',
-            content: 'Queued follow-up',
-            messageType: MessageType.text,
-            isUser: true,
-            status: MessageStatus.sending,
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
-          );
-        });
-        when(
-          () => fixture.messageRepository.patchMessage(any(), any()),
-        ).thenAnswer(
-          (_) async => MessageEntity(
-            id: 'queued-user-1',
-            conversationId: 'conversation-1',
-            content: 'Queued follow-up',
-            messageType: MessageType.text,
-            isUser: true,
-            status: MessageStatus.sent,
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
-          ),
-        );
+              return MessageEntity(
+                id: 'queued-user-1',
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up',
+                messageType: MessageType.text,
+                isUser: true,
+                status: MessageStatus.sending,
+                createdAt: DateTime(2025),
+                updatedAt: DateTime(2025),
+              );
+            });
+        when(() => fixture.messageRepository.patchMessage(any(), any()))
+            .thenAnswer(
+              (_) async => MessageEntity(
+                id: 'queued-user-1',
+                conversationId: 'conversation-1',
+                content: 'Queued follow-up',
+                messageType: MessageType.text,
+                isUser: true,
+                status: MessageStatus.sent,
+                createdAt: DateTime(2025),
+                updatedAt: DateTime(2025),
+              ),
+            );
 
         final _ = await fixture.usecase.call(
           conversationId: 'conversation-1',
@@ -1013,8 +1007,19 @@ void main() {
   });
 }
 
-class _AgentServiceFixture {
-  factory _AgentServiceFixture() {
+class _AgentServiceFixture._({
+  required final MockContinueAgentService continueAgentUsecase,
+  required final MockAgentToolExecutionService runAllowedToolsUsecase,
+  required final MockConversationRepository conversationRepository,
+  required final MockMessageRepository messageRepository,
+  required final MockMaybeAutoCompactConversationUsecase
+  maybeAutoCompactConversationUsecase,
+  required final ProviderContainer container,
+  required final AgentCancellationRuntime agentCancellationRuntime,
+  required final ConversationRateLimitRetryRuntime rateLimitRetryRuntime,
+  required var AppAgentService usecase,
+}) {
+  factory() {
     final continueAgentUsecase = MockContinueAgentService();
     final runAllowedToolsUsecase = MockAgentToolExecutionService();
     final conversationRepository = MockConversationRepository();
@@ -1055,29 +1060,6 @@ class _AgentServiceFixture {
       ),
     );
   }
-
-  _AgentServiceFixture._({
-    required this.continueAgentUsecase,
-    required this.runAllowedToolsUsecase,
-    required this.conversationRepository,
-    required this.messageRepository,
-    required this.maybeAutoCompactConversationUsecase,
-    required this.container,
-    required this.agentCancellationRuntime,
-    required this.rateLimitRetryRuntime,
-    required this.usecase,
-  });
-
-  final MockContinueAgentService continueAgentUsecase;
-  final MockAgentToolExecutionService runAllowedToolsUsecase;
-  final MockConversationRepository conversationRepository;
-  final MockMessageRepository messageRepository;
-  final MockMaybeAutoCompactConversationUsecase
-  maybeAutoCompactConversationUsecase;
-  final ProviderContainer container;
-  final AgentCancellationRuntime agentCancellationRuntime;
-  final ConversationRateLimitRetryRuntime rateLimitRetryRuntime;
-  AppAgentService usecase;
 
   void dispose() {
     container.dispose();

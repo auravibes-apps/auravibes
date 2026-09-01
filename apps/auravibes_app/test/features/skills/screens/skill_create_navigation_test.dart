@@ -144,9 +144,8 @@ void main() {
     );
     expect(find.text('Workspace Skills'), findsOneWidget);
 
-    final skill = await SkillsRepository(
-      database,
-    ).getSkillByTitle(workspace.id, 'Write Summary');
+    final skill = await SkillsRepository(database)
+        .getSkillByTitle(workspace.id, 'Write Summary');
     final _ = skill ?? fail('skill missing');
     expect(skill.description, '# Summary\n\n**Bold**');
     expect(skill.content, 'Summarize text.');

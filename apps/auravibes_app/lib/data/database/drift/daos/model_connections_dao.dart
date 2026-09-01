@@ -9,7 +9,7 @@ part 'model_connections_dao.g.dart';
 class ModelConnectionsDao extends DatabaseAccessor<AppDatabase>
     with _$ModelConnectionsDaoMixin {
   /// Creates a new [ModelConnectionsDao] instance.
-  ModelConnectionsDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   Future<List<ServiceConnectionTable>> getAllModelConnectionsByWorkspace({
     required List<String> workspaceIds,

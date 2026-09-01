@@ -4,9 +4,9 @@ import 'package:auravibes_app/features/cloud_accounts/usecases/cloud_account_use
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockAuthStore extends Mock implements ServerpodAuthStore {}
+class _MockAuthStore extends Mock implements ServerpodAuthStore;
 
-class _MockWorkspaceRepository extends Mock implements WorkspaceRepository {}
+class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;
 
 void main() {
   test('account removal disposes canonical account dependencies', () async {

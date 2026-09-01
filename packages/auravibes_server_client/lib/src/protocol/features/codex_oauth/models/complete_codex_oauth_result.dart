@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CompleteCodexOAuthResult implements _i1.SerializableModel {
-  CompleteCodexOAuthResult._({
-    required this.workspaceId,
-    required this.connectionId,
-    required this.configured,
-  });
-
-  factory CompleteCodexOAuthResult({
+abstract class CompleteCodexOAuthResult._({
+  required var int workspaceId,
+  required var String connectionId,
+  required var bool configured,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String connectionId,
     required bool configured,
   }) = _CompleteCodexOAuthResultImpl;
 
-  factory CompleteCodexOAuthResult.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CompleteCodexOAuthResult(
@@ -36,12 +34,6 @@ abstract class CompleteCodexOAuthResult implements _i1.SerializableModel {
       ),
     );
   }
-
-  int workspaceId;
-
-  String connectionId;
-
-  bool configured;
 
   /// Returns a shallow copy of this [CompleteCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.
@@ -67,16 +59,17 @@ abstract class CompleteCodexOAuthResult implements _i1.SerializableModel {
   }
 }
 
-class _CompleteCodexOAuthResultImpl extends CompleteCodexOAuthResult {
-  _CompleteCodexOAuthResultImpl({
-    required int workspaceId,
-    required String connectionId,
-    required bool configured,
-  }) : super._(
-         workspaceId: workspaceId,
-         connectionId: connectionId,
-         configured: configured,
-       );
+class _CompleteCodexOAuthResultImpl({
+  required int workspaceId,
+  required String connectionId,
+  required bool configured,
+}) extends CompleteCodexOAuthResult {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        connectionId: connectionId,
+        configured: configured,
+      );
 
   /// Returns a shallow copy of this [CompleteCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.

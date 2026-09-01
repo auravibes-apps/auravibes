@@ -19,7 +19,7 @@ class ServerpodAuthStore {
     ),
   );
 
-  ServerpodAuthStore({
+  new({
     FlutterSecureStorage? secureStorage,
     this.storageNamespace = 'auravibes_app',
   }) : _secureStorage = secureStorage ?? _defaultStorage;
@@ -173,17 +173,11 @@ class ServerpodAuthStore {
   }
 }
 
-class _SecureKeyValueStorage implements KeyValueStorage {
-  const _SecureKeyValueStorage({
-    required this._secureStorage,
-    required this._keyPrefix,
-    this._legacyKeyPrefix,
-  });
-
-  final FlutterSecureStorage _secureStorage;
-  final String _keyPrefix;
-  final String? _legacyKeyPrefix;
-
+class const _SecureKeyValueStorage({
+  required final FlutterSecureStorage _secureStorage,
+  required final String _keyPrefix,
+  final String? _legacyKeyPrefix,
+}) implements KeyValueStorage {
   @override
   Future<String?> get(String key) async {
     final storageKey = '$_keyPrefix.$key';

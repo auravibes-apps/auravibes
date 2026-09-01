@@ -16,14 +16,14 @@ typedef _Scenario = PressableDemoScenario;
 typedef _Defaults = PressableDemoDefaults;
 typedef _Story = PressableDemoStory;
 typedef _Args = _PressableInputArgs;
-final PressableDemoComponent = Component<PressableDemo, StoryArgs<PressableDemo>>(
-  name: component.name ?? 'PressableDemo',
-  path: component.path ?? 'aura_ui',
-  docsBuilder: component.docsBuilder,
-  docComment:
-      r'''Demonstrates keyboard and pointer feedback on a reusable pressable surface.''',
-  stories: [$Pressable..$generatedName = 'Pressable'],
-);
+final PressableDemoComponent =
+    Component<PressableDemo, StoryArgs<PressableDemo>>(
+      name: component.name ?? 'PressableDemo',
+      path: component.path ?? 'aura_ui',
+      docsBuilder: component.docsBuilder,
+      docComment: r'''Demonstrates keyboard and pointer feedback on a reusable pressable surface.''',
+      stories: [$Pressable..$generatedName = 'Pressable'],
+    );
 typedef PressableDemoScenario = Scenario<PressableDemo, _PressableInputArgs>;
 typedef PressableDemoDefaults = Defaults<PressableDemo, _PressableInputArgs>;
 

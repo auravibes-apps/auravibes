@@ -32,56 +32,44 @@ typedef ResolveSkillCommandTarget =
       required agent.SkillCommandTarget command,
     });
 
-class AgentToolExecutionService
-    extends agent.AgentToolExecutionRunner<ResolvedTool> {
-  AgentToolExecutionService({
-    required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
-    required MessageRepository messageRepository,
-    ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecision,
-    ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
-    resolveToolApprovalDecisionForWorkspace,
-    ResolveSkillCommandTarget? resolveSkillCommandTarget,
-    required ResolvedToolService runResolvedToolUsecase,
-    required AgentToolDecisionService getAgentIterationDecisionUsecase,
-    required AgentCancellationRuntime agentCancellationRuntime,
-  }) : super(
-         provider: AppAllowedToolsDataProvider(
-           messageRepository: messageRepository,
-           loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
-           resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
-           resolveToolApprovalDecisionUsecaseForWorkspace:
-               resolveToolApprovalDecisionForWorkspace,
-           resolveSkillCommandTarget: resolveSkillCommandTarget,
-           resolvedToolService: runResolvedToolUsecase,
-           toolDecisionService: getAgentIterationDecisionUsecase,
-           agentCancellationRuntime: agentCancellationRuntime,
-         ),
-       );
+class AgentToolExecutionService({
+  required AgentToolCallLoader loadLatestMessageToolCallsUsecase,
+  required MessageRepository messageRepository,
+  ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecision,
+  ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
+  resolveToolApprovalDecisionForWorkspace,
+  ResolveSkillCommandTarget? resolveSkillCommandTarget,
+  required ResolvedToolService runResolvedToolUsecase,
+  required AgentToolDecisionService getAgentIterationDecisionUsecase,
+  required AgentCancellationRuntime agentCancellationRuntime,
+}) extends agent.AgentToolExecutionRunner<ResolvedTool> {
+  this
+    : super(
+        provider: AppAllowedToolsDataProvider(
+          messageRepository: messageRepository,
+          loadLatestMessageToolCallsService: loadLatestMessageToolCallsUsecase,
+          resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+          resolveToolApprovalDecisionUsecaseForWorkspace:
+              resolveToolApprovalDecisionForWorkspace,
+          resolveSkillCommandTarget: resolveSkillCommandTarget,
+          resolvedToolService: runResolvedToolUsecase,
+          toolDecisionService: getAgentIterationDecisionUsecase,
+          agentCancellationRuntime: agentCancellationRuntime,
+        ),
+      );
 }
 
-class AppAllowedToolsDataProvider
-    implements agent.AgentToolExecutionProvider<ResolvedTool> {
-  const AppAllowedToolsDataProvider({
-    required this.messageRepository,
-    required this.loadLatestMessageToolCallsService,
-    this.resolveToolApprovalDecisionUsecase,
-    this.resolveToolApprovalDecisionUsecaseForWorkspace,
-    this.resolveSkillCommandTarget,
-    required this.resolvedToolService,
-    required this.toolDecisionService,
-    required this.agentCancellationRuntime,
-  });
-
-  final MessageRepository messageRepository;
-  final AgentToolCallLoader loadLatestMessageToolCallsService;
-  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase;
+class const AppAllowedToolsDataProvider({
+  required final MessageRepository messageRepository,
+  required final AgentToolCallLoader loadLatestMessageToolCallsService,
+  final ResolveToolApprovalDecisionUsecase? resolveToolApprovalDecisionUsecase,
   final ResolveToolApprovalDecisionUsecase Function(String workspaceId)?
-  resolveToolApprovalDecisionUsecaseForWorkspace;
-  final ResolveSkillCommandTarget? resolveSkillCommandTarget;
-  final ResolvedToolService resolvedToolService;
-  final AgentToolDecisionService toolDecisionService;
-  final AgentCancellationRuntime agentCancellationRuntime;
-
+  resolveToolApprovalDecisionUsecaseForWorkspace,
+  final ResolveSkillCommandTarget? resolveSkillCommandTarget,
+  required final ResolvedToolService resolvedToolService,
+  required final AgentToolDecisionService toolDecisionService,
+  required final AgentCancellationRuntime agentCancellationRuntime,
+}) implements agent.AgentToolExecutionProvider<ResolvedTool> {
   @override
   Future<agent.LoadLatestMessageToolCallsResult<ResolvedTool>>
   loadLatestToolCalls({required String conversationId}) {

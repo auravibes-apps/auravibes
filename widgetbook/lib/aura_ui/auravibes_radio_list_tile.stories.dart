@@ -37,18 +37,12 @@ final $RadioListTile = _Story(
 );
 
 /// Demonstrates settings-style radio list tiles with optional subtitles.
-class RadioListTileDemo extends StatefulWidget {
-  const RadioListTileDemo({
-    super.key,
-    required this.tint,
-    required this.disabled,
-    required this.showSubtitle,
-  });
-
-  final AuraTint? tint;
-  final bool disabled;
-  final bool showSubtitle;
-
+class const RadioListTileDemo({
+  super.key,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final bool showSubtitle,
+}) extends StatefulWidget {
   @override
   State<RadioListTileDemo> createState() => _RadioListTileDemoState();
 }

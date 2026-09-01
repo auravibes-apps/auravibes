@@ -36,12 +36,11 @@ import 'package:textf/textf.dart';
 
 const _skillDescriptionMaxCharacters = 1024;
 
-class SkillDetailScreen extends ConsumerStatefulWidget {
-  const SkillDetailScreen({required this.workspaceId, this.skillId, super.key});
-
-  final String workspaceId;
-  final String? skillId;
-
+class const SkillDetailScreen({
+  required final String workspaceId,
+  final String? skillId,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<SkillDetailScreen> createState() => _SkillDetailScreenState();
 }
@@ -317,41 +316,23 @@ class _SkillDetailScreenState extends ConsumerState<SkillDetailScreen> {
   }
 }
 
-class _SkillDetailForm extends StatelessWidget {
-  const _SkillDetailForm({
-    required this.detail,
-    required this.workspaceId,
-    required this.titleController,
-    required this.descriptionController,
-    required this.contentController,
-    required this.credentialDefinitionId,
-    required this.isCredentialOptional,
-    required this.isEnabled,
-    required this.isSaving,
-    required this.onCredentialDefinitionChanged,
-    required this.onCredentialOptionalChanged,
-    required this.onEnabledChanged,
-    required this.onEditDescription,
-    required this.onEditContent,
-    required this.onSave,
-  });
-
-  final SkillDetail? detail;
-  final String workspaceId;
-  final TextEditingController titleController;
-  final TextEditingController descriptionController;
-  final TextEditingController contentController;
-  final String? credentialDefinitionId;
-  final bool isCredentialOptional;
-  final bool isEnabled;
-  final bool isSaving;
-  final ValueChanged<String?> onCredentialDefinitionChanged;
-  final ValueChanged<bool> onCredentialOptionalChanged;
-  final ValueChanged<bool> onEnabledChanged;
-  final VoidCallback onEditDescription;
-  final VoidCallback onEditContent;
-  final VoidCallback onSave;
-
+class const _SkillDetailForm({
+  required final SkillDetail? detail,
+  required final String workspaceId,
+  required final TextEditingController titleController,
+  required final TextEditingController descriptionController,
+  required final TextEditingController contentController,
+  required final String? credentialDefinitionId,
+  required final bool isCredentialOptional,
+  required final bool isEnabled,
+  required final bool isSaving,
+  required final ValueChanged<String?> onCredentialDefinitionChanged,
+  required final ValueChanged<bool> onCredentialOptionalChanged,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final VoidCallback onEditDescription,
+  required final VoidCallback onEditContent,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final detail = this.detail;
@@ -483,12 +464,10 @@ class _SkillDetailForm extends StatelessWidget {
   }
 }
 
-class _SkillToolsCard extends ConsumerWidget {
-  const _SkillToolsCard({required this.workspaceId, required this.skillId});
-
-  final String workspaceId;
-  final String skillId;
-
+class const _SkillToolsCard({
+  required final String workspaceId,
+  required final String skillId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final toolsAsync = ref.watch(
@@ -633,11 +612,9 @@ class _SkillToolsCard extends ConsumerWidget {
   }
 }
 
-class _AppSkillToolsCard extends StatelessWidget {
-  const _AppSkillToolsCard({required this.tools});
-
-  final List<AppSkillToolDefinition> tools;
-
+class const _AppSkillToolsCard({
+  required final List<AppSkillToolDefinition> tools,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraCard(
@@ -688,17 +665,11 @@ class _AppSkillToolsCard extends StatelessWidget {
   }
 }
 
-class _CredentialDefinitionSelector extends ConsumerWidget {
-  const _CredentialDefinitionSelector({
-    required this.workspaceId,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String workspaceId;
-  final String? value;
-  final ValueChanged<String?> onChanged;
-
+class const _CredentialDefinitionSelector({
+  required final String workspaceId,
+  required final String? value,
+  required final ValueChanged<String?> onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final definitionsAsync = ref.watch(
@@ -720,18 +691,12 @@ class _CredentialDefinitionSelector extends ConsumerWidget {
   }
 }
 
-class _CredentialDefinitionSelectContent extends StatelessWidget {
+class const _CredentialDefinitionSelectContent({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final String? value,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
   static const _noneValue = '';
-  const _CredentialDefinitionSelectContent({
-    required this.definitions,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final List<SkillCredentialDefinitionEntity> definitions;
-  final String? value;
-  final ValueChanged<String?> onChanged;
-
   @override
   Widget build(BuildContext context) {
     final hasSelectedDefinition =
@@ -777,17 +742,11 @@ class _CredentialDefinitionSelectContent extends StatelessWidget {
   }
 }
 
-class _SkillCredentialsHint extends ConsumerWidget {
-  const _SkillCredentialsHint({
-    required this.workspaceId,
-    required this.credentialDefinitionId,
-    required this.isCredentialOptional,
-  });
-
-  final String workspaceId;
-  final String credentialDefinitionId;
-  final bool isCredentialOptional;
-
+class const _SkillCredentialsHint({
+  required final String workspaceId,
+  required final String credentialDefinitionId,
+  required final bool isCredentialOptional,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final definitionAsync = ref.watch(
@@ -873,15 +832,10 @@ class _SkillCredentialsHint extends ConsumerWidget {
   }
 }
 
-class _AppSkillCredentialsHint extends ConsumerStatefulWidget {
-  const _AppSkillCredentialsHint({
-    required this.workspaceId,
-    required this.appSkillId,
-  });
-
-  final String workspaceId;
-  final String appSkillId;
-
+class const _AppSkillCredentialsHint({
+  required final String workspaceId,
+  required final String appSkillId,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_AppSkillCredentialsHint> createState() =>
       _AppSkillCredentialsHintState();
@@ -976,17 +930,11 @@ class _AppSkillCredentialsHintState
   }
 }
 
-class _LoadedCredentialsHint extends StatelessWidget {
-  const _LoadedCredentialsHint({
-    required this.credentials,
-    required this.isCredentialOptional,
-    required this.onCreateCredential,
-  });
-
-  final List<SkillCredentialEntity> credentials;
-  final bool isCredentialOptional;
-  final VoidCallback onCreateCredential;
-
+class const _LoadedCredentialsHint({
+  required final List<SkillCredentialEntity> credentials,
+  required final bool isCredentialOptional,
+  required final VoidCallback onCreateCredential,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (credentials.isEmpty) {
@@ -1008,15 +956,10 @@ class _LoadedCredentialsHint extends StatelessWidget {
   }
 }
 
-class _MissingCredentialHint extends StatelessWidget {
-  const _MissingCredentialHint({
-    required this.isCredentialOptional,
-    required this.onCreateCredential,
-  });
-
-  final bool isCredentialOptional;
-  final VoidCallback onCreateCredential;
-
+class const _MissingCredentialHint({
+  required final bool isCredentialOptional,
+  required final VoidCallback onCreateCredential,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hintKey = isCredentialOptional
@@ -1041,12 +984,10 @@ class _MissingCredentialHint extends StatelessWidget {
   }
 }
 
-class _ReadOnlyField extends StatelessWidget {
-  const _ReadOnlyField({required this.labelKey, required this.value});
-
-  final String labelKey;
-  final String value;
-
+class const _ReadOnlyField({
+  required final String labelKey,
+  required final String value,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(

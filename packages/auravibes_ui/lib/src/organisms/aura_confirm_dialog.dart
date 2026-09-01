@@ -16,7 +16,7 @@ export 'aura_alert_dialog.dart';
 /// for displaying dialogs imperatively using showGeneralDialog.
 class AuraConfirmDialog extends StatelessWidget {
   /// Creates a confirmation dialog.
-  const AuraConfirmDialog({
+  const new({
     required this.title,
     required this.message,
     required this.confirmLabel,
@@ -84,7 +84,7 @@ class AuraConfirmDialog extends StatelessWidget {
 /// Labels used by [AuraDialogs.confirm].
 class AuraConfirmDialogActions {
   /// Creates labels for confirmation dialog actions.
-  const AuraConfirmDialogActions({this.confirmLabel, this.cancelLabel});
+  const new({this.confirmLabel, this.cancelLabel});
 
   /// Label for the confirm action.
   final Widget? confirmLabel;

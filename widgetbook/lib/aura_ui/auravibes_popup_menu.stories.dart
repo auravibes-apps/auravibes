@@ -6,9 +6,7 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_popup_menu.stories.g.dart';
 
-class _PopupMenuInput {
-  const _PopupMenuInput();
-}
+class const _PopupMenuInput();
 
 const component = ComponentMeta(name: 'AuraPopupMenu');
 const meta = Meta(AuraPopupMenu.new, argsType: _PopupMenuInput.new);

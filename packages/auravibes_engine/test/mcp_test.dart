@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
 
@@ -37,9 +38,8 @@ void main() {
     });
     expect(
       jsonDecode(
-        McpToolResult(
-          content: [McpTextContent('one'), McpTextContent('two')],
-        ).toModelText(),
+        McpToolResult(content: [McpTextContent('one'), McpTextContent('two')])
+            .toModelText(),
       ),
       {
         'content': [

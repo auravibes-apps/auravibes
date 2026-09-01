@@ -8,7 +8,7 @@ part 'messages_streaming_state.g.dart';
 
 @freezed
 abstract class MessagesStreamingState with _$MessagesStreamingState {
-  const factory MessagesStreamingState({
+  const factory({
     required CompositeSubscription streamSubscription,
     ChatResult<ChatMessage>? lastResult,
   }) = _MessagesStreamingState;

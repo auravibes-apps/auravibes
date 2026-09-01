@@ -20,33 +20,21 @@ import 'package:auravibes_app/features/skills/usecases/update_skill_usecase.dart
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class RunSkillsManagerToolUsecase {
-  const RunSkillsManagerToolUsecase(
-    this._skillsRepository,
-    this._skillTemplateToolsRepository,
-    this._skillCredentialDefinitionsRepository,
-    this._createSkillUsecase,
-    this._updateSkillUsecase,
-    this._createSkillTemplateToolUsecase,
-    this._updateSkillTemplateToolUsecase,
-    this._createSkillCredentialDefinitionUsecase,
-    this._updateSkillCredentialDefinitionUsecase, {
-    this.cloudStore,
-  });
-  final CloudSkillStore? cloudStore;
-
-  final SkillsRepository? _skillsRepository;
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
+class const RunSkillsManagerToolUsecase(
+  final SkillsRepository? _skillsRepository,
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository,
   final SkillCredentialDefinitionsRepository?
-  _skillCredentialDefinitionsRepository;
-  final CreateSkillUsecase _createSkillUsecase;
-  final UpdateSkillUsecase _updateSkillUsecase;
-  final CreateSkillTemplateToolUsecase _createSkillTemplateToolUsecase;
-  final UpdateSkillTemplateToolUsecase _updateSkillTemplateToolUsecase;
+  _skillCredentialDefinitionsRepository,
+  final CreateSkillUsecase _createSkillUsecase,
+  final UpdateSkillUsecase _updateSkillUsecase,
+  final CreateSkillTemplateToolUsecase _createSkillTemplateToolUsecase,
+  final UpdateSkillTemplateToolUsecase _updateSkillTemplateToolUsecase,
   final CreateSkillCredentialDefinitionUsecase
-  _createSkillCredentialDefinitionUsecase;
+  _createSkillCredentialDefinitionUsecase,
   final UpdateSkillCredentialDefinitionUsecase
-  _updateSkillCredentialDefinitionUsecase;
+  _updateSkillCredentialDefinitionUsecase, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<Object> call({
     required String workspaceId,
     required String toolSlug,
@@ -255,9 +243,9 @@ class RunSkillsManagerToolUsecase {
             skill.id,
             slug,
           )
-        : (await cloud.tools(
-            skill.id,
-          )).where((item) => item.slug == slug).firstOrNull;
+        : (await cloud.tools(skill.id))
+              .where((item) => item.slug == slug)
+              .firstOrNull;
     if (duplicate != null) {
       throw StateError('A skill template tool with this title already exists.');
     }
@@ -668,9 +656,9 @@ class RunSkillsManagerToolUsecase {
   ) async {
     final cloud = cloudStore;
     if (cloud != null) {
-      return (await cloud.tools(
-        skillId,
-      )).where((item) => item.slug == slug).firstOrNull;
+      return (await cloud.tools(skillId))
+          .where((item) => item.slug == slug)
+          .firstOrNull;
     }
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {

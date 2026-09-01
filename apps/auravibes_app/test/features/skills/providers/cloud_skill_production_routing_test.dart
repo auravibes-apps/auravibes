@@ -34,7 +34,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
 void main() {
   final _ = TestWidgetsFlutterBinding.ensureInitialized();
@@ -170,15 +170,13 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           workspaceSessionProvider(workspace).overrideWithValue(workspace),
-          workspaceSessionForRouteProvider(
-            workspaceId,
-          ).overrideWithValue(const AsyncData(workspace)),
+          workspaceSessionForRouteProvider(workspaceId)
+              .overrideWithValue(const AsyncData(workspace)),
           cloudWorkspaceStateGatewayProvider.overrideWith(
             (_, _) async => gateway,
           ),
-          cloudWorkspaceStateGatewayForWorkspaceProvider(
-            workspaceId,
-          ).overrideWith((_) async => gateway),
+          cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId)
+              .overrideWith((_) async => gateway),
           workspaceSkillsProvider(workspaceId).overrideWith(
             (_) => CloudSkillSettingsAdapter(gateway).watchSkills().first,
           ),

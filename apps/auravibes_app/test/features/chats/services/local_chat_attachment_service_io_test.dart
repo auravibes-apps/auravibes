@@ -73,9 +73,8 @@ void main() {
 
   test('copies drafts into namespaced temporary storage', () async {
     const namespace = 'auravibes_app_0123456789abcdef';
-    final source = await File(
-      '${tempDirectory.path}/image.png',
-    ).writeAsBytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+    final source = await File('${tempDirectory.path}/image.png')
+        .writeAsBytes([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
 
     final attachment = await LocalChatAttachmentService(
       storageNamespace: namespace,
@@ -88,9 +87,8 @@ void main() {
     final draftDirectory = await Directory(
       '${tempDirectory.path}/chat_attachments_draft',
     ).create(recursive: true);
-    final legacyFile = await File(
-      '${draftDirectory.path}/legacy.png',
-    ).writeAsBytes([1]);
+    final legacyFile = await File('${draftDirectory.path}/legacy.png')
+        .writeAsBytes([1]);
 
     await LocalChatAttachmentService(
       storageNamespace: 'auravibes_app_0123456789abcdef',
@@ -236,14 +234,10 @@ void main() {
   });
 }
 
-class _FakeRecordPlatform extends RecordPlatform {
-  _FakeRecordPlatform({
-    this.isRecordingValue = false,
-    this.hasPermissionValue = true,
-  });
-
-  final bool isRecordingValue;
-  final bool hasPermissionValue;
+class _FakeRecordPlatform({
+  final bool isRecordingValue = false,
+  final bool hasPermissionValue = true,
+}) extends RecordPlatform {
   String? startPath;
   bool startStreamCalled = false;
   bool stopCalled = false;

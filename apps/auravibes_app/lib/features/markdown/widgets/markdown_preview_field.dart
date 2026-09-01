@@ -3,24 +3,15 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
-class MarkdownPreviewField extends StatelessWidget {
-  const MarkdownPreviewField({
-    required this.controller,
-    required this.titleKey,
-    required this.editKey,
-    required this.emptyKey,
-    required this.onEdit,
-    this.isReadOnly = false,
-    super.key,
-  });
-
-  final TextEditingController controller;
-  final String titleKey;
-  final String editKey;
-  final String emptyKey;
-  final VoidCallback onEdit;
-  final bool isReadOnly;
-
+class const MarkdownPreviewField({
+  required final TextEditingController controller,
+  required final String titleKey,
+  required final String editKey,
+  required final String emptyKey,
+  required final VoidCallback onEdit,
+  final bool isReadOnly = false,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraCard(

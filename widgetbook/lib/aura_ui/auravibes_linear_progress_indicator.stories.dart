@@ -5,25 +5,15 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_linear_progress_indicator.stories.g.dart';
 
-class _ProgressInput {
-  const _ProgressInput({
-    required this.value,
-    required this.height,
-    required this.tint,
-    required this.backgroundAlpha,
-    required this.borderRadius,
-    required this.semanticLabel,
-    required this.semanticValue,
-  });
-
-  final double value;
-  final double height;
-  final AuraTint tint;
-  final double backgroundAlpha;
-  final AuraBorderRadius borderRadius;
-  final String semanticLabel;
-  final String semanticValue;
-}
+class const _ProgressInput({
+  required final double value,
+  required final double height,
+  required final AuraTint tint,
+  required final double backgroundAlpha,
+  required final AuraBorderRadius borderRadius,
+  required final String semanticLabel,
+  required final String semanticValue,
+});
 
 const meta = Meta(
   AuraLinearProgressIndicator.new,

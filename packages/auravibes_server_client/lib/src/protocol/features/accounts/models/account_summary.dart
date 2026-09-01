@@ -12,27 +12,21 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class AccountSummary implements _i1.SerializableModel {
-  AccountSummary._({
-    required this.userId,
-    required this.email,
-  });
-
-  factory AccountSummary({
+abstract class AccountSummary._({
+  required var String userId,
+  required var String email,
+}) implements _i1.SerializableModel {
+  factory({
     required String userId,
     required String email,
   }) = _AccountSummaryImpl;
 
-  factory AccountSummary.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return AccountSummary(
       userId: jsonSerialization['userId'] as String,
       email: jsonSerialization['email'] as String,
     );
   }
-
-  String userId;
-
-  String email;
 
   /// Returns a shallow copy of this [AccountSummary]
   /// with some or all fields replaced by the given arguments.
@@ -56,14 +50,15 @@ abstract class AccountSummary implements _i1.SerializableModel {
   }
 }
 
-class _AccountSummaryImpl extends AccountSummary {
-  _AccountSummaryImpl({
-    required String userId,
-    required String email,
-  }) : super._(
-         userId: userId,
-         email: email,
-       );
+class _AccountSummaryImpl({
+  required String userId,
+  required String email,
+}) extends AccountSummary {
+  this
+    : super._(
+        userId: userId,
+        email: email,
+      );
 
   /// Returns a shallow copy of this [AccountSummary]
   /// with some or all fields replaced by the given arguments.

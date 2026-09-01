@@ -509,15 +509,14 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider(
-                    _workspaceId,
-                  ).overrideWithValue(
-                    const AsyncData(
-                      WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                  workspaceSessionForRouteProvider(_workspaceId)
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
@@ -546,12 +545,10 @@ void main() {
                   pendingToolCallsProvider.overrideWith(
                     (ref, _) async => const <PendingToolCall>[],
                   ),
-                  listModelsGroupedByProviderProvider(
-                    workspaceId: _workspaceId,
-                  ).overrideWith((ref) => Stream.value(const {})),
-                  agentsProvider(
-                    _workspaceId,
-                  ).overrideWith((ref) => Stream.value(const [])),
+                  listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                      .overrideWith((ref) => Stream.value(const {})),
+                  agentsProvider(_workspaceId)
+                      .overrideWith((ref) => Stream.value(const [])),
                 ],
                 child: MaterialApp(
                   home: const ChatConversationScreen(
@@ -599,15 +596,14 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider(
-                    _workspaceId,
-                  ).overrideWithValue(
-                    const AsyncData(
-                      WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                  workspaceSessionForRouteProvider(_workspaceId)
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
@@ -636,12 +632,10 @@ void main() {
                   pendingToolCallsProvider.overrideWith(
                     (ref, _) async => const <PendingToolCall>[],
                   ),
-                  listModelsGroupedByProviderProvider(
-                    workspaceId: _workspaceId,
-                  ).overrideWith((ref) => Stream.value(const {})),
-                  agentsProvider(
-                    _workspaceId,
-                  ).overrideWith((ref) => Stream.value(const [])),
+                  listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                      .overrideWith((ref) => Stream.value(const {})),
+                  agentsProvider(_workspaceId)
+                      .overrideWith((ref) => Stream.value(const [])),
                   compactionExecutionStateProvider(_chatId).overrideWithValue(
                     CompactionExecutionState(
                       conversationId: _chatId,
@@ -738,12 +732,10 @@ void main() {
         pendingToolCallsProvider.overrideWith(
           (ref, _) async => const <PendingToolCall>[],
         ),
-        listModelsGroupedByProviderProvider(
-          workspaceId: _workspaceId,
-        ).overrideWith((ref) => Stream.value(const {})),
-        agentsProvider(
-          _workspaceId,
-        ).overrideWith((ref) => Stream.value(const [])),
+        listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+            .overrideWith((ref) => Stream.value(const {})),
+        agentsProvider(_workspaceId)
+            .overrideWith((ref) => Stream.value(const [])),
       ],
     );
     addTearDown(container.dispose);
@@ -815,15 +807,14 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider(
-                    _workspaceId,
-                  ).overrideWithValue(
-                    const AsyncData(
-                      WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                  workspaceSessionForRouteProvider(_workspaceId)
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
@@ -855,12 +846,10 @@ void main() {
                   pendingToolCallsProvider.overrideWith(
                     (ref, _) async => const <PendingToolCall>[],
                   ),
-                  listModelsGroupedByProviderProvider(
-                    workspaceId: _workspaceId,
-                  ).overrideWith((ref) => Stream.value(const {})),
-                  agentsProvider(
-                    _workspaceId,
-                  ).overrideWith((ref) => Stream.value(const [])),
+                  listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                      .overrideWith((ref) => Stream.value(const {})),
+                  agentsProvider(_workspaceId)
+                      .overrideWith((ref) => Stream.value(const [])),
                 ],
                 child: MaterialApp(
                   home: const ChatConversationScreen(
@@ -897,9 +886,8 @@ void main() {
     'routes cloud Continue with the authoritative projection revision',
     (tester) async {
       final endpoint = _CloudConversationEndpoint();
-      when(
-        () => endpoint.continueConversation(any()),
-      ).thenAnswer((_) async => _cloudSnapshot());
+      when(() => endpoint.continueConversation(any()))
+          .thenAnswer((_) async => _cloudSnapshot());
       final usecase = _cloudTurnUsecase(endpoint);
 
       await _pumpCloudConversationScreen(
@@ -918,9 +906,9 @@ void main() {
       await tester.pump();
 
       final request =
-          verify(
-                () => endpoint.continueConversation(captureAny()),
-              ).captured.single
+          verify(() => endpoint.continueConversation(captureAny()))
+                  .captured
+                  .single
               as ContinueConversationRequest;
       expect(request.conversationId, _chatId);
       expect(request.expectedProjectionRevision, 42);
@@ -986,20 +974,19 @@ Future<void> _pumpCloudConversationScreen(
           builder: (context) {
             return TestProviderScope(
               overrides: [
-                workspaceSessionForRouteProvider(
-                  _workspaceId,
-                ).overrideWithValue(
-                  const AsyncData(
-                    WorkspaceSession(
-                      CloudWorkspaceRef(
-                        localWorkspaceId: _workspaceId,
-                        serverUrl: 'https://example.com',
-                        accountId: 'account',
-                        cloudWorkspaceId: 7,
+                workspaceSessionForRouteProvider(_workspaceId)
+                    .overrideWithValue(
+                      const AsyncData(
+                        WorkspaceSession(
+                          CloudWorkspaceRef(
+                            localWorkspaceId: _workspaceId,
+                            serverUrl: 'https://example.com',
+                            accountId: 'account',
+                            cloudWorkspaceId: 7,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
                 conversationSelectedProvider.overrideWithValue(_chatId),
                 conversationRepositoryProvider.overrideWithValue(
                   _StubConversationRepository(),
@@ -1017,9 +1004,8 @@ Future<void> _pumpCloudConversationScreen(
                   yield initialState;
                   yield* updates;
                 }),
-                cloudTurnUsecaseProvider(
-                  _workspaceId,
-                ).overrideWith((ref) => cloudUsecase),
+                cloudTurnUsecaseProvider(_workspaceId)
+                    .overrideWith((ref) => cloudUsecase),
                 chatMessagesProvider.overrideWith(
                   (ref, _) => Stream.value(const <MessageEntity>[]),
                 ),
@@ -1032,12 +1018,10 @@ Future<void> _pumpCloudConversationScreen(
                     limitTokens: null,
                   ),
                 ),
-                listModelsGroupedByProviderProvider(
-                  workspaceId: _workspaceId,
-                ).overrideWith((ref) => Stream.value(const {})),
-                agentsProvider(
-                  _workspaceId,
-                ).overrideWith((ref) => Stream.value(const [])),
+                listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                    .overrideWith((ref) => Stream.value(const {})),
+                agentsProvider(_workspaceId)
+                    .overrideWith((ref) => Stream.value(const [])),
               ],
               child: MaterialApp(
                 home: const ChatConversationScreen(
@@ -1072,9 +1056,8 @@ _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
   required String executionState,
 }) async {
   final endpoint = _CloudConversationEndpoint();
-  when(
-    () => endpoint.continueConversation(any()),
-  ).thenAnswer((_) async => _cloudSnapshot());
+  when(() => endpoint.continueConversation(any()))
+      .thenAnswer((_) async => _cloudSnapshot());
   final usecaseCompleter = Completer<CloudTurnUsecase?>();
   final updates = StreamController<CloudConversationState>();
   addTearDown(updates.close);
@@ -1155,15 +1138,14 @@ ConversationSnapshot _cloudSnapshot() => ConversationSnapshot(
   sequence: 43,
 );
 
-class _CloudWorkspaceGateway extends Mock
-    implements CloudWorkspaceStateGateway {}
+class _CloudWorkspaceGateway extends Mock implements CloudWorkspaceStateGateway;
 
-class _CloudClient extends Mock implements Client {}
+class _CloudClient extends Mock implements Client;
 
-class _CloudConversationEndpoint extends Mock implements EndpointConversation {}
+class _CloudConversationEndpoint extends Mock implements EndpointConversation;
 
 class _ContinueConversationRequestFake extends Fake
-    implements ContinueConversationRequest {}
+    implements ContinueConversationRequest;
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
   @override
@@ -1182,10 +1164,8 @@ class _ErrorChatNotifier extends ConversationChatNotifier {
   }
 }
 
-class _ResultChatNotifier extends ConversationChatNotifier {
-  _ResultChatNotifier(this.result);
-  final ConversationResult result;
-
+class _ResultChatNotifier(final ConversationResult result)
+    extends ConversationChatNotifier {
   @override
   Future<ConversationResult> build(
     String workspaceId,
@@ -1193,11 +1173,8 @@ class _ResultChatNotifier extends ConversationChatNotifier {
   ) async => result;
 }
 
-class _StaticRateLimitRetryNotifier extends ConversationRateLimitRetryNotifier {
-  _StaticRateLimitRetryNotifier(this.retryDeadline);
-
-  final DateTime retryDeadline;
-
+class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)
+    extends ConversationRateLimitRetryNotifier {
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
 }
@@ -1211,10 +1188,9 @@ class _BusyRefreshNotifier extends Notifier<int> {
   }
 }
 
-class _StubConversationRepository implements ConversationRepository {
-  _StubConversationRepository({this.watchStream});
-  final Stream<ConversationEntity?>? watchStream;
-
+class _StubConversationRepository({
+  final Stream<ConversationEntity?>? watchStream,
+}) implements ConversationRepository {
   @override
   Stream<ConversationEntity?> watchConversationById(String id) {
     return watchStream ?? const Stream.empty();

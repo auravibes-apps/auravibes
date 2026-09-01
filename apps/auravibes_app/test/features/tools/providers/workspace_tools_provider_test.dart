@@ -465,10 +465,9 @@ void main() {
   });
 }
 
-class _WorkspaceToolsProviderFixture {
-  _WorkspaceToolsProviderFixture({this.includeWorkspaceToolIndex = false});
-
-  final bool includeWorkspaceToolIndex;
+class _WorkspaceToolsProviderFixture({
+  final bool includeWorkspaceToolIndex = false,
+}) {
   _FakeWorkspaceToolsRepository? _repository;
   ProviderContainer? _container;
 

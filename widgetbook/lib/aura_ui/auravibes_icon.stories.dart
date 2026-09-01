@@ -23,12 +23,10 @@ const _iconValues = <IconData>[
   Icons.lock,
 ];
 
-class _IconInput {
-  const _IconInput({required this.icon, required this.size});
-
-  final IconData icon;
-  final AuraIconSize size;
-}
+class const _IconInput({
+  required final IconData icon,
+  required final AuraIconSize size,
+});
 
 const component = ComponentMeta(name: 'AuraIcon');
 const meta = Meta(AuraIcon.new, argsType: _IconInput.new);

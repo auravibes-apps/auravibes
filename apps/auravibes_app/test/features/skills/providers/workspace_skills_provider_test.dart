@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
 void main() {
   const workspaceId = 'cloud-workspace';
@@ -27,9 +27,8 @@ void main() {
     'merges the cloud snapshot with the app catalog without local storage',
     () async {
       final gateway = _Gateway();
-      when(
-        () => gateway.watchResources(any()),
-      ).thenAnswer((_) => Stream.value(const <WorkspaceResource>[]));
+      when(() => gateway.watchResources(any()))
+          .thenAnswer((_) => Stream.value(const <WorkspaceResource>[]));
       final container = ProviderContainer(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(

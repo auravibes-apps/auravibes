@@ -2,11 +2,8 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
-class EmptyMarkdownPreview extends StatelessWidget {
-  const EmptyMarkdownPreview({required this.label, super.key});
-
-  final String label;
-
+class const EmptyMarkdownPreview({required final String label, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;

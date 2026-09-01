@@ -8,9 +8,7 @@ import 'package:auravibes_app/features/chats/agent_adapters/message_transcript_s
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-class SelectCompactionRangeUsecase {
-  const SelectCompactionRangeUsecase();
-
+class const SelectCompactionRangeUsecase() {
   CompactionRange? call(List<MessageEntity> messages) {
     return switch (selectAgentCompactionRange(
       MessageTranscriptSnapshotMapper.toAgentContextSnapshot(messages),

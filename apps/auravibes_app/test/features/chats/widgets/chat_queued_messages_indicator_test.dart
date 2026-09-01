@@ -9,11 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class _EasyLocalizationTestWrapper extends StatelessWidget {
-  const _EasyLocalizationTestWrapper({required this.child});
-
-  final Widget child;
-
+class const _EasyLocalizationTestWrapper({required final Widget child})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

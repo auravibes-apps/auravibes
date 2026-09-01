@@ -22,11 +22,9 @@ abstract interface class AgentToolDecisionProvider {
   Future<List<AgentToolCallState>?> getToolCallStates(String messageId);
 }
 
-class AgentToolDecisionService {
-  const AgentToolDecisionService({required this.provider});
-
-  final AgentToolDecisionProvider provider;
-
+class const AgentToolDecisionService({
+  required final AgentToolDecisionProvider provider,
+}) {
   Future<AgentIterationDecision> call({required String messageId}) async {
     final toolCalls = await provider.getToolCallStates(messageId);
     return decideAgentToolIteration(toolCalls);

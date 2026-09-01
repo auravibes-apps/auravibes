@@ -7,17 +7,12 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
-class CloudAccountUseCases {
-  const CloudAccountUseCases({
-    required this._store,
-    required this._workspaceRepository,
-    required this.invalidateAccount,
-  });
-  final void Function(String serverUrl, String userId) invalidateAccount;
-
-  final ServerpodAuthStore _store;
-  final WorkspaceRepository _workspaceRepository;
-
+class const CloudAccountUseCases({
+  required final ServerpodAuthStore _store,
+  required final WorkspaceRepository _workspaceRepository,
+  required final void Function(String serverUrl, String userId)
+  invalidateAccount,
+}) {
   Future<CloudAccountSession> login({
     required String email,
     required String password,
@@ -129,11 +124,7 @@ class CloudAccountUseCases {
   }
 }
 
-class CloudAccountException implements Exception {
-  const CloudAccountException(this.message);
-
-  final String message;
-
+class const CloudAccountException(final String message) implements Exception {
   @override
   String toString() => message;
 }

@@ -14,8 +14,17 @@ import 'package:riverpod/riverpod.dart';
 /// disposed and recreated between uses. For keep-alive notifiers this is
 /// guaranteed. For auto-dispose notifiers, the adapter's `ref.watch`
 /// subscription keeps the notifier alive while the adapter is watched.
-class ConversationSendQueueRuntime implements AgentSendQueueRuntime {
-  factory ConversationSendQueueRuntime({
+class const ConversationSendQueueRuntime._({
+  required final ConversationQueuedDraft Function({
+    required String conversationId,
+    required ChatDraft draft,
+  })
+  enqueue,
+  required final List<ConversationQueuedDraft> Function(String conversationId)
+  _dequeueAll,
+  required final void Function(String conversationId) _clear,
+}) implements AgentSendQueueRuntime {
+  factory({
     required ConversationQueuedDraft Function({
       required String conversationId,
       required ChatDraft draft,
@@ -31,21 +40,6 @@ class ConversationSendQueueRuntime implements AgentSendQueueRuntime {
       clear: clear,
     );
   }
-
-  const ConversationSendQueueRuntime._({
-    required this.enqueue,
-    required this._dequeueAll,
-    required this._clear,
-  });
-
-  final ConversationQueuedDraft Function({
-    required String conversationId,
-    required ChatDraft draft,
-  })
-  enqueue;
-  final List<ConversationQueuedDraft> Function(String conversationId)
-  _dequeueAll;
-  final void Function(String conversationId) _clear;
 
   @override
   List<AgentQueuedDraft> dequeueAll(String conversationId) {

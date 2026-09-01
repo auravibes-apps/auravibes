@@ -9,7 +9,7 @@ import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.
 /// extend this and add their own fields, merging [toJson] via
 /// `...super.toJson()`.
 class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
-  const OpenAICompatChatOptions({
+  const new({
     this.temperature,
     this.topP,
     this.maxTokens,
@@ -20,7 +20,7 @@ class OpenAICompatChatOptions with ChatCompletionsSamplingOptions {
     this.user,
   });
 
-  factory OpenAICompatChatOptions.fromJson(Map<String, dynamic>? json) {
+  factory fromJson(Map<String, dynamic>? json) {
     if (json == null) return const OpenAICompatChatOptions();
 
     return OpenAICompatChatOptions(

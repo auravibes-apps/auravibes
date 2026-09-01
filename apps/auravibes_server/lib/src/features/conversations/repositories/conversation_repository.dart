@@ -43,12 +43,9 @@ int? conversationParentTurnIdForExecutionSettings(String settingsJson) {
       : null;
 }
 
-class ConversationRepository {
-  ConversationRepository({ObjectReferenceService? objectReferenceService})
-    : _objectReferenceService =
-          objectReferenceService ?? ObjectReferenceService();
-
-  final ObjectReferenceService _objectReferenceService;
+class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
+  final ObjectReferenceService _objectReferenceService =
+      objectReferenceService ?? ObjectReferenceService();
   Future<Conversation?> findConversationByStableId(
     Session session, {
     required int workspaceId,

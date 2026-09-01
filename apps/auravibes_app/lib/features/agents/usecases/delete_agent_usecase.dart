@@ -3,11 +3,7 @@ import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.da
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class DeleteAgentUsecase {
-  const DeleteAgentUsecase(this._repository);
-
-  final AgentRepository _repository;
-
+class const DeleteAgentUsecase(final AgentRepository _repository) {
   Future<bool> call(String agentId) => _repository.deleteAgent(agentId);
 }
 

@@ -22,8 +22,7 @@ final LoadingOverlayDemoComponent =
       name: component.name ?? 'LoadingOverlayDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates loading content with an optional message and accessible state.''',
+      docComment: r'''Demonstrates loading content with an optional message and accessible state.''',
       stories: [$LoadingOverlay..$generatedName = 'LoadingOverlay'],
     );
 typedef LoadingOverlayDemoScenario =

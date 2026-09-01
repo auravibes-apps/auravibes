@@ -10,17 +10,15 @@ abstract final class SkillToolNames {
   static const String listCredentials = listSkillCredentialsToolName;
 }
 
-class BuildDynamicSkillToolSpecsUsecase {
-  const BuildDynamicSkillToolSpecsUsecase(
-    ListAvailableSkillsUsecase Function(String workspaceId) _,
-    // Legacy constructor stays stable while implementation becomes fixed.
-    // ignore: avoid_unused_parameters
-    AppSkillRegistry _,
-    // Legacy constructor stays stable while implementation becomes fixed.
-    // ignore: avoid_unused_parameters
-    ListAppSkillCredentialCandidatesUsecase _,
-  );
-
+class const BuildDynamicSkillToolSpecsUsecase(
+  ListAvailableSkillsUsecase Function(String workspaceId) _,
+  // Legacy constructor stays stable while implementation becomes fixed.
+  // ignore: avoid_unused_parameters
+  AppSkillRegistry _,
+  // Legacy constructor stays stable while implementation becomes fixed.
+  // ignore: avoid_unused_parameters
+  ListAppSkillCredentialCandidatesUsecase _,
+) {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,

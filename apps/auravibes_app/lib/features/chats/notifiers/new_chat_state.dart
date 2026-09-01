@@ -10,7 +10,7 @@ part 'new_chat_state.g.dart';
 
 @freezed
 abstract class NewChatState with _$NewChatState {
-  const factory NewChatState({
+  const factory({
     String? modelId,
 
     /// Stores the provider ID (or name equivalent) for displaying and

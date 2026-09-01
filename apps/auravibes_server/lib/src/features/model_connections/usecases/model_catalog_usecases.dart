@@ -3,11 +3,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../repositories/model_catalog_repository.dart';
 
-class ModelCatalogUseCases {
-  ModelCatalogUseCases(this._repository);
-
-  final ModelCatalogRepository _repository;
-
+class ModelCatalogUseCases(final ModelCatalogRepository _repository) {
   Future<List<ApiModelProvider>> listProviders(Session session) =>
       _repository.listProviders(session);
 

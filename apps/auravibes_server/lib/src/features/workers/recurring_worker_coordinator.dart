@@ -11,17 +11,14 @@ import '../sync/stream/sync_wakeups.dart';
 import 'worker_coordinator_repository.dart';
 import 'recurring_worker_timer_set.dart';
 
-class RecurringWorkerCoordinator {
-  RecurringWorkerCoordinator(
-    this.pod, {
-    this.repository = const WorkerCoordinatorRepository(),
-  });
-
+class RecurringWorkerCoordinator(
+  final Serverpod pod, {
+  final WorkerCoordinatorRepository repository =
+      const WorkerCoordinatorRepository(),
+}) {
   static const _heartbeat = Duration(seconds: 15);
   static const _executionLease = Duration(minutes: 5);
 
-  final Serverpod pod;
-  final WorkerCoordinatorRepository repository;
   late final String _ownerId = '${pod.serverId}:${const Uuid().v4()}';
   Timer? _heartbeatTimer;
   final _timers = RecurringWorkerTimerSet();
@@ -384,24 +381,17 @@ class RecurringWorkerCoordinator {
   }
 }
 
-class _WorkerDefinition {
-  const _WorkerDefinition(
-    this.key,
-    this.interval,
-    this.pollInterval,
-    this.run,
-  );
-
-  final String key;
-  final Duration interval;
-  final Duration pollInterval;
+class const _WorkerDefinition(
+  final String key,
+  final Duration interval,
+  final Duration pollInterval,
   final Future<void> Function(
     Session, {
     required WorkerCoordinatorLease coordinator,
     required bool Function() isActive,
   })
-  run;
-}
+  run,
+);
 
 final _definitions = [
   _WorkerDefinition(

@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 /// border radius, and shadow options for layout organization.
 class AuraContainer extends StatelessWidget {
   /// Creates a Aura container.
-  const AuraContainer({
+  const new({
     required this.child,
     super.key,
     this.padding,

@@ -8,17 +8,11 @@ export 'cloud_operation_context.dart';
 
 final _logger = Logger('cloud_app_exception');
 
-final class CloudAppException implements Exception {
-  const CloudAppException({
-    required this.localizationKey,
-    required this.context,
-    this.code,
-  });
-
-  final String localizationKey;
-  final CloudOperationContext context;
-  final String? code;
-
+final class const CloudAppException({
+  required final String localizationKey,
+  required final CloudOperationContext context,
+  final String? code,
+}) implements Exception {
   @override
   String toString() => 'CloudAppException($context, $code)';
 }

@@ -16,7 +16,7 @@ class AuraTile extends StatefulWidget {
   // Null onTap creates a non-interactive tile for status rows.
   // ignore: unnecessary-nullable
   /// Creates a Aura tile.
-  const AuraTile({
+  const new({
     required this.child,
     super.key,
     this.onTap,

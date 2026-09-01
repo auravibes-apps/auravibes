@@ -7,7 +7,7 @@ class Vector {
   static const int _cubeExponent = 3;
 
   /// Creates a 3D vector with the given [x], [y], and [z] components.
-  const Vector(this.x, this.y, this.z);
+  const new(this.x, this.y, this.z);
 
   /// The X component of the vector.
   final num x;
@@ -47,17 +47,15 @@ class Vector {
 /// Represents a 3x3 matrix for color space transformations.
 class MatrixTransformation {
   /// Creates a matrix transformation from three row vectors.
-  const MatrixTransformation(this.first, this.second, this.third);
+  const new(this.first, this.second, this.third);
 
   /// Creates a matrix by multiplying [a] and [b].
-  factory MatrixTransformation.multiply(
-    MatrixTransformation a,
-    MatrixTransformation b,
-  ) => MatrixTransformation(
-    a.transform(b.first),
-    a.transform(b.second),
-    a.transform(b.third),
-  );
+  factory multiply(MatrixTransformation a, MatrixTransformation b) =>
+      MatrixTransformation(
+        a.transform(b.first),
+        a.transform(b.second),
+        a.transform(b.third),
+      );
 
   /// First row vector of the matrix.
   final Vector first;

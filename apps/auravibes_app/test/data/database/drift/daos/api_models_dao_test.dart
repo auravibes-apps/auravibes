@@ -23,10 +23,7 @@ Future<void> seedProvider(
   ApiModelProvidersCompanion.insert(id: id, name: name),
 );
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>

@@ -34,16 +34,11 @@ final $ConfirmDialog = _Story(
 );
 
 /// Demonstrates a confirmation dialog with destructive and tinted states.
-class ConfirmDialogDemo extends StatelessWidget {
-  const ConfirmDialogDemo({
-    super.key,
-    required this.isDestructive,
-    required this.tint,
-  });
-
-  final bool isDestructive;
-  final AuraTint? tint;
-
+class const ConfirmDialogDemo({
+  super.key,
+  required final bool isDestructive,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(

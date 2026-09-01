@@ -16,11 +16,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatListWidget extends ConsumerWidget {
-  const ChatListWidget({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const ChatListWidget({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatListAsync = ref.watch(
@@ -54,11 +51,8 @@ class ChatListWidget extends ConsumerWidget {
   }
 }
 
-class _ChatListEmptyState extends StatelessWidget {
-  const _ChatListEmptyState({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _ChatListEmptyState({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -99,12 +93,10 @@ class _ChatListEmptyState extends StatelessWidget {
   }
 }
 
-class _ChatTile extends ConsumerStatefulWidget {
-  const _ChatTile({required this.chat, required this.workspaceId});
-
-  final ConversationEntity chat;
-  final String workspaceId;
-
+class const _ChatTile({
+  required final ConversationEntity chat,
+  required final String workspaceId,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ChatTile> createState() => _ChatTileState();
 }

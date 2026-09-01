@@ -4,17 +4,11 @@ abstract interface class AgentStopProvider {
   Future<void> stopLatestPendingTools(String conversationId);
 }
 
-class AgentStopService {
-  const AgentStopService({
-    required this.cancellationEffects,
-    required this.sendQueueRuntime,
-    required this.provider,
-  });
-
-  final AgentCancellationEffects cancellationEffects;
-  final AgentSendQueueRuntime sendQueueRuntime;
-  final AgentStopProvider provider;
-
+class const AgentStopService({
+  required final AgentCancellationEffects cancellationEffects,
+  required final AgentSendQueueRuntime sendQueueRuntime,
+  required final AgentStopProvider provider,
+}) {
   Future<void> call({required String conversationId}) async {
     cancellationEffects.requestStop(conversationId);
     sendQueueRuntime.clear(conversationId);

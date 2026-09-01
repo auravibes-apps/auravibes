@@ -13,15 +13,10 @@ const _parentConversationIdEmpty = 'Parent conversation ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
-class ConversationRepository {
-  ConversationRepository(
-    this._database, {
-    this._attachmentFileStore = const AttachmentFileStore(),
-  });
-
-  final AppDatabase _database;
-  final AttachmentFileStore _attachmentFileStore;
-
+class ConversationRepository(
+  final AppDatabase _database, {
+  final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+}) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
@@ -247,12 +242,10 @@ class ConversationRepository {
   }
 }
 
-class ConversationException implements Exception {
-  const ConversationException(this.message, [this.cause]);
-
-  final String message;
-  final Exception? cause;
-
+class const ConversationException(
+  final String message, [
+  final Exception? cause,
+]) implements Exception {
   @override
   String toString() {
     final causedBy = ' (Caused by: $cause)';
@@ -261,13 +254,12 @@ class ConversationException implements Exception {
   }
 }
 
-class ConversationValidationException extends ConversationException {
-  const ConversationValidationException(super.message, [super.cause]);
-}
+class const ConversationValidationException(super.message, [super.cause])
+    extends ConversationException;
 
-class ConversationNotFoundException extends ConversationException {
-  const ConversationNotFoundException(this.conversationId, [Exception? cause])
-    : super('Conversation with ID "$conversationId" not found', cause);
-
-  final String conversationId;
+class const ConversationNotFoundException(
+  final String conversationId, [
+  Exception? cause,
+]) extends ConversationException {
+  this : super('Conversation with ID "$conversationId" not found', cause);
 }

@@ -131,22 +131,21 @@ ImageProvider<Object> auraSampleImageProvider() {
   );
 }
 
-class AuraArabicLocaleMode extends LocaleMode {
-  AuraArabicLocaleMode() : super(const Locale('ar'), auraLocalizationDelegates);
+class AuraArabicLocaleMode() extends LocaleMode {
+  this : super(const Locale('ar'), auraLocalizationDelegates);
 }
 
-class AuraDirectionalityMode extends Mode<TextDirection> {
-  AuraDirectionalityMode(TextDirection value)
-    : super(value, AuraDirectionalityAddon());
+class AuraDirectionalityMode(TextDirection value) extends Mode<TextDirection> {
+  this : super(value, AuraDirectionalityAddon());
 
   @override
   String get formattedValue => value == TextDirection.rtl ? 'RTL' : 'LTR';
 }
 
-class AuraDirectionalityAddon extends Addon<TextDirection>
+class AuraDirectionalityAddon([TextDirection direction = TextDirection.ltr])
+    extends Addon<TextDirection>
     with SingleFieldOnly {
-  AuraDirectionalityAddon([TextDirection direction = TextDirection.ltr])
-    : super(name: 'Directionality', initialValue: direction);
+  this : super(name: 'Directionality', initialValue: direction);
 
   @override
   Field<TextDirection> get field {

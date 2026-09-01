@@ -15,16 +15,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SkillCredentialDefinitionEditScreen extends ConsumerStatefulWidget {
-  const SkillCredentialDefinitionEditScreen({
-    required this.workspaceId,
-    this.definitionId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String? definitionId;
-
+class const SkillCredentialDefinitionEditScreen({
+  required final String workspaceId,
+  final String? definitionId,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<SkillCredentialDefinitionEditScreen> createState() =>
       _SkillCredentialDefinitionEditScreenState();
@@ -154,16 +149,16 @@ class _SkillCredentialDefinitionEditScreenState
     if (definition != null) {
       _titleController.text = definition.title;
       _attributeRows.addAll(
-        SkillCredentialAttributeDefinition.parseMap(
-          definition.attributesJson,
-        ).entries.map(
-          (entry) => _AttributeFormRow(
-            variable: entry.key,
-            description: entry.value.description,
-            optional: entry.value.optional,
-            secret: entry.value.secret,
-          ),
-        ),
+        SkillCredentialAttributeDefinition.parseMap(definition.attributesJson)
+            .entries
+            .map(
+              (entry) => _AttributeFormRow(
+                variable: entry.key,
+                description: entry.value.description,
+                optional: entry.value.optional,
+                secret: entry.value.secret,
+              ),
+            ),
       );
     }
     if (_attributeRows.isEmpty) {
@@ -301,27 +296,16 @@ class _SkillCredentialDefinitionEditScreenState
   }
 }
 
-class _SkillCredentialDefinitionForm extends StatelessWidget {
-  const _SkillCredentialDefinitionForm({
-    required this.definition,
-    required this.titleController,
-    required this.attributeRows,
-    required this.isSaving,
-    required this.onAddAttributeRow,
-    required this.onDeleteAttributeRow,
-    required this.onSave,
-    required this.onChanged,
-  });
-
-  final SkillCredentialDefinitionEntity? definition;
-  final TextEditingController titleController;
-  final List<_AttributeFormRow> attributeRows;
-  final bool isSaving;
-  final VoidCallback onAddAttributeRow;
-  final ValueChanged<_AttributeFormRow> onDeleteAttributeRow;
-  final VoidCallback onSave;
-  final VoidCallback onChanged;
-
+class const _SkillCredentialDefinitionForm({
+  required final SkillCredentialDefinitionEntity? definition,
+  required final TextEditingController titleController,
+  required final List<_AttributeFormRow> attributeRows,
+  required final bool isSaving,
+  required final VoidCallback onAddAttributeRow,
+  required final ValueChanged<_AttributeFormRow> onDeleteAttributeRow,
+  required final VoidCallback onSave,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final definition = this.definition;
@@ -389,40 +373,31 @@ class _SkillCredentialDefinitionForm extends StatelessWidget {
   }
 }
 
-class _AttributeFormRow {
-  _AttributeFormRow({
-    String variable = '',
-    String description = '',
-    this.optional = false,
-    this.secret = true,
-  }) : variableController = TextEditingController(text: variable),
-       descriptionController = TextEditingController(text: description);
-
-  final TextEditingController variableController;
-  final TextEditingController descriptionController;
-  bool optional;
-  bool secret;
-
+class _AttributeFormRow({
+  String variable = '',
+  String description = '',
+  var bool optional = false,
+  var bool secret = true,
+}) {
+  final TextEditingController variableController = TextEditingController(
+    text: variable,
+  );
+  final TextEditingController descriptionController = TextEditingController(
+    text: description,
+  );
   void dispose() {
     variableController.dispose();
     descriptionController.dispose();
   }
 }
 
-class _AttributeRowEditor extends StatelessWidget {
-  const _AttributeRowEditor({
-    required this.row,
-    required this.canDelete,
-    required this.onChanged,
-    required this.onDelete,
-    super.key,
-  });
-
-  final _AttributeFormRow row;
-  final bool canDelete;
-  final VoidCallback onChanged;
-  final VoidCallback onDelete;
-
+class const _AttributeRowEditor({
+  required final _AttributeFormRow row,
+  required final bool canDelete,
+  required final VoidCallback onChanged,
+  required final VoidCallback onDelete,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final variableLabel = LocaleKeys

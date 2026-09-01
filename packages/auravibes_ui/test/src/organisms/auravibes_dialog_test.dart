@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// Test helper to create a widget with Aura theme.
 class AuraThemeWrapper extends StatelessWidget {
   /// Creates an [AuraThemeWrapper].
-  const AuraThemeWrapper({required this.child, super.key});
+  const new({required this.child, super.key});
 
   /// The widget under test.
   final Widget child;

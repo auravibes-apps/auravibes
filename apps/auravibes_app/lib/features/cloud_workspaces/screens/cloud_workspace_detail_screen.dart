@@ -12,18 +12,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CloudWorkspaceDetailScreen extends ConsumerWidget {
-  const CloudWorkspaceDetailScreen({
-    required this.workspaceId,
-    required this.cloudAccountId,
-    required this.cloudWorkspaceId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String cloudAccountId;
-  final int cloudWorkspaceId;
-
+class const CloudWorkspaceDetailScreen({
+  required final String workspaceId,
+  required final String cloudAccountId,
+  required final int cloudWorkspaceId,
+  super.key,
+}) extends ConsumerWidget {
   CloudWorkspaceDetailKey get _key =>
       (accountId: cloudAccountId, workspaceId: cloudWorkspaceId);
 
@@ -66,19 +60,12 @@ class CloudWorkspaceDetailScreen extends ConsumerWidget {
   }
 }
 
-class _DetailBody extends ConsumerWidget {
-  const _DetailBody({
-    required this.state,
-    required this.accountId,
-    required this.mirror,
-    required this.onChanged,
-  });
-
-  final CloudWorkspaceDetailState state;
-  final String accountId;
-  final WorkspaceEntity? mirror;
-  final VoidCallback onChanged;
-
+class const _DetailBody({
+  required final CloudWorkspaceDetailState state,
+  required final String accountId,
+  required final WorkspaceEntity? mirror,
+  required final VoidCallback onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = state.detail;
@@ -279,20 +266,13 @@ Future<void> _runCloudAction(
   }
 }
 
-class _MemberTile extends ConsumerWidget {
-  const _MemberTile({
-    required this.accountId,
-    required this.workspace,
-    required this.member,
-    required this.capabilities,
-    required this.onChanged,
-  });
-  final String accountId;
-  final CloudWorkspaceSummary workspace;
-  final CloudWorkspaceMemberSummary member;
-  final CloudWorkspaceCapabilities capabilities;
-  final VoidCallback onChanged;
-
+class const _MemberTile({
+  required final String accountId,
+  required final CloudWorkspaceSummary workspace,
+  required final CloudWorkspaceMemberSummary member,
+  required final CloudWorkspaceCapabilities capabilities,
+  required final VoidCallback onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
     child: AuraColumn(
@@ -381,18 +361,12 @@ class _MemberTile extends ConsumerWidget {
   }
 }
 
-class _OutgoingInviteTile extends ConsumerWidget {
-  const _OutgoingInviteTile({
-    required this.accountId,
-    required this.workspaceId,
-    required this.invite,
-    required this.onChanged,
-  });
-  final String accountId;
-  final int workspaceId;
-  final CloudWorkspaceInviteSummary invite;
-  final VoidCallback onChanged;
-
+class const _OutgoingInviteTile({
+  required final String accountId,
+  required final int workspaceId,
+  required final CloudWorkspaceInviteSummary invite,
+  required final VoidCallback onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
     child: Text(invite.email),

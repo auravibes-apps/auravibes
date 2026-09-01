@@ -28,29 +28,19 @@ WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
   );
 }
 
-class _MockWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
-  _MockWorkspaceToolsNotifier(this.tools);
-
-  final List<WorkspaceToolEntity> tools;
-
+class _MockWorkspaceToolsNotifier(final List<WorkspaceToolEntity> tools)
+    extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }
 
-class _MockGroupedNotifier extends GroupedToolsNotifier {
-  _MockGroupedNotifier(this.groups);
-
-  final List<ToolsGroupWithTools> groups;
-
+class _MockGroupedNotifier(final List<ToolsGroupWithTools> groups)
+    extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => groups;
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.child});
-
-  final Widget child;
-
+class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TestableApp(
@@ -59,12 +49,10 @@ class _Subject extends StatelessWidget {
         child: Material(child: child),
       ),
       overrides: [
-        workspaceToolsProvider(
-          _workspaceId,
-        ).overrideWith(() => _MockWorkspaceToolsNotifier([_tool()])),
-        groupedToolsProvider(
-          _workspaceId,
-        ).overrideWith(() => _MockGroupedNotifier([])),
+        workspaceToolsProvider(_workspaceId)
+            .overrideWith(() => _MockWorkspaceToolsNotifier([_tool()])),
+        groupedToolsProvider(_workspaceId)
+            .overrideWith(() => _MockGroupedNotifier([])),
       ],
     );
   }

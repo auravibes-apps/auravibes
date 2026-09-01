@@ -13,15 +13,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'save_workspace_compaction_settings_usecase.g.dart';
 
-class SaveWorkspaceCompactionSettingsUsecase {
-  const SaveWorkspaceCompactionSettingsUsecase({
-    this.repository,
-    this.cloudAdapter,
-  });
-
-  final WorkspaceCompactionSettingsRepository? repository;
-  final CloudSkillSettingsAdapter? cloudAdapter;
-
+class const SaveWorkspaceCompactionSettingsUsecase({
+  final WorkspaceCompactionSettingsRepository? repository,
+  final CloudSkillSettingsAdapter? cloudAdapter,
+}) {
   Future<CompactionSettings> call({
     required String workspaceId,
     required CompactionSettings settings,

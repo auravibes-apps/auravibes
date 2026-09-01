@@ -6,25 +6,15 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_button.stories.g.dart';
 
-class _ButtonInput {
-  const _ButtonInput({
-    required this.buttonContent,
-    required this.variant,
-    required this.size,
-    required this.isLoading,
-    required this.isFullWidth,
-    required this.disabled,
-    required this.semanticLabel,
-  });
-
-  final String buttonContent;
-  final AuraButtonVariant variant;
-  final AuraButtonSize size;
-  final bool isLoading;
-  final bool isFullWidth;
-  final bool disabled;
-  final String semanticLabel;
-}
+class const _ButtonInput({
+  required final String buttonContent,
+  required final AuraButtonVariant variant,
+  required final AuraButtonSize size,
+  required final bool isLoading,
+  required final bool isFullWidth,
+  required final bool disabled,
+  required final String semanticLabel,
+});
 
 const meta = Meta(AuraButton.new, argsType: _ButtonInput.new);
 

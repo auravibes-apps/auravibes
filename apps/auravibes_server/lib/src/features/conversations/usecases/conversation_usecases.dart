@@ -12,11 +12,10 @@ import '../engine/conversation_host_effects.dart';
 
 import '../repositories/conversation_repository.dart' as conversation_repo;
 
-typedef ConversationJobPublisher =
-    Future<void> Function(
-      Session session,
-      ConversationJob job,
-    );
+typedef ConversationJobPublisher = Future<void> Function(
+  Session session,
+  ConversationJob job,
+);
 
 class ConversationUseCases {
   ConversationUseCases(
@@ -2344,21 +2343,15 @@ class ConversationUseCases {
       throw ConversationException(code: code);
 }
 
-class _ContinueConversationReplay {
-  const _ContinueConversationReplay();
-}
+class const _ContinueConversationReplay();
 
-class _ConversationCursor {
-  const _ConversationCursor(this.updatedAt, this.stableId);
+class const _ConversationCursor(
+  final DateTime updatedAt,
+  final String stableId,
+);
 
-  final DateTime updatedAt;
-  final String stableId;
-}
-
-class _Mutation<T> {
-  const _Mutation(this.value, this.operation, this.resourceId);
-
-  final T? value;
-  final String operation;
-  final String resourceId;
-}
+class const _Mutation<T>(
+  final T? value,
+  final String operation,
+  final String resourceId,
+);

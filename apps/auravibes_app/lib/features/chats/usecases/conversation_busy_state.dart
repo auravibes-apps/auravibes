@@ -7,14 +7,14 @@ import 'package:auravibes_app/features/chats/providers/conversation_streaming_ru
 import 'package:riverpod/riverpod.dart';
 
 class ConversationBusyState {
-  const ConversationBusyState({
+  const new({
     required this.isStreaming,
     required this.hasPendingTools,
     this.isCompacting = false,
     this.cloudExecutionBusy = false,
   });
 
-  const ConversationBusyState.cloud({required bool isBusy})
+  const new cloud({required bool isBusy})
     : isStreaming = false,
       hasPendingTools = false,
       isCompacting = false,
@@ -29,15 +29,10 @@ class ConversationBusyState {
       cloudExecutionBusy || isStreaming || hasPendingTools || isCompacting;
 }
 
-class GetConversationBusyStateUsecase {
-  const GetConversationBusyStateUsecase({
-    required this.messageRepository,
-    required this.conversationStreamingRuntime,
-  });
-
-  final MessageRepository messageRepository;
-  final ConversationStreamingRuntime conversationStreamingRuntime;
-
+class const GetConversationBusyStateUsecase({
+  required final MessageRepository messageRepository,
+  required final ConversationStreamingRuntime conversationStreamingRuntime,
+}) {
   Future<ConversationBusyState> call({
     required String conversationId,
     bool isCompacting = false,

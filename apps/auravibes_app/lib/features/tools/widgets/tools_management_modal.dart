@@ -18,16 +18,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// Shows all workspace tools organized by group, with each group collapsed by
 /// default. MCP groups include status indicators, group-level toggles, and a
 /// reconnect button for connection issues.
-class ToolsManagementModal extends ConsumerWidget {
-  const ToolsManagementModal({
-    required this.workspaceId,
-    super.key,
-    this.conversationId,
-  });
-
-  final String? conversationId;
-  final String workspaceId;
-
+class const ToolsManagementModal({
+  required final String workspaceId,
+  super.key,
+  final String? conversationId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref
@@ -120,17 +115,11 @@ class ToolsManagementModal extends ConsumerWidget {
 }
 
 /// List of grouped conversation tools.
-class _GroupedToolsList extends StatelessWidget {
-  const _GroupedToolsList({
-    required this.groups,
-    required this.workspaceId,
-    this.conversationId,
-  });
-
-  final List<ConversationToolsGroupWithTools> groups;
-  final String? conversationId;
-  final String workspaceId;
-
+class const _GroupedToolsList({
+  required final List<ConversationToolsGroupWithTools> groups,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groups.isEmpty) {

@@ -14,21 +14,14 @@ import 'package:riverpod/riverpod.dart';
 
 export 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 
-class SyncSkillToolPermissionsUsecase {
-  const SyncSkillToolPermissionsUsecase({
-    required this.database,
-    required this.buildDynamicSkillToolSpecs,
-    required this.buildSkillTemplateToolSpecs,
-    required this.buildAppSkillNativeToolSpecs,
-    this.listConversationAgentSkillsUsecase,
-  });
-
-  final AppDatabase database;
-  final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs;
-  final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs;
-  final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecs;
-  final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase;
-
+class const SyncSkillToolPermissionsUsecase({
+  required final AppDatabase database,
+  required final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs,
+  required final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs,
+  required final BuildAppSkillNativeToolSpecsUsecase
+  buildAppSkillNativeToolSpecs,
+  final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase,
+}) {
   Future<void> call({
     required String conversationId,
     required String workspaceId,

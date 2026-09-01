@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 /// Contextual Row management.
 class AuraRow extends StatelessWidget {
   /// Creates an Aura row.
-  const AuraRow({
+  const new({
     required this.children,
     this.spacing = AuraSpacing.base,
     this.crossAxisAlignment = CrossAxisAlignment.center,

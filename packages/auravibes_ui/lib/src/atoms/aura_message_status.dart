@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 /// icons and colors, typically used alongside message bubbles.
 class AuraMessageStatus extends StatefulWidget {
   /// Creates a Aura message status indicator.
-  const AuraMessageStatus({
+  const new({
     required this.status,
     super.key,
     this.size = AuraMessageStatusSize.medium,

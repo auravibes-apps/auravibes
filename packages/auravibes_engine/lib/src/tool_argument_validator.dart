@@ -114,9 +114,8 @@ bool _jsonEquals(Object? left, Object? right) {
   }
   if (left is List && right is List) {
     return left.length == right.length &&
-        Iterable<int>.generate(
-          left.length,
-        ).every((index) => _jsonEquals(left[index], right[index]));
+        Iterable<int>.generate(left.length)
+            .every((index) => _jsonEquals(left[index], right[index]));
   }
   return left == right;
 }

@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 /// A reusable Aura pressable surface with pointer and keyboard feedback.
 class AuraPressable extends StatefulWidget {
   /// Constructor.
-  const AuraPressable({
+  const new({
     required this.child,
     required this.color,
     super.key,
@@ -168,15 +168,10 @@ class AuraPressableState extends State<AuraPressable> {
   }
 }
 
-class _AuraPressableFocusRingPainter extends CustomPainter {
-  const _AuraPressableFocusRingPainter({
-    required this.color,
-    required this.decoration,
-  });
-
-  final Color color;
-  final Decoration? decoration;
-
+class const _AuraPressableFocusRingPainter({
+  required final Color color,
+  required final Decoration? decoration,
+}) extends CustomPainter {
   double get _borderRadius {
     final decoration = this.decoration;
     if (decoration is! BoxDecoration) return 0;

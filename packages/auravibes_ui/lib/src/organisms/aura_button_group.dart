@@ -16,7 +16,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates a single-selection button group (radio behavior).
   ///
   /// Only one item can be selected at a time.
-  const AuraButtonGroup.single({
+  const new single({
     required this.items,
     required this.selectedValue,
     required ValueChanged<T> this.onChanged,
@@ -34,7 +34,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates a multi-selection button group (toggle behavior).
   ///
   /// Multiple items can be selected at the same time.
-  const AuraButtonGroup.multi({
+  const new multi({
     required this.items,
     required Set<T> this.selectedValues,
     required ValueChanged<Set<T>> this.onMultiChanged,
@@ -52,7 +52,7 @@ class AuraButtonGroup<T> extends StatelessWidget {
   /// Creates an action button group (clickable without selection state).
   ///
   /// Each button triggers its own action without maintaining selection.
-  const AuraButtonGroup.action({
+  const new action({
     required this.items,
     required ValueChanged<T> this.onPressed,
     super.key,
@@ -191,37 +191,21 @@ class AuraButtonGroup<T> extends StatelessWidget {
   }
 }
 
-class _AuraButtonGroupItem<T> extends StatefulWidget {
-  const _AuraButtonGroupItem({
-    required this.item,
-    required this.isSelected,
-    required this.isFirst,
-    required this.isLast,
-    required this.size,
-    required this.variant,
-    required this.orientation,
-    required this.disabled,
-    required this.isLoading,
-    required this.mode,
-    required this.onTap,
-    required this.auraColors,
-    required this.auraTheme,
-  });
-
-  final AuraButtonGroupItem<T> item;
-  final bool isSelected;
-  final bool isFirst;
-  final bool isLast;
-  final AuraButtonGroupSize size;
-  final AuraButtonGroupVariant variant;
-  final Axis orientation;
-  final bool disabled;
-  final bool isLoading;
-  final _ButtonGroupMode mode;
-  final VoidCallback? onTap;
-  final AuraColorScheme auraColors;
-  final AuraTheme auraTheme;
-
+class const _AuraButtonGroupItem<T>({
+  required final AuraButtonGroupItem<T> item,
+  required final bool isSelected,
+  required final bool isFirst,
+  required final bool isLast,
+  required final AuraButtonGroupSize size,
+  required final AuraButtonGroupVariant variant,
+  required final Axis orientation,
+  required final bool disabled,
+  required final bool isLoading,
+  required final _ButtonGroupMode mode,
+  required final VoidCallback? onTap,
+  required final AuraColorScheme auraColors,
+  required final AuraTheme auraTheme,
+}) extends StatefulWidget {
   @override
   State<_AuraButtonGroupItem<T>> createState() =>
       _AuraButtonGroupItemState<T>();
@@ -450,7 +434,7 @@ class _AuraButtonGroupItemState<T> extends State<_AuraButtonGroupItem<T>> {
 /// Represents an item in an [AuraButtonGroup].
 class AuraButtonGroupItem<T> {
   /// Creates a button group item.
-  const AuraButtonGroupItem({
+  const new({
     required this.value,
     required this.child,
     this.disabled = false,

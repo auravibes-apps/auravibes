@@ -16,7 +16,7 @@ enum SelectionMode { full, affected, none }
 
 /// One file row from a Git change range.
 class ChangedFile {
-  ChangedFile({required this.status, this.oldPath, this.newPath}) {
+  new({required this.status, this.oldPath, this.newPath}) {
     if (status != 'added' &&
         status != 'modified' &&
         status != 'deleted' &&
@@ -25,22 +25,22 @@ class ChangedFile {
     }
   }
 
-  const ChangedFile.added(String path)
+  const new added(String path)
     : status = 'added',
       oldPath = null,
       newPath = path;
 
-  const ChangedFile.modified(String path)
+  const new modified(String path)
     : status = 'modified',
       oldPath = path,
       newPath = path;
 
-  const ChangedFile.deleted(String path)
+  const new deleted(String path)
     : status = 'deleted',
       oldPath = path,
       newPath = null;
 
-  const ChangedFile.renamed({
+  const new renamed({
     required String this.oldPath,
     required String this.newPath,
   }) : status = 'renamed';
@@ -52,13 +52,13 @@ class ChangedFile {
 
 /// Immutable selector output.
 class SelectionResult {
-  SelectionResult({
+  new({
     required this.mode,
     required Map<String, List<String>> packages,
     required this.reason,
   }) : packages = _freezePackages(packages);
 
-  factory SelectionResult.fromJson(Object? value) {
+  factory fromJson(Object? value) {
     if (value is! Map) {
       throw const FormatException('Manifest must be an object');
     }
@@ -308,12 +308,11 @@ SelectionResult selectChangedTests({
   }
 }
 
-typedef ProcessLauncher =
-    Future<int> Function({
-      required String executable,
-      required List<String> arguments,
-      required String workingDirectory,
-    });
+typedef ProcessLauncher = Future<int> Function({
+  required String executable,
+  required List<String> arguments,
+  required String workingDirectory,
+});
 
 /// One GitHub Actions matrix row for a selected package test group.
 class TestMatrixEntry {
@@ -565,9 +564,8 @@ Future<void> main(List<String> args) async {
           rootPath: Directory.current.path,
           head: _requiredOption(options, 'head'),
         );
-        final _ = await File(
-          _requiredOption(options, 'output'),
-        ).writeAsString(jsonEncode(result.toJson()));
+        final _ = await File(_requiredOption(options, 'output'))
+            .writeAsString(jsonEncode(result.toJson()));
         stderr.writeln('${result.mode.name}: ${result.reason}');
       case 'run':
         _checkOptions(options, const {
@@ -623,7 +621,7 @@ Future<void> main(List<String> args) async {
 }
 
 class _Package {
-  _Package({
+  new({
     required this.relativeRoot,
     required this.name,
     required this.flutter,
@@ -638,7 +636,7 @@ class _Package {
 }
 
 class _TestGroup {
-  _TestGroup(this.package, this.paths);
+  new(this.package, this.paths);
   final _Package package;
   final List<String> paths;
 }
@@ -665,7 +663,7 @@ class _Shard {
 }
 
 class _Command {
-  _Command(this.executable, this.arguments);
+  new(this.executable, this.arguments);
   final String executable;
   final List<String> arguments;
 }
@@ -695,9 +693,8 @@ Future<List<_Package>> _loadPackages(String rootPath) async {
   final packages = <_Package>[];
   for (final member in members) {
     final packageRoot = Directory('${root.path}/$member');
-    final packageLines = await File(
-      '${packageRoot.path}/pubspec.yaml',
-    ).readAsLines();
+    final packageLines = await File('${packageRoot.path}/pubspec.yaml')
+        .readAsLines();
     final nameLine = packageLines.firstWhere(
       (line) => RegExp(r'^name:\s*\S+').hasMatch(line),
       orElse: () => throw FormatException('Package name missing: $member'),
@@ -776,9 +773,8 @@ Future<String> _validateTestPath(_Package package, String path) async {
     throw FormatException('Selected test file is missing: $path');
   }
   final resolved = await file.resolveSymbolicLinks();
-  final packageResolved = await Directory(
-    package.absoluteRoot,
-  ).resolveSymbolicLinks();
+  final packageResolved = await Directory(package.absoluteRoot)
+      .resolveSymbolicLinks();
   final root = packageResolved.endsWith(Platform.pathSeparator)
       ? packageResolved
       : '$packageResolved${Platform.pathSeparator}';
@@ -966,13 +962,11 @@ bool _containsOpaqueRuntimeMarker(String source) =>
     // ponytail: this finite marker list bounds known opaque runtimes; unknown
     // dynamic/reflection behavior remains residual risk until explicit marker
     // coverage is added.
-    RegExp(
-      '''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''',
-    ).hasMatch(source) ||
+    RegExp('''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''')
+        .hasMatch(source) ||
     RegExp(r'\bDynamicLibrary\b').hasMatch(source) ||
-    RegExp(
-      r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b',
-    ).hasMatch(source) ||
+    RegExp(r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b')
+        .hasMatch(source) ||
     RegExp(r'''@pragma\s*\(\s*['"]vm:entry-point['"]''').hasMatch(source);
 
 Map<String, String> _normalizeSources(Map<String, String> sources) {

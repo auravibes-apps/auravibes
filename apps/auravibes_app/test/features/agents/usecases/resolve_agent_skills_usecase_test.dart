@@ -76,23 +76,14 @@ void main() {
   });
 }
 
-class _ResolveAgentSkillsFixture {
-  _ResolveAgentSkillsFixture({
-    required this.database,
-    required this.skillsRepository,
-    required this.appSettingsRepository,
-    required this.usecase,
-    required this.workspaceId,
-    required this.otherWorkspaceId,
-  });
-
-  final AppDatabase database;
-  final SkillsRepository skillsRepository;
-  final AppSkillWorkspaceSettingsRepository appSettingsRepository;
-  final ResolveAgentSkillsUsecase usecase;
-  final String workspaceId;
-  final String otherWorkspaceId;
-
+class _ResolveAgentSkillsFixture({
+  required final AppDatabase database,
+  required final SkillsRepository skillsRepository,
+  required final AppSkillWorkspaceSettingsRepository appSettingsRepository,
+  required final ResolveAgentSkillsUsecase usecase,
+  required final String workspaceId,
+  required final String otherWorkspaceId,
+}) {
   static Future<_ResolveAgentSkillsFixture> create() async {
     final database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),

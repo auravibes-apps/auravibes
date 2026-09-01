@@ -6,20 +6,12 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/services/agent_harness/agent_tool_resume_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 
-class AppToolCallActionsDataProvider
-    implements agent.SkipToolCallProvider, agent.StopPendingToolCallsProvider {
-  const AppToolCallActionsDataProvider({
-    required this.messageRepository,
-    required this.agentToolResumeService,
-    required this.onToolCallChanged,
-    this.activeSubAgents,
-  });
-
-  final MessageRepository messageRepository;
-  final AgentToolResumeService agentToolResumeService;
-  final ActiveSubAgentRuntime? activeSubAgents;
-  final void Function() onToolCallChanged;
-
+class const AppToolCallActionsDataProvider({
+  required final MessageRepository messageRepository,
+  required final AgentToolResumeService agentToolResumeService,
+  required final void Function() onToolCallChanged,
+  final ActiveSubAgentRuntime? activeSubAgents,
+}) implements agent.SkipToolCallProvider, agent.StopPendingToolCallsProvider {
   @override
   Future<bool> skipToolCall({
     required String messageId,

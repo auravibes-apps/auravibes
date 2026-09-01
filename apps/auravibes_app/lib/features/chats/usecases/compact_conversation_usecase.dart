@@ -33,32 +33,21 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         requireCompactionSummary;
 import 'package:riverpod/src/providers/provider.dart';
 
-class CompactConversationUsecase {
+class const CompactConversationUsecase({
+  required final CompactionExecutionRuntime compactionExecution,
+  final MessageRepository? messageRepository,
+  final ConversationRepository? conversationRepository,
+  final Future<ModelSelectionStore> Function(String workspaceId)?
+  modelSelectionStore,
+  final ChatbotService? chatbotService,
+  final SelectCompactionRangeUsecase? selectCompactionRangeUsecase,
+  final CloudCompactionUsecase? cloudCompaction,
+  final Future<ConversationEntity?> Function(String id)? cloudConversation,
+}) {
   static const String _failureMessageKey =
       LocaleKeys.compaction_errors_auto_blocked;
   static const BuildPromptChatMessages _buildPromptChatMessages =
       BuildPromptChatMessages();
-
-  const CompactConversationUsecase({
-    required this.compactionExecution,
-    this.messageRepository,
-    this.conversationRepository,
-    this.modelSelectionStore,
-    this.chatbotService,
-    this.selectCompactionRangeUsecase,
-    this.cloudCompaction,
-    this.cloudConversation,
-  });
-
-  final MessageRepository? messageRepository;
-  final ConversationRepository? conversationRepository;
-  final Future<ModelSelectionStore> Function(String workspaceId)?
-  modelSelectionStore;
-  final ChatbotService? chatbotService;
-  final SelectCompactionRangeUsecase? selectCompactionRangeUsecase;
-  final CompactionExecutionRuntime compactionExecution;
-  final CloudCompactionUsecase? cloudCompaction;
-  final Future<ConversationEntity?> Function(String id)? cloudConversation;
 
   Future<CompactionExecutionState> call({
     required String conversationId,
@@ -108,9 +97,8 @@ class CompactConversationUsecase {
         throw const CompactionUnavailableException();
       }
 
-      final foundModel = await (await getModelStore(
-        conversation.workspaceId,
-      )).getById(modelId);
+      final foundModel = await (await getModelStore(conversation.workspaceId))
+          .getById(modelId);
       if (foundModel == null) {
         throw const CompactionUnavailableException();
       }

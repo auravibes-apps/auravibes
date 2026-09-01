@@ -4,37 +4,21 @@ import 'package:auravibes_engine/src/transcript_context.dart';
 
 enum AgentContextLimitValidity { known, unknown, invalid }
 
-final class AgentContextWindowUsage {
-  const AgentContextWindowUsage({
-    required this.usedTokens,
-    required this.contextLimit,
-    required this.remainingTokens,
-    required this.usagePercentage,
-    required this.overflowTokens,
-    required this.limitValidity,
-  });
+final class const AgentContextWindowUsage({
+  required final int usedTokens,
+  required final int? contextLimit,
+  required final int? remainingTokens,
+  required final double? usagePercentage,
+  required final int? overflowTokens,
+  required final AgentContextLimitValidity limitValidity,
+});
 
-  final int usedTokens;
-  final int? contextLimit;
-  final int? remainingTokens;
-  final double? usagePercentage;
-  final int? overflowTokens;
-  final AgentContextLimitValidity limitValidity;
-}
-
-final class AgentCompactionEvaluation {
-  const AgentCompactionEvaluation({
-    required this.usage,
-    required this.isSafe,
-    required this.meetsUsageThreshold,
-    required this.meetsRemainingThreshold,
-  });
-
-  final AgentContextWindowUsage usage;
-  final bool isSafe;
-  final bool meetsUsageThreshold;
-  final bool meetsRemainingThreshold;
-
+final class const AgentCompactionEvaluation({
+  required final AgentContextWindowUsage usage,
+  required final bool isSafe,
+  required final bool meetsUsageThreshold,
+  required final bool meetsRemainingThreshold,
+}) {
   bool get shouldCompact =>
       isSafe && (meetsUsageThreshold || meetsRemainingThreshold);
 }

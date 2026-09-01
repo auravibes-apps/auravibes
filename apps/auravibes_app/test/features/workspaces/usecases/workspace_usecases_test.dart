@@ -355,8 +355,10 @@ void main() {
   });
 }
 
-class _CreateWorkspaceUseCaseFixture {
-  factory _CreateWorkspaceUseCaseFixture() {
+class const _CreateWorkspaceUseCaseFixture._(
+  final CreateWorkspaceUseCase usecase,
+) {
+  factory() {
     final repository = _FakeRepository();
 
     return _CreateWorkspaceUseCaseFixture._(
@@ -366,14 +368,13 @@ class _CreateWorkspaceUseCaseFixture {
       ),
     );
   }
-
-  const _CreateWorkspaceUseCaseFixture._(this.usecase);
-
-  final CreateWorkspaceUseCase usecase;
 }
 
-class _EditWorkspaceUseCaseFixture {
-  factory _EditWorkspaceUseCaseFixture() {
+class const _EditWorkspaceUseCaseFixture._(
+  final _FakeRepository repository,
+  final EditWorkspaceUseCase usecase,
+) {
+  factory() {
     final repository = _FakeRepository();
 
     return _EditWorkspaceUseCaseFixture._(
@@ -385,11 +386,6 @@ class _EditWorkspaceUseCaseFixture {
     );
   }
 
-  const _EditWorkspaceUseCaseFixture._(this.repository, this.usecase);
-
-  final _FakeRepository repository;
-  final EditWorkspaceUseCase usecase;
-
   Future<void> setUp() async {
     final _ = await repository.createWorkspace(
       const WorkspaceToCreate(name: 'Original', type: WorkspaceType.local),
@@ -397,8 +393,11 @@ class _EditWorkspaceUseCaseFixture {
   }
 }
 
-class _DeleteWorkspaceUseCaseFixture {
-  factory _DeleteWorkspaceUseCaseFixture() {
+class const _DeleteWorkspaceUseCaseFixture._(
+  final _FakeRepository repository,
+  final DeleteWorkspaceUseCase usecase,
+) {
+  factory() {
     final repository = _FakeRepository();
 
     return _DeleteWorkspaceUseCaseFixture._(
@@ -406,9 +405,4 @@ class _DeleteWorkspaceUseCaseFixture {
       DeleteWorkspaceUseCase(repository: repository),
     );
   }
-
-  const _DeleteWorkspaceUseCaseFixture._(this.repository, this.usecase);
-
-  final _FakeRepository repository;
-  final DeleteWorkspaceUseCase usecase;
 }

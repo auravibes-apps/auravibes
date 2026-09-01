@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'workspace_tools_dao.g.dart';
 
 @DriftAccessor(tables: [Tools])
-class WorkspaceToolsDao extends DatabaseAccessor<AppDatabase>
+class WorkspaceToolsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceToolsDaoMixin {
-  WorkspaceToolsDao(super.attachedDatabase);
-
   // Core operations.
   Future<ToolsTable?> getWorkspaceTool(String workspaceId, String id) =>
       (select(tools)..where(

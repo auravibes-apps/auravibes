@@ -6,28 +6,20 @@ import 'package:drift/drift.dart';
 
 part 'workspace_model_selection_with_connection.g.dart';
 
-class WorkspaceModelSelectionWithConnection {
-  WorkspaceModelSelectionWithConnection({
-    required this.model,
-    required this.modelConnection,
-    this.modelProvider,
-    this.apiModel,
-  });
-
-  final WorkspaceModelSelectionTable model;
-  final ServiceConnectionTable modelConnection;
-  final ApiModelProvidersTable? modelProvider;
-  final ApiModelsTable? apiModel;
-}
+class WorkspaceModelSelectionWithConnection({
+  required final WorkspaceModelSelectionTable model,
+  required final ServiceConnectionTable modelConnection,
+  final ApiModelProvidersTable? modelProvider,
+  final ApiModelsTable? apiModel,
+});
 
 /// Data Access Object for workspace operations.
 @DriftAccessor(
   tables: [WorkspaceModelSelections, ServiceConnections, ApiModels],
 )
-class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
+class WorkspaceModelSelectionsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceModelSelectionsDaoMixin {
-  WorkspaceModelSelectionsDao(super.attachedDatabase);
-
   Future<void> insertWorkspaceModelSelections(
     List<WorkspaceModelSelectionsCompanion> modelProvidersToInsert,
   ) async {
@@ -56,18 +48,18 @@ class WorkspaceModelSelectionsDao extends DatabaseAccessor<AppDatabase>
   getAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
   }) {
-    return _queryWorkspaceModelSelectionsByWorkspace(
-      workspaceIds: workspaceIds,
-    ).map(_mapJoin).get();
+    return _queryWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds)
+        .map(_mapJoin)
+        .get();
   }
 
   Stream<List<WorkspaceModelSelectionWithConnection>>
   watchAllWorkspaceModelSelectionsByWorkspace({
     required List<String> workspaceIds,
   }) {
-    return _queryWorkspaceModelSelectionsByWorkspace(
-      workspaceIds: workspaceIds,
-    ).map(_mapJoin).watch();
+    return _queryWorkspaceModelSelectionsByWorkspace(workspaceIds: workspaceIds)
+        .map(_mapJoin)
+        .watch();
   }
 
   Future<WorkspaceModelSelectionWithConnection?> getWorkspaceModelSelectionById(

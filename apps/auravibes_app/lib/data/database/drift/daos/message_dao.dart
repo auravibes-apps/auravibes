@@ -7,9 +7,9 @@ import 'package:drift/drift.dart';
 part 'message_dao.g.dart';
 
 @DriftAccessor(tables: [Messages])
-class MessageDao extends DatabaseAccessor<AppDatabase> with _$MessageDaoMixin {
-  MessageDao(super.attachedDatabase);
-
+class MessageDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
+    with _$MessageDaoMixin {
   // Core CRUD operations.
   Future<MessagesTable> insertMessage(MessagesCompanion message) =>
       into(messages).insertReturning(message);

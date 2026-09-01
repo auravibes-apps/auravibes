@@ -18,37 +18,27 @@ import 'package:flutter/material.dart';
 /// - Master toggle (hidden for default group).
 /// - Delete button (for MCP groups only).
 /// - Expand/collapse chevron.
-class ToolsGroupHeader extends StatelessWidget {
-  const ToolsGroupHeader({
-    required this.groupWithTools,
-    required this.isExpanded,
-    required this.onToggleExpand,
-    this.onToggleEnabled,
-    this.onReconnect,
-    this.onDelete,
-    this.onViewError,
-    super.key,
-  });
-
-  final ToolsGroupWithTools groupWithTools;
-  final bool isExpanded;
-  final VoidCallback onToggleExpand;
+class const ToolsGroupHeader({
+  required final ToolsGroupWithTools groupWithTools,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
 
   /// Callback when the group is toggled on/off.
   /// Null for default group (which has no toggle).
-  final ValueChanged<bool>? onToggleEnabled;
+  final ValueChanged<bool>? onToggleEnabled,
 
   /// Callback to reconnect an MCP server.
   /// Null for non-MCP groups or connected MCPs.
-  final VoidCallback? onReconnect;
+  final VoidCallback? onReconnect,
 
   /// Callback to delete an MCP group.
   /// Null for non-MCP groups.
-  final VoidCallback? onDelete;
+  final VoidCallback? onDelete,
 
   /// Callback to view error details.
-  final VoidCallback? onViewError;
-
+  final VoidCallback? onViewError,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final group = groupWithTools.group;
@@ -132,11 +122,8 @@ class ToolsGroupHeader extends StatelessWidget {
 }
 
 /// Icon widget for the group.
-class _GroupIcon extends StatelessWidget {
-  const _GroupIcon({required this.groupWithTools});
-
-  final ToolsGroupWithTools groupWithTools;
-
+class const _GroupIcon({required final ToolsGroupWithTools groupWithTools})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const iconSize = 40.0;
@@ -165,17 +152,11 @@ class _GroupIcon extends StatelessWidget {
 }
 
 /// MCP status badge widget.
-class _McpStatusBadge extends StatelessWidget {
-  const _McpStatusBadge({
-    required this.groupWithTools,
-    this.onReconnect,
-    this.onViewError,
-  });
-
-  final ToolsGroupWithTools groupWithTools;
-  final VoidCallback? onReconnect;
-  final VoidCallback? onViewError;
-
+class const _McpStatusBadge({
+  required final ToolsGroupWithTools groupWithTools,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = groupWithTools.mcpStatus;
@@ -206,17 +187,11 @@ class _McpStatusBadge extends StatelessWidget {
 }
 
 /// Error badge with reconnect and view error options.
-class _ErrorBadge extends StatelessWidget {
-  const _ErrorBadge({
-    required this.groupWithTools,
-    this.onReconnect,
-    this.onViewError,
-  });
-
-  final ToolsGroupWithTools groupWithTools;
-  final VoidCallback? onReconnect;
-  final VoidCallback? onViewError;
-
+class const _ErrorBadge({
+  required final ToolsGroupWithTools groupWithTools,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
@@ -261,11 +236,8 @@ class _ErrorBadge extends StatelessWidget {
 }
 
 /// Disconnected badge with reconnect button.
-class _DisconnectedBadge extends StatelessWidget {
-  const _DisconnectedBadge({this.onReconnect});
-
-  final VoidCallback? onReconnect;
-
+class const _DisconnectedBadge({final VoidCallback? onReconnect})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(

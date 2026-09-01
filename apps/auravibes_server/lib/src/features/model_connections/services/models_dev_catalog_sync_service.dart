@@ -47,16 +47,14 @@ class ModelsDevCatalogSyncService {
   }
 }
 
-class ModelsDevCatalog {
-  ModelsDevCatalog._(this.providers, this.models);
-
+class ModelsDevCatalog._(
+  final List<ModelsDevProvider> providers,
+  final List<ModelsDevModel> models,
+) {
   static const maxProviders = 10000;
   static const maxModels = 100000;
 
-  final List<ModelsDevProvider> providers;
-  final List<ModelsDevModel> models;
-
-  factory ModelsDevCatalog.fromEngine(ModelsDevCatalogValue catalog) {
+  factory fromEngine(ModelsDevCatalogValue catalog) {
     if (catalog.providers.length > maxProviders ||
         catalog.models.length > maxModels) {
       throw const FormatException('Catalog exceeds limits.');
@@ -95,61 +93,35 @@ class ModelsDevCatalog {
     );
   }
 
-  factory ModelsDevCatalog.parse(Object? response) =>
+  factory parse(Object? response) =>
       ModelsDevCatalog.fromEngine(ModelsDevCatalogValue.parse(response));
 }
 
-class ModelsDevProvider {
-  const ModelsDevProvider({
-    required this.id,
-    required this.name,
-    required this.type,
-    required this.url,
-    required this.documentationUrl,
-  });
+class const ModelsDevProvider({
+  required final String id,
+  required final String name,
+  required final String? type,
+  required final String? url,
+  required final String? documentationUrl,
+});
 
-  final String id;
-  final String name;
-  final String? type;
-  final String? url;
-  final String? documentationUrl;
-}
-
-class ModelsDevModel {
-  const ModelsDevModel({
-    required this.providerId,
-    required this.id,
-    required this.name,
-    required this.limitContext,
-    required this.limitOutput,
-    required this.modalitiesInput,
-    required this.modalitiesOutput,
-    required this.family,
-    required this.costInput,
-    required this.costCacheRead,
-    required this.costOutput,
-    required this.openWeights,
-    required this.supportsReasoning,
-    required this.supportsPriorityMode,
-    required this.supportsToolCalls,
-  });
-
-  final String providerId;
-  final String id;
-  final String name;
-  final int limitContext;
-  final int limitOutput;
-  final List<String> modalitiesInput;
-  final List<String> modalitiesOutput;
-  final String? family;
-  final double costInput;
-  final double costCacheRead;
-  final double costOutput;
-  final bool openWeights;
-  final bool supportsReasoning;
-  final bool supportsPriorityMode;
-  final bool supportsToolCalls;
-}
+class const ModelsDevModel({
+  required final String providerId,
+  required final String id,
+  required final String name,
+  required final int limitContext,
+  required final int limitOutput,
+  required final List<String> modalitiesInput,
+  required final List<String> modalitiesOutput,
+  required final String? family,
+  required final double costInput,
+  required final double costCacheRead,
+  required final double costOutput,
+  required final bool openWeights,
+  required final bool supportsReasoning,
+  required final bool supportsPriorityMode,
+  required final bool supportsToolCalls,
+});
 
 Future<Object?> fetchModelsDevCatalog(Uri uri) async {
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 15);

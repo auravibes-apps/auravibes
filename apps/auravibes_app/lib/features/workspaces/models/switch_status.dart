@@ -21,7 +21,7 @@ enum SwitchStatus {
 @freezed
 abstract class WorkspaceSwitchState with _$WorkspaceSwitchState {
   /// Creates a new [WorkspaceSwitchState].
-  const factory WorkspaceSwitchState({
+  const factory({
     @Default(SwitchStatus.idle) SwitchStatus status,
     String? targetWorkspaceId,
     String? errorLocalizationKey,

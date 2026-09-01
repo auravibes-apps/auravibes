@@ -16,10 +16,8 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 /// data operations using the Drift database. It handles the mapping between
 /// domain entities and database records, and provides proper error handling
 /// using exceptions.
-class WorkspaceModelSelectionRepository implements ModelSelectionStore {
-  WorkspaceModelSelectionRepository(this._database);
-  final AppDatabase _database;
-
+class WorkspaceModelSelectionRepository(final AppDatabase _database)
+    implements ModelSelectionStore {
   Future<void> createWorkspaceModelSelections(
     List<WorkspaceModelSelectionToCreate> workspaceModelSelections,
   ) async {

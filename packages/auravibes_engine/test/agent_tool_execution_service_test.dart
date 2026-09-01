@@ -230,20 +230,13 @@ LoadLatestMessageToolCallsResult<String> _latestToolCalls() {
   );
 }
 
-class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
-  _FakeExecutionProvider({
-    required this.latestToolCalls,
-    this.cancellationRequested = false,
-    this.decisions = const {},
-    this.results = const {},
-    this.resultFutures = const {},
-  });
-
-  final LoadLatestMessageToolCallsResult<String> latestToolCalls;
-  final bool cancellationRequested;
-  final Map<String, AgentToolPermissionResult> decisions;
-  final Map<String, Object?> results;
-  final Map<String, Future<Object?>> resultFutures;
+class _FakeExecutionProvider({
+  required final LoadLatestMessageToolCallsResult<String> latestToolCalls,
+  final bool cancellationRequested = false,
+  final Map<String, AgentToolPermissionResult> decisions = const {},
+  final Map<String, Object?> results = const {},
+  final Map<String, Future<Object?>> resultFutures = const {},
+}) implements AgentToolExecutionProvider<String> {
   final stoppedMessageIds = <String>[];
   final updateBatches = <List<AgentToolResultUpdate>>[];
   final updates = <AgentToolResultUpdate>[];

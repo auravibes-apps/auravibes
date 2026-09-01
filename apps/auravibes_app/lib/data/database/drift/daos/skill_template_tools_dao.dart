@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'skill_template_tools_dao.g.dart';
 
 @DriftAccessor(tables: [SkillTemplateTools])
-class SkillTemplateToolsDao extends DatabaseAccessor<AppDatabase>
+class SkillTemplateToolsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$SkillTemplateToolsDaoMixin {
-  SkillTemplateToolsDao(super.attachedDatabase);
-
   Future<List<SkillTemplateToolsTable>> getSkillTools(String skillId) =>
       (select(skillTemplateTools)
             ..where((tbl) => tbl.skillId.equals(skillId))

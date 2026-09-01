@@ -5,12 +5,10 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_app_bar.stories.g.dart';
 
-class _AppBarInput {
-  const _AppBarInput({required this.title, required this.showLeading});
-
-  final String title;
-  final bool showLeading;
-}
+class const _AppBarInput({
+  required final String title,
+  required final bool showLeading,
+});
 
 const component = ComponentMeta(name: 'AuraAppBar');
 const meta = Meta(AppBarDemo.new, argsType: _AppBarInput.new);
@@ -42,12 +40,11 @@ final $AppBar = _Story(
 );
 
 /// Demonstrates the Aura app bar with editable title and leading action.
-class AppBarDemo extends StatelessWidget implements PreferredSizeWidget {
-  const AppBarDemo({required this.title, required this.showLeading, super.key});
-
-  final String title;
-  final bool showLeading;
-
+class const AppBarDemo({
+  required final String title,
+  required final bool showLeading,
+  super.key,
+}) extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 

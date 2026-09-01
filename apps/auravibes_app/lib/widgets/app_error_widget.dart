@@ -8,17 +8,12 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('app_error_widget');
 
-class AppErrorWidget<T extends Object> extends StatefulWidget {
-  const AppErrorWidget({
-    required this.error,
-    required this.stackTrace,
-    this.action,
-    super.key,
-  });
-  final T error;
-  final StackTrace stackTrace;
-  final Widget? action;
-
+class const AppErrorWidget<T extends Object>({
+  required final T error,
+  required final StackTrace stackTrace,
+  final Widget? action,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<AppErrorWidget<T>> createState() => _AppErrorWidgetState<T>();
 }
@@ -64,11 +59,7 @@ class _AppErrorWidgetState<T extends Object> extends State<AppErrorWidget<T>> {
   }
 }
 
-class _AppErrorText extends StatelessWidget {
-  const _AppErrorText(this.localeKey);
-
-  final String localeKey;
-
+class const _AppErrorText(final String localeKey) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(

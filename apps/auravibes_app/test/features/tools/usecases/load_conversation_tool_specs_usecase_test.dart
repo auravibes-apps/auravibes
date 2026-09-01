@@ -22,10 +22,8 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../test_mocks.dart';
 
-class _FakeConversationToolsRepository implements ConversationToolsRepository {
-  _FakeConversationToolsRepository(this._tools);
-  final List<WorkspaceToolEntity> _tools;
-
+class _FakeConversationToolsRepository(final List<WorkspaceToolEntity> _tools)
+    implements ConversationToolsRepository {
   @override
   Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
     String conversationId,
@@ -36,8 +34,10 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
-  _FakeBuildCombinedToolSpecsUseCase(List<ToolSpec> specs)
+class _FakeBuildCombinedToolSpecsUseCase.candidates(
+  final List<ToolCatalogCandidate<ResolvedTool>> _result,
+) extends BuildCombinedToolSpecsUseCase {
+  new(List<ToolSpec> specs)
     : this.candidates([
         for (final spec in specs)
           ToolCatalogCandidate.reserved(
@@ -46,13 +46,11 @@ class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
           ),
       ]);
 
-  _FakeBuildCombinedToolSpecsUseCase.candidates(this._result)
+  this
     : super(
         getToolsGroupById: (_) async => null,
         getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
       );
-
-  final List<ToolCatalogCandidate<ResolvedTool>> _result;
 
   @override
   Future<List<ToolCatalogCandidate<ResolvedTool>>> call(
@@ -60,9 +58,9 @@ class _FakeBuildCombinedToolSpecsUseCase extends BuildCombinedToolSpecsUseCase {
   ) async => _result;
 }
 
-class _FakeBuildDynamicSkillToolSpecsUsecase
+class _FakeBuildDynamicSkillToolSpecsUsecase(final List<ToolSpec> _result)
     extends BuildDynamicSkillToolSpecsUsecase {
-  _FakeBuildDynamicSkillToolSpecsUsecase(this._result)
+  this
     : super(
         (_) => ListAvailableSkillsUsecase(
           _NeverSkillsRepository(),
@@ -73,8 +71,6 @@ class _FakeBuildDynamicSkillToolSpecsUsecase
         const AppSkillRegistry(),
         const _NoAppSkillCandidates(),
       );
-
-  final List<ToolSpec> _result;
 
   @override
   Future<List<ToolSpec>> call({
@@ -124,9 +120,8 @@ class _NeverAppSkillSettingsRepository
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _NoAppSkillCandidates implements ListAppSkillCredentialCandidatesUsecase {
-  const _NoAppSkillCandidates();
-
+class const _NoAppSkillCandidates()
+    implements ListAppSkillCredentialCandidatesUsecase {
   @override
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,
@@ -147,11 +142,10 @@ class _NoAppSkillCandidates implements ListAppSkillCredentialCandidatesUsecase {
   }
 }
 
-class _CapturingRepo implements ConversationToolsRepository {
-  _CapturingRepo({required this.onGetTools});
-
-  final Future<List<WorkspaceToolEntity>> Function(String, String) onGetTools;
-
+class _CapturingRepo({
+  required final Future<List<WorkspaceToolEntity>> Function(String, String)
+  onGetTools,
+}) implements ConversationToolsRepository {
   @override
   Future<List<WorkspaceToolEntity>> getAvailableToolEntitiesForConversation(
     String conversationId,
@@ -630,17 +624,17 @@ void main() {
   });
 }
 
-class _CapturingBuildCombined extends BuildCombinedToolSpecsUseCase {
-  _CapturingBuildCombined({required this.onCall})
+class _CapturingBuildCombined({
+  required final Future<List<ToolCatalogCandidate<ResolvedTool>>> Function(
+    List<WorkspaceToolEntity>,
+  )
+  onCall,
+}) extends BuildCombinedToolSpecsUseCase {
+  this
     : super(
         getToolsGroupById: (_) async => null,
         getMcpToolSpec: ({required mcpServerId, required toolName}) => null,
       );
-
-  final Future<List<ToolCatalogCandidate<ResolvedTool>>> Function(
-    List<WorkspaceToolEntity>,
-  )
-  onCall;
 
   @override
   Future<List<ToolCatalogCandidate<ResolvedTool>>> call(

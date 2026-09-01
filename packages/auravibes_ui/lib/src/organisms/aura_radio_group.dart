@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 export 'package:auravibes_ui/src/molecules/aura_radio_option.dart'
     show AuraRadioOption;
+
 export 'aura_radio_list_tile.dart';
 
 /// A container managing mutually exclusive radio selections.
@@ -13,7 +14,7 @@ class AuraRadioGroup<T> extends StatelessWidget {
   static const double _kRadioTapTargetSize = 48;
 
   /// Creates an AuraRadioGroup widget.
-  const AuraRadioGroup({
+  const new({
     required this.value,
     required this.onChanged,
     required this.options,
@@ -72,21 +73,13 @@ class AuraRadioGroup<T> extends StatelessWidget {
   }
 }
 
-class _AuraRadioOptions<T> extends StatelessWidget {
-  const _AuraRadioOptions({
-    required this.value,
-    required this.onChanged,
-    required this.options,
-    required this.direction,
-    required this.tint,
-  });
-
-  final T? value;
-  final ValueChanged<T?>? onChanged;
-  final List<AuraRadioOption<T>> options;
-  final Axis direction;
-  final AuraTint? tint;
-
+class const _AuraRadioOptions<T>({
+  required final T? value,
+  required final ValueChanged<T?>? onChanged,
+  required final List<AuraRadioOption<T>> options,
+  required final Axis direction,
+  required final AuraTint? tint,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (direction) {
@@ -122,21 +115,13 @@ class _AuraRadioOptions<T> extends StatelessWidget {
   }
 }
 
-class _AuraRadioOption<T> extends StatelessWidget {
-  const _AuraRadioOption({
-    required this.option,
-    required this.groupValue,
-    required this.onChanged,
-    required this.tint,
-    this.shrinkWrap = false,
-  });
-
-  final AuraRadioOption<T> option;
-  final T? groupValue;
-  final ValueChanged<T?>? onChanged;
-  final AuraTint? tint;
-  final bool shrinkWrap;
-
+class const _AuraRadioOption<T>({
+  required final AuraRadioOption<T> option,
+  required final T? groupValue,
+  required final ValueChanged<T?>? onChanged,
+  required final AuraTint? tint,
+  final bool shrinkWrap = false,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onChanged = this.onChanged;

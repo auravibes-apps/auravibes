@@ -11,7 +11,7 @@ class AuraImage extends StatelessWidget {
   static const _brokenImageIcon = IconData(0xeeff, fontFamily: 'MaterialIcons');
 
   /// Creates an Aura image.
-  const AuraImage({
+  const new({
     required this.url,
     super.key,
     this.fit = BoxFit.fill,

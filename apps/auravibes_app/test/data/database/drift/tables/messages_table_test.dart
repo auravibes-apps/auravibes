@@ -17,7 +17,7 @@ QueryExecutor _testConnection() {
 }
 
 final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
+  new(this.createConnection);
 
   final QueryExecutor Function() createConnection;
   AppDatabase? _database;

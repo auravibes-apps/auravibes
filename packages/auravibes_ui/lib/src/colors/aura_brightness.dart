@@ -16,17 +16,15 @@ typedef _OnColorCandidates = ({
 /// `light` is a near-white surface; `dark` is a near-black surface. The presets
 /// sit at perceptually typical surface tones, leaving headroom for compliant
 /// foregrounds via [AuraComputedColor.onColor].
-enum AuraBrightness {
+enum AuraBrightness(
+  /// OKLCH lightness this preset resolves to.
+  final double lightness,
+) {
   /// Light surface, OKLCH `L = 0.96`.
   light(0.96),
 
   /// Dark surface, OKLCH `L = 0.22`.
-  dark(0.22);
-
-  const AuraBrightness(this.lightness);
-
-  /// OKLCH lightness this preset resolves to.
-  final double lightness;
+  dark(0.22),
 }
 
 /// Computed Aura color expressed as OKLCH `hue + L + chroma`.
@@ -47,14 +45,14 @@ class AuraComputedColor extends OKLCHColor {
   static const _defaultChroma = 0.15;
 
   /// Creates a computed Aura color from a hue and a brightness preset.
-  AuraComputedColor({
+  new({
     required super.hue,
     AuraBrightness brightness = AuraBrightness.light,
     super.chroma = _defaultChroma,
   }) : super(lightness: brightness.lightness);
 
   /// Creates a computed Aura color from a hue and an explicit OKLCH lightness.
-  AuraComputedColor.withLightness({
+  new withLightness({
     required super.hue,
     required super.lightness,
     super.chroma = _defaultChroma,

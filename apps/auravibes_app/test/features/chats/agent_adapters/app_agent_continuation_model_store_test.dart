@@ -9,19 +9,18 @@ import 'package:auravibes_app/services/agent_harness/build_skill_context_message
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _ConversationRepository extends Mock implements ConversationRepository {}
+class _ConversationRepository extends Mock implements ConversationRepository;
 
-class _ModelSelectionStore extends Mock implements ModelSelectionStore {}
+class _ModelSelectionStore extends Mock implements ModelSelectionStore;
 
-class _ApiModelRepository extends Mock implements ApiModelRepository {}
+class _ApiModelRepository extends Mock implements ApiModelRepository;
 
-class _SelectPromptMessages extends Mock
-    implements SelectPromptMessagesUsecase {}
+class _SelectPromptMessages extends Mock implements SelectPromptMessagesUsecase;
 
 class _BuildSkillContext extends Mock
-    implements BuildSkillContextMessagesService {}
+    implements BuildSkillContextMessagesService;
 
-class _LoadTools extends Mock implements LoadConversationToolSpecsUsecase {}
+class _LoadTools extends Mock implements LoadConversationToolSpecsUsecase;
 
 void main() {
   test(

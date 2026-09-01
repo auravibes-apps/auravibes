@@ -32,9 +32,7 @@ final $PopupMenuButton = _Story(
 );
 
 /// Demonstrates a labeled popup-menu trigger and its action entries.
-class PopupMenuButtonDemo extends StatelessWidget {
-  const PopupMenuButtonDemo({super.key});
-
+class const PopupMenuButtonDemo({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Align(

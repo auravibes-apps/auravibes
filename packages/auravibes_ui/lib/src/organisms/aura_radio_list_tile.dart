@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// A list tile with an integrated radio button for settings-style selections.
 class AuraRadioListTile<T> extends StatelessWidget {
   /// Creates an AuraRadioListTile widget.
-  const AuraRadioListTile({
+  const new({
     required this.value,
     required this.groupValue,
     required this.onChanged,

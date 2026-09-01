@@ -11,12 +11,14 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
+
 import '../../../features/workspace_state/models/workspace_patch_operation.dart'
     as _i2;
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
     as _i3;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
     as _i4;
+
 import 'package:auravibes_server/src/generated/protocol.dart' as _i5;
 
 abstract class MutateWorkspaceCredentialRequest

@@ -10,11 +10,7 @@ const _agentDescriptionTooLong =
 const _agentNameEmpty = 'Agent name cannot be empty';
 const _unknownAgentValidationError = 'Unknown validation error';
 
-class AgentsRepository implements AgentRepository {
-  AgentsRepository(this._database);
-
-  final AppDatabase _database;
-
+class AgentsRepository(final AppDatabase _database) implements AgentRepository {
   @override
   Stream<List<AgentEntity>> watchAgentsByWorkspace(String workspaceId) {
     return _database.agentsDao
@@ -179,12 +175,8 @@ class AgentsRepository implements AgentRepository {
   }
 }
 
-class AgentException implements Exception {
-  const AgentException(this.message, [this.cause]);
-
-  final String message;
-  final Exception? cause;
-
+class const AgentException(final String message, [final Exception? cause])
+    implements Exception {
   @override
   String toString() {
     final causedBy = ' (Caused by: $cause)';
@@ -193,6 +185,5 @@ class AgentException implements Exception {
   }
 }
 
-class AgentValidationException extends AgentException {
-  const AgentValidationException(super.message, [super.cause]);
-}
+class const AgentValidationException(super.message, [super.cause])
+    extends AgentException;

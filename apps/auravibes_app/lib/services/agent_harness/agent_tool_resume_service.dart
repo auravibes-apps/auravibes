@@ -7,39 +7,32 @@ import 'package:auravibes_app/services/agent_harness/agent_tool_execution_servic
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
-class AgentToolResumeService extends agent.AgentToolResumeRunner {
-  AgentToolResumeService({
-    required MessageRepository messageRepository,
-    required ConversationRepository conversationRepository,
-    required AgentToolExecutionService toolExecutionService,
-    required AppAgentService agentService,
-    ActiveSubAgentRuntime? activeSubAgents,
-  }) : super(
-         provider: AppAgentToolResumeProvider(
-           messageRepository: messageRepository,
-           conversationRepository: conversationRepository,
-           toolExecutionService: toolExecutionService,
-           agentService: agentService,
-           activeSubAgents: activeSubAgents,
-         ),
-       );
+class AgentToolResumeService({
+  required MessageRepository messageRepository,
+  required ConversationRepository conversationRepository,
+  required AgentToolExecutionService toolExecutionService,
+  required AppAgentService agentService,
+  ActiveSubAgentRuntime? activeSubAgents,
+}) extends agent.AgentToolResumeRunner {
+  this
+    : super(
+        provider: AppAgentToolResumeProvider(
+          messageRepository: messageRepository,
+          conversationRepository: conversationRepository,
+          toolExecutionService: toolExecutionService,
+          agentService: agentService,
+          activeSubAgents: activeSubAgents,
+        ),
+      );
 }
 
-class AppAgentToolResumeProvider implements agent.AgentToolResumeProvider {
-  const AppAgentToolResumeProvider({
-    required this.messageRepository,
-    required this.conversationRepository,
-    required this.toolExecutionService,
-    required this.agentService,
-    required this.activeSubAgents,
-  });
-
-  final MessageRepository messageRepository;
-  final ConversationRepository conversationRepository;
-  final AgentToolExecutionService toolExecutionService;
-  final AppAgentService agentService;
-  final ActiveSubAgentRuntime? activeSubAgents;
-
+class const AppAgentToolResumeProvider({
+  required final MessageRepository messageRepository,
+  required final ConversationRepository conversationRepository,
+  required final AgentToolExecutionService toolExecutionService,
+  required final AppAgentService agentService,
+  required final ActiveSubAgentRuntime? activeSubAgents,
+}) implements agent.AgentToolResumeProvider {
   @override
   Future<agent.AgentToolResumeReference?> getResumeReference(
     String messageId,

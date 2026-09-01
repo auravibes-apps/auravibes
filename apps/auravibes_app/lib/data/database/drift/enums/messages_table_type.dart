@@ -4,7 +4,7 @@ enum MessagesTableType {
   toolCall('tool_call'),
   system('system');
 
-  const MessagesTableType(this.value);
+  new(this.value);
   final String value;
 }
 
@@ -29,9 +29,9 @@ enum MessageTableStatus {
   /// Message failed - error details in metadata.
   error('error');
 
-  const MessageTableStatus(this.value);
+  new(this.value);
 
-  factory MessageTableStatus.fromString(String value) {
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'sending':
         return MessageTableStatus.sending;

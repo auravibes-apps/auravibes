@@ -5,11 +5,8 @@ import 'package:auravibes_app/domain/entities/skill_template_tool_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
-class SkillTemplateToolsRepository {
-  SkillTemplateToolsRepository(AppDatabase database)
-    : _dao = database.skillTemplateToolsDao;
-
-  final SkillTemplateToolsDao _dao;
+class SkillTemplateToolsRepository(AppDatabase database) {
+  final SkillTemplateToolsDao _dao = database.skillTemplateToolsDao;
 
   Future<List<SkillTemplateToolEntity>> getSkillTools(String skillId) async {
     final rows = await _dao.getSkillTools(skillId);

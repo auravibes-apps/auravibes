@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 /// consistent styling across the application by using the AuraFieldWrapper.
 class AuraInput extends StatefulWidget {
   /// Creates a Aura input field.
-  const AuraInput({
+  const new({
     super.key,
     this.controller,
     this.initialValue,

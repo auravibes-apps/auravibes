@@ -601,7 +601,7 @@ genkit.ModelResponse _modelResponse(genkit.FinishReason finishReason) {
 }
 
 class _FakeProviderFactory extends ProviderFactory {
-  _FakeProviderFactory({
+  new({
     this.chunks = const [],
     genkit.ModelResponse? response,
     this.onRequest,
@@ -643,9 +643,8 @@ class _FakeProviderFactory extends ProviderFactory {
   }
 }
 
-class _FakeServiceConnectionRepository implements ServiceConnectionRepository {
-  const _FakeServiceConnectionRepository();
-
+class const _FakeServiceConnectionRepository()
+    implements ServiceConnectionRepository {
   @override
   Future<ServiceConnectionSecret> readSecret(String id) async {
     return const ServiceConnectionSecretApiKey(apiKey: 'test-api-key');

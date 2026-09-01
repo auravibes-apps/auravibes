@@ -5,13 +5,7 @@ import 'package:flutter/material.dart';
 /// App bar following the Aura design system.
 class AuraAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// Creates an Aura app bar.
-  const AuraAppBar({
-    super.key,
-    this.title,
-    this.actions,
-    this.bottom,
-    this.leading,
-  });
+  const new({super.key, this.title, this.actions, this.bottom, this.leading});
 
   /// Title.
   final Widget? title;

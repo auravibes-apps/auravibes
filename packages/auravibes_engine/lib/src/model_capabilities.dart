@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 final class ModelCapabilities {
-  ModelCapabilities({
+  new({
     required this.id,
     required this.name,
     required this.limitContext,
@@ -24,7 +24,7 @@ final class ModelCapabilities {
          outputModalities.map((value) => value.toLowerCase()),
        );
 
-  factory ModelCapabilities.fromJson(
+  factory fromJson(
     String providerId,
     Map<String, dynamic> json, [
     Set<String> canonicalModelIds = const {},

@@ -11,15 +11,10 @@ part 'create_workspace_use_case.g.dart';
 /// Creates a new workspace with validated name.
 ///
 /// Orchestrates name validation and repository creation.
-class CreateWorkspaceUseCase {
-  const CreateWorkspaceUseCase({
-    required this._repository,
-    required this._validateName,
-  });
-
-  final WorkspaceRepository _repository;
-  final ValidateWorkspaceNameUseCase _validateName;
-
+class const CreateWorkspaceUseCase({
+  required final WorkspaceRepository _repository,
+  required final ValidateWorkspaceNameUseCase _validateName,
+}) {
   /// Creates a workspace with the given [name].
   ///
   /// Validates the name length (3–20 chars) before persisting.

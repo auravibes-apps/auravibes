@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationSubscribeRequest implements _i1.SerializableModel {
-  ConversationSubscribeRequest._({
-    required this.workspaceId,
-    required this.conversationId,
-    required this.afterSequence,
-  });
-
-  factory ConversationSubscribeRequest({
+abstract class ConversationSubscribeRequest._({
+  required var int workspaceId,
+  required var String conversationId,
+  required var int afterSequence,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String conversationId,
     required int afterSequence,
   }) = _ConversationSubscribeRequestImpl;
 
-  factory ConversationSubscribeRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationSubscribeRequest(
@@ -34,12 +32,6 @@ abstract class ConversationSubscribeRequest implements _i1.SerializableModel {
       afterSequence: jsonSerialization['afterSequence'] as int,
     );
   }
-
-  int workspaceId;
-
-  String conversationId;
-
-  int afterSequence;
 
   /// Returns a shallow copy of this [ConversationSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
@@ -65,16 +57,17 @@ abstract class ConversationSubscribeRequest implements _i1.SerializableModel {
   }
 }
 
-class _ConversationSubscribeRequestImpl extends ConversationSubscribeRequest {
-  _ConversationSubscribeRequestImpl({
-    required int workspaceId,
-    required String conversationId,
-    required int afterSequence,
-  }) : super._(
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         afterSequence: afterSequence,
-       );
+class _ConversationSubscribeRequestImpl({
+  required int workspaceId,
+  required String conversationId,
+  required int afterSequence,
+}) extends ConversationSubscribeRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        afterSequence: afterSequence,
+      );
 
   /// Returns a shallow copy of this [ConversationSubscribeRequest]
   /// with some or all fields replaced by the given arguments.

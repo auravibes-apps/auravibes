@@ -4,11 +4,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_queued_draft.g.dart';
 
-class ConversationQueuedDraft extends AgentQueuedDraft {
-  ConversationQueuedDraft({required this.id, required ChatDraft draft})
-    : super(content: _contentForDraft(draft), payload: draft);
-
-  final String id;
+class ConversationQueuedDraft({
+  required final String id,
+  required ChatDraft draft,
+}) extends AgentQueuedDraft {
+  this : super(content: _contentForDraft(draft), payload: draft);
 }
 
 String _contentForDraft(ChatDraft draft) {

@@ -6,10 +6,8 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 typedef AppSkillUrlGuard = Future<Uri> Function(String url);
 
 class AppSkillHttpClientAdapter {
-  AppSkillHttpClientAdapter(
-    this._urlService, {
-    AppSkillUrlGuard? requirePublicUri,
-  }) : _requirePublicUri = requirePublicUri ?? PublicUrlGuard.requireHttpsUri;
+  new(this._urlService, {AppSkillUrlGuard? requirePublicUri})
+    : _requirePublicUri = requirePublicUri ?? PublicUrlGuard.requireHttpsUri;
 
   final UrlService _urlService;
   final AppSkillUrlGuard _requirePublicUri;

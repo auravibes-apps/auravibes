@@ -32,9 +32,8 @@ void main() {
         ],
       );
 
-      final agents = await AppSubAgentCatalog(
-        repository,
-      ).listSubAgents('workspace-1');
+      final agents = await AppSubAgentCatalog(repository)
+          .listSubAgents('workspace-1');
 
       expect(agents.map((agent) => agent.id), ['main', 'sub', 'both']);
       expect(agents.map((agent) => agent.types), [
@@ -61,9 +60,8 @@ void main() {
           visibility: AgentVisibility.chatSelector,
         ),
       );
-      when(
-        () => repository.getAgentById('missing'),
-      ).thenAnswer((_) async => null);
+      when(() => repository.getAgentById('missing'))
+          .thenAnswer((_) async => null);
 
       final catalog = AppSubAgentCatalog(repository);
 
@@ -92,15 +90,12 @@ void main() {
         agentId: 'agent-1',
         parentConversationId: 'parent',
       );
-      when(
-        () => repository.createConversation(input),
-      ).thenAnswer((_) async => created);
-      when(
-        () => repository.getConversationById('child'),
-      ).thenAnswer((_) async => created);
-      when(
-        () => repository.getConversationById('missing'),
-      ).thenAnswer((_) async => null);
+      when(() => repository.createConversation(input))
+          .thenAnswer((_) async => created);
+      when(() => repository.getConversationById('child'))
+          .thenAnswer((_) async => created);
+      when(() => repository.getConversationById('missing'))
+          .thenAnswer((_) async => null);
 
       final store = AppSubAgentConversationStore(repository);
 
@@ -192,7 +187,7 @@ AgentEntity _agent({
   );
 }
 
-class _MockAgentsRepository extends Mock implements AgentsRepository {}
+class _MockAgentsRepository extends Mock implements AgentsRepository;
 
 ConversationEntity _conversation({
   required String id,
@@ -232,6 +227,6 @@ MessageEntity _message({
 }
 
 class _MockConversationRepository extends Mock
-    implements ConversationRepository {}
+    implements ConversationRepository;
 
-class _MockMessageRepository extends Mock implements MessageRepository {}
+class _MockMessageRepository extends Mock implements MessageRepository;

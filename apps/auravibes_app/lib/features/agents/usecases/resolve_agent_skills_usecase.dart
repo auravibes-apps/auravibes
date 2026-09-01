@@ -10,19 +10,12 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class ResolveAgentSkillsUsecase {
-  const ResolveAgentSkillsUsecase(
-    this._skillsRepository,
-    this._appSkillSettingsRepository,
-    this._appSkillRegistry, [
-    this._cloudStore,
-  ]);
-
-  final SkillsRepository? _skillsRepository;
-  final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository;
-  final AppSkillRegistry _appSkillRegistry;
-  final CloudSkillStore? _cloudStore;
-
+class const ResolveAgentSkillsUsecase(
+  final SkillsRepository? _skillsRepository,
+  final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository,
+  final AppSkillRegistry _appSkillRegistry, [
+  final CloudSkillStore? _cloudStore,
+]) {
   Future<ResolvedAgentSkills> call({
     required String workspaceId,
     required List<AgentSkillRef> refs,
@@ -81,15 +74,10 @@ class ResolveAgentSkillsUsecase {
   }
 }
 
-class ResolvedAgentSkills {
-  const ResolvedAgentSkills({
-    required this.available,
-    required this.unavailable,
-  });
-
-  final List<AvailableSkill> available;
-  final List<AgentSkillRef> unavailable;
-}
+class const ResolvedAgentSkills({
+  required final List<AvailableSkill> available,
+  required final List<AgentSkillRef> unavailable,
+});
 
 final ProviderFamily<ResolveAgentSkillsUsecase, String>
 resolveAgentSkillsUsecaseProvider =

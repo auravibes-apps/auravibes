@@ -9,19 +9,12 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 
 import 'package:riverpod/src/providers/provider.dart';
 
-class UnloadConversationSkillUsecase {
-  const UnloadConversationSkillUsecase(
-    this._skillsRepository,
-    this._conversationSkillsRepository,
-    this._appSkillRegistry, [
-    this.cloudStore,
-  ]);
-  final CloudSkillStore? cloudStore;
-
-  final SkillsRepository? _skillsRepository;
-  final ConversationSkillsRepository? _conversationSkillsRepository;
-  final AppSkillRegistry _appSkillRegistry;
-
+class const UnloadConversationSkillUsecase(
+  final SkillsRepository? _skillsRepository,
+  final ConversationSkillsRepository? _conversationSkillsRepository,
+  final AppSkillRegistry _appSkillRegistry, [
+  final CloudSkillStore? cloudStore,
+]) {
   Future<void> call({
     required String conversationId,
     required String workspaceId,

@@ -49,18 +49,12 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('chat_conversation_screen');
 
-class ChatConversationScreen extends ConsumerWidget {
-  const ChatConversationScreen({
-    required this.workspaceId,
-    required this.chatId,
-    super.key,
-    this.showInputComposer = true,
-  });
-
-  final String workspaceId;
-  final String chatId;
-  final bool showInputComposer;
-
+class const ChatConversationScreen({
+  required final String workspaceId,
+  required final String chatId,
+  super.key,
+  final bool showInputComposer = true,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return _ChatConversationScreen(
@@ -71,17 +65,11 @@ class ChatConversationScreen extends ConsumerWidget {
   }
 }
 
-class _ChatConversationScreen extends HookConsumerWidget {
-  const _ChatConversationScreen({
-    required this.workspaceId,
-    required this.chatId,
-    required this.showInputComposer,
-  });
-
-  final String workspaceId;
-  final String chatId;
-  final bool showInputComposer;
-
+class const _ChatConversationScreen({
+  required final String workspaceId,
+  required final String chatId,
+  required final bool showInputComposer,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversationAsync = ref.watch(
@@ -130,17 +118,11 @@ class _ChatConversationScreen extends HookConsumerWidget {
   }
 }
 
-class _LoadedChatConversation extends HookConsumerWidget {
-  const _LoadedChatConversation({
-    required this.workspaceId,
-    required this.conversation,
-    required this.showInputComposer,
-  });
-
-  final String workspaceId;
-  final ConversationEntity conversation;
-  final bool showInputComposer;
-
+class const _LoadedChatConversation({
+  required final String workspaceId,
+  required final ConversationEntity conversation,
+  required final bool showInputComposer,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stopRequested = useState(false);
@@ -416,15 +398,10 @@ class _LoadedChatConversation extends HookConsumerWidget {
   }
 }
 
-class _ChatControlsBar extends StatelessWidget {
-  const _ChatControlsBar({
-    required this.workspaceId,
-    required this.conversationId,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-
+class const _ChatControlsBar({
+  required final String workspaceId,
+  required final String conversationId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -455,11 +432,8 @@ class _ChatControlsBar extends StatelessWidget {
   }
 }
 
-class _RateLimitRetryIndicator extends StatefulWidget {
-  const _RateLimitRetryIndicator({required this.retryAt});
-
-  final DateTime retryAt;
-
+class const _RateLimitRetryIndicator({required final DateTime retryAt})
+    extends StatefulWidget {
   @override
   State<_RateLimitRetryIndicator> createState() =>
       _RateLimitRetryIndicatorState();
@@ -879,17 +853,11 @@ Future<void> _manualCompact(
   }
 }
 
-class _ChatList extends ConsumerWidget {
-  const _ChatList({
-    required this.workspaceId,
-    required this.conversationId,
-    required this.pendingToolCalls,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-  final List<PendingToolCall> pendingToolCalls;
-
+class const _ChatList({
+  required final String workspaceId,
+  required final String conversationId,
+  required final List<PendingToolCall> pendingToolCalls,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatMessages = ref.watch(

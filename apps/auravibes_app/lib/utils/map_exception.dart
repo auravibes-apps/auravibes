@@ -1,20 +1,14 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
-sealed class MapException implements Exception {}
+sealed class MapException implements Exception;
 
-class NoKeyMapException implements MapException {
-  NoKeyMapException(this.key);
-  final String key;
-
+class NoKeyMapException(final String key) implements MapException {
   @override
   String toString() => 'MapNoEntry: map has no key $key';
 }
 
-class NoTypeMapException implements MapException {
-  NoTypeMapException(this.key, this.type);
-  final String key;
-  final Type type;
-
+class NoTypeMapException(final String key, final Type type)
+    implements MapException {
   @override
   String toString() => 'MapNoEntry: map has no key $key with type $type';
 }

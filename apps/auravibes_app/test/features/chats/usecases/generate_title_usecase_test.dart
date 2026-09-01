@@ -97,9 +97,8 @@ void main() {
 
     test('calls chatbotService.streamTitle with correct args', () async {
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       usecase.call(
         conversationId: 'conv-1',
@@ -108,9 +107,9 @@ void main() {
       );
 
       expect(
-        () => verify(
-          () => chatbotService.streamTitle(modelSelection, 'Hello'),
-        ).called(1),
+        () =>
+            verify(() => chatbotService.streamTitle(modelSelection, 'Hello'))
+                .called(1),
         returnsNormally,
       );
 
@@ -134,9 +133,8 @@ void main() {
       );
 
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       localUsecase.call(
         conversationId: 'conv-1',
@@ -167,9 +165,8 @@ void main() {
       );
 
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       localUsecase.call(
         conversationId: 'conv-1',
@@ -188,9 +185,8 @@ void main() {
 
     test('patches conversation with streamed titles', () async {
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       usecase.call(
         conversationId: 'conv-1',
@@ -204,18 +200,17 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       expect(
-        () => verify(
-          () => conversationRepo.patchConversation(any(), any()),
-        ).called(1),
+        () =>
+            verify(() => conversationRepo.patchConversation(any(), any()))
+                .called(1),
         returnsNormally,
       );
     });
 
     test('patches with latest title when multiple titles emitted', () async {
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       usecase.call(
         conversationId: 'conv-1',
@@ -230,18 +225,17 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
       expect(
-        () => verify(
-          () => conversationRepo.patchConversation(any(), any()),
-        ).called(greaterThanOrEqualTo(1)),
+        () =>
+            verify(() => conversationRepo.patchConversation(any(), any()))
+                .called(greaterThanOrEqualTo(1)),
         returnsNormally,
       );
     });
 
     test('works with empty first message', () async {
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       usecase.call(
         conversationId: 'conv-empty',
@@ -250,9 +244,9 @@ void main() {
       );
 
       expect(
-        () => verify(
-          () => chatbotService.streamTitle(modelSelection, ''),
-        ).called(1),
+        () =>
+            verify(() => chatbotService.streamTitle(modelSelection, ''))
+                .called(1),
         returnsNormally,
       );
       final _ = await controller.close();
@@ -260,9 +254,8 @@ void main() {
 
     test('tracks error via monitoringService when stream fails', () async {
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       usecase.call(
         conversationId: 'conv-err',
@@ -303,9 +296,8 @@ void main() {
       );
 
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       localUsecase.call(
         conversationId: 'conv-done',
@@ -321,9 +313,8 @@ void main() {
 
     test('coalescing save patches final title to repo', () async {
       final controller = StreamController<String>();
-      when(
-        () => chatbotService.streamTitle(any(), any()),
-      ).thenAnswer((_) => controller.stream);
+      when(() => chatbotService.streamTitle(any(), any()))
+          .thenAnswer((_) => controller.stream);
 
       usecase.call(
         conversationId: 'conv-final',

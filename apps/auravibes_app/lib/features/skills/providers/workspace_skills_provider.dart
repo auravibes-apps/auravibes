@@ -25,9 +25,9 @@ Future<List<WorkspaceSkill>> workspaceSkills(
     );
     if (gateway != null) {
       _logger.info('Cloud snapshot requested: workspace=$workspaceId.');
-      final skills = await CloudSkillSettingsAdapter(
-        gateway,
-      ).watchSkills().first;
+      final skills = await CloudSkillSettingsAdapter(gateway)
+          .watchSkills()
+          .first;
       final appSkillRegistry = ref.watch(appSkillRegistryProvider);
       final skillsById = {for (final skill in skills) skill.id: skill};
       for (final skill in appSkillRegistry.getAll()) {

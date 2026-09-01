@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ListConversationsRequest implements _i1.SerializableModel {
-  ListConversationsRequest._({
-    required this.workspaceId,
-    required this.limit,
-    this.cursor,
-  });
-
-  factory ListConversationsRequest({
+abstract class ListConversationsRequest._({
+  required var int workspaceId,
+  required var int limit,
+  var String? cursor,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required int limit,
     String? cursor,
   }) = _ListConversationsRequestImpl;
 
-  factory ListConversationsRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ListConversationsRequest(
@@ -34,12 +32,6 @@ abstract class ListConversationsRequest implements _i1.SerializableModel {
       cursor: jsonSerialization['cursor'] as String?,
     );
   }
-
-  int workspaceId;
-
-  int limit;
-
-  String? cursor;
 
   /// Returns a shallow copy of this [ListConversationsRequest]
   /// with some or all fields replaced by the given arguments.
@@ -65,18 +57,19 @@ abstract class ListConversationsRequest implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ListConversationsRequestImpl extends ListConversationsRequest {
-  _ListConversationsRequestImpl({
-    required int workspaceId,
-    required int limit,
-    String? cursor,
-  }) : super._(
-         workspaceId: workspaceId,
-         limit: limit,
-         cursor: cursor,
-       );
+class _ListConversationsRequestImpl({
+  required int workspaceId,
+  required int limit,
+  String? cursor,
+}) extends ListConversationsRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        limit: limit,
+        cursor: cursor,
+      );
 
   /// Returns a shallow copy of this [ListConversationsRequest]
   /// with some or all fields replaced by the given arguments.

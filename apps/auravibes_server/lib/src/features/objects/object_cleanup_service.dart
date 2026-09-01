@@ -6,19 +6,13 @@ import '../../generated/protocol.dart';
 import 'object_repository.dart';
 import 'object_store.dart';
 
-class ObjectCleanupService {
-  ObjectCleanupService({
-    required this.store,
-    ObjectRepository? repository,
-    this.batchSize = 20,
-    this.maxAttempts = 8,
-  }) : repository = repository ?? ObjectRepository();
-
-  final ObjectStore store;
-  final ObjectRepository repository;
-  final int batchSize;
-  final int maxAttempts;
-
+class ObjectCleanupService({
+  required final ObjectStore store,
+  ObjectRepository? repository,
+  final int batchSize = 20,
+  final int maxAttempts = 8,
+}) {
+  final ObjectRepository repository = repository ?? ObjectRepository();
   Future<int> runOnce(
     Session session, {
     bool Function()? isActive,

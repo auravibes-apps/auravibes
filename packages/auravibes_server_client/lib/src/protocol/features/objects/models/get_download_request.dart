@@ -12,27 +12,21 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class GetDownloadRequest implements _i1.SerializableModel {
-  GetDownloadRequest._({
-    required this.workspaceId,
-    required this.objectId,
-  });
-
-  factory GetDownloadRequest({
+abstract class GetDownloadRequest._({
+  required var int workspaceId,
+  required var int objectId,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required int objectId,
   }) = _GetDownloadRequestImpl;
 
-  factory GetDownloadRequest.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return GetDownloadRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       objectId: jsonSerialization['objectId'] as int,
     );
   }
-
-  int workspaceId;
-
-  int objectId;
 
   /// Returns a shallow copy of this [GetDownloadRequest]
   /// with some or all fields replaced by the given arguments.
@@ -56,14 +50,15 @@ abstract class GetDownloadRequest implements _i1.SerializableModel {
   }
 }
 
-class _GetDownloadRequestImpl extends GetDownloadRequest {
-  _GetDownloadRequestImpl({
-    required int workspaceId,
-    required int objectId,
-  }) : super._(
-         workspaceId: workspaceId,
-         objectId: objectId,
-       );
+class _GetDownloadRequestImpl({
+  required int workspaceId,
+  required int objectId,
+}) extends GetDownloadRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        objectId: objectId,
+      );
 
   /// Returns a shallow copy of this [GetDownloadRequest]
   /// with some or all fields replaced by the given arguments.

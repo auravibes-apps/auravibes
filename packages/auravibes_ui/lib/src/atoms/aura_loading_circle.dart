@@ -7,12 +7,13 @@ import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
 
-class _DelayTween extends Tween<double> {
+class _DelayTween({
+  required final double delay,
+  required double begin,
+  required double end,
+}) extends Tween<double> {
   static const _fullTurn = 2.0;
-  _DelayTween({required this.delay, required double begin, required double end})
-    : super(begin: begin, end: end);
-
-  final double delay;
+  this : super(begin: begin, end: end);
 
   @override
   double lerp(double t) {
@@ -28,7 +29,7 @@ class _DelayTween extends Tween<double> {
 /// Loading Widget.
 class AuraLoadingCircle extends StatefulWidget {
   /// Constructor.
-  const AuraLoadingCircle({
+  const new({
     required this.tint,
     super.key,
     this.size = 50.0,
@@ -40,7 +41,7 @@ class AuraLoadingCircle extends StatefulWidget {
   });
 
   /// Compact loading indicator for inline controls.
-  const AuraLoadingCircle.compact({
+  const new compact({
     required this.tint,
     super.key,
     this.duration = const Duration(milliseconds: 1200),

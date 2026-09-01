@@ -12,22 +12,17 @@ import 'package:dio/dio.dart';
 
 enum CodexOAuthMethod { browser, deviceCode }
 
-class CodexDeviceCode {
-  const CodexDeviceCode({
-    required this.verificationUrl,
-    required this.userCode,
-  });
-
-  final String verificationUrl;
-  final String userCode;
-}
+class const CodexDeviceCode({
+  required final String verificationUrl,
+  required final String userCode,
+});
 
 class CodexOAuthService {
   static const defaultPort = 1455;
   static const fallbackPort = 1457;
   static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
   static const _jsonContentType = 'application/json';
-  CodexOAuthService({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
+  new({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
     : _dio = dio ?? Dio(),
       _openBrowser = openBrowser ?? OpenSystemBrowser.call;
 
@@ -344,16 +339,12 @@ class CodexOAuthService {
   }
 }
 
-class CodexOAuthCanceledException implements Exception {
-  const CodexOAuthCanceledException();
-}
+class const CodexOAuthCanceledException() implements Exception;
 
-class _Pkce {
-  const _Pkce({required this.verifier, required this.challenge});
-
-  final String verifier;
-  final String challenge;
-}
+class const _Pkce({
+  required final String verifier,
+  required final String challenge,
+});
 
 _Pkce _generatePkce() {
   final verifier = _randomUrlSafe(64);

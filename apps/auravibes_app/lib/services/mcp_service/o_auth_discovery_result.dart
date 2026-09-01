@@ -10,37 +10,25 @@ import 'package:logging/logging.dart';
 const _jsonAcceptHeader = {'Accept': 'application/json'};
 
 /// Result of OAuth discovery for an MCP server.
-class OAuthDiscoveryResult {
-  const OAuthDiscoveryResult({
-    required this.authorizationUrl,
-    required this.tokenUrl,
-    required this.clientId,
-    required this.scope,
-  });
-
+class const OAuthDiscoveryResult({
   /// OAuth authorization endpoint URL.
-  final String authorizationUrl;
+  required final String authorizationUrl,
 
   /// OAuth token endpoint URL.
-  final String tokenUrl;
+  required final String tokenUrl,
 
   /// OAuth client ID (may be null for public clients).
-  final String? clientId;
+  required final String? clientId,
 
   /// OAuth scope string.
-  final String? scope;
-}
+  required final String? scope,
+});
 
-class OAuthConnector {
-  const OAuthConnector({
-    required this.clientName,
-    required this.serverUrl,
-    required this.redirectUrl,
-  });
-  final String clientName;
-  final String serverUrl;
-  final String redirectUrl;
-}
+class const OAuthConnector({
+  required final String clientName,
+  required final String serverUrl,
+  required final String redirectUrl,
+});
 
 /// Service for automatically discovering OAuth configuration from MCP servers
 ///

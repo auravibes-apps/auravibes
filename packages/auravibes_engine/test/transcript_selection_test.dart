@@ -66,17 +66,15 @@ void main() {
   });
 
   test('selects safe range and reports no-range or unresolved tool', () {
-    final selected =
-        selectAgentCompactionRange(
-              AgentContextSnapshot([
-                message('error', status: AgentTranscriptStatus.error),
-                message('first'),
-                message('model', role: AgentTranscriptRole.model),
-                message('tail-user'),
-                message('tail-model', role: AgentTranscriptRole.model),
-              ]),
-            )
-            as AgentCompactionRangeSelected;
+    final selected = selectAgentCompactionRange(
+      AgentContextSnapshot([
+        message('error', status: AgentTranscriptStatus.error),
+        message('first'),
+        message('model', role: AgentTranscriptRole.model),
+        message('tail-user'),
+        message('tail-model', role: AgentTranscriptRole.model),
+      ]),
+    ) as AgentCompactionRangeSelected;
 
     expect(selected.messageIds, ['first', 'model']);
     expect(selected.keptTailMessageIds, ['tail-user', 'tail-model']);

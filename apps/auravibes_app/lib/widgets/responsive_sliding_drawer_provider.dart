@@ -4,11 +4,7 @@ import 'package:flutter/widgets.dart';
 /// Provides a responsive drawer controller to descendants.
 class ResponsiveSlidingDrawerProvider extends InheritedWidget {
   /// Creates a responsive drawer provider.
-  const ResponsiveSlidingDrawerProvider({
-    required this.controller,
-    required super.child,
-    super.key,
-  });
+  const new({required this.controller, required super.child, super.key});
 
   /// Drawer controller.
   final ResponsiveSlidingDrawerController controller;

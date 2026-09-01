@@ -7,17 +7,11 @@ part 'auravibes_snackbar.stories.g.dart';
 
 const component = ComponentMeta(name: 'Snackbar Variants');
 
-class _SnackBarInput {
-  const _SnackBarInput({
-    required this.variant,
-    required this.showAction,
-    required this.durationSeconds,
-  });
-
-  final AuraSnackBarVariant variant;
-  final bool showAction;
-  final int durationSeconds;
-}
+class const _SnackBarInput({
+  required final AuraSnackBarVariant variant,
+  required final bool showAction,
+  required final int durationSeconds,
+});
 
 const meta = Meta(SnackBarDemo.new, argsType: _SnackBarInput.new);
 
@@ -58,18 +52,12 @@ final $SnackbarVariants = _Story(
 );
 
 /// Demonstrates snackbar variants, actions, and display duration.
-class SnackBarDemo extends StatelessWidget {
-  const SnackBarDemo({
-    super.key,
-    required this.variant,
-    required this.showAction,
-    required this.duration,
-  });
-
-  final AuraSnackBarVariant variant;
-  final bool showAction;
-  final Duration duration;
-
+class const SnackBarDemo({
+  super.key,
+  required final AuraSnackBarVariant variant,
+  required final bool showAction,
+  required final Duration duration,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(

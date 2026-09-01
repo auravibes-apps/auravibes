@@ -19,7 +19,7 @@ export 'mcp_servers_repository_contract.dart';
 
 class McpServersRepository implements McpServersRepositoryContract {
   /// Creates a new [McpServersRepository] instance.
-  McpServersRepository(this._database)
+  new(this._database)
     : _mcpServersDao = _database.mcpServersDao,
       _toolsGroupsDao = _database.toolsGroupsDao,
       _workspaceToolsDao = _database.workspaceToolsDao;
@@ -262,7 +262,7 @@ class McpServersException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
   /// Creates a new McpServersException.
-  const McpServersException(this.message, [this.cause]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -281,7 +281,7 @@ class McpServersException implements Exception {
 /// Exception thrown when an MCP server is not found.
 class McpServerNotFoundException extends McpServersException {
   /// Creates a new McpServerNotFoundException.
-  const McpServerNotFoundException(this.serverId, [Exception? cause])
+  const new(this.serverId, [Exception? cause])
     : super('MCP server "$serverId" not found', cause);
 
   /// ID of the MCP server that was not found.
