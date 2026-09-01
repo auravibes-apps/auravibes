@@ -127,7 +127,7 @@ class const _FakeSkillsRepository() implements SkillsRepository {
 
 class _FakeConversationSkillsRepository
     implements ConversationSkillsRepository {
-  _FakeConversationSkillsRepository();
+  new();
 
   String? loadedAppSkillIdentifier;
 

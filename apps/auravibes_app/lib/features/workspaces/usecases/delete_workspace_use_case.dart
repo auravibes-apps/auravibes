@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'delete_workspace_use_case.g.dart';
 
 class DeleteWorkspaceUseCase {
-  const DeleteWorkspaceUseCase({required this._repository});
+  const new({required this._repository});
 
   final WorkspaceRepository _repository;
 

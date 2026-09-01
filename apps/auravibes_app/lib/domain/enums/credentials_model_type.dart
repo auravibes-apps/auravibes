@@ -6,7 +6,7 @@ enum CredentialsModelType {
   google('google');
 
   /// Creates a new CredentialsModelType with the given string value.
-  const new(this.value);
+  new(this.value);
 
   /// Creates a credentials model type from a string value.
   ///

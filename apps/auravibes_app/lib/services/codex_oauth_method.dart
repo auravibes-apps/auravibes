@@ -22,7 +22,7 @@ class CodexOAuthService {
   static const fallbackPort = 1457;
   static const deviceCallback = 'https://auth.openai.com/deviceauth/callback';
   static const _jsonContentType = 'application/json';
-  CodexOAuthService({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
+  new({Dio? dio, Future<void> Function(Uri uri)? openBrowser})
     : _dio = dio ?? Dio(),
       _openBrowser = openBrowser ?? OpenSystemBrowser.call;
 

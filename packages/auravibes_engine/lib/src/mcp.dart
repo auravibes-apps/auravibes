@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 final class McpDiscoveredTool {
-  McpDiscoveredTool({
+  new({
     required this.name,
     required Map<String, Object?> inputSchema,
     this.description,
@@ -45,7 +45,7 @@ sealed class const McpContent() {
 }
 
 final class McpTextContent extends McpContent {
-  McpTextContent(this.text, {Map<String, Object?>? annotations})
+  new(this.text, {Map<String, Object?>? annotations})
     : annotations = annotations == null ? null : _freezeMap(annotations);
   final String text;
   final Map<String, Object?>? annotations;
@@ -58,7 +58,7 @@ final class McpTextContent extends McpContent {
 }
 
 final class McpBinaryContent extends McpContent {
-  McpBinaryContent({
+  new({
     required this.type,
     required this.mimeType,
     this.data,
@@ -81,7 +81,7 @@ final class McpBinaryContent extends McpContent {
 }
 
 final class McpResourceContent extends McpContent {
-  McpResourceContent({
+  new({
     required this.uri,
     this.text,
     this.blob,
@@ -117,7 +117,7 @@ final class McpResourceContent extends McpContent {
 }
 
 class McpToolResult {
-  McpToolResult({
+  new({
     List<McpContent> content = const [],
     Map<String, Object?>? structuredContent,
     this.isStreaming = false,

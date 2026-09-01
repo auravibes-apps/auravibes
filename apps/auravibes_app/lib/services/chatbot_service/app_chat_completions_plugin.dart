@@ -5,7 +5,7 @@ import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
 class AppChatCompletionsPlugin extends GenkitPlugin {
-  AppChatCompletionsPlugin({
+  new({
     required this.name,
     required this.baseUrl,
     required this.apiKey,

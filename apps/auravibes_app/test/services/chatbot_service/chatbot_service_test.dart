@@ -601,7 +601,7 @@ genkit.ModelResponse _modelResponse(genkit.FinishReason finishReason) {
 }
 
 class _FakeProviderFactory extends ProviderFactory {
-  _FakeProviderFactory({
+  new({
     this.chunks = const [],
     genkit.ModelResponse? response,
     this.onRequest,

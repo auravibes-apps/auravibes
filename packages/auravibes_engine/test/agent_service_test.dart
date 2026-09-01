@@ -282,7 +282,7 @@ void main() {
 
 class _FakeAgentConversationDataProvider
     implements AgentDataProvider, AgentModelProvider, AgentLoopToolProvider {
-  _FakeAgentConversationDataProvider({
+  new({
     this.workspaceId = 'workspace-1',
     List<ContinueAgentResult>? continueResults,
     List<Object>? continueErrors,

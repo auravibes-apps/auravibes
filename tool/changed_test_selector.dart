@@ -16,7 +16,7 @@ enum SelectionMode { full, affected, none }
 
 /// One file row from a Git change range.
 class ChangedFile {
-  ChangedFile({required this.status, this.oldPath, this.newPath}) {
+  new({required this.status, this.oldPath, this.newPath}) {
     if (status != 'added' &&
         status != 'modified' &&
         status != 'deleted' &&
@@ -25,22 +25,22 @@ class ChangedFile {
     }
   }
 
-  const ChangedFile.added(String path)
+  const new added(String path)
     : status = 'added',
       oldPath = null,
       newPath = path;
 
-  const ChangedFile.modified(String path)
+  const new modified(String path)
     : status = 'modified',
       oldPath = path,
       newPath = path;
 
-  const ChangedFile.deleted(String path)
+  const new deleted(String path)
     : status = 'deleted',
       oldPath = path,
       newPath = null;
 
-  const ChangedFile.renamed({
+  const new renamed({
     required String this.oldPath,
     required String this.newPath,
   }) : status = 'renamed';
@@ -52,13 +52,13 @@ class ChangedFile {
 
 /// Immutable selector output.
 class SelectionResult {
-  SelectionResult({
+  new({
     required this.mode,
     required Map<String, List<String>> packages,
     required this.reason,
   }) : packages = _freezePackages(packages);
 
-  factory SelectionResult.fromJson(Object? value) {
+  factory fromJson(Object? value) {
     if (value is! Map) {
       throw const FormatException('Manifest must be an object');
     }
@@ -479,7 +479,7 @@ Future<void> main(List<String> args) async {
 }
 
 class _Package {
-  _Package({
+  new({
     required this.relativeRoot,
     required this.name,
     required this.flutter,
@@ -494,13 +494,13 @@ class _Package {
 }
 
 class _TestGroup {
-  _TestGroup(this.package, this.paths);
+  new(this.package, this.paths);
   final _Package package;
   final List<String> paths;
 }
 
 class _Command {
-  _Command(this.executable, this.arguments);
+  new(this.executable, this.arguments);
   final String executable;
   final List<String> arguments;
 }

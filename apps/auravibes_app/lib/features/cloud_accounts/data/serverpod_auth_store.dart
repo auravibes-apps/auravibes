@@ -19,7 +19,7 @@ class ServerpodAuthStore {
     ),
   );
 
-  ServerpodAuthStore({
+  new({
     FlutterSecureStorage? secureStorage,
     this.storageNamespace = 'auravibes_app',
   }) : _secureStorage = secureStorage ?? _defaultStorage;

@@ -6,7 +6,7 @@ import 'package:riverpod/riverpod.dart';
 
 class MonitoringService {
   static const _maxLogFieldLength = 500;
-  MonitoringService({
+  new({
     ValueSetter<String>? debugLogger,
     this.enableConsoleLogging = kDebugMode,
   }) : _debugLogger = debugLogger ?? _defaultDebugLogger;

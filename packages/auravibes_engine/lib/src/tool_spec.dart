@@ -4,7 +4,7 @@ import 'dart:collection';
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
 class ToolSpec {
-  ToolSpec({
+  new({
     required this.name,
     required this.description,
     required Map<String, Object?> inputJsonSchema,

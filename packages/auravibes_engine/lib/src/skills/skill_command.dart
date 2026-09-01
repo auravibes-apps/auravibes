@@ -109,7 +109,7 @@ class SkillCommandTarget._({
 }
 
 class SkillManifest {
-  SkillManifest({
+  new({
     required this.slug,
     required this.title,
     required this.instructions,
@@ -136,7 +136,7 @@ class SkillManifest {
 }
 
 class SkillManifestTool {
-  SkillManifestTool({
+  new({
     required this.name,
     required this.description,
     required Map<String, Object?> inputJsonSchema,

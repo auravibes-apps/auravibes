@@ -966,7 +966,7 @@ class _FailingMcpManagerService extends McpManagerService {
 }
 
 class _SuccessfulMcpManagerService extends McpManagerService {
-  _SuccessfulMcpManagerService({_FakeMcpManagerClient? client})
+  new({_FakeMcpManagerClient? client})
     : _client = client ?? _FakeMcpManagerClient();
 
   final _FakeMcpManagerClient _client;

@@ -7,7 +7,7 @@ enum WorkspaceType {
   remote('remote');
 
   /// Creates a new WorkspaceType with the given string value.
-  const new(this.value);
+  new(this.value);
 
   /// Creates a workspace type from a string value.
   ///
