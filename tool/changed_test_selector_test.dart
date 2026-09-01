@@ -463,7 +463,7 @@ void main() {
   });
 
   test(
-    'matrix emits selected packages and caps app shards by test count',
+    'matrix normalizes shard package and caps shards by test count',
     () async {
       final root = await _runnerFixture();
       addTearDown(() => root.delete(recursive: true));
@@ -481,7 +481,7 @@ void main() {
       final matrix = await buildTestMatrix(
         selection,
         rootPath: root.path,
-        shardPackage: 'packages/core',
+        shardPackage: r'packages\core',
         shardCount: 3,
       );
 
@@ -703,6 +703,55 @@ void main() {
         ),
         isNonZero,
       );
+      expect(launches, 0);
+    },
+  );
+
+  test(
+    'runner rejects sharding multiple selected packages before launching',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final other = Directory('${root.path}/packages/other');
+      final _ = await Directory('${other.path}/test').create(recursive: true);
+      final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
+name: fixture
+workspace:
+  - packages/core
+  - packages/other
+''');
+      final _ = await File('${other.path}/pubspec.yaml').writeAsString('''
+name: other
+''');
+      final _ = await File('${other.path}/test/other_test.dart')
+          .writeAsString('void main() {}');
+      var launches = 0;
+
+      final code = await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/behavior_test.dart'],
+            'packages/other': ['test/other_test.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              launches++;
+
+              return 0;
+            },
+        totalShards: 2,
+        shardIndex: 0,
+      );
+
+      expect(code, isNonZero);
       expect(launches, 0);
     },
   );

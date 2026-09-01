@@ -346,6 +346,7 @@ Future<Map<String, Object>> buildTestMatrix(
   if (shardCount < 1) {
     throw const FormatException('Shard count must be positive');
   }
+  final normalizedShardPackage = _normalizePath(shardPackage);
   if (selection.mode == SelectionMode.none) {
     return const {'include': <Object>[]};
   }
@@ -353,7 +354,7 @@ Future<Map<String, Object>> buildTestMatrix(
   final groups = await _testGroups(selection, rootPath: rootPath);
   final entries = <TestMatrixEntry>[];
   for (final group in groups) {
-    final totalShards = group.package.relativeRoot == shardPackage
+    final totalShards = group.package.relativeRoot == normalizedShardPackage
         ? shardCount.clamp(1, group.paths.length)
         : 1;
     final artifactBase = _artifactBase(group.package.relativeRoot);
@@ -393,6 +394,9 @@ Future<int> runSelectedTests(
       totalShards: totalShards,
       shardIndex: shardIndex,
     );
+    if (shard.total > 1 && selectedGroups.length != 1) {
+      throw const FormatException('Sharding requires one selected package');
+    }
     final launch = launcher ?? _launchProcess;
     var firstFailure = 0;
     for (var index = 0; index < selectedGroups.length; index += 2) {
