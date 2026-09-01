@@ -14,13 +14,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockBuildDynamicSkillToolSpecsUsecase extends Mock
-    implements BuildDynamicSkillToolSpecsUsecase {}
+    implements BuildDynamicSkillToolSpecsUsecase;
 
 class _MockBuildSkillTemplateToolSpecsUsecase extends Mock
-    implements BuildSkillTemplateToolSpecsUsecase {}
+    implements BuildSkillTemplateToolSpecsUsecase;
 
 class _MockBuildAppSkillNativeToolSpecsUsecase extends Mock
-    implements BuildAppSkillNativeToolSpecsUsecase {}
+    implements BuildAppSkillNativeToolSpecsUsecase;
 
 void main() {
   group('SyncSkillToolPermissionsUsecase', () {
@@ -129,9 +129,8 @@ void main() {
       );
       final groupId = group?.id ?? fail('Expected skills group');
       final created =
-          (await fixture.database.workspaceToolsDao.getToolsByGroupId(
-            groupId,
-          )).single;
+          (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
+              .single;
       final _ = await fixture.database.workspaceToolsDao
           .setWorkspaceToolEnabledById(created.id, isEnabled: false);
       final _ = await fixture.database.workspaceToolsDao
@@ -158,9 +157,8 @@ void main() {
       );
 
       final updated =
-          (await fixture.database.workspaceToolsDao.getToolsByGroupId(
-            groupId,
-          )).single;
+          (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
+              .single;
       expect(updated.description, updatedSpec.description);
       expect(updated.inputSchema, jsonEncode(updatedSpec.inputJsonSchema));
       expect(updated.isEnabled, isFalse);
@@ -184,9 +182,8 @@ void main() {
       );
       final groupId = group?.id ?? fail('Expected skills group');
       final created =
-          (await fixture.database.workspaceToolsDao.getToolsByGroupId(
-            groupId,
-          )).single;
+          (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
+              .single;
 
       await fixture.usecase.call(
         conversationId: 'conversation-id',
@@ -194,9 +191,8 @@ void main() {
       );
 
       final unchanged =
-          (await fixture.database.workspaceToolsDao.getToolsByGroupId(
-            groupId,
-          )).single;
+          (await fixture.database.workspaceToolsDao.getToolsByGroupId(groupId))
+              .single;
       expect(unchanged.updatedAt, created.updatedAt);
     });
 

@@ -21,8 +21,7 @@ final MessageBubbleDemoComponent =
       name: component.name ?? 'MessageBubbleDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates message content, delivery state, sizing, and callbacks.''',
+      docComment: r'''Demonstrates message content, delivery state, sizing, and callbacks.''',
       stories: [$AuraMessageBubble..$generatedName = 'AuraMessageBubble'],
     );
 typedef MessageBubbleDemoScenario =

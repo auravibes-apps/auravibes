@@ -7,10 +7,10 @@ import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Gateway extends Mock implements CloudChatGateway {}
+class _Gateway extends Mock implements CloudChatGateway;
 
 class _UpdateConversationRequestFake extends Fake
-    implements UpdateConversationRequest {}
+    implements UpdateConversationRequest;
 
 void main() {
   setUpAll(() => registerFallbackValue(_UpdateConversationRequestFake()));
@@ -48,29 +48,26 @@ void main() {
     );
     final requests = <UpdateConversationRequest>[];
 
-    when(() => gateway.updateConversation(captureAny())).thenAnswer((
-      invocation,
-    ) async {
-      requests.add(
-        invocation.positionalArguments.single as UpdateConversationRequest,
-      );
-      if (requests.length == 1) {
-        throw CloudAppException(
-          localizationKey: 'cloud_errors.conflict',
-          context: CloudOperationContext.conversation,
-          code: ConversationErrorCode.staleRevision.name,
-        );
-      }
+    when(() => gateway.updateConversation(captureAny()))
+        .thenAnswer((invocation) async {
+          requests.add(
+            invocation.positionalArguments.single as UpdateConversationRequest,
+          );
+          if (requests.length == 1) {
+            throw CloudAppException(
+              localizationKey: 'cloud_errors.conflict',
+              context: CloudOperationContext.conversation,
+              code: ConversationErrorCode.staleRevision.name,
+            );
+          }
 
-      return updated;
-    });
-    when(
-      () => gateway.getConversation(conversation.id),
-    ).thenAnswer((_) async => refreshed);
+          return updated;
+        });
+    when(() => gateway.getConversation(conversation.id))
+        .thenAnswer((_) async => refreshed);
 
-    final actual = await CloudConversationUsecase(
-      gateway,
-    ).updateModel(conversation, 'replacement-model');
+    final actual = await CloudConversationUsecase(gateway)
+        .updateModel(conversation, 'replacement-model');
 
     expect(actual, same(updated));
     expect(requests, hasLength(2));

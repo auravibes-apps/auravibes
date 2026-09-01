@@ -11,7 +11,7 @@ import 'package:flutter/widgets.dart';
 /// route. Content can close itself with `Navigator.of(context).pop()`.
 class AuraModal extends StatefulWidget {
   /// Creates a modal composition.
-  const AuraModal({
+  const new({
     required this.entryPointChild,
     required this.contentChild,
     required this.barrierLabel,
@@ -142,13 +142,11 @@ class _AuraModalState extends State<AuraModal> {
   }
 }
 
-class _AuraModalSurface extends StatelessWidget {
+class const _AuraModalSurface({
+  required final Widget content,
+  required final String? semanticLabel,
+}) extends StatelessWidget {
   static const _maxWidth = 400.0;
-
-  const _AuraModalSurface({required this.content, required this.semanticLabel});
-
-  final Widget content;
-  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {

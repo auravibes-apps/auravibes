@@ -9,11 +9,8 @@ import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:auravibes_app/services/url/url_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-final class UrlTool extends NativeToolEntity<String, String> {
-  UrlTool({this._urlService});
-
-  final UrlService? _urlService;
-
+final class UrlTool({final UrlService? _urlService})
+    extends NativeToolEntity<String, String> {
   @override
   NativeToolType get type => .url;
 

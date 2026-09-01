@@ -22,8 +22,7 @@ final CheckboxListTileDemoComponent =
       name: component.name ?? 'CheckboxListTileDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates a settings-style checkbox tile with optional supporting text.''',
+      docComment: r'''Demonstrates a settings-style checkbox tile with optional supporting text.''',
       stories: [$CheckboxListTile..$generatedName = 'CheckboxListTile'],
     );
 typedef CheckboxListTileDemoScenario =

@@ -49,22 +49,14 @@ final $MultiSelectionToggle = _Story(
 );
 
 /// Demonstrates a multi-selection toggle button group.
-class MultiSelectionDemo extends StatefulWidget {
-  const MultiSelectionDemo({
-    super.key,
-    required this.size,
-    required this.variant,
-    required this.orientation,
-    required this.disabled,
-    required this.isLoading,
-  });
-
-  final AuraButtonGroupSize size;
-  final AuraButtonGroupVariant variant;
-  final Axis orientation;
-  final bool disabled;
-  final bool isLoading;
-
+class const MultiSelectionDemo({
+  super.key,
+  required final AuraButtonGroupSize size,
+  required final AuraButtonGroupVariant variant,
+  required final Axis orientation,
+  required final bool disabled,
+  required final bool isLoading,
+}) extends StatefulWidget {
   @override
   State<MultiSelectionDemo> createState() => _MultiSelectionDemoState();
 }

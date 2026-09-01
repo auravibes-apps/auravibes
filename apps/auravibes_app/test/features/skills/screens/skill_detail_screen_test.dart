@@ -97,9 +97,8 @@ void main() {
     final appSkillContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(appSkillDatabase),
-        workspaceSessionProvider(
-          appSkillSession,
-        ).overrideWithValue(appSkillSession),
+        workspaceSessionProvider(appSkillSession)
+            .overrideWithValue(appSkillSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
         cloudSkillStoreProvider(appSkillWorkspace.id).overrideWithValue(null),
       ],
@@ -126,26 +125,23 @@ void main() {
       overrides: [
         appDatabaseProvider.overrideWithValue(selectedCredentialDatabase),
         encryptionServiceProvider.overrideWithValue(selectedEncryptionService),
-        workspaceSessionProvider(
-          selectedCredentialSession,
-        ).overrideWithValue(selectedCredentialSession),
+        workspaceSessionProvider(selectedCredentialSession)
+            .overrideWithValue(selectedCredentialSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider(
-          selectedCredentialWorkspace.id,
-        ).overrideWithValue(null),
+        cloudSkillStoreProvider(selectedCredentialWorkspace.id)
+            .overrideWithValue(null),
       ],
     );
     addTearDown(selectedCredentialContainer.dispose);
     final definition =
-        await SkillCredentialDefinitionsRepository(
-          selectedCredentialDatabase,
-        ).createDefinition(
-          selectedCredentialWorkspace.id,
-          const SkillCredentialDefinitionToCreate(
-            title: 'TheCatAPI Key',
-            attributesJson: '{"apiKey":{"description":"API key"}}',
-          ),
-        );
+        await SkillCredentialDefinitionsRepository(selectedCredentialDatabase)
+            .createDefinition(
+              selectedCredentialWorkspace.id,
+              const SkillCredentialDefinitionToCreate(
+                title: 'TheCatAPI Key',
+                attributesJson: '{"apiKey":{"description":"API key"}}',
+              ),
+            );
     final skillWithDefinition =
         await SkillsRepository(selectedCredentialDatabase).createSkill(
           selectedCredentialWorkspace.id,
@@ -170,15 +166,14 @@ void main() {
           ),
         );
     final optionalDefinition =
-        await SkillCredentialDefinitionsRepository(
-          selectedCredentialDatabase,
-        ).createDefinition(
-          selectedCredentialWorkspace.id,
-          const SkillCredentialDefinitionToCreate(
-            title: 'Optional API Key',
-            attributesJson: '{"apiKey":{"description":"API key"}}',
-          ),
-        );
+        await SkillCredentialDefinitionsRepository(selectedCredentialDatabase)
+            .createDefinition(
+              selectedCredentialWorkspace.id,
+              const SkillCredentialDefinitionToCreate(
+                title: 'Optional API Key',
+                attributesJson: '{"apiKey":{"description":"API key"}}',
+              ),
+            );
     final optionalSkill = await SkillsRepository(selectedCredentialDatabase)
         .createSkill(
           selectedCredentialWorkspace.id,
@@ -208,13 +203,11 @@ void main() {
     final staleCredentialContainer = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(staleCredentialDatabase),
-        workspaceSessionProvider(
-          staleCredentialSession,
-        ).overrideWithValue(staleCredentialSession),
+        workspaceSessionProvider(staleCredentialSession)
+            .overrideWithValue(staleCredentialSession),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
-        cloudSkillStoreProvider(
-          staleCredentialWorkspace.id,
-        ).overrideWithValue(null),
+        cloudSkillStoreProvider(staleCredentialWorkspace.id)
+            .overrideWithValue(null),
       ],
     );
     addTearDown(staleCredentialContainer.dispose);
@@ -294,14 +287,8 @@ class _FakeSecretKeyManager extends SecretKeyManager {
   Future<SecretKey> getOrCreateSecretKey() async => _key;
 }
 
-class _SkillDetailScreenFixture {
-  const _SkillDetailScreenFixture({
-    required this.container,
-    required this.workspaceId,
-    required this.skillId,
-  });
-
-  final ProviderContainer container;
-  final String workspaceId;
-  final String skillId;
-}
+class const _SkillDetailScreenFixture({
+  required final ProviderContainer container,
+  required final String workspaceId,
+  required final String skillId,
+});

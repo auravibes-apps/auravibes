@@ -5,32 +5,24 @@ import 'package:crypto/crypto.dart';
 
 final _validToolName = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
-class ToolCatalogCandidate<T> {
-  factory ToolCatalogCandidate.reserved({
-    required ToolSpec spec,
-    required T target,
-  }) => ToolCatalogCandidate._(spec, target);
+class const ToolCatalogCandidate<T>._(
+  final ToolSpec spec,
+  final T target, [
+  final String? _sourceId,
+]) {
+  factory reserved({required ToolSpec spec, required T target}) =>
+      ToolCatalogCandidate._(spec, target);
 
-  factory ToolCatalogCandidate.external({
+  factory external({
     required ToolSpec spec,
     required T target,
     required String sourceId,
   }) => ToolCatalogCandidate._(spec, target, sourceId);
-
-  const ToolCatalogCandidate._(this.spec, this.target, [this._sourceId]);
-
-  final ToolSpec spec;
-  final T target;
-  final String? _sourceId;
 }
 
-class ToolCatalog<T> {
-  ToolCatalog._(List<ToolSpec> specs, Map<String, T> targets)
-    : specs = List.unmodifiable(specs),
-      _targets = Map.unmodifiable(targets);
-
-  final List<ToolSpec> specs;
-  final Map<String, T> _targets;
+class ToolCatalog<T>._(List<ToolSpec> specs, Map<String, T> targets) {
+  final List<ToolSpec> specs = List.unmodifiable(specs);
+  final Map<String, T> _targets = Map.unmodifiable(targets);
 
   T? resolve(String modelName) => _targets[modelName];
 }

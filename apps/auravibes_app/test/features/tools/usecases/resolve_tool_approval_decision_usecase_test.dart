@@ -394,9 +394,8 @@ void main() {
           mcpSlug: 'server-1',
         );
 
-        when(
-          () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
-        ).thenAnswer((_) async => null);
+        when(() => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'))
+            .thenAnswer((_) async => null);
 
         final decision = await usecase(
           conversationId: 'conv-1',
@@ -420,20 +419,19 @@ void main() {
           mcpSlug: 'server-1',
         );
 
-        when(
-          () => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'),
-        ).thenAnswer(
-          (_) async => ToolsGroupEntity(
-            id: 'group-1',
-            workspaceId: 'ws-1',
-            name: 'Group',
-            isEnabled: true,
-            permissions: PermissionAccess.ask,
-            createdAt: DateTime(2026),
-            updatedAt: DateTime(2026),
-            mcpServerId: 'server-1',
-          ),
-        );
+        when(() => toolsGroupsRepository.getToolsGroupByMcpServerId('server-1'))
+            .thenAnswer(
+              (_) async => ToolsGroupEntity(
+                id: 'group-1',
+                workspaceId: 'ws-1',
+                name: 'Group',
+                isEnabled: true,
+                permissions: PermissionAccess.ask,
+                createdAt: DateTime(2026),
+                updatedAt: DateTime(2026),
+                mcpServerId: 'server-1',
+              ),
+            );
         when(
           () => workspaceToolsRepository.getWorkspaceToolByToolName(
             toolGroupId: 'group-1',

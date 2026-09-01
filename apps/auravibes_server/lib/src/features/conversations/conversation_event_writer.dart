@@ -3,12 +3,11 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../sync/stream/sync_wakeups.dart';
 
-typedef ConversationWakeupPublisher =
-    Future<void> Function(
-      Session session, {
-      required int workspaceId,
-      required String conversationId,
-    });
+typedef ConversationWakeupPublisher = Future<void> Function(
+  Session session, {
+  required int workspaceId,
+  required String conversationId,
+});
 
 class ConversationEventWriter {
   ConversationEventWriter({
@@ -92,12 +91,7 @@ class ConversationEventWriter {
   }
 }
 
-class ConversationEventWriteResult {
-  const ConversationEventWriteResult({
-    required this.conversation,
-    required this.event,
-  });
-
-  final Conversation conversation;
-  final ConversationEvent event;
-}
+class const ConversationEventWriteResult({
+  required final Conversation conversation,
+  required final ConversationEvent event,
+});

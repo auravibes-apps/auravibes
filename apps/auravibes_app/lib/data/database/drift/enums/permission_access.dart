@@ -1,11 +1,7 @@
-enum PermissionAccess {
+enum PermissionAccess(final String value) {
   ask('ask'),
   granted('granted'),
   denied('denied');
-
-  const PermissionAccess(this.value);
-
-  final String value;
 
   static PermissionAccess fromString(String value) {
     if (!PermissionAccess.values.map((access) => access.name).contains(value)) {

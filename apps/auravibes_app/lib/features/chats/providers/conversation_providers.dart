@@ -98,9 +98,8 @@ Stream<List<ConversationEntity>> _cloudConversations(
   CloudWorkspaceRef cloud,
 ) async* {
   final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(
-      cloud.localWorkspaceId,
-    ).future,
+    cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
+        .future,
   );
   if (gateway == null) return;
 

@@ -133,11 +133,9 @@ void main() {
   });
 }
 
-class _FakeAgentToolCallProvider implements AgentToolCallProvider<String> {
-  const _FakeAgentToolCallProvider({required this.messages});
-
-  final List<AgentToolMessage> messages;
-
+class const _FakeAgentToolCallProvider({
+  required final List<AgentToolMessage> messages,
+}) implements AgentToolCallProvider<String> {
   @override
   Future<List<AgentToolMessage>> loadMessages(String conversationId) async {
     return messages;

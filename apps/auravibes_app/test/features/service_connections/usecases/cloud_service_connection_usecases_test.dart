@@ -44,9 +44,9 @@ void main() {
               required clearSecret,
               expectedSecretRevision,
             }) async {
-              resourceWrite =
-                  jsonDecode(resourceOperation.data ?? '{}')
-                      as Map<String, dynamic>;
+              resourceWrite = jsonDecode(
+                resourceOperation.data ?? '{}',
+              ) as Map<String, dynamic>;
               submittedSecret = secret;
 
               return MutateWorkspaceCredentialResponse(
@@ -126,9 +126,9 @@ void main() {
             }) async {
               resourceRevision = resourceOperation.expectedRevision;
               secretRevision = expectedSecretRevision;
-              metadata =
-                  jsonDecode(resourceOperation.data ?? '{}')
-                      as Map<String, dynamic>;
+              metadata = jsonDecode(
+                resourceOperation.data ?? '{}',
+              ) as Map<String, dynamic>;
 
               return MutateWorkspaceCredentialResponse(
                 resource: WorkspaceResource(

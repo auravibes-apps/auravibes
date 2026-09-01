@@ -8,11 +8,8 @@ import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.da
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:collection/collection.dart';
 
-class AppSubAgentCatalog implements agent.SubAgentCatalog {
-  const AppSubAgentCatalog(this._agentsRepository);
-
-  final AgentRepository _agentsRepository;
-
+class const AppSubAgentCatalog(final AgentRepository _agentsRepository)
+    implements agent.SubAgentCatalog {
   @override
   Future<agent.SubAgentCatalogEntry?> getSubAgent(String agentId) async {
     final subAgent = await _agentsRepository.getAgentById(agentId);
@@ -55,11 +52,9 @@ class AppSubAgentCatalog implements agent.SubAgentCatalog {
   }
 }
 
-class AppSubAgentConversationStore implements agent.SubAgentConversationStore {
-  const AppSubAgentConversationStore(this._conversationRepository);
-
-  final ConversationRepository _conversationRepository;
-
+class const AppSubAgentConversationStore(
+  final ConversationRepository _conversationRepository,
+) implements agent.SubAgentConversationStore {
   @override
   Future<agent.SubAgentConversationRecord> createChildConversation({
     required String parentConversationId,
@@ -103,11 +98,8 @@ class AppSubAgentConversationStore implements agent.SubAgentConversationStore {
   }
 }
 
-class AppSubAgentMessageStore implements agent.SubAgentMessageStore {
-  const AppSubAgentMessageStore(this._messageRepository);
-
-  final MessageRepository _messageRepository;
-
+class const AppSubAgentMessageStore(final MessageRepository _messageRepository)
+    implements agent.SubAgentMessageStore {
   @override
   Future<agent.SubAgentMessageRecord> createUserPrompt({
     required String conversationId,

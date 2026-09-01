@@ -4,11 +4,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class CloudConversationUsecase {
-  const CloudConversationUsecase(this._gateway);
-
-  final CloudChatGateway _gateway;
-
+class const CloudConversationUsecase(final CloudChatGateway _gateway) {
   Future<ConversationSummary> create(ConversationToCreate value) {
     final id = const UuidV7().generate();
 

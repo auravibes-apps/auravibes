@@ -12,11 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class AgentsScreen extends ConsumerWidget {
-  const AgentsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const AgentsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final agentsAsync = ref.watch(agentsProvider(workspaceId));
@@ -58,12 +55,10 @@ class AgentsScreen extends ConsumerWidget {
   }
 }
 
-class _AgentsList extends ConsumerWidget {
-  const _AgentsList({required this.agents, required this.workspaceId});
-
-  final List<AgentEntity> agents;
-  final String workspaceId;
-
+class const _AgentsList({
+  required final List<AgentEntity> agents,
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (agents.isEmpty) {

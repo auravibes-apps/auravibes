@@ -25,18 +25,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatToolApprovalCard extends HookConsumerWidget {
-  const ChatToolApprovalCard({
-    required this.workspaceId,
-    required this.conversationId,
-    this.pendingCalls,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-  final List<PendingToolCall>? pendingCalls;
-
+class const ChatToolApprovalCard({
+  required final String workspaceId,
+  required final String conversationId,
+  final List<PendingToolCall>? pendingCalls,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectedCalls = pendingCalls;
@@ -82,28 +76,16 @@ class ChatToolApprovalCard extends HookConsumerWidget {
   }
 }
 
-class _ApprovalCardContent extends ConsumerWidget {
-  const _ApprovalCardContent({
-    required this.workspaceId,
-    required this.current,
-    required this.currentIndex,
-    required this.totalCount,
-    required this.hasPrev,
-    required this.hasNext,
-    required this.onPrev,
-    required this.onNext,
-  });
-
-  final String workspaceId;
-
-  final PendingToolCall current;
-  final int currentIndex;
-  final int totalCount;
-  final bool hasPrev;
-  final bool hasNext;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
-
+class const _ApprovalCardContent({
+  required final String workspaceId,
+  required final PendingToolCall current,
+  required final int currentIndex,
+  required final int totalCount,
+  required final bool hasPrev,
+  required final bool hasNext,
+  required final VoidCallback onPrev,
+  required final VoidCallback onNext,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auraColors = context.auraColors;
@@ -187,23 +169,14 @@ class _ApprovalCardContent extends ConsumerWidget {
   }
 }
 
-class _NavigationHeader extends StatelessWidget {
-  const _NavigationHeader({
-    required this.currentIndex,
-    required this.totalCount,
-    required this.hasPrev,
-    required this.hasNext,
-    required this.onPrev,
-    required this.onNext,
-  });
-
-  final int currentIndex;
-  final int totalCount;
-  final bool hasPrev;
-  final bool hasNext;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
-
+class const _NavigationHeader({
+  required final int currentIndex,
+  required final int totalCount,
+  required final bool hasPrev,
+  required final bool hasNext,
+  required final VoidCallback onPrev,
+  required final VoidCallback onNext,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -239,12 +212,10 @@ class _NavigationHeader extends StatelessWidget {
   }
 }
 
-class _NavButton extends StatelessWidget {
-  const _NavButton({required this.icon, required this.onPressed});
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
+class const _NavButton({
+  required final IconData icon,
+  required final VoidCallback? onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraIconButton(
@@ -256,19 +227,12 @@ class _NavButton extends StatelessWidget {
   }
 }
 
-class _ToolCallInfo extends StatelessWidget {
-  const _ToolCallInfo({
-    required this.displayName,
-    required this.toolName,
-    required this.argumentsRaw,
-    required this.sourceLabel,
-  });
-
-  final String displayName;
-  final String toolName;
-  final String argumentsRaw;
-  final String? sourceLabel;
-
+class const _ToolCallInfo({
+  required final String displayName,
+  required final String toolName,
+  required final String argumentsRaw,
+  required final String? sourceLabel,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -437,17 +401,11 @@ Map<String, String>? _urlRequestSummary(Object? arguments) {
   };
 }
 
-class _ConfirmationButtons extends ConsumerWidget {
-  const _ConfirmationButtons({
-    required this.workspaceId,
-    required this.toolCall,
-    required this.messageId,
-  });
-
-  final String workspaceId;
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-
+class const _ConfirmationButtons({
+  required final String workspaceId,
+  required final MessageToolCallEntity toolCall,
+  required final String messageId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCloudCall =

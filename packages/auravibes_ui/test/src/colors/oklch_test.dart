@@ -337,9 +337,10 @@ void main() {
 
     test('round-trip conversion preserves approximate values', () {
       const original = Color.fromARGB(255, 100, 150, 200);
-      final converted = RgbColor.fromColor(
-        original,
-      ).toOklab().toLch().toColor();
+      final converted = RgbColor.fromColor(original)
+          .toOklab()
+          .toLch()
+          .toColor();
       expect(converted.r, closeTo(original.r, 0.02));
       expect(converted.g, closeTo(original.g, 0.02));
       expect(converted.b, closeTo(original.b, 0.02));

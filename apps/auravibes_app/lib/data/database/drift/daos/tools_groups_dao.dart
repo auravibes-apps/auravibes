@@ -11,7 +11,7 @@ part 'tools_groups_dao.g.dart';
 class ToolsGroupsDao extends DatabaseAccessor<AppDatabase>
     with _$ToolsGroupsDaoMixin {
   /// Creates a new [ToolsGroupsDao] instance.
-  ToolsGroupsDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Insert a new tools group.
   ///

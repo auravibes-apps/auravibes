@@ -7,16 +7,14 @@ import '../../../generated/protocol.dart';
 import '../domain/workspace_roles.dart';
 import '../repositories/cloud_workspace_repository.dart' as workspace_repo;
 
-class CloudWorkspaceUseCases {
-  CloudWorkspaceUseCases(this._repository);
-
+class CloudWorkspaceUseCases(
+  final workspace_repo.CloudWorkspaceRepository _repository,
+) {
   static const _inviteLifetime = Duration(days: 7);
   static const _maxWorkspaceNameLength = 20;
   static const _maxEmailLength = 254;
   static const _createWorkspaceScope = 'create-workspace';
   static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-  final workspace_repo.CloudWorkspaceRepository _repository;
-
   Future<List<CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     Session session, {
     required String userId,
@@ -938,20 +936,11 @@ class CloudWorkspaceUseCases {
       throw CloudWorkspaceException(code: code);
 }
 
-class _MutationResult<T> {
-  const _MutationResult({
-    required this.value,
-    required this.responseJson,
-    required this.operation,
-    required this.resourceKind,
-    this.resourceId,
-    this.workspace,
-  });
-
-  final T value;
-  final String responseJson;
-  final String operation;
-  final String resourceKind;
-  final String? resourceId;
-  final CloudWorkspace? workspace;
-}
+class const _MutationResult<T>({
+  required final T value,
+  required final String responseJson,
+  required final String operation,
+  required final String resourceKind,
+  final String? resourceId,
+  final CloudWorkspace? workspace,
+});

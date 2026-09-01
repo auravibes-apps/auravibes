@@ -14,21 +14,13 @@ import 'package:rxdart/rxdart.dart';
 
 final _logger = Logger('watch_service_connection_list_items_usecase');
 
-class WatchServiceConnectionListItemsUsecase {
-  const WatchServiceConnectionListItemsUsecase(
-    this._database,
-    this._modelConnectionRepository,
-    this._credentialDefinitionsRepository,
-    this._credentialsRepository,
-    this._now,
-  );
-
-  final AppDatabase _database;
-  final ModelConnectionRepository _modelConnectionRepository;
-  final SkillCredentialDefinitionsRepository _credentialDefinitionsRepository;
-  final SkillCredentialsRepository _credentialsRepository;
-  final DateTime Function() _now;
-
+class const WatchServiceConnectionListItemsUsecase(
+  final AppDatabase _database,
+  final ModelConnectionRepository _modelConnectionRepository,
+  final SkillCredentialDefinitionsRepository _credentialDefinitionsRepository,
+  final SkillCredentialsRepository _credentialsRepository,
+  final DateTime Function() _now,
+) {
   Stream<List<ServiceConnectionListItem>> call(String workspaceId) {
     return Rx.combineLatest4(
       _modelConnectionRepository.watchModelConnections(

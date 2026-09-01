@@ -576,8 +576,12 @@ void main() {
   });
 }
 
-class _ConversationToolsNotifierFixture {
-  factory _ConversationToolsNotifierFixture() {
+class const _ConversationToolsNotifierFixture._({
+  required final _FakeConversationToolsRepository conversationToolsRepository,
+  required final _FakeWorkspaceToolsRepository workspaceToolsRepository,
+  required final ProviderContainer container,
+}) {
+  factory() {
     final conversationToolsRepository = _FakeConversationToolsRepository();
     final workspaceToolsRepository = _FakeWorkspaceToolsRepository();
 
@@ -586,12 +590,10 @@ class _ConversationToolsNotifierFixture {
       workspaceToolsRepository: workspaceToolsRepository,
       container: ProviderContainer(
         overrides: [
-          conversationToolsRepositoryProvider(
-            'workspace-1',
-          ).overrideWithValue(conversationToolsRepository),
-          conversationToolsRepositoryProvider(
-            'ws-1',
-          ).overrideWithValue(conversationToolsRepository),
+          conversationToolsRepositoryProvider('workspace-1')
+              .overrideWithValue(conversationToolsRepository),
+          conversationToolsRepositoryProvider('ws-1')
+              .overrideWithValue(conversationToolsRepository),
           workspaceToolsRepositoryProvider(
             const WorkspaceSession(
               LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
@@ -613,16 +615,6 @@ class _ConversationToolsNotifierFixture {
       ),
     );
   }
-
-  const _ConversationToolsNotifierFixture._({
-    required this.conversationToolsRepository,
-    required this.workspaceToolsRepository,
-    required this.container,
-  });
-
-  final _FakeConversationToolsRepository conversationToolsRepository;
-  final _FakeWorkspaceToolsRepository workspaceToolsRepository;
-  final ProviderContainer container;
 
   void dispose() {
     container.dispose();

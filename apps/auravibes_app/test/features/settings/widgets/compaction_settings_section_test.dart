@@ -21,10 +21,10 @@ import 'package:riverpod/riverpod.dart';
 import '../../../helpers/test_app.dart';
 
 class MockSaveUsecase extends Mock
-    implements SaveWorkspaceCompactionSettingsUsecase {}
+    implements SaveWorkspaceCompactionSettingsUsecase;
 
 class MockCompactionSettingsRepository extends Mock
-    implements WorkspaceCompactionSettingsRepository {}
+    implements WorkspaceCompactionSettingsRepository;
 
 void main() {
   const testWorkspaceId = 'test-ws';
@@ -68,12 +68,10 @@ void main() {
         ),
       ),
       overrides: [
-        compactionSettingsProvider(
-          testWorkspaceId,
-        ).overrideWith((ref) => readSettingsController().stream),
-        saveWorkspaceCompactionSettingsUsecaseProvider(
-          testWorkspaceId,
-        ).overrideWith((ref) => readMockSave()),
+        compactionSettingsProvider(testWorkspaceId)
+            .overrideWith((ref) => readSettingsController().stream),
+        saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId)
+            .overrideWith((ref) => readMockSave()),
         workspaceCompactionSettingsRepositoryProvider.overrideWith(
           (ref) => readMockRepository(),
         ),
@@ -220,9 +218,8 @@ void main() {
 
   group('_resetDefaults', () {
     testWidgets('calls reset usecase even when it fails', (tester) async {
-      when(
-        () => readMockRepository().resetOverrides(testWorkspaceId),
-      ).thenThrow(Exception('DB error'));
+      when(() => readMockRepository().resetOverrides(testWorkspaceId))
+          .thenThrow(Exception('DB error'));
 
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
@@ -238,17 +235,16 @@ void main() {
       await tester.pump();
 
       expect(
-        () => verify(
-          () => readMockRepository().resetOverrides(testWorkspaceId),
-        ).called(1),
+        () =>
+            verify(() => readMockRepository().resetOverrides(testWorkspaceId))
+                .called(1),
         returnsNormally,
       );
     });
 
     testWidgets('resets form fields on success', (tester) async {
-      when(
-        () => readMockRepository().resetOverrides(testWorkspaceId),
-      ).thenAnswer((_) async => CompactionSettings.defaults);
+      when(() => readMockRepository().resetOverrides(testWorkspaceId))
+          .thenAnswer((_) async => CompactionSettings.defaults);
 
       readSettingsController().add(CompactionSettings.defaults);
       await pumpSubject(tester);
@@ -263,9 +259,8 @@ void main() {
       );
       await tester.pump();
 
-      verify(
-        () => readMockRepository().resetOverrides(testWorkspaceId),
-      ).called(1);
+      verify(() => readMockRepository().resetOverrides(testWorkspaceId))
+          .called(1);
 
       final slider = tester.widget<AuraSlider>(find.byType(AuraSlider));
       final remainingField = tester.widget<TextField>(find.byType(TextField));

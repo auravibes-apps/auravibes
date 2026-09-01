@@ -283,9 +283,9 @@ void main() {
           'data': {'label': 'test-key'},
         });
 
-        nock(
-          'https://openrouter.ai',
-        ).get('/api/v1/models').reply(200, 'not json');
+        nock('https://openrouter.ai')
+            .get('/api/v1/models')
+            .reply(200, 'not json');
 
         final service = ModelProviderServices();
         final result = await service.getWorkspaceModelSelections(

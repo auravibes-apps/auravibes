@@ -5,16 +5,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
 /// Permission mode selector widget.
-class ToolPermissionSelector extends StatelessWidget {
-  const ToolPermissionSelector({
-    required this.value,
-    required this.onChanged,
-    super.key,
-  });
-
-  final ToolPermissionMode value;
-  final void Function(ToolPermissionMode?) onChanged;
-
+class const ToolPermissionSelector({
+  required final ToolPermissionMode value,
+  required final void Function(ToolPermissionMode?) onChanged,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraButtonGroup<ToolPermissionMode>.single(

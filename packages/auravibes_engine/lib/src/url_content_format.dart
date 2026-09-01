@@ -14,20 +14,11 @@ enum UrlContentFormat {
   };
 }
 
-class TransformedUrlContent {
-  const TransformedUrlContent({
-    required this.body,
-    required this.format,
-    required this.originalLength,
-    required this.truncated,
-    required this.elapsed,
-    this.contentType,
-  });
-
-  final String body;
-  final UrlContentFormat format;
-  final String? contentType;
-  final int originalLength;
-  final bool truncated;
-  final Duration elapsed;
-}
+class const TransformedUrlContent({
+  required final String body,
+  required final UrlContentFormat format,
+  required final int originalLength,
+  required final bool truncated,
+  required final Duration elapsed,
+  final String? contentType,
+});

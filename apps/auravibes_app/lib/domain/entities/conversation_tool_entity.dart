@@ -8,9 +8,9 @@ part 'conversation_tool_entity.freezed.dart';
 /// This represents user preferences for tools at the conversation level,
 /// allowing different conversations to override workspace tool settings.
 @freezed
-abstract class ConversationToolEntity with _$ConversationToolEntity {
+abstract class const ConversationToolEntity._() with _$ConversationToolEntity {
   /// Creates a new ConversationTool instance.
-  const factory ConversationToolEntity({
+  const factory({
     /// ID of the conversation this tool setting belongs to.
     required String conversationId,
 
@@ -32,7 +32,6 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
     /// Timestamp when this setting was last updated.
     required DateTime updatedAt,
   }) = _ConversationToolEntity;
-  const ConversationToolEntity._();
 
   /// Returns true if the tool is currently enabled.
   bool get isAvailable => isEnabled;
@@ -40,9 +39,10 @@ abstract class ConversationToolEntity with _$ConversationToolEntity {
 
 /// Entity for creating/updating conversation tool settings.
 @freezed
-abstract class ConversationToolToCreate with _$ConversationToolToCreate {
+abstract class const ConversationToolToCreate._()
+    with _$ConversationToolToCreate {
   /// Creates a new ConversationToolToCreate instance.
-  const factory ConversationToolToCreate({
+  const factory({
     /// ID of the workspace tool record this setting overrides.
     ///
     /// Corresponds to [WorkspaceToolEntity.id],
@@ -55,7 +55,6 @@ abstract class ConversationToolToCreate with _$ConversationToolToCreate {
     /// Permission mode for this tool (defaults to alwaysAsk).
     ToolPermissionMode? permissionMode,
   }) = _ConversationToolToCreate;
-  const ConversationToolToCreate._();
 
   /// Returns true if the tool type is valid.
   bool get hasValidToolId => toolId.isNotEmpty;

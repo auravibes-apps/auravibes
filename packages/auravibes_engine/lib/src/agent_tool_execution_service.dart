@@ -11,23 +11,15 @@ enum AgentToolPermissionResult {
   notConfigured,
 }
 
-class AgentToolApprovalDecision {
-  const AgentToolApprovalDecision({required this.permissionResult});
+class const AgentToolApprovalDecision({
+  required final AgentToolPermissionResult permissionResult,
+});
 
-  final AgentToolPermissionResult permissionResult;
-}
-
-class AgentToolResultUpdate {
-  const AgentToolResultUpdate({
-    required this.toolCallId,
-    required this.resultStatus,
-    this.responseRaw,
-  });
-
-  final String toolCallId;
-  final AgentToolResultStatus resultStatus;
-  final String? responseRaw;
-}
+class const AgentToolResultUpdate({
+  required final String toolCallId,
+  required final AgentToolResultStatus resultStatus,
+  final String? responseRaw,
+});
 
 abstract interface class AgentToolExecutionProvider<TTool extends Object> {
   Future<LoadLatestMessageToolCallsResult<TTool>> loadLatestToolCalls({
@@ -72,11 +64,9 @@ abstract interface class AgentToolExecutionProvider<TTool extends Object> {
   });
 }
 
-class AgentToolExecutionService<TTool extends Object> {
-  const AgentToolExecutionService({required this.provider});
-
-  final AgentToolExecutionProvider<TTool> provider;
-
+class const AgentToolExecutionService<TTool extends Object>({
+  required final AgentToolExecutionProvider<TTool> provider,
+}) {
   Future<AgentIterationDecision> call({
     required String conversationId,
     required String workspaceId,

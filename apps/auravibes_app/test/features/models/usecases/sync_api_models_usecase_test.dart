@@ -26,9 +26,8 @@ void main() {
     });
 
     test('syncs fetched models to repository', () async {
-      when(
-        () => apiService.fetchAllModels(),
-      ).thenAnswer((_) async => ModelApiResponse(providers: []));
+      when(() => apiService.fetchAllModels())
+          .thenAnswer((_) async => ModelApiResponse(providers: []));
       when(
         () => repository.replaceAllData(
           providers: any(named: 'providers'),
@@ -47,9 +46,8 @@ void main() {
     });
 
     test('stops before repository writes when fetch fails', () async {
-      when(
-        () => apiService.fetchAllModels(),
-      ).thenThrow(Exception('Network error'));
+      when(() => apiService.fetchAllModels())
+          .thenThrow(Exception('Network error'));
 
       await expectLater(useCase(), throwsA(isA<Exception>()));
 
@@ -62,9 +60,8 @@ void main() {
     });
 
     test('forwards atomic write failures', () async {
-      when(
-        () => apiService.fetchAllModels(),
-      ).thenAnswer((_) async => ModelApiResponse(providers: []));
+      when(() => apiService.fetchAllModels())
+          .thenAnswer((_) async => ModelApiResponse(providers: []));
       when(
         () => repository.replaceAllData(
           providers: any(named: 'providers'),

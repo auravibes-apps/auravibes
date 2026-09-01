@@ -12,22 +12,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ObjectDeletion implements _i1.SerializableModel {
-  ObjectDeletion._({
-    this.id,
-    required this.workspaceId,
-    required this.objectId,
-    required this.objectKey,
-    required this.requestId,
-    required this.expectedRevision,
-    required this.requestedAt,
-    this.completedAt,
-    required this.attempts,
-    required this.availableAt,
-    this.lastError,
-  });
-
-  factory ObjectDeletion({
+abstract class ObjectDeletion._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int objectId,
+  required var String objectKey,
+  required var String requestId,
+  required var int expectedRevision,
+  required var DateTime requestedAt,
+  var DateTime? completedAt,
+  required var int attempts,
+  required var DateTime availableAt,
+  var String? lastError,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int objectId,
@@ -41,7 +42,7 @@ abstract class ObjectDeletion implements _i1.SerializableModel {
     String? lastError,
   }) = _ObjectDeletionImpl;
 
-  factory ObjectDeletion.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ObjectDeletion(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -64,31 +65,6 @@ abstract class ObjectDeletion implements _i1.SerializableModel {
       lastError: jsonSerialization['lastError'] as String?,
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int objectId;
-
-  String objectKey;
-
-  String requestId;
-
-  int expectedRevision;
-
-  DateTime requestedAt;
-
-  DateTime? completedAt;
-
-  int attempts;
-
-  DateTime availableAt;
-
-  String? lastError;
 
   /// Returns a shallow copy of this [ObjectDeletion]
   /// with some or all fields replaced by the given arguments.
@@ -130,34 +106,35 @@ abstract class ObjectDeletion implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ObjectDeletionImpl extends ObjectDeletion {
-  _ObjectDeletionImpl({
-    int? id,
-    required int workspaceId,
-    required int objectId,
-    required String objectKey,
-    required String requestId,
-    required int expectedRevision,
-    required DateTime requestedAt,
-    DateTime? completedAt,
-    required int attempts,
-    required DateTime availableAt,
-    String? lastError,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         objectId: objectId,
-         objectKey: objectKey,
-         requestId: requestId,
-         expectedRevision: expectedRevision,
-         requestedAt: requestedAt,
-         completedAt: completedAt,
-         attempts: attempts,
-         availableAt: availableAt,
-         lastError: lastError,
-       );
+class _ObjectDeletionImpl({
+  int? id,
+  required int workspaceId,
+  required int objectId,
+  required String objectKey,
+  required String requestId,
+  required int expectedRevision,
+  required DateTime requestedAt,
+  DateTime? completedAt,
+  required int attempts,
+  required DateTime availableAt,
+  String? lastError,
+}) extends ObjectDeletion {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        objectId: objectId,
+        objectKey: objectKey,
+        requestId: requestId,
+        expectedRevision: expectedRevision,
+        requestedAt: requestedAt,
+        completedAt: completedAt,
+        attempts: attempts,
+        availableAt: availableAt,
+        lastError: lastError,
+      );
 
   /// Returns a shallow copy of this [ObjectDeletion]
   /// with some or all fields replaced by the given arguments.

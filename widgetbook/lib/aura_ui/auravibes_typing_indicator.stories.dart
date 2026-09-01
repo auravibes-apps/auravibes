@@ -6,19 +6,12 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_typing_indicator.stories.g.dart';
 
-class _TypingIndicatorInput {
-  const _TypingIndicatorInput({
-    required this.size,
-    required this.color,
-    required this.showContainer,
-    required this.animationDurationMs,
-  });
-
-  final AuraTypingIndicatorSize size;
-  final Color color;
-  final bool showContainer;
-  final int animationDurationMs;
-}
+class const _TypingIndicatorInput({
+  required final AuraTypingIndicatorSize size,
+  required final Color color,
+  required final bool showContainer,
+  required final int animationDurationMs,
+});
 
 const meta = Meta(AuraTypingIndicator.new, argsType: _TypingIndicatorInput.new);
 

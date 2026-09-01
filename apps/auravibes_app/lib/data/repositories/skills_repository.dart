@@ -5,10 +5,8 @@ import 'package:auravibes_app/domain/entities/skill_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
-class SkillsRepository {
-  SkillsRepository(AppDatabase database) : _dao = database.skillsDao;
-
-  final SkillsDao _dao;
+class SkillsRepository(AppDatabase database) {
+  final SkillsDao _dao = database.skillsDao;
 
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     final rows = await _dao.getWorkspaceSkills(workspaceId);

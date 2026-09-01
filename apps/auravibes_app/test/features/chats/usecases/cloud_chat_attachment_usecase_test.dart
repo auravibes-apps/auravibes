@@ -48,12 +48,11 @@ void main() {
           );
         },
         getDownload: ({required objectId}) => throw UnimplementedError(),
-        deleteObject:
-            ({
-              required objectId,
-              required requestId,
-              required expectedRevision,
-            }) => throw UnimplementedError(),
+        deleteObject: ({
+          required objectId,
+          required requestId,
+          required expectedRevision,
+        }) => throw UnimplementedError(),
         readBytes: (_) async => bytes,
       );
 
@@ -102,12 +101,11 @@ void main() {
         completeUpload: ({required objectId}) =>
             throw ObjectException(code: ObjectErrorCode.scanInfected),
         getDownload: ({required objectId}) => throw UnimplementedError(),
-        deleteObject:
-            ({
-              required objectId,
-              required requestId,
-              required expectedRevision,
-            }) => throw UnimplementedError(),
+        deleteObject: ({
+          required objectId,
+          required requestId,
+          required expectedRevision,
+        }) => throw UnimplementedError(),
         readBytes: (_) async => Uint8List.fromList([1]),
       );
 
@@ -221,15 +219,14 @@ void main() {
 
   test('download requires server-authorized HTTPS URL', () async {
     final usecase = CloudChatAttachmentUsecase(
-      beginUpload:
-          ({
-            required requestId,
-            required purpose,
-            required displayName,
-            required mimeType,
-            required sizeBytes,
-            required checksumSha256,
-          }) => throw UnimplementedError(),
+      beginUpload: ({
+        required requestId,
+        required purpose,
+        required displayName,
+        required mimeType,
+        required sizeBytes,
+        required checksumSha256,
+      }) => throw UnimplementedError(),
       uploadBytes: (_, _) => throw UnimplementedError(),
       completeUpload: ({required objectId}) => throw UnimplementedError(),
       getDownload: ({required objectId}) => Future.value(
@@ -238,12 +235,11 @@ void main() {
           expiresAt: DateTime.utc(2026),
         ),
       ),
-      deleteObject:
-          ({
-            required objectId,
-            required requestId,
-            required expectedRevision,
-          }) => throw UnimplementedError(),
+      deleteObject: ({
+        required objectId,
+        required requestId,
+        required expectedRevision,
+      }) => throw UnimplementedError(),
       readBytes: (_) => throw UnimplementedError(),
     );
 
@@ -256,15 +252,14 @@ void main() {
   test('delete forwards object revision to server policy', () async {
     Object? received;
     final usecase = CloudChatAttachmentUsecase(
-      beginUpload:
-          ({
-            required requestId,
-            required purpose,
-            required displayName,
-            required mimeType,
-            required sizeBytes,
-            required checksumSha256,
-          }) => throw UnimplementedError(),
+      beginUpload: ({
+        required requestId,
+        required purpose,
+        required displayName,
+        required mimeType,
+        required sizeBytes,
+        required checksumSha256,
+      }) => throw UnimplementedError(),
       uploadBytes: (_, _) => throw UnimplementedError(),
       completeUpload: ({required objectId}) => throw UnimplementedError(),
       getDownload: ({required objectId}) => throw UnimplementedError(),

@@ -9,12 +9,11 @@ import 'package:auravibes_app/services/url/public_url_guard.dart';
 import 'package:http/http.dart' as http;
 import 'package:openai_dart/openai_dart.dart';
 
-class ModelProvider {
-  const ModelProvider({required this.type, required this.key, this.url});
-  final CredentialsModelType type;
-  final String key;
-  final String? url;
-}
+class const ModelProvider({
+  required final CredentialsModelType type,
+  required final String key,
+  final String? url,
+});
 
 class ModelProviderServices {
   Future<List<WorkspaceModelSelectionToCreate>?> getWorkspaceModelSelections(

@@ -16,17 +16,12 @@ import 'package:auravibes_app/services/agent_harness/continue_agent_service.dart
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-class AppAgentConversationDataProvider implements AgentDataProvider {
-  const AppAgentConversationDataProvider({
-    required this.conversationRepository,
-    required this.messageRepository,
-    required this.autoCompactConversationUsecase,
-  });
-
-  final ConversationRepository conversationRepository;
-  final MessageRepository messageRepository;
-  final MaybeAutoCompactConversationUsecase autoCompactConversationUsecase;
-
+class const AppAgentConversationDataProvider({
+  required final ConversationRepository conversationRepository,
+  required final MessageRepository messageRepository,
+  required final MaybeAutoCompactConversationUsecase
+  autoCompactConversationUsecase,
+}) implements AgentDataProvider {
   @override
   Future<void> autoCompactConversation({required String conversationId}) {
     return autoCompactConversationUsecase.call(conversationId: conversationId);
@@ -136,7 +131,7 @@ AgentConversationMessage _toAgentConversationMessage(MessageEntity message) {
 }
 
 class AppAgentService extends AgentLoopRunner {
-  AppAgentService({
+  new({
     required ContinueAgentService continueAgentService,
     required AgentToolExecutionService toolExecutionService,
     required MaybeAutoCompactConversationUsecase autoCompactConversationUsecase,
@@ -163,7 +158,7 @@ class AppAgentService extends AgentLoopRunner {
          ),
        );
 
-  AppAgentService._({
+  new _({
     required AppAgentConversationDataProvider data,
     required AppAgentModelProvider models,
     required ConversationRateLimitRetryRuntime retryRuntime,
@@ -182,11 +177,9 @@ class AppAgentService extends AgentLoopRunner {
        );
 }
 
-class AppAgentLoopToolProvider implements AgentLoopToolProvider {
-  const AppAgentLoopToolProvider(this._toolExecutionService);
-
-  final AgentToolExecutionService _toolExecutionService;
-
+class const AppAgentLoopToolProvider(
+  final AgentToolExecutionService _toolExecutionService,
+) implements AgentLoopToolProvider {
   @override
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
@@ -199,11 +192,9 @@ class AppAgentLoopToolProvider implements AgentLoopToolProvider {
   }
 }
 
-class AppAgentModelProvider implements AgentModelProvider {
-  const AppAgentModelProvider(this._continueAgentService);
-
-  final ContinueAgentService _continueAgentService;
-
+class const AppAgentModelProvider(
+  final ContinueAgentService _continueAgentService,
+) implements AgentModelProvider {
   @override
   Future<ContinueAgentResult> continueAgent({
     required String conversationId,

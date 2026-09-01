@@ -34,9 +34,7 @@ final $SelectorTabs = _Story(
 enum _SelectorTab { overview, details, activity }
 
 /// Demonstrates selector tabs whose selected value is owned by the caller.
-class SelectorTabsDemo extends StatefulWidget {
-  const SelectorTabsDemo({super.key});
-
+class const SelectorTabsDemo({super.key}) extends StatefulWidget {
   @override
   State<SelectorTabsDemo> createState() => _SelectorTabsDemoState();
 }

@@ -4,19 +4,12 @@ import 'package:widgetbook/widgetbook.dart';
 
 part 'auravibes_spinner.stories.g.dart';
 
-class _SpinnerInput {
-  const _SpinnerInput({
-    required this.size,
-    required this.tint,
-    required this.strokeWidth,
-    required this.semanticLabel,
-  });
-
-  final AuraSpinnerSize size;
-  final AuraTint? tint;
-  final double strokeWidth;
-  final String semanticLabel;
-}
+class const _SpinnerInput({
+  required final AuraSpinnerSize size,
+  required final AuraTint? tint,
+  required final double strokeWidth,
+  required final String semanticLabel,
+});
 
 const meta = Meta(AuraSpinner.new, argsType: _SpinnerInput.new);
 

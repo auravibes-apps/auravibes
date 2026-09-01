@@ -15,7 +15,7 @@ class AuraSidebar extends StatelessWidget {
   static const _shadowAlpha = 0.1;
 
   /// Creates a Aura sidebar organism.
-  const AuraSidebar({
+  const new({
     required this.navigationItems,
     required this.onNavigationTap,
     this.isExpanded = true,
@@ -119,7 +119,7 @@ class AuraSidebar extends StatelessWidget {
 /// [AuraSidebar].
 class AuraNavigationData {
   /// Creates a navigation item.
-  const AuraNavigationData({
+  const new({
     required this.icon,
     required this.label,
     this.footer = false,
@@ -139,26 +139,14 @@ class AuraNavigationData {
   final String? semanticLabel;
 }
 
-class _AuraSidebarItem extends StatelessWidget {
+class const _AuraSidebarItem({
+  required final Widget label,
+  required final Widget icon,
+  required final void Function() onTap,
+  required final String semanticLabel,
+  final bool selected = false,
+}) extends StatelessWidget {
   static const _selectedAlpha = 0.1;
-  const _AuraSidebarItem({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    required this.semanticLabel,
-    this.selected = false,
-  });
-
-  final Widget label;
-
-  final Widget icon;
-
-  final bool selected;
-
-  final void Function() onTap;
-
-  final String semanticLabel;
-
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;

@@ -5,17 +5,11 @@ import 'package:widgetbook/widgetbook.dart';
 
 part 'auravibes_container.stories.g.dart';
 
-class _ContainerInput {
-  const _ContainerInput({
-    required this.padding,
-    required this.margin,
-    required this.shadow,
-  });
-
-  final AuraEdgeInsetsGeometry padding;
-  final AuraEdgeInsetsGeometry margin;
-  final AuraContainerShadow shadow;
-}
+class const _ContainerInput({
+  required final AuraEdgeInsetsGeometry padding,
+  required final AuraEdgeInsetsGeometry margin,
+  required final AuraContainerShadow shadow,
+});
 
 const meta = Meta(AuraContainer.new, argsType: _ContainerInput.new);
 

@@ -8,7 +8,7 @@ enum ModelProvidersTableType {
   openrouter('openrouter');
 
   /// Creates a new CredentialsModelType with the given string value.
-  const ModelProvidersTableType(this.value);
+  new(this.value);
 
   /// Creates a credentials model type from a string value.
   ///

@@ -407,25 +407,23 @@ CloudSkillStore _cloudStore(List<WorkspaceResource> resources) =>
               .where((resource) => kinds.contains(resource.resourceKind))
               .toList(),
         ),
-        putSecret:
-            ({
-              required requestId,
-              required secretKind,
-              required scope,
-              required resourceId,
-              secret,
-              expectedRevision,
-            }) => throw UnimplementedError(),
-        mutateCredential:
-            ({
-              required requestId,
-              required resourceOperation,
-              required secretKind,
-              required scope,
-              required secret,
-              required clearSecret,
-              expectedSecretRevision,
-            }) => throw UnimplementedError(),
+        putSecret: ({
+          required requestId,
+          required secretKind,
+          required scope,
+          required resourceId,
+          secret,
+          expectedRevision,
+        }) => throw UnimplementedError(),
+        mutateCredential: ({
+          required requestId,
+          required resourceOperation,
+          required secretKind,
+          required scope,
+          required secret,
+          required clearSecret,
+          expectedSecretRevision,
+        }) => throw UnimplementedError(),
       ),
       'workspace-1',
     );
@@ -476,11 +474,8 @@ SkillEntity _skill({
   );
 }
 
-class _FakeSkillsRepository implements SkillsRepository {
-  const _FakeSkillsRepository(this.skills);
-
-  final List<SkillEntity> skills;
-
+class const _FakeSkillsRepository(final List<SkillEntity> skills)
+    implements SkillsRepository {
   @override
   Future<List<SkillEntity>> getWorkspaceSkills(String workspaceId) async {
     return skills.where((skill) => skill.workspaceId == workspaceId).toList();
@@ -517,12 +512,9 @@ class _FakeSkillsRepository implements SkillsRepository {
   }
 }
 
-class _FakeConversationSkillsRepository
-    implements ConversationSkillsRepository {
-  const _FakeConversationSkillsRepository(this.skills);
-
-  final List<ConversationSkillEntity> skills;
-
+class const _FakeConversationSkillsRepository(
+  final List<ConversationSkillEntity> skills,
+) implements ConversationSkillsRepository {
   @override
   Future<List<ConversationSkillEntity>> getConversationSkills(
     String conversationId,
@@ -551,12 +543,9 @@ class _FakeConversationSkillsRepository
   }
 }
 
-class _FakeAppSkillWorkspaceSettingsRepository
-    implements AppSkillWorkspaceSettingsRepository {
-  const _FakeAppSkillWorkspaceSettingsRepository([this.enabledIds = const {}]);
-
-  final Set<String> enabledIds;
-
+class const _FakeAppSkillWorkspaceSettingsRepository([
+  final Set<String> enabledIds = const {},
+]) implements AppSkillWorkspaceSettingsRepository {
   @override
   Future<bool> isAppSkillEnabled(
     String workspaceId,
@@ -575,12 +564,8 @@ class _FakeAppSkillWorkspaceSettingsRepository
   }
 }
 
-class _FakeAppSkillCandidates
+class const _FakeAppSkillCandidates([final Set<String> readySlugs = const {}])
     implements ListAppSkillCredentialCandidatesUsecase {
-  const _FakeAppSkillCandidates([this.readySlugs = const {}]);
-
-  final Set<String> readySlugs;
-
   @override
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,

@@ -11,24 +11,26 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/conversations/models/conversation_event_type.dart'
     as _i2;
 
-abstract class ConversationEvent implements _i1.SerializableModel {
-  ConversationEvent._({
-    this.id,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.sequence,
-    required this.eventId,
-    required this.actorUserId,
-    required this.requestId,
-    required this.kind,
-    required this.payloadJson,
-    required this.createdAt,
-  });
-
-  factory ConversationEvent({
+abstract class ConversationEvent._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int conversationId,
+  required var int sequence,
+  required var String eventId,
+  required var String actorUserId,
+  required var String requestId,
+  required var _i2.ConversationEventType kind,
+  required var String payloadJson,
+  required var DateTime createdAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -41,7 +43,7 @@ abstract class ConversationEvent implements _i1.SerializableModel {
     required DateTime createdAt,
   }) = _ConversationEventImpl;
 
-  factory ConversationEvent.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationEvent(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -59,29 +61,6 @@ abstract class ConversationEvent implements _i1.SerializableModel {
       ),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int conversationId;
-
-  int sequence;
-
-  String eventId;
-
-  String actorUserId;
-
-  String requestId;
-
-  _i2.ConversationEventType kind;
-
-  String payloadJson;
-
-  DateTime createdAt;
 
   /// Returns a shallow copy of this [ConversationEvent]
   /// with some or all fields replaced by the given arguments.
@@ -121,32 +100,33 @@ abstract class ConversationEvent implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationEventImpl extends ConversationEvent {
-  _ConversationEventImpl({
-    int? id,
-    required int workspaceId,
-    required int conversationId,
-    required int sequence,
-    required String eventId,
-    required String actorUserId,
-    required String requestId,
-    required _i2.ConversationEventType kind,
-    required String payloadJson,
-    required DateTime createdAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         sequence: sequence,
-         eventId: eventId,
-         actorUserId: actorUserId,
-         requestId: requestId,
-         kind: kind,
-         payloadJson: payloadJson,
-         createdAt: createdAt,
-       );
+class _ConversationEventImpl({
+  int? id,
+  required int workspaceId,
+  required int conversationId,
+  required int sequence,
+  required String eventId,
+  required String actorUserId,
+  required String requestId,
+  required _i2.ConversationEventType kind,
+  required String payloadJson,
+  required DateTime createdAt,
+}) extends ConversationEvent {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        sequence: sequence,
+        eventId: eventId,
+        actorUserId: actorUserId,
+        requestId: requestId,
+        kind: kind,
+        payloadJson: payloadJson,
+        createdAt: createdAt,
+      );
 
   /// Returns a shallow copy of this [ConversationEvent]
   /// with some or all fields replaced by the given arguments.

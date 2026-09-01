@@ -419,11 +419,9 @@ void main() {
   );
 }
 
-class _SeededConversationRepository extends _RecordingConversationRepository {
-  _SeededConversationRepository(this._conversations);
-
-  final List<ConversationEntity> _conversations;
-
+class _SeededConversationRepository(
+  final List<ConversationEntity> _conversations,
+) extends _RecordingConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
@@ -451,20 +449,16 @@ class _SeededConversationRepository extends _RecordingConversationRepository {
   }
 }
 
-class _TestCompactionExecution extends CompactionExecution {
-  _TestCompactionExecution(this._initialState);
-
-  final Map<String, CompactionExecutionState> _initialState;
-
+class _TestCompactionExecution(
+  final Map<String, CompactionExecutionState> _initialState,
+) extends CompactionExecution {
   @override
   Map<String, CompactionExecutionState> build() {
     return Map.unmodifiable(_initialState);
   }
 }
 
-class _SidebarWorkspaceHost extends StatefulWidget {
-  const _SidebarWorkspaceHost();
-
+class const _SidebarWorkspaceHost() extends StatefulWidget {
   static const loadWorkspaceKey = Key('load-workspace');
   static const switchWorkspaceKey = Key('switch-workspace');
 
@@ -501,12 +495,10 @@ class _SidebarWorkspaceHostState extends State<_SidebarWorkspaceHost> {
 }
 
 @immutable
-class _WorkspaceWatchCall {
-  const _WorkspaceWatchCall({required this.workspaceId, required this.limit});
-
-  final String workspaceId;
-  final int? limit;
-
+class const _WorkspaceWatchCall({
+  required final String workspaceId,
+  required final int? limit,
+}) {
   @override
   bool operator ==(Object other) {
     return other is _WorkspaceWatchCall &&

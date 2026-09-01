@@ -13,7 +13,7 @@ import 'package:dio/dio.dart';
 /// This service handles fetching model and provider data from the external API,
 /// parsing responses, and handling network errors.
 class ModelApiService {
-  ModelApiService({Dio? dio}) : _dio = dio ?? _createDefaultDio();
+  new({Dio? dio}) : _dio = dio ?? _createDefaultDio();
 
   /// Dio client for API requests.
   final Dio _dio;
@@ -136,19 +136,19 @@ Set<String> _canonicalModelIds(Response<Map<String, dynamic>> response) {
 }
 
 /// Data class representing the API response.
-class ModelApiResponse {
-  ModelApiResponse({required this.providers});
-
+class ModelApiResponse({
   /// List of providers with their models.
-  final List<ApiProviderDto> providers;
-}
+  required final List<ApiProviderDto> providers,
+});
 
 /// Data class representing an API provider.
-class ApiProviderDto {
-  ApiProviderDto({required this.modelProvider, required this.models});
-
+class ApiProviderDto({
+  /// Provider name.
+  required final ApiModelProviderEntity modelProvider,
+  required final List<ApiModelEntity> models,
+}) {
   /// Creates an ApiProviderDto from JSON.
-  factory ApiProviderDto.fromJson(
+  factory fromJson(
     Map<String, dynamic> json, {
     required ApiModelProviderEntity modelProvider,
     Set<String> canonicalModelIds = const {},
@@ -176,9 +176,4 @@ class ApiProviderDto {
 
     return ApiProviderDto(modelProvider: modelProvider, models: models);
   }
-
-  final List<ApiModelEntity> models;
-
-  /// Provider name.
-  final ApiModelProviderEntity modelProvider;
 }

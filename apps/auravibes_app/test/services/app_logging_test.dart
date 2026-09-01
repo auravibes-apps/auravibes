@@ -39,9 +39,8 @@ void main() {
     test('records log messages with error and stack trace', () async {
       AppLogging.configure(enabled: true);
 
-      Logger(
-        'test.logger',
-      ).severe('failed', StateError('bad'), StackTrace.current);
+      Logger('test.logger')
+          .severe('failed', StateError('bad'), StackTrace.current);
       await Future<void>.delayed(Duration.zero);
 
       expect(logs, anyElement(contains('[SEVERE] test.logger: failed')));
@@ -52,9 +51,8 @@ void main() {
     test('redacts credential-like values', () async {
       AppLogging.configure(enabled: true);
 
-      Logger(
-        'test.logger',
-      ).warning('Authorization: Bearer secret-token api_key=abc123');
+      Logger('test.logger')
+          .warning('Authorization: Bearer secret-token api_key=abc123');
       await Future<void>.delayed(Duration.zero);
 
       expect(logs.join('\n'), isNot(contains('secret-token')));

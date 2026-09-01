@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
+
 import 'support/fake_cancellation_effects.dart';
 
 void main() {
@@ -298,9 +299,7 @@ class _FakeToolProvider
   }) {}
 }
 
-class _EmptySendQueueRuntime implements AgentSendQueueRuntime {
-  const _EmptySendQueueRuntime();
-
+class const _EmptySendQueueRuntime() implements AgentSendQueueRuntime {
   @override
   void clear(String conversationId) {}
 

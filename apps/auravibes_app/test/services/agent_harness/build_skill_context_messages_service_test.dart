@@ -109,9 +109,8 @@ void main() {
           workspaceId: 'w',
         ),
       ).thenAnswer((_) async => null);
-      when(
-        () => listAgentSkills.call(conversationId: 'c', workspaceId: 'w'),
-      ).thenAnswer((_) async => const []);
+      when(() => listAgentSkills.call(conversationId: 'c', workspaceId: 'w'))
+          .thenAnswer((_) async => const []);
 
       final messages = await usecase.call(
         conversationId: 'c',
@@ -241,10 +240,10 @@ void main() {
 }
 
 class _MockListAvailableSkillsUsecase extends Mock
-    implements ListAvailableSkillsUsecase {}
+    implements ListAvailableSkillsUsecase;
 
 class _MockListConversationAgentSkillsUsecase extends Mock
-    implements ListConversationAgentSkillsUsecase {}
+    implements ListConversationAgentSkillsUsecase;
 
 class _MockBuildLoadedSkillManifestsUsecase extends Mock
-    implements BuildLoadedSkillManifestsUsecase {}
+    implements BuildLoadedSkillManifestsUsecase;

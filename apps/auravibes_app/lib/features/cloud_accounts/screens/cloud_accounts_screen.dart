@@ -17,11 +17,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class CloudAccountsScreen extends ConsumerWidget {
-  const CloudAccountsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const CloudAccountsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accountsAsync = ref.watch(cloudAccountsProvider);
@@ -54,12 +51,10 @@ class CloudAccountsScreen extends ConsumerWidget {
   }
 }
 
-class _AccountList extends ConsumerWidget {
-  const _AccountList({required this.accounts, required this.workspaceId});
-
-  final List<CloudAccountSession> accounts;
-  final String workspaceId;
-
+class const _AccountList({
+  required final List<CloudAccountSession> accounts,
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraColumn(

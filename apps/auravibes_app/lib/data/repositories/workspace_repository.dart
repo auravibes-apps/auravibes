@@ -12,16 +12,11 @@ import 'package:drift/drift.dart';
 /// This class provides a concrete implementation of workspace data operations
 /// using the Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
-class WorkspaceRepository {
-  WorkspaceRepository(
-    this._database, {
-    this._attachmentFileStore = const AttachmentFileStore(),
-  });
-
+class WorkspaceRepository(
   /// The database instance for workspace operations.
-  final AppDatabase _database;
-  final AttachmentFileStore _attachmentFileStore;
-
+  final AppDatabase _database, {
+  final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+}) {
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
 
@@ -362,7 +357,7 @@ class WorkspaceRepository {
 /// Base exception for workspace-related operations.
 class WorkspaceException implements Exception {
   /// Creates a new WorkspaceException.
-  const WorkspaceException(this.message, {this.localizationKey, this.cause});
+  const new(this.message, {this.localizationKey, this.cause});
 
   /// Error message describing the exception.
   /// Used as fallback when localization is unavailable.
@@ -385,17 +380,13 @@ class WorkspaceException implements Exception {
 /// Exception thrown when workspace validation fails.
 class WorkspaceValidationException extends WorkspaceException {
   /// Creates a new WorkspaceValidationException.
-  const WorkspaceValidationException(
-    super.message, {
-    super.localizationKey,
-    super.cause,
-  });
+  const new(super.message, {super.localizationKey, super.cause});
 }
 
 /// Exception thrown when a workspace is not found.
 class WorkspaceNotFoundException extends WorkspaceException {
   /// Creates a new WorkspaceNotFoundException.
-  const WorkspaceNotFoundException(this.workspaceId, {super.cause})
+  const new(this.workspaceId, {super.cause})
     : super(
         'Workspace with ID "$workspaceId" not found',
         localizationKey: LocaleKeys.workspace_management_error_not_found,

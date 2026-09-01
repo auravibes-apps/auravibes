@@ -31,7 +31,7 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
   static final _darkColors = AuraColorScheme._dark();
 
   /// Creates a Aura theme extension.
-  const AuraTheme({
+  const new({
     required this.colors,
     required this.animation,
     this.spacing = const AuraSpacingScale._standard(),
@@ -110,7 +110,7 @@ class AuraSpacingScale {
   static const _extraLarge3Value = 64.0;
 
   /// Creates a spacing scale.
-  const AuraSpacingScale({
+  const new({
     this.none = _noneValue,
     this.base = _baseValue,
     this.xs = _extraSmallValue,
@@ -123,7 +123,7 @@ class AuraSpacingScale {
   });
 
   /// Design-system standard spacing scale.
-  const AuraSpacingScale._standard()
+  const new _standard()
     : none = _noneValue,
       base = _baseValue,
       xs = _extraSmallValue,
@@ -206,7 +206,7 @@ class AuraBorderRadiusScale {
   static const _fullValue = 9999.0;
 
   /// Creates a border-radius scale.
-  const AuraBorderRadiusScale({
+  const new({
     this.none = _noneValue,
     this.sm = _smallValue,
     this.md = _mediumValue,
@@ -216,7 +216,7 @@ class AuraBorderRadiusScale {
   });
 
   /// Design-system standard border-radius scale.
-  const AuraBorderRadiusScale._standard()
+  const new _standard()
     : none = _noneValue,
       sm = _smallValue,
       md = _mediumValue,
@@ -301,7 +301,7 @@ class AuraTypographyScale {
   static const _halfway = 0.5;
 
   /// Creates a typography scale.
-  const AuraTypographyScale({
+  const new({
     this.headingFontFamily = 'Inter',
     this.bodyFontFamily = 'Inter',
     this.monoFontFamily = 'JetBrains Mono',
@@ -334,7 +334,7 @@ class AuraTypographyScale {
   });
 
   /// Design-system standard typography scale.
-  const AuraTypographyScale._standard()
+  const new _standard()
     : headingFontFamily = 'Inter',
       bodyFontFamily = 'Inter',
       monoFontFamily = 'JetBrains Mono',
@@ -543,7 +543,7 @@ class AuraColorScheme {
   static const _standardChroma = 0.2;
 
   /// Creates a [AuraColorScheme] with the specified colors.
-  const AuraColorScheme({
+  const new({
     required this.primary,
     required this.primaryVariant,
     required this.onPrimary,
@@ -574,7 +574,7 @@ class AuraColorScheme {
   });
 
   /// Creates a light color scheme.
-  AuraColorScheme._light()
+  new _light()
     : primary = DesignColors.primaryBase,
       primaryVariant = DesignColors.primaryDark,
       onPrimary = DesignColors.primaryContrast,
@@ -620,7 +620,7 @@ class AuraColorScheme {
       scrim = const Color(0x80000000);
 
   /// Creates a dark color scheme.
-  AuraColorScheme._dark()
+  new _dark()
     : primary = DesignColors.primaryLight,
       primaryVariant = DesignColors.primaryBase,
       onPrimary = Colors.black,
@@ -826,14 +826,14 @@ class AuraColorScheme {
 @immutable
 class AuraAnimationTheme {
   /// Creates an animation theme with the specified values.
-  const AuraAnimationTheme({
+  const new({
     this.fast = DesignDuration.fast,
     this.normal = DesignDuration.normal,
     this.slow = DesignDuration.slow,
   });
 
   /// Creates the standard animation theme.
-  const AuraAnimationTheme._standard()
+  const new _standard()
     : fast = DesignDuration.fast,
       normal = DesignDuration.normal,
       slow = DesignDuration.slow;

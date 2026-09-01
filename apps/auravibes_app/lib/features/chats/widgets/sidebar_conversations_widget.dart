@@ -23,18 +23,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SidebarConversationsWidget extends ConsumerWidget {
+class const SidebarConversationsWidget({
+  required final String? workspaceId,
+  super.key,
+  final int limit = 10,
+}) extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
   // ignore: unnecessary-nullable
-  const SidebarConversationsWidget({
-    required this.workspaceId,
-    super.key,
-    this.limit = 10,
-  });
-
-  final String? workspaceId;
-  final int limit;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceId = this.workspaceId;
@@ -43,9 +38,11 @@ class SidebarConversationsWidget extends ConsumerWidget {
     }
 
     final currentChatId = _currentChatId(
-      GoRouter.maybeOf(
-        context,
-      )?.routeInformationProvider.value.uri.pathSegments,
+      GoRouter.maybeOf(context)
+          ?.routeInformationProvider
+          .value
+          .uri
+          .pathSegments,
     );
     final chatListAsync = ref.watch(
       conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
@@ -108,11 +105,9 @@ class SidebarConversationsWidget extends ConsumerWidget {
   }
 }
 
-class _SidebarConversationsError<T extends Object> extends StatelessWidget {
-  const _SidebarConversationsError({required this.error});
-
-  final T error;
-
+class const _SidebarConversationsError<T extends Object>({
+  required final T error,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -131,9 +126,7 @@ class _SidebarConversationsError<T extends Object> extends StatelessWidget {
   }
 }
 
-class _SidebarConversationsSectionHeader extends StatelessWidget {
-  const _SidebarConversationsSectionHeader();
-
+class const _SidebarConversationsSectionHeader() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -149,9 +142,7 @@ class _SidebarConversationsSectionHeader extends StatelessWidget {
   }
 }
 
-class _SidebarConversationsEmptyState extends StatelessWidget {
-  const _SidebarConversationsEmptyState();
-
+class const _SidebarConversationsEmptyState() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -168,11 +159,9 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
   }
 }
 
-class _SidebarConversationsViewAllButton extends StatelessWidget {
-  const _SidebarConversationsViewAllButton({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _SidebarConversationsViewAllButton({
+  required final String workspaceId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -193,17 +182,11 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
   }
 }
 
-class _SidebarConversationTile extends ConsumerStatefulWidget {
-  const _SidebarConversationTile({
-    required this.chat,
-    required this.workspaceId,
-    required this.isActive,
-  });
-
-  final ConversationEntity chat;
-  final String workspaceId;
-  final bool isActive;
-
+class const _SidebarConversationTile({
+  required final ConversationEntity chat,
+  required final String workspaceId,
+  required final bool isActive,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_SidebarConversationTile> createState() =>
       _SidebarConversationTileState();
@@ -291,9 +274,7 @@ class _SidebarConversationTileState
   }
 }
 
-class _CompactingRow extends StatelessWidget {
-  const _CompactingRow();
-
+class const _CompactingRow() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

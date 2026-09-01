@@ -948,8 +948,8 @@ class _FakeMcpServersRepository implements McpServersRepository {
   }
 }
 
-final class _FakeEncryptionService extends EncryptionService {
-  _FakeEncryptionService() : super(SecretKeyManager());
+final class _FakeEncryptionService() extends EncryptionService {
+  this : super(SecretKeyManager());
 
   @override
   Future<String> decrypt(String encryptedBase64) async => encryptedBase64;
@@ -966,7 +966,7 @@ class _FailingMcpManagerService extends McpManagerService {
 }
 
 class _SuccessfulMcpManagerService extends McpManagerService {
-  _SuccessfulMcpManagerService({_FakeMcpManagerClient? client})
+  new({_FakeMcpManagerClient? client})
     : _client = client ?? _FakeMcpManagerClient();
 
   final _FakeMcpManagerClient _client;
@@ -1002,13 +1002,9 @@ class _SuccessfulMcpManagerService extends McpManagerService {
   }
 }
 
-class _FakeMcpManagerClient implements McpManagerClient {
-  _FakeMcpManagerClient({Stream<OAuthTokenEntity>? tokenUpdates})
-    : this._(tokenUpdates);
-
-  _FakeMcpManagerClient._(this._tokenUpdates);
-
-  final Stream<OAuthTokenEntity>? _tokenUpdates;
+class _FakeMcpManagerClient._(final Stream<OAuthTokenEntity>? _tokenUpdates)
+    implements McpManagerClient {
+  new({Stream<OAuthTokenEntity>? tokenUpdates}) : this._(tokenUpdates);
 
   @override
   Stream<OAuthTokenEntity>? get onTokenUpdate => _tokenUpdates;

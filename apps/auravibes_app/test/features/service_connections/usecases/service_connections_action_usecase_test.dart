@@ -86,4 +86,4 @@ void main() {
 }
 
 class MockDeleteServiceConnectionUsecase extends Mock
-    implements DeleteServiceConnectionUsecase {}
+    implements DeleteServiceConnectionUsecase;

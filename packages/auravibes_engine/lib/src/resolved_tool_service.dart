@@ -47,21 +47,14 @@ abstract interface class ResolvedToolProvider<TTool> {
   });
 }
 
-class AgentResolvedToolExecution<TTool> {
-  const AgentResolvedToolExecution({
-    required this.descriptor,
-    required this.tool,
-  });
+class const AgentResolvedToolExecution<TTool>({
+  required final AgentResolvedToolName descriptor,
+  required final TTool tool,
+});
 
-  final AgentResolvedToolName descriptor;
-  final TTool tool;
-}
-
-class ResolvedToolService<TTool> {
-  const ResolvedToolService({required this.provider});
-
-  final ResolvedToolProvider<TTool> provider;
-
+class const ResolvedToolService<TTool>({
+  required final ResolvedToolProvider<TTool> provider,
+}) {
   Future<Object?> call({
     required String conversationId,
     required TTool tool,

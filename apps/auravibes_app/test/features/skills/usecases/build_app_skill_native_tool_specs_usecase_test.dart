@@ -288,14 +288,11 @@ AvailableSkill _appSkill(String slug) {
 }
 
 class _MockListAvailableSkillsUsecase extends Mock
-    implements ListAvailableSkillsUsecase {}
+    implements ListAvailableSkillsUsecase;
 
-class _FakeAppSkillCandidates
-    implements ListAppSkillCredentialCandidatesUsecase {
-  const _FakeAppSkillCandidates(this.candidatesBySlug);
-
-  final Map<String, List<AppSkillCredentialCandidate>> candidatesBySlug;
-
+class const _FakeAppSkillCandidates(
+  final Map<String, List<AppSkillCredentialCandidate>> candidatesBySlug,
+) implements ListAppSkillCredentialCandidatesUsecase {
   @override
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,

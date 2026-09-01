@@ -60,11 +60,8 @@ ConversationToolState _toolState({String id = 't1'}) {
   );
 }
 
-class _MockConversationToolsNotifier extends ConversationToolsNotifier {
-  _MockConversationToolsNotifier(this.states);
-
-  final List<ConversationToolState> states;
-
+class _MockConversationToolsNotifier(final List<ConversationToolState> states)
+    extends ConversationToolsNotifier {
   @override
   Future<List<ConversationToolState>> build({
     required String workspaceId,
@@ -72,12 +69,9 @@ class _MockConversationToolsNotifier extends ConversationToolsNotifier {
   }) async => states;
 }
 
-class _MockGroupedConversationToolsNotifier
-    extends GroupedConversationToolsNotifier {
-  _MockGroupedConversationToolsNotifier(this.groups);
-
-  final List<ConversationToolsGroupWithTools> groups;
-
+class _MockGroupedConversationToolsNotifier(
+  final List<ConversationToolsGroupWithTools> groups,
+) extends GroupedConversationToolsNotifier {
   @override
   Future<List<ConversationToolsGroupWithTools>> build({
     required String workspaceId,
@@ -95,23 +89,17 @@ class _MockMcpConnectionNotifier extends McpConnectionNotifier {
   }
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.child});
-
-  final Widget child;
-
+class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
       child: TestProviderScope(
         overrides: [
           mcpConnectionProvider.overrideWith(_MockMcpConnectionNotifier.new),
-          conversationToolsProvider(
-            workspaceId: _workspaceId,
-          ).overrideWith(() => _MockConversationToolsNotifier([])),
-          groupedConversationToolsProvider(
-            workspaceId: _workspaceId,
-          ).overrideWith(() => _MockGroupedConversationToolsNotifier([])),
+          conversationToolsProvider(workspaceId: _workspaceId)
+              .overrideWith(() => _MockConversationToolsNotifier([])),
+          groupedConversationToolsProvider(workspaceId: _workspaceId)
+              .overrideWith(() => _MockGroupedConversationToolsNotifier([])),
         ],
         child: MaterialApp(
           home: Theme(

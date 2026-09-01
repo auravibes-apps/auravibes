@@ -6,9 +6,9 @@ import 'package:drift/drift.dart';
 part 'agents_dao.g.dart';
 
 @DriftAccessor(tables: [Agents, AgentSkills])
-class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
-  AgentsDao(super.attachedDatabase);
-
+class AgentsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
+    with _$AgentsDaoMixin {
   Stream<List<AgentsTable>> watchAgentsByWorkspace(String workspaceId) =>
       (select(agents)
             ..where((tbl) => tbl.workspaceId.equals(workspaceId))
@@ -82,9 +82,8 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
     )..where((tbl) => tbl.agentId.equals(agentId))).go();
 
     for (final skill in skills) {
-      final _ = await into(
-        agentSkills,
-      ).insert(skill.copyWith(agentId: Value(agentId)));
+      final _ = await into(agentSkills)
+          .insert(skill.copyWith(agentId: Value(agentId)));
     }
   }
 }

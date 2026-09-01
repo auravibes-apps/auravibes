@@ -13,7 +13,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// App shell with a responsive navigation drawer.
 class AppWithResponsiveDrawer extends StatefulWidget {
   /// Creates a responsive drawer app shell.
-  const AppWithResponsiveDrawer({
+  const new({
     required this.child,
     required this.navigationItems,
     required this.onNavigationTap,
@@ -101,11 +101,8 @@ class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
   }
 }
 
-class _WorkspaceHeader extends ConsumerWidget {
-  const _WorkspaceHeader({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _WorkspaceHeader({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspacesAsync = ref.watch(allWorkspacesProvider);

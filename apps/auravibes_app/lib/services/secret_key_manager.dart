@@ -10,7 +10,7 @@ import 'package:riverpod/riverpod.dart';
 
 class SecretKeyManager {
   static const _keyStorageKey = 'app_encryption_secret_key';
-  SecretKeyManager({
+  new({
     FlutterSecureStorage? secureStorage,
     this.storageNamespace = 'auravibes_app',
   }) : _secureStorage =

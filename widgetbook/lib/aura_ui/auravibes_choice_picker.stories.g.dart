@@ -21,8 +21,7 @@ final ChoicePickerDemoComponent =
       name: component.name ?? 'ChoicePickerDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates controlled single- and multiple-selection choices.''',
+      docComment: r'''Demonstrates controlled single- and multiple-selection choices.''',
       stories: [$ChoicePicker..$generatedName = 'ChoicePicker'],
     );
 typedef ChoicePickerDemoScenario =

@@ -20,8 +20,7 @@ final DropdownDemoComponent = Component<DropdownDemo, StoryArgs<DropdownDemo>>(
   name: component.name ?? 'DropdownDemo',
   path: component.path ?? 'aura_ui',
   docsBuilder: component.docsBuilder,
-  docComment:
-      r'''Demonstrates the Aura dropdown with selection, validation, and keyboard
+  docComment: r'''Demonstrates the Aura dropdown with selection, validation, and keyboard
 focus behavior.''',
   stories: [$Dropdown..$generatedName = 'Dropdown'],
 );

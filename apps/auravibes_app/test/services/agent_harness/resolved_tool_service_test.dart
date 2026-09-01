@@ -29,28 +29,28 @@ import 'package:riverpod/riverpod.dart';
 import '../../test_mocks.dart';
 
 class _MockLoadConversationSkillUsecase extends Mock
-    implements LoadConversationSkillUsecase {}
+    implements LoadConversationSkillUsecase;
 
 class _MockUnloadConversationSkillUsecase extends Mock
-    implements UnloadConversationSkillUsecase {}
+    implements UnloadConversationSkillUsecase;
 
 class _MockRunSkillTemplateToolUsecase extends Mock
-    implements RunSkillTemplateToolUsecase {}
+    implements RunSkillTemplateToolUsecase;
 
 class _MockRunAppSkillToolUsecase extends Mock
-    implements RunAppSkillToolUsecase {}
+    implements RunAppSkillToolUsecase;
 
 class _MockRunSkillsManagerToolUsecase extends Mock
-    implements RunSkillsManagerToolUsecase {}
+    implements RunSkillsManagerToolUsecase;
 
 class _MockListAvailableSkillsUsecase extends Mock
-    implements ListAvailableSkillsUsecase {}
+    implements ListAvailableSkillsUsecase;
 
 class _MockListAppSkillCredentialCandidatesUsecase extends Mock
-    implements ListAppSkillCredentialCandidatesUsecase {}
+    implements ListAppSkillCredentialCandidatesUsecase;
 
 class _MockSkillCredentialsRepository extends Mock
-    implements SkillCredentialsRepository {}
+    implements SkillCredentialsRepository;
 
 AvailableSkill _appAvailableSkill(String slug) {
   return AvailableSkill(
@@ -181,12 +181,11 @@ void main() {
   test('maps resolved tools to agent descriptors', () {
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
     );
 
     final descriptors = [
@@ -245,26 +244,24 @@ void main() {
 
   test('loads workspace id through injected conversation repository', () async {
     final conversationRepository = MockConversationRepository();
-    when(
-      () => conversationRepository.getConversationById('conversation-1'),
-    ).thenAnswer(
-      (_) async => ConversationEntity(
-        id: 'conversation-1',
-        title: 'Conversation',
-        workspaceId: 'workspace-1',
-        isPinned: false,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-      ),
-    );
+    when(() => conversationRepository.getConversationById('conversation-1'))
+        .thenAnswer(
+          (_) async => ConversationEntity(
+            id: 'conversation-1',
+            title: 'Conversation',
+            workspaceId: 'workspace-1',
+            isPinned: false,
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+          ),
+        );
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
       conversationRepository: conversationRepository,
     );
 
@@ -276,31 +273,28 @@ void main() {
 
   test('throws when workspace lookup is not configured or missing', () {
     final missingRepository = MockConversationRepository();
-    when(
-      () => missingRepository.getConversationById('conversation-1'),
-    ).thenAnswer((_) async => null);
+    when(() => missingRepository.getConversationById('conversation-1'))
+        .thenAnswer((_) async => null);
 
     expect(
       () => AppResolvedToolProvider(
         agentCancellationRuntime: cancellationRuntime,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) => Future.value('mcp result'),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) => Future.value('mcp result'),
       ).getConversationWorkspaceId('conversation-1'),
       throwsA(isA<StateError>()),
     );
     expect(
       () => AppResolvedToolProvider(
         agentCancellationRuntime: cancellationRuntime,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) => Future.value('mcp result'),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) => Future.value('mcp result'),
         conversationRepository: missingRepository,
       ).getConversationWorkspaceId('conversation-1'),
       throwsA(isA<StateError>()),
@@ -326,12 +320,11 @@ void main() {
     ).thenAnswer((_) => Future<void>.value());
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
       loadConversationSkillUsecase: (_) => loadSkill,
       unloadConversationSkillUsecase: (_) => unloadSkill,
     );
@@ -359,12 +352,11 @@ void main() {
   test('rejects skill control calls without a slug', () {
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
     );
 
     expect(
@@ -400,12 +392,11 @@ void main() {
     );
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
       listAvailableSkillsUsecase: (_) => listSkills,
       listAppSkillCredentialCandidatesUsecase: appCandidates,
       appSkillRegistry: const AppSkillRegistry(),
@@ -459,12 +450,11 @@ void main() {
     );
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
       runSkillTemplateToolUsecase: templateTool,
       runAppSkillToolUsecase: appSkillTool,
       runSkillsManagerToolUsecase: (_) => nativeTool,
@@ -523,12 +513,11 @@ void main() {
     ).thenReturn(operation.operation);
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
       runAppSkillToolUsecase: appSkillTool,
     );
 
@@ -549,12 +538,11 @@ void main() {
   test('throws when skill runners are not configured', () {
     final provider = AppResolvedToolProvider(
       agentCancellationRuntime: cancellationRuntime,
-      mcpToolCaller:
-          ({
-            required mcpServerId,
-            required toolIdentifier,
-            required arguments,
-          }) async => 'mcp result',
+      mcpToolCaller: ({
+        required mcpServerId,
+        required toolIdentifier,
+        required arguments,
+      }) async => 'mcp result',
     );
 
     expect(
@@ -584,12 +572,11 @@ void main() {
     () async {
       final provider = AppResolvedToolProvider(
         agentCancellationRuntime: cancellationRuntime,
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) => Future.value('mcp result'),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) => Future.value('mcp result'),
       );
 
       await expectLater(

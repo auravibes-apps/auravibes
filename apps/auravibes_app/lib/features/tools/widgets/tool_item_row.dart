@@ -16,22 +16,16 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 ///
 /// This is a more compact version of the full WorkspaceToolCard,
 /// designed for use within collapsible group cards.
-class ToolItemRow extends HookConsumerWidget {
-  const ToolItemRow({
-    required this.tool,
-    required this.workspaceId,
-    this.showDeleteButton = true,
-    super.key,
-  });
-
+class const ToolItemRow({
   /// The tool to display.
-  final WorkspaceToolEntity tool;
-  final String workspaceId;
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
 
   /// Whether to show the delete button.
   /// Should be false for MCP tools (they can't be individually deleted).
-  final bool showDeleteButton;
-
+  final bool showDeleteButton = true,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const iconSize = 36.0;
@@ -130,21 +124,13 @@ class ToolItemRow extends HookConsumerWidget {
 }
 
 /// Options section for an expanded tool item.
-class _ToolOptions extends HookConsumerWidget {
-  const _ToolOptions({
-    required this.tool,
-    required this.workspaceId,
-    required this.isEnabled,
-    required this.permissionMode,
-    required this.showDeleteButton,
-  });
-
-  final WorkspaceToolEntity tool;
-  final String workspaceId;
-  final bool isEnabled;
-  final ToolPermissionMode permissionMode;
-  final bool showDeleteButton;
-
+class const _ToolOptions({
+  required final WorkspaceToolEntity tool,
+  required final String workspaceId,
+  required final bool isEnabled,
+  required final ToolPermissionMode permissionMode,
+  required final bool showDeleteButton,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceTool = tool;

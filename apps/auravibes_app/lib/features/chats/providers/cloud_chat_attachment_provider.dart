@@ -20,7 +20,6 @@ Future<CloudChatAttachmentUsecase?> cloudChatAttachmentUsecase(
   );
   if (gateway == null) return null;
 
-  return CloudChatAttachmentAdapter(
-    gateway: CloudChatGateway(gateway),
-  ).createUsecase();
+  return CloudChatAttachmentAdapter(gateway: CloudChatGateway(gateway))
+      .createUsecase();
 }

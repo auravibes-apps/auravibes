@@ -16,24 +16,15 @@ import 'package:riverpod/riverpod.dart';
 
 const _kDefaultMaxOutputTokens = 4096;
 
-class MaybeAutoCompactConversationUsecase {
-  const MaybeAutoCompactConversationUsecase({
-    required this.compactConversationUsecase,
-    this.conversationRepository,
-    this.modelSelectionStore,
-    this.apiModelRepository,
-    this.shouldCompactConversationUsecase,
-    this.cloudShouldCompact,
-  });
-
-  final ConversationRepository? conversationRepository;
+class const MaybeAutoCompactConversationUsecase({
+  required final CompactConversationUsecase compactConversationUsecase,
+  final ConversationRepository? conversationRepository,
   final Future<ModelSelectionStore> Function(String workspaceId)?
-  modelSelectionStore;
-  final ApiModelRepository? apiModelRepository;
-  final ShouldCompactConversationUsecase? shouldCompactConversationUsecase;
-  final CompactConversationUsecase compactConversationUsecase;
-  final Future<bool> Function(String conversationId)? cloudShouldCompact;
-
+  modelSelectionStore,
+  final ApiModelRepository? apiModelRepository,
+  final ShouldCompactConversationUsecase? shouldCompactConversationUsecase,
+  final Future<bool> Function(String conversationId)? cloudShouldCompact,
+}) {
   Future<void> call({required String conversationId}) async {
     final cloudDecision = cloudShouldCompact;
     if (cloudDecision != null) {
@@ -62,9 +53,8 @@ class MaybeAutoCompactConversationUsecase {
     final modelId = conversation.modelId;
     if (modelId == null) return;
 
-    final foundModel = await (await getModelStore(
-      conversation.workspaceId,
-    )).getById(modelId);
+    final foundModel = await (await getModelStore(conversation.workspaceId))
+        .getById(modelId);
     if (foundModel == null) return;
 
     final apiModel = await models.getModelByProviderAndModelId(

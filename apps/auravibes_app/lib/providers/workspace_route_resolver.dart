@@ -75,8 +75,8 @@ abstract final class WorkspaceRouteResolver {
     if (location == null) return null;
     if (!uri.hasQuery && uri.fragment.isEmpty) return location;
 
-    return Uri.parse(
-      location,
-    ).replace(query: uri.query, fragment: uri.fragment).toString();
+    return Uri.parse(location)
+        .replace(query: uri.query, fragment: uri.fragment)
+        .toString();
   }
 }

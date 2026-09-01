@@ -31,10 +31,8 @@ abstract interface class ConversationCancellationProbe {
   Future<bool> isCancelled(Session session, int turnId);
 }
 
-class DatabaseConversationCancellationProbe
+class const DatabaseConversationCancellationProbe()
     implements ConversationCancellationProbe {
-  const DatabaseConversationCancellationProbe();
-
   @override
   Future<bool> isCancelled(Session session, int turnId) async {
     final turn = await ConversationTurn.db.findById(session, turnId);
@@ -52,21 +50,13 @@ abstract interface class ConversationProgressPublisher {
   Future<void> flush();
 }
 
-class WakeupConversationProgressPublisher
-    implements ConversationProgressPublisher {
-  WakeupConversationProgressPublisher({
-    required this.session,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.sequence,
-    required this.checkpoint,
-  });
-
-  final Session session;
-  final int workspaceId;
-  final String conversationId;
-  final int sequence;
-  final Future<void> Function(String content) checkpoint;
+class WakeupConversationProgressPublisher({
+  required final Session session,
+  required final int workspaceId,
+  required final String conversationId,
+  required final int sequence,
+  required final Future<void> Function(String content) checkpoint,
+}) implements ConversationProgressPublisher {
   final StringBuffer _content = StringBuffer();
   DateTime? _lastCheckpoint;
 
@@ -111,10 +101,9 @@ class WakeupConversationProgressPublisher
   }
 }
 
-class ConversationResponseAccumulator {
-  ConversationResponseAccumulator({required this.publisher});
-
-  final ConversationProgressPublisher publisher;
+class ConversationResponseAccumulator({
+  required final ConversationProgressPublisher publisher,
+}) {
   final StringBuffer _content = StringBuffer();
   Future<void> _pending = Future.value();
   var _contentBytes = 0;
@@ -143,9 +132,8 @@ abstract interface class ConversationAdmissionGate {
   });
 }
 
-class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
-  const DatabaseConversationAdmissionGate();
-
+class const DatabaseConversationAdmissionGate()
+    implements ConversationAdmissionGate {
   @override
   Future<T> run<T>(
     Session session, {
@@ -360,17 +348,11 @@ class DatabaseConversationAdmissionGate implements ConversationAdmissionGate {
   );
 }
 
-class ConversationAttachment {
-  const ConversationAttachment({
-    required this.mimeType,
-    required this.name,
-    required this.bytes,
-  });
-
-  final String mimeType;
-  final String name;
-  final List<int> bytes;
-}
+class const ConversationAttachment({
+  required final String mimeType,
+  required final String name,
+  required final List<int> bytes,
+});
 
 abstract interface class ConversationAttachmentReader {
   Future<List<ConversationAttachment>> read(
@@ -380,10 +362,8 @@ abstract interface class ConversationAttachmentReader {
   });
 }
 
-class ServerConversationAttachmentReader
+class const ServerConversationAttachmentReader()
     implements ConversationAttachmentReader {
-  const ServerConversationAttachmentReader();
-
   @override
   Future<List<ConversationAttachment>> read(
     Session session, {
@@ -459,9 +439,7 @@ Future<List<int>> _readSignedObject(
   }
 }
 
-class ConversationDurableJobs {
-  const ConversationDurableJobs();
-
+class const ConversationDurableJobs() {
   Future<void> enqueueTitle(
     Session session, {
     required ConversationJob parent,
@@ -516,19 +494,11 @@ class ConversationDurableJobs {
   }
 }
 
-final class ConversationCancelledException implements Exception {
-  const ConversationCancelledException();
-}
+final class const ConversationCancelledException() implements Exception;
 
-final class ConversationRateLimitException implements Exception {
-  const ConversationRateLimitException();
-}
+final class const ConversationRateLimitException() implements Exception;
 
-final class ConversationResponseLimitException implements Exception {
-  const ConversationResponseLimitException();
-}
+final class const ConversationResponseLimitException() implements Exception;
 
-final class ConversationAttachmentException implements Exception {
-  const ConversationAttachmentException(this.code);
-  final String code;
-}
+final class const ConversationAttachmentException(final String code)
+    implements Exception;

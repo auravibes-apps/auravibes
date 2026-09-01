@@ -3,7 +3,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class CloudModelGateway {
-  CloudModelGateway(this._stateGateway)
+  new(this._stateGateway)
     : _testAndSync = null,
       _create = null,
       _list = null,
@@ -15,7 +15,7 @@ class CloudModelGateway {
       _startCodexOAuth = null,
       _completeCodexOAuth = null;
 
-  CloudModelGateway.forTesting({
+  new forTesting({
     required this._stateGateway,
     this._testAndSync,
     this._create,

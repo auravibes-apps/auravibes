@@ -792,7 +792,7 @@ void main() {
 }
 
 class _FakeAttachmentFileStore extends AttachmentFileStore {
-  _FakeAttachmentFileStore({Map<String, String>? persistedPaths})
+  new({Map<String, String>? persistedPaths})
     : _persistedPaths = persistedPaths ?? const {};
 
   final Map<String, String> _persistedPaths;

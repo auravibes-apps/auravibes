@@ -168,9 +168,8 @@ void main() {
           },
         );
 
-      final token = await CodexOAuthService(
-        dio: dio,
-      ).authenticateWithDeviceCode();
+      final token = await CodexOAuthService(dio: dio)
+          .authenticateWithDeviceCode();
 
       expect(tokenPolls, 2);
       expect(token.accessToken, 'access');
@@ -192,9 +191,8 @@ void main() {
         );
 
       await expectLater(
-        CodexOAuthService(
-          dio: dio,
-        ).authenticateWithDeviceCode(isCancelled: () => true),
+        CodexOAuthService(dio: dio)
+            .authenticateWithDeviceCode(isCancelled: () => true),
         throwsA(isA<CodexOAuthCanceledException>()),
       );
     });
@@ -226,11 +224,9 @@ String _jwt(Map<String, Object?> claims) {
   return 'header.$payload.signature';
 }
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required this.onFetch});
-
-  final Future<ResponseBody> Function(RequestOptions options) onFetch;
-
+final class _FakeHttpClientAdapter({
+  required final Future<ResponseBody> Function(RequestOptions options) onFetch,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,

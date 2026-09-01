@@ -676,16 +676,14 @@ void main() {
   });
 }
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required this._onFetch});
-
-  final Future<ResponseBody> Function(
+final class _FakeHttpClientAdapter({
+  required final Future<ResponseBody> Function(
     RequestOptions,
     Stream<Uint8List>?,
     Future<void>?,
   )
-  _onFetch;
-
+  _onFetch,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,

@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// predefined text styles based on the design tokens.
 class AuraText extends StatelessWidget {
   /// Creates a Aura text widget.
-  const AuraText({
+  const new({
     required this.child,
     super.key,
     this.style = AuraTextStyle.body,

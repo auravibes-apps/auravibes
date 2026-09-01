@@ -20,9 +20,8 @@ void main() {
     () async {
       final container = ProviderContainer(
         overrides: [
-          cloudSkillStoreProvider(
-            workspaceId,
-          ).overrideWithValue(_cloudStore(const [])),
+          cloudSkillStoreProvider(workspaceId)
+              .overrideWithValue(_cloudStore(const [])),
         ],
       );
       addTearDown(container.dispose);
@@ -142,9 +141,8 @@ void main() {
   test('returns null for an unknown cloud skill id', () async {
     final container = ProviderContainer(
       overrides: [
-        cloudSkillStoreProvider(
-          workspaceId,
-        ).overrideWithValue(_cloudStore(const [])),
+        cloudSkillStoreProvider(workspaceId)
+            .overrideWithValue(_cloudStore(const [])),
       ],
     );
     addTearDown(container.dispose);
@@ -163,25 +161,23 @@ CloudSkillStore _cloudStore(List<WorkspaceResource> resources) {
       patch: ({required requestId, required operations}) =>
           throw UnimplementedError(),
       watch: (_) => Stream.value(resources),
-      putSecret:
-          ({
-            required requestId,
-            required secretKind,
-            required scope,
-            required resourceId,
-            secret,
-            expectedRevision,
-          }) => throw UnimplementedError(),
-      mutateCredential:
-          ({
-            required requestId,
-            required resourceOperation,
-            required secretKind,
-            required scope,
-            required secret,
-            required clearSecret,
-            expectedSecretRevision,
-          }) => throw UnimplementedError(),
+      putSecret: ({
+        required requestId,
+        required secretKind,
+        required scope,
+        required resourceId,
+        secret,
+        expectedRevision,
+      }) => throw UnimplementedError(),
+      mutateCredential: ({
+        required requestId,
+        required resourceOperation,
+        required secretKind,
+        required scope,
+        required secret,
+        required clearSecret,
+        expectedSecretRevision,
+      }) => throw UnimplementedError(),
     ),
     'workspace-1',
   );
@@ -220,9 +216,7 @@ WorkspaceResource _resource({
   );
 }
 
-class _FakeSkillsRepository implements SkillsRepository {
-  const _FakeSkillsRepository();
-
+class const _FakeSkillsRepository() implements SkillsRepository {
   @override
   Future<SkillEntity?> getSkillById(String skillId) async => null;
 
@@ -250,12 +244,9 @@ class _FakeSkillsRepository implements SkillsRepository {
   Future<bool> deleteSkill(String skillId) => throw UnimplementedError();
 }
 
-class _FakeAppSkillWorkspaceSettingsRepository
-    implements AppSkillWorkspaceSettingsRepository {
-  const _FakeAppSkillWorkspaceSettingsRepository({required this.enabled});
-
-  final bool enabled;
-
+class const _FakeAppSkillWorkspaceSettingsRepository({
+  required final bool enabled,
+}) implements AppSkillWorkspaceSettingsRepository {
   @override
   Future<bool> isAppSkillEnabled(
     String workspaceId,

@@ -16,7 +16,7 @@ import 'package:flutter_portal/flutter_portal.dart';
 /// search functionality, and keyboard navigation.
 class AuraDropdownSelector<T> extends StatefulWidget {
   /// Creates a Aura dropdown selector.
-  const AuraDropdownSelector({
+  const new({
     required this.options,
     super.key,
     this.value,
@@ -312,24 +312,15 @@ class _AuraDropdownSelectorState<T> extends State<AuraDropdownSelector<T>> {
   }
 }
 
-class _DropdownMenu<T> extends StatelessWidget {
-  const _DropdownMenu({
-    required this.options,
-    required this.selectedValue,
-    required this.onOptionSelected,
-    required this.header,
-    required this.footer,
-    this.optionBuilder,
-    super.key,
-  });
-
-  final List<AuraDropdownOption<T>> options;
-  final T? selectedValue;
-  final void Function(T) onOptionSelected;
-  final Widget? header;
-  final Widget? footer;
-  final Widget Function(BuildContext, AuraDropdownOption<T>)? optionBuilder;
-
+class const _DropdownMenu<T>({
+  required final List<AuraDropdownOption<T>> options,
+  required final T? selectedValue,
+  required final void Function(T) onOptionSelected,
+  required final Widget? header,
+  required final Widget? footer,
+  final Widget Function(BuildContext, AuraDropdownOption<T>)? optionBuilder,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;

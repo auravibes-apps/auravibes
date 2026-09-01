@@ -11,12 +11,11 @@ import '../../workspaces/domain/workspace_roles.dart';
 import '../../workspace_state/workspace_secret_cipher.dart';
 import '../repositories/model_connection_repository.dart';
 
-typedef ModelCatalogFetcher =
-    Future<Object?> Function(
-      Uri uri,
-      Map<String, String> headers,
-      InternetAddress address,
-    );
+typedef ModelCatalogFetcher = Future<Object?> Function(
+  Uri uri,
+  Map<String, String> headers,
+  InternetAddress address,
+);
 
 class ModelConnectionUseCases {
   ModelConnectionUseCases(
@@ -435,11 +434,7 @@ Future<Uri> requirePublicHttpsUri(
   return (await validatePublicHttpsUri(source, lookup: lookup)).uri;
 }
 
-class ValidatedPublicUri {
-  const ValidatedPublicUri(this.uri, this.address);
-  final Uri uri;
-  final InternetAddress address;
-}
+class const ValidatedPublicUri(final Uri uri, final InternetAddress address);
 
 Future<ValidatedPublicUri> validatePublicHttpsUri(
   String source, {

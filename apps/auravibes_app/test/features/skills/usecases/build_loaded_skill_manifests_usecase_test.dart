@@ -9,13 +9,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockListAvailableSkillsUsecase extends Mock
-    implements ListAvailableSkillsUsecase {}
+    implements ListAvailableSkillsUsecase;
 
 class _MockBuildSkillTemplateToolSpecsUsecase extends Mock
-    implements BuildSkillTemplateToolSpecsUsecase {}
+    implements BuildSkillTemplateToolSpecsUsecase;
 
 class _MockBuildAppSkillNativeToolSpecsUsecase extends Mock
-    implements BuildAppSkillNativeToolSpecsUsecase {}
+    implements BuildAppSkillNativeToolSpecsUsecase;
 
 void main() {
   test(

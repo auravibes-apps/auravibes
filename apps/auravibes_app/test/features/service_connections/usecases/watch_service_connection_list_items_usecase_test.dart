@@ -25,15 +25,14 @@ void main() {
       final fixture = await _createFixture();
       addTearDown(fixture.close);
       final definition =
-          await SkillCredentialDefinitionsRepository(
-            fixture.database,
-          ).createDefinition(
-            fixture.workspace.id,
-            const SkillCredentialDefinitionToCreate(
-              title: 'GitHub Token',
-              attributesJson: '{"token":{"description":"API token"}}',
-            ),
-          );
+          await SkillCredentialDefinitionsRepository(fixture.database)
+              .createDefinition(
+                fixture.workspace.id,
+                const SkillCredentialDefinitionToCreate(
+                  title: 'GitHub Token',
+                  attributesJson: '{"token":{"description":"API token"}}',
+                ),
+              );
       final _ =
           await SkillCredentialsRepository(
             database: fixture.database,
@@ -247,17 +246,11 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
   );
 }
 
-class _Fixture {
-  const _Fixture({
-    required this.database,
-    required this.encryptionService,
-    required this.workspace,
-  });
-
-  final AppDatabase database;
-  final EncryptionService encryptionService;
-  final WorkspaceEntity workspace;
-
+class const _Fixture({
+  required final AppDatabase database,
+  required final EncryptionService encryptionService,
+  required final WorkspaceEntity workspace,
+}) {
   Future<void> close() {
     return database.close();
   }

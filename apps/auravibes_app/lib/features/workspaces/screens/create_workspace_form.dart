@@ -21,11 +21,7 @@ final _logger = Logger('create_workspace_form');
 /// Form for creating a workspace.
 class CreateWorkspaceForm extends ConsumerStatefulWidget {
   /// Creates a workspace form.
-  const CreateWorkspaceForm({
-    required this.onCreated,
-    this.onAddCloudAccount,
-    super.key,
-  });
+  const new({required this.onCreated, this.onAddCloudAccount, super.key});
 
   /// Called after workspace creation succeeds.
   final ValueChanged<WorkspaceEntity> onCreated;

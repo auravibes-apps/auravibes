@@ -6,16 +6,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class CloudAccountAddScreen extends StatelessWidget {
-  const CloudAccountAddScreen({
-    required this.workspaceId,
-    required this.returnPath,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String? returnPath;
-
+class const CloudAccountAddScreen({
+  required final String workspaceId,
+  required final String? returnPath,
+  super.key,
+}) extends StatelessWidget {
   String get _returnPath {
     final path = returnPath;
     if (path != null && path.isNotEmpty) return path;

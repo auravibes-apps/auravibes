@@ -2,11 +2,7 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudTurnUsecase {
-  const CloudTurnUsecase(this._gateway);
-
-  final CloudChatGateway _gateway;
-
+class const CloudTurnUsecase(final CloudChatGateway _gateway) {
   Future<TurnSnapshot> get(String turnId) => _gateway.getTurn(turnId: turnId);
 
   Future<ConversationMutationResult> decide({

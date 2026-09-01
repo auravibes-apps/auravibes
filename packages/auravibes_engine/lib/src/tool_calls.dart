@@ -25,62 +25,35 @@ extension AgentToolCallLifecycleX on AgentToolCallLifecycle {
   };
 }
 
-class AgentMessageToolCall {
-  const AgentMessageToolCall({
-    required this.id,
-    required this.name,
-    required this.argumentsRaw,
-    this.lifecycle = AgentToolCallLifecycle.pending,
-  });
-
-  final String id;
-  final String name;
-  final String argumentsRaw;
-  final AgentToolCallLifecycle lifecycle;
-
+class const AgentMessageToolCall({
+  required final String id,
+  required final String name,
+  required final String argumentsRaw,
+  final AgentToolCallLifecycle lifecycle = AgentToolCallLifecycle.pending,
+}) {
   bool get isPending => lifecycle.isPending;
   bool get isResolved => lifecycle.isResolved;
 }
 
-class AgentToolMessage {
-  const AgentToolMessage({
-    required this.id,
-    required this.isUser,
-    this.toolCalls = const [],
-  });
+class const AgentToolMessage({
+  required final String id,
+  required final bool isUser,
+  final List<AgentMessageToolCall> toolCalls = const [],
+});
 
-  final String id;
-  final bool isUser;
-  final List<AgentMessageToolCall> toolCalls;
-}
+class const AgentToolToCall<TTool extends Object>({
+  required final TTool tool,
+  required final String id,
+  required final String argumentsRaw,
+});
 
-class AgentToolToCall<TTool extends Object> {
-  const AgentToolToCall({
-    required this.tool,
-    required this.id,
-    required this.argumentsRaw,
-  });
-
-  final TTool tool;
-  final String id;
-  final String argumentsRaw;
-}
-
-class LoadLatestMessageToolCallsResult<TTool extends Object> {
-  const LoadLatestMessageToolCallsResult({
-    required this.messageId,
-    required this.hasToolCalls,
-    required this.toolsToRun,
-    required this.notFoundToolCallIds,
-    required this.previouslyFailedToolCallIds,
-  });
-
-  final String messageId;
-  final bool hasToolCalls;
-  final List<AgentToolToCall<TTool>> toolsToRun;
-  final List<String> notFoundToolCallIds;
-  final List<String> previouslyFailedToolCallIds;
-}
+class const LoadLatestMessageToolCallsResult<TTool extends Object>({
+  required final String messageId,
+  required final bool hasToolCalls,
+  required final List<AgentToolToCall<TTool>> toolsToRun,
+  required final List<String> notFoundToolCallIds,
+  required final List<String> previouslyFailedToolCallIds,
+});
 
 abstract interface class AgentToolCallProvider<TTool extends Object> {
   Future<List<AgentToolMessage>> loadMessages(String conversationId);
@@ -91,11 +64,9 @@ abstract interface class AgentToolCallProvider<TTool extends Object> {
   });
 }
 
-class AgentToolCallLoader<TTool extends Object> {
-  const AgentToolCallLoader({required this.provider});
-
-  final AgentToolCallProvider<TTool> provider;
-
+class const AgentToolCallLoader<TTool extends Object>({
+  required final AgentToolCallProvider<TTool> provider,
+}) {
   Future<LoadLatestMessageToolCallsResult<TTool>> call({
     required String conversationId,
   }) async {

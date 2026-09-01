@@ -22,8 +22,7 @@ final PopupMenuButtonDemoComponent =
       name: component.name ?? 'PopupMenuButtonDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates a labeled popup-menu trigger and its action entries.''',
+      docComment: r'''Demonstrates a labeled popup-menu trigger and its action entries.''',
       stories: [$PopupMenuButton..$generatedName = 'PopupMenuButton'],
     );
 typedef PopupMenuButtonDemoScenario =

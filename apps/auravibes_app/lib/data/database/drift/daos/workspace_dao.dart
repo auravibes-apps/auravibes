@@ -10,7 +10,7 @@ part 'workspace_dao.g.dart';
 class WorkspaceDao extends DatabaseAccessor<AppDatabase>
     with _$WorkspaceDaoMixin {
   /// Creates a new [WorkspaceDao] instance.
-  WorkspaceDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Retrieves all workspaces from the database.
   ///

@@ -44,9 +44,7 @@ Future<void> main() async {
   });
 }
 
-class AppFlavorResolver {
-  AppFlavorResolver._();
-
+class AppFlavorResolver._() {
   static Flavor resolve(String? flavorName) {
     if (flavorName == null) {
       throw StateError('appFlavor is not initialized');
@@ -56,9 +54,7 @@ class AppFlavorResolver {
   }
 }
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
-
+class const MyApp({super.key}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeAsync = ref.watch(themeProvider);

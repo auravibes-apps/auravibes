@@ -22,18 +22,12 @@ export 'tool_permission_selector.dart';
 /// - Tool name and description.
 /// - Toggle indicator (check circle / empty circle / blocked).
 /// - Permission selector when tool is enabled.
-class ConversationToolTile extends HookConsumerWidget {
-  const ConversationToolTile({
-    required this.toolState,
-    required this.workspaceId,
-    this.conversationId,
-    super.key,
-  });
-
-  final ConversationToolState toolState;
-  final String workspaceId;
-  final String? conversationId;
-
+class const ConversationToolTile({
+  required final ConversationToolState toolState,
+  required final String workspaceId,
+  final String? conversationId,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final toolsNotifier = ref.read(
@@ -87,17 +81,11 @@ class ConversationToolTile extends HookConsumerWidget {
   }
 }
 
-class _ToolSummaryRow extends StatelessWidget {
-  const _ToolSummaryRow({
-    required this.toolState,
-    required this.isEnabled,
-    required this.isWorkspaceEnabled,
-  });
-
-  final ConversationToolState toolState;
-  final bool isEnabled;
-  final bool isWorkspaceEnabled;
-
+class const _ToolSummaryRow({
+  required final ConversationToolState toolState,
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraPadding(
@@ -126,17 +114,11 @@ class _ToolSummaryRow extends StatelessWidget {
   }
 }
 
-class _ToolIcon extends StatelessWidget {
-  const _ToolIcon({
-    required this.toolState,
-    required this.isEnabled,
-    required this.isWorkspaceEnabled,
-  });
-
-  final ConversationToolState toolState;
-  final bool isEnabled;
-  final bool isWorkspaceEnabled;
-
+class const _ToolIcon({
+  required final ConversationToolState toolState,
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const iconSize = 40.0;
@@ -157,15 +139,10 @@ class _ToolIcon extends StatelessWidget {
   }
 }
 
-class _ToolDescription extends StatelessWidget {
-  const _ToolDescription({
-    required this.toolState,
-    required this.isWorkspaceEnabled,
-  });
-
-  final ConversationToolState toolState;
-  final bool isWorkspaceEnabled;
-
+class const _ToolDescription({
+  required final ConversationToolState toolState,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
@@ -197,15 +174,10 @@ class _ToolDescription extends StatelessWidget {
   }
 }
 
-class _ToolToggleIcon extends StatelessWidget {
-  const _ToolToggleIcon({
-    required this.isEnabled,
-    required this.isWorkspaceEnabled,
-  });
-
-  final bool isEnabled;
-  final bool isWorkspaceEnabled;
-
+class const _ToolToggleIcon({
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isWorkspaceEnabled) {
@@ -222,12 +194,10 @@ class _ToolToggleIcon extends StatelessWidget {
   }
 }
 
-class _ToolPermissionSection extends StatelessWidget {
-  const _ToolPermissionSection({required this.value, required this.onChanged});
-
-  final ToolPermissionMode value;
-  final void Function(ToolPermissionMode?) onChanged;
-
+class const _ToolPermissionSection({
+  required final ToolPermissionMode value,
+  required final void Function(ToolPermissionMode?) onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(

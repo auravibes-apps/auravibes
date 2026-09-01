@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 /// its content when the scroll axis is unbounded.
 class AuraList extends StatelessWidget {
   /// Creates a scrollable Aura list.
-  const AuraList({
+  const new({
     required this.children,
     this.direction = Axis.vertical,
     this.alignment = CrossAxisAlignment.stretch,

@@ -13,20 +13,18 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
-  WorkspaceSubscribeRequest._({
-    required this.workspaceId,
-    required this.afterSequence,
-    required this.activeTurnIds,
-  });
-
-  factory WorkspaceSubscribeRequest({
+abstract class WorkspaceSubscribeRequest._({
+  required var int workspaceId,
+  required var int afterSequence,
+  required var List<String> activeTurnIds,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required int afterSequence,
     required List<String> activeTurnIds,
   }) = _WorkspaceSubscribeRequestImpl;
 
-  factory WorkspaceSubscribeRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceSubscribeRequest(
@@ -37,12 +35,6 @@ abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
       ),
     );
   }
-
-  int workspaceId;
-
-  int afterSequence;
-
-  List<String> activeTurnIds;
 
   /// Returns a shallow copy of this [WorkspaceSubscribeRequest]
   /// with some or all fields replaced by the given arguments.
@@ -68,16 +60,17 @@ abstract class WorkspaceSubscribeRequest implements _i1.SerializableModel {
   }
 }
 
-class _WorkspaceSubscribeRequestImpl extends WorkspaceSubscribeRequest {
-  _WorkspaceSubscribeRequestImpl({
-    required int workspaceId,
-    required int afterSequence,
-    required List<String> activeTurnIds,
-  }) : super._(
-         workspaceId: workspaceId,
-         afterSequence: afterSequence,
-         activeTurnIds: activeTurnIds,
-       );
+class _WorkspaceSubscribeRequestImpl({
+  required int workspaceId,
+  required int afterSequence,
+  required List<String> activeTurnIds,
+}) extends WorkspaceSubscribeRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        afterSequence: afterSequence,
+        activeTurnIds: activeTurnIds,
+      );
 
   /// Returns a shallow copy of this [WorkspaceSubscribeRequest]
   /// with some or all fields replaced by the given arguments.

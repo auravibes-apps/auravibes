@@ -5,12 +5,10 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_pressable.stories.g.dart';
 
-class _PressableInput {
-  const _PressableInput({required this.label, required this.enabled});
-
-  final String label;
-  final bool enabled;
-}
+class const _PressableInput({
+  required final String label,
+  required final bool enabled,
+});
 
 const component = ComponentMeta(name: 'AuraPressable');
 const meta = Meta(PressableDemo.new, argsType: _PressableInput.new);
@@ -41,12 +39,11 @@ final $Pressable = _Story(
 );
 
 /// Demonstrates keyboard and pointer feedback on a reusable pressable surface.
-class PressableDemo extends StatefulWidget {
-  const PressableDemo({required this.label, required this.enabled, super.key});
-
-  final String label;
-  final bool enabled;
-
+class const PressableDemo({
+  required final String label,
+  required final bool enabled,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<PressableDemo> createState() => _PressableDemoState();
 }

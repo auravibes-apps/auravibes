@@ -10,7 +10,7 @@ import 'package:dio/dio.dart';
 import 'package:riverpod/riverpod.dart';
 
 class OAuthCredentialService {
-  OAuthCredentialService(this._serviceConnectionRepository, {Dio? dio})
+  new(this._serviceConnectionRepository, {Dio? dio})
     : _dio =
           dio ??
           Dio(

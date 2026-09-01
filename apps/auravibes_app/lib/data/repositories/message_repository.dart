@@ -17,16 +17,11 @@ const _messageContentCannotBeEmpty = 'Message content cannot be empty';
 /// This class provides a concrete implementation of message data operations
 /// using Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
-class MessageRepository {
-  MessageRepository(
-    this._database, {
-    this._attachmentFileStore = const AttachmentFileStore(),
-  });
-
+class MessageRepository(
   /// The database instance for message operations.
-  final AppDatabase _database;
-  final AttachmentFileStore _attachmentFileStore;
-
+  final AppDatabase _database, {
+  final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+}) {
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) async {
@@ -533,7 +528,7 @@ class MessageException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
   /// Creates a new MessageException.
-  const MessageException(this.message, [this.cause]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -552,13 +547,13 @@ class MessageException implements Exception {
 /// Exception thrown when message validation fails.
 class MessageValidationException extends MessageException {
   /// Creates a new MessageValidationException.
-  const MessageValidationException(super.message, [super.cause]);
+  const new(super.message, [super.cause]);
 }
 
 /// Exception thrown when a message is not found.
 class MessageNotFoundException extends MessageException {
   /// Creates a new MessageNotFoundException.
-  const MessageNotFoundException(this.messageId, [Exception? cause])
+  const new(this.messageId, [Exception? cause])
     : super('Message with ID "$messageId" not found', cause);
 
   /// ID of the message that was not found.

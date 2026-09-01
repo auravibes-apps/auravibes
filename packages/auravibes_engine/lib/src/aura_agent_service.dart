@@ -8,35 +8,33 @@ import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 import 'package:auravibes_engine/src/tool_call_actions.dart';
 import 'package:auravibes_engine/src/tool_resume_service.dart';
 
-class AuraAgentService<TTool extends Object> {
-  AuraAgentService({
-    required AgentDataProvider data,
-    required AgentModelProvider models,
-    required AgentLoopToolProvider loopTools,
-    required ApproveToolCallProvider<TTool> approvals,
-    required SkipToolCallProvider skips,
-    required StopPendingToolCallsProvider stopPending,
-    required AgentToolResumeProvider resume,
-    required AgentSendQueueRuntime sendQueueRuntime,
-    required AgentCancellationEffects cancellationEffects,
-    required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
-  }) : agent = AgentNamespace(
-         data: data,
-         models: models,
-         tools: loopTools,
-         sendQueueRuntime: sendQueueRuntime,
-         cancellationEffects: cancellationEffects,
-         rateLimitRetryRuntime: rateLimitRetryRuntime,
-       ),
-       conversations = ConversationsNamespace(data: data),
-       tools = ToolsNamespace<TTool>(
-         approvals: approvals,
-         skips: skips,
-         stopPending: stopPending,
-         resume: resume,
-       );
-
-  final AgentNamespace agent;
-  final ConversationsNamespace conversations;
-  final ToolsNamespace<TTool> tools;
+class AuraAgentService<TTool extends Object>({
+  required AgentDataProvider data,
+  required AgentModelProvider models,
+  required AgentLoopToolProvider loopTools,
+  required ApproveToolCallProvider<TTool> approvals,
+  required SkipToolCallProvider skips,
+  required StopPendingToolCallsProvider stopPending,
+  required AgentToolResumeProvider resume,
+  required AgentSendQueueRuntime sendQueueRuntime,
+  required AgentCancellationEffects cancellationEffects,
+  required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
+}) {
+  final AgentNamespace agent = AgentNamespace(
+    data: data,
+    models: models,
+    tools: loopTools,
+    sendQueueRuntime: sendQueueRuntime,
+    cancellationEffects: cancellationEffects,
+    rateLimitRetryRuntime: rateLimitRetryRuntime,
+  );
+  final ConversationsNamespace conversations = ConversationsNamespace(
+    data: data,
+  );
+  final ToolsNamespace<TTool> tools = ToolsNamespace<TTool>(
+    approvals: approvals,
+    skips: skips,
+    stopPending: stopPending,
+    resume: resume,
+  );
 }

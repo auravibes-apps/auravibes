@@ -97,18 +97,12 @@ void main() {
   });
 }
 
-class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
-  _FakeApproveToolCallProvider({
-    required this.resolvedTool,
-    this.runResult,
-    this.runError,
-    this.isCancelled = false,
-  });
-
-  final String? resolvedTool;
-  final Object? runResult;
-  final Object? runError;
-  final bool isCancelled;
+class _FakeApproveToolCallProvider({
+  required final String? resolvedTool,
+  final Object? runResult,
+  final Object? runError,
+  final bool isCancelled = false,
+}) implements ApproveToolCallProvider<String> {
   final calls = <String>[];
   final updates = <AgentToolResultStatus>[];
   bool didResume = false;
@@ -195,10 +189,8 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
   }) {}
 }
 
-class _FakeSkipToolCallProvider implements SkipToolCallProvider {
-  _FakeSkipToolCallProvider({required this.shouldSkip});
-
-  final bool shouldSkip;
+class _FakeSkipToolCallProvider({required final bool shouldSkip})
+    implements SkipToolCallProvider {
   final calls = <String>[];
   bool didResume = false;
 

@@ -12,7 +12,7 @@ part 'mcp_servers_dao.g.dart';
 class McpServersDao extends DatabaseAccessor<AppDatabase>
     with _$McpServersDaoMixin {
   /// Creates a new [McpServersDao] instance.
-  McpServersDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Get all MCP servers for a workspace.
   ///

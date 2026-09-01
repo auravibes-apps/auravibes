@@ -166,13 +166,11 @@ class ActiveSubAgentRuntime extends Notifier<Map<String, Set<String>>>
   bool isStopped(String childId) => _stoppedChildIds.contains(childId);
 }
 
-class _AppSubAgentRequestHandle implements SubAgentRequestHandle {
-  const _AppSubAgentRequestHandle(this._runtime, this._parentId, this._childId);
-
-  final ActiveSubAgentRuntime _runtime;
-  final String _parentId;
-  final String _childId;
-
+class const _AppSubAgentRequestHandle(
+  final ActiveSubAgentRuntime _runtime,
+  final String _parentId,
+  final String _childId,
+) implements SubAgentRequestHandle {
   @override
   Future<SubAgentCompletionStatus> get completion =>
       _runtime.waitForCompletion(_childId);

@@ -136,15 +136,12 @@ void main() {
         monitoringService: monitoringService,
       );
 
-      when(
-        () => conversationRepository.getConversationById('conversation-1'),
-      ).thenAnswer((_) async => _conversation);
-      when(
-        () => messageRepository.getMessagesByConversation('conversation-1'),
-      ).thenAnswer((_) async => [_userMessage]);
-      when(
-        () => selectPromptMessagesUsecase.call('conversation-1'),
-      ).thenAnswer((_) async => [_userMessage]);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => [_userMessage]);
+      when(() => selectPromptMessagesUsecase.call('conversation-1'))
+          .thenAnswer((_) async => [_userMessage]);
       when(
         () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
           'model-1',
@@ -156,12 +153,10 @@ void main() {
           workspaceId: 'workspace-1',
         ),
       ).thenAnswer((_) async => const []);
-      when(
-        () => messageRepository.createMessage(any()),
-      ).thenAnswer((_) async => _unfinishedAssistantMessage);
-      when(
-        () => messageRepository.patchMessage(any(), any()),
-      ).thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
     });
 
     test('uses model stream as lastResult', () async {
@@ -312,8 +307,7 @@ void main() {
           const [
             ChatMessage(
               role: ChatMessageRole.user,
-              content:
-                  '<skill><name>Research</name><skill_manifest>{&quot;revision&quot;:&quot;r1&quot;}</skill_manifest></skill>',
+              content: '<skill><name>Research</name><skill_manifest>{&quot;revision&quot;:&quot;r1&quot;}</skill_manifest></skill>',
               metadata: {'kind': skillContextMetadataKind},
             ),
           ],
@@ -436,9 +430,9 @@ void main() {
       expect(updatedResults.single.entityText, 'Done');
 
       final created =
-          verify(
-                () => messageRepository.createMessage(captureAny()),
-              ).captured.single
+          verify(() => messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
               as MessageToCreate;
       expect(created.content, 'Done');
       expect(created.metadata, isNull);
@@ -479,17 +473,17 @@ void main() {
       expect(result.hasToolCalls, isTrue);
 
       final created =
-          verify(
-                () => messageRepository.createMessage(captureAny()),
-              ).captured.single
+          verify(() => messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
               as MessageToCreate;
       expect(created.content, isEmpty);
       expect(created.metadata, isNotNull);
 
       final rawMetadata = created.metadata;
-      final metadata =
-          jsonDecode(rawMetadata ?? fail('Expected tool call metadata'))
-              as Map<String, dynamic>;
+      final metadata = jsonDecode(
+        rawMetadata ?? fail('Expected tool call metadata'),
+      ) as Map<String, dynamic>;
       final toolCalls = metadata['toolCalls'] as List<dynamic>;
       expect(toolCalls, hasLength(1));
       expect(toolCalls.single, containsPair('id', 'tool-1'));
@@ -526,9 +520,9 @@ void main() {
       expect(updatedResults.single.entityText, 'Done');
 
       final created =
-          verify(
-                () => messageRepository.createMessage(captureAny()),
-              ).captured.single
+          verify(() => messageRepository.createMessage(captureAny()))
+                  .captured
+                  .single
               as MessageToCreate;
       expect(created.content, 'Done');
       expect(created.metadata, isNull);
@@ -1029,9 +1023,8 @@ void main() {
     );
 
     test('allows empty stream after tool resume', () async {
-      when(
-        () => conversationRepository.getConversationById('conversation-1'),
-      ).thenAnswer((_) async => _conversation);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
       when(
         () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
           'model-1',
@@ -1163,15 +1156,13 @@ void main() {
         monitoringService: monitoringService,
       );
 
-      when(
-        () => selectPromptMessagesUsecase.call('conversation-1'),
-      ).thenAnswer((_) async => [_userMessage]);
+      when(() => selectPromptMessagesUsecase.call('conversation-1'))
+          .thenAnswer((_) async => [_userMessage]);
     });
 
     test('throws when conversation not found', () {
-      when(
-        () => conversationRepository.getConversationById('conversation-1'),
-      ).thenAnswer((_) async => null);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => null);
 
       expect(
         usecase.call(conversationId: 'conversation-1'),
@@ -1188,12 +1179,10 @@ void main() {
         createdAt: DateTime(2025),
         updatedAt: DateTime(2025),
       );
-      when(
-        () => conversationRepository.getConversationById('conversation-1'),
-      ).thenAnswer((_) async => noModelConversation);
-      when(
-        () => messageRepository.getMessagesByConversation('conversation-1'),
-      ).thenAnswer((_) async => []);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => noModelConversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
 
       expect(
         usecase.call(conversationId: 'conversation-1'),
@@ -1202,12 +1191,10 @@ void main() {
     });
 
     test('throws when model not found', () {
-      when(
-        () => conversationRepository.getConversationById('conversation-1'),
-      ).thenAnswer((_) async => _conversation);
-      when(
-        () => messageRepository.getMessagesByConversation('conversation-1'),
-      ).thenAnswer((_) async => []);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
       when(
         () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
           'model-1',
@@ -1224,12 +1211,10 @@ void main() {
       final records = <LogRecord>[];
       final subscription = Logger.root.onRecord.listen(records.add);
       addTearDown(subscription.cancel);
-      when(
-        () => conversationRepository.getConversationById('conversation-1'),
-      ).thenAnswer((_) async => _conversation);
-      when(
-        () => messageRepository.getMessagesByConversation('conversation-1'),
-      ).thenAnswer((_) async => []);
+      when(() => conversationRepository.getConversationById('conversation-1'))
+          .thenAnswer((_) async => _conversation);
+      when(() => messageRepository.getMessagesByConversation('conversation-1'))
+          .thenAnswer((_) async => []);
       when(
         () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
           'model-1',
@@ -1241,12 +1226,10 @@ void main() {
           workspaceId: 'workspace-1',
         ),
       ).thenAnswer((_) async => const []);
-      when(
-        () => messageRepository.createMessage(any()),
-      ).thenAnswer((_) async => _unfinishedAssistantMessage);
-      when(
-        () => messageRepository.patchMessage(any(), any()),
-      ).thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
       when(
         () => chatbotService.sendMessage(
           _model,
@@ -1294,9 +1277,8 @@ void main() {
     test(
       'throws StateError when stream completes empty without cancellation',
       () async {
-        when(
-          () => conversationRepository.getConversationById('conversation-1'),
-        ).thenAnswer((_) async => _conversation);
+        when(() => conversationRepository.getConversationById('conversation-1'))
+            .thenAnswer((_) async => _conversation);
         when(
           () => workspaceModelSelectionsRepository
               .getWorkspaceModelSelectionById('model-1'),
@@ -1307,12 +1289,10 @@ void main() {
             workspaceId: 'workspace-1',
           ),
         ).thenAnswer((_) async => []);
-        when(
-          () => messageRepository.createMessage(any()),
-        ).thenAnswer((_) async => _unfinishedAssistantMessage);
-        when(
-          () => messageRepository.patchMessage(any(), any()),
-        ).thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(() => messageRepository.createMessage(any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
+        when(() => messageRepository.patchMessage(any(), any()))
+            .thenAnswer((_) async => _unfinishedAssistantMessage);
         when(
           () => chatbotService.sendMessage(
             _model,
@@ -1431,9 +1411,8 @@ void main() {
         monitoringService: monitoringService,
       );
 
-      when(
-        () => conversationRepository.getConversationById(any()),
-      ).thenAnswer((_) async => _conversation);
+      when(() => conversationRepository.getConversationById(any()))
+          .thenAnswer((_) async => _conversation);
       when(
         () => workspaceModelSelectionsRepository.getWorkspaceModelSelectionById(
           any(),
@@ -1445,24 +1424,19 @@ void main() {
           workspaceId: any(named: 'workspaceId'),
         ),
       ).thenAnswer((_) async => const []);
-      when(
-        () => selectPromptMessagesUsecase.call(any()),
-      ).thenAnswer((_) async => [_userMessage]);
-      when(
-        () => messageRepository.createMessage(any()),
-      ).thenAnswer((_) async => _unfinishedAssistantMessage);
-      when(
-        () => messageRepository.patchMessage(any(), any()),
-      ).thenAnswer((_) async => _unfinishedAssistantMessage);
-      when(
-        () => messageRepository.getMessagesByConversation(any()),
-      ).thenAnswer((_) async => [_userMessage]);
+      when(() => selectPromptMessagesUsecase.call(any()))
+          .thenAnswer((_) async => [_userMessage]);
+      when(() => messageRepository.createMessage(any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.patchMessage(any(), any()))
+          .thenAnswer((_) async => _unfinishedAssistantMessage);
+      when(() => messageRepository.getMessagesByConversation(any()))
+          .thenAnswer((_) async => [_userMessage]);
     });
 
     test('uses selectPromptMessages for prompt construction', () async {
-      when(
-        () => selectPromptMessagesUsecase.call(any()),
-      ).thenAnswer((_) async => [_userMessage]);
+      when(() => selectPromptMessagesUsecase.call(any()))
+          .thenAnswer((_) async => [_userMessage]);
       when(
         () => chatbotService.sendMessage(
           _model,
@@ -1483,9 +1457,9 @@ void main() {
       final _ = await usecase.call(conversationId: 'conversation-1');
 
       expect(
-        () => verify(
-          () => selectPromptMessagesUsecase.call('conversation-1'),
-        ).called(1),
+        () =>
+            verify(() => selectPromptMessagesUsecase.call('conversation-1'))
+                .called(1),
         returnsNormally,
       );
       expect(
@@ -1577,11 +1551,9 @@ final _model = WorkspaceModelSelectionWithConnectionEntity(
   ),
 );
 
-class _QueuedBuildSkillContextMessagesService
-    implements BuildSkillContextMessagesService {
-  _QueuedBuildSkillContextMessagesService(this.responses);
-
-  final List<List<ChatMessage>> responses;
+class _QueuedBuildSkillContextMessagesService(
+  final List<List<ChatMessage>> responses,
+) implements BuildSkillContextMessagesService {
   int calls = 0;
 
   @override
@@ -1591,12 +1563,9 @@ class _QueuedBuildSkillContextMessagesService
   }) async => responses[calls++];
 }
 
-class _FakeBuildSkillContextMessagesService
-    implements BuildSkillContextMessagesService {
-  const _FakeBuildSkillContextMessagesService(this.messages);
-
-  final List<ChatMessage> messages;
-
+class const _FakeBuildSkillContextMessagesService(
+  final List<ChatMessage> messages,
+) implements BuildSkillContextMessagesService {
   @override
   Future<List<ChatMessage>> call({
     required String conversationId,

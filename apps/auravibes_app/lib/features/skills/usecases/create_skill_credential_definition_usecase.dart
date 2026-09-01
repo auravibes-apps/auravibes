@@ -8,16 +8,11 @@ import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usec
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class CreateSkillCredentialDefinitionUsecase {
-  const CreateSkillCredentialDefinitionUsecase(
-    this._skillCredentialDefinitionsRepository, {
-    this.cloudStore,
-  });
-  final CloudSkillStore? cloudStore;
-
+class const CreateSkillCredentialDefinitionUsecase(
   final SkillCredentialDefinitionsRepository?
-  _skillCredentialDefinitionsRepository;
-
+  _skillCredentialDefinitionsRepository, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<SkillCredentialDefinitionEntity> call(
     String workspaceId,
     SkillCredentialDefinitionToCreate definition,

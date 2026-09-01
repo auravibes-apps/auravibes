@@ -13,11 +13,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CloudAccountRegisterForm extends ConsumerStatefulWidget {
-  const CloudAccountRegisterForm({required this.onSignedIn, super.key});
-
-  final ValueChanged<CloudAccountSession> onSignedIn;
-
+class const CloudAccountRegisterForm({
+  required final ValueChanged<CloudAccountSession> onSignedIn,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<CloudAccountRegisterForm> createState() =>
       _CloudAccountRegisterFormState();

@@ -9,39 +9,29 @@ import 'package:auravibes_app/features/skills/usecases/run_skill_template_tool_u
 import 'package:auravibes_app/features/skills/usecases/unload_conversation_skill_usecase.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-typedef ListSkillCredentials =
-    Future<Map<String, Object?>> Function({
-      required String conversationId,
-      required String workspaceId,
-      required Map<String, dynamic> arguments,
-    });
+typedef ListSkillCredentials = Future<Map<String, Object?>> Function({
+  required String conversationId,
+  required String workspaceId,
+  required Map<String, dynamic> arguments,
+});
 
-class RunSkillCommandUsecase {
-  const RunSkillCommandUsecase({
-    required this.listAvailableSkillsUsecase,
-    required this.loadConversationSkillUsecase,
-    required this.unloadConversationSkillUsecase,
-    required this.buildLoadedSkillManifestsUsecase,
-    required this.buildSkillTemplateToolSpecsUsecase,
-    required this.buildAppSkillNativeToolSpecsUsecase,
-    required this.runSkillTemplateToolUsecase,
-    required this.runAppSkillToolUsecase,
-    required this.listSkillCredentials,
-  });
-
-  final ListAvailableSkillsUsecase Function(String workspaceId)
-  listAvailableSkillsUsecase;
-  final LoadConversationSkillUsecase Function(String workspaceId)
-  loadConversationSkillUsecase;
-  final UnloadConversationSkillUsecase Function(String workspaceId)
-  unloadConversationSkillUsecase;
-  final BuildLoadedSkillManifestsUsecase buildLoadedSkillManifestsUsecase;
-  final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecsUsecase;
-  final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecsUsecase;
-  final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase;
-  final RunAppSkillToolUsecase runAppSkillToolUsecase;
-  final ListSkillCredentials listSkillCredentials;
-
+class const RunSkillCommandUsecase({
+  required final ListAvailableSkillsUsecase Function(String workspaceId)
+  listAvailableSkillsUsecase,
+  required final LoadConversationSkillUsecase Function(String workspaceId)
+  loadConversationSkillUsecase,
+  required final UnloadConversationSkillUsecase Function(String workspaceId)
+  unloadConversationSkillUsecase,
+  required final BuildLoadedSkillManifestsUsecase
+  buildLoadedSkillManifestsUsecase,
+  required final BuildSkillTemplateToolSpecsUsecase
+  buildSkillTemplateToolSpecsUsecase,
+  required final BuildAppSkillNativeToolSpecsUsecase
+  buildAppSkillNativeToolSpecsUsecase,
+  required final RunSkillTemplateToolUsecase runSkillTemplateToolUsecase,
+  required final RunAppSkillToolUsecase runAppSkillToolUsecase,
+  required final ListSkillCredentials listSkillCredentials,
+}) {
   Future<Map<String, Object?>> call({
     required String conversationId,
     required String workspaceId,

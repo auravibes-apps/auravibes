@@ -554,12 +554,9 @@ class _FakeMessageRepository implements MessageRepository {
   }
 }
 
-class _FakeWorkspaceModelSelectionRepository
-    implements WorkspaceModelSelectionRepository {
-  _FakeWorkspaceModelSelectionRepository({this.selectedModel});
-
-  final WorkspaceModelSelectionWithConnectionEntity? selectedModel;
-
+class _FakeWorkspaceModelSelectionRepository({
+  final WorkspaceModelSelectionWithConnectionEntity? selectedModel,
+}) implements WorkspaceModelSelectionRepository {
   @override
   Future<void> createWorkspaceModelSelections(
     List<WorkspaceModelSelectionToCreate> workspaceModelSelections,
@@ -597,11 +594,8 @@ class _FakeWorkspaceModelSelectionRepository
   }
 }
 
-class _FakeApiModelRepository implements ApiModelRepository {
-  _FakeApiModelRepository({required this.models});
-
-  final List<ApiModelEntity> models;
-
+class _FakeApiModelRepository({required final List<ApiModelEntity> models})
+    implements ApiModelRepository {
   @override
   Future<List<ApiModelEntity>> getAllModels() async => models;
 

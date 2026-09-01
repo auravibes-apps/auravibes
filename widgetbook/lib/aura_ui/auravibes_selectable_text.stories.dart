@@ -6,39 +6,22 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_selectable_text.stories.g.dart';
 
-class _SelectableTextInput {
-  const _SelectableTextInput({
-    required this.data,
-    required this.style,
-    required this.tint,
-    required this.textAlign,
-    required this.maxLines,
-    required this.cursorWidth,
-    required this.cursorHeight,
-    required this.cursorRadius,
-    required this.cursorTint,
-    required this.showCursor,
-    required this.autofocus,
-    required this.minLines,
-    required this.enableTap,
-    required this.enableSelectionChanged,
-  });
-
-  final String data;
-  final AuraTextStyle style;
-  final AuraTint? tint;
-  final TextAlign? textAlign;
-  final int? maxLines;
-  final double cursorWidth;
-  final double? cursorHeight;
-  final Radius? cursorRadius;
-  final AuraTint? cursorTint;
-  final bool showCursor;
-  final bool autofocus;
-  final int? minLines;
-  final bool enableTap;
-  final bool enableSelectionChanged;
-}
+class const _SelectableTextInput({
+  required final String data,
+  required final AuraTextStyle style,
+  required final AuraTint? tint,
+  required final TextAlign? textAlign,
+  required final int? maxLines,
+  required final double cursorWidth,
+  required final double? cursorHeight,
+  required final Radius? cursorRadius,
+  required final AuraTint? cursorTint,
+  required final bool showCursor,
+  required final bool autofocus,
+  required final int? minLines,
+  required final bool enableTap,
+  required final bool enableSelectionChanged,
+});
 
 const component = ComponentMeta(name: 'AuraSelectableText');
 const meta = Meta(SelectableTextDemo.new, argsType: _SelectableTextInput.new);
@@ -140,40 +123,23 @@ final $DefaultSelectableText = _Story(
 );
 
 /// Demonstrates selectable text callbacks and cursor configuration.
-class SelectableTextDemo extends StatefulWidget {
-  const SelectableTextDemo({
-    super.key,
-    required this.data,
-    required this.style,
-    required this.tint,
-    required this.textAlign,
-    required this.maxLines,
-    required this.cursorWidth,
-    required this.cursorHeight,
-    required this.cursorRadius,
-    required this.cursorTint,
-    required this.showCursor,
-    required this.autofocus,
-    required this.minLines,
-    required this.enableTap,
-    required this.enableSelectionChanged,
-  });
-
-  final String data;
-  final AuraTextStyle style;
-  final AuraTint? tint;
-  final TextAlign? textAlign;
-  final int? maxLines;
-  final double cursorWidth;
-  final double? cursorHeight;
-  final Radius? cursorRadius;
-  final AuraTint? cursorTint;
-  final bool showCursor;
-  final bool autofocus;
-  final int? minLines;
-  final bool enableTap;
-  final bool enableSelectionChanged;
-
+class const SelectableTextDemo({
+  super.key,
+  required final String data,
+  required final AuraTextStyle style,
+  required final AuraTint? tint,
+  required final TextAlign? textAlign,
+  required final int? maxLines,
+  required final double cursorWidth,
+  required final double? cursorHeight,
+  required final Radius? cursorRadius,
+  required final AuraTint? cursorTint,
+  required final bool showCursor,
+  required final bool autofocus,
+  required final int? minLines,
+  required final bool enableTap,
+  required final bool enableSelectionChanged,
+}) extends StatefulWidget {
   @override
   State<SelectableTextDemo> createState() => _SelectableTextDemoState();
 }

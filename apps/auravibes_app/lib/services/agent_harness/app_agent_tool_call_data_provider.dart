@@ -5,10 +5,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/riverpod.dart';
 
-class AppAgentToolCallDataProvider implements agent.AgentToolDecisionProvider {
-  const AppAgentToolCallDataProvider({required this.messageRepository});
-  final MessageRepository messageRepository;
-
+class const AppAgentToolCallDataProvider({
+  required final MessageRepository messageRepository,
+}) implements agent.AgentToolDecisionProvider {
   @override
   Future<List<agent.AgentToolCallState>?> getToolCallStates(
     String messageId,
@@ -33,8 +32,9 @@ class AppAgentToolCallDataProvider implements agent.AgentToolDecisionProvider {
   }
 }
 
-class AgentToolDecisionService extends agent.AgentToolDecisionRunner {
-  AgentToolDecisionService({required MessageRepository messageRepository})
+class AgentToolDecisionService({required MessageRepository messageRepository})
+    extends agent.AgentToolDecisionRunner {
+  this
     : super(
         provider: AppAgentToolCallDataProvider(
           messageRepository: messageRepository,

@@ -50,11 +50,7 @@ McpServerEntity _mcpServer({String id = 'mcp-1'}) {
   );
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.child});
-
-  final Widget child;
-
+class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

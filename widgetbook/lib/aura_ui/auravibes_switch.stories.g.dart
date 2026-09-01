@@ -20,8 +20,7 @@ final SwitchDemoComponent = Component<SwitchDemo, StoryArgs<SwitchDemo>>(
   name: component.name ?? 'SwitchDemo',
   path: component.path ?? 'aura_ui',
   docsBuilder: component.docsBuilder,
-  docComment:
-      r'''Demonstrates a controlled switch with size, loading, and disabled states.''',
+  docComment: r'''Demonstrates a controlled switch with size, loading, and disabled states.''',
   stories: [$Default..$generatedName = 'Default'],
 );
 typedef SwitchDemoScenario = Scenario<SwitchDemo, SwitchDemoArgs>;

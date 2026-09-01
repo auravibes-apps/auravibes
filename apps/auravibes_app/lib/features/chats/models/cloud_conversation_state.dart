@@ -1,34 +1,23 @@
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 /// The server-authoritative projection of one shared cloud conversation.
-class CloudConversationState {
-  const CloudConversationState({
-    required this.conversation,
-    required this.messages,
-    required this.pendingMessages,
-    required this.activeExecution,
-    required this.toolCalls,
-    required this.sequence,
-    this.activeAssistantContent = '',
-  });
-
-  factory CloudConversationState.fromSnapshot(ConversationSnapshot snapshot) =>
-      CloudConversationState(
-        conversation: snapshot.conversation,
-        messages: snapshot.messages,
-        pendingMessages: snapshot.pendingMessages,
-        activeExecution: snapshot.activeExecution,
-        toolCalls: snapshot.toolCalls,
-        sequence: snapshot.sequence,
-      );
-
-  final ConversationProjectionView conversation;
-  final List<ConversationMessageView> messages;
-  final List<ConversationMessageView> pendingMessages;
-  final ConversationExecutionView? activeExecution;
-  final List<ConversationToolCallView> toolCalls;
-  final int sequence;
-  final String activeAssistantContent;
+class const CloudConversationState({
+  required final ConversationProjectionView conversation,
+  required final List<ConversationMessageView> messages,
+  required final List<ConversationMessageView> pendingMessages,
+  required final ConversationExecutionView? activeExecution,
+  required final List<ConversationToolCallView> toolCalls,
+  required final int sequence,
+  final String activeAssistantContent = '',
+}) {
+  factory fromSnapshot(ConversationSnapshot snapshot) => CloudConversationState(
+    conversation: snapshot.conversation,
+    messages: snapshot.messages,
+    pendingMessages: snapshot.pendingMessages,
+    activeExecution: snapshot.activeExecution,
+    toolCalls: snapshot.toolCalls,
+    sequence: snapshot.sequence,
+  );
 
   /// Applies only the next event in the durable ordering.
   CloudConversationState? apply(ConversationStreamEvent event) {

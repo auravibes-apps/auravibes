@@ -195,9 +195,8 @@ class _GroupedToolsControllerFixture {
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),
         ).overrideWithValue(toolsGroupsRepository),
-        workspaceToolsProvider(
-          _workspace.id,
-        ).overrideWith(() => workspaceToolsNotifier),
+        workspaceToolsProvider(_workspace.id)
+            .overrideWith(() => workspaceToolsNotifier),
         mcpConnectionProvider.overrideWith(() => mcpNotifier),
         workspaceSessionForRouteProvider(_workspace.id).overrideWithValue(
           const AsyncData(
@@ -242,11 +241,8 @@ final _mcpGroup = ToolsGroupEntity(
   mcpServerId: 'server-1',
 );
 
-class _FakeWorkspaceToolsNotifier extends WorkspaceToolsNotifier {
-  _FakeWorkspaceToolsNotifier(this.tools);
-
-  final List<WorkspaceToolEntity> tools;
-
+class _FakeWorkspaceToolsNotifier(final List<WorkspaceToolEntity> tools)
+    extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }

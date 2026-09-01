@@ -5,8 +5,8 @@ import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class MockSecretKeyManager extends SecretKeyManager {
-  MockSecretKeyManager() : super();
+class MockSecretKeyManager() extends SecretKeyManager {
+  this : super();
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async {

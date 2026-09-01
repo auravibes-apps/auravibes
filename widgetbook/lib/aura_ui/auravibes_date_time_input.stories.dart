@@ -5,19 +5,12 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_date_time_input.stories.g.dart';
 
-class _DateTimeInputControls {
-  const _DateTimeInputControls({
-    required this.enableDate,
-    required this.enableTime,
-    required this.enabled,
-    required this.initialValue,
-  });
-
-  final bool enableDate;
-  final bool enableTime;
-  final bool enabled;
-  final DateTime initialValue;
-}
+class const _DateTimeInputControls({
+  required final bool enableDate,
+  required final bool enableTime,
+  required final bool enabled,
+  required final DateTime initialValue,
+});
 
 const component = ComponentMeta(name: 'AuraDateTimeInput');
 const meta = Meta(DateTimeInputDemo.new, argsType: _DateTimeInputControls.new);
@@ -63,20 +56,13 @@ final $DateAndTime = _Story(
 );
 
 /// Demonstrates the controlled date and time picker in its supported modes.
-class DateTimeInputDemo extends StatefulWidget {
-  const DateTimeInputDemo({
-    super.key,
-    required this.enableDate,
-    required this.enableTime,
-    required this.enabled,
-    required this.initialValue,
-  });
-
-  final bool enableDate;
-  final bool enableTime;
-  final bool enabled;
-  final DateTime initialValue;
-
+class const DateTimeInputDemo({
+  super.key,
+  required final bool enableDate,
+  required final bool enableTime,
+  required final bool enabled,
+  required final DateTime initialValue,
+}) extends StatefulWidget {
   @override
   State<DateTimeInputDemo> createState() => _DateTimeInputDemoState();
 }

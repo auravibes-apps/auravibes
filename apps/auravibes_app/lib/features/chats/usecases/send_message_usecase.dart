@@ -26,21 +26,20 @@ import 'package:uuid/v7.dart';
 
 final _logger = Logger('cloud_conversation_send');
 
-typedef ContinueAgentTurn =
-    Future<AgentIterationDecision> Function({
-      required String conversationId,
-      required AgentIterationContext context,
-    });
+typedef ContinueAgentTurn = Future<AgentIterationDecision> Function({
+  required String conversationId,
+  required AgentIterationContext context,
+});
 
 class SendMessageUsecase {
-  const SendMessageUsecase({
+  const new({
     required ContinueAgentTurn this.continueAgentTurn,
     required this.messageRepository,
     required this.getConversationBusyStateUsecase,
     required this.sendQueueRuntime,
   }) : cloudSend = null;
 
-  const SendMessageUsecase.cloud(
+  const new cloud(
     Future<void> Function(String conversationId, ChatDraft draft)
     this.cloudSend,
   ) : continueAgentTurn = null,

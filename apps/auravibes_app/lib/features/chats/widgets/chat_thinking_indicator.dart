@@ -3,9 +3,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-class ChatThinkingIndicator extends StatelessWidget {
-  const ChatThinkingIndicator({super.key});
-
+class const ChatThinkingIndicator({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

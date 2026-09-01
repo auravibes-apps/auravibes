@@ -12,27 +12,28 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationMessage implements _i1.SerializableModel {
-  ConversationMessage._({
-    this.id,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.stableId,
-    this.turnId,
-    required this.role,
-    required this.kind,
-    required this.status,
-    required this.content,
-    this.metadataJson,
-    this.pendingOrder,
-    this.pendingAt,
-    this.compactedThroughMessageId,
-    required this.revision,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory ConversationMessage({
+abstract class ConversationMessage._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int conversationId,
+  required var String stableId,
+  var int? turnId,
+  required var String role,
+  required var String kind,
+  required var String status,
+  required var String content,
+  var String? metadataJson,
+  var int? pendingOrder,
+  var DateTime? pendingAt,
+  var int? compactedThroughMessageId,
+  required var int revision,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -51,7 +52,7 @@ abstract class ConversationMessage implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _ConversationMessageImpl;
 
-  factory ConversationMessage.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationMessage(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -78,41 +79,6 @@ abstract class ConversationMessage implements _i1.SerializableModel {
       ),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int conversationId;
-
-  String stableId;
-
-  int? turnId;
-
-  String role;
-
-  String kind;
-
-  String status;
-
-  String content;
-
-  String? metadataJson;
-
-  int? pendingOrder;
-
-  DateTime? pendingAt;
-
-  int? compactedThroughMessageId;
-
-  int revision;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationMessage]
   /// with some or all fields replaced by the given arguments.
@@ -165,44 +131,45 @@ abstract class ConversationMessage implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationMessageImpl extends ConversationMessage {
-  _ConversationMessageImpl({
-    int? id,
-    required int workspaceId,
-    required int conversationId,
-    required String stableId,
-    int? turnId,
-    required String role,
-    required String kind,
-    required String status,
-    required String content,
-    String? metadataJson,
-    int? pendingOrder,
-    DateTime? pendingAt,
-    int? compactedThroughMessageId,
-    required int revision,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         stableId: stableId,
-         turnId: turnId,
-         role: role,
-         kind: kind,
-         status: status,
-         content: content,
-         metadataJson: metadataJson,
-         pendingOrder: pendingOrder,
-         pendingAt: pendingAt,
-         compactedThroughMessageId: compactedThroughMessageId,
-         revision: revision,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-       );
+class _ConversationMessageImpl({
+  int? id,
+  required int workspaceId,
+  required int conversationId,
+  required String stableId,
+  int? turnId,
+  required String role,
+  required String kind,
+  required String status,
+  required String content,
+  String? metadataJson,
+  int? pendingOrder,
+  DateTime? pendingAt,
+  int? compactedThroughMessageId,
+  required int revision,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+}) extends ConversationMessage {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        stableId: stableId,
+        turnId: turnId,
+        role: role,
+        kind: kind,
+        status: status,
+        content: content,
+        metadataJson: metadataJson,
+        pendingOrder: pendingOrder,
+        pendingAt: pendingAt,
+        compactedThroughMessageId: compactedThroughMessageId,
+        revision: revision,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [ConversationMessage]
   /// with some or all fields replaced by the given arguments.

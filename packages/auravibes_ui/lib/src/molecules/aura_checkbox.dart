@@ -11,7 +11,7 @@ export 'aura_checkbox_list_tile.dart';
 /// An Aura checkbox that follows the const-first design system.
 class AuraCheckbox extends StatelessWidget {
   /// Creates an Aura checkbox.
-  const AuraCheckbox({
+  const new({
     required this.value,
     required this.onChanged,
     super.key,
@@ -68,11 +68,8 @@ class AuraCheckbox extends StatelessWidget {
   }
 }
 
-class _CheckboxMarkPainter extends CustomPainter {
-  const _CheckboxMarkPainter({required this.color});
-
-  final Color color;
-
+class const _CheckboxMarkPainter({required final Color color})
+    extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
@@ -94,21 +91,13 @@ class _CheckboxMarkPainter extends CustomPainter {
   }
 }
 
-class _CheckboxInteraction extends StatefulWidget {
-  const _CheckboxInteraction({
-    required this.value,
-    required this.isDisabled,
-    required this.onChanged,
-    required this.autofocus,
-    required this.child,
-  });
-
-  final bool value;
-  final bool isDisabled;
-  final ValueChanged<bool>? onChanged;
-  final bool autofocus;
-  final Widget child;
-
+class const _CheckboxInteraction({
+  required final bool value,
+  required final bool isDisabled,
+  required final ValueChanged<bool>? onChanged,
+  required final bool autofocus,
+  required final Widget child,
+}) extends StatefulWidget {
   @override
   State<_CheckboxInteraction> createState() => _CheckboxInteractionState();
 }
@@ -174,11 +163,10 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
   }
 }
 
-class _CheckboxFocusState extends InheritedWidget {
-  const _CheckboxFocusState({required this.isFocused, required super.child});
-
-  final bool isFocused;
-
+class const _CheckboxFocusState({
+  required final bool isFocused,
+  required super.child,
+}) extends InheritedWidget {
   static bool of(BuildContext context) {
     final state = context
         .dependOnInheritedWidgetOfExactType<_CheckboxFocusState>();
@@ -192,21 +180,14 @@ class _CheckboxFocusState extends InheritedWidget {
   }
 }
 
-class _CheckboxVisual extends StatelessWidget {
+class const _CheckboxVisual({
+  required final bool value,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final bool isFocused,
+}) extends StatelessWidget {
   static const _boxSize = 24.0;
   static const _checkMarkSize = 12.0;
-  const _CheckboxVisual({
-    required this.value,
-    required this.tint,
-    required this.disabled,
-    required this.isFocused,
-  });
-
-  final bool value;
-  final AuraTint? tint;
-  final bool disabled;
-  final bool isFocused;
-
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;

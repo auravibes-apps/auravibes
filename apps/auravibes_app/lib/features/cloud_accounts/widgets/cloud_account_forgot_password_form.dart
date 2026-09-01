@@ -10,11 +10,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CloudAccountForgotPasswordForm extends ConsumerStatefulWidget {
-  const CloudAccountForgotPasswordForm({required this.onFinished, super.key});
-
-  final VoidCallback onFinished;
-
+class const CloudAccountForgotPasswordForm({
+  required final VoidCallback onFinished,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<CloudAccountForgotPasswordForm> createState() =>
       _CloudAccountForgotPasswordFormState();

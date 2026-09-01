@@ -16,37 +16,31 @@ import 'package:auravibes_engine/auravibes_engine.dart'
     hide BuildPromptChatMessages;
 import 'package:riverpod/riverpod.dart';
 
-class AppAgentContinuationAdapter
-    implements
-        AgentContinuationProvider<
-          WorkspaceModelSelectionWithConnectionEntity,
-          MessageEntity,
-          ChatMessage,
-          ToolSpec
-        > {
-  AppAgentContinuationAdapter({
-    required this.conversationRepository,
-    required this.modelSelectionStore,
-    required this.apiModelRepository,
-    required this.selectPromptMessagesUsecase,
-    required this.buildSkillContextMessagesUsecase,
-    this.loadConversationToolSpecsUsecase,
-    this.loadConversationToolSpecsUsecaseForWorkspace,
-  }) : assert(
-         loadConversationToolSpecsUsecase != null ||
-             loadConversationToolSpecsUsecaseForWorkspace != null,
-         'A tool spec usecase is required.',
-       );
-
-  final ConversationRepository conversationRepository;
-  final Future<ModelSelectionStore> Function(String workspaceId)
-  modelSelectionStore;
-  final ApiModelRepository apiModelRepository;
-  final SelectPromptMessagesUsecase selectPromptMessagesUsecase;
-  final BuildSkillContextMessagesService buildSkillContextMessagesUsecase;
-  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase;
+class AppAgentContinuationAdapter({
+  required final ConversationRepository conversationRepository,
+  required final Future<ModelSelectionStore> Function(String workspaceId)
+  modelSelectionStore,
+  required final ApiModelRepository apiModelRepository,
+  required final SelectPromptMessagesUsecase selectPromptMessagesUsecase,
+  required final BuildSkillContextMessagesService
+  buildSkillContextMessagesUsecase,
+  final LoadConversationToolSpecsUsecase? loadConversationToolSpecsUsecase,
   final LoadConversationToolSpecsUsecase Function(String workspaceId)?
-  loadConversationToolSpecsUsecaseForWorkspace;
+  loadConversationToolSpecsUsecaseForWorkspace,
+}) implements
+    AgentContinuationProvider<
+      WorkspaceModelSelectionWithConnectionEntity,
+      MessageEntity,
+      ChatMessage,
+      ToolSpec
+    > {
+  this
+    : assert(
+        loadConversationToolSpecsUsecase != null ||
+            loadConversationToolSpecsUsecaseForWorkspace != null,
+        'A tool spec usecase is required.',
+      );
+
   final Map<String, String> _workspaceIdsByModelId = {};
 
   @override

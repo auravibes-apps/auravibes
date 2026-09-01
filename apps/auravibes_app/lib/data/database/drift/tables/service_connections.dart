@@ -46,24 +46,18 @@ class ServiceConnections extends Table with TableMixin {
   BoolColumn get isEnabled => boolean().withDefault(const Constant(true))();
 }
 
-enum ServiceConnectionKindTable {
+enum ServiceConnectionKindTable(final String value) {
   modelProvider('model_provider'),
   mcpServer('mcp_server'),
   gmail('gmail'),
   customHttp('custom_http'),
   skillCredential('skill_credential'),
-  appSkillCredential('app_skill_credential');
-
-  const ServiceConnectionKindTable(this.value);
-  final String value;
+  appSkillCredential('app_skill_credential'),
 }
 
-enum ServiceAuthenticationTypeTable {
+enum ServiceAuthenticationTypeTable(final String value) {
   none('none'),
   apiKey('api_key'),
   bearerToken('bearer_token'),
-  oauth2('oauth2');
-
-  const ServiceAuthenticationTypeTable(this.value);
-  final String value;
+  oauth2('oauth2'),
 }

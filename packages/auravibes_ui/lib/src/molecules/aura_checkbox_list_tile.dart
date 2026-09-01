@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 /// subtitle.
 class AuraCheckboxListTile extends StatelessWidget {
   /// Creates an Aura checkbox list tile.
-  const AuraCheckboxListTile({
+  const new({
     required this.value,
     required this.onChanged,
     required this.title,

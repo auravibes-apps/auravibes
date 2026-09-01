@@ -6,11 +6,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_repository_p
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-class SelectPromptMessagesUsecase {
-  const SelectPromptMessagesUsecase({required this.messageRepository});
-
-  final MessageRepository messageRepository;
-
+class const SelectPromptMessagesUsecase({
+  required final MessageRepository messageRepository,
+}) {
   Future<List<MessageEntity>> call(String conversationId) async {
     final messages = await messageRepository.getMessagesByConversation(
       conversationId,

@@ -11,33 +11,36 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
     as _i2;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
     as _i3;
+
 import 'dart:typed_data' as _i4;
 
-abstract class WorkspaceSecret implements _i1.SerializableModel {
-  WorkspaceSecret._({
-    this.id,
-    required this.workspaceId,
-    required this.secretKind,
-    required this.scope,
-    required this.ownerUserId,
-    required this.resourceId,
-    required this.ciphertext,
-    required this.nonce,
-    required this.authenticationTag,
-    required this.algorithm,
-    required this.keyVersion,
-    this.displaySuffix,
-    required this.revision,
-    required this.createdAt,
-    required this.updatedAt,
-    this.deletedAt,
-  });
-
-  factory WorkspaceSecret({
+abstract class WorkspaceSecret._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var _i2.WorkspaceSecretKind secretKind,
+  required var _i3.WorkspaceSecretScope scope,
+  required var String ownerUserId,
+  required var String resourceId,
+  required var _i4.ByteData ciphertext,
+  required var _i4.ByteData nonce,
+  required var _i4.ByteData authenticationTag,
+  required var String algorithm,
+  required var int keyVersion,
+  var String? displaySuffix,
+  required var int revision,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+  var DateTime? deletedAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required _i2.WorkspaceSecretKind secretKind,
@@ -56,7 +59,7 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
     DateTime? deletedAt,
   }) = _WorkspaceSecretImpl;
 
-  factory WorkspaceSecret.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return WorkspaceSecret(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -90,41 +93,6 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  _i2.WorkspaceSecretKind secretKind;
-
-  _i3.WorkspaceSecretScope scope;
-
-  String ownerUserId;
-
-  String resourceId;
-
-  _i4.ByteData ciphertext;
-
-  _i4.ByteData nonce;
-
-  _i4.ByteData authenticationTag;
-
-  String algorithm;
-
-  int keyVersion;
-
-  String? displaySuffix;
-
-  int revision;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
-
-  DateTime? deletedAt;
 
   /// Returns a shallow copy of this [WorkspaceSecret]
   /// with some or all fields replaced by the given arguments.
@@ -176,44 +144,45 @@ abstract class WorkspaceSecret implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _WorkspaceSecretImpl extends WorkspaceSecret {
-  _WorkspaceSecretImpl({
-    int? id,
-    required int workspaceId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
-    required String ownerUserId,
-    required String resourceId,
-    required _i4.ByteData ciphertext,
-    required _i4.ByteData nonce,
-    required _i4.ByteData authenticationTag,
-    required String algorithm,
-    required int keyVersion,
-    String? displaySuffix,
-    required int revision,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    DateTime? deletedAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         secretKind: secretKind,
-         scope: scope,
-         ownerUserId: ownerUserId,
-         resourceId: resourceId,
-         ciphertext: ciphertext,
-         nonce: nonce,
-         authenticationTag: authenticationTag,
-         algorithm: algorithm,
-         keyVersion: keyVersion,
-         displaySuffix: displaySuffix,
-         revision: revision,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-         deletedAt: deletedAt,
-       );
+class _WorkspaceSecretImpl({
+  int? id,
+  required int workspaceId,
+  required _i2.WorkspaceSecretKind secretKind,
+  required _i3.WorkspaceSecretScope scope,
+  required String ownerUserId,
+  required String resourceId,
+  required _i4.ByteData ciphertext,
+  required _i4.ByteData nonce,
+  required _i4.ByteData authenticationTag,
+  required String algorithm,
+  required int keyVersion,
+  String? displaySuffix,
+  required int revision,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  DateTime? deletedAt,
+}) extends WorkspaceSecret {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        secretKind: secretKind,
+        scope: scope,
+        ownerUserId: ownerUserId,
+        resourceId: resourceId,
+        ciphertext: ciphertext,
+        nonce: nonce,
+        authenticationTag: authenticationTag,
+        algorithm: algorithm,
+        keyVersion: keyVersion,
+        displaySuffix: displaySuffix,
+        revision: revision,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        deletedAt: deletedAt,
+      );
 
   /// Returns a shallow copy of this [WorkspaceSecret]
   /// with some or all fields replaced by the given arguments.

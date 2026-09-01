@@ -153,6 +153,4 @@ class ModelCatalogRepository {
   );
 }
 
-class _StaleCoordinator implements Exception {
-  const _StaleCoordinator();
-}
+class const _StaleCoordinator() implements Exception;

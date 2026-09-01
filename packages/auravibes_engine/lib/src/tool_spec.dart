@@ -4,7 +4,7 @@ import 'dart:collection';
 // ignore_for_file: avoid_equals_and_hash_code_on_mutable_classes
 
 class ToolSpec {
-  ToolSpec({
+  new({
     required this.name,
     required this.description,
     required Map<String, Object?> inputJsonSchema,
@@ -55,9 +55,8 @@ bool _jsonEquals(Object? left, Object? right) {
   }
   if (left is List<Object?> && right is List<Object?>) {
     return left.length == right.length &&
-        Iterable<int>.generate(
-          left.length,
-        ).every((index) => _jsonEquals(left[index], right[index]));
+        Iterable<int>.generate(left.length)
+            .every((index) => _jsonEquals(left[index], right[index]));
   }
   return left == right;
 }

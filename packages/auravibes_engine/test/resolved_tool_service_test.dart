@@ -140,10 +140,8 @@ ResolvedToolService<AgentResolvedToolName> _usecase() {
   );
 }
 
-class _FakeResolvedToolProvider
+class const _FakeResolvedToolProvider()
     implements ResolvedToolProvider<AgentResolvedToolName> {
-  const _FakeResolvedToolProvider();
-
   @override
   AgentResolvedToolExecution<AgentResolvedToolName> toExecution(
     AgentResolvedToolName tool,

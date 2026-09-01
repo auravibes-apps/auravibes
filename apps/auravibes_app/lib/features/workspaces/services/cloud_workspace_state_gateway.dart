@@ -5,16 +5,15 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-typedef WorkspaceStateRead =
-    Future<ReadWorkspaceStateResponse> Function(
-      ReadWorkspaceStateRequest request,
-    );
-typedef WorkspaceStreamSubscribe =
-    Stream<WorkspaceStreamEnvelope> Function(WorkspaceSubscribeRequest request);
-typedef WorkspaceSecretPut =
-    Future<PutWorkspaceSecretResponse> Function(
-      PutWorkspaceSecretRequest request,
-    );
+typedef WorkspaceStateRead = Future<ReadWorkspaceStateResponse> Function(
+  ReadWorkspaceStateRequest request,
+);
+typedef WorkspaceStreamSubscribe = Stream<WorkspaceStreamEnvelope> Function(
+  WorkspaceSubscribeRequest request,
+);
+typedef WorkspaceSecretPut = Future<PutWorkspaceSecretResponse> Function(
+  PutWorkspaceSecretRequest request,
+);
 typedef WorkspaceCredentialMutation =
     Future<MutateWorkspaceCredentialResponse> Function(
       MutateWorkspaceCredentialRequest request,
@@ -26,7 +25,7 @@ class CloudWorkspaceStateGateway {
   static const _stateReadTimeout = Duration(seconds: 15);
   static const _initialReconnectDelay = Duration(milliseconds: 250);
   static const _maxReconnectDelay = Duration(seconds: 8);
-  CloudWorkspaceStateGateway({
+  new({
     required Client client,
     required CloudWorkspaceRef workspace,
     this.readTimeout = _stateReadTimeout,
@@ -40,7 +39,7 @@ class CloudWorkspaceStateGateway {
        _mutateCredential = null,
        _delay = _defaultDelay;
 
-  CloudWorkspaceStateGateway.forTesting({
+  new forTesting({
     required this._workspace,
     required this._readState,
     required this._subscribe,

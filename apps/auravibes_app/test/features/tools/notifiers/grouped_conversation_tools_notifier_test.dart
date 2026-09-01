@@ -241,9 +241,8 @@ class _GroupedConversationToolsFixture {
             LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
           ),
         ).overrideWithValue(workspaceToolsRepository),
-        conversationToolsRepositoryProvider(
-          'workspace-1',
-        ).overrideWithValue(conversationToolsRepository),
+        conversationToolsRepositoryProvider('workspace-1')
+            .overrideWithValue(conversationToolsRepository),
         syncSkillToolPermissionsUsecaseProvider.overrideWithValue(
           NoopSyncSkillToolPermissionsUsecase(),
         ),

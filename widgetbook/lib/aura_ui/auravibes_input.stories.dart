@@ -23,35 +23,20 @@ const _iconValues = <IconData>[
   Icons.lock,
 ];
 
-class _InputControls {
-  const _InputControls({
-    required this.initialValue,
-    required this.placeholderText,
-    required this.hintText,
-    required this.prefixIcon,
-    required this.suffixIcon,
-    required this.size,
-    required this.state,
-    required this.keyboardType,
-    required this.enabled,
-    required this.maxLines,
-    required this.maxLength,
-    required this.semanticLabel,
-  });
-
-  final String? initialValue;
-  final String? placeholderText;
-  final String? hintText;
-  final IconData? prefixIcon;
-  final IconData? suffixIcon;
-  final AuraInputSize size;
-  final AuraInputState state;
-  final TextInputType? keyboardType;
-  final bool enabled;
-  final int maxLines;
-  final int? maxLength;
-  final String semanticLabel;
-}
+class const _InputControls({
+  required final String? initialValue,
+  required final String? placeholderText,
+  required final String? hintText,
+  required final IconData? prefixIcon,
+  required final IconData? suffixIcon,
+  required final AuraInputSize size,
+  required final AuraInputState state,
+  required final TextInputType? keyboardType,
+  required final bool enabled,
+  required final int maxLines,
+  required final int? maxLength,
+  required final String semanticLabel,
+});
 
 const component = ComponentMeta(name: 'AuraInput');
 const meta = Meta(AuraInput.new, argsType: _InputControls.new);

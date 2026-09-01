@@ -13,24 +13,15 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 
-class RunAppSkillToolUsecase {
-  RunAppSkillToolUsecase(
-    this._appSkillRegistry,
-    this._serviceConnectionRepository,
-    this._skillCredentialsRepository,
-    this._listAppSkillCredentialCandidatesUsecase,
-    this._appSkillExecutor,
-    this._oauthCredentialService,
-  );
-
-  final AppSkillRegistry _appSkillRegistry;
-  final ServiceConnectionRepository _serviceConnectionRepository;
-  final SkillCredentialsRepository _skillCredentialsRepository;
+class RunAppSkillToolUsecase(
+  final AppSkillRegistry _appSkillRegistry,
+  final ServiceConnectionRepository _serviceConnectionRepository,
+  final SkillCredentialsRepository _skillCredentialsRepository,
   final ListAppSkillCredentialCandidatesUsecase
-  _listAppSkillCredentialCandidatesUsecase;
-  final AppSkillExecutor _appSkillExecutor;
-  final OAuthCredentialService? _oauthCredentialService;
-
+  _listAppSkillCredentialCandidatesUsecase,
+  final AppSkillExecutor _appSkillExecutor,
+  final OAuthCredentialService? _oauthCredentialService,
+) {
   Future<Object?> call({
     required String workspaceId,
     required String skillSlug,

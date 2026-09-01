@@ -441,19 +441,16 @@ final _callbackSkill = AppSkillDefinition(
       title: 'Fetch',
       description: 'Fetch.',
       callback: (input, context) {
-        return context(
-          UrlRequest(url: input['url'] as String),
-        ).then<Object?>((response) => response.body);
+        return context(UrlRequest(url: input['url'] as String))
+            .then<Object?>((response) => response.body);
       },
     ),
   ],
 );
 
-class _FakeSkillHttpClient {
-  const _FakeSkillHttpClient(this.run);
-
-  final UrlResponse Function(UrlRequest request) run;
-
+class const _FakeSkillHttpClient(
+  final UrlResponse Function(UrlRequest request) run,
+) {
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
     return CancelableOperation.fromFuture(Future.value(run(request)));
   }

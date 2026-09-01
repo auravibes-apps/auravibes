@@ -9,19 +9,12 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/create_skill_usecase.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class DuplicateSkillUsecase {
-  const DuplicateSkillUsecase(
-    this._skillsRepository,
-    this._skillTemplateToolsRepository,
-    this._createSkillUsecase, {
-    this.cloudStore,
-  });
-  final CloudSkillStore? cloudStore;
-
-  final SkillsRepository? _skillsRepository;
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
-  final CreateSkillUsecase _createSkillUsecase;
-
+class const DuplicateSkillUsecase(
+  final SkillsRepository? _skillsRepository,
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository,
+  final CreateSkillUsecase _createSkillUsecase, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<SkillEntity> call(String skillId) async {
     final cloud = cloudStore;
     final skill = cloud != null

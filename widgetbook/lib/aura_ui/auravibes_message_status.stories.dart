@@ -5,21 +5,13 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_message_status.stories.g.dart';
 
-class _MessageStatusInput {
-  const _MessageStatusInput({
-    required this.status,
-    required this.size,
-    required this.tint,
-    required this.showAnimation,
-    required this.semanticLabel,
-  });
-
-  final AuraMessageDeliveryStatus status;
-  final AuraMessageStatusSize size;
-  final AuraTint? tint;
-  final bool showAnimation;
-  final String? semanticLabel;
-}
+class const _MessageStatusInput({
+  required final AuraMessageDeliveryStatus status,
+  required final AuraMessageStatusSize size,
+  required final AuraTint? tint,
+  required final bool showAnimation,
+  required final String? semanticLabel,
+});
 
 const meta = Meta(AuraMessageStatus.new, argsType: _MessageStatusInput.new);
 

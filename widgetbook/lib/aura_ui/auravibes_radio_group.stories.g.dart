@@ -21,8 +21,7 @@ final RadioGroupDemoComponent =
       name: component.name ?? 'RadioGroupDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates a controlled radio group in vertical and horizontal layouts.''',
+      docComment: r'''Demonstrates a controlled radio group in vertical and horizontal layouts.''',
       stories: [$RadioGroup..$generatedName = 'RadioGroup'],
     );
 typedef RadioGroupDemoScenario = Scenario<RadioGroupDemo, RadioGroupDemoArgs>;

@@ -12,7 +12,7 @@ import 'package:flutter/widgets.dart';
 /// consistency with the design tokens.
 class AuraButton extends StatelessWidget {
   /// Creates a Aura button.
-  const AuraButton({
+  const new({
     required this.onPressed,
     required this.child,
     super.key,

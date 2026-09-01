@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 /// typography and styling for field descriptions.
 class AuraFieldHint extends StatelessWidget {
   /// Creates a Aura field hint.
-  const AuraFieldHint({
+  const new({
     super.key,
     this.text,
     this.error,

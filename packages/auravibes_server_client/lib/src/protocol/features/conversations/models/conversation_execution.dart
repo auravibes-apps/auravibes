@@ -12,24 +12,25 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationExecution implements _i1.SerializableModel {
-  ConversationExecution._({
-    this.id,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.stableId,
-    required this.status,
-    required this.settingsJson,
-    required this.claimedMessageIdsJson,
-    this.assistantMessageId,
-    required this.attempt,
-    required this.createdByUserId,
-    required this.createdAt,
-    required this.updatedAt,
-    this.terminalAt,
-  });
-
-  factory ConversationExecution({
+abstract class ConversationExecution._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int conversationId,
+  required var String stableId,
+  required var String status,
+  required var String settingsJson,
+  required var String claimedMessageIdsJson,
+  var int? assistantMessageId,
+  required var int attempt,
+  required var String createdByUserId,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+  var DateTime? terminalAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -45,7 +46,7 @@ abstract class ConversationExecution implements _i1.SerializableModel {
     DateTime? terminalAt,
   }) = _ConversationExecutionImpl;
 
-  factory ConversationExecution.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationExecution(
@@ -71,35 +72,6 @@ abstract class ConversationExecution implements _i1.SerializableModel {
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['terminalAt']),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int conversationId;
-
-  String stableId;
-
-  String status;
-
-  String settingsJson;
-
-  String claimedMessageIdsJson;
-
-  int? assistantMessageId;
-
-  int attempt;
-
-  String createdByUserId;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
-
-  DateTime? terminalAt;
 
   /// Returns a shallow copy of this [ConversationExecution]
   /// with some or all fields replaced by the given arguments.
@@ -145,38 +117,39 @@ abstract class ConversationExecution implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationExecutionImpl extends ConversationExecution {
-  _ConversationExecutionImpl({
-    int? id,
-    required int workspaceId,
-    required int conversationId,
-    required String stableId,
-    required String status,
-    required String settingsJson,
-    required String claimedMessageIdsJson,
-    int? assistantMessageId,
-    required int attempt,
-    required String createdByUserId,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    DateTime? terminalAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         stableId: stableId,
-         status: status,
-         settingsJson: settingsJson,
-         claimedMessageIdsJson: claimedMessageIdsJson,
-         assistantMessageId: assistantMessageId,
-         attempt: attempt,
-         createdByUserId: createdByUserId,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-         terminalAt: terminalAt,
-       );
+class _ConversationExecutionImpl({
+  int? id,
+  required int workspaceId,
+  required int conversationId,
+  required String stableId,
+  required String status,
+  required String settingsJson,
+  required String claimedMessageIdsJson,
+  int? assistantMessageId,
+  required int attempt,
+  required String createdByUserId,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  DateTime? terminalAt,
+}) extends ConversationExecution {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        stableId: stableId,
+        status: status,
+        settingsJson: settingsJson,
+        claimedMessageIdsJson: claimedMessageIdsJson,
+        assistantMessageId: assistantMessageId,
+        attempt: attempt,
+        createdByUserId: createdByUserId,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        terminalAt: terminalAt,
+      );
 
   /// Returns a shallow copy of this [ConversationExecution]
   /// with some or all fields replaced by the given arguments.

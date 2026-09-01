@@ -7,12 +7,12 @@ enum WorkspaceType {
   remote('remote');
 
   /// Creates a new WorkspaceType with the given string value.
-  const WorkspaceType(this.value);
+  new(this.value);
 
   /// Creates a workspace type from a string value.
   ///
   /// Throws [ArgumentError] if the value is not a valid workspace type.
-  factory WorkspaceType.fromString(String value) {
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'local':
         return WorkspaceType.local;

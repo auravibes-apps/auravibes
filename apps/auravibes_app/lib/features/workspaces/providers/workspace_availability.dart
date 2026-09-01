@@ -1,16 +1,10 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 
-sealed class WorkspaceAvailability {
-  const WorkspaceAvailability(this.session);
-
-  final WorkspaceSession session;
-}
+sealed class const WorkspaceAvailability(final WorkspaceSession session);
 
 // ignore: unused-code, returned by workspaceAvailability provider.
-final class WorkspaceAvailable extends WorkspaceAvailability {
-  const WorkspaceAvailable(super.session);
-}
+final class const WorkspaceAvailable(super.session)
+    extends WorkspaceAvailability;
 
-final class WorkspaceAuthenticationRequired extends WorkspaceAvailability {
-  const WorkspaceAuthenticationRequired(super.session);
-}
+final class const WorkspaceAuthenticationRequired(super.session)
+    extends WorkspaceAvailability;

@@ -10,11 +10,10 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-class CompactedMessageDetails extends StatelessWidget {
-  const CompactedMessageDetails({required this.message, super.key});
-
-  final MessageEntity message;
-
+class const CompactedMessageDetails({
+  required final MessageEntity message,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -77,12 +76,10 @@ class CompactedMessageDetails extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
+class const _DetailRow({
+  required final String label,
+  required final String value,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

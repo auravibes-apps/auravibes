@@ -8,17 +8,11 @@ part 'auravibes_radio.stories.g.dart';
 
 const component = ComponentMeta(name: 'AuraRadio');
 
-class _RadioInput {
-  const _RadioInput({
-    required this.tint,
-    required this.disabled,
-    required this.itemCount,
-  });
-
-  final AuraTint? tint;
-  final bool disabled;
-  final int itemCount;
-}
+class const _RadioInput({
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final int itemCount,
+});
 
 const meta = Meta(SingleRadioDemo.new, argsType: _RadioInput.new);
 
@@ -55,18 +49,12 @@ final $SingleRadio = _Story(
 );
 
 /// Demonstrates a single controlled radio button.
-class SingleRadioDemo extends StatefulWidget {
-  const SingleRadioDemo({
-    super.key,
-    required this.tint,
-    required this.disabled,
-    required this.itemCount,
-  });
-
-  final AuraTint? tint;
-  final bool disabled;
-  final int itemCount;
-
+class const SingleRadioDemo({
+  super.key,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final int itemCount,
+}) extends StatefulWidget {
   @override
   State<SingleRadioDemo> createState() => _SingleRadioDemoState();
 }

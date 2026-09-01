@@ -3,9 +3,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import 'domain/workspace_resource_validation.dart';
 
-class WorkspaceSecretResolver {
-  const WorkspaceSecretResolver();
-
+class const WorkspaceSecretResolver() {
   Future<WorkspaceSecret?> find(
     Session session, {
     required int workspaceId,

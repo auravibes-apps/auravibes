@@ -9,12 +9,10 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:dio/dio.dart';
 
-class UrlService {
+class UrlService({Dio? dio}) {
   static const int _maxResponseSize = 1024 * 1024;
   static const String _truncatedSuffix = '\n... [truncated]';
-  UrlService({Dio? dio}) : _dio = dio ?? Dio();
-
-  final Dio _dio;
+  final Dio _dio = dio ?? Dio();
 
   CancelableOperation<UrlResponse> execute(UrlRequest request) {
     final cancelToken = CancelToken();

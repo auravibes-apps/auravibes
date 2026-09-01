@@ -4,9 +4,7 @@ import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:collection/collection.dart';
 
-class BuildGroupedToolsViewUseCase {
-  const BuildGroupedToolsViewUseCase();
-
+class const BuildGroupedToolsViewUseCase() {
   List<GroupedToolsViewItem> call({
     required List<WorkspaceToolEntity> workspaceTools,
     required List<ToolsGroupEntity> groups,

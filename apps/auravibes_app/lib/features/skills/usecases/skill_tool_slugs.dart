@@ -31,19 +31,13 @@ abstract final class SkillToolSlugs {
       'delete_skill_credential_definition';
 }
 
-class BuildAppSkillNativeToolSpecsUsecase {
-  const BuildAppSkillNativeToolSpecsUsecase(
-    this._listAvailableSkillsUsecase,
-    this._listAppSkillCredentialCandidatesUsecase, [
-    this._conversationRepository,
-  ]);
-
+class const BuildAppSkillNativeToolSpecsUsecase(
   final ListAvailableSkillsUsecase Function(String workspaceId)
-  _listAvailableSkillsUsecase;
+  _listAvailableSkillsUsecase,
   final ListAppSkillCredentialCandidatesUsecase
-  _listAppSkillCredentialCandidatesUsecase;
-  final ConversationRepository? _conversationRepository;
-
+  _listAppSkillCredentialCandidatesUsecase, [
+  final ConversationRepository? _conversationRepository,
+]) {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,

@@ -23,7 +23,7 @@ class AuraIconButton extends StatelessWidget {
   /// Creates an Aura icon button.
   // Null follows Flutter button semantics and disables the interaction.
   // ignore: unnecessary-nullable
-  const AuraIconButton({
+  const new({
     required this.icon,
     this.onPressed,
     super.key,
@@ -38,7 +38,7 @@ class AuraIconButton extends StatelessWidget {
   /// Creates an Aura icon button with custom icon content.
   // Null follows Flutter button semantics and disables the interaction.
   // ignore: unnecessary-nullable
-  const AuraIconButton.custom({
+  const new custom({
     required this.child,
     this.onPressed,
     super.key,

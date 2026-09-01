@@ -13,18 +13,13 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('repository:skill_credentials');
 
-class SkillCredentialsRepository {
-  SkillCredentialsRepository({
-    required AppDatabase database,
-    required this._encryptionService,
-  }) : _database = database,
-       _dao = database.skillCredentialsDao,
-       super();
+class SkillCredentialsRepository({
+  required final AppDatabase _database,
+  required final EncryptionService _encryptionService,
+}) {
+  this : super();
 
-  final AppDatabase _database;
-  final SkillCredentialsDao _dao;
-  final EncryptionService _encryptionService;
-
+  final SkillCredentialsDao _dao = _database.skillCredentialsDao;
   Future<List<SkillCredentialEntity>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,
@@ -296,22 +291,19 @@ class SkillCredentialsRepository {
   }
 }
 
-class SkillCredentialsException implements Exception {
-  const SkillCredentialsException(this.message);
-
-  factory SkillCredentialsException.notFound(String credentialId) {
+class const SkillCredentialsException(final String message)
+    implements Exception {
+  factory notFound(String credentialId) {
     return SkillCredentialsException(
       'Skill credential not found: $credentialId',
     );
   }
 
-  factory SkillCredentialsException.definitionNotFound(String definitionId) {
+  factory definitionNotFound(String definitionId) {
     return SkillCredentialsException(
       'Skill credential definition not found: $definitionId',
     );
   }
-
-  final String message;
 
   @override
   String toString() => 'SkillCredentialsException: $message';

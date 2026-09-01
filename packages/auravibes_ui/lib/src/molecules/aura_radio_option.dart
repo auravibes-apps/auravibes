@@ -7,19 +7,12 @@ import 'package:flutter/widgets.dart';
 /// A custom painter for drawing the radio button circles.
 ///
 /// Draws an outer circle with border and an inner filled circle when selected.
-class _RadioPainter extends CustomPainter {
-  _RadioPainter({
-    required this.isSelected,
-    required this.isFocused,
-    required this.color,
-    required this.borderColor,
-  });
-
-  final bool isSelected;
-  final bool isFocused;
-  final Color color;
-  final Color borderColor;
-
+class _RadioPainter({
+  required final bool isSelected,
+  required final bool isFocused,
+  required final Color color,
+  required final Color borderColor,
+}) extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
@@ -66,7 +59,7 @@ class _RadioPainter extends CustomPainter {
 /// Used with AuraRadioGroup to define the available selections.
 class AuraRadioOption<T> {
   /// Creates a radio option with a value, label, and optional subtitle.
-  const AuraRadioOption({
+  const new({
     required this.value,
     required this.label,
     this.subtitle,
@@ -111,7 +104,7 @@ class AuraRadioOption<T> {
 /// ```
 class AuraRadio<T> extends StatefulWidget {
   /// Creates an AuraRadio widget.
-  const AuraRadio({
+  const new({
     required this.value,
     required this.groupValue,
     required this.onChanged,

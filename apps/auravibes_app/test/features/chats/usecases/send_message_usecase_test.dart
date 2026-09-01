@@ -154,16 +154,15 @@ void main() {
   });
 }
 
-class _SendMessageUsecaseFixture {
-  _SendMessageUsecaseFixture({
-    required this.runAgentIterationUsecase,
-    required this.messageRepository,
-    required this.getConversationBusyStateUsecase,
-    required this.container,
-    required this.usecase,
-  });
-
-  factory _SendMessageUsecaseFixture.create() {
+class _SendMessageUsecaseFixture({
+  required final MockAppAgentService runAgentIterationUsecase,
+  required final MockMessageRepository messageRepository,
+  required final MockGetConversationBusyStateUsecase
+  getConversationBusyStateUsecase,
+  required final ProviderContainer container,
+  required final SendMessageUsecase usecase,
+}) {
+  factory create() {
     final runAgentIterationUsecase = MockAppAgentService();
     final messageRepository = MockMessageRepository();
     final getConversationBusyStateUsecase =
@@ -191,11 +190,6 @@ class _SendMessageUsecaseFixture {
     );
   }
 
-  final MockAppAgentService runAgentIterationUsecase;
-  final MockMessageRepository messageRepository;
-  final MockGetConversationBusyStateUsecase getConversationBusyStateUsecase;
-  final ProviderContainer container;
-  final SendMessageUsecase usecase;
   var _isDisposed = false;
 
   void dispose() {

@@ -7,12 +7,10 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_app/features/skills/usecases/validate_skill_title_usecase.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class UpdateSkillUsecase {
-  const UpdateSkillUsecase(this._skillsRepository, {this.cloudStore});
-  final CloudSkillStore? cloudStore;
-
-  final SkillsRepository? _skillsRepository;
-
+class const UpdateSkillUsecase(
+  final SkillsRepository? _skillsRepository, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<SkillEntity> call(String skillId, SkillToUpdate skill) async {
     final title = skill.title;
     if (title != null) {

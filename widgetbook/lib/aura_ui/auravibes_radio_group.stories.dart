@@ -49,20 +49,13 @@ final $RadioGroup = _Story(
 );
 
 /// Demonstrates a controlled radio group in vertical and horizontal layouts.
-class RadioGroupDemo extends StatefulWidget {
-  const RadioGroupDemo({
-    super.key,
-    required this.direction,
-    required this.tint,
-    required this.showLabel,
-    required this.showSubtitles,
-  });
-
-  final Axis direction;
-  final AuraTint? tint;
-  final bool showLabel;
-  final bool showSubtitles;
-
+class const RadioGroupDemo({
+  super.key,
+  required final Axis direction,
+  required final AuraTint? tint,
+  required final bool showLabel,
+  required final bool showSubtitles,
+}) extends StatefulWidget {
   @override
   State<RadioGroupDemo> createState() => _RadioGroupDemoState();
 }

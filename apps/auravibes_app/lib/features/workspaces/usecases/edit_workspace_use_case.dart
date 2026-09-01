@@ -10,15 +10,10 @@ part 'edit_workspace_use_case.g.dart';
 /// Edits an existing workspace name.
 ///
 /// Orchestrates name validation and repository patch.
-class EditWorkspaceUseCase {
-  const EditWorkspaceUseCase({
-    required this._repository,
-    required this._validateName,
-  });
-
-  final WorkspaceRepository _repository;
-  final ValidateWorkspaceNameUseCase _validateName;
-
+class const EditWorkspaceUseCase({
+  required final WorkspaceRepository _repository,
+  required final ValidateWorkspaceNameUseCase _validateName,
+}) {
   /// Patches the workspace with [id] to have the new [name].
   ///
   /// Validates the name length (3–20 chars) before persisting.

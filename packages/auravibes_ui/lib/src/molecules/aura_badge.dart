@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 /// labels, and notification counts across the application.
 class AuraBadge extends StatelessWidget {
   /// Creates a Aura badge.
-  const AuraBadge({
+  const new({
     required this.child,
     super.key,
     this.variant = AuraBadgeVariant.primary,
@@ -20,7 +20,7 @@ class AuraBadge extends StatelessWidget {
   });
 
   /// Creates a Aura badge with text content.
-  AuraBadge.text({
+  new text({
     required Widget child,
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
@@ -40,7 +40,7 @@ class AuraBadge extends StatelessWidget {
        );
 
   /// Creates a Aura badge with a count number.
-  AuraBadge.count({
+  new count({
     required int count,
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
@@ -61,7 +61,7 @@ class AuraBadge extends StatelessWidget {
        );
 
   /// Creates a Aura badge with a dot indicator.
-  const AuraBadge.dot({
+  const new dot({
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
     String? semanticLabel,
@@ -202,12 +202,10 @@ class AuraBadge extends StatelessWidget {
   }
 }
 
-class _AuraBadgeText extends StatelessWidget {
-  const _AuraBadgeText({required this.child, required this.style});
-
-  final Widget child;
-  final AuraTextStyle style;
-
+class const _AuraBadgeText({
+  required final Widget child,
+  required final AuraTextStyle style,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = DefaultTextStyle.of(context).style.color;

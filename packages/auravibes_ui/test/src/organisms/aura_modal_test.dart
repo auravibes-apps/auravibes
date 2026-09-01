@@ -229,12 +229,10 @@ void main() {
   });
 }
 
-class _AuraModalTestApp extends StatelessWidget {
-  const _AuraModalTestApp({required this.child, this.auraTheme});
-
-  final Widget child;
-  final AuraTheme? auraTheme;
-
+class const _AuraModalTestApp({
+  required final Widget child,
+  final AuraTheme? auraTheme,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

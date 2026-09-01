@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _MockSecureStorage extends Mock implements FlutterSecureStorage {}
+class _MockSecureStorage extends Mock implements FlutterSecureStorage;
 
 void main() {
   test(
@@ -82,9 +82,8 @@ void main() {
           value: any(named: 'value'),
         ),
       ).thenAnswer((_) => Future<void>.value());
-      when(
-        () => storage.delete(key: any(named: 'key')),
-      ).thenAnswer((_) => Future<void>.value());
+      when(() => storage.delete(key: any(named: 'key')))
+          .thenAnswer((_) => Future<void>.value());
       final store = ServerpodAuthStore(
         secureStorage: storage,
         storageNamespace: 'auravibes_app_0123456789abcdef',

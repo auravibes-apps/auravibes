@@ -21,8 +21,7 @@ final SelectorTabsDemoComponent =
       name: component.name ?? 'SelectorTabsDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates selector tabs whose selected value is owned by the caller.''',
+      docComment: r'''Demonstrates selector tabs whose selected value is owned by the caller.''',
       stories: [$SelectorTabs..$generatedName = 'SelectorTabs'],
     );
 typedef SelectorTabsDemoScenario =

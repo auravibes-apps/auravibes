@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// A custom alert dialog with a single dismiss action.
 class AuraAlertDialog extends StatelessWidget {
   /// Creates an alert dialog.
-  const AuraAlertDialog({
+  const new({
     required this.title,
     required this.message,
     required this.dismissLabel,

@@ -8,7 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// Creates a testable widget wrapped with EasyLocalization and Riverpod.
 class TestableApp extends StatefulWidget {
   /// Creates a [TestableApp].
-  const TestableApp({
+  const new({
     required this.child,
     this.overrides = const [],
     this.workspaceId = 'test-workspace',

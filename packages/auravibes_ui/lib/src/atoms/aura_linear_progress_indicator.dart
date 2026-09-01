@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 /// A linear progress indicator following the Aura design system.
 class AuraLinearProgressIndicator extends StatelessWidget {
   /// Creates an Aura linear progress indicator.
-  const AuraLinearProgressIndicator({
+  const new({
     required this.value,
     super.key,
     this.height = 4,

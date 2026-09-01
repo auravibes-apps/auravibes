@@ -21,8 +21,7 @@ final ConfirmDialogDemoComponent =
       name: component.name ?? 'ConfirmDialogDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates a confirmation dialog with destructive and tinted states.''',
+      docComment: r'''Demonstrates a confirmation dialog with destructive and tinted states.''',
       stories: [$ConfirmDialog..$generatedName = 'ConfirmDialog'],
     );
 typedef ConfirmDialogDemoScenario =

@@ -47,10 +47,8 @@ ProviderContainer _pendingToolContainer({List<Override> overrides = const []}) {
   );
 }
 
-class _FakeLoadConversationToolSpecsUsecase
+class const _FakeLoadConversationToolSpecsUsecase()
     implements LoadConversationToolSpecsUsecase {
-  const _FakeLoadConversationToolSpecsUsecase();
-
   @override
   Future<List<ToolSpec>> call({
     required String conversationId,
@@ -124,15 +122,15 @@ MessageEntity _assistantMessage({
   );
 }
 
-class _FakeResolveToolApprovalDecisionUsecase
-    extends ResolveToolApprovalDecisionUsecase {
-  _FakeResolveToolApprovalDecisionUsecase(this._decisions)
+class _FakeResolveToolApprovalDecisionUsecase(
+  final Map<String, ToolApprovalDecision> _decisions,
+) extends ResolveToolApprovalDecisionUsecase {
+  this
     : super(
         conversationToolsRepository: _NoOpConversationToolsRepository(),
         toolsGroupsRepository: _NoOpToolsGroupsRepository(),
         workspaceToolsRepository: _NoOpWorkspaceToolsRepository(),
       );
-  final Map<String, ToolApprovalDecision> _decisions;
 
   @override
   Future<ToolApprovalDecision> call({
@@ -196,11 +194,9 @@ class _StreamingMessageRepository implements MessageRepository {
   Null noSuchMethod(Invocation invocation) => null;
 }
 
-class _StaticMessageRepository implements MessageRepository {
-  const _StaticMessageRepository(this._messagesByConversationId);
-
-  final Map<String, List<MessageEntity>> _messagesByConversationId;
-
+class const _StaticMessageRepository(
+  final Map<String, List<MessageEntity>> _messagesByConversationId,
+) implements MessageRepository {
   @override
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
@@ -795,9 +791,8 @@ void main() {
               ),
             ),
           ),
-          resolveToolApprovalDecisionUsecaseProvider(
-            'ws-1',
-          ).overrideWithValue(needsConfirmUseCase),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1')
+              .overrideWithValue(needsConfirmUseCase),
         ],
       );
 
@@ -835,9 +830,8 @@ void main() {
               ),
             ),
           ),
-          resolveToolApprovalDecisionUsecaseProvider(
-            'ws-1',
-          ).overrideWithValue(grantedUseCase),
+          resolveToolApprovalDecisionUsecaseProvider('ws-1')
+              .overrideWithValue(grantedUseCase),
         ],
       );
 

@@ -38,20 +38,13 @@ final $CheckboxListTile = _Story(
 );
 
 /// Demonstrates a settings-style checkbox tile with optional supporting text.
-class CheckboxListTileDemo extends StatefulWidget {
-  const CheckboxListTileDemo({
-    super.key,
-    required this.tint,
-    required this.disabled,
-    required this.showSubtitle,
-    required this.autofocus,
-  });
-
-  final AuraTint? tint;
-  final bool disabled;
-  final bool showSubtitle;
-  final bool autofocus;
-
+class const CheckboxListTileDemo({
+  super.key,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final bool showSubtitle,
+  required final bool autofocus,
+}) extends StatefulWidget {
   @override
   State<CheckboxListTileDemo> createState() => _CheckboxListTileDemoState();
 }

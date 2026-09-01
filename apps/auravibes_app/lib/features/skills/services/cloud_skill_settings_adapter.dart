@@ -9,11 +9,9 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class CloudSkillSettingsAdapter {
-  const CloudSkillSettingsAdapter(this._gateway);
-
-  final CloudWorkspaceStateGateway _gateway;
-
+class const CloudSkillSettingsAdapter(
+  final CloudWorkspaceStateGateway _gateway,
+) {
   Stream<List<WorkspaceSkill>> watchSkills() {
     return _gateway
         .watchResources(const [

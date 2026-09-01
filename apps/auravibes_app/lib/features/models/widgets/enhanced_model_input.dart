@@ -10,20 +10,13 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Enhanced input widget for the add model provider form with validation.
-class EnhancedModelInput extends HookConsumerWidget {
-  const EnhancedModelInput({
-    required this.workspaceId,
-    required this.fieldType,
-    this.focusNode,
-    this.onSubmitted,
-    super.key,
-  });
-
-  final String workspaceId;
-  final ModelInputFieldType fieldType;
-  final FocusNode? focusNode;
-  final VoidCallback? onSubmitted;
-
+class const EnhancedModelInput({
+  required final String workspaceId,
+  required final ModelInputFieldType fieldType,
+  final FocusNode? focusNode,
+  final VoidCallback? onSubmitted,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(addModelProviderStateProvider(workspaceId));

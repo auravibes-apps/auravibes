@@ -18,16 +18,14 @@ bool _isLoopbackHost(String host) {
 }
 
 @freezed
-abstract class AddModelProviderModel with _$AddModelProviderModel {
-  const factory AddModelProviderModel({
+abstract class const AddModelProviderModel._() with _$AddModelProviderModel {
+  const factory({
     String? name,
     String? modelId,
     String? key,
     String? url,
     @Default(ModelProviderAuthMode.apiKey) ModelProviderAuthMode authMode,
   }) = _AddModelProviderModel;
-  const AddModelProviderModel._();
-
   String? validateName() {
     final name = this.name;
     if (name == null || name.trim().isEmpty) {

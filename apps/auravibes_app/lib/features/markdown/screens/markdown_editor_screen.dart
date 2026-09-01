@@ -6,16 +6,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:textf/textf.dart';
 
-class MarkdownEditorScreen extends StatefulWidget {
-  const MarkdownEditorScreen({
-    required this.initialMarkdown,
-    this.maxCharacters,
-    super.key,
-  });
-
-  final String initialMarkdown;
-  final int? maxCharacters;
-
+class const MarkdownEditorScreen({
+  required final String initialMarkdown,
+  final int? maxCharacters,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<MarkdownEditorScreen> createState() => _MarkdownEditorScreenState();
 }

@@ -49,25 +49,30 @@ final $ChoicePicker = _Story(
 );
 
 /// Demonstrates controlled single- and multiple-selection choices.
-class ChoicePickerDemo extends StatefulWidget {
-  const ChoicePickerDemo({
-    super.key,
-    required this.variant,
-    required this.tint,
-  });
-
-  final AuraChoicePickerVariant variant;
-  final AuraTint? tint;
-
+class const ChoicePickerDemo({
+  super.key,
+  required final AuraChoicePickerVariant variant,
+  required final AuraTint? tint,
+}) extends StatefulWidget {
   @override
   State<ChoicePickerDemo> createState() => _ChoicePickerDemoState();
 }
 
 class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
   static const List<AuraChoiceOption<String>> _options = [
-    AuraChoiceOption(value: 'email', label: Text('Email')),
-    AuraChoiceOption(value: 'phone', label: Text('Phone')),
-    AuraChoiceOption(value: 'post', label: Text('Post'), disabled: true),
+    AuraChoiceOption(
+      value: 'email',
+      label: AuraText(child: Text('Email'), style: .bodySmall),
+    ),
+    AuraChoiceOption(
+      value: 'phone',
+      label: AuraText(child: Text('Phone'), style: .bodySmall),
+    ),
+    AuraChoiceOption(
+      value: 'post',
+      label: AuraText(child: Text('Post'), style: .bodySmall),
+      disabled: true,
+    ),
   ];
   List<String> _value = ['email'];
 
@@ -76,16 +81,19 @@ class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
     final maxAllowedSelections =
         widget.variant == AuraChoicePickerVariant.multipleSelection ? 2 : null;
 
-    return AuraChoicePicker<String>(
-      options: _options,
-      value: widget.variant == AuraChoicePickerVariant.mutuallyExclusive
-          ? _value.take(1).toList()
-          : _value,
-      onChanged: (value) => setState(() => _value = value),
-      variant: widget.variant,
-      maxAllowedSelections: maxAllowedSelections,
-      label: const Text('Preferred contact method'),
-      tint: widget.tint,
+    return ColoredBox(
+      color: context.auraColors.surface,
+      child: AuraChoicePicker<String>(
+        options: _options,
+        value: widget.variant == AuraChoicePickerVariant.mutuallyExclusive
+            ? _value.take(1).toList()
+            : _value,
+        onChanged: (value) => setState(() => _value = value),
+        variant: widget.variant,
+        maxAllowedSelections: maxAllowedSelections,
+        label: const Text('Preferred contact method'),
+        tint: widget.tint,
+      ),
     );
   }
 }

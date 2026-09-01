@@ -72,23 +72,18 @@ enum ContextUsageLevel {
   };
 }
 
-class ContextUsageData {
-  const ContextUsageData({
-    required this.usedTokens,
-    required this.normalizedLimit,
-    required this.hasLimit,
-    required this.percent,
-    required this.progress,
-    required this.level,
-    required this.overflowTokens,
-    required this.usageLabel,
-    required this.percentLabel,
-  });
-
-  factory ContextUsageData.compute({
-    required int usedTokens,
-    required int? limitTokens,
-  }) {
+class const ContextUsageData({
+  required final int usedTokens,
+  required final int normalizedLimit,
+  required final bool hasLimit,
+  required final int percent,
+  required final double progress,
+  required final ContextUsageLevel level,
+  required final int overflowTokens,
+  required final String usageLabel,
+  required final String percentLabel,
+}) {
+  factory compute({required int usedTokens, required int? limitTokens}) {
     final normalizedLimit = (limitTokens ?? 0) < 0 ? 0 : (limitTokens ?? 0);
     final hasLimit = normalizedLimit > 0;
     final percent = hasLimit
@@ -132,16 +127,6 @@ class ContextUsageData {
       percentLabel: '$percent%',
     );
   }
-
-  final int usedTokens;
-  final int normalizedLimit;
-  final bool hasLimit;
-  final int percent;
-  final double progress;
-  final ContextUsageLevel level;
-  final int overflowTokens;
-  final String usageLabel;
-  final String percentLabel;
 
   Map<String, String> tooltipArgs() => {
     'used': '$usedTokens',

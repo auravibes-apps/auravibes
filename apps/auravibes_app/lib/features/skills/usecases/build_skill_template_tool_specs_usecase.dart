@@ -10,21 +10,14 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 
-class BuildSkillTemplateToolSpecsUsecase {
-  const BuildSkillTemplateToolSpecsUsecase(
-    this._listAvailableSkillsUsecase,
-    this._skillTemplateToolsRepository,
-    this._skillCredentialsRepository, {
-    this._workspaceSession,
-  });
-
+class const BuildSkillTemplateToolSpecsUsecase(
   final ListAvailableSkillsUsecase Function(String workspaceId)
-  _listAvailableSkillsUsecase;
-  final SkillTemplateToolsRepository _skillTemplateToolsRepository;
-  final SkillCredentialsRepository _skillCredentialsRepository;
+  _listAvailableSkillsUsecase,
+  final SkillTemplateToolsRepository _skillTemplateToolsRepository,
+  final SkillCredentialsRepository _skillCredentialsRepository, {
   final Future<WorkspaceSession> Function(String workspaceId)?
-  _workspaceSession;
-
+  _workspaceSession,
+}) {
   Future<List<ToolSpec>> call({
     required String conversationId,
     required String workspaceId,
