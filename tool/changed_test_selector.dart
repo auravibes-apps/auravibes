@@ -476,11 +476,6 @@ List<_TestGroup> _singlePackageGroup(
   String packageRoot,
 ) {
   final normalized = _normalizePath(packageRoot);
-  if (normalized.isEmpty ||
-      normalized.startsWith('/') ||
-      normalized.contains(r'\')) {
-    throw const FormatException('Invalid package root');
-  }
   final group = groups.where(
     (candidate) => candidate.package.relativeRoot == normalized,
   );
