@@ -122,7 +122,6 @@ class const AddModelProviderWidget({
                       deviceCode: deviceCode,
                       isPending: isSubmitting,
                       onCancel: () => _cancelCodexOAuth(
-                        ref,
                         codexDeviceCode,
                         activeCodexOAuthMethod,
                         codexOAuthCancellation,
@@ -164,7 +163,6 @@ class const AddModelProviderWidget({
                     const AuraSizedBox(height: .md),
                     AuraButton(
                       onPressed: () => _cancelCodexOAuth(
-                        ref,
                         codexDeviceCode,
                         activeCodexOAuthMethod,
                         codexOAuthCancellation,
@@ -188,7 +186,7 @@ class const AddModelProviderWidget({
     WidgetRef ref, {
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
+    bool Function()? isCodexOAuthCancelled,
   }) async {
     try {
       await addCredentialsModelMutationProvider.run(ref, (transaction) async {
@@ -198,7 +196,7 @@ class const AddModelProviderWidget({
         final created = await notifier.addModelProvider(
           codexOAuthMethod: codexOAuthMethod,
           onCodexDeviceCode: onCodexDeviceCode,
-          isCodexDeviceCodeCancelled: isCodexDeviceCodeCancelled,
+          isCodexOAuthCancelled: isCodexOAuthCancelled,
         );
         if (context.mounted && created != null) {
           final onCreated = this.onCreated;
@@ -230,7 +228,7 @@ class const AddModelProviderWidget({
         context,
         ref,
         codexOAuthMethod: CodexOAuthMethod.browser,
-        isCodexDeviceCodeCancelled: () => cancellation.isCancelled,
+        isCodexOAuthCancelled: () => cancellation.isCancelled,
       ),
     );
   }
@@ -259,13 +257,12 @@ class const AddModelProviderWidget({
           }
           deviceCode.value = value;
         },
-        isCodexDeviceCodeCancelled: () => cancellation.isCancelled,
+        isCodexOAuthCancelled: () => cancellation.isCancelled,
       ),
     );
   }
 
   void _cancelCodexOAuth(
-    WidgetRef ref,
     ValueNotifier<CodexDeviceCode?> deviceCode,
     ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
     ObjectRef<_CodexOAuthCancellation?> cancellationRef,
@@ -274,7 +271,6 @@ class const AddModelProviderWidget({
     cancellationRef.value = null;
     deviceCode.value = null;
     activeOAuthMethod.value = null;
-    addCredentialsModelMutationProvider.reset(ref);
   }
 }
 
@@ -472,8 +468,8 @@ class const _CreateButton({
             ),
             size: AuraButtonSize.large,
             isLoading:
-                !isCodex ||
-                (isSubmitting &&
+                isSubmitting &&
+                (!isCodex ||
                     activeCodexOAuthMethod == CodexOAuthMethod.deviceCode),
             isFullWidth: true,
             disabled: disabled,
@@ -485,7 +481,6 @@ class const _CreateButton({
 
 class const _CodexOAuthPendingStatus({final bool showSpinner = true})
     extends StatelessWidget {
-
   @override
   Widget build(BuildContext _) {
     return Row(

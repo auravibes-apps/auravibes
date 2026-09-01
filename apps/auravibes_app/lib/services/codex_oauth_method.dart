@@ -189,20 +189,34 @@ class CodexOAuthService {
     Completer<String> completer,
     bool Function() isCancelled,
   ) async {
-    final deadline = DateTime.now().add(const Duration(minutes: 5));
-    while (true) {
-      if (isCancelled()) throw const CodexOAuthCanceledException();
-      if (completer.isCompleted) return await completer.future;
+    final cancellation = Completer<void>();
+    Timer? cancellationTimer;
 
-      final remaining = deadline.difference(DateTime.now());
-      if (remaining.isNegative || remaining == Duration.zero) {
-        throw TimeoutException('Browser auth timed out after 5 minutes');
+    void checkCancellation() {
+      if (isCancelled()) {
+        cancellation.complete();
+
+        return;
       }
-      await Future<void>.delayed(
-        remaining < const Duration(milliseconds: 250)
-            ? remaining
-            : const Duration(milliseconds: 250),
+      cancellationTimer = Timer(
+        const Duration(milliseconds: 250),
+        checkCancellation,
       );
+    }
+
+    Future<String> waitForCancellation() async {
+      await cancellation.future;
+      throw const CodexOAuthCanceledException();
+    }
+
+    checkCancellation();
+    try {
+      return await Future.any<String>([
+        completer.future.timeout(const Duration(minutes: 5)),
+        waitForCancellation(),
+      ]);
+    } finally {
+      cancellationTimer?.cancel();
     }
   }
 
