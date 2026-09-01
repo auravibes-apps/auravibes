@@ -701,7 +701,7 @@ void main() {
         ),
         rootPath: root.path,
         launcher:
-          ({
+            ({
               required executable,
               required arguments,
               required workingDirectory,
