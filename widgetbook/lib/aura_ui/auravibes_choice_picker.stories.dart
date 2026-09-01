@@ -10,15 +10,10 @@ const meta = Meta(ChoicePickerDemo.new);
 
 final $ChoicePicker = _Story(
   name: 'Choice Picker',
-  setup: (_, child, args) => Builder(
-    builder: (context) => ColoredBox(
-      color: context.auraColors.surface,
-      child: SizedBox(
-        width: 360,
-        height: 260,
-        child: Padding(padding: const EdgeInsets.all(16), child: child),
-      ),
-    ),
+  setup: (context, child, args) => SizedBox(
+    width: 360,
+    height: 260,
+    child: Padding(padding: const EdgeInsets.all(16), child: child),
   ),
   args: _Args(
     variant: EnumArg(
@@ -76,16 +71,19 @@ class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
     final maxAllowedSelections =
         widget.variant == AuraChoicePickerVariant.multipleSelection ? 2 : null;
 
-    return AuraChoicePicker<String>(
-      options: _options,
-      value: widget.variant == AuraChoicePickerVariant.mutuallyExclusive
-          ? _value.take(1).toList()
-          : _value,
-      onChanged: (value) => setState(() => _value = value),
-      variant: widget.variant,
-      maxAllowedSelections: maxAllowedSelections,
-      label: const Text('Preferred contact method'),
-      tint: widget.tint,
+    return ColoredBox(
+      color: context.auraColors.surface,
+      child: AuraChoicePicker<String>(
+        options: _options,
+        value: widget.variant == AuraChoicePickerVariant.mutuallyExclusive
+            ? _value.take(1).toList()
+            : _value,
+        onChanged: (value) => setState(() => _value = value),
+        variant: widget.variant,
+        maxAllowedSelections: maxAllowedSelections,
+        label: const Text('Preferred contact method'),
+        tint: widget.tint,
+      ),
     );
   }
 }
