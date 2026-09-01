@@ -403,7 +403,12 @@ Future<int> runSelectedTests(
       final batch = selectedGroups.skip(index).take(2);
       final results = await Future.wait(
         batch.map((group) async {
-          final command = _command(group, shard: shard, coverage: coverage);
+          final command = _command(
+            group,
+            rootPath: rootPath,
+            shard: shard,
+            coverage: coverage,
+          );
           if (dryRun) {
             stdout.writeln(
               [command.executable, ...command.arguments].join(' '),
@@ -419,7 +424,7 @@ Future<int> runSelectedTests(
             );
             if (testExitCode != 0 || !coverage) return testExitCode;
 
-            final coverageCommand = _coverageCommand(group);
+            final coverageCommand = _coverageCommand(group, rootPath: rootPath);
             if (coverageCommand == null) return 0;
 
             return await launch(
@@ -797,25 +802,29 @@ bool _isTestEntrypoint(String path) => path.endsWith('_test.dart');
 
 _Command _command(
   _TestGroup group, {
+  required String rootPath,
   required _Shard shard,
   required bool coverage,
-}) => _Command(group.package.flutter ? 'flutter' : 'dart', [
-  'test',
-  '--exclude-tags=integration',
-  if (coverage && group.package.flutter) '--coverage',
-  if (coverage && !group.package.flutter) '--coverage=coverage',
-  '--concurrency=2',
-  '--timeout=30s',
-  '--reporter=compact',
-  if (shard.total > 1) '--total-shards=${shard.total}',
-  if (shard.total > 1) '--shard-index=${shard.index}',
-  ...group.paths,
-]);
+}) => _Command(
+  _workspaceExecutable(rootPath, group.package.flutter ? 'flutter' : 'dart'),
+  [
+    'test',
+    '--exclude-tags=integration',
+    if (coverage && group.package.flutter) '--coverage',
+    if (coverage && !group.package.flutter) '--coverage=coverage',
+    '--concurrency=2',
+    '--timeout=30s',
+    '--reporter=compact',
+    if (shard.total > 1) '--total-shards=${shard.total}',
+    if (shard.total > 1) '--shard-index=${shard.index}',
+    ...group.paths,
+  ],
+);
 
-_Command? _coverageCommand(_TestGroup group) {
+_Command? _coverageCommand(_TestGroup group, {required String rootPath}) {
   if (group.package.flutter) return null;
 
-  return _Command('dart', [
+  return _Command(_workspaceExecutable(rootPath, 'dart'), [
     'run',
     'coverage:format_coverage',
     '--lcov',
@@ -823,6 +832,19 @@ _Command? _coverageCommand(_TestGroup group) {
     '--out=coverage/lcov.info',
     '--report-on=lib',
   ]);
+}
+
+String _workspaceExecutable(String rootPath, String name) {
+  final names = Platform.isWindows ? ['$name.bat', '$name.exe'] : [name];
+  final root = Directory(rootPath);
+  for (final candidate in names) {
+    final file = File.fromUri(
+      root.uri.resolve('.fvm/flutter_sdk/bin/$candidate'),
+    );
+    if (file.existsSync()) return file.path;
+  }
+
+  return name;
 }
 
 Future<int> _launchProcess({

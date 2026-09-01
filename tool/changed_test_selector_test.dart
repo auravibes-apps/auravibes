@@ -682,6 +682,79 @@ void main() {
   });
 
   test(
+    'runner uses the workspace FVM Flutter executable when present',
+    () async {
+      final root = await _runnerFixture(flutter: true);
+      addTearDown(() => root.delete(recursive: true));
+      final bin = await Directory('${root.path}/.fvm/flutter_sdk/bin')
+          .create(recursive: true);
+      final flutter = await File('${bin.path}/flutter').create();
+      String? capturedExecutable;
+
+      final code = await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/behavior_test.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+          ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              capturedExecutable = executable;
+
+              return 0;
+            },
+      );
+
+      expect(code, 0);
+      expect(capturedExecutable, flutter.path);
+    },
+  );
+
+  test(
+    'coverage runner uses the workspace FVM Dart executable when present',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final bin = await Directory('${root.path}/.fvm/flutter_sdk/bin')
+          .create(recursive: true);
+      final dart = await File('${bin.path}/dart').create();
+      final executables = <String>[];
+
+      final code = await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/behavior_test.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              executables.add(executable);
+
+              return 0;
+            },
+        coverage: true,
+      );
+
+      expect(code, 0);
+      expect(executables, [dart.path, dart.path]);
+    },
+  );
+
+  test(
     'runner filters to one package, shards, and propagates coverage failure',
     () async {
       final root = await _runnerFixture();
