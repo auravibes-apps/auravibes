@@ -7,9 +7,10 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:dio/dio.dart';
 
 class CloudChatAttachmentAdapter({
-  required final CloudChatGateway _gateway,
+  required CloudChatGateway gateway,
   Dio? dio,
 }) {
+  final CloudChatGateway _gateway = gateway;
   final Dio _dio = dio ?? Dio();
 
   CloudChatAttachmentUsecase createUsecase() => CloudChatAttachmentUsecase(
