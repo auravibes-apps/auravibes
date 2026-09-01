@@ -47,7 +47,7 @@ jobs:
         run: melos analyze
 
       - name: Test CI tools
-        run: fvm dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
+        run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
 
   code-health:
     name: code health
@@ -139,7 +139,7 @@ jobs:
         run: |
           manifest="$RUNNER_TEMP/changed-tests.json"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            if ! fvm dart run tool/changed_test_selector.dart select \
+            if ! dart run tool/changed_test_selector.dart select \
               --base "${{ github.event.pull_request.base.sha }}" \
               --head HEAD \
               --output "$manifest"; then
@@ -150,7 +150,7 @@ jobs:
           fi
 
           mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "$manifest")"
-          matrix="$(fvm dart run tool/changed_test_selector.dart matrix \
+          matrix="$(dart run tool/changed_test_selector.dart matrix \
             --manifest "$manifest" \
             --shard-package apps/auravibes_app \
             --shard-count 3)"
@@ -199,7 +199,7 @@ jobs:
           if [ "${{ needs.test-plan.outputs.mode }}" = "full" ]; then
             coverage=(--coverage)
           fi
-          fvm dart run tool/changed_test_selector.dart run \
+          dart run tool/changed_test_selector.dart run \
             --manifest "$RUNNER_TEMP/test-plan/changed-tests.json" \
             --package "${{ matrix.package }}" \
             --total-shards "${{ matrix.totalShards }}" \
@@ -245,7 +245,7 @@ jobs:
 
       - name: Merge LCOV reports for Sonar
         run: |
-          fvm dart run tool/merge_lcov.dart \
+          dart run tool/merge_lcov.dart \
             --input-root "$RUNNER_TEMP/coverage-artifacts" \
             --output coverage/lcov.info \
             --expected-reports "${{ needs.test-plan.outputs.coverage-report-count }}"
