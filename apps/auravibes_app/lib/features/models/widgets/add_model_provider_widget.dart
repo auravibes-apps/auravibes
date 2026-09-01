@@ -483,10 +483,8 @@ class const _CreateButton({
   }
 }
 
-class _CodexOAuthPendingStatus extends StatelessWidget {
-  const _CodexOAuthPendingStatus({this.showSpinner = true});
-
-  final bool showSpinner;
+class const _CodexOAuthPendingStatus({final bool showSpinner = true})
+    extends StatelessWidget {
 
   @override
   Widget build(BuildContext _) {
