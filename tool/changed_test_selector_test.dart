@@ -561,9 +561,8 @@ Future<Directory> _runnerFixture({
 }) async {
   final root = await Directory.systemTemp.createTemp('changed-selector-');
   final package = Directory('${root.path}/packages/core');
-  final _ = await Directory(
-    '${package.path}/test/features',
-  ).create(recursive: true);
+  final _ = await Directory('${package.path}/test/features')
+      .create(recursive: true);
   final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
 name: fixture
 workspace:
@@ -574,12 +573,10 @@ name: core
 dependencies:
 ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
 ''');
-  final _ = await File(
-    '${package.path}/test/behavior_test.dart',
-  ).writeAsString('void main() {}');
-  final _ = await File(
-    '${package.path}/test/features/example_test.dart',
-  ).writeAsString('void main() {}');
+  final _ = await File('${package.path}/test/behavior_test.dart')
+      .writeAsString('void main() {}');
+  final _ = await File('${package.path}/test/features/example_test.dart')
+      .writeAsString('void main() {}');
   if (serverpod) {
     final _ = await File(
       '${package.path}/test/integration/test_tools/serverpod_test_tools.dart',

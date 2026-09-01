@@ -127,9 +127,8 @@ class AddModelProviderState extends _$AddModelProviderState {
               url: state.url,
             ),
           );
-          final oauth = await CloudModelGateway(
-            gateway,
-          ).startCodexOAuth(connectionId: connection.id);
+          final oauth = await CloudModelGateway(gateway)
+              .startCodexOAuth(connectionId: connection.id);
           await ref.read(openCodexAuthorizationProvider)(
             Uri.parse(oauth.authorizationUrl),
           );

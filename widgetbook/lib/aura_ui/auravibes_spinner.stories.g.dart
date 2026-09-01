@@ -19,8 +19,7 @@ typedef _Args = _SpinnerInputArgs;
 final AuraSpinnerComponent = Component<AuraSpinner, StoryArgs<AuraSpinner>>(
   name: 'AuraSpinner',
   path: 'aura_ui',
-  docComment:
-      r'''A customizable loading spinner component following the Aura design system.''',
+  docComment: r'''A customizable loading spinner component following the Aura design system.''',
   stories: [$AuraSpinner..$generatedName = 'AuraSpinner'],
 );
 typedef AuraSpinnerScenario = Scenario<AuraSpinner, _SpinnerInputArgs>;

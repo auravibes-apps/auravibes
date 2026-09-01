@@ -19,8 +19,7 @@ typedef _Args = AuraImageArgs;
 final AuraImageComponent = Component<AuraImage, StoryArgs<AuraImage>>(
   name: 'AuraImage',
   path: 'aura_ui',
-  docComment:
-      r'''Displays an image loaded from [url] with Aura loading and error states.''',
+  docComment: r'''Displays an image loaded from [url] with Aura loading and error states.''',
   stories: [$BasicImage..$generatedName = 'BasicImage'],
 );
 typedef AuraImageScenario = Scenario<AuraImage, AuraImageArgs>;

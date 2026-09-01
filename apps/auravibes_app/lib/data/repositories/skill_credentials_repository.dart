@@ -19,7 +19,7 @@ class SkillCredentialsRepository({
 }) {
   this : super();
 
-  final SkillCredentialsDao _dao = database.skillCredentialsDao;
+  final SkillCredentialsDao _dao = _database.skillCredentialsDao;
   Future<List<SkillCredentialEntity>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,

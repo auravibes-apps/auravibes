@@ -21,8 +21,7 @@ final AuraIconButtonComponent =
       name: component.name ?? 'AuraIconButton',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''A specialized icon button component following the Aura design system.''',
+      docComment: r'''A specialized icon button component following the Aura design system.''',
       stories: [$IconButtonBasic..$generatedName = 'IconButtonBasic'],
     );
 typedef AuraIconButtonScenario = Scenario<AuraIconButton, _IconButtonInputArgs>;

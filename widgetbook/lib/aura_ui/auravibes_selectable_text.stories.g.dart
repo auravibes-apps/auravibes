@@ -22,8 +22,7 @@ final SelectableTextDemoComponent =
       name: component.name ?? 'SelectableTextDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates selectable text callbacks and cursor configuration.''',
+      docComment: r'''Demonstrates selectable text callbacks and cursor configuration.''',
       stories: [
         $DefaultSelectableText..$generatedName = 'DefaultSelectableText',
       ],

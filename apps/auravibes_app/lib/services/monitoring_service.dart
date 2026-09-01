@@ -30,9 +30,9 @@ class MonitoringService {
   }
 
   String _sanitize(Object value) {
-    final normalized = LogRedaction.redact(
-      value,
-    ).replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized = LogRedaction.redact(value)
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
 
     if (normalized.length <= _maxLogFieldLength) {
       return normalized;

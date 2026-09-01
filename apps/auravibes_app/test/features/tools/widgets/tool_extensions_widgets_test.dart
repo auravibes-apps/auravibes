@@ -90,9 +90,8 @@ void main() {
     });
 
     test('getDescriptionWidget returns Text when description set', () {
-      final widget = _entity(
-        description: 'A calculator',
-      ).getDescriptionWidget();
+      final widget = _entity(description: 'A calculator')
+          .getDescriptionWidget();
       expect(widget, isA<Text>());
     });
 

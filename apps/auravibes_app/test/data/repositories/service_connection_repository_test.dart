@@ -127,8 +127,9 @@ void main() {
         clearSecret: false,
       );
       expect(
-        (await repository.readSecret(id) as ServiceConnectionSecretApiKey)
-            .apiKey,
+        (await repository.readSecret(
+          id,
+        ) as ServiceConnectionSecretApiKey).apiKey,
         'old-secret',
       );
 
@@ -140,8 +141,9 @@ void main() {
         secret: 'new-secret',
       );
       expect(
-        (await repository.readSecret(id) as ServiceConnectionSecretApiKey)
-            .apiKey,
+        (await repository.readSecret(
+          id,
+        ) as ServiceConnectionSecretApiKey).apiKey,
         'new-secret',
       );
 

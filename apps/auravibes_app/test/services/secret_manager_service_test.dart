@@ -20,9 +20,8 @@ void main() {
     });
 
     test('clearCache resets cached key', () async {
-      when(
-        () => mockStorage.read(key: any(named: 'key')),
-      ).thenAnswer((_) async => null);
+      when(() => mockStorage.read(key: any(named: 'key')))
+          .thenAnswer((_) async => null);
       when(
         () => mockStorage.write(
           key: any(named: 'key'),
@@ -88,9 +87,8 @@ void main() {
     );
 
     test('getOrCreateSecretKey returns cached key on second call', () async {
-      when(
-        () => mockStorage.read(key: any(named: 'key')),
-      ).thenAnswer((_) async => null);
+      when(() => mockStorage.read(key: any(named: 'key')))
+          .thenAnswer((_) async => null);
       when(
         () => mockStorage.write(
           key: any(named: 'key'),
@@ -104,24 +102,21 @@ void main() {
       final key2 = await manager.getOrCreateSecretKey();
 
       expect(identical(key1, key2), true);
-      verify(
-        () => mockStorage.read(key: 'app_encryption_secret_key'),
-      ).called(1);
+      verify(() => mockStorage.read(key: 'app_encryption_secret_key'))
+          .called(1);
     });
 
     test('getOrCreateSecretKey loads existing key from storage', () async {
       final existingKeyBase64 = base64Encode(List<int>.generate(32, (i) => i));
-      when(
-        () => mockStorage.read(key: any(named: 'key')),
-      ).thenAnswer((_) async => existingKeyBase64);
+      when(() => mockStorage.read(key: any(named: 'key')))
+          .thenAnswer((_) async => existingKeyBase64);
 
       final key = await manager.getOrCreateSecretKey();
       final bytes = await key.extractBytes();
 
       expect(bytes, hasLength(32));
-      verify(
-        () => mockStorage.read(key: 'app_encryption_secret_key'),
-      ).called(1);
+      verify(() => mockStorage.read(key: 'app_encryption_secret_key'))
+          .called(1);
       final _ = verifyNever(
         () => mockStorage.write(
           key: any(named: 'key'),
@@ -133,9 +128,8 @@ void main() {
     test(
       'getOrCreateSecretKey generates and saves new key when none exists',
       () async {
-        when(
-          () => mockStorage.read(key: any(named: 'key')),
-        ).thenAnswer((_) async => null);
+        when(() => mockStorage.read(key: any(named: 'key')))
+            .thenAnswer((_) async => null);
         when(
           () => mockStorage.write(
             key: any(named: 'key'),
@@ -160,9 +154,8 @@ void main() {
 
     test('getOrCreateSecretKey shares concurrent key creation', () async {
       final readCompleter = Completer<String?>();
-      when(
-        () => mockStorage.read(key: any(named: 'key')),
-      ).thenAnswer((_) => readCompleter.future);
+      when(() => mockStorage.read(key: any(named: 'key')))
+          .thenAnswer((_) => readCompleter.future);
       when(
         () => mockStorage.write(
           key: any(named: 'key'),
@@ -178,9 +171,8 @@ void main() {
       final keys = await Future.wait([first, second]);
 
       expect(identical(keys.firstOrNull, keys.lastOrNull), isTrue);
-      verify(
-        () => mockStorage.read(key: 'app_encryption_secret_key'),
-      ).called(1);
+      verify(() => mockStorage.read(key: 'app_encryption_secret_key'))
+          .called(1);
       verify(
         () => mockStorage.write(
           key: 'app_encryption_secret_key',

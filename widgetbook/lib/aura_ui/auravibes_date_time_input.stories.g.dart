@@ -21,8 +21,7 @@ final DateTimeInputDemoComponent =
       name: component.name ?? 'DateTimeInputDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates the controlled date and time picker in its supported modes.''',
+      docComment: r'''Demonstrates the controlled date and time picker in its supported modes.''',
       stories: [$DateAndTime..$generatedName = 'DateAndTime'],
     );
 typedef DateTimeInputDemoScenario =

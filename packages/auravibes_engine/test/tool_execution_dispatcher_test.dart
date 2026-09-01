@@ -4,21 +4,19 @@ import 'package:test/test.dart';
 void main() {
   Future<AgentToolExecutionResult> run(Object result) {
     return AgentToolExecutionDispatcher<String>(
-      runResolvedTool:
-          ({
-            required conversationId,
-            required tool,
-            required arguments,
-          }) async => result,
+      runResolvedTool: ({
+        required conversationId,
+        required tool,
+        required arguments,
+      }) async => result,
       isCancellationRequested: (_) => false,
-      logToolExecutionError:
-          ({
-            required conversationId,
-            required toolCallId,
-            required tool,
-            required error,
-            required stackTrace,
-          }) {},
+      logToolExecutionError: ({
+        required conversationId,
+        required toolCallId,
+        required tool,
+        required error,
+        required stackTrace,
+      }) {},
     ).call(
       conversationId: 'conversation-1',
       toolCallId: 'call-1',

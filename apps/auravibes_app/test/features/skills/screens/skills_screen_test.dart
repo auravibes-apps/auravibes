@@ -114,9 +114,8 @@ void main() {
             ),
           ],
         ),
-        deleteSkillProvider(
-          workspace.id,
-        ).overrideWithValue(skillsRepository.deleteSkill),
+        deleteSkillProvider(workspace.id)
+            .overrideWithValue(skillsRepository.deleteSkill),
       ],
     );
     addTearDown(container.dispose);

@@ -30,9 +30,8 @@ void main() {
         container: container,
       );
 
-      when(
-        () => messageRepository.getMessagesByConversation(any()),
-      ).thenAnswer((_) async => const []);
+      when(() => messageRepository.getMessagesByConversation(any()))
+          .thenAnswer((_) async => const []);
     });
 
     tearDown(() {

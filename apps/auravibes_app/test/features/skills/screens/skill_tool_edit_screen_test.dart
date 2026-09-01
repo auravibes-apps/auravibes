@@ -204,9 +204,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.save_outlined));
     final _ = await tester.pumpAndSettle();
 
-    final tool = await SkillTemplateToolsRepository(
-      database,
-    ).getToolBySlug(skill.id, 'find_company');
+    final tool = await SkillTemplateToolsRepository(database)
+        .getToolBySlug(skill.id, 'find_company');
     final templateJson = (tool ?? fail('tool missing')).templateJson;
     expect(tool.description, 'Find company records.');
     expect(jsonDecode(templateJson), {

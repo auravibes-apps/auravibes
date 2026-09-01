@@ -22,8 +22,7 @@ final SingleCheckboxDemoComponent =
       name: component.name ?? 'SingleCheckboxDemo',
       path: component.path ?? 'aura_ui',
       docsBuilder: component.docsBuilder,
-      docComment:
-          r'''Demonstrates a controlled checkbox with focus, tint, and disabled states.''',
+      docComment: r'''Demonstrates a controlled checkbox with focus, tint, and disabled states.''',
       stories: [$SingleCheckbox..$generatedName = 'SingleCheckbox'],
     );
 typedef SingleCheckboxDemoScenario =

@@ -16,16 +16,16 @@ typedef _Scenario = AuraContainerScenario;
 typedef _Defaults = AuraContainerDefaults;
 typedef _Story = AuraContainerStory;
 typedef _Args = _ContainerInputArgs;
-final AuraContainerComponent = Component<AuraContainer, StoryArgs<AuraContainer>>(
-  name: 'AuraContainer',
-  path: 'aura_ui',
-  docComment:
-      r'''A customizable layout container component following the Aura design system.
+final AuraContainerComponent =
+    Component<AuraContainer, StoryArgs<AuraContainer>>(
+      name: 'AuraContainer',
+      path: 'aura_ui',
+      docComment: r'''A customizable layout container component following the Aura design system.
 
 This container provides consistent padding, margin, background colors,
 border radius, and shadow options for layout organization.''',
-  stories: [$BasicContainer..$generatedName = 'BasicContainer'],
-);
+      stories: [$BasicContainer..$generatedName = 'BasicContainer'],
+    );
 typedef AuraContainerScenario = Scenario<AuraContainer, _ContainerInputArgs>;
 typedef AuraContainerDefaults = Defaults<AuraContainer, _ContainerInputArgs>;
 

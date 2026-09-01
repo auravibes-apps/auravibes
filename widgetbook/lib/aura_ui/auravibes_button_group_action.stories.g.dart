@@ -20,8 +20,7 @@ final ActionDemoComponent = Component<ActionDemo, StoryArgs<ActionDemo>>(
   name: component.name ?? 'ActionDemo',
   path: component.path ?? 'aura_ui',
   docsBuilder: component.docsBuilder,
-  docComment:
-      r'''Demonstrates an action button group and reports the last pressed action.''',
+  docComment: r'''Demonstrates an action button group and reports the last pressed action.''',
   stories: [$ActionClickable..$generatedName = 'ActionClickable'],
 );
 typedef ActionDemoScenario = Scenario<ActionDemo, ActionDemoArgs>;

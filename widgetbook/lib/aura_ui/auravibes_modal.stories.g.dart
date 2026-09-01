@@ -20,8 +20,7 @@ final AuraModalComponent = Component<AuraModal, StoryArgs<AuraModal>>(
   name: component.name ?? 'AuraModal',
   path: component.path ?? 'aura_ui',
   docsBuilder: component.docsBuilder,
-  docComment:
-      r'''A reusable modal composition with an entry point and arbitrary content.
+  docComment: r'''A reusable modal composition with an entry point and arbitrary content.
 
 Tapping or activating [entryPointChild] opens [contentChild] in a modal
 route. Content can close itself with `Navigator.of(context).pop()`.''',
