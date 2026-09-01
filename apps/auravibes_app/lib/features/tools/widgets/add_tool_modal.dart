@@ -16,11 +16,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new tools to the workspace.
-class AddToolModal extends HookConsumerWidget {
+class const AddToolModal({required final String workspaceId, super.key})
+    extends HookConsumerWidget {
   static const _iconSize = 40.0;
-  const AddToolModal({required this.workspaceId, super.key});
-
-  final String workspaceId;
 
   /// Shows the add tool modal as a dialog.
   static Future<void> show(
@@ -128,17 +126,11 @@ class AddToolModal extends HookConsumerWidget {
   }
 }
 
-class _AvailableToolsList extends StatelessWidget {
-  const _AvailableToolsList({
-    required this.workspaceId,
-    required this.tools,
-    required this.searchQuery,
-  });
-
-  final String workspaceId;
-  final List<UserToolType> tools;
-  final String searchQuery;
-
+class const _AvailableToolsList({
+  required final String workspaceId,
+  required final List<UserToolType> tools,
+  required final String searchQuery,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Filter tools based on search query.
@@ -191,12 +183,10 @@ class _AvailableToolsList extends StatelessWidget {
   }
 }
 
-class _AvailableToolTile extends ConsumerWidget {
-  const _AvailableToolTile({required this.toolType, required this.workspaceId});
-
-  final UserToolType toolType;
-  final String workspaceId;
-
+class const _AvailableToolTile({
+  required final UserToolType toolType,
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraTile(

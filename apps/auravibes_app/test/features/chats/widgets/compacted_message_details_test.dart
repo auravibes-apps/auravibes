@@ -24,11 +24,8 @@ MessageEntity _makeMessage({
   );
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.message});
-
-  final MessageEntity message;
-
+class const _Subject({required final MessageEntity message})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

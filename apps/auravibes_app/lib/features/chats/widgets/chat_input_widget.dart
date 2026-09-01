@@ -43,47 +43,27 @@ const String _voiceRecordLabelKey =
 const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
 
-class ChatInputWidget extends HookConsumerWidget {
+class const ChatInputWidget({
+  required final String workspaceId,
+  required final FutureOr<void> Function(ChatDraft draft) onSendMessage,
+  required final VoidCallback onToolsPress,
+  required final Widget modelSheetControl,
+  required final Widget agentSheetControl,
+  required final Widget modelCompactControl,
+  required final Widget agentCompactControl,
+  final List<String> modalitiesInput = const [],
+  final VoidCallback? onSkillsPress,
+  final VoidCallback? onContinueAgent,
+  final Widget? disabledHint,
+  final bool disabled = false,
+  final bool isBusy = false,
+  final bool? showStopButton,
+  final VoidCallback? onStop,
+  final VoidCallback? onCompact,
+  final bool isCompacting = false,
+  super.key,
+}) extends HookConsumerWidget {
   static const _maxInputLines = 2;
-  const ChatInputWidget({
-    required this.workspaceId,
-    required this.onSendMessage,
-    required this.onToolsPress,
-    required this.modelSheetControl,
-    required this.agentSheetControl,
-    required this.modelCompactControl,
-    required this.agentCompactControl,
-    this.modalitiesInput = const [],
-    this.onSkillsPress,
-    this.onContinueAgent,
-    this.disabledHint,
-    this.disabled = false,
-    this.isBusy = false,
-    this.showStopButton,
-    this.onStop,
-    this.onCompact,
-    this.isCompacting = false,
-    super.key,
-  });
-
-  final bool disabled;
-  final String workspaceId;
-  final bool isBusy;
-  final bool? showStopButton;
-  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
-  final VoidCallback onToolsPress;
-  final VoidCallback? onSkillsPress;
-  final VoidCallback? onContinueAgent;
-  final List<String> modalitiesInput;
-  final Widget modelSheetControl;
-  final Widget agentSheetControl;
-  final Widget modelCompactControl;
-  final Widget agentCompactControl;
-  final Widget? disabledHint;
-  final VoidCallback? onStop;
-  final VoidCallback? onCompact;
-  final bool isCompacting;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController();
@@ -96,9 +76,8 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
     final workspaceCapabilities = ref.watch(
-      workspaceSessionForRouteProvider(
-        workspaceId,
-      ).select((session) => session.value?.capabilities),
+      workspaceSessionForRouteProvider(workspaceId)
+          .select((session) => session.value?.capabilities),
     );
 
     final isTextEmpty = useListenableSelector(
@@ -213,39 +192,22 @@ class ChatInputWidget extends HookConsumerWidget {
   }
 }
 
-class _ChatInputActions {
-  const _ChatInputActions({
-    required this.ref,
-    required this.controller,
-    required this.focusNode,
-    required this.attachments,
-    required this.isSending,
-    required this.isRecording,
-    required this.isStartingRecording,
-    required this.recordingElapsed,
-    required this.recordingTimer,
-    required this.recordingStart,
-    required this.modalitiesInput,
-    required this.onSendMessage,
-    required this.disabled,
-    required this.isEmpty,
-  });
-
-  final WidgetRef ref;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueNotifier<List<MessageAttachmentToCreate>> attachments;
-  final ValueNotifier<bool> isSending;
-  final ValueNotifier<bool> isRecording;
-  final ValueNotifier<bool> isStartingRecording;
-  final ValueNotifier<Duration> recordingElapsed;
-  final ObjectRef<Timer?> recordingTimer;
-  final ObjectRef<Future<void>?> recordingStart;
-  final List<String> modalitiesInput;
-  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
-  final bool disabled;
-  final bool isEmpty;
-
+class const _ChatInputActions({
+  required final WidgetRef ref,
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+  required final ValueNotifier<List<MessageAttachmentToCreate>> attachments,
+  required final ValueNotifier<bool> isSending,
+  required final ValueNotifier<bool> isRecording,
+  required final ValueNotifier<bool> isStartingRecording,
+  required final ValueNotifier<Duration> recordingElapsed,
+  required final ObjectRef<Timer?> recordingTimer,
+  required final ObjectRef<Future<void>?> recordingStart,
+  required final List<String> modalitiesInput,
+  required final FutureOr<void> Function(ChatDraft draft) onSendMessage,
+  required final bool disabled,
+  required final bool isEmpty,
+}) {
   void disposeDraft() {
     if (isRecording.value || isStartingRecording.value) {
       unawaited(
@@ -544,59 +506,32 @@ AuraPopupMenuItem _attachmentMenuItem({
   );
 }
 
-class _ChatInputFooter extends StatelessWidget {
-  const _ChatInputFooter({
-    required this.actions,
-    required this.attachments,
-    required this.disabled,
-    required this.isBusy,
-    required this.isCompacting,
-    required this.isEmpty,
-    required this.isMacOS,
-    required this.isRecording,
-    required this.isSending,
-    required this.isStartingRecording,
-    required this.modelCompactControl,
-    required this.modelSheetControl,
-    required this.onToolsPress,
-    required this.recordingElapsed,
-    required this.shouldShowStopButton,
-    required this.supportsAudio,
-    required this.supportsFile,
-    required this.supportsImage,
-    required this.supportsLocalAttachments,
-    this.disabledHint,
-    this.onCompact,
-    this.onContinueAgent,
-    this.onSkillsPress,
-    this.onStop,
-  });
-
-  final _ChatInputActions actions;
-  final List<MessageAttachmentToCreate> attachments;
-  final bool disabled;
-  final Widget? disabledHint;
-  final bool isBusy;
-  final bool isCompacting;
-  final bool isEmpty;
-  final bool isMacOS;
-  final bool isRecording;
-  final bool isSending;
-  final bool isStartingRecording;
-  final Widget modelCompactControl;
-  final Widget modelSheetControl;
-  final VoidCallback? onCompact;
-  final VoidCallback? onContinueAgent;
-  final VoidCallback? onSkillsPress;
-  final VoidCallback? onStop;
-  final VoidCallback onToolsPress;
-  final Duration recordingElapsed;
-  final bool shouldShowStopButton;
-  final bool supportsAudio;
-  final bool supportsFile;
-  final bool supportsImage;
-  final bool supportsLocalAttachments;
-
+class const _ChatInputFooter({
+  required final _ChatInputActions actions,
+  required final List<MessageAttachmentToCreate> attachments,
+  required final bool disabled,
+  required final bool isBusy,
+  required final bool isCompacting,
+  required final bool isEmpty,
+  required final bool isMacOS,
+  required final bool isRecording,
+  required final bool isSending,
+  required final bool isStartingRecording,
+  required final Widget modelCompactControl,
+  required final Widget modelSheetControl,
+  required final VoidCallback onToolsPress,
+  required final Duration recordingElapsed,
+  required final bool shouldShowStopButton,
+  required final bool supportsAudio,
+  required final bool supportsFile,
+  required final bool supportsImage,
+  required final bool supportsLocalAttachments,
+  final Widget? disabledHint,
+  final VoidCallback? onCompact,
+  final VoidCallback? onContinueAgent,
+  final VoidCallback? onSkillsPress,
+  final VoidCallback? onStop,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -784,17 +719,11 @@ class _ChatInputFooter extends StatelessWidget {
   }
 }
 
-class _AttachmentChips extends StatelessWidget {
-  const _AttachmentChips({
-    required this.attachments,
-    required this.onRemove,
-    this.enabled = true,
-  });
-
-  final List<MessageAttachmentToCreate> attachments;
-  final ValueChanged<MessageAttachmentToCreate> onRemove;
-  final bool enabled;
-
+class const _AttachmentChips({
+  required final List<MessageAttachmentToCreate> attachments,
+  required final ValueChanged<MessageAttachmentToCreate> onRemove,
+  final bool enabled = true,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
@@ -812,11 +741,8 @@ class _AttachmentChips extends StatelessWidget {
   }
 }
 
-class _RecordingIndicator extends StatelessWidget {
-  const _RecordingIndicator({required this.elapsed});
-
-  final Duration elapsed;
-
+class const _RecordingIndicator({required final Duration elapsed})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;

@@ -9,15 +9,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'delete_service_connection_usecase.g.dart';
 
-class DeleteServiceConnectionUsecase {
-  DeleteServiceConnectionUsecase({
-    required ModelConnectionStore modelConnectionRepository,
-    required this.deleteSkillCredential,
-  }) : modelConnectionStore = modelConnectionRepository;
-
-  final ModelConnectionStore modelConnectionStore;
-  final Future<void> Function(String id) deleteSkillCredential;
-
+class DeleteServiceConnectionUsecase({
+  required ModelConnectionStore modelConnectionRepository,
+  required final Future<void> Function(String id) deleteSkillCredential,
+}) {
+  final ModelConnectionStore modelConnectionStore = modelConnectionRepository;
   Future<void> call({
     required String connectionId,
     required ServiceConnectionListItemKind kind,
@@ -55,9 +51,8 @@ Future<DeleteServiceConnectionUsecase> deleteServiceConnectionUsecase(
       ),
       deleteSkillCredential: gateway == null
           ? ref.watch(skillCredentialsRepositoryProvider).deleteCredential
-          : CloudServiceConnectionUsecases(
-              CloudWorkspaceResourceStore(gateway),
-            ).deleteById,
+          : CloudServiceConnectionUsecases(CloudWorkspaceResourceStore(gateway))
+                .deleteById,
     );
   } finally {
     link.close();

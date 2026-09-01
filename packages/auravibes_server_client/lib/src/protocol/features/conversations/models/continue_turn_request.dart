@@ -12,22 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ContinueTurnRequest implements _i1.SerializableModel {
-  ContinueTurnRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.conversationId,
-    required this.expectedConversationRevision,
-  });
-
-  factory ContinueTurnRequest({
+abstract class ContinueTurnRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var String conversationId,
+  required var int expectedConversationRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required String conversationId,
     required int expectedConversationRevision,
   }) = _ContinueTurnRequestImpl;
 
-  factory ContinueTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ContinueTurnRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
@@ -36,14 +34,6 @@ abstract class ContinueTurnRequest implements _i1.SerializableModel {
           jsonSerialization['expectedConversationRevision'] as int,
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  String conversationId;
-
-  int expectedConversationRevision;
 
   /// Returns a shallow copy of this [ContinueTurnRequest]
   /// with some or all fields replaced by the given arguments.
@@ -71,18 +61,19 @@ abstract class ContinueTurnRequest implements _i1.SerializableModel {
   }
 }
 
-class _ContinueTurnRequestImpl extends ContinueTurnRequest {
-  _ContinueTurnRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required String conversationId,
-    required int expectedConversationRevision,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         conversationId: conversationId,
-         expectedConversationRevision: expectedConversationRevision,
-       );
+class _ContinueTurnRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required String conversationId,
+  required int expectedConversationRevision,
+}) extends ContinueTurnRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedConversationRevision: expectedConversationRevision,
+      );
 
   /// Returns a shallow copy of this [ContinueTurnRequest]
   /// with some or all fields replaced by the given arguments.

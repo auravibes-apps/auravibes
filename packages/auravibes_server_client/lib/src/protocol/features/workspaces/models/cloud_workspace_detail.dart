@@ -11,28 +11,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/workspaces/models/cloud_workspace_summary.dart'
     as _i2;
 import '../../../features/workspaces/models/cloud_workspace_capabilities.dart'
     as _i3;
+
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
-abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
-  CloudWorkspaceDetail._({
-    required this.workspace,
-    required this.ownerUserId,
-    this.ownerEmail,
-    required this.capabilities,
-  });
-
-  factory CloudWorkspaceDetail({
+abstract class CloudWorkspaceDetail._({
+  required var _i2.CloudWorkspaceSummary workspace,
+  required var String ownerUserId,
+  var String? ownerEmail,
+  required var _i3.CloudWorkspaceCapabilities capabilities,
+}) implements _i1.SerializableModel {
+  factory({
     required _i2.CloudWorkspaceSummary workspace,
     required String ownerUserId,
     String? ownerEmail,
     required _i3.CloudWorkspaceCapabilities capabilities,
   }) = _CloudWorkspaceDetailImpl;
 
-  factory CloudWorkspaceDetail.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceDetail(
@@ -46,14 +46,6 @@ abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
       ),
     );
   }
-
-  _i2.CloudWorkspaceSummary workspace;
-
-  String ownerUserId;
-
-  String? ownerEmail;
-
-  _i3.CloudWorkspaceCapabilities capabilities;
 
   /// Returns a shallow copy of this [CloudWorkspaceDetail]
   /// with some or all fields replaced by the given arguments.
@@ -81,20 +73,21 @@ abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _CloudWorkspaceDetailImpl extends CloudWorkspaceDetail {
-  _CloudWorkspaceDetailImpl({
-    required _i2.CloudWorkspaceSummary workspace,
-    required String ownerUserId,
-    String? ownerEmail,
-    required _i3.CloudWorkspaceCapabilities capabilities,
-  }) : super._(
-         workspace: workspace,
-         ownerUserId: ownerUserId,
-         ownerEmail: ownerEmail,
-         capabilities: capabilities,
-       );
+class _CloudWorkspaceDetailImpl({
+  required _i2.CloudWorkspaceSummary workspace,
+  required String ownerUserId,
+  String? ownerEmail,
+  required _i3.CloudWorkspaceCapabilities capabilities,
+}) extends CloudWorkspaceDetail {
+  this
+    : super._(
+        workspace: workspace,
+        ownerUserId: ownerUserId,
+        ownerEmail: ownerEmail,
+        capabilities: capabilities,
+      );
 
   /// Returns a shallow copy of this [CloudWorkspaceDetail]
   /// with some or all fields replaced by the given arguments.

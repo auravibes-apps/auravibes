@@ -40,8 +40,7 @@ List<McpDiscoveredTool> parseMcpToolsList(Map<String, Object?> result) {
       .toList(growable: false);
 }
 
-sealed class McpContent {
-  const McpContent();
+sealed class const McpContent() {
   Map<String, Object?> toJson();
 }
 
@@ -133,9 +132,8 @@ class McpToolResult {
   final bool? isError;
 
   String toModelText() {
-    if (content case [
-      McpTextContent(:final text),
-    ] when structuredContent == null && !isStreaming && isError != true) {
+    if (content case [McpTextContent(:final text)]
+        when structuredContent == null && !isStreaming && isError != true) {
       return text;
     }
     return jsonEncode({

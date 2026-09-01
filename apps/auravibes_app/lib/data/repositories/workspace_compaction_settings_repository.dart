@@ -4,11 +4,9 @@ import 'package:auravibes_app/data/database/drift/daos/workspace_compaction_sett
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:drift/drift.dart';
 
-class WorkspaceCompactionSettingsRepository {
-  WorkspaceCompactionSettingsRepository(this._dao);
-
-  final WorkspaceCompactionSettingsDao _dao;
-
+class WorkspaceCompactionSettingsRepository(
+  final WorkspaceCompactionSettingsDao _dao,
+) {
   Stream<CompactionSettings> watchEffectiveSettings(String workspaceId) {
     return _dao.watchByWorkspaceId(workspaceId).map(_resolveEffective);
   }

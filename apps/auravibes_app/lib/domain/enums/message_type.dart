@@ -1,12 +1,10 @@
-enum MessageType {
+enum MessageType(final String value) {
   text('text'),
   image('image'),
   toolCall('tool_call'),
   system('system');
 
-  const MessageType(this.value);
-
-  factory MessageType.fromString(String value) {
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'text':
         return MessageType.text;
@@ -20,8 +18,6 @@ enum MessageType {
         throw ArgumentError('Invalid message type: $value');
     }
   }
-  final String value;
-
   String get displayName {
     switch (this) {
       case MessageType.text:
@@ -59,7 +55,7 @@ enum MessageType {
 /// `sending` is transient and primarily in-memory, but may be briefly
 /// persisted until confirmation. `unfinished` is persisted to the database
 /// and means a pending outcome if the app closes, crashes, or errors.
-enum MessageStatus {
+enum MessageStatus(final String value) {
   /// Transient state for UI feedback while actively transmitting.
   /// May be briefly persisted until confirmation from AI service.
   sending('sending'),
@@ -74,9 +70,7 @@ enum MessageStatus {
   /// Message failed - check error details in metadata.
   error('error');
 
-  const MessageStatus(this.value);
-
-  factory MessageStatus.fromString(String value) {
+  factory fromString(String value) {
     switch (value.toLowerCase()) {
       case 'sending':
         return MessageStatus.sending;
@@ -90,8 +84,6 @@ enum MessageStatus {
         throw ArgumentError('Invalid message status: $value');
     }
   }
-  final String value;
-
   String get displayName {
     switch (this) {
       case MessageStatus.sending:

@@ -8,9 +8,7 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('app_logging');
 
-class AppLogging {
-  AppLogging._();
-
+class AppLogging._() {
   static bool _configured = false;
   static StreamSubscription<LogRecord>? _subscription;
 

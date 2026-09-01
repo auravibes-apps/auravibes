@@ -89,4 +89,4 @@ void main() {
   });
 }
 
-class _MockWorkspaceRepository extends Mock implements WorkspaceRepository {}
+class _MockWorkspaceRepository extends Mock implements WorkspaceRepository;

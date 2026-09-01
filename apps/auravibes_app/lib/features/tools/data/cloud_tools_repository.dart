@@ -23,14 +23,14 @@ class CloudToolsRepository
         WorkspaceToolsRepositoryContract,
         ToolsGroupsRepositoryContract,
         McpServersRepositoryContract {
-  CloudToolsRepository(this._gatewayFuture)
+  new(this._gatewayFuture)
     : _readState = null,
       _patchState = null,
       _create = null,
       _delete = null,
       _discover = null;
 
-  CloudToolsRepository.forTesting({
+  new forTesting({
     required Future<ReadWorkspaceStateResponse> Function({
       required List<WorkspaceResourcePageRequest> pages,
     })
@@ -169,9 +169,8 @@ class CloudToolsRepository
     final discover = _discover;
     if (discover != null) return await discover(mcpServerId: id);
 
-    return await CloudMcpGateway(
-      await _gateway,
-    ).discoverMcpServer(mcpServerId: id);
+    return await CloudMcpGateway(await _gateway)
+        .discoverMcpServer(mcpServerId: id);
   }
 
   @override
@@ -183,9 +182,10 @@ class CloudToolsRepository
   @override
   Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
     String workspaceId,
-  ) async => (await getMcpServersForWorkspace(
-    workspaceId,
-  )).where((server) => server.isEnabled).toList();
+  ) async =>
+      (await getMcpServersForWorkspace(workspaceId))
+          .where((server) => server.isEnabled)
+          .toList();
 
   @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(String _) async =>
@@ -203,9 +203,10 @@ class CloudToolsRepository
   @override
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
-  ) async => (await getWorkspaceTools(
-    workspaceId,
-  )).where((tool) => tool.isEnabled).toList();
+  ) async =>
+      (await getWorkspaceTools(workspaceId))
+          .where((tool) => tool.isEnabled)
+          .toList();
 
   @override
   Future<WorkspaceToolEntity?> getWorkspaceTool(String _, String id) async {
@@ -326,9 +327,9 @@ class CloudToolsRepository
 
   @override
   Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(String id) async =>
-      (await getToolsGroupsForWorkspace(
-        '',
-      )).where((group) => group.mcpServerId == id).firstOrNull;
+      (await getToolsGroupsForWorkspace(''))
+          .where((group) => group.mcpServerId == id)
+          .firstOrNull;
   @override
   Future<McpServerEntity?> getMcpServerById(String id) async {
     final resource = await _find(.mcpServer, id);

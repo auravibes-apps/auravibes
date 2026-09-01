@@ -578,50 +578,35 @@ bool serverToolPermissionAllowsExecution({
     (persistedStatus == 'approved' &&
         permission == AgentToolPermissionResult.needsConfirmation);
 
-class ServerResolvedTool {
-  const ServerResolvedTool({required this.descriptor, required this.spec});
+class const ServerResolvedTool({
+  required final AgentResolvedToolName descriptor,
+  required final ToolSpec spec,
+});
 
-  final AgentResolvedToolName descriptor;
-  final ToolSpec spec;
-}
+class const ServerToolRequest({
+  required final String id,
+  required final String name,
+  required final Map<String, dynamic> arguments,
+});
 
-class ServerToolRequest {
-  const ServerToolRequest({
-    required this.id,
-    required this.name,
-    required this.arguments,
-  });
-
-  final String id;
-  final String name;
-  final Map<String, dynamic> arguments;
-}
-
-typedef ServerToolExecutor =
-    Future<Object?> Function(
-      Session session,
-      ConversationTurn turn,
-      ServerResolvedTool tool,
-      ServerToolRequest request,
-    );
+typedef ServerToolExecutor = Future<Object?> Function(
+  Session session,
+  ConversationTurn turn,
+  ServerResolvedTool tool,
+  ServerToolRequest request,
+);
 
 /// Server-owned persistence and policy around deterministic engine tool names.
-class ServerToolRuntime {
-  ServerToolRuntime({
-    this._resolver = const AgentToolNameResolver(
-      skillControlToolNames: skillCommandToolNames,
-    ),
-    this._executor,
-    this.beforeApprovedClaim,
-    this.cancellationProbe = const DatabaseConversationCancellationProbe(),
-  });
-
+class ServerToolRuntime({
+  final AgentToolNameResolver _resolver = const AgentToolNameResolver(
+    skillControlToolNames: skillCommandToolNames,
+  ),
+  final ServerToolExecutor? _executor,
+  final Future<void> Function()? beforeApprovedClaim,
+  final ConversationCancellationProbe cancellationProbe =
+      const DatabaseConversationCancellationProbe(),
+}) {
   static const maxResultCharacters = 50000;
-
-  final AgentToolNameResolver _resolver;
-  final ServerToolExecutor? _executor;
-  final Future<void> Function()? beforeApprovedClaim;
-  final ConversationCancellationProbe cancellationProbe;
 
   Future<List<ServerResolvedTool>> loadTools(
     Session session, {

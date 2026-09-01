@@ -5,21 +5,13 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_dropdown_selector.stories.g.dart';
 
-class _DropdownInput {
-  const _DropdownInput({
-    required this.selectedIndex,
-    required this.enabled,
-    required this.isRequired,
-    required this.showError,
-    required this.label,
-  });
-
-  final int? selectedIndex;
-  final bool enabled;
-  final bool isRequired;
-  final bool showError;
-  final String label;
-}
+class const _DropdownInput({
+  required final int? selectedIndex,
+  required final bool enabled,
+  required final bool isRequired,
+  required final bool showError,
+  required final String label,
+});
 
 const component = ComponentMeta(name: 'AuraDropdownSelector');
 const meta = Meta(DropdownDemo.new, argsType: _DropdownInput.new);
@@ -66,22 +58,14 @@ final $Dropdown = _Story(
 
 /// Demonstrates the Aura dropdown with selection, validation, and keyboard
 /// focus behavior.
-class DropdownDemo extends StatefulWidget {
-  const DropdownDemo({
-    required this.selectedIndex,
-    required this.enabled,
-    required this.isRequired,
-    required this.showError,
-    required this.label,
-    super.key,
-  });
-
-  final int? selectedIndex;
-  final bool enabled;
-  final bool isRequired;
-  final bool showError;
-  final String label;
-
+class const DropdownDemo({
+  required final int? selectedIndex,
+  required final bool enabled,
+  required final bool isRequired,
+  required final bool showError,
+  required final String label,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<DropdownDemo> createState() => _DropdownDemoState();
 }

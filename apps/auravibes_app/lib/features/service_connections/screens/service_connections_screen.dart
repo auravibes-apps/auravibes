@@ -20,12 +20,11 @@ const _mcpCredentialsDeleteError =
 
 enum _ConnectionFilter { all, modelProviders, skillCredentials, mcpServers }
 
-class ServiceConnectionsScreen extends ConsumerWidget {
+class const ServiceConnectionsScreen({
+  required final String workspaceId,
+  super.key,
+}) extends ConsumerWidget {
   static const _tagSpacing = 6.0;
-  const ServiceConnectionsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final connectionsAsync = ref.watch(serviceConnectionsProvider(workspaceId));
@@ -83,15 +82,10 @@ class ServiceConnectionsScreen extends ConsumerWidget {
   }
 }
 
-class _ConnectionsList extends StatefulWidget {
-  const _ConnectionsList({
-    required this.connections,
-    required this.onAddConnection,
-  });
-
-  final List<ServiceConnectionListItem> connections;
-  final VoidCallback onAddConnection;
-
+class const _ConnectionsList({
+  required final List<ServiceConnectionListItem> connections,
+  required final VoidCallback onAddConnection,
+}) extends StatefulWidget {
   @override
   State<_ConnectionsList> createState() => _ConnectionsListState();
 }
@@ -191,17 +185,11 @@ class _ConnectionsListState extends State<_ConnectionsList> {
   }
 }
 
-class _ConnectionsTab extends StatelessWidget {
-  const _ConnectionsTab({
-    required this.connections,
-    required this.onAddConnection,
-    this.kind,
-  });
-
-  final List<ServiceConnectionListItem> connections;
-  final VoidCallback onAddConnection;
-  final ServiceConnectionListItemKind? kind;
-
+class const _ConnectionsTab({
+  required final List<ServiceConnectionListItem> connections,
+  required final VoidCallback onAddConnection,
+  final ServiceConnectionListItemKind? kind,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visibleConnections = kind == null
@@ -262,11 +250,9 @@ String _connectionFilterLabel(
   };
 }
 
-class _ConnectionTile extends ConsumerWidget {
-  const _ConnectionTile({required this.connection});
-
-  final ServiceConnectionListItem connection;
-
+class const _ConnectionTile({
+  required final ServiceConnectionListItem connection,
+}) extends ConsumerWidget {
   IconData get _icon {
     return switch (connection.kind) {
       ServiceConnectionListItemKind.modelProvider => Icons.memory_outlined,
@@ -544,11 +530,9 @@ class _ConnectionTile extends ConsumerWidget {
   }
 }
 
-class _ConnectionStatusBadge extends StatelessWidget {
-  const _ConnectionStatusBadge({required this.status});
-
-  final ServiceConnectionDisplayStatus status;
-
+class const _ConnectionStatusBadge({
+  required final ServiceConnectionDisplayStatus status,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -559,10 +543,8 @@ class _ConnectionStatusBadge extends StatelessWidget {
       ),
       child: Text(
         _statusLabel(context, status),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: _color(context),
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: _color(context), fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -580,11 +562,9 @@ class _ConnectionStatusBadge extends StatelessWidget {
   }
 }
 
-class _ConnectionMetadata extends StatelessWidget {
-  const _ConnectionMetadata({required this.values});
-
-  final List<ServiceConnectionMetadataValue> values;
-
+class const _ConnectionMetadata({
+  required final List<ServiceConnectionMetadataValue> values,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(

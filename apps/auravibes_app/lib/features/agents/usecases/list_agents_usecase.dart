@@ -5,11 +5,7 @@ import 'package:auravibes_app/features/agents/providers/agent_repository_provide
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class ListAgentsUsecase {
-  const ListAgentsUsecase(this._repository);
-
-  final AgentRepository _repository;
-
+class const ListAgentsUsecase(final AgentRepository _repository) {
   Stream<List<AgentEntity>> call(String workspaceId) {
     return _repository.watchAgentsByWorkspace(workspaceId);
   }

@@ -5,12 +5,10 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_list.stories.g.dart';
 
-class _ListInput {
-  const _ListInput({required this.direction, required this.itemCount});
-
-  final Axis direction;
-  final int itemCount;
-}
+class const _ListInput({
+  required final Axis direction,
+  required final int itemCount,
+});
 
 const meta = Meta(AuraList.new, argsType: _ListInput.new);
 

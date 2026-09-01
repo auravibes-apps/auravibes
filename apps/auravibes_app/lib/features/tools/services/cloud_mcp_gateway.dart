@@ -2,11 +2,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudMcpGateway {
-  const CloudMcpGateway(this._stateGateway);
-
-  final CloudWorkspaceStateGateway _stateGateway;
-
+class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   Future<CreateMcpServerResult> createMcpServer({
     required String requestId,
     required String name,

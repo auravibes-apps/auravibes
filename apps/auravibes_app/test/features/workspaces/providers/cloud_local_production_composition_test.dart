@@ -47,11 +47,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
-class _Client extends Mock implements Client {}
+class _Client extends Mock implements Client;
 
-class _Conversation extends Mock implements EndpointConversation {}
+class _Conversation extends Mock implements EndpointConversation;
 
 Never _local(String dependency) =>
     throw StateError('Cloud composition touched local $dependency');
@@ -107,12 +107,10 @@ void main() {
         ),
       ],
     );
-    when(
-      () => conversation.listMessages(any()),
-    ).thenAnswer((_) async => const []);
-    when(
-      () => gateway.watchResources(any()),
-    ).thenAnswer((_) => Stream.value(const <WorkspaceResource>[]));
+    when(() => conversation.listMessages(any()))
+        .thenAnswer((_) async => const []);
+    when(() => gateway.watchResources(any()))
+        .thenAnswer((_) => Stream.value(const <WorkspaceResource>[]));
 
     final container = ProviderContainer(
       overrides: [
@@ -141,9 +139,8 @@ void main() {
             sequence: 0,
           );
         }),
-        toolsGroupsRepositoryProvider(
-          cloud,
-        ).overrideWithValue(CloudToolsRepository(Future.value(gateway))),
+        toolsGroupsRepositoryProvider(cloud)
+            .overrideWithValue(CloudToolsRepository(Future.value(gateway))),
         workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
         appDatabaseProvider.overrideWith((_) => _local('Drift database')),
         conversationRepositoryProvider.overrideWith(
@@ -288,9 +285,8 @@ void main() {
         workspaceSessionProvider(local).overrideWithValue(local),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => local),
         appDatabaseProvider.overrideWithValue(database),
-        toolsGroupsRepositoryProvider(
-          local,
-        ).overrideWithValue(ToolsGroupsRepository(database)),
+        toolsGroupsRepositoryProvider(local)
+            .overrideWithValue(ToolsGroupsRepository(database)),
         serverpodClientForWorkspaceProvider.overrideWith(
           (_, _) => _local('workspace server client'),
         ),

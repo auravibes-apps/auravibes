@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'skill_credential_definitions_dao.g.dart';
 
 @DriftAccessor(tables: [SkillCredentialDefinitions])
-class SkillCredentialDefinitionsDao extends DatabaseAccessor<AppDatabase>
+class SkillCredentialDefinitionsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$SkillCredentialDefinitionsDaoMixin {
-  SkillCredentialDefinitionsDao(super.attachedDatabase);
-
   Future<List<SkillCredentialDefinitionsTable>> getDefinitions(
     String workspaceId,
   ) =>

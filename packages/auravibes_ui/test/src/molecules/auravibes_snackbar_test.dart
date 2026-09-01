@@ -482,12 +482,10 @@ void main() {
   });
 }
 
-class _SnackBarTestApp extends StatelessWidget {
-  const _SnackBarTestApp({required this.home, required this.theme});
-
-  final Widget home;
-  final ThemeData theme;
-
+class const _SnackBarTestApp({
+  required final Widget home,
+  required final ThemeData theme,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

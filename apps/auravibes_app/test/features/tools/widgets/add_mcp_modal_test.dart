@@ -55,9 +55,7 @@ class _ErrorMcpFormNotifier extends McpFormNotifier {
 
 const _wsId = 'ws1';
 
-class _Subject extends StatelessWidget {
-  const _Subject();
-
+class const _Subject() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

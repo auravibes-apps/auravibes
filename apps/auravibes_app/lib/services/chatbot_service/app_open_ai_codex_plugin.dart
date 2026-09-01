@@ -4,24 +4,15 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/plugin.dart';
 import 'package:http/http.dart' as http;
 
-class AppOpenAICodexPlugin extends GenkitPlugin {
-  AppOpenAICodexPlugin({
-    required this.accessToken,
-    this.accountId,
-    this.sessionId,
-    this.models = const [],
-    this.baseUrl = 'https://chatgpt.com/backend-api/codex/responses',
-    this.httpClient,
-    this.requestTimeout = const Duration(seconds: 30),
-  });
-
-  final String accessToken;
-  final String? accountId;
-  final String? sessionId;
-  final List<String> models;
-  final String baseUrl;
-  final http.Client? httpClient;
-  final Duration requestTimeout;
+class AppOpenAICodexPlugin({
+  required final String accessToken,
+  final String? accountId,
+  final String? sessionId,
+  final List<String> models = const [],
+  final String baseUrl = 'https://chatgpt.com/backend-api/codex/responses',
+  final http.Client? httpClient,
+  final Duration requestTimeout = const Duration(seconds: 30),
+}) extends GenkitPlugin {
   final OpenAICodexCodec codec = const OpenAICodexCodec();
 
   @override

@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 /// its own active snackbar.
 class AuraSnackBarHost extends StatefulWidget {
   /// Creates a snackbar host for [child].
-  const AuraSnackBarHost({required this.child, super.key});
+  const new({required this.child, super.key});
 
   /// The subtree that can show Aura snackbars.
   final Widget child;
@@ -102,11 +102,10 @@ class _AuraSnackBarHostState extends State<AuraSnackBarHost> {
   }
 }
 
-class _AuraSnackBarHostScope extends InheritedWidget {
-  const _AuraSnackBarHostScope({required this.state, required super.child});
-
-  final _AuraSnackBarHostState state;
-
+class const _AuraSnackBarHostScope({
+  required final _AuraSnackBarHostState state,
+  required super.child,
+}) extends InheritedWidget {
   @override
   bool updateShouldNotify(_AuraSnackBarHostScope oldWidget) {
     return false;
@@ -137,7 +136,7 @@ enum AuraSnackBarVariant {
 /// control over the snackbar after it's been shown.
 class AuraSnackBarController {
   /// Creates a controller with the dismiss callback.
-  AuraSnackBarController({required this._dismissCallback});
+  new({required this._dismissCallback});
 
   final void Function() _dismissCallback;
 
@@ -195,25 +194,15 @@ abstract final class AuraSnackBars {
 }
 
 /// Internal widget that manages its own animation state.
-class _AuraSnackBarOverlayEntry extends StatefulWidget {
-  const _AuraSnackBarOverlayEntry({
-    required this.backgroundColor,
-    required this.foregroundColor,
-    required this.content,
-    required this.dismissCallback,
-    required this.duration,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final Color backgroundColor;
-  final Color foregroundColor;
-  final Widget content;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-  final Duration duration;
-  final VoidCallback dismissCallback;
-
+class const _AuraSnackBarOverlayEntry({
+  required final Color backgroundColor,
+  required final Color foregroundColor,
+  required final Widget content,
+  required final VoidCallback dismissCallback,
+  required final Duration duration,
+  final String? actionLabel,
+  final VoidCallback? onAction,
+}) extends StatefulWidget {
   @override
   State<_AuraSnackBarOverlayEntry> createState() =>
       _AuraSnackBarOverlayEntryState();

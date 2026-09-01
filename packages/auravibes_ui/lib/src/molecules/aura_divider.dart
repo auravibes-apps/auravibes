@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 /// content sections with support for labels and different orientations.
 class AuraDivider extends StatelessWidget {
   /// Creates a horizontal Aura divider.
-  const AuraDivider({
+  const new({
     super.key,
     this.thickness = 1,
     this.color,
@@ -19,7 +19,7 @@ class AuraDivider extends StatelessWidget {
        label = null;
 
   /// Creates a vertical Aura divider.
-  const AuraDivider.vertical({
+  const new vertical({
     super.key,
     this.thickness = 1,
     this.color,
@@ -29,7 +29,7 @@ class AuraDivider extends StatelessWidget {
        label = null;
 
   /// Creates a horizontal Aura divider with a label.
-  const AuraDivider.withLabel({
+  const new withLabel({
     required this.label,
     super.key,
     this.thickness = 1,

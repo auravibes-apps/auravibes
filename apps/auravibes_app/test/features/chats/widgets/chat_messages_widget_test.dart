@@ -792,32 +792,22 @@ void main() {
 }
 
 class _MockConversationRepository extends Mock
-    implements ConversationRepository {}
+    implements ConversationRepository;
 
-class _ChatMessagesTestSubject extends StatelessWidget {
-  const _ChatMessagesTestSubject({
-    required this.conversationId,
-    required this.messages,
-    required this.overrides,
-    required this.pendingToolCalls,
-    this.messageEntitiesById,
-  });
-
-  final String conversationId;
-  final Map<String, MessageEntity>? messageEntitiesById;
-  final List<String> messages;
-  final List<Object> overrides;
-  final List<PendingToolCall> pendingToolCalls;
-
+class const _ChatMessagesTestSubject({
+  required final String conversationId,
+  required final List<String> messages,
+  required final List<Object> overrides,
+  required final List<PendingToolCall> pendingToolCalls,
+  final Map<String, MessageEntity>? messageEntitiesById,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final conversationRepository = _MockConversationRepository();
-    when(
-      () => conversationRepository.watchConversationById(conversationId),
-    ).thenAnswer((_) => Stream.value(null));
-    when(
-      () => conversationRepository.watchChildConversations(conversationId),
-    ).thenAnswer((_) => Stream.value(const []));
+    when(() => conversationRepository.watchConversationById(conversationId))
+        .thenAnswer((_) => Stream.value(null));
+    when(() => conversationRepository.watchChildConversations(conversationId))
+        .thenAnswer((_) => Stream.value(const []));
 
     return TestProviderScope(
       overrides: [

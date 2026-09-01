@@ -16,11 +16,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new MCP (Model Context Protocol) servers to the workspace.
-class AddMcpModal extends ConsumerWidget {
+class const AddMcpModal({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   static const _dividerOpacity = 0.2;
-  const AddMcpModal({required this.workspaceId, super.key});
-
-  final String workspaceId;
 
   /// Shows the add MCP modal as a dialog.
   static Future<void> show(
@@ -83,9 +81,8 @@ class AddMcpModal extends ConsumerWidget {
                         Visibility(
                           child: _BearerTokenField(workspaceId: workspaceId),
                           visible: ref.watch(
-                            mcpFormProvider(
-                              workspaceId,
-                            ).select((value) => value.showBearerTokenField),
+                            mcpFormProvider(workspaceId)
+                                .select((value) => value.showBearerTokenField),
                           ),
                         ),
                       ],
@@ -107,9 +104,7 @@ class AddMcpModal extends ConsumerWidget {
   }
 }
 
-class _AddMcpModalHeader extends StatelessWidget {
-  const _AddMcpModalHeader();
-
+class const _AddMcpModalHeader() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -142,11 +137,8 @@ class _AddMcpModalHeader extends StatelessWidget {
   }
 }
 
-class _LoadingOverlay extends ConsumerWidget {
-  const _LoadingOverlay({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _LoadingOverlay({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
@@ -166,11 +158,8 @@ class _LoadingOverlay extends ConsumerWidget {
   }
 }
 
-class _ErrorBanner extends ConsumerWidget {
-  const _ErrorBanner({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _ErrorBanner({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final errorMessage = ref.watch(
@@ -207,11 +196,8 @@ class _ErrorBanner extends ConsumerWidget {
   }
 }
 
-class _Footer extends ConsumerWidget {
-  const _Footer({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _Footer({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
@@ -270,11 +256,8 @@ class _Footer extends ConsumerWidget {
   }
 }
 
-class _TransportSelector extends ConsumerWidget {
-  const _TransportSelector({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _TransportSelector({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final capabilities = ref
@@ -308,9 +291,8 @@ class _TransportSelector extends ConsumerWidget {
             mcpFormProvider(workspaceId).select((value) => value.transport),
           ),
           onChanged: ref.watch(
-            mcpFormProvider(
-              workspaceId,
-            ).notifier.select((notifier) => notifier.setTransport),
+            mcpFormProvider(workspaceId).notifier
+                .select((notifier) => notifier.setTransport),
           ),
         ),
       ],
@@ -322,11 +304,8 @@ class _TransportSelector extends ConsumerWidget {
 
 /// Renders the available authentication types from [mcpFormProvider]
 /// as a localized single-select button group and updates the selected type.
-class _AuthenticationSelector extends ConsumerWidget {
-  const _AuthenticationSelector({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _AuthenticationSelector({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final capabilities = ref
@@ -360,14 +339,12 @@ class _AuthenticationSelector extends ConsumerWidget {
             );
           }).toList(),
           selectedValue: ref.watch(
-            mcpFormProvider(
-              workspaceId,
-            ).select((value) => value.authenticationType),
+            mcpFormProvider(workspaceId)
+                .select((value) => value.authenticationType),
           ),
           onChanged: ref.watch(
-            mcpFormProvider(
-              workspaceId,
-            ).notifier.select((value) => value.setAuthenticationType),
+            mcpFormProvider(workspaceId).notifier
+                .select((value) => value.setAuthenticationType),
           ),
         ),
       ],
@@ -388,11 +365,8 @@ class _AuthenticationSelector extends ConsumerWidget {
   }
 }
 
-class _NameInput extends HookConsumerWidget {
-  const _NameInput({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NameInput({required final String workspaceId})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(
@@ -414,11 +388,8 @@ class _NameInput extends HookConsumerWidget {
   }
 }
 
-class _DescriptionInput extends HookConsumerWidget {
-  const _DescriptionInput({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _DescriptionInput({required final String workspaceId})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(
@@ -434,19 +405,15 @@ class _DescriptionInput extends HookConsumerWidget {
       ),
       label: const TextLocale(LocaleKeys.mcp_modal_fields_description_label),
       onChanged: ref.watch(
-        mcpFormProvider(
-          workspaceId,
-        ).notifier.select((value) => value.setDescription),
+        mcpFormProvider(workspaceId).notifier
+            .select((value) => value.setDescription),
       ),
     );
   }
 }
 
-class _UrlInput extends HookConsumerWidget {
-  const _UrlInput({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _UrlInput({required final String workspaceId})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(
@@ -469,11 +436,8 @@ class _UrlInput extends HookConsumerWidget {
   }
 }
 
-class _BearerTokenField extends HookConsumerWidget {
-  const _BearerTokenField({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _BearerTokenField({required final String workspaceId})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(
@@ -491,9 +455,8 @@ class _BearerTokenField extends HookConsumerWidget {
       hint: const TextLocale(LocaleKeys.mcp_modal_fields_bearer_token_hint),
       obscureText: true,
       onChanged: ref.watch(
-        mcpFormProvider(
-          workspaceId,
-        ).notifier.select((value) => value.setBearerToken),
+        mcpFormProvider(workspaceId).notifier
+            .select((value) => value.setBearerToken),
       ),
     );
   }

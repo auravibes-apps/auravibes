@@ -575,17 +575,11 @@ void main() {
   });
 }
 
-final class _SuccessAdapter implements HttpClientAdapter {
-  _SuccessAdapter({
-    required this.body,
-    required this.statusCode,
-    this.extraHeaders,
-  });
-
-  final String body;
-  final int statusCode;
-  final Map<String, List<String>>? extraHeaders;
-
+final class _SuccessAdapter({
+  required final String body,
+  required final int statusCode,
+  final Map<String, List<String>>? extraHeaders,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -605,19 +599,13 @@ final class _SuccessAdapter implements HttpClientAdapter {
   }
 }
 
-final class _InspectAdapter implements HttpClientAdapter {
-  _InspectAdapter({
-    required this.body,
-    required this.statusCode,
-    required this.onInspect,
-    this.extraHeaders,
-  });
-
-  final String body;
-  final int statusCode;
-  final void Function(String?, Map<String, dynamic>?, String?) onInspect;
-  final Map<String, List<String>>? extraHeaders;
-
+final class _InspectAdapter({
+  required final String body,
+  required final int statusCode,
+  required final void Function(String?, Map<String, dynamic>?, String?)
+  onInspect,
+  final Map<String, List<String>>? extraHeaders,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,

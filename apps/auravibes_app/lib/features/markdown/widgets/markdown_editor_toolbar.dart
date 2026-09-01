@@ -4,16 +4,11 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
-class MarkdownEditorToolbar extends StatelessWidget {
-  const MarkdownEditorToolbar({
-    required this.controller,
-    required this.focusNode,
-    super.key,
-  });
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-
+class const MarkdownEditorToolbar({
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+  super.key,
+}) extends StatelessWidget {
   TextSelection get _safeSelection {
     final selection = controller.selection;
     if (selection.isValid) return selection;
@@ -138,17 +133,11 @@ class MarkdownEditorToolbar extends StatelessWidget {
   }
 }
 
-class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({
-    required this.icon,
-    required this.label,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-
+class const _ToolbarButton({
+  required final IconData icon,
+  required final String label,
+  required final VoidCallback onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ExcludeFocus(

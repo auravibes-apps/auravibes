@@ -1,9 +1,10 @@
 import 'package:auravibes_engine/src/model_capabilities.dart';
 
-class ModelsDevCatalogValue {
-  ModelsDevCatalogValue({required this.providers, required this.models});
-
-  factory ModelsDevCatalogValue.parse(
+class ModelsDevCatalogValue({
+  required final List<ModelsDevProviderValue> providers,
+  required final List<ModelsDevModelValue> models,
+}) {
+  factory parse(
     Object? response, {
     Set<String> canonicalModelIds = const {},
     int? maxProviders,
@@ -76,34 +77,20 @@ class ModelsDevCatalogValue {
       models: List.unmodifiable(models),
     );
   }
-
-  final List<ModelsDevProviderValue> providers;
-  final List<ModelsDevModelValue> models;
 }
 
-class ModelsDevProviderValue {
-  const ModelsDevProviderValue({
-    required this.id,
-    required this.name,
-    this.type,
-    this.url,
-    this.documentationUrl,
-  });
-  final String id;
-  final String name;
-  final String? type;
-  final String? url;
-  final String? documentationUrl;
-}
+class const ModelsDevProviderValue({
+  required final String id,
+  required final String name,
+  final String? type,
+  final String? url,
+  final String? documentationUrl,
+});
 
-class ModelsDevModelValue {
-  const ModelsDevModelValue({
-    required this.providerId,
-    required this.capabilities,
-  });
-  final String providerId;
-  final ModelCapabilities capabilities;
-}
+class const ModelsDevModelValue({
+  required final String providerId,
+  required final ModelCapabilities capabilities,
+});
 
 String _string(Map<String, dynamic> json, String key) {
   final value = _optionalString(json, key);

@@ -3,12 +3,10 @@ import 'dart:async';
 
 import 'package:rxdart/rxdart.dart';
 
-class _CoalescingSaver<T> {
-  _CoalescingSaver({required this._store, required this._onSaved});
-
-  final Future<void> Function(T state) _store;
-  final void Function(T state) _onSaved;
-
+class _CoalescingSaver<T>({
+  required final Future<void> Function(T state) _store,
+  required final void Function(T state) _onSaved,
+}) {
   bool _saving = false;
   bool _closed = false;
   bool _doneRequested = false;

@@ -34,24 +34,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatMessagesWidget extends HookConsumerWidget {
+class const ChatMessagesWidget({
+  required final String workspaceId,
+  required final String conversationId,
+  required final List<String> messages,
+  final Map<String, MessageEntity>? messageEntitiesById,
+  final List<PendingToolCall> pendingToolCalls = const [],
+  super.key,
+}) extends HookConsumerWidget {
   // Null lets callers fall back to per-message provider reads.
   // ignore: unnecessary-nullable
-  const ChatMessagesWidget({
-    required this.workspaceId,
-    required this.conversationId,
-    required this.messages,
-    this.messageEntitiesById,
-    this.pendingToolCalls = const [],
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-  final List<String> messages;
-  final Map<String, MessageEntity>? messageEntitiesById;
-  final List<PendingToolCall> pendingToolCalls;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
@@ -104,23 +96,14 @@ class ChatMessagesWidget extends HookConsumerWidget {
   }
 }
 
-class _ChatMessageRow extends HookConsumerWidget {
-  const _ChatMessageRow({
-    required this.messageId,
-    required this.baseMessage,
-    required this.pendingToolCalls,
-    required this.parentConversationId,
-    required this.childConversations,
-    required this.workspaceId,
-  });
-
-  final String messageId;
-  final MessageEntity? baseMessage;
-  final List<PendingToolCall> pendingToolCalls;
-  final String parentConversationId;
-  final List<ConversationEntity> childConversations;
-  final String workspaceId;
-
+class const _ChatMessageRow({
+  required final String messageId,
+  required final MessageEntity? baseMessage,
+  required final List<PendingToolCall> pendingToolCalls,
+  required final String parentConversationId,
+  required final List<ConversationEntity> childConversations,
+  required final String workspaceId,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final streamingResult = ref.watch(
@@ -238,11 +221,8 @@ class _ChatMessageRow extends HookConsumerWidget {
   }
 }
 
-class _MessageAttachments extends StatelessWidget {
-  const _MessageAttachments({required this.message});
-
-  final MessageEntity message;
-
+class const _MessageAttachments({required final MessageEntity message})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -259,11 +239,9 @@ class _MessageAttachments extends StatelessWidget {
   }
 }
 
-class _AttachmentPreview extends StatelessWidget {
-  const _AttachmentPreview({required this.attachment});
-
-  final MessageAttachmentEntity attachment;
-
+class const _AttachmentPreview({
+  required final MessageAttachmentEntity attachment,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (attachment.modality == MessageAttachmentModality.image) {
@@ -284,21 +262,13 @@ class _AttachmentPreview extends StatelessWidget {
   }
 }
 
-class _MessageTextContent extends StatelessWidget {
-  const _MessageTextContent({
-    required this.message,
-    required this.thinking,
-    required this.hasContent,
-    required this.hasThinking,
-    required this.status,
-  });
-
-  final MessageEntity message;
-  final String? thinking;
-  final bool hasContent;
-  final bool hasThinking;
-  final AuraMessageDeliveryStatus status;
-
+class const _MessageTextContent({
+  required final MessageEntity message,
+  required final String? thinking,
+  required final bool hasContent,
+  required final bool hasThinking,
+  required final AuraMessageDeliveryStatus status,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (message.isUser) {
@@ -332,11 +302,8 @@ class _MessageTextContent extends StatelessWidget {
   }
 }
 
-class _ReasoningSummary extends StatelessWidget {
-  const _ReasoningSummary({required this.content});
-
-  final String content;
-
+class const _ReasoningSummary({required final String content})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -387,18 +354,12 @@ class _ReasoningSummary extends StatelessWidget {
   }
 }
 
-class _AiMessageContent extends StatelessWidget {
-  const _AiMessageContent({
-    required this.content,
-    required this.timestamp,
-    super.key,
-    this.status = AuraMessageDeliveryStatus.sent,
-  });
-
-  final String content;
-  final DateTime timestamp;
-  final AuraMessageDeliveryStatus status;
-
+class const _AiMessageContent({
+  required final String content,
+  required final DateTime timestamp,
+  super.key,
+  final AuraMessageDeliveryStatus status = AuraMessageDeliveryStatus.sent,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -435,24 +396,15 @@ class _AiMessageContent extends StatelessWidget {
 }
 
 /// Widget that displays a single tool call with optional confirmation UI.
-class _ToolCallWidget extends ConsumerWidget {
-  const _ToolCallWidget({
-    required this.toolCall,
-    required this.messageId,
-    required this.parentConversationId,
-    required this.childConversations,
-    required this.workspaceId,
-    required this.isAwaitingApproval,
-    super.key,
-  });
-
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-  final String parentConversationId;
-  final List<ConversationEntity> childConversations;
-  final String? workspaceId;
-  final bool isAwaitingApproval;
-
+class const _ToolCallWidget({
+  required final MessageToolCallEntity toolCall,
+  required final String messageId,
+  required final String parentConversationId,
+  required final List<ConversationEntity> childConversations,
+  required final String? workspaceId,
+  required final bool isAwaitingApproval,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const containerBorderRadius = 10.0;
@@ -668,11 +620,10 @@ String? _subAgentTitle(MessageToolCallEntity toolCall) {
   return null;
 }
 
-class _CompactedMessageWidget extends StatelessWidget {
-  const _CompactedMessageWidget({required this.message, super.key});
-
-  final MessageEntity message;
-
+class const _CompactedMessageWidget({
+  required final MessageEntity message,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -753,11 +704,8 @@ class _CompactedMessageWidget extends StatelessWidget {
   }
 }
 
-class _ErrorMessageWidget extends StatelessWidget {
-  const _ErrorMessageWidget({required this.content, super.key});
-
-  final String content;
-
+class const _ErrorMessageWidget({required final String content, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -782,17 +730,11 @@ class _ErrorMessageWidget extends StatelessWidget {
 }
 
 /// A small status indicator widget with icon and text.
-class _ToolCallStatusIndicator extends StatelessWidget {
-  const _ToolCallStatusIndicator({
-    required this.statusText,
-    required this.icon,
-    required this.color,
-  });
-
-  final Widget statusText;
-  final IconData icon;
-  final Color color;
-
+class const _ToolCallStatusIndicator({
+  required final Widget statusText,
+  required final IconData icon,
+  required final Color color,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const iconSize = 14.0;
@@ -815,9 +757,7 @@ class _ToolCallStatusIndicator extends StatelessWidget {
   }
 }
 
-class _CompactingIndicator extends StatelessWidget {
-  const _CompactingIndicator();
-
+class const _CompactingIndicator() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;

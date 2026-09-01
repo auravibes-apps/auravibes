@@ -8,8 +8,8 @@ export 'agent_visibility.dart';
 part 'agent_entity.freezed.dart';
 
 @freezed
-abstract class AgentEntity with _$AgentEntity {
-  const factory AgentEntity({
+abstract class const AgentEntity._() with _$AgentEntity {
+  const factory({
     required String id,
     required String workspaceId,
     required String name,
@@ -21,8 +21,6 @@ abstract class AgentEntity with _$AgentEntity {
     @Default(true) bool isEnabled,
     @Default(AgentVisibility.both) AgentVisibility visibility,
   }) = _AgentEntity;
-  const AgentEntity._();
-
   bool get appearsInChatSelector =>
       isEnabled && visibility.appearsInChatSelector;
 
@@ -31,8 +29,8 @@ abstract class AgentEntity with _$AgentEntity {
 }
 
 @freezed
-abstract class AgentToCreate with _$AgentToCreate {
-  const factory AgentToCreate({
+abstract class const AgentToCreate._() with _$AgentToCreate {
+  const factory({
     required String name,
     required String description,
     required String content,
@@ -40,8 +38,6 @@ abstract class AgentToCreate with _$AgentToCreate {
     @Default(AgentVisibility.both) AgentVisibility visibility,
     @Default([]) List<AgentSkillRef> skills,
   }) = _AgentToCreate;
-  const AgentToCreate._();
-
   bool get isValid {
     final normalizedDescription = description.trim();
 
@@ -53,8 +49,8 @@ abstract class AgentToCreate with _$AgentToCreate {
 }
 
 @freezed
-abstract class AgentToUpdate with _$AgentToUpdate {
-  const factory AgentToUpdate({
+abstract class const AgentToUpdate._() with _$AgentToUpdate {
+  const factory({
     required String name,
     required String description,
     required String content,
@@ -62,8 +58,6 @@ abstract class AgentToUpdate with _$AgentToUpdate {
     @Default(AgentVisibility.both) AgentVisibility visibility,
     @Default([]) List<AgentSkillRef> skills,
   }) = _AgentToUpdate;
-  const AgentToUpdate._();
-
   bool get isValid {
     final normalizedDescription = description.trim();
 
@@ -76,7 +70,7 @@ abstract class AgentToUpdate with _$AgentToUpdate {
 
 @freezed
 sealed class AgentSkillRef with _$AgentSkillRef {
-  const factory AgentSkillRef.user(String skillId) = UserAgentSkillRef;
+  const factory user(String skillId) = UserAgentSkillRef;
 
-  const factory AgentSkillRef.app(String identifier) = AppAgentSkillRef;
+  const factory app(String identifier) = AppAgentSkillRef;
 }

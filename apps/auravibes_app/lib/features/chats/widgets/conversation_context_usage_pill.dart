@@ -8,16 +8,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ConversationContextUsagePill extends ConsumerWidget {
-  const ConversationContextUsagePill({
-    required this.workspaceId,
-    required this.conversationId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-
+class const ConversationContextUsagePill({
+  required final String workspaceId,
+  required final String conversationId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(contextUsageProvider(workspaceId, conversationId));

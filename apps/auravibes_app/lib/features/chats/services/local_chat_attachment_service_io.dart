@@ -18,14 +18,11 @@ final _logger = Logger('local_chat_attachment_service');
 const _macRecordingSampleRate = 44100;
 const _macRecordingChannels = 1;
 
-class LocalChatAttachmentServiceIo {
-  LocalChatAttachmentServiceIo({
-    AudioRecorder? recorder,
-    this.storageNamespace = 'auravibes_app',
-  }) : _recorder = recorder ?? AudioRecorder();
-  final String storageNamespace;
-
-  final AudioRecorder _recorder;
+class LocalChatAttachmentServiceIo({
+  AudioRecorder? recorder,
+  final String storageNamespace = 'auravibes_app',
+}) {
+  final AudioRecorder _recorder = recorder ?? AudioRecorder();
   String? _recordingPath;
   BytesBuilder? _recordingBytes;
   Completer<void>? _recordingStreamDone;

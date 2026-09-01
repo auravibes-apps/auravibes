@@ -12,23 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class TransferCloudWorkspaceOwnershipRequest
-    implements _i1.SerializableModel {
-  TransferCloudWorkspaceOwnershipRequest._({
-    required this.workspaceId,
-    required this.newOwnerUserId,
-    required this.requestId,
-    required this.expectedWorkspaceRevision,
-  });
-
-  factory TransferCloudWorkspaceOwnershipRequest({
+abstract class TransferCloudWorkspaceOwnershipRequest._({
+  required var int workspaceId,
+  required var String newOwnerUserId,
+  required var String requestId,
+  required var int expectedWorkspaceRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String newOwnerUserId,
     required String requestId,
     required int expectedWorkspaceRevision,
   }) = _TransferCloudWorkspaceOwnershipRequestImpl;
 
-  factory TransferCloudWorkspaceOwnershipRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return TransferCloudWorkspaceOwnershipRequest(
@@ -39,14 +36,6 @@ abstract class TransferCloudWorkspaceOwnershipRequest
           jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
-
-  int workspaceId;
-
-  String newOwnerUserId;
-
-  String requestId;
-
-  int expectedWorkspaceRevision;
 
   /// Returns a shallow copy of this [TransferCloudWorkspaceOwnershipRequest]
   /// with some or all fields replaced by the given arguments.
@@ -74,19 +63,19 @@ abstract class TransferCloudWorkspaceOwnershipRequest
   }
 }
 
-class _TransferCloudWorkspaceOwnershipRequestImpl
-    extends TransferCloudWorkspaceOwnershipRequest {
-  _TransferCloudWorkspaceOwnershipRequestImpl({
-    required int workspaceId,
-    required String newOwnerUserId,
-    required String requestId,
-    required int expectedWorkspaceRevision,
-  }) : super._(
-         workspaceId: workspaceId,
-         newOwnerUserId: newOwnerUserId,
-         requestId: requestId,
-         expectedWorkspaceRevision: expectedWorkspaceRevision,
-       );
+class _TransferCloudWorkspaceOwnershipRequestImpl({
+  required int workspaceId,
+  required String newOwnerUserId,
+  required String requestId,
+  required int expectedWorkspaceRevision,
+}) extends TransferCloudWorkspaceOwnershipRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        newOwnerUserId: newOwnerUserId,
+        requestId: requestId,
+        expectedWorkspaceRevision: expectedWorkspaceRevision,
+      );
 
   /// Returns a shallow copy of this [TransferCloudWorkspaceOwnershipRequest]
   /// with some or all fields replaced by the given arguments.

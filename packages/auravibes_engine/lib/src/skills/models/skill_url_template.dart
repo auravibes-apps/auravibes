@@ -3,19 +3,18 @@ import 'dart:convert';
 import 'package:auravibes_engine/src/skills/models/url_request_method.dart';
 import 'package:auravibes_engine/src/skills/models/url_response_format.dart';
 
-class SkillUrlTemplate {
-  const SkillUrlTemplate({
-    required this.url,
-    this.method = UrlRequestMethod.get,
-    this.headers = const {},
-    this.query = const {},
-    this.body,
-    this.bodyFormat = SkillUrlTemplateBodyFormat.infer,
-    this.timeout = const Duration(seconds: 30),
-    this.format = UrlResponseFormat.defaultFormat,
-  });
-
-  factory SkillUrlTemplate.fromJsonString(String value) {
+class const SkillUrlTemplate({
+  required final String url,
+  final UrlRequestMethod method = UrlRequestMethod.get,
+  final Map<String, String> headers = const {},
+  final Map<String, String> query = const {},
+  final String? body,
+  final SkillUrlTemplateBodyFormat bodyFormat =
+      SkillUrlTemplateBodyFormat.infer,
+  final Duration timeout = const Duration(seconds: 30),
+  final UrlResponseFormat format = UrlResponseFormat.defaultFormat,
+}) {
+  factory fromJsonString(String value) {
     final decoded = jsonDecode(value);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('URL template must be a JSON object.');
@@ -43,15 +42,6 @@ class SkillUrlTemplate {
       format: UrlResponseFormat.fromString('${decoded['format'] ?? ''}'),
     );
   }
-
-  final String url;
-  final UrlRequestMethod method;
-  final Map<String, String> headers;
-  final Map<String, String> query;
-  final String? body;
-  final SkillUrlTemplateBodyFormat bodyFormat;
-  final Duration timeout;
-  final UrlResponseFormat format;
 
   Map<String, Object> toJson() {
     return {
@@ -155,14 +145,10 @@ class SkillUrlTemplate {
   }
 }
 
-enum SkillUrlTemplateBodyFormat {
+enum SkillUrlTemplateBodyFormat(final String value) {
   infer('infer'),
   json('json'),
-  text('text');
-
-  const SkillUrlTemplateBodyFormat(this.value);
-
-  final String value;
+  text('text'),
 }
 
 final _legacyPlaceholderPattern = RegExp(

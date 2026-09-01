@@ -33,11 +33,8 @@ final $AlertDialog = _Story(
 );
 
 /// Demonstrates the alert dialog trigger and dismissible dialog content.
-class AlertDialogDemo extends StatelessWidget {
-  const AlertDialogDemo({super.key, required this.tint});
-
-  final AuraTint? tint;
-
+class const AlertDialogDemo({super.key, required final AuraTint? tint})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(

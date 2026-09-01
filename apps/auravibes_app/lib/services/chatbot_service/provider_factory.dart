@@ -12,17 +12,12 @@ import 'package:genkit_openai/genkit_openai.dart';
 
 typedef UntypedModelRef = ModelRef<Object?>;
 
-class ProviderFactory {
+class const ProviderFactory({
+  required final ServiceConnectionRepository serviceConnectionRepository,
+  final Future<String> Function(String id)? resolveOAuthAccessToken,
+}) {
   static const _openAIReasoningNamespace = 'openai_reasoning';
   static const _thinkingBudgetTokens = 1024;
-  const ProviderFactory({
-    required this.serviceConnectionRepository,
-    this.resolveOAuthAccessToken,
-  });
-
-  final ServiceConnectionRepository serviceConnectionRepository;
-  final Future<String> Function(String id)? resolveOAuthAccessToken;
-
   Future<Genkit> createGenkit(
     WorkspaceModelSelectionWithConnectionEntity config, {
     String? sessionId,
@@ -115,12 +110,11 @@ class ProviderFactory {
     final usesAdaptiveThinking = runtime.usesAdaptiveThinking;
 
     return AnthropicOptions(
-          thinking: ThinkingConfig(
-            type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
-            budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
-          ),
-        )
-        as T;
+      thinking: ThinkingConfig(
+        type: usesAdaptiveThinking ? 'adaptive' : 'enabled',
+        budgetTokens: usesAdaptiveThinking ? null : _thinkingBudgetTokens,
+      ),
+    ) as T;
   }
 
   Future<String> _resolveCredential(

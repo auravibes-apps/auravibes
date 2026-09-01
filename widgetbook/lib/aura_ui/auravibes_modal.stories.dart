@@ -5,9 +5,7 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_modal.stories.g.dart';
 
-class _ModalInput {
-  const _ModalInput();
-}
+class const _ModalInput();
 
 const component = ComponentMeta(name: 'AuraModal');
 const meta = Meta(AuraModal.new, argsType: _ModalInput.new);

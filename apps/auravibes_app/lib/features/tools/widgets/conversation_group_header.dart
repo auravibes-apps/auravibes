@@ -18,32 +18,23 @@ import 'package:flutter/material.dart';
 /// - Group toggle (enables/disables all tools in this group).
 /// - Reconnect button (for MCP error/disconnected states).
 /// - Expand/collapse chevron.
-class ConversationGroupHeader extends StatelessWidget {
-  static const _iconSize = 40.0;
-  const ConversationGroupHeader({
-    required this.groupWithTools,
-    required this.isExpanded,
-    required this.onToggleExpand,
-    this.onToggleAllTools,
-    this.onReconnect,
-    this.onViewError,
-    super.key,
-  });
-
-  final ConversationToolsGroupWithTools groupWithTools;
-  final bool isExpanded;
-  final VoidCallback onToggleExpand;
+class const ConversationGroupHeader({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  required final bool isExpanded,
+  required final VoidCallback onToggleExpand,
 
   /// Callback when all tools are toggled on/off.
-  final ValueChanged<bool>? onToggleAllTools;
+  final ValueChanged<bool>? onToggleAllTools,
 
   /// Callback to reconnect an MCP server.
   /// Null for non-MCP groups or connected MCPs.
-  final VoidCallback? onReconnect;
+  final VoidCallback? onReconnect,
 
   /// Callback to view error details.
-  final VoidCallback? onViewError;
-
+  final VoidCallback? onViewError,
+  super.key,
+}) extends StatelessWidget {
+  static const _iconSize = 40.0;
   @override
   Widget build(BuildContext context) {
     final group = groupWithTools.group;
@@ -120,11 +111,9 @@ class ConversationGroupHeader extends StatelessWidget {
 }
 
 /// Icon widget for the group.
-class _GroupIcon extends StatelessWidget {
-  const _GroupIcon({required this.groupWithTools});
-
-  final ConversationToolsGroupWithTools groupWithTools;
-
+class const _GroupIcon({
+  required final ConversationToolsGroupWithTools groupWithTools,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasEnabledTools = groupWithTools.areAnyToolsEnabled;
@@ -152,17 +141,11 @@ class _GroupIcon extends StatelessWidget {
 }
 
 /// MCP status badge widget.
-class _McpStatusBadge extends StatelessWidget {
-  const _McpStatusBadge({
-    required this.groupWithTools,
-    this.onReconnect,
-    this.onViewError,
-  });
-
-  final ConversationToolsGroupWithTools groupWithTools;
-  final VoidCallback? onReconnect;
-  final VoidCallback? onViewError;
-
+class const _McpStatusBadge({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = groupWithTools.mcpStatus;
@@ -193,17 +176,11 @@ class _McpStatusBadge extends StatelessWidget {
 }
 
 /// Error badge with reconnect and view error options.
-class _ErrorBadge extends StatelessWidget {
-  const _ErrorBadge({
-    required this.groupWithTools,
-    this.onReconnect,
-    this.onViewError,
-  });
-
-  final ConversationToolsGroupWithTools groupWithTools;
-  final VoidCallback? onReconnect;
-  final VoidCallback? onViewError;
-
+class const _ErrorBadge({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  final VoidCallback? onReconnect,
+  final VoidCallback? onViewError,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
@@ -248,11 +225,8 @@ class _ErrorBadge extends StatelessWidget {
 }
 
 /// Disconnected badge with reconnect button.
-class _DisconnectedBadge extends StatelessWidget {
-  const _DisconnectedBadge({this.onReconnect});
-
-  final VoidCallback? onReconnect;
-
+class const _DisconnectedBadge({final VoidCallback? onReconnect})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(

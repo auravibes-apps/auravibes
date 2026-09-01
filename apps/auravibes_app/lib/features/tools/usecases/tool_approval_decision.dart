@@ -13,34 +13,21 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/src/providers/provider.dart';
 
-class ToolApprovalDecision {
-  const ToolApprovalDecision({
-    required this.toolCallId,
-    required this.permissionResult,
-    this.permissionTableId,
-  });
-
-  final String toolCallId;
-  final ToolPermissionResult permissionResult;
-  final String? permissionTableId;
-
+class const ToolApprovalDecision({
+  required final String toolCallId,
+  required final ToolPermissionResult permissionResult,
+  final String? permissionTableId,
+}) {
   bool get needsConfirmation =>
       permissionResult == ToolPermissionResult.needsConfirmation;
 }
 
-class ResolveToolApprovalDecisionUsecase {
-  const ResolveToolApprovalDecisionUsecase({
-    required this.conversationToolsRepository,
-    required this.toolsGroupsRepository,
-    required this.workspaceToolsRepository,
-    this.syncSkillToolPermissionsUsecase,
-  });
-
-  final ConversationToolsRepository conversationToolsRepository;
-  final ToolsGroupsRepositoryContract toolsGroupsRepository;
-  final WorkspaceToolsRepositoryContract workspaceToolsRepository;
-  final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase;
-
+class const ResolveToolApprovalDecisionUsecase({
+  required final ConversationToolsRepository conversationToolsRepository,
+  required final ToolsGroupsRepositoryContract toolsGroupsRepository,
+  required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
+  final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase,
+}) {
   Future<ToolApprovalDecision> call({
     required String conversationId,
     required String workspaceId,

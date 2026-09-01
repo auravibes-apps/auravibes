@@ -1,6 +1,7 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_engine/src/agent_service.dart';
 import 'package:test/test.dart';
+
 import 'support/fake_cancellation_effects.dart';
 
 AgentService _buildAgentService(
@@ -379,10 +380,9 @@ class _FakeAgentConversationDataProvider
   Future<void> stopLatestPendingTools(String conversationId) async {}
 }
 
-class _FakeAgentSendQueueRuntime implements AgentSendQueueRuntime {
-  _FakeAgentSendQueueRuntime({this.drafts = const []});
-
-  final List<AgentQueuedDraft> drafts;
+class _FakeAgentSendQueueRuntime({
+  final List<AgentQueuedDraft> drafts = const [],
+}) implements AgentSendQueueRuntime {
   final cleared = <String>[];
   var _didDequeue = false;
 

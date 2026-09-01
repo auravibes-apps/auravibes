@@ -10,7 +10,7 @@ part 'api_model_entity.freezed.dart';
 /// A model is a specific AI model that can be used for generating
 /// responses, such as GPT-4, Claude-3, etc.
 @freezed
-abstract class ApiModelEntity with _$ApiModelEntity {
+abstract class const ApiModelEntity._() with _$ApiModelEntity {
   static const _largeContextLimit = 100000;
   static const _veryLargeContextLimit = 1000000;
   static const _smallContextLimit = 4000;
@@ -18,7 +18,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
   static const _largeCategoryLimit = 128000;
 
   /// Creates a new ApiModelEntity instance.
-  const factory ApiModelEntity({
+  const factory({
     /// ID of the provider that offers this model.
     required String modelProvider,
 
@@ -63,9 +63,7 @@ abstract class ApiModelEntity with _$ApiModelEntity {
     /// Whether models.dev reports tool-call support for this model.
     @Default(false) bool supportsToolCalls,
   }) = _ApiModelEntity;
-  const ApiModelEntity._();
-
-  factory ApiModelEntity.fromJson(
+  factory fromJson(
     String modelProvider,
     Map<String, dynamic> json, [
     Set<String> canonicalModelIds = const {},

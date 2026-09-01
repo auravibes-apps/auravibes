@@ -14,7 +14,7 @@ export 'aura_app_bar.dart';
 /// Screen manager.
 class AuraScreen extends StatelessWidget {
   /// Screen manager.
-  const AuraScreen({
+  const new({
     required this.child,
     this.appBar,
     this.variant = AuraScreenVariation.standard,
@@ -80,7 +80,7 @@ enum AuraScreenVariation {
   aurora,
 }
 
-class _AuroraBackground extends StatelessWidget {
+class const _AuroraBackground() extends StatelessWidget {
   static const _outerOffset = -100.0;
   static const _bottomOffset = -50.0;
   static const _topBlobSize = 400.0;
@@ -89,8 +89,6 @@ class _AuroraBackground extends StatelessWidget {
   static const _blurRadius = 60.0;
   static const _primaryAlpha = 102;
   static const _accentAlpha = 76;
-  const _AuroraBackground();
-
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
@@ -136,11 +134,8 @@ class _AuroraBackground extends StatelessWidget {
   }
 }
 
-class _Blob extends StatelessWidget {
-  const _Blob({required this.color, required this.size});
-  final Color color;
-  final double size;
-
+class const _Blob({required final Color color, required final double size})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

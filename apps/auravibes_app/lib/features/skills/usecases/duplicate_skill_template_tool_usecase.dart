@@ -8,17 +8,11 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_template_too
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class DuplicateSkillTemplateToolUsecase {
-  const DuplicateSkillTemplateToolUsecase(
-    this._skillTemplateToolsRepository, {
-    required this.createSkillTemplateToolUsecase,
-    this.cloudStore,
-  });
-  final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase;
-  final CloudSkillStore? cloudStore;
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
-
+class const DuplicateSkillTemplateToolUsecase(
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
+  required final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase,
+  final CloudSkillStore? cloudStore,
+}) {
   Future<SkillTemplateToolEntity> call(String toolId) async {
     final cloud = cloudStore;
     final tool = cloud != null

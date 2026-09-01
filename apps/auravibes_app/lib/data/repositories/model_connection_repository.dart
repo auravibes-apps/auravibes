@@ -26,18 +26,14 @@ typedef _ModelConnectionUpdatePayload = ({
 /// operations using the Drift database. It handles the mapping between domain
 /// entities and database records, and provides proper error handling using
 /// exceptions.
-class ModelConnectionRepository implements ModelConnectionStore {
+class ModelConnectionRepository({
+  required final AppDatabase _database,
+  required final EncryptionService _encryptionService,
+  ModelProviderServices? modelProviderServices,
+}) implements ModelConnectionStore {
   static const _missingApiKeyMessage = 'Model connection has no API key';
-  ModelConnectionRepository({
-    required this._database,
-    required this._encryptionService,
-    ModelProviderServices? modelProviderServices,
-  }) : _modelProviderServices =
-           modelProviderServices ?? ModelProviderServices();
-
-  final AppDatabase _database;
-  final EncryptionService _encryptionService;
-  final ModelProviderServices _modelProviderServices;
+  final ModelProviderServices _modelProviderServices =
+      modelProviderServices ?? ModelProviderServices();
 
   @override
   Future<ModelConnectionEntity> createModelConnection(
@@ -498,7 +494,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
 /// Base exception for model connection-related operations.
 class ModelConnectionException implements Exception {
   /// Creates a new ModelConnectionException.
-  const ModelConnectionException(this.message, [this.cause]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -517,23 +513,23 @@ class ModelConnectionException implements Exception {
 /// Exception thrown when a model connection has no models.
 class ModelConnectionNoModelsException extends ModelConnectionException {
   /// Creates a new ModelConnectionNoModelsException.
-  const ModelConnectionNoModelsException(this.modelId, [Exception? cause])
+  const new(this.modelId, [Exception? cause])
     : super('ModelProvider with type "$modelId" not found models', cause);
 
   /// ID of the workspaceModelSelection that was not found.
   final String modelId;
 }
 
-class ModelConnectionModelNotFoundException extends ModelConnectionException {
-  const ModelConnectionModelNotFoundException(this.modelId, [Exception? cause])
-    : super('ModelProvider with id "$modelId" not found', cause);
-
-  final String modelId;
+class const ModelConnectionModelNotFoundException(
+  final String modelId, [
+  Exception? cause,
+]) extends ModelConnectionException {
+  this : super('ModelProvider with id "$modelId" not found', cause);
 }
 
-class ModelConnectionNoTypeException extends ModelConnectionException {
-  const ModelConnectionNoTypeException(this.modelId, [Exception? cause])
-    : super('ModelProvider with id "$modelId" has no type', cause);
-
-  final String modelId;
+class const ModelConnectionNoTypeException(
+  final String modelId, [
+  Exception? cause,
+]) extends ModelConnectionException {
+  this : super('ModelProvider with id "$modelId" has no type', cause);
 }

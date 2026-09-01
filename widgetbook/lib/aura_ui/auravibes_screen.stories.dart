@@ -6,11 +6,7 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_screen.stories.g.dart';
 
-class _ScreenInput {
-  const _ScreenInput({required this.variant});
-
-  final AuraScreenVariation variant;
-}
+class const _ScreenInput({required final AuraScreenVariation variant});
 
 const meta = Meta(AuraScreen.new, argsType: _ScreenInput.new);
 

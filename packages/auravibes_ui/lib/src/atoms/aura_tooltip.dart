@@ -25,7 +25,7 @@ class AuraTooltip extends StatelessWidget {
   static const _fontSize = 12.0;
 
   /// Creates an Aura tooltip.
-  const AuraTooltip({
+  const new({
     required this.message,
     required this.child,
     super.key,

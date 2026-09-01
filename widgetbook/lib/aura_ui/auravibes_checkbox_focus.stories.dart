@@ -6,11 +6,7 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_checkbox_focus.stories.g.dart';
 
-class _FocusInput {
-  const _FocusInput({required this.selected});
-
-  final bool selected;
-}
+class const _FocusInput({required final bool selected});
 
 const component = ComponentMeta(name: 'AuraCheckbox');
 const meta = Meta(AuraCheckbox.new, argsType: _FocusInput.new);
@@ -55,12 +51,10 @@ final $FocusStates = _Story(
   ],
 );
 
-class _FocusStateRow extends StatelessWidget {
-  const _FocusStateRow({required this.label, required this.value});
-
-  final String label;
-  final bool value;
-
+class const _FocusStateRow({
+  required final String label,
+  required final bool value,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(

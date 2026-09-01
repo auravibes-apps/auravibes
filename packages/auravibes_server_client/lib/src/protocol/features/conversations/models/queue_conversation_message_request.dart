@@ -13,19 +13,16 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class QueueConversationMessageRequest
-    implements _i1.SerializableModel {
-  QueueConversationMessageRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.conversationId,
-    required this.expectedProjectionRevision,
-    required this.clientMessageId,
-    required this.content,
-    required this.attachmentIds,
-  });
-
-  factory QueueConversationMessageRequest({
+abstract class QueueConversationMessageRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var String conversationId,
+  required var int expectedProjectionRevision,
+  required var String clientMessageId,
+  required var String content,
+  required var List<String> attachmentIds,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -35,7 +32,7 @@ abstract class QueueConversationMessageRequest
     required List<String> attachmentIds,
   }) = _QueueConversationMessageRequestImpl;
 
-  factory QueueConversationMessageRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return QueueConversationMessageRequest(
@@ -51,20 +48,6 @@ abstract class QueueConversationMessageRequest
       ),
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  String conversationId;
-
-  int expectedProjectionRevision;
-
-  String clientMessageId;
-
-  String content;
-
-  List<String> attachmentIds;
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
@@ -98,25 +81,25 @@ abstract class QueueConversationMessageRequest
   }
 }
 
-class _QueueConversationMessageRequestImpl
-    extends QueueConversationMessageRequest {
-  _QueueConversationMessageRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required String conversationId,
-    required int expectedProjectionRevision,
-    required String clientMessageId,
-    required String content,
-    required List<String> attachmentIds,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         conversationId: conversationId,
-         expectedProjectionRevision: expectedProjectionRevision,
-         clientMessageId: clientMessageId,
-         content: content,
-         attachmentIds: attachmentIds,
-       );
+class _QueueConversationMessageRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required String conversationId,
+  required int expectedProjectionRevision,
+  required String clientMessageId,
+  required String content,
+  required List<String> attachmentIds,
+}) extends QueueConversationMessageRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedProjectionRevision: expectedProjectionRevision,
+        clientMessageId: clientMessageId,
+        content: content,
+        attachmentIds: attachmentIds,
+      );
 
   /// Returns a shallow copy of this [QueueConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.

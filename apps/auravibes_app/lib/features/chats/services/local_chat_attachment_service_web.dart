@@ -1,8 +1,10 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:riverpod/riverpod.dart';
 
-class LocalChatAttachmentServiceWeb {
-  LocalChatAttachmentServiceWeb({String storageNamespace = 'auravibes_app'}) {
+class LocalChatAttachmentServiceWeb({
+  String storageNamespace = 'auravibes_app',
+}) {
+  this {
     if (storageNamespace.isEmpty) {
       throw ArgumentError.value(storageNamespace, 'storageNamespace');
     }

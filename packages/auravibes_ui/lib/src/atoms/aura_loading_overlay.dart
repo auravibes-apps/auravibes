@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 /// A specialized full-screen loading overlay component.
 class AuraLoadingOverlay extends StatelessWidget {
   /// Creates an Aura loading overlay.
-  const AuraLoadingOverlay({
+  const new({
     super.key,
     this.isLoading = true,
     this.child,

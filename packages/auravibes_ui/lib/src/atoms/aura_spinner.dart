@@ -7,7 +7,7 @@ export 'aura_loading_overlay.dart';
 /// A customizable loading spinner component following the Aura design system.
 class AuraSpinner extends StatelessWidget {
   /// Creates an Aura spinner.
-  const AuraSpinner({
+  const new({
     super.key,
     this.size = AuraSpinnerSize.medium,
     this.tint,

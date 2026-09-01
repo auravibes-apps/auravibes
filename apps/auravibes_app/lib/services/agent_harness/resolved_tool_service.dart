@@ -39,17 +39,16 @@ import 'package:riverpod/riverpod.dart';
 const _conversationRepositoryNotConfigured =
     'ConversationRepository is not configured.';
 
-typedef SkillsManagerToolSuccessHandler =
-    void Function({
-      required String workspaceId,
-      required String toolSlug,
-      required Object result,
-    });
+typedef SkillsManagerToolSuccessHandler = void Function({
+  required String workspaceId,
+  required String toolSlug,
+  required Object result,
+});
 
 class ResolvedToolService {
   // Null disables mutation side-effects for tests and non-skills callers.
   // ignore: unnecessary-nullable
-  ResolvedToolService({
+  new({
     required AgentCancellationRuntime agentCancellationRuntime,
     required McpToolCaller mcpToolCaller,
     ConversationRepository? conversationRepository,
@@ -96,7 +95,7 @@ class ResolvedToolService {
            onSkillsManagerToolSuccess: onSkillsManagerToolSuccess,
          ),
        );
-  ResolvedToolService.cloud() : _delegate = null;
+  new cloud() : _delegate = null;
 
   final agent.ResolvedToolRunner<ResolvedTool>? _delegate;
 
@@ -118,52 +117,31 @@ class ResolvedToolService {
   }
 }
 
-class AppResolvedToolProvider
-    implements agent.ResolvedToolProvider<ResolvedTool> {
-  const AppResolvedToolProvider({
-    required this.agentCancellationRuntime,
-    required this.mcpToolCaller,
-    this.conversationRepository,
-    this.loadConversationSkillUsecase,
-    this.unloadConversationSkillUsecase,
-    this.runSkillTemplateToolUsecase,
-    this.runAppSkillToolUsecase,
-    this.buildLoadedSkillManifestsUsecase,
-    this.buildSkillTemplateToolSpecsUsecase,
-    this.buildAppSkillNativeToolSpecsUsecase,
-    this.runSkillsManagerToolUsecase,
-    this.listAvailableSkillsUsecase,
-    this.listAppSkillCredentialCandidatesUsecase,
-    this.appSkillRegistry,
-    this.skillCredentialsRepository,
-    this.subAgentRunner,
-    this.onSkillsManagerToolSuccess,
-  });
-
-  final AgentCancellationRuntime agentCancellationRuntime;
-  final McpToolCaller mcpToolCaller;
-  final ConversationRepository? conversationRepository;
+class const AppResolvedToolProvider({
+  required final AgentCancellationRuntime agentCancellationRuntime,
+  required final McpToolCaller mcpToolCaller,
+  final ConversationRepository? conversationRepository,
   final LoadConversationSkillUsecase Function(String workspaceId)?
-  loadConversationSkillUsecase;
+  loadConversationSkillUsecase,
   final UnloadConversationSkillUsecase Function(String workspaceId)?
-  unloadConversationSkillUsecase;
-  final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase;
-  final RunAppSkillToolUsecase? runAppSkillToolUsecase;
-  final BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase;
-  final BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase;
+  unloadConversationSkillUsecase,
+  final RunSkillTemplateToolUsecase? runSkillTemplateToolUsecase,
+  final RunAppSkillToolUsecase? runAppSkillToolUsecase,
+  final BuildLoadedSkillManifestsUsecase? buildLoadedSkillManifestsUsecase,
+  final BuildSkillTemplateToolSpecsUsecase? buildSkillTemplateToolSpecsUsecase,
   final BuildAppSkillNativeToolSpecsUsecase?
-  buildAppSkillNativeToolSpecsUsecase;
+  buildAppSkillNativeToolSpecsUsecase,
   final RunSkillsManagerToolUsecase Function(String workspaceId)?
-  runSkillsManagerToolUsecase;
+  runSkillsManagerToolUsecase,
   final ListAvailableSkillsUsecase Function(String workspaceId)?
-  listAvailableSkillsUsecase;
+  listAvailableSkillsUsecase,
   final ListAppSkillCredentialCandidatesUsecase?
-  listAppSkillCredentialCandidatesUsecase;
-  final AppSkillRegistry? appSkillRegistry;
-  final SkillCredentialsRepository? skillCredentialsRepository;
-  final agent.SubAgentRunner? subAgentRunner;
-  final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess;
-
+  listAppSkillCredentialCandidatesUsecase,
+  final AppSkillRegistry? appSkillRegistry,
+  final SkillCredentialsRepository? skillCredentialsRepository,
+  final agent.SubAgentRunner? subAgentRunner,
+  final SkillsManagerToolSuccessHandler? onSkillsManagerToolSuccess,
+}) implements agent.ResolvedToolProvider<ResolvedTool> {
   @override
   agent.AgentResolvedToolExecution<ResolvedTool> toExecution(
     ResolvedTool tool,
@@ -551,27 +529,18 @@ Future<Object?> _runSkillControlTool({
   return 'Skill "$slug" unloaded.';
 }
 
-class _SkillControlToolDependencies {
-  const _SkillControlToolDependencies({
-    required this.loadConversationSkillUsecase,
-    required this.unloadConversationSkillUsecase,
-    required this.listAvailableSkillsUsecase,
-    required this.listAppSkillCredentialCandidatesUsecase,
-    required this.appSkillRegistry,
-    required this.skillCredentialsRepository,
-  });
-
-  final LoadConversationSkillUsecase Function(String workspaceId)?
-  loadConversationSkillUsecase;
-  final UnloadConversationSkillUsecase Function(String workspaceId)?
-  unloadConversationSkillUsecase;
-  final ListAvailableSkillsUsecase Function(String workspaceId)?
-  listAvailableSkillsUsecase;
-  final ListAppSkillCredentialCandidatesUsecase?
-  listAppSkillCredentialCandidatesUsecase;
-  final AppSkillRegistry? appSkillRegistry;
-  final SkillCredentialsRepository? skillCredentialsRepository;
-}
+class const _SkillControlToolDependencies({
+  required final LoadConversationSkillUsecase Function(String workspaceId)?
+  loadConversationSkillUsecase,
+  required final UnloadConversationSkillUsecase Function(String workspaceId)?
+  unloadConversationSkillUsecase,
+  required final ListAvailableSkillsUsecase Function(String workspaceId)?
+  listAvailableSkillsUsecase,
+  required final ListAppSkillCredentialCandidatesUsecase?
+  listAppSkillCredentialCandidatesUsecase,
+  required final AppSkillRegistry? appSkillRegistry,
+  required final SkillCredentialsRepository? skillCredentialsRepository,
+});
 
 Future<Object?> _runSubAgentTool({
   required agent.SubAgentRunner runner,

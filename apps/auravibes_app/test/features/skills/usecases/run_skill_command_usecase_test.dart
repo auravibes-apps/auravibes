@@ -25,12 +25,11 @@ void main() {
       buildAppSkillNativeToolSpecsUsecase: _UnusedNativeSpecs(),
       runSkillTemplateToolUsecase: templateRunner,
       runAppSkillToolUsecase: nativeRunner,
-      listSkillCredentials:
-          ({
-            required conversationId,
-            required workspaceId,
-            required arguments,
-          }) async => const {},
+      listSkillCredentials: ({
+        required conversationId,
+        required workspaceId,
+        required arguments,
+      }) async => const {},
     );
 
     await expectLater(
@@ -91,12 +90,11 @@ void main() {
         buildAppSkillNativeToolSpecsUsecase: nativeSpecs,
         runSkillTemplateToolUsecase: templateRunner,
         runAppSkillToolUsecase: nativeRunner,
-        listSkillCredentials:
-            ({
-              required conversationId,
-              required workspaceId,
-              required arguments,
-            }) async => const {},
+        listSkillCredentials: ({
+          required conversationId,
+          required workspaceId,
+          required arguments,
+        }) async => const {},
       );
 
       final result = await usecase.call(
@@ -194,10 +192,8 @@ class _LoadedSkills implements ListAvailableSkillsUsecase {
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _TemplateRunner implements RunSkillTemplateToolUsecase {
-  _TemplateRunner({this.result});
-
-  final Map<String, int>? result;
+class _TemplateRunner({final Map<String, int>? result})
+    implements RunSkillTemplateToolUsecase {
   int calls = 0;
   String? lastWorkspaceId;
   String? lastSkillSlug;
@@ -255,14 +251,10 @@ class _UnusedUnload implements UnloadConversationSkillUsecase {
   Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-class _SkillSpecs
+class const _SkillSpecs(final List<ToolSpec> specs)
     implements
         BuildSkillTemplateToolSpecsUsecase,
         BuildAppSkillNativeToolSpecsUsecase {
-  const _SkillSpecs(this.specs);
-
-  final List<ToolSpec> specs;
-
   @override
   Future<List<ToolSpec>> call({
     required String conversationId,

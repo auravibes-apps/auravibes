@@ -3,11 +3,11 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
 class CloudChatGateway {
-  CloudChatGateway(this._stateGateway)
+  new(this._stateGateway)
     : _subscribeConversation = null,
       _getConversationSnapshot = null;
 
-  factory CloudChatGateway.forConversationTesting({
+  factory forConversationTesting({
     required CloudWorkspaceStateGateway stateGateway,
     required Stream<ConversationStreamEvent> Function(
       ConversationSubscribeRequest request,
@@ -21,7 +21,7 @@ class CloudChatGateway {
     getConversationSnapshot,
   );
 
-  CloudChatGateway._forConversationTesting(
+  new _forConversationTesting(
     this._stateGateway,
     this._subscribeConversation,
     this._getConversationSnapshot,

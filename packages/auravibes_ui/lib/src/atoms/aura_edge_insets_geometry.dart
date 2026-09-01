@@ -20,7 +20,7 @@ class AuraEdgeInsetsGeometry {
   static const small = AuraEdgeInsetsGeometry.all(.sm);
 
   /// Constructor for each side.
-  const AuraEdgeInsetsGeometry.only({
+  const new only({
     this.left = .none,
     this.top = .none,
     this.right = .none,
@@ -28,28 +28,28 @@ class AuraEdgeInsetsGeometry {
   });
 
   /// Constructor for horizontal padding.
-  const AuraEdgeInsetsGeometry.horizontal(AuraSpacing spacing)
+  const new horizontal(AuraSpacing spacing)
     : left = spacing,
       right = spacing,
       top = .none,
       bottom = .none;
 
   /// Constructor for vertical padding.
-  const AuraEdgeInsetsGeometry.vertical(AuraSpacing spacing)
+  const new vertical(AuraSpacing spacing)
     : top = spacing,
       bottom = spacing,
       left = .none,
       right = .none;
 
   /// Constructor for all same padding.
-  const AuraEdgeInsetsGeometry.all(AuraSpacing spacing)
+  const new all(AuraSpacing spacing)
     : left = spacing,
       top = spacing,
       right = spacing,
       bottom = spacing;
 
   /// Constructor for symmetric padding.
-  const AuraEdgeInsetsGeometry.symmetric({
+  const new symmetric({
     AuraSpacing horizontal = .none,
     AuraSpacing vertical = .none,
   }) : left = horizontal,
@@ -95,7 +95,7 @@ class AuraEdgeInsetsGeometry {
 /// Padding for const.
 class AuraPadding extends StatelessWidget {
   /// Default constructor.
-  const AuraPadding({required this.child, this.padding = .base, super.key});
+  const new({required this.child, this.padding = .base, super.key});
 
   /// The widget below this padding.
   final Widget child;

@@ -27,23 +27,16 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class AddModelProviderWidget extends HookConsumerWidget {
+class const AddModelProviderWidget({
+  required final String workspaceId,
+  super.key,
+  final VoidCallback? onCreated,
+  final VoidCallback? onCancel,
+  final bool showHeader = true,
+}) extends HookConsumerWidget {
   // Extract long locale key to avoid line length issues.
   static const String noModelsFoundKey =
       LocaleKeys.models_screens_add_provider_search_no_models_found;
-  const AddModelProviderWidget({
-    required this.workspaceId,
-    super.key,
-    this.onCreated,
-    this.onCancel,
-    this.showHeader = true,
-  });
-
-  final String workspaceId;
-  final VoidCallback? onCreated;
-  final VoidCallback? onCancel;
-  final bool showHeader;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollController = useScrollController();
@@ -228,11 +221,8 @@ class AddModelProviderWidget extends HookConsumerWidget {
 }
 
 /// Modal header with title and close button.
-class _ModalHeader extends StatelessWidget {
-  const _ModalHeader({required this.onClose});
-
-  final VoidCallback onClose;
-
+class const _ModalHeader({required final VoidCallback onClose})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -257,12 +247,10 @@ class _ModalHeader extends StatelessWidget {
 }
 
 /// API configuration section with key and URL.
-class _ApiConfigSection extends StatelessWidget {
-  const _ApiConfigSection({required this.workspaceId, required this.onSubmit});
-
-  final String workspaceId;
-  final VoidCallback onSubmit;
-
+class const _ApiConfigSection({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _HiddenSection(
@@ -278,12 +266,10 @@ class _ApiConfigSection extends StatelessWidget {
 }
 
 /// Reusable form section with title and content.
-class _HiddenSection extends HookWidget {
-  const _HiddenSection({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
+class const _HiddenSection({
+  required final String title,
+  required final Widget child,
+}) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final visibilityState = useState(false);
@@ -318,9 +304,7 @@ class _HiddenSection extends HookWidget {
 }
 
 /// Error banner for displaying general errors.
-class _ErrorBanner extends ConsumerWidget {
-  const _ErrorBanner();
-
+class const _ErrorBanner() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final addCredentialsModelMutation = ref.watch(
@@ -353,9 +337,8 @@ class _ErrorBanner extends ConsumerWidget {
           Expanded(
             child: Text(
               error,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: errorColor),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: errorColor),
             ),
           ),
         ],
@@ -364,9 +347,8 @@ class _ErrorBanner extends ConsumerWidget {
   }
 
   String _mapErrorMessage(Object error) {
-    if (error case ModelConnectionException(
-      :final message,
-    ) when message.trim().isNotEmpty) {
+    if (error case ModelConnectionException(:final message)
+        when message.trim().isNotEmpty) {
       return message;
     }
 
@@ -375,27 +357,16 @@ class _ErrorBanner extends ConsumerWidget {
 }
 
 /// Create button with loading state.
-class _CreateButton extends HookConsumerWidget {
-  const _CreateButton({
-    required this.workspaceId,
-    required this.onSubmit,
-    required this.isCodex,
-    required this.isDesktop,
-    required this.supportsBrowserOAuth,
-    required this.supportsDeviceOAuth,
-    required this.onCodexBrowserSubmit,
-    required this.onCodexDeviceSubmit,
-  });
-
-  final String workspaceId;
-  final VoidCallback onSubmit;
-  final bool isCodex;
-  final bool isDesktop;
-  final bool supportsBrowserOAuth;
-  final bool supportsDeviceOAuth;
-  final VoidCallback onCodexBrowserSubmit;
-  final VoidCallback onCodexDeviceSubmit;
-
+class const _CreateButton({
+  required final String workspaceId,
+  required final VoidCallback onSubmit,
+  required final bool isCodex,
+  required final bool isDesktop,
+  required final bool supportsBrowserOAuth,
+  required final bool supportsDeviceOAuth,
+  required final VoidCallback onCodexBrowserSubmit,
+  required final VoidCallback onCodexDeviceSubmit,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSubmitting = ref.watch(
@@ -403,9 +374,8 @@ class _CreateButton extends HookConsumerWidget {
     );
 
     final isValid = ref.watch(
-      addModelProviderStateProvider(
-        workspaceId,
-      ).select((value) => value.isValid()),
+      addModelProviderStateProvider(workspaceId)
+          .select((value) => value.isValid()),
     );
     final disabled = isSubmitting || !isValid;
 
@@ -443,15 +413,10 @@ class _CreateButton extends HookConsumerWidget {
   }
 }
 
-class _CodexDeviceCodePanel extends StatelessWidget {
-  const _CodexDeviceCodePanel({
-    required this.deviceCode,
-    required this.onCancel,
-  });
-
-  final CodexDeviceCode deviceCode;
-  final VoidCallback onCancel;
-
+class const _CodexDeviceCodePanel({
+  required final CodexDeviceCode deviceCode,
+  required final VoidCallback onCancel,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final linkStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -615,11 +580,8 @@ class _CodexDeviceCodePanel extends StatelessWidget {
   }
 }
 
-class _SelectModelProvider extends HookConsumerWidget {
-  const _SelectModelProvider({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _SelectModelProvider({required final String workspaceId})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final models = ref
@@ -740,17 +702,13 @@ class _SelectModelProvider extends HookConsumerWidget {
 }
 
 /// Header showing the selected model with a back button.
-class _SelectedModelHeader extends HookConsumerWidget {
-  const _SelectedModelHeader({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _SelectedModelHeader({required final String workspaceId})
+    extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedModelId = ref.watch(
-      addModelProviderStateProvider(
-        workspaceId,
-      ).select((value) => value.modelId),
+      addModelProviderStateProvider(workspaceId)
+          .select((value) => value.modelId),
     );
 
     final addModelProvider = ref.watch(

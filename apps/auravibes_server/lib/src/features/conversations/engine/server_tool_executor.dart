@@ -228,17 +228,11 @@ Future<T> runBoundedServerSkillHttpRequest<T>({
   );
 }
 
-class ServerToolExecutorService {
-  const ServerToolExecutorService({
-    this.beforeChildLaunch,
-    this.afterChildContinuation,
-    this.beforeSkillSelectionMutation,
-  });
-
-  final ServerToolExecutorInterlock? beforeChildLaunch;
-  final ServerToolExecutorInterlock? afterChildContinuation;
-  final ServerToolExecutorInterlock? beforeSkillSelectionMutation;
-
+class const ServerToolExecutorService({
+  final ServerToolExecutorInterlock? beforeChildLaunch,
+  final ServerToolExecutorInterlock? afterChildContinuation,
+  final ServerToolExecutorInterlock? beforeSkillSelectionMutation,
+}) {
   Future<Object?> call(
     Session session,
     ConversationTurn turn,
@@ -1548,6 +1542,4 @@ class ServerToolExecutorService {
   }
 }
 
-class ServerToolNotConfiguredException implements Exception {
-  const ServerToolNotConfiguredException();
-}
+class const ServerToolNotConfiguredException() implements Exception;

@@ -5,23 +5,14 @@ import 'package:widgetbook/widgetbook.dart';
 
 part 'auravibes_card.stories.g.dart';
 
-class _CardInput {
-  const _CardInput({
-    required this.title,
-    required this.description,
-    required this.padding,
-    required this.enableTap,
-    required this.semanticLabel,
-    required this.style,
-  });
-
-  final String title;
-  final String description;
-  final AuraEdgeInsetsGeometry padding;
-  final bool enableTap;
-  final String? semanticLabel;
-  final AuraCardStyle style;
-}
+class const _CardInput({
+  required final String title,
+  required final String description,
+  required final AuraEdgeInsetsGeometry padding,
+  required final bool enableTap,
+  required final String? semanticLabel,
+  required final AuraCardStyle style,
+});
 
 const component = ComponentMeta(name: 'AuraCard');
 const meta = Meta(CardDemo.new, argsType: _CardInput.new);
@@ -78,24 +69,15 @@ final $BasicCard = _Story(
 );
 
 /// Demonstrates editable card content and the optional tap callback.
-class CardDemo extends StatefulWidget {
-  const CardDemo({
-    super.key,
-    required this.title,
-    required this.description,
-    required this.padding,
-    required this.enableTap,
-    required this.semanticLabel,
-    required this.style,
-  });
-
-  final String title;
-  final String description;
-  final AuraEdgeInsetsGeometry padding;
-  final bool enableTap;
-  final String? semanticLabel;
-  final AuraCardStyle style;
-
+class const CardDemo({
+  super.key,
+  required final String title,
+  required final String description,
+  required final AuraEdgeInsetsGeometry padding,
+  required final bool enableTap,
+  required final String? semanticLabel,
+  required final AuraCardStyle style,
+}) extends StatefulWidget {
   @override
   State<CardDemo> createState() => _CardDemoState();
 }

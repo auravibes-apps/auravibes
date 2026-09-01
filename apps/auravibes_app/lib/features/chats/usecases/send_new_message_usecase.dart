@@ -15,25 +15,17 @@ import 'package:auravibes_app/services/monitoring_service.dart';
 import 'package:riverpod/riverpod.dart' show Ref;
 import 'package:riverpod/src/providers/provider.dart';
 
-class SendNewMessageUsecase {
-  const SendNewMessageUsecase({
-    required this.conversationRepo,
-    required this.sendMessageUsecase,
+class const SendNewMessageUsecase({
+  required final ConversationRepository conversationRepo,
+  required final SendMessageUsecase sendMessageUsecase,
 
-    required this.modelSelectionStore,
-    required this.generateTitleUsecase,
-    required this.monitoringService,
-    this.cloudCreate,
-  });
-
-  final ConversationRepository conversationRepo;
-  final SendMessageUsecase sendMessageUsecase;
-  final Future<ModelSelectionStore> Function(String workspaceId)
-  modelSelectionStore;
-  final GenerateTitleUsecase generateTitleUsecase;
-  final MonitoringService monitoringService;
+  required final Future<ModelSelectionStore> Function(String workspaceId)
+  modelSelectionStore,
+  required final GenerateTitleUsecase generateTitleUsecase,
+  required final MonitoringService monitoringService,
   final Future<ConversationEntity> Function(ConversationToCreate value)?
-  cloudCreate;
+  cloudCreate,
+}) {
   Future<ConversationEntity> call({
     required String workspaceId,
     required ChatDraft draft,

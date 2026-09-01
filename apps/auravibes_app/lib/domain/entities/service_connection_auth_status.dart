@@ -9,10 +9,8 @@ enum ServiceConnectionAuthStatus {
   failed,
 }
 
-sealed class ServiceConnectionSecret {
-  const ServiceConnectionSecret();
-
-  factory ServiceConnectionSecret.fromJson(Map<String, dynamic> json) {
+sealed class const ServiceConnectionSecret() {
+  factory fromJson(Map<String, dynamic> json) {
     return switch (json['type']) {
       'apiKey' => ServiceConnectionSecretApiKey(
         apiKey: _requiredSecretValue(json, 'api_key', 'apiKey'),
@@ -38,41 +36,29 @@ sealed class ServiceConnectionSecret {
   String toString() => 'ServiceConnectionSecret(redacted)';
 }
 
-class ServiceConnectionSecretApiKey extends ServiceConnectionSecret {
-  const ServiceConnectionSecretApiKey({required this.apiKey});
-
-  final String apiKey;
-
+class const ServiceConnectionSecretApiKey({required final String apiKey})
+    extends ServiceConnectionSecret {
   @override
   Map<String, dynamic> toJson() {
     return {'type': 'apiKey', 'api_key': apiKey};
   }
 }
 
-class ServiceConnectionSecretBearerToken extends ServiceConnectionSecret {
-  const ServiceConnectionSecretBearerToken({required this.bearerToken});
-
-  final String bearerToken;
-
+class const ServiceConnectionSecretBearerToken({
+  required final String bearerToken,
+}) extends ServiceConnectionSecret {
   @override
   Map<String, dynamic> toJson() {
     return {'type': 'bearerToken', 'bearer_token': bearerToken};
   }
 }
 
-class ServiceConnectionSecretOAuth2 extends ServiceConnectionSecret {
-  const ServiceConnectionSecretOAuth2({
-    required this.accessToken,
-    this.refreshToken,
-    this.idToken,
-    this.clientSecret,
-  });
-
-  final String accessToken;
-  final String? refreshToken;
-  final String? idToken;
-  final String? clientSecret;
-
+class const ServiceConnectionSecretOAuth2({
+  required final String accessToken,
+  final String? refreshToken,
+  final String? idToken,
+  final String? clientSecret,
+}) extends ServiceConnectionSecret {
   @override
   Map<String, dynamic> toJson() {
     return {
@@ -85,19 +71,17 @@ class ServiceConnectionSecretOAuth2 extends ServiceConnectionSecret {
   }
 }
 
-class ServiceConnectionMetadata {
-  const ServiceConnectionMetadata({
-    this.clientId,
-    this.issuer,
-    this.authorizationEndpoint,
-    this.tokenEndpoint,
-    this.scopes = const [],
-    this.accountId,
-    this.tenantId,
-    this.provider,
-  });
-
-  factory ServiceConnectionMetadata.fromJson(Map<String, dynamic> json) {
+class const ServiceConnectionMetadata({
+  final String? clientId,
+  final String? issuer,
+  final String? authorizationEndpoint,
+  final String? tokenEndpoint,
+  final List<String> scopes = const [],
+  final String? accountId,
+  final String? tenantId,
+  final String? provider,
+}) {
+  factory fromJson(Map<String, dynamic> json) {
     return ServiceConnectionMetadata(
       clientId: _stringOrNull(json['client_id']),
       issuer: _stringOrNull(json['issuer']),
@@ -113,15 +97,6 @@ class ServiceConnectionMetadata {
       provider: _stringOrNull(json['provider']),
     );
   }
-
-  final String? clientId;
-  final String? issuer;
-  final String? authorizationEndpoint;
-  final String? tokenEndpoint;
-  final List<String> scopes;
-  final String? accountId;
-  final String? tenantId;
-  final String? provider;
 
   Map<String, dynamic> toJson() {
     return {
@@ -141,9 +116,7 @@ class ServiceConnectionMetadata {
   String toString() => 'ServiceConnectionMetadata(${jsonEncode(toJson())})';
 }
 
-class ServiceConnectionAuthCodec {
-  const ServiceConnectionAuthCodec._();
-
+class const ServiceConnectionAuthCodec._() {
   static String encodeSecret(ServiceConnectionSecret secret) {
     return jsonEncode(secret.toJson());
   }

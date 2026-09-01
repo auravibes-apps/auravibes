@@ -8,7 +8,7 @@ export 'aura_row.dart';
 /// Contextual Column management.
 class AuraColumn extends StatelessWidget {
   /// Creates an Aura column.
-  const AuraColumn({
+  const new({
     required this.children,
     this.spacing = AuraSpacing.base,
     this.crossAxisAlignment = CrossAxisAlignment.center,

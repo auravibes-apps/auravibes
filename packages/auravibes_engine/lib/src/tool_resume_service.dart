@@ -1,15 +1,10 @@
 import 'package:auravibes_engine/src/agent_iteration_context.dart';
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
 
-class AgentToolResumeReference {
-  const AgentToolResumeReference({
-    required this.conversationId,
-    required this.workspaceId,
-  });
-
-  final String conversationId;
-  final String workspaceId;
-}
+class const AgentToolResumeReference({
+  required final String conversationId,
+  required final String workspaceId,
+});
 
 abstract interface class AgentToolResumeProvider {
   Future<AgentToolResumeReference?> getResumeReference(String messageId);
@@ -25,11 +20,9 @@ abstract interface class AgentToolResumeProvider {
   });
 }
 
-class AgentToolResumeService {
-  const AgentToolResumeService({required this.provider});
-
-  final AgentToolResumeProvider provider;
-
+class const AgentToolResumeService({
+  required final AgentToolResumeProvider provider,
+}) {
   Future<void> call({required String messageId}) async {
     final reference = await provider.getResumeReference(messageId);
     if (reference == null) return;

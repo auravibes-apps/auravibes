@@ -49,16 +49,11 @@ final $ChoicePicker = _Story(
 );
 
 /// Demonstrates controlled single- and multiple-selection choices.
-class ChoicePickerDemo extends StatefulWidget {
-  const ChoicePickerDemo({
-    super.key,
-    required this.variant,
-    required this.tint,
-  });
-
-  final AuraChoicePickerVariant variant;
-  final AuraTint? tint;
-
+class const ChoicePickerDemo({
+  super.key,
+  required final AuraChoicePickerVariant variant,
+  required final AuraTint? tint,
+}) extends StatefulWidget {
   @override
   State<ChoicePickerDemo> createState() => _ChoicePickerDemoState();
 }

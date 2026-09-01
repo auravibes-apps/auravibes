@@ -16,15 +16,10 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _FakeApiModelRepository implements ApiModelRepository {
-  const _FakeApiModelRepository({
-    this.providers = const [],
-    this.models = const [],
-  });
-
-  final List<ApiModelProviderEntity> providers;
-  final List<ApiModelEntity> models;
-
+class const _FakeApiModelRepository({
+  final List<ApiModelProviderEntity> providers = const [],
+  final List<ApiModelEntity> models = const [],
+}) implements ApiModelRepository {
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async => providers;
 
@@ -84,17 +79,11 @@ class _FakeApiModelRepository implements ApiModelRepository {
   }
 }
 
-class _FakeWorkspaceModelSelectionRepository
-    implements WorkspaceModelSelectionRepository {
-  _FakeWorkspaceModelSelectionRepository([
-    this.selections = const [],
-    this.workspaceModelSelectionStream,
-  ]);
-
-  final List<WorkspaceModelSelectionWithConnectionEntity> selections;
+class _FakeWorkspaceModelSelectionRepository([
+  final List<WorkspaceModelSelectionWithConnectionEntity> selections = const [],
   final Stream<List<WorkspaceModelSelectionWithConnectionEntity>>?
-  workspaceModelSelectionStream;
-
+  workspaceModelSelectionStream,
+]) implements WorkspaceModelSelectionRepository {
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
   getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) async {

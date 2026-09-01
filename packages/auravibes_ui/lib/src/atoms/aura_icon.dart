@@ -15,7 +15,7 @@ class AuraIcon extends StatelessWidget {
   static const _hugeSize = 48.0;
 
   /// Creates an Aura icon.
-  const AuraIcon(
+  const new(
     this.icon, {
     super.key,
     this.size = AuraIconSize.medium,

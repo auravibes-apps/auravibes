@@ -15,8 +15,8 @@ final _logger = Logger('mcp_form');
 
 /// State for the MCP form.
 @freezed
-abstract class McpFormState with _$McpFormState {
-  const factory McpFormState({
+abstract class const McpFormState._() with _$McpFormState {
+  const factory({
     @Default('') String name,
     @Default('') String description,
     @Default('') String url,
@@ -29,8 +29,6 @@ abstract class McpFormState with _$McpFormState {
     @Default(false) bool isSubmitting,
     String? errorMessage,
   }) = _McpFormState;
-
-  const McpFormState._();
 
   /// Get available authentication types based on current transport.
   List<McpAuthenticationTypeOptions> get availableAuthTypes {

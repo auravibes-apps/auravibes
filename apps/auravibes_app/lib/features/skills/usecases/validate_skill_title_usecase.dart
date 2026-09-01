@@ -18,12 +18,10 @@ abstract final class ValidateSkillTitleUsecase {
   }
 }
 
-class SkillTitleValidationException implements Exception {
-  const SkillTitleValidationException(this.message, {this.localizationKey});
-
-  final String message;
-  final String? localizationKey;
-
+class const SkillTitleValidationException(
+  final String message, {
+  final String? localizationKey,
+}) implements Exception {
   @override
   String toString() => 'SkillTitleValidationException: $message';
 }

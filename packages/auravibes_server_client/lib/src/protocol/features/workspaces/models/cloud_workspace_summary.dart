@@ -12,18 +12,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
-  CloudWorkspaceSummary._({
-    required this.id,
-    required this.name,
-    required this.role,
-    required this.revision,
-    required this.sequence,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory CloudWorkspaceSummary({
+abstract class CloudWorkspaceSummary._({
+  required var int id,
+  required var String name,
+  required var String role,
+  required var int revision,
+  required var int sequence,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     required int id,
     required String name,
     required String role,
@@ -33,7 +31,7 @@ abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _CloudWorkspaceSummaryImpl;
 
-  factory CloudWorkspaceSummary.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceSummary(
@@ -50,20 +48,6 @@ abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
       ),
     );
   }
-
-  int id;
-
-  String name;
-
-  String role;
-
-  int revision;
-
-  int sequence;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [CloudWorkspaceSummary]
   /// with some or all fields replaced by the given arguments.
@@ -97,24 +81,25 @@ abstract class CloudWorkspaceSummary implements _i1.SerializableModel {
   }
 }
 
-class _CloudWorkspaceSummaryImpl extends CloudWorkspaceSummary {
-  _CloudWorkspaceSummaryImpl({
-    required int id,
-    required String name,
-    required String role,
-    required int revision,
-    required int sequence,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         name: name,
-         role: role,
-         revision: revision,
-         sequence: sequence,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-       );
+class _CloudWorkspaceSummaryImpl({
+  required int id,
+  required String name,
+  required String role,
+  required int revision,
+  required int sequence,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+}) extends CloudWorkspaceSummary {
+  this
+    : super._(
+        id: id,
+        name: name,
+        role: role,
+        revision: revision,
+        sequence: sequence,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [CloudWorkspaceSummary]
   /// with some or all fields replaced by the given arguments.

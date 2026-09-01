@@ -9,12 +9,7 @@ import 'package:flutter/widgets.dart';
 /// constructor behaves as a passthrough wrapper.
 class AuraSizedBox extends StatelessWidget {
   /// Default constructor.
-  const AuraSizedBox({
-    this.width = .none,
-    this.height = .none,
-    this.child,
-    super.key,
-  });
+  const new({this.width = .none, this.height = .none, this.child, super.key});
 
   /// Horizontal spacing. Selects the resolved [width].
   final AuraSpacing width;

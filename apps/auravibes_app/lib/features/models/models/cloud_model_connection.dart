@@ -1,19 +1,17 @@
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudModelConnection {
-  const CloudModelConnection({
-    required this.id,
-    required this.revision,
-    required this.name,
-    required this.providerId,
-    required this.hasSecret,
-    required this.createdAt,
-    required this.updatedAt,
-    this.url,
-    this.keySuffix,
-  });
-
-  factory CloudModelConnection.fromView(ModelConnectionView view) {
+class const CloudModelConnection({
+  required final String id,
+  required final int revision,
+  required final String name,
+  required final String providerId,
+  required final bool hasSecret,
+  required final DateTime createdAt,
+  required final DateTime updatedAt,
+  final String? url,
+  final String? keySuffix,
+}) {
+  factory fromView(ModelConnectionView view) {
     return CloudModelConnection(
       id: view.id,
       revision: view.revision,
@@ -26,14 +24,4 @@ class CloudModelConnection {
       keySuffix: view.keySuffix,
     );
   }
-
-  final String id;
-  final int revision;
-  final String name;
-  final String providerId;
-  final bool hasSecret;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? url;
-  final String? keySuffix;
 }

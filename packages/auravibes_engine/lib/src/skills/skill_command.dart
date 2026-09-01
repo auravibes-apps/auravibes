@@ -67,15 +67,13 @@ const _skillSlugSchema = <String, Object?>{
   'additionalProperties': false,
 };
 
-class SkillCommandTarget {
-  SkillCommandTarget._({
-    required this.skill,
-    required this.tool,
-    required this.args,
-    required this.revision,
-  });
-
-  factory SkillCommandTarget.fromArguments(Map<String, Object?> arguments) {
+class SkillCommandTarget._({
+  required final String skill,
+  required final String tool,
+  required final Map<String, Object?> args,
+  required final String revision,
+}) {
+  factory fromArguments(Map<String, Object?> arguments) {
     final skill = arguments['skill'];
     final tool = arguments['tool'];
     final args = arguments['args'];
@@ -108,11 +106,6 @@ class SkillCommandTarget {
       revision: revision,
     );
   }
-
-  final String skill;
-  final String tool;
-  final Map<String, Object?> args;
-  final String revision;
 }
 
 class SkillManifest {

@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 /// with optional required field indicators.
 class AuraFieldLabel extends StatelessWidget {
   /// Creates a Aura field label.
-  const AuraFieldLabel({
+  const new({
     required this.child,
     super.key,
     this.isRequired = false,

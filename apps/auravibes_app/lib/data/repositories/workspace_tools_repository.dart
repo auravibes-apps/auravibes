@@ -8,10 +8,9 @@ import 'package:auravibes_app/services/tools/tool_service.dart';
 
 export 'workspace_tools_repository_contract.dart';
 
-class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
-  WorkspaceToolsRepository(this._database) : _dao = _database.workspaceToolsDao;
-  final AppDatabase _database;
-  final WorkspaceToolsDao _dao;
+class WorkspaceToolsRepository(final AppDatabase _database)
+    implements WorkspaceToolsRepositoryContract {
+  final WorkspaceToolsDao _dao = _database.workspaceToolsDao;
 
   @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(
@@ -241,7 +240,7 @@ class WorkspaceToolsRepository implements WorkspaceToolsRepositoryContract {
 /// Base exception for workspace tools-related operations.
 class WorkspaceToolsException implements Exception {
   /// Creates a new WorkspaceToolsException.
-  const WorkspaceToolsException(this.message, [this.cause]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -260,5 +259,5 @@ class WorkspaceToolsException implements Exception {
 /// Exception thrown when workspace tool validation fails.
 class WorkspaceToolsValidationException extends WorkspaceToolsException {
   /// Creates a new WorkspaceToolsValidationException.
-  const WorkspaceToolsValidationException(super.message, [super.cause]);
+  const new(super.message, [super.cause]);
 }

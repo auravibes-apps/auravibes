@@ -24,16 +24,11 @@ const _kNoToolsInGroup = 'tools_screen.no_tools_in_group';
 /// Shows a group header with icon, name, status, toggle, and expand chevron;
 /// an expandable list of tools; and MCP status indicators with reconnect and
 /// delete actions for MCP groups.
-class ToolsGroupCard extends HookConsumerWidget {
-  const ToolsGroupCard({
-    required this.groupWithTools,
-    required this.workspaceId,
-    super.key,
-  });
-
-  final ToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-
+class const ToolsGroupCard({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(false);
@@ -136,12 +131,10 @@ class ToolsGroupCard extends HookConsumerWidget {
 }
 
 /// List of tools within a group.
-class _ToolsList extends StatelessWidget {
-  const _ToolsList({required this.groupWithTools, required this.workspaceId});
-
-  final ToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-
+class const _ToolsList({
+  required final ToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groupWithTools.tools.isEmpty) {

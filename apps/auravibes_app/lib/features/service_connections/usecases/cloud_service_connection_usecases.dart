@@ -2,11 +2,9 @@ import 'package:auravibes_app/features/service_connections/models/cloud_service_
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_resource_store.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudServiceConnectionUsecases {
-  const CloudServiceConnectionUsecases(this._store);
-
-  final CloudWorkspaceResourceStore _store;
-
+class const CloudServiceConnectionUsecases(
+  final CloudWorkspaceResourceStore _store,
+) {
   Stream<List<CloudServiceConnection>> watch() => _store
       .watch(WorkspaceResourceKind.serviceConnection)
       .map((items) => items.map(CloudServiceConnection.fromResource).toList());

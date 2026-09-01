@@ -27,29 +27,22 @@ class ResponsiveSlidingDrawerController {
   }
 }
 
-class ResponsiveSlidingDrawer extends StatefulWidget {
-  const ResponsiveSlidingDrawer({
-    required this.drawer,
-    required this.body,
-    required this.isDarkMode,
-    required this.controller,
-    super.key,
-  });
-
+class const ResponsiveSlidingDrawer({
   /// The widget to be displayed in the drawer panel.
-  final Widget drawer;
+  required final Widget drawer,
 
   /// The main content widget that will be displayed alongside the drawer.
-  final Widget body;
-
-  /// An optional controller to programmatically open, close, or toggle the
-  /// drawer state.
-  final ResponsiveSlidingDrawerController controller;
+  required final Widget body,
 
   /// A boolean flag indicating whether the application is currently in dark
   /// mode. This determines which scrim color and opacity settings are used.
-  final bool isDarkMode;
+  required final bool isDarkMode,
 
+  /// An optional controller to programmatically open, close, or toggle the
+  /// drawer state.
+  required final ResponsiveSlidingDrawerController controller,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<ResponsiveSlidingDrawer> createState() =>
       _ResponsiveSlidingDrawerState();

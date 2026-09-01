@@ -6,27 +6,16 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_message_bubble.stories.g.dart';
 
-class _MessageBubbleInput {
-  const _MessageBubbleInput({
-    required this.content,
-    required this.isUser,
-    required this.status,
-    required this.timestamp,
-    required this.contentType,
-    required this.maxWidth,
-    required this.enableTap,
-    required this.enableLongPress,
-  });
-
-  final String content;
-  final bool isUser;
-  final AuraMessageDeliveryStatus status;
-  final DateTime? timestamp;
-  final AuraMessageContentType contentType;
-  final double? maxWidth;
-  final bool enableTap;
-  final bool enableLongPress;
-}
+class const _MessageBubbleInput({
+  required final String content,
+  required final bool isUser,
+  required final AuraMessageDeliveryStatus status,
+  required final DateTime? timestamp,
+  required final AuraMessageContentType contentType,
+  required final double? maxWidth,
+  required final bool enableTap,
+  required final bool enableLongPress,
+});
 
 const component = ComponentMeta(name: 'AuraMessageBubble');
 const meta = Meta(MessageBubbleDemo.new, argsType: _MessageBubbleInput.new);
@@ -110,32 +99,19 @@ final $AuraMessageBubble = _Story(
 );
 
 /// Demonstrates message content, delivery state, sizing, and callbacks.
-class MessageBubbleDemo extends StatefulWidget {
-  const MessageBubbleDemo({
-    super.key,
-    required this.content,
-    required this.isUser,
-    required this.status,
-    required this.timestamp,
-    required this.contentType,
-    required this.maxWidth,
-    required this.enableTap,
-    required this.enableLongPress,
-    this.imageProvider,
-    this.now,
-  });
-
-  final String content;
-  final bool isUser;
-  final AuraMessageDeliveryStatus status;
-  final DateTime? timestamp;
-  final AuraMessageContentType contentType;
-  final double? maxWidth;
-  final bool enableTap;
-  final bool enableLongPress;
-  final ImageProvider<Object>? imageProvider;
-  final DateTime Function()? now;
-
+class const MessageBubbleDemo({
+  super.key,
+  required final String content,
+  required final bool isUser,
+  required final AuraMessageDeliveryStatus status,
+  required final DateTime? timestamp,
+  required final AuraMessageContentType contentType,
+  required final double? maxWidth,
+  required final bool enableTap,
+  required final bool enableLongPress,
+  final ImageProvider<Object>? imageProvider,
+  final DateTime Function()? now,
+}) extends StatefulWidget {
   @override
   State<MessageBubbleDemo> createState() => _MessageBubbleDemoState();
 }

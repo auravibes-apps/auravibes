@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'conversation_skills_dao.g.dart';
 
 @DriftAccessor(tables: [ConversationSkills])
-class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
+class ConversationSkillsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$ConversationSkillsDaoMixin {
-  ConversationSkillsDao(super.attachedDatabase);
-
   Future<List<ConversationSkillsTable>> getConversationSkills(
     String conversationId,
   ) =>

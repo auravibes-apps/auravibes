@@ -15,9 +15,7 @@ abstract interface class ObjectScanner {
   });
 }
 
-class UnconfiguredObjectScanner implements ObjectScanner {
-  const UnconfiguredObjectScanner();
-
+class const UnconfiguredObjectScanner() implements ObjectScanner {
   @override
   Future<ObjectScanResult> scan({
     required String objectKey,
@@ -25,12 +23,10 @@ class UnconfiguredObjectScanner implements ObjectScanner {
   }) => throw StateError('Object scanner is not configured.');
 }
 
-class HttpObjectScanner implements ObjectScanner {
-  HttpObjectScanner({required this.endpoint, this.bearerToken});
-
-  final Uri endpoint;
-  final String? bearerToken;
-
+class HttpObjectScanner({
+  required final Uri endpoint,
+  final String? bearerToken,
+}) implements ObjectScanner {
   @override
   Future<ObjectScanResult> scan({
     required String objectKey,

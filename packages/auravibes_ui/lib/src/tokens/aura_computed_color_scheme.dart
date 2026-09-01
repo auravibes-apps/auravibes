@@ -21,12 +21,37 @@ import 'package:flutter/widgets.dart';
 ///   brightness: AuraBrightness.dark,
 /// );
 /// ```
-class AuraComputedColorScheme extends AuraColorScheme {
+class const AuraComputedColorScheme._({
+  required super.primary,
+  required super.primaryVariant,
+  required super.onPrimary,
+  required super.secondary,
+  required super.secondaryVariant,
+  required super.onSecondary,
+  required super.tertiary,
+  required super.tertiaryVariant,
+  required super.onTertiary,
+  required super.surface,
+  required super.surfaceVariant,
+  required super.onSurface,
+  required super.onSurfaceVariant,
+  required super.background,
+  required super.onBackground,
+  required super.error,
+  required super.onError,
+  required super.warning,
+  required super.onWarning,
+  required super.success,
+  required super.onSuccess,
+  required super.info,
+  required super.onInfo,
+  required super.outline,
+  required super.outlineVariant,
+  required super.shadow,
+  required super.scrim,
+}) extends AuraColorScheme {
   /// Computes a full 24-field scheme from [primaryHue] and [brightness].
-  factory AuraComputedColorScheme({
-    required double primaryHue,
-    required AuraBrightness brightness,
-  }) {
+  factory({required double primaryHue, required AuraBrightness brightness}) {
     final isLight = brightness == AuraBrightness.light;
 
     double l(double lightL, double darkL) => isLight ? lightL : darkL;
@@ -130,33 +155,4 @@ class AuraComputedColorScheme extends AuraColorScheme {
       scrim: scrim,
     );
   }
-  const AuraComputedColorScheme._({
-    required super.primary,
-    required super.primaryVariant,
-    required super.onPrimary,
-    required super.secondary,
-    required super.secondaryVariant,
-    required super.onSecondary,
-    required super.tertiary,
-    required super.tertiaryVariant,
-    required super.onTertiary,
-    required super.surface,
-    required super.surfaceVariant,
-    required super.onSurface,
-    required super.onSurfaceVariant,
-    required super.background,
-    required super.onBackground,
-    required super.error,
-    required super.onError,
-    required super.warning,
-    required super.onWarning,
-    required super.success,
-    required super.onSuccess,
-    required super.info,
-    required super.onInfo,
-    required super.outline,
-    required super.outlineVariant,
-    required super.shadow,
-    required super.scrim,
-  });
 }

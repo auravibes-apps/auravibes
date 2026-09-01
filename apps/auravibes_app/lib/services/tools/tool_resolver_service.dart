@@ -4,12 +4,10 @@ import 'package:auravibes_app/services/tools/native_tool_type.dart';
 import 'package:auravibes_app/services/tools/user_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-class ToolResolverService {
-  const ToolResolverService([this._resolver = _defaultResolver]);
-
+class const ToolResolverService([
+  final AgentToolNameResolver _resolver = _defaultResolver,
+]) {
   static const _defaultResolver = AgentToolNameResolver();
-
-  final AgentToolNameResolver _resolver;
 
   ResolvedTool? resolveTool(
     String modelToolName,

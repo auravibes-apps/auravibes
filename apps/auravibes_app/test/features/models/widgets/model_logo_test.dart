@@ -76,11 +76,8 @@ void main() {
   });
 }
 
-class _EasyLocalizationWrapper extends StatelessWidget {
-  const _EasyLocalizationWrapper({required this.child});
-
-  final Widget child;
-
+class const _EasyLocalizationWrapper({required final Widget child})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

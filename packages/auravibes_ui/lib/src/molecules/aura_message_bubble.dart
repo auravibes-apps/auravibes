@@ -11,7 +11,7 @@ import 'package:gpt_markdown/gpt_markdown.dart';
 /// messages, including different states and content types.
 class AuraMessageBubble extends StatelessWidget {
   /// Creates a Aura message bubble.
-  const AuraMessageBubble({
+  const new({
     required this.content,
     required this.isUser,
     super.key,
@@ -195,24 +195,15 @@ class AuraMessageBubble extends StatelessWidget {
   }
 }
 
-class _AuraMessageBubbleContent extends StatelessWidget {
+class const _AuraMessageBubbleContent({
+  required final String content,
+  required final AuraMessageContentType contentType,
+  required final Color textColor,
+  required final ImageProvider<Object>? imageProvider,
+  required final String? imageSemanticLabel,
+  required final String imageErrorLabel,
+}) extends StatelessWidget {
   static const _attachmentIconSize = 20.0;
-  const _AuraMessageBubbleContent({
-    required this.content,
-    required this.contentType,
-    required this.textColor,
-    required this.imageProvider,
-    required this.imageSemanticLabel,
-    required this.imageErrorLabel,
-  });
-
-  final String content;
-  final AuraMessageContentType contentType;
-  final Color textColor;
-  final ImageProvider<Object>? imageProvider;
-  final String? imageSemanticLabel;
-  final String imageErrorLabel;
-
   @override
   Widget build(BuildContext context) {
     final typography = context.auraTheme.typography;
@@ -275,17 +266,11 @@ class _AuraMessageBubbleContent extends StatelessWidget {
   }
 }
 
-class _AuraMessageBubbleTimestamp extends StatelessWidget {
-  const _AuraMessageBubbleTimestamp({
-    required this.timestamp,
-    required this.textColor,
-    required this.now,
-  });
-
-  final DateTime timestamp;
-  final Color textColor;
-  final DateTime Function()? now;
-
+class const _AuraMessageBubbleTimestamp({
+  required final DateTime timestamp,
+  required final Color textColor,
+  required final DateTime Function()? now,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final typography = context.auraTheme.typography;

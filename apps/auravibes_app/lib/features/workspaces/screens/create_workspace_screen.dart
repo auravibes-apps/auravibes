@@ -11,16 +11,15 @@ export 'create_workspace_form.dart';
 /// Screen for creating a workspace.
 class CreateWorkspaceScreen extends StatelessWidget {
   /// Creates a workspace screen.
-  const CreateWorkspaceScreen({required this.workspaceId, super.key});
+  const new({required this.workspaceId, super.key});
 
   /// Workspace id used for the return route.
   final String workspaceId;
 
   @override
   Widget build(BuildContext context) {
-    final createLocation = WorkspaceCreateRoute(
-      workspaceId: workspaceId,
-    ).location;
+    final createLocation = WorkspaceCreateRoute(workspaceId: workspaceId)
+        .location;
 
     return AuraScreen(
       child: ListView(

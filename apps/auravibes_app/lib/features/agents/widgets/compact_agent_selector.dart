@@ -7,22 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CompactAgentSelector extends ConsumerWidget {
-  const CompactAgentSelector({
-    required this.workspaceId,
-    required this.agentId,
-    required this.onChanged,
-    this.compactMode = false,
-    this.sheetMode = false,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String? agentId;
-  final ValueChanged<String?> onChanged;
-  final bool compactMode;
-  final bool sheetMode;
-
+class const CompactAgentSelector({
+  required final String workspaceId,
+  required final String? agentId,
+  required final ValueChanged<String?> onChanged,
+  final bool compactMode = false,
+  final bool sheetMode = false,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final agentsAsync = ref.watch(agentsProvider(workspaceId));
@@ -103,11 +95,7 @@ class CompactAgentSelector extends ConsumerWidget {
   }
 }
 
-class _AgentChip extends StatelessWidget {
-  const _AgentChip({required this.label});
-
-  final Widget label;
-
+class const _AgentChip({required final Widget label}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
@@ -127,17 +115,11 @@ String? _selectedAgentName(List<AgentEntity> agents, String? agentId) {
   return null;
 }
 
-class _AgentSheetSelector extends HookWidget {
-  const _AgentSheetSelector({
-    required this.agents,
-    required this.agentId,
-    required this.onChanged,
-  });
-
-  final List<AgentEntity> agents;
-  final String? agentId;
-  final ValueChanged<String?> onChanged;
-
+class const _AgentSheetSelector({
+  required final List<AgentEntity> agents,
+  required final String? agentId,
+  required final ValueChanged<String?> onChanged,
+}) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController();
@@ -192,17 +174,11 @@ class _AgentSheetSelector extends HookWidget {
   }
 }
 
-class _AgentSheetTile extends StatelessWidget {
-  const _AgentSheetTile({
-    required this.isSelected,
-    required this.onTap,
-    required this.child,
-  });
-
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Widget child;
-
+class const _AgentSheetTile({
+  required final bool isSelected,
+  required final VoidCallback onTap,
+  required final Widget child,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(

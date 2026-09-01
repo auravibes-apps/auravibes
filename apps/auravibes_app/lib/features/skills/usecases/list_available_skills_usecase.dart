@@ -14,27 +14,17 @@ import 'package:auravibes_app/services/skills/app_skill_registry.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class ListAvailableSkillsUsecase {
-  const ListAvailableSkillsUsecase(
-    this._skillsRepository,
-    this._conversationSkillsRepository,
-    this._appSkillSettingsRepository,
-    this._appSkillRegistry, [
-    this._checkSkillCredentialReadinessUsecase,
-    this._listAppSkillCredentialCandidatesUsecase,
-    this.cloudStore,
-  ]);
-  final CloudSkillStore? cloudStore;
-
-  final SkillsRepository? _skillsRepository;
-  final ConversationSkillsRepository? _conversationSkillsRepository;
-  final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository;
-  final AppSkillRegistry _appSkillRegistry;
+class const ListAvailableSkillsUsecase(
+  final SkillsRepository? _skillsRepository,
+  final ConversationSkillsRepository? _conversationSkillsRepository,
+  final AppSkillWorkspaceSettingsRepository? _appSkillSettingsRepository,
+  final AppSkillRegistry _appSkillRegistry, [
   final CheckSkillCredentialReadinessUsecase?
-  _checkSkillCredentialReadinessUsecase;
+  _checkSkillCredentialReadinessUsecase,
   final ListAppSkillCredentialCandidatesUsecase?
-  _listAppSkillCredentialCandidatesUsecase;
-
+  _listAppSkillCredentialCandidatesUsecase,
+  final CloudSkillStore? cloudStore,
+]) {
   ConversationSkillsRepository get _requiredConversationSkillsRepository {
     final repository = _conversationSkillsRepository;
     if (repository == null) {
@@ -201,15 +191,17 @@ enum SkillLoadFilter {
 
 extension on List<ConversationSkillEntity> {
   Set<String> get loadedUserSkillIds {
-    return where(
-      (skill) => skill.isLoaded,
-    ).map((skill) => skill.workspaceSkillId).nonNulls.toSet();
+    return where((skill) => skill.isLoaded)
+        .map((skill) => skill.workspaceSkillId)
+        .nonNulls
+        .toSet();
   }
 
   Set<String> get loadedAppSkillIdentifiers {
-    return where(
-      (skill) => skill.isLoaded,
-    ).map((skill) => skill.appSkillIdentifier).nonNulls.toSet();
+    return where((skill) => skill.isLoaded)
+        .map((skill) => skill.appSkillIdentifier)
+        .nonNulls
+        .toSet();
   }
 }
 

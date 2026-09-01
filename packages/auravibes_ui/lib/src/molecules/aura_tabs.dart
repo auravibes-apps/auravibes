@@ -16,7 +16,7 @@ import 'package:flutter/widgets.dart';
 /// tab strip selects a value and the caller renders content separately.
 class AuraTabs<T> extends StatefulWidget {
   /// Creates Aura tabs with one child per tab.
-  const AuraTabs({
+  const new({
     required this.items,
     super.key,
     this.initialIndex = 0,
@@ -29,7 +29,7 @@ class AuraTabs<T> extends StatefulWidget {
        _mode = _AuraTabsMode.content;
 
   /// Creates value-selecting tabs without tab children.
-  const AuraTabs.selector({
+  const new selector({
     required this.options,
     this.value,
     this.initialValue,
@@ -223,19 +223,12 @@ class _AuraTabsState<T> extends State<AuraTabs<T>> {
   }
 }
 
-class _AuraTabBar extends StatelessWidget {
-  const _AuraTabBar({
-    required this.titles,
-    required this.semanticLabels,
-    required this.selectedIndex,
-    required this.onChanged,
-  });
-
-  final List<Widget> titles;
-  final List<String?> semanticLabels;
-  final int selectedIndex;
-  final ValueChanged<int> onChanged;
-
+class const _AuraTabBar({
+  required final List<Widget> titles,
+  required final List<String?> semanticLabels,
+  required final int selectedIndex,
+  required final ValueChanged<int> onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -335,11 +328,7 @@ class _AuraTabBar extends StatelessWidget {
 /// Defines one tab title widget and its static content.
 class AuraTabItem {
   /// Creates a tab item.
-  const AuraTabItem({
-    required this.title,
-    required this.child,
-    this.semanticLabel,
-  });
+  const new({required this.title, required this.child, this.semanticLabel});
 
   /// The widget shown in the tab bar.
   final Widget title;
@@ -354,11 +343,7 @@ class AuraTabItem {
 /// Defines one value-selecting tab option.
 class AuraTabOption<T> {
   /// Creates a value-selecting tab option.
-  const AuraTabOption({
-    required this.value,
-    required this.title,
-    this.semanticLabel,
-  });
+  const new({required this.value, required this.title, this.semanticLabel});
 
   /// The value emitted when this option is selected.
   final T value;

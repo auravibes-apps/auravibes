@@ -1,16 +1,9 @@
-class ProviderProfile {
-  const ProviderProfile({
-    required this.id,
-    required this.defaultUrl,
-    required this.catalogPath,
-    required this.usesApiKeyHeader,
-  });
-
-  final String id;
-  final String defaultUrl;
-  final String catalogPath;
-  final bool usesApiKeyHeader;
-}
+class const ProviderProfile({
+  required final String id,
+  required final String defaultUrl,
+  required final String catalogPath,
+  required final bool usesApiKeyHeader,
+});
 
 enum ProviderRuntime {
   openAi,
@@ -20,17 +13,11 @@ enum ProviderRuntime {
   openAiReasoning,
 }
 
-class ProviderRuntimeSelection {
-  const ProviderRuntimeSelection({
-    required this.runtime,
-    required this.modelNamespace,
-    required this.usesAdaptiveThinking,
-  });
-
-  final ProviderRuntime runtime;
-  final String modelNamespace;
-  final bool usesAdaptiveThinking;
-}
+class const ProviderRuntimeSelection({
+  required final ProviderRuntime runtime,
+  required final String modelNamespace,
+  required final bool usesAdaptiveThinking,
+});
 
 ProviderRuntimeSelection selectProviderRuntime({
   required String providerId,

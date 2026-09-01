@@ -12,7 +12,7 @@ import 'package:go_router/go_router.dart';
 /// Provides navigation tiles for workspaces, service connections, and tools.
 class MoreScreen extends StatelessWidget {
   /// Creates a [MoreScreen].
-  const MoreScreen({required this.workspaceId, super.key});
+  const new({required this.workspaceId, super.key});
 
   /// The current workspace ID from the route.
   final String workspaceId;
@@ -81,19 +81,12 @@ class MoreScreen extends StatelessWidget {
   }
 }
 
-class _SectionTile extends StatelessWidget {
-  const _SectionTile({
-    required this.icon,
-    required this.titleKey,
-    required this.subtitleKey,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String titleKey;
-  final String subtitleKey;
-  final VoidCallback onTap;
-
+class const _SectionTile({
+  required final IconData icon,
+  required final String titleKey,
+  required final String subtitleKey,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(

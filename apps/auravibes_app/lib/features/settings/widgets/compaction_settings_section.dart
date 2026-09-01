@@ -16,11 +16,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CompactionSettingsSection extends ConsumerStatefulWidget {
-  const CompactionSettingsSection({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const CompactionSettingsSection({
+  required final String workspaceId,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<CompactionSettingsSection> createState() =>
       _CompactionSettingsSectionState();
@@ -218,9 +217,8 @@ class _CompactionSettingsSectionState
 
     try {
       final usecase = await ref.read(
-        saveWorkspaceCompactionSettingsUsecaseProvider(
-          widget.workspaceId,
-        ).future,
+        saveWorkspaceCompactionSettingsUsecaseProvider(widget.workspaceId)
+            .future,
       );
       final _ = await usecase(
         workspaceId: widget.workspaceId,
@@ -259,9 +257,8 @@ class _CompactionSettingsSectionState
           null;
       if (isCloud) {
         final usecase = await ref.read(
-          saveWorkspaceCompactionSettingsUsecaseProvider(
-            widget.workspaceId,
-          ).future,
+          saveWorkspaceCompactionSettingsUsecaseProvider(widget.workspaceId)
+              .future,
         );
         await usecase.reset(workspaceId: widget.workspaceId);
       } else {

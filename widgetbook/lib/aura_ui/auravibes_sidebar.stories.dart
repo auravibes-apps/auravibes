@@ -5,12 +5,10 @@ import 'package:widgetbook_workspace/aura_ui/story_helpers.dart';
 
 part 'auravibes_sidebar.stories.g.dart';
 
-class _SidebarInput {
-  const _SidebarInput({required this.expanded, required this.selectedIndex});
-
-  final bool expanded;
-  final int selectedIndex;
-}
+class const _SidebarInput({
+  required final bool expanded,
+  required final int selectedIndex,
+});
 
 int _clampSidebarIndex(int index) {
   if (index < 0) return 0;
@@ -51,16 +49,11 @@ final $Sidebar = _Story(
 );
 
 /// Demonstrates expanded and compact directional navigation sidebars.
-class SidebarDemo extends StatefulWidget {
-  const SidebarDemo({
-    required this.expanded,
-    required this.selectedIndex,
-    super.key,
-  });
-
-  final bool expanded;
-  final int selectedIndex;
-
+class const SidebarDemo({
+  required final bool expanded,
+  required final int selectedIndex,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<SidebarDemo> createState() => _SidebarDemoState();
 }

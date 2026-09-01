@@ -5,10 +5,10 @@ import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockDao extends Mock implements WorkspaceCompactionSettingsDao {}
+class MockDao extends Mock implements WorkspaceCompactionSettingsDao;
 
 class FakeCompanion extends Fake
-    implements WorkspaceCompactionSettingsCompanion {}
+    implements WorkspaceCompactionSettingsCompanion;
 
 void main() {
   var mockDao = MockDao();
@@ -25,9 +25,8 @@ void main() {
 
   group('getEffectiveSettings', () {
     test('returns defaults when no row exists', () async {
-      when(
-        () => mockDao.getByWorkspaceId('ws-1'),
-      ).thenAnswer((_) async => null);
+      when(() => mockDao.getByWorkspaceId('ws-1'))
+          .thenAnswer((_) async => null);
 
       final settings = await repo.getEffectiveSettings('ws-1');
 
@@ -58,9 +57,8 @@ void main() {
 
   group('watchEffectiveSettings', () {
     test('maps null row to defaults', () {
-      when(
-        () => mockDao.watchByWorkspaceId('ws-1'),
-      ).thenAnswer((_) => Stream.value(null));
+      when(() => mockDao.watchByWorkspaceId('ws-1'))
+          .thenAnswer((_) => Stream.value(null));
 
       expect(
         repo.watchEffectiveSettings('ws-1'),
@@ -110,9 +108,8 @@ void main() {
 
   group('resetOverrides', () {
     test('deletes row and returns defaults', () async {
-      when(
-        () => mockDao.deleteByWorkspaceId('ws-1'),
-      ).thenAnswer((_) async => 1);
+      when(() => mockDao.deleteByWorkspaceId('ws-1'))
+          .thenAnswer((_) async => 1);
 
       final settings = await repo.resetOverrides('ws-1');
 

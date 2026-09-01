@@ -10,19 +10,15 @@ import 'package:flutter/material.dart';
 /// Shows the full response content in a scrollable view with markdown
 /// rendering. Used when tool call responses exceed the preview limit
 /// in the chat view.
-class ToolCallResponseModal extends StatelessWidget {
-  static const _dividerOpacity = 0.2;
-  const ToolCallResponseModal({
-    required this.toolName,
-    required this.content,
-    super.key,
-  });
-
+class const ToolCallResponseModal({
   /// The name of the tool that generated the response.
-  final String toolName;
+  required final String toolName,
 
   /// The markdown content to display.
-  final String content;
+  required final String content,
+  super.key,
+}) extends StatelessWidget {
+  static const _dividerOpacity = 0.2;
 
   /// Shows the tool call response modal as a dialog.
   static Future<void> show(
@@ -77,11 +73,8 @@ class ToolCallResponseModal extends StatelessWidget {
   }
 }
 
-class _ToolCallResponseModalHeader extends StatelessWidget {
-  const _ToolCallResponseModalHeader({required this.toolName});
-
-  final String toolName;
-
+class const _ToolCallResponseModalHeader({required final String toolName})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -115,9 +108,7 @@ class _ToolCallResponseModalHeader extends StatelessWidget {
   }
 }
 
-class _ToolCallResponseModalFooter extends StatelessWidget {
-  const _ToolCallResponseModalFooter();
-
+class const _ToolCallResponseModalFooter() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

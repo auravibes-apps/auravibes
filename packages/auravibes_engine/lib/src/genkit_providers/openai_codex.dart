@@ -7,9 +7,7 @@ import 'dart:convert';
 import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
 import 'package:genkit/plugin.dart';
 
-class OpenAICodexCodec {
-  const OpenAICodexCodec();
-
+class const OpenAICodexCodec() {
   Future<ModelResponse> complete(
     ProviderTransport transport,
     Map<String, dynamic> body,

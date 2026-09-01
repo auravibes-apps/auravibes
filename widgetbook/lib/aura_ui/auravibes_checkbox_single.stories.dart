@@ -33,18 +33,12 @@ final $SingleCheckbox = _Story(
 );
 
 /// Demonstrates a controlled checkbox with focus, tint, and disabled states.
-class SingleCheckboxDemo extends StatefulWidget {
-  const SingleCheckboxDemo({
-    super.key,
-    required this.tint,
-    required this.disabled,
-    required this.autofocus,
-  });
-
-  final AuraTint? tint;
-  final bool disabled;
-  final bool autofocus;
-
+class const SingleCheckboxDemo({
+  super.key,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final bool autofocus,
+}) extends StatefulWidget {
   @override
   State<SingleCheckboxDemo> createState() => _SingleCheckboxDemoState();
 }

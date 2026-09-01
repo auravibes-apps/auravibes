@@ -5,19 +5,12 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
 
-class CloudWorkspaceUseCases {
-  const CloudWorkspaceUseCases({
-    required this._cloudRepository,
-    required this._workspaceRepository,
-    required this._cloudAccountId,
-    required this._serverUrl,
-  });
-
-  final CloudWorkspaceRepository _cloudRepository;
-  final WorkspaceRepository _workspaceRepository;
-  final String _cloudAccountId;
-  final String _serverUrl;
-
+class const CloudWorkspaceUseCases({
+  required final CloudWorkspaceRepository _cloudRepository,
+  required final WorkspaceRepository _workspaceRepository,
+  required final String _cloudAccountId,
+  required final String _serverUrl,
+}) {
   Future<CloudWorkspaceViewState> load() async {
     final workspacesFuture = _cloudRepository.listWorkspaces();
     final pendingInvitesFuture = _cloudRepository.listPendingInvites();
@@ -266,26 +259,20 @@ class CloudWorkspaceUseCases {
   }
 }
 
-class CloudWorkspaceDetailState {
-  const CloudWorkspaceDetailState({
-    required this.detail,
-    required this.members,
-    required this.invites,
-  });
-
-  final CloudWorkspaceDetail detail;
-  final List<CloudWorkspaceMemberSummary> members;
-  final List<CloudWorkspaceInviteSummary> invites;
-}
+class const CloudWorkspaceDetailState({
+  required final CloudWorkspaceDetail detail,
+  required final List<CloudWorkspaceMemberSummary> members,
+  required final List<CloudWorkspaceInviteSummary> invites,
+});
 
 class CloudWorkspaceViewState {
-  const CloudWorkspaceViewState({
+  const new({
     required this.workspaces,
     required this.pendingInvites,
     this.authenticationRequired = false,
   });
 
-  const CloudWorkspaceViewState.authenticationRequired()
+  const new authenticationRequired()
     : workspaces = const [],
       pendingInvites = const [],
       authenticationRequired = true;
@@ -295,8 +282,5 @@ class CloudWorkspaceViewState {
   final bool authenticationRequired;
 }
 
-class AppCloudWorkspaceException implements Exception {
-  const AppCloudWorkspaceException(this.localizationKey);
-
-  final String localizationKey;
-}
+class const AppCloudWorkspaceException(final String localizationKey)
+    implements Exception;

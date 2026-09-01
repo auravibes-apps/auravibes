@@ -13,20 +13,18 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class StartTurnRequest implements _i1.SerializableModel {
-  StartTurnRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.conversationId,
-    required this.expectedConversationRevision,
-    required this.clientMessageId,
-    required this.content,
-    required this.attachmentIds,
-    this.modelSelectionId,
-    this.agentId,
-  });
-
-  factory StartTurnRequest({
+abstract class StartTurnRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var String conversationId,
+  required var int expectedConversationRevision,
+  required var String clientMessageId,
+  required var String content,
+  required var List<String> attachmentIds,
+  var String? modelSelectionId,
+  var String? agentId,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -38,7 +36,7 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
     String? agentId,
   }) = _StartTurnRequestImpl;
 
-  factory StartTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return StartTurnRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
@@ -54,24 +52,6 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
       agentId: jsonSerialization['agentId'] as String?,
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  String conversationId;
-
-  int expectedConversationRevision;
-
-  String clientMessageId;
-
-  String content;
-
-  List<String> attachmentIds;
-
-  String? modelSelectionId;
-
-  String? agentId;
 
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.
@@ -109,30 +89,31 @@ abstract class StartTurnRequest implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _StartTurnRequestImpl extends StartTurnRequest {
-  _StartTurnRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required String conversationId,
-    required int expectedConversationRevision,
-    required String clientMessageId,
-    required String content,
-    required List<String> attachmentIds,
-    String? modelSelectionId,
-    String? agentId,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         conversationId: conversationId,
-         expectedConversationRevision: expectedConversationRevision,
-         clientMessageId: clientMessageId,
-         content: content,
-         attachmentIds: attachmentIds,
-         modelSelectionId: modelSelectionId,
-         agentId: agentId,
-       );
+class _StartTurnRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required String conversationId,
+  required int expectedConversationRevision,
+  required String clientMessageId,
+  required String content,
+  required List<String> attachmentIds,
+  String? modelSelectionId,
+  String? agentId,
+}) extends StartTurnRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        conversationId: conversationId,
+        expectedConversationRevision: expectedConversationRevision,
+        clientMessageId: clientMessageId,
+        content: content,
+        attachmentIds: attachmentIds,
+        modelSelectionId: modelSelectionId,
+        agentId: agentId,
+      );
 
   /// Returns a shallow copy of this [StartTurnRequest]
   /// with some or all fields replaced by the given arguments.

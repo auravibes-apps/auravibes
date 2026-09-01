@@ -27,12 +27,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class AgentDetailScreen extends ConsumerStatefulWidget {
-  const AgentDetailScreen({required this.workspaceId, this.agentId, super.key});
-
-  final String workspaceId;
-  final String? agentId;
-
+class const AgentDetailScreen({
+  required final String workspaceId,
+  final String? agentId,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<AgentDetailScreen> createState() => _AgentDetailScreenState();
 }
@@ -361,46 +360,28 @@ class _AgentDetailScreenState extends ConsumerState<AgentDetailScreen> {
   }
 }
 
-class _AgentForm extends StatelessWidget {
-  const _AgentForm({
-    required this.skills,
-    required this.tools,
-    required this.nameController,
-    required this.descriptionController,
-    required this.contentController,
-    required this.isEnabled,
-    required this.visibility,
-    required this.selectedSkills,
-    required this.toolPermissionModes,
-    required this.onEnabledChanged,
-    required this.onVisibilityChanged,
-    required this.onEditDescription,
-    required this.onEditPrompt,
-    required this.onManageSkills,
-    required this.onManageTools,
-  });
-
-  final List<WorkspaceSkill> skills;
-  final List<WorkspaceToolEntity> tools;
-  final TextEditingController nameController;
-  final TextEditingController descriptionController;
-  final TextEditingController contentController;
-  final bool isEnabled;
-  final AgentVisibility visibility;
-  final Set<AgentSkillRef> selectedSkills;
-  final Map<String, AgentToolPermissionMode> toolPermissionModes;
-  final ValueChanged<bool> onEnabledChanged;
-  final ValueChanged<AgentVisibility> onVisibilityChanged;
-  final VoidCallback onEditDescription;
-  final VoidCallback onEditPrompt;
-  final void Function({
+class const _AgentForm({
+  required final List<WorkspaceSkill> skills,
+  required final List<WorkspaceToolEntity> tools,
+  required final TextEditingController nameController,
+  required final TextEditingController descriptionController,
+  required final TextEditingController contentController,
+  required final bool isEnabled,
+  required final AgentVisibility visibility,
+  required final Set<AgentSkillRef> selectedSkills,
+  required final Map<String, AgentToolPermissionMode> toolPermissionModes,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final ValueChanged<AgentVisibility> onVisibilityChanged,
+  required final VoidCallback onEditDescription,
+  required final VoidCallback onEditPrompt,
+  required final void Function({
     required List<WorkspaceSkill> enabledSkills,
     required List<WorkspaceSkill> disabledSkills,
     required List<AgentSkillRef> unavailableRefs,
   })
-  onManageSkills;
-  final VoidCallback onManageTools;
-
+  onManageSkills,
+  required final VoidCallback onManageTools,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabledSkills = skills.where((skill) => skill.isEnabled).toList();
@@ -457,29 +438,17 @@ class _AgentForm extends StatelessWidget {
   }
 }
 
-class _PromptCard extends StatelessWidget {
-  const _PromptCard({
-    required this.nameController,
-    required this.descriptionController,
-    required this.contentController,
-    required this.isEnabled,
-    required this.visibility,
-    required this.onEnabledChanged,
-    required this.onVisibilityChanged,
-    required this.onEditDescription,
-    required this.onEditPrompt,
-  });
-
-  final TextEditingController nameController;
-  final TextEditingController descriptionController;
-  final TextEditingController contentController;
-  final bool isEnabled;
-  final AgentVisibility visibility;
-  final ValueChanged<bool> onEnabledChanged;
-  final ValueChanged<AgentVisibility> onVisibilityChanged;
-  final VoidCallback onEditDescription;
-  final VoidCallback onEditPrompt;
-
+class const _PromptCard({
+  required final TextEditingController nameController,
+  required final TextEditingController descriptionController,
+  required final TextEditingController contentController,
+  required final bool isEnabled,
+  required final AgentVisibility visibility,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final ValueChanged<AgentVisibility> onVisibilityChanged,
+  required final VoidCallback onEditDescription,
+  required final VoidCallback onEditPrompt,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraCard(
@@ -564,21 +533,13 @@ class _PromptCard extends StatelessWidget {
   }
 }
 
-class _SkillsSummaryCard extends StatelessWidget {
-  const _SkillsSummaryCard({
-    required this.selectedCount,
-    required this.availableCount,
-    required this.disabledSelectedCount,
-    required this.unavailableCount,
-    required this.onManage,
-  });
-
-  final int selectedCount;
-  final int availableCount;
-  final int disabledSelectedCount;
-  final int unavailableCount;
-  final VoidCallback onManage;
-
+class const _SkillsSummaryCard({
+  required final int selectedCount,
+  required final int availableCount,
+  required final int disabledSelectedCount,
+  required final int unavailableCount,
+  required final VoidCallback onManage,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasWarning = disabledSelectedCount > 0 || unavailableCount > 0;
@@ -622,17 +583,11 @@ class _SkillsSummaryCard extends StatelessWidget {
   }
 }
 
-class _ToolPermissionsSummaryCard extends StatelessWidget {
-  const _ToolPermissionsSummaryCard({
-    required this.overrideCount,
-    required this.missingOverrideCount,
-    required this.onManage,
-  });
-
-  final int overrideCount;
-  final int missingOverrideCount;
-  final VoidCallback onManage;
-
+class const _ToolPermissionsSummaryCard({
+  required final int overrideCount,
+  required final int missingOverrideCount,
+  required final VoidCallback onManage,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraCard(
@@ -674,17 +629,11 @@ class _ToolPermissionsSummaryCard extends StatelessWidget {
   }
 }
 
-class _CardHeader extends StatelessWidget {
-  const _CardHeader({
-    required this.title,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  final Widget title;
-  final Widget actionLabel;
-  final VoidCallback onAction;
-
+class const _CardHeader({
+  required final Widget title,
+  required final Widget actionLabel,
+  required final VoidCallback onAction,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraRow(
@@ -703,17 +652,11 @@ class _CardHeader extends StatelessWidget {
   }
 }
 
-class _SaveBar extends StatelessWidget {
-  const _SaveBar({
-    required this.isCreate,
-    required this.isSaving,
-    required this.onSave,
-  });
-
-  final bool isCreate;
-  final bool isSaving;
-  final VoidCallback onSave;
-
+class const _SaveBar({
+  required final bool isCreate,
+  required final bool isSaving,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -749,12 +692,10 @@ class _SaveBar extends StatelessWidget {
   }
 }
 
-class _WarningTile extends StatelessWidget {
-  const _WarningTile({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
+class const _WarningTile({
+  required final String label,
+  required final VoidCallback onTap,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
@@ -767,25 +708,15 @@ class _WarningTile extends StatelessWidget {
   }
 }
 
-class _AgentSkillsDialog extends StatefulWidget {
-  const _AgentSkillsDialog({
-    required this.enabledSkills,
-    required this.disabledSkills,
-    required this.unavailableRefs,
-    required this.selectedSkills,
-    required this.onToggle,
-    required this.onEnable,
-    required this.onRemoveUnavailable,
-  });
-
-  final List<WorkspaceSkill> enabledSkills;
-  final List<WorkspaceSkill> disabledSkills;
-  final List<AgentSkillRef> unavailableRefs;
-  final Set<AgentSkillRef> selectedSkills;
-  final ValueChanged<WorkspaceSkill> onToggle;
-  final Future<void> Function(WorkspaceSkill skill) onEnable;
-  final ValueChanged<AgentSkillRef> onRemoveUnavailable;
-
+class const _AgentSkillsDialog({
+  required final List<WorkspaceSkill> enabledSkills,
+  required final List<WorkspaceSkill> disabledSkills,
+  required final List<AgentSkillRef> unavailableRefs,
+  required final Set<AgentSkillRef> selectedSkills,
+  required final ValueChanged<WorkspaceSkill> onToggle,
+  required final Future<void> Function(WorkspaceSkill skill) onEnable,
+  required final ValueChanged<AgentSkillRef> onRemoveUnavailable,
+}) extends StatefulWidget {
   @override
   State<_AgentSkillsDialog> createState() => _AgentSkillsDialogState();
 }
@@ -870,21 +801,14 @@ class _AgentSkillsDialogState extends State<_AgentSkillsDialog> {
   }
 }
 
-class _AgentToolPermissionsDialog extends StatefulWidget {
-  const _AgentToolPermissionsDialog({
-    required this.skills,
-    required this.selectedSkills,
-    required this.tools,
-    required this.values,
-    required this.onChanged,
-  });
-
-  final List<WorkspaceSkill> skills;
-  final Set<AgentSkillRef> selectedSkills;
-  final List<WorkspaceToolEntity> tools;
-  final Map<String, AgentToolPermissionMode> values;
-  final void Function(String toolId, AgentToolPermissionMode value) onChanged;
-
+class const _AgentToolPermissionsDialog({
+  required final List<WorkspaceSkill> skills,
+  required final Set<AgentSkillRef> selectedSkills,
+  required final List<WorkspaceToolEntity> tools,
+  required final Map<String, AgentToolPermissionMode> values,
+  required final void Function(String toolId, AgentToolPermissionMode value)
+  onChanged,
+}) extends StatefulWidget {
   @override
   State<_AgentToolPermissionsDialog> createState() =>
       _AgentToolPermissionsDialogState();
@@ -1115,40 +1039,24 @@ class _AgentToolPermissionsDialogState
   }
 }
 
-class _GroupedTools {
-  const _GroupedTools({
-    required this.selectedSkillGroups,
-    required this.otherSkillGroups,
-    required this.skillControls,
-    required this.otherWorkspaceTools,
-  });
+class const _GroupedTools({
+  required final List<_ToolGroup> selectedSkillGroups,
+  required final List<_ToolGroup> otherSkillGroups,
+  required final List<WorkspaceToolEntity> skillControls,
+  required final List<WorkspaceToolEntity> otherWorkspaceTools,
+});
 
-  final List<_ToolGroup> selectedSkillGroups;
-  final List<_ToolGroup> otherSkillGroups;
-  final List<WorkspaceToolEntity> skillControls;
-  final List<WorkspaceToolEntity> otherWorkspaceTools;
-}
+class const _ToolGroup({
+  required final String key,
+  required final String title,
+  required final List<WorkspaceToolEntity> tools,
+  required final int overrideCount,
+});
 
-class _ToolGroup {
-  const _ToolGroup({
-    required this.key,
-    required this.title,
-    required this.tools,
-    required this.overrideCount,
-  });
-
-  final String key;
-  final String title;
-  final List<WorkspaceToolEntity> tools;
-  final int overrideCount;
-}
-
-class _AgentManageDialog extends StatelessWidget {
-  const _AgentManageDialog({required this.title, required this.child});
-
-  final Widget title;
-  final Widget child;
-
+class const _AgentManageDialog({
+  required final Widget title,
+  required final Widget child,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -1192,23 +1100,14 @@ class _AgentManageDialog extends StatelessWidget {
   }
 }
 
-class _SkillSection extends StatelessWidget {
-  const _SkillSection({
-    required this.title,
-    required this.empty,
-    required this.skills,
-    required this.selectedSkills,
-    required this.onTap,
-    this.disabled = false,
-  });
-
-  final Widget title;
-  final Widget empty;
-  final List<WorkspaceSkill> skills;
-  final Set<AgentSkillRef> selectedSkills;
-  final ValueChanged<WorkspaceSkill> onTap;
-  final bool disabled;
-
+class const _SkillSection({
+  required final Widget title,
+  required final Widget empty,
+  required final List<WorkspaceSkill> skills,
+  required final Set<AgentSkillRef> selectedSkills,
+  required final ValueChanged<WorkspaceSkill> onTap,
+  final bool disabled = false,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DialogSection(
@@ -1228,12 +1127,10 @@ class _SkillSection extends StatelessWidget {
   }
 }
 
-class _UnavailableSkillSection extends StatelessWidget {
-  const _UnavailableSkillSection({required this.refs, required this.onRemove});
-
-  final List<AgentSkillRef> refs;
-  final ValueChanged<AgentSkillRef> onRemove;
-
+class const _UnavailableSkillSection({
+  required final List<AgentSkillRef> refs,
+  required final ValueChanged<AgentSkillRef> onRemove,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DialogSection(
@@ -1267,21 +1164,14 @@ class _UnavailableSkillSection extends StatelessWidget {
   }
 }
 
-class _ToolSection extends StatelessWidget {
-  const _ToolSection({
-    required this.title,
-    required this.empty,
-    required this.tools,
-    required this.valueOf,
-    required this.onChanged,
-  });
-
-  final Widget title;
-  final Widget empty;
-  final List<WorkspaceToolEntity> tools;
-  final AgentToolPermissionMode Function(String toolId) valueOf;
-  final void Function(String toolId, AgentToolPermissionMode value) onChanged;
-
+class const _ToolSection({
+  required final Widget title,
+  required final Widget empty,
+  required final List<WorkspaceToolEntity> tools,
+  required final AgentToolPermissionMode Function(String toolId) valueOf,
+  required final void Function(String toolId, AgentToolPermissionMode value)
+  onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DialogSection(
@@ -1300,25 +1190,16 @@ class _ToolSection extends StatelessWidget {
   }
 }
 
-class _CollapsibleToolSection extends StatelessWidget {
-  const _CollapsibleToolSection({
-    required this.title,
-    required this.empty,
-    required this.isExpanded,
-    required this.onToggle,
-    required this.tools,
-    required this.valueOf,
-    required this.onChanged,
-  });
-
-  final String title;
-  final Widget empty;
-  final bool isExpanded;
-  final VoidCallback onToggle;
-  final List<WorkspaceToolEntity> tools;
-  final AgentToolPermissionMode Function(String toolId) valueOf;
-  final void Function(String toolId, AgentToolPermissionMode value) onChanged;
-
+class const _CollapsibleToolSection({
+  required final String title,
+  required final Widget empty,
+  required final bool isExpanded,
+  required final VoidCallback onToggle,
+  required final List<WorkspaceToolEntity> tools,
+  required final AgentToolPermissionMode Function(String toolId) valueOf,
+  required final void Function(String toolId, AgentToolPermissionMode value)
+  onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -1354,19 +1235,12 @@ class _CollapsibleToolSection extends StatelessWidget {
   }
 }
 
-class _DialogSection extends StatelessWidget {
-  const _DialogSection({
-    required this.title,
-    required this.empty,
-    required this.children,
-    required this.isEmpty,
-  });
-
-  final Widget title;
-  final Widget empty;
-  final List<Widget> children;
-  final bool isEmpty;
-
+class const _DialogSection({
+  required final Widget title,
+  required final Widget empty,
+  required final List<Widget> children,
+  required final bool isEmpty,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -1386,19 +1260,12 @@ class _DialogSection extends StatelessWidget {
   }
 }
 
-class _AgentSkillTile extends StatelessWidget {
-  const _AgentSkillTile({
-    required this.skill,
-    required this.selected,
-    required this.onTap,
-    this.disabled = false,
-  });
-
-  final WorkspaceSkill skill;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool disabled;
-
+class const _AgentSkillTile({
+  required final WorkspaceSkill skill,
+  required final bool selected,
+  required final VoidCallback onTap,
+  final bool disabled = false,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -1427,11 +1294,8 @@ class _AgentSkillTile extends StatelessWidget {
   }
 }
 
-class _SkillTitle extends StatelessWidget {
-  const _SkillTitle({required this.skill});
-
-  final WorkspaceSkill skill;
-
+class const _SkillTitle({required final WorkspaceSkill skill})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleKey = skill.titleKey;
@@ -1440,17 +1304,11 @@ class _SkillTitle extends StatelessWidget {
   }
 }
 
-class _AgentToolPermissionTile extends StatelessWidget {
-  const _AgentToolPermissionTile({
-    required this.tool,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final WorkspaceToolEntity tool;
-  final AgentToolPermissionMode value;
-  final ValueChanged<AgentToolPermissionMode> onChanged;
-
+class const _AgentToolPermissionTile({
+  required final WorkspaceToolEntity tool,
+  required final AgentToolPermissionMode value,
+  required final ValueChanged<AgentToolPermissionMode> onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

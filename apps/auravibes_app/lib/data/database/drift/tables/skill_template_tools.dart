@@ -34,9 +34,6 @@ class SkillTemplateTools extends Table with TableMixin {
   ];
 }
 
-enum SkillTemplateToolTypeTable {
-  url('url');
-
-  const SkillTemplateToolTypeTable(this.value);
-  final String value;
+enum SkillTemplateToolTypeTable(final String value) {
+  url('url'),
 }

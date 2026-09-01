@@ -18,31 +18,18 @@ Future<void> _defaultAgentSleep(Duration duration) {
   return Future<void>.delayed(duration);
 }
 
-class AgentService {
-  const AgentService({
-    required this.data,
-    required this.models,
-    required this.tools,
-    required this.sendQueueRuntime,
-    required this.cancellationEffects,
-    required this.rateLimitRetryRuntime,
-    this.rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
-    this.rateLimitRetryCount = defaultAgentRateLimitRetryCount,
-    this.now = DateTime.now,
-    this.sleep = _defaultAgentSleep,
-  });
-
-  final AgentDataProvider data;
-  final AgentModelProvider models;
-  final AgentLoopToolProvider tools;
-  final AgentSendQueueRuntime sendQueueRuntime;
-  final AgentCancellationEffects cancellationEffects;
-  final AgentRateLimitRetryRuntime rateLimitRetryRuntime;
-  final Duration rateLimitRetryDelay;
-  final int rateLimitRetryCount;
-  final DateTime Function() now;
-  final Future<void> Function(Duration duration) sleep;
-
+class const AgentService({
+  required final AgentDataProvider data,
+  required final AgentModelProvider models,
+  required final AgentLoopToolProvider tools,
+  required final AgentSendQueueRuntime sendQueueRuntime,
+  required final AgentCancellationEffects cancellationEffects,
+  required final AgentRateLimitRetryRuntime rateLimitRetryRuntime,
+  final Duration rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
+  final int rateLimitRetryCount = defaultAgentRateLimitRetryCount,
+  final DateTime Function() now = DateTime.now,
+  final Future<void> Function(Duration duration) sleep = _defaultAgentSleep,
+}) {
   Future<AgentIterationDecision> call({
     required String conversationId,
     required AgentIterationContext context,
@@ -300,9 +287,7 @@ class AgentService {
   }
 }
 
-class _AgentIterationStep {
-  const _AgentIterationStep(this.context, this.decision);
-
-  final AgentIterationContext? context;
-  final AgentIterationDecision decision;
-}
+class const _AgentIterationStep(
+  final AgentIterationContext? context,
+  final AgentIterationDecision decision,
+);

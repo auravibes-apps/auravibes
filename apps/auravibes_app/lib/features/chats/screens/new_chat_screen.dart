@@ -26,11 +26,8 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('new_chat_screen');
 
-class NewChatScreen extends StatelessWidget {
-  const NewChatScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const NewChatScreen({required final String workspaceId, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TickerMode(
     enabled: true,
@@ -38,11 +35,8 @@ class NewChatScreen extends StatelessWidget {
   );
 }
 
-class _NewChatContent extends ConsumerWidget {
-  const _NewChatContent({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NewChatContent({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final availability = ref.watch(workspaceAvailabilityProvider(workspaceId));
@@ -171,11 +165,8 @@ class _NewChatContent extends ConsumerWidget {
   }
 }
 
-class _NewChatUnavailable extends StatelessWidget {
-  const _NewChatUnavailable({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NewChatUnavailable({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
@@ -216,11 +207,8 @@ class _NewChatUnavailable extends StatelessWidget {
   }
 }
 
-class _WorkspaceSelector extends ConsumerWidget {
-  const _WorkspaceSelector({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _WorkspaceSelector({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
@@ -263,11 +251,8 @@ class _WorkspaceSelector extends ConsumerWidget {
   }
 }
 
-class _NoModelProviderPrompt extends StatelessWidget {
-  const _NoModelProviderPrompt({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NoModelProviderPrompt({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(

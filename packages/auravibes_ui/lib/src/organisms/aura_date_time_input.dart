@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 /// Caller-provided visible and semantic strings used by [AuraDateTimeInput].
 class AuraDateTimeInputLabels {
   /// Creates localized date/time picker labels.
-  const AuraDateTimeInputLabels({
+  const new({
     this.selectDateAndTime = 'Select date and time',
     this.selectDate = 'Select date',
     this.selectTime = 'Select time',
@@ -91,7 +91,7 @@ class AuraDateTimeInput extends StatelessWidget {
   static const _pickerDayFontSize = 14.0;
 
   /// Creates a date and/or time input.
-  const AuraDateTimeInput({
+  const new({
     super.key,
     this.value,
     this.enableDate = true,
@@ -701,11 +701,8 @@ class AuraDateTimeInput extends StatelessWidget {
   }
 }
 
-class _AuraDateTimeInputHost extends StatefulWidget {
-  const _AuraDateTimeInputHost({required this.input});
-
-  final AuraDateTimeInput input;
-
+class const _AuraDateTimeInputHost({required final AuraDateTimeInput input})
+    extends StatefulWidget {
   @override
   State<_AuraDateTimeInputHost> createState() => _AuraDateTimeInputHostState();
 }
@@ -744,15 +741,13 @@ class _AuraDateTimeInputHostState extends State<_AuraDateTimeInputHost> {
 }
 
 @immutable
-class _PickerEnvironment {
-  const _PickerEnvironment({
-    required this.theme,
-    required this.mediaQuery,
-    required this.textDirection,
-    required this.locale,
-  });
-
-  factory _PickerEnvironment.from(BuildContext context) {
+class const _PickerEnvironment({
+  required final ThemeData theme,
+  required final MediaQueryData mediaQuery,
+  required final TextDirection textDirection,
+  required final Locale locale,
+}) {
+  factory from(BuildContext context) {
     return _PickerEnvironment(
       theme: Theme.of(context),
       mediaQuery: MediaQuery.of(context),
@@ -760,11 +755,6 @@ class _PickerEnvironment {
       locale: Localizations.maybeLocaleOf(context) ?? const Locale('en'),
     );
   }
-
-  final ThemeData theme;
-  final MediaQueryData mediaQuery;
-  final TextDirection textDirection;
-  final Locale locale;
 
   @override
   bool operator ==(Object other) {

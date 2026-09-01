@@ -7,20 +7,18 @@ part 'compaction_settings.freezed.dart';
 part 'compaction_settings.g.dart';
 
 @freezed
-abstract class CompactionSettings with _$CompactionSettings {
+abstract class const CompactionSettings._() with _$CompactionSettings {
   /// Static fallback used when no per-workspace overrides exist.
   /// The [remainingTokenThreshold] 2000 is a minimum guard; the effective
   /// decision-time default is computed by [defaultRemainingTokenThreshold].
   static const CompactionSettings defaults = CompactionSettings();
-  const factory CompactionSettings({
+  const factory({
     @Default(true) bool autoCompactionEnabled,
     @Default(80) int usagePercentageThreshold,
     @Default(2000) int remainingTokenThreshold,
     DateTime? updatedAt,
   }) = _CompactionSettings;
-  const CompactionSettings._();
-
-  factory CompactionSettings.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$CompactionSettingsFromJson(json);
 
   // Null context limit means the model has no known limit.
@@ -35,10 +33,11 @@ abstract class CompactionSettings with _$CompactionSettings {
 }
 
 @freezed
-abstract class ConversationPromptEstimate with _$ConversationPromptEstimate {
+abstract class const ConversationPromptEstimate._()
+    with _$ConversationPromptEstimate {
   // Null fields represent unavailable provider estimates.
   // ignore: unnecessary-nullable
-  const factory ConversationPromptEstimate({
+  const factory({
     required String conversationId,
     required String selectedModelId,
     required String selectedProviderId,
@@ -48,9 +47,7 @@ abstract class ConversationPromptEstimate with _$ConversationPromptEstimate {
     int? remainingTokens,
     double? usagePercentage,
   }) = _ConversationPromptEstimate;
-  const ConversationPromptEstimate._();
-
-  factory ConversationPromptEstimate.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$ConversationPromptEstimateFromJson(json);
 }
 
@@ -66,61 +63,55 @@ enum CompactionDecisionReason {
 enum CompactionTrigger { auto, manual }
 
 @freezed
-abstract class CompactionDecision with _$CompactionDecision {
+abstract class const CompactionDecision._() with _$CompactionDecision {
   // Null settings mean defaults were used for the decision.
   // ignore: unnecessary-nullable
-  const factory CompactionDecision({
+  const factory({
     required bool shouldCompact,
     required CompactionDecisionReason reason,
     required CompactionTrigger trigger,
     ConversationPromptEstimate? estimate,
     CompactionSettings? settings,
   }) = _CompactionDecision;
-  const CompactionDecision._();
-
-  factory CompactionDecision.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$CompactionDecisionFromJson(json);
 }
 
 @freezed
-abstract class CompactionRange with _$CompactionRange {
-  const factory CompactionRange({
+abstract class const CompactionRange._() with _$CompactionRange {
+  const factory({
     required String fromMessageId,
     required String throughMessageId,
     required List<String> messageIds,
     required List<String> keptTailMessageIds,
   }) = _CompactionRange;
-  const CompactionRange._();
-
-  factory CompactionRange.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$CompactionRangeFromJson(json);
 }
 
 enum CompactionExecutionStatus { running, success, failure }
 
 @freezed
-abstract class CompactionExecutionState with _$CompactionExecutionState {
-  const factory CompactionExecutionState({
+abstract class const CompactionExecutionState._()
+    with _$CompactionExecutionState {
+  const factory({
     required String conversationId,
     required CompactionTrigger trigger,
     required DateTime startedAt,
     required CompactionExecutionStatus status,
   }) = _CompactionExecutionState;
-  const CompactionExecutionState._();
-
-  factory CompactionExecutionState.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$CompactionExecutionStateFromJson(json);
 }
 
 @freezed
-abstract class ContextOverflowRetryState with _$ContextOverflowRetryState {
-  const factory ContextOverflowRetryState({
+abstract class const ContextOverflowRetryState._()
+    with _$ContextOverflowRetryState {
+  const factory({
     required String conversationId,
     required String assistantRequestId,
     @Default(false) bool hasRetriedAfterCompaction,
   }) = _ContextOverflowRetryState;
-  const ContextOverflowRetryState._();
-
-  factory ContextOverflowRetryState.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$ContextOverflowRetryStateFromJson(json);
 }

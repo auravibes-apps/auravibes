@@ -9,7 +9,7 @@ export 'aura_popup_menu_button.dart';
 /// Controller for managing the visibility of a context menu.
 class AuraPopupMenuController {
   /// Creates a new context menu controller.
-  AuraPopupMenuController();
+  new();
 
   _AuraPopupMenuState? _state;
 
@@ -37,7 +37,7 @@ class AuraPopupMenu extends StatefulWidget {
   /// [items] is the list of menu entries to display.
   /// [controller] is used to programmatically control menu visibility.
   /// [focusNode] defines the keyboard focus for this widget.
-  const AuraPopupMenu({
+  const new({
     required this.child,
     required this.items,
     required this.controller,
@@ -225,11 +225,10 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
   }
 }
 
-class _AuraPopupMenuCloseScope extends InheritedWidget {
-  const _AuraPopupMenuCloseScope({required this.close, required super.child});
-
-  final VoidCallback close;
-
+class const _AuraPopupMenuCloseScope({
+  required final VoidCallback close,
+  required super.child,
+}) extends InheritedWidget {
   static VoidCallback? maybeOf(BuildContext context) {
     return context
         .dependOnInheritedWidgetOfExactType<_AuraPopupMenuCloseScope>()
@@ -248,7 +247,7 @@ class _AuraPopupMenuCloseScope extends InheritedWidget {
 /// including regular items, dividers, and custom builders.
 abstract class AuraPopupMenuEntry {
   /// Creates a new menu entry.
-  const AuraPopupMenuEntry();
+  const new();
 
   /// Builds the widget for this menu entry.
   Widget build(BuildContext context);
@@ -259,7 +258,7 @@ abstract class AuraPopupMenuEntry {
 /// Displays a horizontal line between menu items.
 class AuraPopupMenuDivider extends AuraPopupMenuEntry {
   /// Creates a new menu divider.
-  const AuraPopupMenuDivider();
+  const new();
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +277,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   /// [onTap] is the callback when the item is tapped.
   /// [leading] is an optional widget displayed before the title.
   /// [trailing] is an optional widget displayed after the title.
-  const AuraPopupMenuItem({
+  const new({
     required this.title,
     this.onTap,
     this.leading,

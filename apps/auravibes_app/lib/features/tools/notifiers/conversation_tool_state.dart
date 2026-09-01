@@ -17,7 +17,7 @@ part 'conversation_tool_state.g.dart';
 /// State for a single tool in a conversation context.
 @freezed
 abstract class ConversationToolState with _$ConversationToolState {
-  const factory ConversationToolState({
+  const factory({
     required WorkspaceToolEntity tool,
     required bool isEnabled,
     required ToolPermissionMode permissionMode,

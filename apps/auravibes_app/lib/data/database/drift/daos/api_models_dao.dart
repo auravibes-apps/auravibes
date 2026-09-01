@@ -13,7 +13,7 @@ final _log = Logger('dao:api_models');
 class ApiModelsDao extends DatabaseAccessor<AppDatabase>
     with _$ApiModelsDaoMixin {
   /// Creates a new [ApiModelsDao] instance.
-  ApiModelsDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Retrieves all API models from the database.
   ///

@@ -17,7 +17,7 @@ class AuraFloatingActionButton extends StatelessWidget {
   static const _regularSize = 56.0;
 
   /// Creates a Aura floating action button.
-  const AuraFloatingActionButton({
+  const new({
     required this.onPressed,
     required this.icon,
     super.key,
@@ -29,7 +29,7 @@ class AuraFloatingActionButton extends StatelessWidget {
   }) : text = null;
 
   /// Creates an extended Aura floating action button with text.
-  const AuraFloatingActionButton.extended({
+  const new extended({
     required this.onPressed,
     required this.icon,
     required this.text,

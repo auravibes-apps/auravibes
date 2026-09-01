@@ -6,10 +6,9 @@ import 'package:drift/drift.dart';
 part 'app_skill_workspace_settings_dao.g.dart';
 
 @DriftAccessor(tables: [AppSkillWorkspaceSettings])
-class AppSkillWorkspaceSettingsDao extends DatabaseAccessor<AppDatabase>
+class AppSkillWorkspaceSettingsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$AppSkillWorkspaceSettingsDaoMixin {
-  AppSkillWorkspaceSettingsDao(super.attachedDatabase);
-
   Future<AppSkillWorkspaceSettingsTable?> getSetting(
     String workspaceId,
     String appSkillIdentifier,

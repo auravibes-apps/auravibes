@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 /// for custom content, icons, and selection states.
 class AuraDropdownOption<T> extends StatelessWidget {
   /// Creates a Aura dropdown option.
-  const AuraDropdownOption({
+  const new({
     required this.value,
     super.key,
     this.child,

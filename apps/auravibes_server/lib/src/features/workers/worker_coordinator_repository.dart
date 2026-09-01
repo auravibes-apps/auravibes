@@ -2,9 +2,7 @@ import 'package:serverpod/serverpod.dart';
 
 import '../../generated/protocol.dart';
 
-class WorkerCoordinatorRepository {
-  const WorkerCoordinatorRepository();
-
+class const WorkerCoordinatorRepository() {
   static const _key = 'global';
   static const leaseDuration = Duration(seconds: 45);
 

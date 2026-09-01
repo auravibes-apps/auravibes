@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'conversation_tools_dao.g.dart';
 
 @DriftAccessor(tables: [ConversationTools])
-class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
+class ConversationToolsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$ConversationToolsDaoMixin {
-  ConversationToolsDao(super.attachedDatabase);
-
   /// Get a specific conversation tool setting.
   Future<ConversationToolsTable?> getConversationTool(
     String conversationId,

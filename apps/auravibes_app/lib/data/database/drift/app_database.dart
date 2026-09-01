@@ -114,7 +114,7 @@ class AppDatabase extends _$AppDatabase {
   /// When [connection] is null, [dbHashSource] is hashed to isolate the
   /// database name for the default connection. If [connection] is provided,
   /// [dbHashSource] has no effect.
-  AppDatabase({QueryExecutor? connection, String? dbHashSource})
+  new({QueryExecutor? connection, String? dbHashSource})
     : super(connection ?? _openConnection(dbHashSource: dbHashSource));
 
   /// Database schema version.

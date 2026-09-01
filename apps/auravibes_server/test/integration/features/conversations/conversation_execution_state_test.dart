@@ -1779,29 +1779,19 @@ Future<void> _waitForIdle(
   fail('Conversation execution did not reach idle; state=$lastState.');
 }
 
-class _ExecutionFixture {
-  const _ExecutionFixture({
-    required this.session,
-    required this.database,
-    required this.userId,
-    required this.workspaceId,
-    required this.conversationDatabaseId,
-    required this.conversationId,
-  });
+class const _ExecutionFixture({
+  required final dynamic session,
+  required final Session database,
+  required final String userId,
+  required final int workspaceId,
+  required final int conversationDatabaseId,
+  required final String conversationId,
+});
 
-  final dynamic session;
-  final Session database;
-  final String userId;
-  final int workspaceId;
-  final int conversationDatabaseId;
-  final String conversationId;
-}
-
-class _CountingCompletingHost implements ConversationEngineHost {
-  _CountingCompletingHost({this.block, this.compactionMessageId});
-
-  final Completer<void>? block;
-  final int? compactionMessageId;
+class _CountingCompletingHost({
+  final Completer<void>? block,
+  final int? compactionMessageId,
+}) implements ConversationEngineHost {
   final started = Completer<void>();
   final compactionStarted = Completer<void>();
   var calls = 0;
@@ -1939,10 +1929,7 @@ class _BlockingCompletingHost extends _CountingCompletingHost {
   }
 }
 
-class _ManualTimer implements Timer {
-  _ManualTimer(this._callback);
-
-  final void Function() _callback;
+class _ManualTimer(final void Function() _callback) implements Timer {
   final cancelled = Completer<void>();
   var _isActive = true;
 

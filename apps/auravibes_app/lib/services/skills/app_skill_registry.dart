@@ -15,9 +15,7 @@ const String _createCredentialDescriptionKey =
     'app_skills.skills_manager.tools.'
     'create_skill_credential_definition.description';
 
-class AppSkillRegistry {
-  const AppSkillRegistry();
-
+class const AppSkillRegistry() {
   List<AppSkillDefinition> getAll() => [
     _localizedSkillsManagerDefinition(),
     AppSkillDefinition(

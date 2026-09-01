@@ -1405,9 +1405,7 @@ void main() {
   });
 }
 
-class _AwaitingApprovalHost implements ConversationEngineHost {
-  const _AwaitingApprovalHost();
-
+class const _AwaitingApprovalHost() implements ConversationEngineHost {
   @override
   Future<ConversationEngineResult> executeTurn(
     Session session, {
@@ -1434,9 +1432,7 @@ class _AwaitingApprovalHost implements ConversationEngineHost {
   }) => throw UnimplementedError();
 }
 
-class _CompletingHost implements ConversationEngineHost {
-  const _CompletingHost();
-
+class const _CompletingHost() implements ConversationEngineHost {
   @override
   Future<ConversationEngineResult> executeTurn(
     Session session, {
@@ -1509,31 +1505,18 @@ class _BlockedCancellationProbe implements ConversationCancellationProbe {
   }
 }
 
-class _Fixture {
-  _Fixture({
-    required this.session,
-    required this.database,
-    required this.userId,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.turn,
-    required this.job,
-    required this.messages,
-  });
+class _Fixture({
+  required final dynamic session,
+  required final Session database,
+  required final String userId,
+  required final int workspaceId,
+  required final int conversationId,
+  required final ConversationTurn turn,
+  required final ConversationJob job,
+  required var List<ConversationMessage> messages,
+});
 
-  final dynamic session;
-  final Session database;
-  final String userId;
-  final int workspaceId;
-  final int conversationId;
-  final ConversationTurn turn;
-  final ConversationJob job;
-  List<ConversationMessage> messages;
-}
-
-class _ImmediateAdmissionGate implements ConversationAdmissionGate {
-  const _ImmediateAdmissionGate();
-
+class const _ImmediateAdmissionGate() implements ConversationAdmissionGate {
   @override
   Future<T> run<T>(
     Session session, {
@@ -1543,9 +1526,7 @@ class _ImmediateAdmissionGate implements ConversationAdmissionGate {
   }) => body(Future<void>.value());
 }
 
-class _NoopProgressPublisher implements ConversationProgressPublisher {
-  const _NoopProgressPublisher();
-
+class const _NoopProgressPublisher() implements ConversationProgressPublisher {
   @override
   Future<void> flush() async {}
 

@@ -11,12 +11,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class const SettingsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   static const _navigationIconSize = 16.0;
-  const SettingsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const screenPadding = 16.0;

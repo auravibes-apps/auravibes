@@ -2,11 +2,9 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:riverpod/riverpod.dart';
 
-class LocalChatAttachmentUsecase {
-  const LocalChatAttachmentUsecase(this._service);
-
-  final LocalChatAttachmentService _service;
-
+class const LocalChatAttachmentUsecase(
+  final LocalChatAttachmentService _service,
+) {
   Future<MessageAttachmentToCreate> copyIntoAppStorage(
     String sourcePath, {
     required String displayName,

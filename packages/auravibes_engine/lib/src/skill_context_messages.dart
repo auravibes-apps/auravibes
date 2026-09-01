@@ -5,23 +5,14 @@ import 'package:auravibes_engine/src/skills/skill_command.dart';
 
 const _xmlEscape = HtmlEscape();
 
-class AgentSkill {
-  const AgentSkill({
-    required this.title,
-    required this.content,
-    this.identity,
-    this.manifest,
-  });
+class const AgentSkill({
+  required final String title,
+  required final String content,
+  final String? identity,
+  final SkillManifest? manifest,
+});
 
-  final String title;
-  final String content;
-  final String? identity;
-  final SkillManifest? manifest;
-}
-
-class BuildSkillContextMessages {
-  const BuildSkillContextMessages();
-
+class const BuildSkillContextMessages() {
   List<AgentChatMessage> call(List<AgentSkill> loadedSkills) {
     return [
       for (final skill in loadedSkills)

@@ -5,7 +5,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../test_mocks.dart';
 
-class _MockSyncApiModelsUseCase extends Mock implements SyncApiModelsUseCase {}
+class _MockSyncApiModelsUseCase extends Mock implements SyncApiModelsUseCase;
 
 void main() {
   setUpAll(registerTestFallbackValues);
@@ -20,9 +20,8 @@ void main() {
     });
 
     test('performFullSync delegates sync orchestration', () async {
-      when(
-        () => syncApiModelsUseCase(),
-      ).thenAnswer((_) => Future<void>.value());
+      when(() => syncApiModelsUseCase())
+          .thenAnswer((_) => Future<void>.value());
 
       await expectLater(service.performFullSync(), completes);
 

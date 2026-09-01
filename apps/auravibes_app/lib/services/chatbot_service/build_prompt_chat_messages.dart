@@ -11,12 +11,10 @@ import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:genkit/genkit.dart';
 import 'package:path/path.dart' as p;
 
-class BuildPromptChatMessages {
+class const BuildPromptChatMessages({
+  final List<String> modalitiesInput = const [],
+}) {
   static const _agentBuilder = agent.BuildPromptChatMessages();
-  const BuildPromptChatMessages({this.modalitiesInput = const []});
-
-  final List<String> modalitiesInput;
-
   Future<List<ChatMessage>> call(List<MessageEntity> messages) async {
     final chatMessages = <ChatMessage>[];
     for (final message in messages) {

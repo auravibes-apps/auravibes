@@ -13,25 +13,18 @@ import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
-class OAuthAuthenticationCanceledException implements Exception {
-  const OAuthAuthenticationCanceledException();
-}
+class const OAuthAuthenticationCanceledException() implements Exception;
 
-class OAuthAuthenticate {
+class OAuthAuthenticate({
+  required final String callbackUrlScheme,
+  required final String clientName,
+  Dio? dio,
+}) {
   static const String _chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
 
   static final Random _rng = _createSecureRandom();
-  OAuthAuthenticate({
-    required this.callbackUrlScheme,
-    required this.clientName,
-    Dio? dio,
-  }) : _dio = dio ?? Dio();
-
-  final String callbackUrlScheme;
-  final String clientName;
-
-  final Dio _dio;
+  final Dio _dio = dio ?? Dio();
 
   /// Generates PKCE code challenge from verifier.
   static String generateCodeChallenge(String codeVerifier) {

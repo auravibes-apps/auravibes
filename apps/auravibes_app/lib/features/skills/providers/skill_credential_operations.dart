@@ -4,27 +4,20 @@ import 'package:auravibes_app/features/skills/providers/cloud_skill_store_provid
 import 'package:auravibes_app/features/skills/providers/skill_repository_providers.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class SkillCredentialOperations {
-  const SkillCredentialOperations({
-    required this.create,
-    required this.getForEdit,
-    required this.update,
-    required this.delete,
-  });
-
-  final Future<SkillCredentialEntity> Function(
+class const SkillCredentialOperations({
+  required final Future<SkillCredentialEntity> Function(
     String workspaceId,
     SkillCredentialToCreate value,
   )
-  create;
-  final Future<SkillCredentialForEdit?> Function(String id) getForEdit;
-  final Future<SkillCredentialEntity> Function(
+  create,
+  required final Future<SkillCredentialForEdit?> Function(String id) getForEdit,
+  required final Future<SkillCredentialEntity> Function(
     String id,
     SkillCredentialToUpdate value,
   )
-  update;
-  final Future<void> Function(String id) delete;
-}
+  update,
+  required final Future<void> Function(String id) delete,
+});
 
 final ProviderFamily<SkillCredentialOperations, String>
 skillCredentialOperationsProvider =

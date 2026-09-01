@@ -9,20 +9,13 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class CreateSkillTemplateToolUsecase {
-  const CreateSkillTemplateToolUsecase(
-    this._skillTemplateToolsRepository, {
-    this.cloudStore,
-    this.skillsRepository,
-    this.skillCredentialDefinitionsRepository,
-  });
-  final CloudSkillStore? cloudStore;
-  final SkillsRepository? skillsRepository;
+class const CreateSkillTemplateToolUsecase(
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
+  final CloudSkillStore? cloudStore,
+  final SkillsRepository? skillsRepository,
   final SkillCredentialDefinitionsRepository?
-  skillCredentialDefinitionsRepository;
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
-
+  skillCredentialDefinitionsRepository,
+}) {
   Future<SkillTemplateToolEntity> call(
     String skillId,
     SkillTemplateToolToCreate tool,

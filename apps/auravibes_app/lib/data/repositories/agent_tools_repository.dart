@@ -6,11 +6,8 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
 export 'agent_tools_repository_contract.dart';
 
-class AgentToolsRepository implements AgentToolsRepositoryContract {
-  const AgentToolsRepository(this._database);
-
-  final AppDatabase _database;
-
+class const AgentToolsRepository(final AppDatabase _database)
+    implements AgentToolsRepositoryContract {
   @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async {
     final rows = await _database.agentToolsDao.getAgentTools(agentId);

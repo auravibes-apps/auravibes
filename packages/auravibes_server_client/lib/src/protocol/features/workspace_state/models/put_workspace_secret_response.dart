@@ -12,22 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
-  PutWorkspaceSecretResponse._({
-    required this.configured,
-    this.displaySuffix,
-    required this.revision,
-    required this.sequence,
-  });
-
-  factory PutWorkspaceSecretResponse({
+abstract class PutWorkspaceSecretResponse._({
+  required var bool configured,
+  var String? displaySuffix,
+  required var int revision,
+  required var int sequence,
+}) implements _i1.SerializableModel {
+  factory({
     required bool configured,
     String? displaySuffix,
     required int revision,
     required int sequence,
   }) = _PutWorkspaceSecretResponseImpl;
 
-  factory PutWorkspaceSecretResponse.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return PutWorkspaceSecretResponse(
@@ -39,14 +37,6 @@ abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
       sequence: jsonSerialization['sequence'] as int,
     );
   }
-
-  bool configured;
-
-  String? displaySuffix;
-
-  int revision;
-
-  int sequence;
 
   /// Returns a shallow copy of this [PutWorkspaceSecretResponse]
   /// with some or all fields replaced by the given arguments.
@@ -74,20 +64,21 @@ abstract class PutWorkspaceSecretResponse implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _PutWorkspaceSecretResponseImpl extends PutWorkspaceSecretResponse {
-  _PutWorkspaceSecretResponseImpl({
-    required bool configured,
-    String? displaySuffix,
-    required int revision,
-    required int sequence,
-  }) : super._(
-         configured: configured,
-         displaySuffix: displaySuffix,
-         revision: revision,
-         sequence: sequence,
-       );
+class _PutWorkspaceSecretResponseImpl({
+  required bool configured,
+  String? displaySuffix,
+  required int revision,
+  required int sequence,
+}) extends PutWorkspaceSecretResponse {
+  this
+    : super._(
+        configured: configured,
+        displaySuffix: displaySuffix,
+        revision: revision,
+        sequence: sequence,
+      );
 
   /// Returns a shallow copy of this [PutWorkspaceSecretResponse]
   /// with some or all fields replaced by the given arguments.

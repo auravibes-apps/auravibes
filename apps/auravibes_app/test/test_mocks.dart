@@ -82,124 +82,119 @@ void registerTestFallbackValues() {
   registerFallbackValue(<WorkspaceModelSelectionsCompanion>[]);
 }
 
-class _FakeAgentIterationContext extends Fake
-    implements AgentIterationContext {}
+class _FakeAgentIterationContext extends Fake implements AgentIterationContext;
 
-class _FakeConversationPatch extends Fake implements ConversationPatch {}
+class _FakeConversationPatch extends Fake implements ConversationPatch;
 
 class _FakeConversationsCompanion extends Fake
-    implements ConversationsCompanion {}
+    implements ConversationsCompanion;
 
-class _FakeConversationToCreate extends Fake implements ConversationToCreate {}
+class _FakeConversationToCreate extends Fake implements ConversationToCreate;
 
-class _FakeMcpServersCompanion extends Fake implements McpServersCompanion {}
+class _FakeMcpServersCompanion extends Fake implements McpServersCompanion;
 
-class _FakeMcpServerToCreate extends Fake implements McpServerToCreate {}
+class _FakeMcpServerToCreate extends Fake implements McpServerToCreate;
 
-class _FakeMessagePatch extends Fake implements MessagePatch {}
+class _FakeMessagePatch extends Fake implements MessagePatch;
 
-class _FakeMessageToCreate extends Fake implements MessageToCreate {}
+class _FakeMessageToCreate extends Fake implements MessageToCreate;
 
-class _FakeModelConnectionFilter extends Fake
-    implements ModelConnectionFilter {}
+class _FakeModelConnectionFilter extends Fake implements ModelConnectionFilter;
 
 class _FakeServiceConnectionsCompanion extends Fake
-    implements ServiceConnectionsCompanion {}
+    implements ServiceConnectionsCompanion;
 
 class _FakeModelConnectionToCreate extends Fake
-    implements ModelConnectionToCreate {}
+    implements ModelConnectionToCreate;
 
 class _FakeModelConnectionToUpdate extends Fake
-    implements ModelConnectionToUpdate {}
+    implements ModelConnectionToUpdate;
 
-class _FakeModelProvider extends Fake implements ModelProvider {}
+class _FakeModelProvider extends Fake implements ModelProvider;
 
-class _FakeResolvedTool extends Fake implements ResolvedTool {}
+class _FakeResolvedTool extends Fake implements ResolvedTool;
 
-class _FakeToolsGroupsCompanion extends Fake implements ToolsGroupsCompanion {}
+class _FakeToolsGroupsCompanion extends Fake implements ToolsGroupsCompanion;
 
-class _FakeToolsGroupToCreate extends Fake implements ToolsGroupToCreate {}
+class _FakeToolsGroupToCreate extends Fake implements ToolsGroupToCreate;
 
 class _FakeWorkspaceModelSelectionFilter extends Fake
-    implements WorkspaceModelSelectionFilter {}
+    implements WorkspaceModelSelectionFilter;
 
 class _FakeWorkspaceModelSelectionToCreate extends Fake
-    implements WorkspaceModelSelectionToCreate {}
+    implements WorkspaceModelSelectionToCreate;
 
 class _FakeWorkspaceModelSelectionWithConnectionEntity extends Fake
-    implements WorkspaceModelSelectionWithConnectionEntity {}
+    implements WorkspaceModelSelectionWithConnectionEntity;
 
-class _FakeWorkspaceToolToCreate extends Fake
-    implements WorkspaceToolToCreate {}
+class _FakeWorkspaceToolToCreate extends Fake implements WorkspaceToolToCreate;
 
-class MockApiModelProvidersDao extends Mock implements ApiModelProvidersDao {}
+class MockApiModelProvidersDao extends Mock implements ApiModelProvidersDao;
 
-class MockApiModelRepository extends Mock implements ApiModelRepository {}
+class MockApiModelRepository extends Mock implements ApiModelRepository;
 
-class MockApiModelsDao extends Mock implements ApiModelsDao {}
+class MockApiModelsDao extends Mock implements ApiModelsDao;
 
-class MockChatResult extends Mock implements ChatResult<ChatMessage> {}
+class MockChatResult extends Mock implements ChatResult<ChatMessage>;
 
-class MockChatbotService extends Mock implements ChatbotService {}
+class MockChatbotService extends Mock implements ChatbotService;
 
-class MockContinueAgentService extends Mock implements ContinueAgentService {}
+class MockContinueAgentService extends Mock implements ContinueAgentService;
 
-class MockConversationDao extends Mock implements ConversationDao {}
+class MockConversationDao extends Mock implements ConversationDao;
 
-class MockConversationRepository extends Mock
-    implements ConversationRepository {}
+class MockConversationRepository extends Mock implements ConversationRepository;
 
 class MockConversationToolsRepository extends Mock
-    implements ConversationToolsRepository {}
+    implements ConversationToolsRepository;
 
-class MockEncryptionService extends Mock implements EncryptionService {}
+class MockEncryptionService extends Mock implements EncryptionService;
 
-class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage {}
+class MockFlutterSecureStorage extends Mock implements FlutterSecureStorage;
 
-class MockGenerateTitleUsecase extends Mock implements GenerateTitleUsecase {}
+class MockGenerateTitleUsecase extends Mock implements GenerateTitleUsecase;
 
 class MockAgentToolDecisionService extends Mock
-    implements AgentToolDecisionService {}
+    implements AgentToolDecisionService;
 
 class MockGetConversationBusyStateUsecase extends Mock
-    implements GetConversationBusyStateUsecase {}
+    implements GetConversationBusyStateUsecase;
 
 class MockLoadConversationToolSpecsUsecase extends Mock
-    implements LoadConversationToolSpecsUsecase {}
+    implements LoadConversationToolSpecsUsecase;
 
-class MockAgentToolCallLoader extends Mock implements AgentToolCallLoader {}
+class MockAgentToolCallLoader extends Mock implements AgentToolCallLoader;
 
 class MockMaybeAutoCompactConversationUsecase extends Mock
-    implements MaybeAutoCompactConversationUsecase {}
+    implements MaybeAutoCompactConversationUsecase;
 
-class MockMcpServersDao extends Mock implements McpServersDao {}
+class MockMcpServersDao extends Mock implements McpServersDao;
 
-class MockMessageRepository extends Mock implements MessageRepository {}
+class MockMessageRepository extends Mock implements MessageRepository;
 
-class MockModelApiService extends Mock implements ModelApiService {}
+class MockModelApiService extends Mock implements ModelApiService;
 
-class MockModelConnectionsDao extends Mock implements ModelConnectionsDao {}
+class MockModelConnectionsDao extends Mock implements ModelConnectionsDao;
 
-class MockModelProviderServices extends Mock implements ModelProviderServices {}
+class MockModelProviderServices extends Mock implements ModelProviderServices;
 
-class MockMonitoringService extends Mock implements MonitoringService {}
+class MockMonitoringService extends Mock implements MonitoringService;
 
 class MockResolveToolApprovalDecisionUsecase extends Mock
-    implements ResolveToolApprovalDecisionUsecase {}
+    implements ResolveToolApprovalDecisionUsecase;
 
-class MockAgentToolResumeService extends Mock
-    implements AgentToolResumeService {}
+class MockAgentToolResumeService extends Mock implements AgentToolResumeService;
 
-class MockAppAgentService extends Mock implements AppAgentService {}
+class MockAppAgentService extends Mock implements AppAgentService;
 
 class MockAgentToolExecutionService extends Mock
-    implements AgentToolExecutionService {}
+    implements AgentToolExecutionService;
 
 class MockSelectPromptMessagesUsecase extends Mock
-    implements SelectPromptMessagesUsecase {}
+    implements SelectPromptMessagesUsecase;
 
 class MockSyncSkillToolPermissionsUsecase extends Mock
-    implements SyncSkillToolPermissionsUsecase {}
+    implements SyncSkillToolPermissionsUsecase;
 
 class NoopSyncSkillToolPermissionsUsecase extends Fake
     implements SyncSkillToolPermissionsUsecase {
@@ -217,15 +212,15 @@ class NoopSyncSkillToolPermissionsUsecase extends Fake
   }) async => null;
 }
 
-class MockSendMessageUsecase extends Mock implements SendMessageUsecase {}
+class MockSendMessageUsecase extends Mock implements SendMessageUsecase;
 
-class MockToolResolverService extends Mock implements ToolResolverService {}
+class MockToolResolverService extends Mock implements ToolResolverService;
 
-class MockToolsGroupsDao extends Mock implements ToolsGroupsDao {}
+class MockToolsGroupsDao extends Mock implements ToolsGroupsDao;
 
-class MockToolsGroupsRepository extends Mock implements ToolsGroupsRepository {}
+class MockToolsGroupsRepository extends Mock implements ToolsGroupsRepository;
 
-class MockWorkspaceDao extends Mock implements WorkspaceDao {}
+class MockWorkspaceDao extends Mock implements WorkspaceDao;
 
 class MockWorkspaceModelSelectionRepository extends Mock
     implements WorkspaceModelSelectionRepository {
@@ -235,9 +230,9 @@ class MockWorkspaceModelSelectionRepository extends Mock
 }
 
 class MockWorkspaceModelSelectionsDao extends Mock
-    implements WorkspaceModelSelectionsDao {}
+    implements WorkspaceModelSelectionsDao;
 
-class MockWorkspaceToolsDao extends Mock implements WorkspaceToolsDao {}
+class MockWorkspaceToolsDao extends Mock implements WorkspaceToolsDao;
 
 class MockWorkspaceToolsRepository extends Mock
-    implements WorkspaceToolsRepository {}
+    implements WorkspaceToolsRepository;

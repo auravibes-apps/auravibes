@@ -9,12 +9,10 @@ import 'package:auravibes_app/utils/string_extensions.dart';
 import 'package:drift/drift.dart';
 import 'package:easy_localization/easy_localization.dart';
 
-class ServiceConnectionRepository {
-  const ServiceConnectionRepository(this._database, this._encryptionService);
-
-  final AppDatabase _database;
-  final EncryptionService _encryptionService;
-
+class const ServiceConnectionRepository(
+  final AppDatabase _database,
+  final EncryptionService _encryptionService,
+) {
   Future<ServiceConnectionEntity?> getById(String id) async {
     final row = await _getRowById(id);
 
@@ -402,44 +400,24 @@ class ServiceConnectionRepository {
   }
 }
 
-class ServiceConnectionCandidate {
-  const ServiceConnectionCandidate({
-    required this.id,
-    required this.name,
-    required this.serviceId,
-    required this.kind,
-  });
+class const ServiceConnectionCandidate({
+  required final String id,
+  required final String name,
+  required final String serviceId,
+  required final ServiceConnectionKindTable kind,
+});
 
-  final String id;
-  final String name;
-  final String serviceId;
-  final ServiceConnectionKindTable kind;
-}
+class const GenericServiceConnectionRecord({
+  required final String id,
+  required final String name,
+  required final String serviceId,
+  required final bool hasSecret,
+  required final String? keySuffix,
+});
 
-class GenericServiceConnectionRecord {
-  const GenericServiceConnectionRecord({
-    required this.id,
-    required this.name,
-    required this.serviceId,
-    required this.hasSecret,
-    required this.keySuffix,
-  });
-
-  final String id;
-  final String name;
-  final String serviceId;
-  final bool hasSecret;
-  final String? keySuffix;
-}
-
-class McpServiceConnectionProfile {
-  const McpServiceConnectionProfile({
-    required this.name,
-    required this.authenticationType,
-  });
-
-  final String name;
-  final McpAuthenticationType authenticationType;
-
+class const McpServiceConnectionProfile({
+  required final String name,
+  required final McpAuthenticationType authenticationType,
+}) {
   String get serviceId => 'mcp:$name';
 }

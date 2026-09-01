@@ -14,11 +14,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 const _wsId = 'ws1';
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.overrides});
-
-  final List<Object> overrides;
-
+class const _Subject({required final List<Object> overrides})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

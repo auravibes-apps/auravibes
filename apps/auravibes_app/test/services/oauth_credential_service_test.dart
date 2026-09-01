@@ -15,11 +15,9 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-final class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter({required this.onFetch});
-
-  final Future<ResponseBody> Function(RequestOptions options) onFetch;
-
+final class _FakeHttpClientAdapter({
+  required final Future<ResponseBody> Function(RequestOptions options) onFetch,
+}) implements HttpClientAdapter {
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -551,17 +549,11 @@ Future<String> _insertOAuthCredential(
   return row.id;
 }
 
-class _Fixture {
-  const _Fixture({
-    required this.database,
-    required this.encryption,
-    required this.workspaceId,
-  });
-
-  final AppDatabase database;
-  final EncryptionService encryption;
-  final String workspaceId;
-
+class const _Fixture({
+  required final AppDatabase database,
+  required final EncryptionService encryption,
+  required final String workspaceId,
+}) {
   ServiceConnectionRepository get serviceConnectionRepository {
     return ServiceConnectionRepository(database, encryption);
   }
@@ -571,8 +563,8 @@ class _Fixture {
   }
 }
 
-class _FakeSecretKeyManager extends SecretKeyManager {
-  _FakeSecretKeyManager() : super();
+class _FakeSecretKeyManager() extends SecretKeyManager {
+  this : super();
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async {

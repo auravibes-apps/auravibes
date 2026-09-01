@@ -12,19 +12,12 @@ const _minShowDurationMs = 500.0;
 const _maxShowDurationMs = 5000.0;
 const _maxWaitDurationMs = 2000.0;
 
-class _TooltipInput {
-  const _TooltipInput({
-    required this.message,
-    required this.tint,
-    required this.showDurationMs,
-    required this.waitDurationMs,
-  });
-
-  final String message;
-  final AuraTint tint;
-  final double showDurationMs;
-  final double waitDurationMs;
-}
+class const _TooltipInput({
+  required final String message,
+  required final AuraTint tint,
+  required final double showDurationMs,
+  required final double waitDurationMs,
+});
 
 const meta = Meta(AuraTooltip.new, argsType: _TooltipInput.new);
 

@@ -1,20 +1,19 @@
 import 'package:auravibes_engine/src/tool_call_actions.dart';
 import 'package:auravibes_engine/src/tool_resume_service.dart';
 
-class ToolsNamespace<TTool extends Object> {
-  ToolsNamespace({
-    required ApproveToolCallProvider<TTool> approvals,
-    required SkipToolCallProvider skips,
-    required this._stopPending,
-    required AgentToolResumeProvider resume,
-  }) : _approve = ApproveToolCallService(provider: approvals),
-       _skip = SkipToolCallService(provider: skips),
-       _resume = AgentToolResumeService(provider: resume);
-
-  final ApproveToolCallService<TTool> _approve;
-  final SkipToolCallService _skip;
-  final StopPendingToolCallsProvider _stopPending;
-  final AgentToolResumeService _resume;
+class ToolsNamespace<TTool extends Object>({
+  required ApproveToolCallProvider<TTool> approvals,
+  required SkipToolCallProvider skips,
+  required final StopPendingToolCallsProvider _stopPending,
+  required AgentToolResumeProvider resume,
+}) {
+  final ApproveToolCallService<TTool> _approve = ApproveToolCallService(
+    provider: approvals,
+  );
+  final SkipToolCallService _skip = SkipToolCallService(provider: skips);
+  final AgentToolResumeService _resume = AgentToolResumeService(
+    provider: resume,
+  );
 
   Future<void> approve({
     required String toolCallId,

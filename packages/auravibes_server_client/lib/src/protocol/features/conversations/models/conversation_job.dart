@@ -12,29 +12,30 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationJob implements _i1.SerializableModel {
-  ConversationJob._({
-    this.id,
-    required this.workspaceId,
-    required this.conversationId,
-    this.turnId,
-    required this.requestId,
-    required this.kind,
-    required this.status,
-    this.payloadJson,
-    required this.attempt,
-    required this.maxAttempts,
-    required this.availableAt,
-    this.leaseOwner,
-    this.leaseToken,
-    this.leaseExpiresAt,
-    this.checkpointJson,
-    this.lastErrorCode,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory ConversationJob({
+abstract class ConversationJob._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int conversationId,
+  var int? turnId,
+  required var String requestId,
+  required var String kind,
+  required var String status,
+  var String? payloadJson,
+  required var int attempt,
+  required var int maxAttempts,
+  required var DateTime availableAt,
+  var String? leaseOwner,
+  var String? leaseToken,
+  var DateTime? leaseExpiresAt,
+  var String? checkpointJson,
+  var String? lastErrorCode,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -55,7 +56,7 @@ abstract class ConversationJob implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _ConversationJobImpl;
 
-  factory ConversationJob.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationJob(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -87,45 +88,6 @@ abstract class ConversationJob implements _i1.SerializableModel {
       ),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int conversationId;
-
-  int? turnId;
-
-  String requestId;
-
-  String kind;
-
-  String status;
-
-  String? payloadJson;
-
-  int attempt;
-
-  int maxAttempts;
-
-  DateTime availableAt;
-
-  String? leaseOwner;
-
-  String? leaseToken;
-
-  DateTime? leaseExpiresAt;
-
-  String? checkpointJson;
-
-  String? lastErrorCode;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationJob]
   /// with some or all fields replaced by the given arguments.
@@ -181,48 +143,49 @@ abstract class ConversationJob implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationJobImpl extends ConversationJob {
-  _ConversationJobImpl({
-    int? id,
-    required int workspaceId,
-    required int conversationId,
-    int? turnId,
-    required String requestId,
-    required String kind,
-    required String status,
-    String? payloadJson,
-    required int attempt,
-    required int maxAttempts,
-    required DateTime availableAt,
-    String? leaseOwner,
-    String? leaseToken,
-    DateTime? leaseExpiresAt,
-    String? checkpointJson,
-    String? lastErrorCode,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         turnId: turnId,
-         requestId: requestId,
-         kind: kind,
-         status: status,
-         payloadJson: payloadJson,
-         attempt: attempt,
-         maxAttempts: maxAttempts,
-         availableAt: availableAt,
-         leaseOwner: leaseOwner,
-         leaseToken: leaseToken,
-         leaseExpiresAt: leaseExpiresAt,
-         checkpointJson: checkpointJson,
-         lastErrorCode: lastErrorCode,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-       );
+class _ConversationJobImpl({
+  int? id,
+  required int workspaceId,
+  required int conversationId,
+  int? turnId,
+  required String requestId,
+  required String kind,
+  required String status,
+  String? payloadJson,
+  required int attempt,
+  required int maxAttempts,
+  required DateTime availableAt,
+  String? leaseOwner,
+  String? leaseToken,
+  DateTime? leaseExpiresAt,
+  String? checkpointJson,
+  String? lastErrorCode,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+}) extends ConversationJob {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        turnId: turnId,
+        requestId: requestId,
+        kind: kind,
+        status: status,
+        payloadJson: payloadJson,
+        attempt: attempt,
+        maxAttempts: maxAttempts,
+        availableAt: availableAt,
+        leaseOwner: leaseOwner,
+        leaseToken: leaseToken,
+        leaseExpiresAt: leaseExpiresAt,
+        checkpointJson: checkpointJson,
+        lastErrorCode: lastErrorCode,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [ConversationJob]
   /// with some or all fields replaced by the given arguments.

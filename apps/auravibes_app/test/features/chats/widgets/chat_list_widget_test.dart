@@ -342,11 +342,9 @@ void main() {
   });
 }
 
-class _StubConversationRepository implements ConversationRepository {
-  _StubConversationRepository({required this.conversationsStream});
-
-  final Stream<List<ConversationEntity>> conversationsStream;
-
+class _StubConversationRepository({
+  required final Stream<List<ConversationEntity>> conversationsStream,
+}) implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {

@@ -59,11 +59,9 @@ void main() {
   });
 }
 
-class _FakeAgentToolCallDataProvider implements AgentToolDecisionProvider {
-  const _FakeAgentToolCallDataProvider({required this.states});
-
-  final List<AgentToolCallState>? states;
-
+class const _FakeAgentToolCallDataProvider({
+  required final List<AgentToolCallState>? states,
+}) implements AgentToolDecisionProvider {
   @override
   Future<List<AgentToolCallState>?> getToolCallStates(String messageId) async {
     return states;

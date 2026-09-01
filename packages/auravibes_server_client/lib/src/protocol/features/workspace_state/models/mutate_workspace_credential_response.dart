@@ -11,21 +11,20 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/workspace_state/models/workspace_resource.dart'
     as _i2;
+
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class MutateWorkspaceCredentialResponse
-    implements _i1.SerializableModel {
-  MutateWorkspaceCredentialResponse._({
-    required this.resource,
-    required this.configured,
-    this.displaySuffix,
-    this.secretRevision,
-    required this.sequence,
-  });
-
-  factory MutateWorkspaceCredentialResponse({
+abstract class MutateWorkspaceCredentialResponse._({
+  required var _i2.WorkspaceResource resource,
+  required var bool configured,
+  var String? displaySuffix,
+  var int? secretRevision,
+  required var int sequence,
+}) implements _i1.SerializableModel {
+  factory({
     required _i2.WorkspaceResource resource,
     required bool configured,
     String? displaySuffix,
@@ -33,7 +32,7 @@ abstract class MutateWorkspaceCredentialResponse
     required int sequence,
   }) = _MutateWorkspaceCredentialResponseImpl;
 
-  factory MutateWorkspaceCredentialResponse.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return MutateWorkspaceCredentialResponse(
@@ -48,16 +47,6 @@ abstract class MutateWorkspaceCredentialResponse
       sequence: jsonSerialization['sequence'] as int,
     );
   }
-
-  _i2.WorkspaceResource resource;
-
-  bool configured;
-
-  String? displaySuffix;
-
-  int? secretRevision;
-
-  int sequence;
 
   /// Returns a shallow copy of this [MutateWorkspaceCredentialResponse]
   /// with some or all fields replaced by the given arguments.
@@ -87,23 +76,23 @@ abstract class MutateWorkspaceCredentialResponse
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _MutateWorkspaceCredentialResponseImpl
-    extends MutateWorkspaceCredentialResponse {
-  _MutateWorkspaceCredentialResponseImpl({
-    required _i2.WorkspaceResource resource,
-    required bool configured,
-    String? displaySuffix,
-    int? secretRevision,
-    required int sequence,
-  }) : super._(
-         resource: resource,
-         configured: configured,
-         displaySuffix: displaySuffix,
-         secretRevision: secretRevision,
-         sequence: sequence,
-       );
+class _MutateWorkspaceCredentialResponseImpl({
+  required _i2.WorkspaceResource resource,
+  required bool configured,
+  String? displaySuffix,
+  int? secretRevision,
+  required int sequence,
+}) extends MutateWorkspaceCredentialResponse {
+  this
+    : super._(
+        resource: resource,
+        configured: configured,
+        displaySuffix: displaySuffix,
+        secretRevision: secretRevision,
+        sequence: sequence,
+      );
 
   /// Returns a shallow copy of this [MutateWorkspaceCredentialResponse]
   /// with some or all fields replaced by the given arguments.

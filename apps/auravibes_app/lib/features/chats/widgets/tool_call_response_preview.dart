@@ -10,24 +10,17 @@ import 'package:flutter/material.dart';
 /// Displays up to 3 lines of the response text. If the content exceeds
 /// 3 lines (considering line wraps), a "Show more" button appears that
 /// opens a modal with the full markdown-rendered content.
-class ToolCallResponsePreview extends StatefulWidget {
-  /// Maximum number of lines to show in the preview.
-  static const int maxPreviewLines = 3;
-
-  const ToolCallResponsePreview({
-    required this.toolName,
-    required this.content,
-    super.key,
-    this.showExpandButton = true,
-  });
-
+class const ToolCallResponsePreview({
   /// The name of the tool that generated the response.
-  final String toolName;
+  required final String toolName,
 
   /// The raw response content to display.
-  final String content;
-
-  final bool showExpandButton;
+  required final String content,
+  super.key,
+  final bool showExpandButton = true,
+}) extends StatefulWidget {
+  /// Maximum number of lines to show in the preview.
+  static const int maxPreviewLines = 3;
 
   @override
   State<ToolCallResponsePreview> createState() =>

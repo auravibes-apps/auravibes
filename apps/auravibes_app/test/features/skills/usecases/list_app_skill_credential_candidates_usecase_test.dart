@@ -12,7 +12,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _ServiceConnectionRepository extends Mock
-    implements ServiceConnectionRepository {}
+    implements ServiceConnectionRepository;
 
 void main() {
   const skill = AppSkillDefinition(
@@ -40,12 +40,10 @@ void main() {
           serviceConnectionRepositoryProvider.overrideWith(
             (_) => throw StateError('local repository touched'),
           ),
-          workspaceSessionForRouteProvider(
-            'cloud-workspace',
-          ).overrideWith((_) async => session),
-          cloudWorkspaceStateGatewayProvider(
-            session,
-          ).overrideWith((_) async => throw StateError('cloud unavailable')),
+          workspaceSessionForRouteProvider('cloud-workspace')
+              .overrideWith((_) async => session),
+          cloudWorkspaceStateGatewayProvider(session)
+              .overrideWith((_) async => throw StateError('cloud unavailable')),
         ],
       );
       addTearDown(container.dispose);

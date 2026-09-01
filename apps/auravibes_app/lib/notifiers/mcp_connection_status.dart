@@ -60,8 +60,8 @@ enum McpConnectionStatus {
 
 /// State for a single MCP server connection.
 @freezed
-abstract class McpConnectionState with _$McpConnectionState {
-  const factory McpConnectionState({
+abstract class const McpConnectionState._() with _$McpConnectionState {
+  const factory({
     /// The MCP server configuration.
     required McpServerEntity server,
 
@@ -77,8 +77,6 @@ abstract class McpConnectionState with _$McpConnectionState {
     /// Error message if connection failed.
     String? errorMessage,
   }) = _McpConnectionState;
-
-  const McpConnectionState._();
 
   /// Whether this connection is ready to use.
   bool get isReady => status == McpConnectionStatus.connected && client != null;
@@ -106,22 +104,16 @@ extension _McpToolInfoSpec on McpToolInfo {
 ///
 /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
 /// so we use underscores as separators instead of colons.
-class McpToolIdComponents {
-  const McpToolIdComponents({
-    required this.mcpServerId,
-    required this.slugName,
-    required this.toolIdentifier,
-  });
-
+class const McpToolIdComponents({
   /// The database ID of the MCP server.
-  final String mcpServerId;
+  required final String mcpServerId,
 
   /// The slugified server name (for readability).
-  final String slugName;
+  required final String slugName,
 
   /// The original tool name from the MCP server.
-  final String toolIdentifier;
-
+  required final String toolIdentifier,
+}) {
   static McpToolIdComponents? fromComposite(String compositeId) {
     final parsed = ToolNameFormatter.parse(compositeId);
     if (parsed case AgentResolvedToolName(

@@ -13,18 +13,16 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class ModelSyncResult implements _i1.SerializableModel {
-  ModelSyncResult._({
-    required this.providerId,
-    required this.modelIds,
-  });
-
-  factory ModelSyncResult({
+abstract class ModelSyncResult._({
+  required var String providerId,
+  required var List<String> modelIds,
+}) implements _i1.SerializableModel {
+  factory({
     required String providerId,
     required List<String> modelIds,
   }) = _ModelSyncResultImpl;
 
-  factory ModelSyncResult.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return ModelSyncResult(
       providerId: jsonSerialization['providerId'] as String,
       modelIds: _i2.Protocol().deserialize<List<String>>(
@@ -32,10 +30,6 @@ abstract class ModelSyncResult implements _i1.SerializableModel {
       ),
     );
   }
-
-  String providerId;
-
-  List<String> modelIds;
 
   /// Returns a shallow copy of this [ModelSyncResult]
   /// with some or all fields replaced by the given arguments.
@@ -59,14 +53,15 @@ abstract class ModelSyncResult implements _i1.SerializableModel {
   }
 }
 
-class _ModelSyncResultImpl extends ModelSyncResult {
-  _ModelSyncResultImpl({
-    required String providerId,
-    required List<String> modelIds,
-  }) : super._(
-         providerId: providerId,
-         modelIds: modelIds,
-       );
+class _ModelSyncResultImpl({
+  required String providerId,
+  required List<String> modelIds,
+}) extends ModelSyncResult {
+  this
+    : super._(
+        providerId: providerId,
+        modelIds: modelIds,
+      );
 
   /// Returns a shallow copy of this [ModelSyncResult]
   /// with some or all fields replaced by the given arguments.

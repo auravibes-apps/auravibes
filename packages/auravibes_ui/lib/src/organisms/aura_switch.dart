@@ -16,7 +16,7 @@ class AuraSwitch extends StatefulWidget {
   static const double _thumbPadding = 2;
 
   /// Creates an Aura switch.
-  const AuraSwitch({
+  const new({
     required this.value,
     required this.onChanged,
     super.key,

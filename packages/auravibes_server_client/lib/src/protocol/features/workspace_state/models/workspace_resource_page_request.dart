@@ -11,23 +11,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/workspace_state/models/workspace_resource_kind.dart'
     as _i2;
 
-abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
-  WorkspaceResourcePageRequest._({
-    required this.resourceKind,
-    this.afterResourceId,
-    required this.limit,
-  });
-
-  factory WorkspaceResourcePageRequest({
+abstract class WorkspaceResourcePageRequest._({
+  required var _i2.WorkspaceResourceKind resourceKind,
+  var String? afterResourceId,
+  required var int limit,
+}) implements _i1.SerializableModel {
+  factory({
     required _i2.WorkspaceResourceKind resourceKind,
     String? afterResourceId,
     required int limit,
   }) = _WorkspaceResourcePageRequestImpl;
 
-  factory WorkspaceResourcePageRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceResourcePageRequest(
@@ -38,12 +37,6 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
       limit: jsonSerialization['limit'] as int,
     );
   }
-
-  _i2.WorkspaceResourceKind resourceKind;
-
-  String? afterResourceId;
-
-  int limit;
 
   /// Returns a shallow copy of this [WorkspaceResourcePageRequest]
   /// with some or all fields replaced by the given arguments.
@@ -69,18 +62,19 @@ abstract class WorkspaceResourcePageRequest implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _WorkspaceResourcePageRequestImpl extends WorkspaceResourcePageRequest {
-  _WorkspaceResourcePageRequestImpl({
-    required _i2.WorkspaceResourceKind resourceKind,
-    String? afterResourceId,
-    required int limit,
-  }) : super._(
-         resourceKind: resourceKind,
-         afterResourceId: afterResourceId,
-         limit: limit,
-       );
+class _WorkspaceResourcePageRequestImpl({
+  required _i2.WorkspaceResourceKind resourceKind,
+  String? afterResourceId,
+  required int limit,
+}) extends WorkspaceResourcePageRequest {
+  this
+    : super._(
+        resourceKind: resourceKind,
+        afterResourceId: afterResourceId,
+        limit: limit,
+      );
 
   /// Returns a shallow copy of this [WorkspaceResourcePageRequest]
   /// with some or all fields replaced by the given arguments.

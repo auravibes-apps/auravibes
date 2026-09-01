@@ -16,22 +16,25 @@ enum ResolvedToolType {
 ///
 /// This abstraction allows the tool calling manager to handle both types
 /// uniformly while preserving the necessary information for execution.
-class ResolvedTool {
-  const ResolvedTool._({
-    required this.type,
-    required this.tableId,
-    required this.toolIdentifier,
-    this.builtInTool,
-    this.mcpServerId,
-    this.mcpSlug,
-    this.nativeTool,
-    this.skillSlug,
-    this.skillToolSlug,
-    this.target,
-  });
+class const ResolvedTool._({
+  /// The type of tool (built-in or MCP).
+  required final ResolvedToolType type,
 
+  /// The database table ID for permission checks.
+  required final String tableId,
+
+  /// The tool identifier (for example, "calculator" or original MCP tool name).
+  required final String toolIdentifier,
+  final UserToolType? builtInTool,
+  final String? mcpServerId,
+  final String? mcpSlug,
+  final NativeToolType? nativeTool,
+  final String? skillSlug,
+  final String? skillToolSlug,
+  final AgentResolvedToolName? target,
+}) {
   /// Creates a resolved built-in tool.
-  factory ResolvedTool.builtIn({
+  factory builtIn({
     required String tableId,
     required String toolIdentifier,
     required UserToolType tooltype,
@@ -45,7 +48,7 @@ class ResolvedTool {
   }
 
   /// Creates a resolved MCP tool.
-  factory ResolvedTool.mcp({
+  factory mcp({
     required String tableId,
     required String toolIdentifier,
     required String mcpServerId,
@@ -60,7 +63,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.native({
+  factory native({
     required String tableId,
     required NativeToolType nativeToolType,
   }) {
@@ -72,7 +75,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillControl({required String toolIdentifier}) {
+  factory skillControl({required String toolIdentifier}) {
     return ResolvedTool._(
       type: ResolvedToolType.skillControl,
       tableId: toolIdentifier,
@@ -80,7 +83,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillCommand({
+  factory skillCommand({
     required String commandName,
     AgentResolvedToolName? target,
   }) {
@@ -92,7 +95,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillTemplate({
+  factory skillTemplate({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
@@ -105,7 +108,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillNative({
+  factory skillNative({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
@@ -118,29 +121,6 @@ class ResolvedTool {
       skillToolSlug: toolIdentifier,
     );
   }
-
-  /// The type of tool (built-in or MCP).
-  final ResolvedToolType type;
-
-  /// The database table ID for permission checks.
-  final String tableId;
-
-  /// The tool identifier (for example, "calculator" or original MCP tool name).
-  final String toolIdentifier;
-
-  final UserToolType? builtInTool;
-
-  final String? mcpServerId;
-
-  final String? mcpSlug;
-
-  final NativeToolType? nativeTool;
-
-  final String? skillSlug;
-
-  final String? skillToolSlug;
-
-  final AgentResolvedToolName? target;
 
   bool get isBuiltIn => type == ResolvedToolType.builtIn;
 

@@ -41,20 +41,13 @@ final $Default = _Story(
 );
 
 /// Demonstrates a controlled switch with size, loading, and disabled states.
-class SwitchDemo extends StatefulWidget {
-  const SwitchDemo({
-    super.key,
-    required this.size,
-    required this.disabled,
-    required this.isLoading,
-    this.semanticLabel = 'Switch',
-  });
-
-  final AuraSwitchSize size;
-  final bool disabled;
-  final bool isLoading;
-  final String semanticLabel;
-
+class const SwitchDemo({
+  super.key,
+  required final AuraSwitchSize size,
+  required final bool disabled,
+  required final bool isLoading,
+  final String semanticLabel = 'Switch',
+}) extends StatefulWidget {
   @override
   State<SwitchDemo> createState() => _SwitchDemoState();
 }

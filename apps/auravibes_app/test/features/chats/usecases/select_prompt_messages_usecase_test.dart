@@ -5,7 +5,7 @@ import 'package:auravibes_app/features/chats/usecases/select_prompt_messages_use
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockMessageRepository extends Mock implements MessageRepository {}
+class MockMessageRepository extends Mock implements MessageRepository;
 
 void main() {
   var mockRepository = MockMessageRepository();
@@ -48,9 +48,8 @@ void main() {
           _makeMessage(id: 'msg-3'),
         ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+        when(() => mockRepository.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
 
         final result = await usecase('conv-1');
 
@@ -78,9 +77,8 @@ void main() {
           _makeMessage(id: 'msg-5', isUser: false),
         ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+        when(() => mockRepository.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
 
         final result = await usecase('conv-1');
 
@@ -106,9 +104,8 @@ void main() {
         _makeMessage(id: 'msg-3'),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
 
@@ -137,9 +134,8 @@ void main() {
         _makeMessage(id: 'msg-4'),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
 
@@ -157,9 +153,8 @@ void main() {
           _makeMessage(id: 'msg-3', isUser: false),
         ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+        when(() => mockRepository.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
 
         final result = await usecase('conv-1');
 
@@ -184,9 +179,8 @@ void main() {
         _makeMessage(id: 'new-1'),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
 
@@ -215,9 +209,8 @@ void main() {
         ),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
 
@@ -256,9 +249,8 @@ void main() {
           ),
         ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+        when(() => mockRepository.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
 
         final result = await usecase('conv-1');
 
@@ -288,9 +280,8 @@ void main() {
           _makeMessage(id: 'kept-1'),
         ];
 
-        when(
-          () => mockRepository.getMessagesByConversation('conv-1'),
-        ).thenAnswer((_) async => messages);
+        when(() => mockRepository.getMessagesByConversation('conv-1'))
+            .thenAnswer((_) async => messages);
 
         final result = await usecase('conv-1');
 
@@ -317,9 +308,8 @@ void main() {
         _makeMessage(id: 'latest-user'),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
       expect(result.length, 2);
@@ -344,9 +334,8 @@ void main() {
         _makeMessage(id: 'model-2', isUser: false),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
       expect(result.length, 1);
@@ -371,9 +360,8 @@ void main() {
         _makeMessage(id: 'tool-result', isUser: false),
       ];
 
-      when(
-        () => mockRepository.getMessagesByConversation('conv-1'),
-      ).thenAnswer((_) async => messages);
+      when(() => mockRepository.getMessagesByConversation('conv-1'))
+          .thenAnswer((_) async => messages);
 
       final result = await usecase('conv-1');
 

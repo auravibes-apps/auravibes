@@ -1,15 +1,10 @@
 import 'package:meta/meta.dart';
 
 @immutable
-class AgentIterationContext {
-  const AgentIterationContext({
-    required this.origin,
-    this.ackMessageIds = const [],
-  });
-
-  final AgentIterationOrigin origin;
-  final List<String> ackMessageIds;
-
+class const AgentIterationContext({
+  required final AgentIterationOrigin origin,
+  final List<String> ackMessageIds = const [],
+}) {
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||

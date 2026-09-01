@@ -75,9 +75,8 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final container = ProviderContainer(
         overrides: [
-          compactionSettingsProvider(
-            'test-ws',
-          ).overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
+          compactionSettingsProvider('test-ws')
+              .overrideWith((ref) => Stream.value(CompactionSettings.defaults)),
         ],
       );
       addTearDown(container.dispose);
@@ -117,9 +116,7 @@ void main() {
   });
 }
 
-class _ThemeModeTestApp extends ConsumerWidget {
-  const _ThemeModeTestApp();
-
+class const _ThemeModeTestApp() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode =

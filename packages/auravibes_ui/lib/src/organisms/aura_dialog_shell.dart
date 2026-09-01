@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// Shared visual shell for Aura dialogs.
 class AuraDialogShell extends StatelessWidget {
   /// Creates a dialog shell.
-  const AuraDialogShell({
+  const new({
     required this.title,
     required this.message,
     required this.actions,

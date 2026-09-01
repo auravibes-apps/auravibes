@@ -7,7 +7,7 @@ export 'tools_groups_repository_contract.dart';
 
 class ToolsGroupsRepository implements ToolsGroupsRepositoryContract {
   /// Creates a new [ToolsGroupsRepository] instance.
-  ToolsGroupsRepository(this._database);
+  new(this._database);
 
   final AppDatabase _database;
 

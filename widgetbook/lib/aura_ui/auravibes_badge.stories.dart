@@ -5,17 +5,11 @@ import 'package:widgetbook/widgetbook.dart';
 
 part 'auravibes_badge.stories.g.dart';
 
-class _TextBadgeInput {
-  const _TextBadgeInput({
-    required this.text,
-    required this.variant,
-    required this.size,
-  });
-
-  final String text;
-  final AuraBadgeVariant variant;
-  final AuraBadgeSize size;
-}
+class const _TextBadgeInput({
+  required final String text,
+  required final AuraBadgeVariant variant,
+  required final AuraBadgeSize size,
+});
 
 const textMeta = Meta(AuraBadge.text, argsType: _TextBadgeInput.new);
 const countMeta = Meta(AuraBadge.count);

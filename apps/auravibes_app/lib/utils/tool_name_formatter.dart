@@ -13,9 +13,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 ///
 /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
 /// so we use underscores as separators instead of colons.
-class ToolNameFormatter {
-  const ToolNameFormatter._();
-
+class const ToolNameFormatter._() {
   /// Parses a composite tool ID into its components.
   ///
   /// Returns an [AgentResolvedToolName] with the parsed components,

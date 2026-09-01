@@ -88,9 +88,7 @@ void main() {
   });
 }
 
-class _FakeSkillsRepository implements SkillsRepository {
-  const _FakeSkillsRepository();
-
+class const _FakeSkillsRepository() implements SkillsRepository {
   @override
   Future<SkillEntity?> getSkillBySlug(String workspaceId, String slug) async {
     return null;
@@ -168,12 +166,9 @@ class _FakeConversationSkillsRepository
   }
 }
 
-class _FakeAppSkillWorkspaceSettingsRepository
-    implements AppSkillWorkspaceSettingsRepository {
-  const _FakeAppSkillWorkspaceSettingsRepository([this.enabledIds = const {}]);
-
-  final Set<String> enabledIds;
-
+class const _FakeAppSkillWorkspaceSettingsRepository([
+  final Set<String> enabledIds = const {},
+]) implements AppSkillWorkspaceSettingsRepository {
   @override
   Future<bool> isAppSkillEnabled(
     String workspaceId,
@@ -192,10 +187,8 @@ class _FakeAppSkillWorkspaceSettingsRepository
   }
 }
 
-class _FakeAppSkillCandidates
+class const _FakeAppSkillCandidates()
     implements ListAppSkillCredentialCandidatesUsecase {
-  const _FakeAppSkillCandidates();
-
   @override
   Future<List<AppSkillCredentialCandidate>> call({
     required String workspaceId,

@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class LeaveCloudWorkspaceRequest implements _i1.SerializableModel {
-  LeaveCloudWorkspaceRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.expectedWorkspaceRevision,
-  });
-
-  factory LeaveCloudWorkspaceRequest({
+abstract class LeaveCloudWorkspaceRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var int expectedWorkspaceRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required int expectedWorkspaceRevision,
   }) = _LeaveCloudWorkspaceRequestImpl;
 
-  factory LeaveCloudWorkspaceRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return LeaveCloudWorkspaceRequest(
@@ -35,12 +33,6 @@ abstract class LeaveCloudWorkspaceRequest implements _i1.SerializableModel {
           jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  int expectedWorkspaceRevision;
 
   /// Returns a shallow copy of this [LeaveCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
@@ -66,16 +58,17 @@ abstract class LeaveCloudWorkspaceRequest implements _i1.SerializableModel {
   }
 }
 
-class _LeaveCloudWorkspaceRequestImpl extends LeaveCloudWorkspaceRequest {
-  _LeaveCloudWorkspaceRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required int expectedWorkspaceRevision,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         expectedWorkspaceRevision: expectedWorkspaceRevision,
-       );
+class _LeaveCloudWorkspaceRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required int expectedWorkspaceRevision,
+}) extends LeaveCloudWorkspaceRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        expectedWorkspaceRevision: expectedWorkspaceRevision,
+      );
 
   /// Returns a shallow copy of this [LeaveCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.

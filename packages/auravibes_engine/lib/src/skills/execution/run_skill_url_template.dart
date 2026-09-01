@@ -6,12 +6,10 @@ import 'package:auravibes_engine/src/skills/models/skill_template_input_definiti
 import 'package:auravibes_engine/src/skills/models/skill_url_template.dart';
 import 'package:auravibes_engine/src/skills/models/url_response.dart';
 
-class RunSkillUrlTemplate {
-  const RunSkillUrlTemplate(this._resolver, this._httpClient);
-
-  final ResolveSkillUrlTemplate _resolver;
-  final SkillHttpClient _httpClient;
-
+class const RunSkillUrlTemplate(
+  final ResolveSkillUrlTemplate _resolver,
+  final SkillHttpClient _httpClient,
+) {
   CancelableOperation<UrlResponse> call({
     required SkillUrlTemplate template,
     required Map<String, dynamic> inputs,

@@ -10,11 +10,10 @@ enum ManagementMode { list, create, edit }
 ///
 /// Does not contain workspace data (owned by the workspace list provider).
 @freezed
-abstract class WorkspaceManagementState with _$WorkspaceManagementState {
-  const factory WorkspaceManagementState({
+abstract class const WorkspaceManagementState._()
+    with _$WorkspaceManagementState {
+  const factory({
     @Default(ManagementMode.list) ManagementMode mode,
     WorkspaceEntity? editingWorkspace,
   }) = _WorkspaceManagementState;
-
-  const WorkspaceManagementState._();
 }

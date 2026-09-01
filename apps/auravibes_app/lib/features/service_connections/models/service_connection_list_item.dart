@@ -3,29 +3,25 @@ import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_definition_entity.dart';
 import 'package:auravibes_app/domain/entities/skill_credential_entity.dart';
 
-class ServiceConnectionListItem {
-  const ServiceConnectionListItem({
-    required this.id,
-    required this.workspaceId,
-    required this.name,
-    required this.serviceName,
-    required this.kind,
-    required this.keySuffix,
-    required this.credentialDefinitionId,
-    required this.mcpServerId,
-    required this.authenticationType,
-    required this.displayStatus,
-    required this.expiresAt,
-    required this.lastRefreshedAt,
-    required this.lastAuthError,
-    required this.metadataValues,
-    required this.canRefresh,
-    required this.canReconnect,
-  });
-
-  factory ServiceConnectionListItem.fromModelConnection(
-    ModelConnectionEntity connection,
-  ) {
+class const ServiceConnectionListItem({
+  required final String id,
+  required final String workspaceId,
+  required final String name,
+  required final String? serviceName,
+  required final ServiceConnectionListItemKind kind,
+  required final String? keySuffix,
+  required final String? credentialDefinitionId,
+  required final String? mcpServerId,
+  required final String? authenticationType,
+  required final ServiceConnectionDisplayStatus displayStatus,
+  required final DateTime? expiresAt,
+  required final DateTime? lastRefreshedAt,
+  required final String? lastAuthError,
+  required final List<ServiceConnectionMetadataValue> metadataValues,
+  required final bool canRefresh,
+  required final bool canReconnect,
+}) {
+  factory fromModelConnection(ModelConnectionEntity connection) {
     return ServiceConnectionListItem(
       id: connection.id,
       workspaceId: connection.workspaceId,
@@ -46,7 +42,7 @@ class ServiceConnectionListItem {
     );
   }
 
-  factory ServiceConnectionListItem.fromSkillCredential({
+  factory fromSkillCredential({
     required SkillCredentialEntity credential,
     required SkillCredentialDefinitionEntity? definition,
   }) {
@@ -70,7 +66,7 @@ class ServiceConnectionListItem {
     );
   }
 
-  factory ServiceConnectionListItem.fromMcpCredential({
+  factory fromMcpCredential({
     required String id,
     required String workspaceId,
     required String name,
@@ -118,23 +114,6 @@ class ServiceConnectionListItem {
       canReconnect: true,
     );
   }
-
-  final String id;
-  final String workspaceId;
-  final String name;
-  final String? serviceName;
-  final ServiceConnectionListItemKind kind;
-  final String? keySuffix;
-  final String? credentialDefinitionId;
-  final String? mcpServerId;
-  final String? authenticationType;
-  final ServiceConnectionDisplayStatus displayStatus;
-  final DateTime? expiresAt;
-  final DateTime? lastRefreshedAt;
-  final String? lastAuthError;
-  final List<ServiceConnectionMetadataValue> metadataValues;
-  final bool canRefresh;
-  final bool canReconnect;
 }
 
 enum ServiceConnectionListItemKind { modelProvider, skillCredential, mcpServer }
@@ -156,15 +135,10 @@ enum ServiceConnectionMetadataKey {
   lastAuthError,
 }
 
-class ServiceConnectionMetadataValue {
-  const ServiceConnectionMetadataValue({
-    required this.key,
-    required this.value,
-  });
-
-  final ServiceConnectionMetadataKey key;
-  final String value;
-}
+class const ServiceConnectionMetadataValue({
+  required final ServiceConnectionMetadataKey key,
+  required final String value,
+});
 
 // Keep the warning window short so reconnect prompts appear only when a token
 // is close enough to expiry that a failed refresh would affect the user soon.

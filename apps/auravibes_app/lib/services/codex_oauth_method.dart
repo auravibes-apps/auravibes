@@ -12,15 +12,10 @@ import 'package:dio/dio.dart';
 
 enum CodexOAuthMethod { browser, deviceCode }
 
-class CodexDeviceCode {
-  const CodexDeviceCode({
-    required this.verificationUrl,
-    required this.userCode,
-  });
-
-  final String verificationUrl;
-  final String userCode;
-}
+class const CodexDeviceCode({
+  required final String verificationUrl,
+  required final String userCode,
+});
 
 class CodexOAuthService {
   static const defaultPort = 1455;
@@ -344,16 +339,12 @@ class CodexOAuthService {
   }
 }
 
-class CodexOAuthCanceledException implements Exception {
-  const CodexOAuthCanceledException();
-}
+class const CodexOAuthCanceledException() implements Exception;
 
-class _Pkce {
-  const _Pkce({required this.verifier, required this.challenge});
-
-  final String verifier;
-  final String challenge;
-}
+class const _Pkce({
+  required final String verifier,
+  required final String challenge,
+});
 
 _Pkce _generatePkce() {
   final verifier = _randomUrlSafe(64);

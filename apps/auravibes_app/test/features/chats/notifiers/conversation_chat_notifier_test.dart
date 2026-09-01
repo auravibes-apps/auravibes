@@ -373,11 +373,9 @@ void main() {
   });
 }
 
-class _FakeConversationRepository implements ConversationRepository {
-  _FakeConversationRepository({this.onPatch});
-
-  final ConversationEntity Function(String, ConversationPatch)? onPatch;
-
+class _FakeConversationRepository({
+  final ConversationEntity Function(String, ConversationPatch)? onPatch,
+}) implements ConversationRepository {
   @override
   Future<ConversationEntity> patchConversation(
     String id,

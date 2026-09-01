@@ -3,9 +3,7 @@ import 'package:serverpod_auth_idp_server/core.dart';
 
 import '../../generated/protocol.dart';
 
-class AuthenticatedAccountResolver {
-  const AuthenticatedAccountResolver();
-
+class const AuthenticatedAccountResolver() {
   Future<AccountSummary> call(Session session) async {
     final auth = session.authenticated;
     if (auth == null) {

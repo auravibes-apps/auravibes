@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// Icon button that opens an [AuraPopupMenu].
 class AuraPopupMenuButton extends StatefulWidget {
   /// Creates an Aura popup menu button.
-  const AuraPopupMenuButton({
+  const new({
     required this.items,
     super.key,
     this.icon = Icons.more_vert,

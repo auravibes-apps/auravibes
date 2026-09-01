@@ -6,53 +6,33 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-class ConversationStreamingRuntime {
-  const ConversationStreamingRuntime({
-    required this.start,
-    required this.isStreaming,
-    required this.remove,
-  });
+class const ConversationStreamingRuntime({
+  required final void Function(String conversationId) start,
+  required final bool Function(String conversationId) isStreaming,
+  required final void Function(String conversationId) remove,
+});
 
-  final void Function(String conversationId) start;
-  final bool Function(String conversationId) isStreaming;
-  final void Function(String conversationId) remove;
-}
+class const MessagesStreamingRuntime({
+  required final void Function(
+    CompositeSubscription subscription,
+    String messageId,
+  )
+  startSubscription,
+  required final void Function(ChatResult<ChatMessage> result, String messageId)
+  updateResult,
+  required final Future<void> Function(String messageId) remove,
+});
 
-class MessagesStreamingRuntime {
-  const MessagesStreamingRuntime({
-    required this.startSubscription,
-    required this.updateResult,
-    required this.remove,
-  });
+class const TitlesStreamingRuntime({
+  required final void Function(String conversationId, String title) updateTitle,
+  required final void Function(String conversationId) removeTitle,
+});
 
-  final void Function(CompositeSubscription subscription, String messageId)
-  startSubscription;
-  final void Function(ChatResult<ChatMessage> result, String messageId)
-  updateResult;
-  final Future<void> Function(String messageId) remove;
-}
-
-class TitlesStreamingRuntime {
-  const TitlesStreamingRuntime({
-    required this.updateTitle,
-    required this.removeTitle,
-  });
-
-  final void Function(String conversationId, String title) updateTitle;
-  final void Function(String conversationId) removeTitle;
-}
-
-class ConversationRateLimitRetryRuntime {
-  const ConversationRateLimitRetryRuntime({
-    required this.start,
-    required this.retryAt,
-    required this.clear,
-  });
-
-  final void Function(String conversationId, DateTime retryAt) start;
-  final DateTime? Function(String conversationId) retryAt;
-  final void Function(String conversationId) clear;
-}
+class const ConversationRateLimitRetryRuntime({
+  required final void Function(String conversationId, DateTime retryAt) start,
+  required final DateTime? Function(String conversationId) retryAt,
+  required final void Function(String conversationId) clear,
+});
 
 class ConversationRateLimitRetryNotifier
     extends Notifier<Map<String, DateTime>> {

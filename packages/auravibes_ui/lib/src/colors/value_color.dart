@@ -13,7 +13,7 @@ extension on num {
 /// Abstract base class for color representations that can be validated.
 abstract class ValueColor {
   /// Creates a new [ValueColor] instance.
-  const ValueColor();
+  const new();
 
   /// The vector representation of this color.
   Vector get vector;
@@ -39,7 +39,7 @@ class LinearSrgbColor extends ValueColor {
   static const _srgbLinearScale = 12.92;
 
   /// Creates a linear RGB color from component values.
-  LinearSrgbColor({
+  new({
     required this.red,
     required this.green,
     required this.blue,
@@ -47,7 +47,7 @@ class LinearSrgbColor extends ValueColor {
   });
 
   /// Creates a linear RGB color from a vector.
-  LinearSrgbColor.fromVector(Vector vector, {this.alpha = 1})
+  new fromVector(Vector vector, {this.alpha = 1})
     : red = vector.x.toDouble(),
       green = vector.y.toDouble(),
       blue = vector.z.toDouble();
@@ -105,7 +105,7 @@ class RgbColor {
   static const _srgbThreshold = 0.04045;
 
   /// Creates an sRGB color from component values.
-  RgbColor({
+  new({
     required this.red,
     required this.green,
     required this.blue,
@@ -113,7 +113,7 @@ class RgbColor {
   });
 
   /// Creates an sRGB color from a Flutter Color.
-  RgbColor.fromColor(Color color)
+  new fromColor(Color color)
     : red = color.r,
       green = color.g,
       blue = color.b,
@@ -172,7 +172,7 @@ class OklabColor extends ValueColor {
   static const _squaredExponent = 2;
 
   /// Creates an Oklab color from component values.
-  OklabColor({
+  new({
     required this.lightness,
     required this.a,
     required this.b,
@@ -180,7 +180,7 @@ class OklabColor extends ValueColor {
   });
 
   /// Creates an Oklab color from a vector.
-  OklabColor.fromVector(Vector vector, {this.alpha = 1})
+  new fromVector(Vector vector, {this.alpha = 1})
     : lightness = vector.x.fit(0, 1).toDouble(),
       a = vector.y.fit(-_componentLimit, _componentLimit).toDouble(),
       b = vector.z.fit(-_componentLimit, _componentLimit).toDouble();
@@ -322,16 +322,11 @@ class OKLCHColor {
   static const _descriptionPrecision = 2;
 
   /// Main constructor for creating an OKLCHColor object.
-  OKLCHColor({
-    required this.hue,
-    this.lightness = 0,
-    this.chroma = 0,
-    this.alpha = 1,
-  });
+  new({required this.hue, this.lightness = 0, this.chroma = 0, this.alpha = 1});
 
   /// Factory constructor that creates an OKLCHColor instance
   /// from a Flutter Color object.
-  factory OKLCHColor.fromColor(Color color) {
+  factory fromColor(Color color) {
     final rgbColor = RgbColor.fromColor(color);
     final lab = rgbColor.toOklab();
 

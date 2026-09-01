@@ -27,23 +27,16 @@ const _kMcpErrorTitle = 'tools_screen.mcp_error';
 ///
 /// Groups are collapsed by default. The user can expand them to see and
 /// configure individual tools.
-class ConversationToolsGroupCard extends HookConsumerWidget {
-  const ConversationToolsGroupCard({
-    required this.groupWithTools,
-    required this.workspaceId,
-    this.conversationId,
-    this.initiallyExpanded = false,
-    super.key,
-  });
-
-  final ConversationToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-  final String? conversationId;
+class const ConversationToolsGroupCard({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  final String? conversationId,
 
   /// Whether the group should be initially expanded.
   /// Defaults to false (collapsed).
-  final bool initiallyExpanded;
-
+  final bool initiallyExpanded = false,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isExpanded = useState(initiallyExpanded);
@@ -133,17 +126,11 @@ class ConversationToolsGroupCard extends HookConsumerWidget {
 }
 
 /// List of conversation tools within a group.
-class _ToolsList extends StatelessWidget {
-  const _ToolsList({
-    required this.groupWithTools,
-    required this.workspaceId,
-    this.conversationId,
-  });
-
-  final ConversationToolsGroupWithTools groupWithTools;
-  final String workspaceId;
-  final String? conversationId;
-
+class const _ToolsList({
+  required final ConversationToolsGroupWithTools groupWithTools,
+  required final String workspaceId,
+  final String? conversationId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groupWithTools.tools.isEmpty) {

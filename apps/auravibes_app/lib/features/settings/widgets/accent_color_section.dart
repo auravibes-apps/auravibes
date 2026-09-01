@@ -10,9 +10,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 ///
 /// The hue is persisted via [AccentHueNotifier]; the whole palette recomputes
 /// from it through [AuraComputedColorScheme].
-class AccentColorSection extends ConsumerWidget {
-  const AccentColorSection({super.key});
-
+class const AccentColorSection({super.key}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hue =
@@ -97,12 +95,8 @@ class AccentColorSection extends ConsumerWidget {
   }
 }
 
-class _HueSwatch extends StatelessWidget {
-  const _HueSwatch({required this.hue, this.size = 24});
-
-  final double hue;
-  final double size;
-
+class const _HueSwatch({required final double hue, final double size = 24})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _primaryColorFor(context, hue);
@@ -119,13 +113,11 @@ class _HueSwatch extends StatelessWidget {
   }
 }
 
-class _HueSlider extends StatelessWidget {
+class const _HueSlider({
+  required final double hue,
+  required final ValueChanged<double> onChanged,
+}) extends StatelessWidget {
   static const _stops = [0.0, 60.0, 120.0, 180.0, 240.0, 300.0, 360.0];
-  const _HueSlider({required this.hue, required this.onChanged});
-
-  final double hue;
-  final ValueChanged<double> onChanged;
-
   @override
   Widget build(BuildContext context) {
     const maxHue = 360.0;

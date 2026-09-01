@@ -7,11 +7,9 @@ import 'package:logging/logging.dart';
 final _log = Logger('service:model_sync');
 
 /// Service for synchronizing model and provider data with the external API.
-class ModelSyncService {
-  ModelSyncService({required this.syncApiModelsUseCase});
-
-  final SyncApiModelsUseCase syncApiModelsUseCase;
-
+class ModelSyncService({
+  required final SyncApiModelsUseCase syncApiModelsUseCase,
+}) {
   /// Performs a full synchronization of all models and providers.
   ///
   /// Errors are logged and swallowed so the periodic timer never tears down on
