@@ -462,6 +462,93 @@ void main() {
     );
   });
 
+  test(
+    'matrix emits selected packages and caps app shards by test count',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final selection = SelectionResult(
+        mode: SelectionMode.affected,
+        packages: {
+          'packages/core': [
+            'test/behavior_test.dart',
+            'test/features/example_test.dart',
+          ],
+        },
+        reason: 'test',
+      );
+
+      final matrix = await buildTestMatrix(
+        selection,
+        rootPath: root.path,
+        shardPackage: 'packages/core',
+        shardCount: 3,
+      );
+
+      expect(matrix, {
+        'include': [
+          {
+            'package': 'packages/core',
+            'shardIndex': 0,
+            'totalShards': 2,
+            'artifact': 'packages-core-0',
+          },
+          {
+            'package': 'packages/core',
+            'shardIndex': 1,
+            'totalShards': 2,
+            'artifact': 'packages-core-1',
+          },
+        ],
+      });
+    },
+  );
+
+  test('matrix emits no rows for no affected tests', () async {
+    final matrix = await buildTestMatrix(
+      SelectionResult(
+        mode: SelectionMode.none,
+        packages: const {},
+        reason: 'docs',
+      ),
+      rootPath: Directory.current.path,
+      shardPackage: 'apps/auravibes_app',
+      shardCount: 3,
+    );
+
+    expect(matrix, const {'include': <Object>[]});
+  });
+
+  test(
+    'matrix enumerates full suites without sharding other packages',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+
+      final matrix = await buildTestMatrix(
+        SelectionResult(
+          mode: SelectionMode.full,
+          packages: const {},
+          reason: 'global',
+        ),
+        rootPath: root.path,
+        shardPackage: 'apps/auravibes_app',
+        shardCount: 3,
+      );
+
+      expect(matrix, {
+        'include': [
+          {
+            'package': 'packages/core',
+            'shardIndex': 0,
+            'totalShards': 1,
+            'artifact': 'packages-core-0',
+          },
+        ],
+      });
+    },
+  );
+
   test('runner validates paths before launching', () async {
     final root = await _runnerFixture();
     addTearDown(() => root.delete(recursive: true));
@@ -523,6 +610,102 @@ void main() {
       containsAllInOrder(['flutter', 'test', '--exclude-tags=integration']),
     );
   });
+
+  test(
+    'runner filters to one package, shards, and propagates coverage failure',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final selection = SelectionResult(
+        mode: SelectionMode.affected,
+        packages: {
+          'packages/core': ['test/behavior_test.dart'],
+        },
+        reason: 'test',
+      );
+      final commands = <List<String>>[];
+      final code = await runSelectedTests(
+        selection,
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              commands.add(arguments);
+              expect(executable, 'fvm');
+              expect(workingDirectory, endsWith('packages/core'));
+
+              return arguments.contains('coverage:format_coverage') ? 9 : 0;
+            },
+        packageRoot: 'packages/core',
+        totalShards: 2,
+        shardIndex: 1,
+        coverage: true,
+      );
+
+      expect(code, 9);
+      expect(
+        commands.firstOrNull,
+        containsAll([
+          '--coverage=coverage',
+          '--total-shards=2',
+          '--shard-index=1',
+        ]),
+      );
+      expect(commands.last, containsAll(['run', 'coverage:format_coverage']));
+    },
+  );
+
+  test(
+    'runner rejects an unselected package and invalid shard before launch',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final selection = SelectionResult(
+        mode: SelectionMode.affected,
+        packages: {
+          'packages/core': ['test/behavior_test.dart'],
+        },
+        reason: 'test',
+      );
+      var launches = 0;
+      Future<int> launcher({
+        required String executable,
+        required List<String> arguments,
+        required String workingDirectory,
+      }) async {
+        expect(executable, 'fvm');
+        expect(arguments, isEmpty);
+        expect(workingDirectory, endsWith('packages/core'));
+        launches++;
+
+        return 0;
+      }
+
+      expect(
+        await runSelectedTests(
+          selection,
+          rootPath: root.path,
+          launcher: launcher,
+          packageRoot: 'packages/missing',
+        ),
+        isNonZero,
+      );
+      expect(
+        await runSelectedTests(
+          selection,
+          rootPath: root.path,
+          launcher: launcher,
+          totalShards: 2,
+          shardIndex: 2,
+        ),
+        isNonZero,
+      );
+      expect(launches, 0);
+    },
+  );
 
   test('Serverpod runner limits paths to supported subtrees', () async {
     final root = await _runnerFixture(serverpod: true);

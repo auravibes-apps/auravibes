@@ -315,46 +315,92 @@ typedef ProcessLauncher =
       required String workingDirectory,
     });
 
+/// One GitHub Actions matrix row for a selected package test group.
+class TestMatrixEntry {
+  const TestMatrixEntry({
+    required this.package,
+    required this.shardIndex,
+    required this.totalShards,
+    required this.artifact,
+  });
+
+  final String package;
+  final int shardIndex;
+  final int totalShards;
+  final String artifact;
+
+  Map<String, Object> toJson() => {
+    'package': package,
+    'shardIndex': shardIndex,
+    'totalShards': totalShards,
+    'artifact': artifact,
+  };
+}
+
+/// Builds a GitHub Actions matrix without changing the selection manifest.
+Future<Map<String, Object>> buildTestMatrix(
+  SelectionResult selection, {
+  required String rootPath,
+  required String shardPackage,
+  required int shardCount,
+}) async {
+  if (shardCount < 1) {
+    throw const FormatException('Shard count must be positive');
+  }
+  if (selection.mode == SelectionMode.none) {
+    return const {'include': <Object>[]};
+  }
+
+  final groups = await _testGroups(selection, rootPath: rootPath);
+  final entries = <TestMatrixEntry>[];
+  for (final group in groups) {
+    final totalShards = group.package.relativeRoot == shardPackage
+        ? shardCount.clamp(1, group.paths.length)
+        : 1;
+    final artifactBase = _artifactBase(group.package.relativeRoot);
+    for (var shardIndex = 0; shardIndex < totalShards; shardIndex++) {
+      entries.add(
+        TestMatrixEntry(
+          package: group.package.relativeRoot,
+          shardIndex: shardIndex,
+          totalShards: totalShards,
+          artifact: '$artifactBase-$shardIndex',
+        ),
+      );
+    }
+  }
+
+  return {'include': entries.map((entry) => entry.toJson()).toList()};
+}
+
 /// Contract entry point for running a selected result.
 Future<int> runSelectedTests(
   SelectionResult selection, {
   required String rootPath,
   ProcessLauncher? launcher,
   bool dryRun = false,
+  String? packageRoot,
+  int? totalShards,
+  int? shardIndex,
+  bool coverage = false,
 }) async {
   if (selection.mode == SelectionMode.none) return 0;
   try {
-    final packages = await _loadPackages(rootPath);
-    final groups = <_TestGroup>[];
-    if (selection.mode == SelectionMode.full) {
-      for (final package in packages) {
-        final paths = await _testFiles(package);
-        if (paths.isNotEmpty) {
-          final _ = groups.add(_TestGroup(package, paths));
-        }
-      }
-    } else {
-      for (final entry in selection.packages.entries) {
-        final package = packages.firstWhere(
-          (candidate) => candidate.relativeRoot == _normalizePath(entry.key),
-          orElse: () => throw FormatException('Unknown package: ${entry.key}'),
-        );
-        final paths = <String>[];
-        for (final path in entry.value) {
-          final _ = paths.add(await _validateTestPath(package, path));
-        }
-        if (paths.isNotEmpty) {
-          final _ = groups.add(_TestGroup(package, paths));
-        }
-      }
-    }
+    final groups = await _testGroups(selection, rootPath: rootPath);
+    final selectedGroups = packageRoot == null
+        ? groups
+        : _singlePackageGroup(groups, packageRoot);
+    final shard = _Shard.fromOptions(
+      totalShards: totalShards,
+      shardIndex: shardIndex,
+    );
     final launch = launcher ?? _launchProcess;
     var firstFailure = 0;
-    for (var index = 0; index < groups.length; index += 2) {
-      final batch = groups.skip(index).take(2);
+    for (var index = 0; index < selectedGroups.length; index += 2) {
+      final batch = selectedGroups.skip(index).take(2);
       final results = await Future.wait(
         batch.map((group) async {
-          final command = _command(group);
+          final command = _command(group, shard: shard, coverage: coverage);
           if (dryRun) {
             stdout.writeln(
               [command.executable, ...command.arguments].join(' '),
@@ -363,9 +409,19 @@ Future<int> runSelectedTests(
             return 0;
           }
           try {
-            return await launch(
+            final testExitCode = await launch(
               executable: command.executable,
               arguments: command.arguments,
+              workingDirectory: group.package.absoluteRoot,
+            );
+            if (testExitCode != 0 || !coverage) return testExitCode;
+
+            final coverageCommand = _coverageCommand(group);
+            if (coverageCommand == null) return 0;
+
+            return await launch(
+              executable: coverageCommand.executable,
+              arguments: coverageCommand.arguments,
               workingDirectory: group.package.absoluteRoot,
             );
           } on Object catch (_) {
@@ -385,6 +441,60 @@ Future<int> runSelectedTests(
     return 2;
   }
 }
+
+Future<List<_TestGroup>> _testGroups(
+  SelectionResult selection, {
+  required String rootPath,
+}) async {
+  final packages = await _loadPackages(rootPath);
+  final groups = <_TestGroup>[];
+  if (selection.mode == SelectionMode.full) {
+    for (final package in packages) {
+      final paths = await _testFiles(package);
+      if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+    }
+
+    return groups;
+  }
+
+  for (final entry in selection.packages.entries) {
+    final package = packages.firstWhere(
+      (candidate) => candidate.relativeRoot == _normalizePath(entry.key),
+      orElse: () => throw FormatException('Unknown package: ${entry.key}'),
+    );
+    final paths = <String>[];
+    for (final path in entry.value) {
+      paths.add(await _validateTestPath(package, path));
+    }
+    if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+  }
+
+  return groups;
+}
+
+List<_TestGroup> _singlePackageGroup(
+  List<_TestGroup> groups,
+  String packageRoot,
+) {
+  final normalized = _normalizePath(packageRoot);
+  if (normalized.isEmpty ||
+      normalized.startsWith('/') ||
+      normalized.contains(r'\')) {
+    throw const FormatException('Invalid package root');
+  }
+  final group = groups.where(
+    (candidate) => candidate.package.relativeRoot == normalized,
+  );
+  if (group.length != 1) {
+    throw FormatException('Package is not selected: $packageRoot');
+  }
+
+  return group.toList(growable: false);
+}
+
+String _artifactBase(String packageRoot) => packageRoot
+    .replaceAll(RegExp('[^a-zA-Z0-9]+'), '-')
+    .replaceAll(RegExp(r'^-+|-+$'), '');
 
 Future<SelectionResult> selectRepository({
   required String rootPath,
@@ -460,7 +570,14 @@ Future<void> main(List<String> args) async {
         ).writeAsString(jsonEncode(result.toJson()));
         stderr.writeln('${result.mode.name}: ${result.reason}');
       case 'run':
-        _checkOptions(options, const {'manifest', 'dry-run'});
+        _checkOptions(options, const {
+          'manifest',
+          'dry-run',
+          'package',
+          'total-shards',
+          'shard-index',
+          'coverage',
+        });
         final result = SelectionResult.fromJson(
           jsonDecode(
             await File(_requiredOption(options, 'manifest')).readAsString(),
@@ -470,6 +587,31 @@ Future<void> main(List<String> args) async {
           result,
           rootPath: Directory.current.path,
           dryRun: options.containsKey('dry-run'),
+          packageRoot: options['package'],
+          totalShards: _optionalInt(options, 'total-shards'),
+          shardIndex: _optionalInt(options, 'shard-index'),
+          coverage: options.containsKey('coverage'),
+        );
+      case 'matrix':
+        _checkOptions(options, const {
+          'manifest',
+          'shard-package',
+          'shard-count',
+        });
+        final result = SelectionResult.fromJson(
+          jsonDecode(
+            await File(_requiredOption(options, 'manifest')).readAsString(),
+          ),
+        );
+        stdout.writeln(
+          jsonEncode(
+            await buildTestMatrix(
+              result,
+              rootPath: Directory.current.path,
+              shardPackage: _requiredOption(options, 'shard-package'),
+              shardCount: _requiredInt(options, 'shard-count'),
+            ),
+          ),
         );
       default:
         throw FormatException('Unknown command: ${args.firstOrNull}');
@@ -499,6 +641,27 @@ class _TestGroup {
   _TestGroup(this.package, this.paths);
   final _Package package;
   final List<String> paths;
+}
+
+class _Shard {
+  const _Shard({required this.total, required this.index});
+
+  factory _Shard.fromOptions({int? totalShards, int? shardIndex}) {
+    if (totalShards == null && shardIndex == null) {
+      return const _Shard(total: 1, index: 0);
+    }
+    if (totalShards == null || shardIndex == null || totalShards < 1) {
+      throw const FormatException('Both valid shard options are required');
+    }
+    if (shardIndex < 0 || shardIndex >= totalShards) {
+      throw const FormatException('Shard index is outside the shard count');
+    }
+
+    return _Shard(total: totalShards, index: shardIndex);
+  }
+
+  final int total;
+  final int index;
 }
 
 class _Command {
@@ -632,15 +795,37 @@ bool _allowedTestPath(String path, bool serverpod) =>
         path.startsWith('test/features/') ||
         path.startsWith('test/migrations/'));
 
-_Command _command(_TestGroup group) => _Command('fvm', [
+_Command _command(
+  _TestGroup group, {
+  required _Shard shard,
+  required bool coverage,
+}) => _Command('fvm', [
   if (group.package.flutter) 'flutter' else 'dart',
   'test',
   '--exclude-tags=integration',
+  if (coverage && group.package.flutter) '--coverage',
+  if (coverage && !group.package.flutter) '--coverage=coverage',
   '--concurrency=2',
   '--timeout=30s',
   '--reporter=compact',
+  if (shard.total > 1) '--total-shards=${shard.total}',
+  if (shard.total > 1) '--shard-index=${shard.index}',
   ...group.paths,
 ]);
+
+_Command? _coverageCommand(_TestGroup group) {
+  if (group.package.flutter) return null;
+
+  return _Command('fvm', [
+    'dart',
+    'run',
+    'coverage:format_coverage',
+    '--lcov',
+    '--in=coverage',
+    '--out=coverage/lcov.info',
+    '--report-on=lib',
+  ]);
+}
 
 Future<int> _launchProcess({
   required String executable,
@@ -684,8 +869,8 @@ Map<String, String> _options(Iterable<String> arguments) {
   final values = arguments.toList();
   for (var index = 0; index < values.length; index++) {
     final argument = values[index];
-    if (argument == '--dry-run') {
-      options['dry-run'] = '';
+    if (argument == '--dry-run' || argument == '--coverage') {
+      options[argument._slice(2)] = '';
     } else if (argument.startsWith('--') && index + 1 < values.length) {
       options[argument._slice(2)] = values[++index];
     } else {
@@ -710,6 +895,22 @@ String _requiredOption(Map<String, String> options, String key) {
   }
 
   return value;
+}
+
+int _requiredInt(Map<String, String> options, String key) {
+  final value = int.tryParse(_requiredOption(options, key));
+  if (value == null) throw FormatException('Invalid option: --$key');
+
+  return value;
+}
+
+int? _optionalInt(Map<String, String> options, String key) {
+  final value = options[key];
+  if (value == null) return null;
+  final parsed = int.tryParse(value);
+  if (parsed == null) throw FormatException('Invalid option: --$key');
+
+  return parsed;
 }
 
 String _relativePath(String root, String path) {
