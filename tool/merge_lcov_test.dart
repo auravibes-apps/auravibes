@@ -94,6 +94,34 @@ end_of_record
     },
   );
 
+  test('accepts CRLF reports', () async {
+    final root = await Directory.systemTemp.createTemp('merge-lcov-');
+    addTearDown(() => root.delete(recursive: true));
+    final artifacts = Directory('${root.path}/artifacts')..createSync();
+    await _writeReport(
+      artifacts,
+      name: 'crlf',
+      packageRoot: 'packages/core',
+      report: 'SF:lib/value.dart\r\nDA:1,1\r\nend_of_record\r\n',
+    );
+
+    final output = '${root.path}/coverage/lcov.info';
+    await mergeLcovReports(
+      inputRoot: artifacts.path,
+      outputPath: output,
+      repositoryRoot: root.path,
+      expectedReports: 1,
+    );
+
+    expect(await File(output).readAsString(), '''
+SF:packages/core/lib/value.dart
+DA:1,1
+LF:1
+LH:1
+end_of_record
+''');
+  });
+
   test('rejects missing reports and non-repository source paths', () async {
     final root = await Directory.systemTemp.createTemp('merge-lcov-');
     addTearDown(() => root.delete(recursive: true));
@@ -128,6 +156,58 @@ end_of_record
       throwsFormatException,
     );
   });
+
+  test('rejects Windows absolute package roots', () async {
+    final root = await Directory.systemTemp.createTemp('merge-lcov-');
+    addTearDown(() => root.delete(recursive: true));
+    final artifacts = Directory('${root.path}/artifacts')..createSync();
+    await _writeReport(
+      artifacts,
+      name: 'windows-root',
+      packageRoot: r'C:\package',
+      report: '''
+SF:lib/value.dart
+DA:1,1
+end_of_record
+''',
+    );
+
+    final _ = await expectLater(
+      mergeLcovReports(
+        inputRoot: artifacts.path,
+        outputPath: '${root.path}/coverage/lcov.info',
+        repositoryRoot: root.path,
+        expectedReports: 1,
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('rejects Windows absolute source paths', () async {
+    final root = await Directory.systemTemp.createTemp('merge-lcov-');
+    addTearDown(() => root.delete(recursive: true));
+    final artifacts = Directory('${root.path}/artifacts')..createSync();
+    await _writeReport(
+      artifacts,
+      name: 'windows-source',
+      packageRoot: 'packages/core',
+      report: r'''
+SF:C:\temp\outside.dart
+DA:1,1
+end_of_record
+''',
+    );
+
+    final _ = await expectLater(
+      mergeLcovReports(
+        inputRoot: artifacts.path,
+        outputPath: '${root.path}/coverage/lcov.info',
+        repositoryRoot: root.path,
+        expectedReports: 1,
+      ),
+      throwsFormatException,
+    );
+  });
 }
 
 Future<void> _writeReport(
@@ -138,8 +218,7 @@ Future<void> _writeReport(
 }) async {
   final directory = Directory('${artifacts.path}/$name')
     ..createSync(recursive: true);
-  final _ = await File(
-    '${directory.path}/package-root',
-  ).writeAsString(packageRoot);
+  final _ = await File('${directory.path}/package-root')
+      .writeAsString(packageRoot);
   final _ = await File('${directory.path}/lcov.info').writeAsString(report);
 }

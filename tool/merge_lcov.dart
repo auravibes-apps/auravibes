@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 extension on String {
@@ -25,9 +26,8 @@ Future<void> mergeLcovReports({
 
   final records = <String, _Record>{};
   for (final report in reports) {
-    final packageRoot = await File(
-      '${report.parent.path}/package-root',
-    ).readAsString();
+    final packageRoot = await File('${report.parent.path}/package-root')
+        .readAsString();
     final normalizedPackageRoot = _packageRoot(packageRoot.trim());
     for (final record in _parse(await report.readAsString())) {
       final source = _sourcePath(
@@ -58,7 +58,7 @@ Future<List<File>> _reports(Directory inputRoot) async {
 
   final reports = <File>[];
   await for (final entity in inputRoot.list(recursive: true)) {
-    if (entity is File && entity.path.endsWith('/lcov.info')) {
+    if (entity is File && entity.uri.pathSegments.lastOrNull == 'lcov.info') {
       final metadata = File('${entity.parent.path}/package-root');
       if (!metadata.existsSync()) {
         throw FormatException(
@@ -75,7 +75,7 @@ Future<List<File>> _reports(Directory inputRoot) async {
 List<_Record> _parse(String report) {
   final records = <_Record>[];
   _Record? current;
-  for (final line in report.split('\n')) {
+  for (final line in const LineSplitter().convert(report)) {
     if (line.isEmpty || line.startsWith('TN:')) {
       continue;
     }
@@ -113,7 +113,7 @@ List<_Record> _parse(String report) {
 String _packageRoot(String value) {
   final normalized = value.replaceAll(r'\', '/');
   if (normalized.isEmpty ||
-      normalized.startsWith('/') ||
+      _isAbsolutePath(normalized) ||
       normalized.split('/').contains('..')) {
     throw const FormatException('Invalid coverage package root');
   }
@@ -126,9 +126,9 @@ String _sourcePath(
   required String packageRoot,
   required String repositoryRoot,
 }) {
-  final normalizedRoot = Directory(
-    repositoryRoot,
-  ).absolute.path.replaceAll(r'\', '/').replaceAll(RegExp(r'/+$'), '');
+  final normalizedRoot = Directory(repositoryRoot).absolute.path
+      .replaceAll(r'\', '/')
+      .replaceAll(RegExp(r'/+$'), '');
   var path = value.replaceAll(r'\', '/');
   if (path.startsWith('$normalizedRoot/')) {
     path = path._slice(normalizedRoot.length + 1);
@@ -137,13 +137,16 @@ String _sourcePath(
     path = '$packageRoot/$path';
   }
   if (path.startsWith('file:') ||
-      path.startsWith('/') ||
+      _isAbsolutePath(path) ||
       path.split('/').contains('..')) {
     throw FormatException('Non-repository coverage path: $value');
   }
 
   return path;
 }
+
+bool _isAbsolutePath(String path) =>
+    path.startsWith('/') || RegExp('^[A-Za-z]:/').hasMatch(path);
 
 bool _excluded(String path) =>
     path.endsWith('.g.dart') ||
@@ -153,7 +156,7 @@ bool _excluded(String path) =>
     path.startsWith('apps/auravibes_server/lib/src/generated/');
 
 class _Record {
-  _Record(this.source);
+  new(this.source);
 
   final String source;
   final lineHits = <int, int>{};
