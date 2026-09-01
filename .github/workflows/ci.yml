@@ -11,21 +11,74 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-jobs:
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+permissions:
+  contents: read
 
+jobs:
+  format:
+    name: format
+    runs-on: ubuntu-latest
     steps:
-      - name: 📚 Git Checkout
+      - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
           persist-credentials: false
 
-      - name: 🔧 Check FVM artifact drift
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Check formatting
+        run: melos run format:check
+
+      - name: Check import sorting
+        run: dart run import_sorter:main --exit-if-changed
+
+  analysis:
+    name: analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Analyze
+        run: melos analyze
+
+      - name: Test CI tools
+        run: dart test tool/changed_test_selector_test.dart tool/merge_lcov_test.dart
+
+  code-health:
+    name: code health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Check unused files
+        run: melos run unused:files --no-select
+
+      - name: Check unused code
+        run: melos run unused:code --no-select
+
+      - name: Check unnecessary nullable parameters
+        run: melos run unnecessary:nullable --no-select
+
+  integrity:
+    name: integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check FVM artifact drift
         run: |
           flutter_version="$(ruby -rjson -e 'puts JSON.parse(File.read(".fvmrc")).fetch("flutter")')"
           vscode_sdk_path="$(ruby -rjson -e 'puts JSON.parse(File.read(".vscode/settings.json")).fetch("dart.flutterSdkPath")')"
@@ -38,41 +91,9 @@ jobs:
             exit 1
           fi
 
-      - name: 🔧 Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action/config@c378498f1d1962d33039c3989411093ef8a17b2c # v3
-        id: fvm-config-action
+      - uses: ./.github/actions/setup-workspace
 
-      - name: 🔍 Detect Flutter channel
-        id: channel-detect
-        run: |
-          version="${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}"
-          if echo "$version" | grep -qE '\.pre$|\.dev\.|-beta\.'; then
-            echo "channel=beta" >> "$GITHUB_OUTPUT"
-          else
-            echo "channel=${{ steps.fvm-config-action.outputs.FLUTTER_CHANNEL }}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: 🐦 Setup Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ steps.fvm-config-action.outputs.FLUTTER_VERSION }}
-          channel: ${{ steps.channel-detect.outputs.channel }}
-          cache: true
-          cache-key: "flutter-:os:-:channel:-:version:-:arch:"
-          cache-path: "${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:"
-          pub-cache-key: "flutter-pub-:os:-:channel:-:version:-:arch:-:hash:"
-
-      - name: 🔗 Create FVM symlink for CI
-        run: |
-          mkdir -p .fvm
-          ln -sfn "$FLUTTER_ROOT" .fvm/flutter_sdk
-
-      - name: 📦 Bootstrap workspace
-        uses: bluefireteam/melos-action@b79b63bcd183f823740a7976cbdb4b0fc95a0eb8
-        with:
-          run-bootstrap: true
-
-      - name: 📦 Check dependency artifact drift
+      - name: Check dependency artifact drift
         run: |
           if ! git diff --quiet; then
             echo "::error::Dependency artifacts are out of date. Run 'fvm dart run melos bootstrap', then commit the resulting changes."
@@ -81,31 +102,13 @@ jobs:
             git diff --exit-code
           fi
 
-      - name: ✨ Check Formatting
-        run: melos run format:check
-
-      - name: 🕵️‍♂️ Analyze
-        run: melos analyze
-
-      - name: 🗑️ Check unused files
-        run: melos run unused:files --no-select
-
-      - name: 🗑️ Check unused code
-        run: melos run unused:code --no-select
-
-      - name: 🧹 Check unnecessary nullable parameters
-        run: melos run unnecessary:nullable --no-select
-
-      - name: 📦 Dependency Validation
+      - name: Validate dependencies
         run: dart run dependency_validator
 
-      - name: 📝 Import Sorting
-        run: dart run import_sorter:main --exit-if-changed
-
-      - name: 🛠️ Generate Code
+      - name: Generate code
         run: melos run generate --no-select
 
-      - name: 📦 Check generated artifact drift
+      - name: Check generated artifact drift
         run: |
           if ! git diff --quiet; then
             echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
@@ -114,71 +117,140 @@ jobs:
             git diff --exit-code
           fi
 
-      - name: 🧭 Determine test scope
-        id: test-scope
-        if: github.event_name == 'pull_request'
+  test-plan:
+    name: test plan
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      coverage-report-count: ${{ steps.plan.outputs.coverage-report-count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Determine test plan
+        id: plan
+        shell: bash
         run: |
           manifest="$RUNNER_TEMP/changed-tests.json"
-          if ! fvm dart run tool/changed_test_selector.dart select \
-            --base "${{ github.event.pull_request.base.sha }}" \
-            --head HEAD \
-            --output "$manifest"; then
-            printf '%s\n' '{"mode":"full","packages":{},"reason":"selector failed"}' > "$manifest"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if ! dart run tool/changed_test_selector.dart select \
+              --base "${{ github.event.pull_request.base.sha }}" \
+              --head HEAD \
+              --output "$manifest"; then
+              printf '%s\n' '{"mode":"full","packages":{},"reason":"selector failed"}' > "$manifest"
+            fi
+          else
+            printf '%s\n' '{"mode":"full","packages":{},"reason":"non-PR run"}' > "$manifest"
           fi
+
           mode="$(ruby -rjson -e 'puts JSON.parse(File.read(ARGV.fetch(0))).fetch("mode")' "$manifest")"
-          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          matrix="$(dart run tool/changed_test_selector.dart matrix \
+            --manifest "$manifest" \
+            --shard-package apps/auravibes_app \
+            --shard-count 3)"
+          report_count="$(ruby -rjson -e 'puts JSON.parse(ARGF.read).fetch("include").length' <<< "$matrix")"
 
-      - name: 🧪 Run affected tests
-        if: github.event_name == 'pull_request' && steps.test-scope.outputs.mode == 'affected'
-        run: fvm dart run tool/changed_test_selector.dart run --manifest "$RUNNER_TEMP/changed-tests.json"
+          {
+            echo "mode=$mode"
+            echo "matrix=$matrix"
+            echo "coverage-report-count=$report_count"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: 🧪 No affected tests
-        if: github.event_name == 'pull_request' && steps.test-scope.outputs.mode == 'none'
-        run: echo 'No workspace package tests are affected by this pull request.'
+      - name: Upload test plan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-plan
+          path: ${{ runner.temp }}/changed-tests.json
+          if-no-files-found: error
 
-      - name: 🧪 Run all tests with coverage
-        if: github.event_name != 'pull_request' || steps.test-scope.outputs.mode == 'full'
-        run: melos run test:ci --no-select
+  test:
+    name: test (${{ matrix.package }} shard ${{ matrix.shardIndex }})
+    needs: [integrity, test-plan]
+    if: ${{ needs.test-plan.outputs.mode != 'none' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.test-plan.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - name: 🧭 Merge LCOV reports for Sonar
-        if: github.event_name != 'pull_request' || steps.test-scope.outputs.mode == 'full'
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Download test plan
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: test-plan
+          path: ${{ runner.temp }}/test-plan
+
+      - name: Run selected tests
+        shell: bash
         run: |
-          ruby <<'RUBY'
-          package_dirs = Dir.glob('{apps,packages,widgetbook}/*')
-            .select { |path| File.directory?(File.join(path, 'test')) }
-          abort 'No tested workspace packages found' if package_dirs.empty?
+          coverage=()
+          if [ "${{ needs.test-plan.outputs.mode }}" = "full" ]; then
+            coverage=(--coverage)
+          fi
+          dart run tool/changed_test_selector.dart run \
+            --manifest "$RUNNER_TEMP/test-plan/changed-tests.json" \
+            --package "${{ matrix.package }}" \
+            --total-shards "${{ matrix.totalShards }}" \
+            --shard-index "${{ matrix.shardIndex }}" \
+            "${coverage[@]}"
 
-          reports = package_dirs.filter_map do |package_dir|
-            report = File.join(package_dir, 'coverage/lcov.info')
-            [package_dir, report] if File.file?(report)
-          end
+      - name: Prepare coverage artifact
+        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        shell: bash
+        run: |
+          output="$RUNNER_TEMP/coverage/${{ matrix.artifact }}"
+          mkdir -p "$output"
+          cp "${{ matrix.package }}/coverage/lcov.info" "$output/lcov.info"
+          printf '%s\n' "${{ matrix.package }}" > "$output/package-root"
 
-          merged = reports.flat_map do |package_dir, report|
-            records = File.read(report).split("end_of_record\n")
-            records.filter_map do |record|
-              lines = record.lines(chomp: true)
-              sf_index = lines.index { |line| line.start_with?('SF:') }
-              next if sf_index.nil?
+      - name: Upload coverage artifact
+        if: ${{ success() && needs.test-plan.outputs.mode == 'full' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-${{ matrix.artifact }}
+          path: ${{ runner.temp }}/coverage/${{ matrix.artifact }}
+          if-no-files-found: error
 
-              path = lines[sf_index].delete_prefix('SF:')
-              path = path.delete_prefix("#{Dir.pwd}/")
-              path = File.join(package_dir, path) if path.start_with?('lib/')
-              excluded = path.end_with?('.g.dart', '.freezed.dart', '.mocks.dart') ||
-                path.end_with?('/drift_worker.js') ||
-                path.start_with?('apps/auravibes_server/lib/src/generated/')
-              next if excluded
-              abort "Non-repository coverage path: #{path}" if path.start_with?('/')
+  coverage:
+    name: coverage and Sonar
+    needs: [test-plan, test]
+    if: ${{ always() && needs.test-plan.outputs.mode == 'full' && needs.test.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-              lines[sf_index] = "SF:#{path}"
-              "#{lines.join("\n")}\nend_of_record\n"
-            end
-          end
+      - uses: ./.github/actions/setup-workspace
 
-          Dir.mkdir('coverage') unless Dir.exist?('coverage')
-          File.write('coverage/lcov.info', merged.join)
-          RUBY
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: coverage-*
+          path: ${{ runner.temp }}/coverage-artifacts
+          merge-multiple: false
 
-      - name: 🔐 Check Sonar token availability
+      - name: Merge LCOV reports for Sonar
+        run: |
+          dart run tool/merge_lcov.dart \
+            --input-root "$RUNNER_TEMP/coverage-artifacts" \
+            --output coverage/lcov.info \
+            --expected-reports "${{ needs.test-plan.outputs.coverage-report-count }}"
+
+      - name: Check Sonar token availability
         id: check-sonar-token
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -189,8 +261,8 @@ jobs:
             echo "token_available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: ☁️ SonarCloud Scan
-        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) && (github.event_name != 'pull_request' || steps.test-scope.outputs.mode == 'full') }}
+      - name: SonarCloud Scan
+        if: ${{ steps.check-sonar-token.outputs.token_available == 'true' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
         uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -198,3 +270,16 @@ jobs:
           args: >
             -Dsonar.dart.lcov.reportPaths=coverage/lcov.info
             -Dsonar.scanner.skipJreProvisioning=true
+
+  ci-success:
+    name: ci success
+    if: ${{ always() }}
+    needs: [format, analysis, code-health, integrity, test-plan, test, coverage]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail for failed required checks
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+
+      - name: Confirm required checks
+        run: echo 'All required CI checks passed or were intentionally skipped.'
