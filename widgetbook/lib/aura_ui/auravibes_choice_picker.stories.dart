@@ -60,9 +60,19 @@ class const ChoicePickerDemo({
 
 class _ChoicePickerDemoState extends State<ChoicePickerDemo> {
   static const List<AuraChoiceOption<String>> _options = [
-    AuraChoiceOption(value: 'email', label: Text('Email')),
-    AuraChoiceOption(value: 'phone', label: Text('Phone')),
-    AuraChoiceOption(value: 'post', label: Text('Post'), disabled: true),
+    AuraChoiceOption(
+      value: 'email',
+      label: AuraText(style: .bodySmall, child: Text('Email')),
+    ),
+    AuraChoiceOption(
+      value: 'phone',
+      label: AuraText(style: .bodySmall, child: Text('Phone')),
+    ),
+    AuraChoiceOption(
+      value: 'post',
+      label: AuraText(style: .bodySmall, child: Text('Post')),
+      disabled: true,
+    ),
   ];
   List<String> _value = ['email'];
 
