@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'compaction_settings.dart';
@@ -9,6 +9,7 @@ part of 'compaction_settings.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $CompactionSettingsCopyWith<CompactionSettings> get copyWith => _$CompactionSett
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionSettings&&(identical(other.autoCompactionEnabled, autoCompactionEnabled) || other.autoCompactionEnabled == autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, usagePercentageThreshold) || other.usagePercentageThreshold == usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, remainingTokenThreshold) || other.remainingTokenThreshold == remainingTokenThreshold)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  final _this = this as CompactionSettings;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionSettings&&(identical(other.autoCompactionEnabled, _this.autoCompactionEnabled) || other.autoCompactionEnabled == _this.autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, _this.usagePercentageThreshold) || other.usagePercentageThreshold == _this.usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, _this.remainingTokenThreshold) || other.remainingTokenThreshold == _this.remainingTokenThreshold)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,autoCompactionEnabled,usagePercentageThreshold,remainingTokenThreshold,updatedAt);
+int get hashCode {
+  final _this = this as CompactionSettings;
+  return Object.hash(runtimeType,_this.autoCompactionEnabled,_this.usagePercentageThreshold,_this.remainingTokenThreshold,_this.updatedAt);
+}
 
 @override
 String toString() {
-  return 'CompactionSettings(autoCompactionEnabled: $autoCompactionEnabled, usagePercentageThreshold: $usagePercentageThreshold, remainingTokenThreshold: $remainingTokenThreshold, updatedAt: $updatedAt)';
+  final _this = this as CompactionSettings;
+  return 'CompactionSettings(autoCompactionEnabled: ${_this.autoCompactionEnabled}, usagePercentageThreshold: ${_this.usagePercentageThreshold}, remainingTokenThreshold: ${_this.remainingTokenThreshold}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -66,7 +72,7 @@ class _$CompactionSettingsCopyWithImpl<$Res>
 /// Create a copy of CompactionSettings
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? autoCompactionEnabled = null,Object? usagePercentageThreshold = null,Object? remainingTokenThreshold = null,Object? updatedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionSettings(
 autoCompactionEnabled: null == autoCompactionEnabled ? _self.autoCompactionEnabled : autoCompactionEnabled // ignore: cast_nullable_to_non_nullable
 as bool,usagePercentageThreshold: null == usagePercentageThreshold ? _self.usagePercentageThreshold : usagePercentageThreshold // ignore: cast_nullable_to_non_nullable
 as int,remainingTokenThreshold: null == remainingTokenThreshold ? _self.remainingTokenThreshold : remainingTokenThreshold // ignore: cast_nullable_to_non_nullable
@@ -233,16 +239,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionSettings&&(identical(other.autoCompactionEnabled, autoCompactionEnabled) || other.autoCompactionEnabled == autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, usagePercentageThreshold) || other.usagePercentageThreshold == usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, remainingTokenThreshold) || other.remainingTokenThreshold == remainingTokenThreshold)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionSettings&&(identical(other.autoCompactionEnabled, autoCompactionEnabled) || other.autoCompactionEnabled == autoCompactionEnabled)&&(identical(other.usagePercentageThreshold, usagePercentageThreshold) || other.usagePercentageThreshold == usagePercentageThreshold)&&(identical(other.remainingTokenThreshold, remainingTokenThreshold) || other.remainingTokenThreshold == remainingTokenThreshold)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,autoCompactionEnabled,usagePercentageThreshold,remainingTokenThreshold,updatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,autoCompactionEnabled,usagePercentageThreshold,remainingTokenThreshold,updatedAt);
+}
 
 @override
 String toString() {
-  return 'CompactionSettings(autoCompactionEnabled: $autoCompactionEnabled, usagePercentageThreshold: $usagePercentageThreshold, remainingTokenThreshold: $remainingTokenThreshold, updatedAt: $updatedAt)';
+    return 'CompactionSettings(autoCompactionEnabled: $autoCompactionEnabled, usagePercentageThreshold: $usagePercentageThreshold, remainingTokenThreshold: $remainingTokenThreshold, updatedAt: $updatedAt)';
 }
 
 
@@ -300,16 +308,21 @@ $ConversationPromptEstimateCopyWith<ConversationPromptEstimate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPromptEstimate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.selectedModelId, selectedModelId) || other.selectedModelId == selectedModelId)&&(identical(other.selectedProviderId, selectedProviderId) || other.selectedProviderId == selectedProviderId)&&(identical(other.estimatedPromptTokens, estimatedPromptTokens) || other.estimatedPromptTokens == estimatedPromptTokens)&&(identical(other.maxOutputTokens, maxOutputTokens) || other.maxOutputTokens == maxOutputTokens)&&(identical(other.contextLimit, contextLimit) || other.contextLimit == contextLimit)&&(identical(other.remainingTokens, remainingTokens) || other.remainingTokens == remainingTokens)&&(identical(other.usagePercentage, usagePercentage) || other.usagePercentage == usagePercentage));
+  final _this = this as ConversationPromptEstimate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationPromptEstimate&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.selectedModelId, _this.selectedModelId) || other.selectedModelId == _this.selectedModelId)&&(identical(other.selectedProviderId, _this.selectedProviderId) || other.selectedProviderId == _this.selectedProviderId)&&(identical(other.estimatedPromptTokens, _this.estimatedPromptTokens) || other.estimatedPromptTokens == _this.estimatedPromptTokens)&&(identical(other.maxOutputTokens, _this.maxOutputTokens) || other.maxOutputTokens == _this.maxOutputTokens)&&(identical(other.contextLimit, _this.contextLimit) || other.contextLimit == _this.contextLimit)&&(identical(other.remainingTokens, _this.remainingTokens) || other.remainingTokens == _this.remainingTokens)&&(identical(other.usagePercentage, _this.usagePercentage) || other.usagePercentage == _this.usagePercentage));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,selectedModelId,selectedProviderId,estimatedPromptTokens,maxOutputTokens,contextLimit,remainingTokens,usagePercentage);
+int get hashCode {
+  final _this = this as ConversationPromptEstimate;
+  return Object.hash(runtimeType,_this.conversationId,_this.selectedModelId,_this.selectedProviderId,_this.estimatedPromptTokens,_this.maxOutputTokens,_this.contextLimit,_this.remainingTokens,_this.usagePercentage);
+}
 
 @override
 String toString() {
-  return 'ConversationPromptEstimate(conversationId: $conversationId, selectedModelId: $selectedModelId, selectedProviderId: $selectedProviderId, estimatedPromptTokens: $estimatedPromptTokens, maxOutputTokens: $maxOutputTokens, contextLimit: $contextLimit, remainingTokens: $remainingTokens, usagePercentage: $usagePercentage)';
+  final _this = this as ConversationPromptEstimate;
+  return 'ConversationPromptEstimate(conversationId: ${_this.conversationId}, selectedModelId: ${_this.selectedModelId}, selectedProviderId: ${_this.selectedProviderId}, estimatedPromptTokens: ${_this.estimatedPromptTokens}, maxOutputTokens: ${_this.maxOutputTokens}, contextLimit: ${_this.contextLimit}, remainingTokens: ${_this.remainingTokens}, usagePercentage: ${_this.usagePercentage})';
 }
 
 
@@ -338,7 +351,7 @@ class _$ConversationPromptEstimateCopyWithImpl<$Res>
 /// Create a copy of ConversationPromptEstimate
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? selectedModelId = null,Object? selectedProviderId = null,Object? estimatedPromptTokens = null,Object? maxOutputTokens = null,Object? contextLimit = freezed,Object? remainingTokens = freezed,Object? usagePercentage = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationPromptEstimate(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,selectedModelId: null == selectedModelId ? _self.selectedModelId : selectedModelId // ignore: cast_nullable_to_non_nullable
 as String,selectedProviderId: null == selectedProviderId ? _self.selectedProviderId : selectedProviderId // ignore: cast_nullable_to_non_nullable
@@ -513,16 +526,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPromptEstimate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.selectedModelId, selectedModelId) || other.selectedModelId == selectedModelId)&&(identical(other.selectedProviderId, selectedProviderId) || other.selectedProviderId == selectedProviderId)&&(identical(other.estimatedPromptTokens, estimatedPromptTokens) || other.estimatedPromptTokens == estimatedPromptTokens)&&(identical(other.maxOutputTokens, maxOutputTokens) || other.maxOutputTokens == maxOutputTokens)&&(identical(other.contextLimit, contextLimit) || other.contextLimit == contextLimit)&&(identical(other.remainingTokens, remainingTokens) || other.remainingTokens == remainingTokens)&&(identical(other.usagePercentage, usagePercentage) || other.usagePercentage == usagePercentage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationPromptEstimate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.selectedModelId, selectedModelId) || other.selectedModelId == selectedModelId)&&(identical(other.selectedProviderId, selectedProviderId) || other.selectedProviderId == selectedProviderId)&&(identical(other.estimatedPromptTokens, estimatedPromptTokens) || other.estimatedPromptTokens == estimatedPromptTokens)&&(identical(other.maxOutputTokens, maxOutputTokens) || other.maxOutputTokens == maxOutputTokens)&&(identical(other.contextLimit, contextLimit) || other.contextLimit == contextLimit)&&(identical(other.remainingTokens, remainingTokens) || other.remainingTokens == remainingTokens)&&(identical(other.usagePercentage, usagePercentage) || other.usagePercentage == usagePercentage));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,selectedModelId,selectedProviderId,estimatedPromptTokens,maxOutputTokens,contextLimit,remainingTokens,usagePercentage);
+int get hashCode {
+    return Object.hash(runtimeType,conversationId,selectedModelId,selectedProviderId,estimatedPromptTokens,maxOutputTokens,contextLimit,remainingTokens,usagePercentage);
+}
 
 @override
 String toString() {
-  return 'ConversationPromptEstimate(conversationId: $conversationId, selectedModelId: $selectedModelId, selectedProviderId: $selectedProviderId, estimatedPromptTokens: $estimatedPromptTokens, maxOutputTokens: $maxOutputTokens, contextLimit: $contextLimit, remainingTokens: $remainingTokens, usagePercentage: $usagePercentage)';
+    return 'ConversationPromptEstimate(conversationId: $conversationId, selectedModelId: $selectedModelId, selectedProviderId: $selectedProviderId, estimatedPromptTokens: $estimatedPromptTokens, maxOutputTokens: $maxOutputTokens, contextLimit: $contextLimit, remainingTokens: $remainingTokens, usagePercentage: $usagePercentage)';
 }
 
 
@@ -584,16 +599,21 @@ $CompactionDecisionCopyWith<CompactionDecision> get copyWith => _$CompactionDeci
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionDecision&&(identical(other.shouldCompact, shouldCompact) || other.shouldCompact == shouldCompact)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.trigger, trigger) || other.trigger == trigger)&&(identical(other.estimate, estimate) || other.estimate == estimate)&&(identical(other.settings, settings) || other.settings == settings));
+  final _this = this as CompactionDecision;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionDecision&&(identical(other.shouldCompact, _this.shouldCompact) || other.shouldCompact == _this.shouldCompact)&&(identical(other.reason, _this.reason) || other.reason == _this.reason)&&(identical(other.trigger, _this.trigger) || other.trigger == _this.trigger)&&(identical(other.estimate, _this.estimate) || other.estimate == _this.estimate)&&(identical(other.settings, _this.settings) || other.settings == _this.settings));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,shouldCompact,reason,trigger,estimate,settings);
+int get hashCode {
+  final _this = this as CompactionDecision;
+  return Object.hash(runtimeType,_this.shouldCompact,_this.reason,_this.trigger,_this.estimate,_this.settings);
+}
 
 @override
 String toString() {
-  return 'CompactionDecision(shouldCompact: $shouldCompact, reason: $reason, trigger: $trigger, estimate: $estimate, settings: $settings)';
+  final _this = this as CompactionDecision;
+  return 'CompactionDecision(shouldCompact: ${_this.shouldCompact}, reason: ${_this.reason}, trigger: ${_this.trigger}, estimate: ${_this.estimate}, settings: ${_this.settings})';
 }
 
 
@@ -622,7 +642,7 @@ class _$CompactionDecisionCopyWithImpl<$Res>
 /// Create a copy of CompactionDecision
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? shouldCompact = null,Object? reason = null,Object? trigger = null,Object? estimate = freezed,Object? settings = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionDecision(
 shouldCompact: null == shouldCompact ? _self.shouldCompact : shouldCompact // ignore: cast_nullable_to_non_nullable
 as bool,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
 as CompactionDecisionReason,trigger: null == trigger ? _self.trigger : trigger // ignore: cast_nullable_to_non_nullable
@@ -815,16 +835,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionDecision&&(identical(other.shouldCompact, shouldCompact) || other.shouldCompact == shouldCompact)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.trigger, trigger) || other.trigger == trigger)&&(identical(other.estimate, estimate) || other.estimate == estimate)&&(identical(other.settings, settings) || other.settings == settings));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionDecision&&(identical(other.shouldCompact, shouldCompact) || other.shouldCompact == shouldCompact)&&(identical(other.reason, reason) || other.reason == reason)&&(identical(other.trigger, trigger) || other.trigger == trigger)&&(identical(other.estimate, estimate) || other.estimate == estimate)&&(identical(other.settings, settings) || other.settings == settings));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,shouldCompact,reason,trigger,estimate,settings);
+int get hashCode {
+    return Object.hash(runtimeType,shouldCompact,reason,trigger,estimate,settings);
+}
 
 @override
 String toString() {
-  return 'CompactionDecision(shouldCompact: $shouldCompact, reason: $reason, trigger: $trigger, estimate: $estimate, settings: $settings)';
+    return 'CompactionDecision(shouldCompact: $shouldCompact, reason: $reason, trigger: $trigger, estimate: $estimate, settings: $settings)';
 }
 
 
@@ -907,16 +929,21 @@ $CompactionRangeCopyWith<CompactionRange> get copyWith => _$CompactionRangeCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionRange&&(identical(other.fromMessageId, fromMessageId) || other.fromMessageId == fromMessageId)&&(identical(other.throughMessageId, throughMessageId) || other.throughMessageId == throughMessageId)&&const DeepCollectionEquality().equals(other.messageIds, messageIds)&&const DeepCollectionEquality().equals(other.keptTailMessageIds, keptTailMessageIds));
+  final _this = this as CompactionRange;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionRange&&(identical(other.fromMessageId, _this.fromMessageId) || other.fromMessageId == _this.fromMessageId)&&(identical(other.throughMessageId, _this.throughMessageId) || other.throughMessageId == _this.throughMessageId)&&const DeepCollectionEquality().equals(other.messageIds, _this.messageIds)&&const DeepCollectionEquality().equals(other.keptTailMessageIds, _this.keptTailMessageIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fromMessageId,throughMessageId,const DeepCollectionEquality().hash(messageIds),const DeepCollectionEquality().hash(keptTailMessageIds));
+int get hashCode {
+  final _this = this as CompactionRange;
+  return Object.hash(runtimeType,_this.fromMessageId,_this.throughMessageId,const DeepCollectionEquality().hash(_this.messageIds),const DeepCollectionEquality().hash(_this.keptTailMessageIds));
+}
 
 @override
 String toString() {
-  return 'CompactionRange(fromMessageId: $fromMessageId, throughMessageId: $throughMessageId, messageIds: $messageIds, keptTailMessageIds: $keptTailMessageIds)';
+  final _this = this as CompactionRange;
+  return 'CompactionRange(fromMessageId: ${_this.fromMessageId}, throughMessageId: ${_this.throughMessageId}, messageIds: ${_this.messageIds}, keptTailMessageIds: ${_this.keptTailMessageIds})';
 }
 
 
@@ -945,7 +972,7 @@ class _$CompactionRangeCopyWithImpl<$Res>
 /// Create a copy of CompactionRange
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? fromMessageId = null,Object? throughMessageId = null,Object? messageIds = null,Object? keptTailMessageIds = null,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionRange(
 fromMessageId: null == fromMessageId ? _self.fromMessageId : fromMessageId // ignore: cast_nullable_to_non_nullable
 as String,throughMessageId: null == throughMessageId ? _self.throughMessageId : throughMessageId // ignore: cast_nullable_to_non_nullable
 as String,messageIds: null == messageIds ? _self.messageIds : messageIds // ignore: cast_nullable_to_non_nullable
@@ -1091,7 +1118,7 @@ return $default(_that.fromMessageId,_that.throughMessageId,_that.messageIds,_tha
 @JsonSerializable()
 
 class _CompactionRange extends CompactionRange {
-  const _CompactionRange({required this.fromMessageId, required this.throughMessageId, required final  List<String> messageIds, required final  List<String> keptTailMessageIds}): _messageIds = messageIds,_keptTailMessageIds = keptTailMessageIds,super._();
+  const _CompactionRange({required this.fromMessageId, required this.throughMessageId, required  List<String> messageIds, required  List<String> keptTailMessageIds}): _messageIds = messageIds,_keptTailMessageIds = keptTailMessageIds,super._();
   factory _CompactionRange.fromJson(Map<String, dynamic> json) => _$CompactionRangeFromJson(json);
 
 @override final  String fromMessageId;
@@ -1124,16 +1151,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionRange&&(identical(other.fromMessageId, fromMessageId) || other.fromMessageId == fromMessageId)&&(identical(other.throughMessageId, throughMessageId) || other.throughMessageId == throughMessageId)&&const DeepCollectionEquality().equals(other._messageIds, _messageIds)&&const DeepCollectionEquality().equals(other._keptTailMessageIds, _keptTailMessageIds));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionRange&&(identical(other.fromMessageId, fromMessageId) || other.fromMessageId == fromMessageId)&&(identical(other.throughMessageId, throughMessageId) || other.throughMessageId == throughMessageId)&&const DeepCollectionEquality().equals(other.messageIds, _messageIds)&&const DeepCollectionEquality().equals(other.keptTailMessageIds, _keptTailMessageIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,fromMessageId,throughMessageId,const DeepCollectionEquality().hash(_messageIds),const DeepCollectionEquality().hash(_keptTailMessageIds));
+int get hashCode {
+    return Object.hash(runtimeType,fromMessageId,throughMessageId,const DeepCollectionEquality().hash(_messageIds),const DeepCollectionEquality().hash(_keptTailMessageIds));
+}
 
 @override
 String toString() {
-  return 'CompactionRange(fromMessageId: $fromMessageId, throughMessageId: $throughMessageId, messageIds: $messageIds, keptTailMessageIds: $keptTailMessageIds)';
+    return 'CompactionRange(fromMessageId: $fromMessageId, throughMessageId: $throughMessageId, messageIds: $messageIds, keptTailMessageIds: $keptTailMessageIds)';
 }
 
 
@@ -1191,16 +1220,21 @@ $CompactionExecutionStateCopyWith<CompactionExecutionState> get copyWith => _$Co
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionExecutionState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.trigger, trigger) || other.trigger == trigger)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.status, status) || other.status == status));
+  final _this = this as CompactionExecutionState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CompactionExecutionState&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.trigger, _this.trigger) || other.trigger == _this.trigger)&&(identical(other.startedAt, _this.startedAt) || other.startedAt == _this.startedAt)&&(identical(other.status, _this.status) || other.status == _this.status));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,trigger,startedAt,status);
+int get hashCode {
+  final _this = this as CompactionExecutionState;
+  return Object.hash(runtimeType,_this.conversationId,_this.trigger,_this.startedAt,_this.status);
+}
 
 @override
 String toString() {
-  return 'CompactionExecutionState(conversationId: $conversationId, trigger: $trigger, startedAt: $startedAt, status: $status)';
+  final _this = this as CompactionExecutionState;
+  return 'CompactionExecutionState(conversationId: ${_this.conversationId}, trigger: ${_this.trigger}, startedAt: ${_this.startedAt}, status: ${_this.status})';
 }
 
 
@@ -1229,7 +1263,7 @@ class _$CompactionExecutionStateCopyWithImpl<$Res>
 /// Create a copy of CompactionExecutionState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? trigger = null,Object? startedAt = null,Object? status = null,}) {
-  return _then(_self.copyWith(
+  return _then(CompactionExecutionState(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,trigger: null == trigger ? _self.trigger : trigger // ignore: cast_nullable_to_non_nullable
 as CompactionTrigger,startedAt: null == startedAt ? _self.startedAt : startedAt // ignore: cast_nullable_to_non_nullable
@@ -1396,16 +1430,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionExecutionState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.trigger, trigger) || other.trigger == trigger)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.status, status) || other.status == status));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _CompactionExecutionState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.trigger, trigger) || other.trigger == trigger)&&(identical(other.startedAt, startedAt) || other.startedAt == startedAt)&&(identical(other.status, status) || other.status == status));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,trigger,startedAt,status);
+int get hashCode {
+    return Object.hash(runtimeType,conversationId,trigger,startedAt,status);
+}
 
 @override
 String toString() {
-  return 'CompactionExecutionState(conversationId: $conversationId, trigger: $trigger, startedAt: $startedAt, status: $status)';
+    return 'CompactionExecutionState(conversationId: $conversationId, trigger: $trigger, startedAt: $startedAt, status: $status)';
 }
 
 
@@ -1463,16 +1499,21 @@ $ContextOverflowRetryStateCopyWith<ContextOverflowRetryState> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ContextOverflowRetryState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.assistantRequestId, assistantRequestId) || other.assistantRequestId == assistantRequestId)&&(identical(other.hasRetriedAfterCompaction, hasRetriedAfterCompaction) || other.hasRetriedAfterCompaction == hasRetriedAfterCompaction));
+  final _this = this as ContextOverflowRetryState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ContextOverflowRetryState&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.assistantRequestId, _this.assistantRequestId) || other.assistantRequestId == _this.assistantRequestId)&&(identical(other.hasRetriedAfterCompaction, _this.hasRetriedAfterCompaction) || other.hasRetriedAfterCompaction == _this.hasRetriedAfterCompaction));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,assistantRequestId,hasRetriedAfterCompaction);
+int get hashCode {
+  final _this = this as ContextOverflowRetryState;
+  return Object.hash(runtimeType,_this.conversationId,_this.assistantRequestId,_this.hasRetriedAfterCompaction);
+}
 
 @override
 String toString() {
-  return 'ContextOverflowRetryState(conversationId: $conversationId, assistantRequestId: $assistantRequestId, hasRetriedAfterCompaction: $hasRetriedAfterCompaction)';
+  final _this = this as ContextOverflowRetryState;
+  return 'ContextOverflowRetryState(conversationId: ${_this.conversationId}, assistantRequestId: ${_this.assistantRequestId}, hasRetriedAfterCompaction: ${_this.hasRetriedAfterCompaction})';
 }
 
 
@@ -1501,7 +1542,7 @@ class _$ContextOverflowRetryStateCopyWithImpl<$Res>
 /// Create a copy of ContextOverflowRetryState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? conversationId = null,Object? assistantRequestId = null,Object? hasRetriedAfterCompaction = null,}) {
-  return _then(_self.copyWith(
+  return _then(ContextOverflowRetryState(
 conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,assistantRequestId: null == assistantRequestId ? _self.assistantRequestId : assistantRequestId // ignore: cast_nullable_to_non_nullable
 as String,hasRetriedAfterCompaction: null == hasRetriedAfterCompaction ? _self.hasRetriedAfterCompaction : hasRetriedAfterCompaction // ignore: cast_nullable_to_non_nullable
@@ -1666,16 +1707,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ContextOverflowRetryState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.assistantRequestId, assistantRequestId) || other.assistantRequestId == assistantRequestId)&&(identical(other.hasRetriedAfterCompaction, hasRetriedAfterCompaction) || other.hasRetriedAfterCompaction == hasRetriedAfterCompaction));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ContextOverflowRetryState&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.assistantRequestId, assistantRequestId) || other.assistantRequestId == assistantRequestId)&&(identical(other.hasRetriedAfterCompaction, hasRetriedAfterCompaction) || other.hasRetriedAfterCompaction == hasRetriedAfterCompaction));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,assistantRequestId,hasRetriedAfterCompaction);
+int get hashCode {
+    return Object.hash(runtimeType,conversationId,assistantRequestId,hasRetriedAfterCompaction);
+}
 
 @override
 String toString() {
-  return 'ContextOverflowRetryState(conversationId: $conversationId, assistantRequestId: $assistantRequestId, hasRetriedAfterCompaction: $hasRetriedAfterCompaction)';
+    return 'ContextOverflowRetryState(conversationId: $conversationId, assistantRequestId: $assistantRequestId, hasRetriedAfterCompaction: $hasRetriedAfterCompaction)';
 }
 
 

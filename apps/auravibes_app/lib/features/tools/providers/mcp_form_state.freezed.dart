@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'mcp_form_state.dart';
@@ -9,6 +9,7 @@ part of 'mcp_form_state.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $McpFormStateCopyWith<McpFormState> get copyWith => _$McpFormStateCopyWithImpl<M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  final _this = this as McpFormState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpFormState&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.useHttp2, _this.useHttp2) || other.useHttp2 == _this.useHttp2)&&(identical(other.isSubmitting, _this.isSubmitting) || other.isSubmitting == _this.isSubmitting)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+int get hashCode {
+  final _this = this as McpFormState;
+  return Object.hash(runtimeType,_this.name,_this.description,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.useHttp2,_this.isSubmitting,_this.errorMessage);
+}
 
 @override
 String toString() {
-  return 'McpFormState(name: $name, description: $description, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, useHttp2: $useHttp2, isSubmitting: $isSubmitting, errorMessage: $errorMessage)';
+  final _this = this as McpFormState;
+  return 'McpFormState(name: ${_this.name}, description: ${_this.description}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, bearerToken: ${_this.bearerToken}, useHttp2: ${_this.useHttp2}, isSubmitting: ${_this.isSubmitting}, errorMessage: ${_this.errorMessage})';
 }
 
 
@@ -63,7 +69,7 @@ class _$McpFormStateCopyWithImpl<$Res>
 /// Create a copy of McpFormState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? description = null,Object? url = null,Object? transport = null,Object? authenticationType = null,Object? bearerToken = null,Object? useHttp2 = null,Object? isSubmitting = null,Object? errorMessage = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(McpFormState(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,description: null == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String,url: null == url ? _self.url : url // ignore: cast_nullable_to_non_nullable
@@ -237,16 +243,18 @@ _$McpFormStateCopyWith<_McpFormState> get copyWith => __$McpFormStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+int get hashCode {
+    return Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+}
 
 @override
 String toString() {
-  return 'McpFormState(name: $name, description: $description, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, useHttp2: $useHttp2, isSubmitting: $isSubmitting, errorMessage: $errorMessage)';
+    return 'McpFormState(name: $name, description: $description, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, useHttp2: $useHttp2, isSubmitting: $isSubmitting, errorMessage: $errorMessage)';
 }
 
 
