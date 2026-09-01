@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'add_model_provider_model.dart';
@@ -9,6 +9,7 @@ part of 'add_model_provider_model.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $AddModelProviderModelCopyWith<AddModelProviderModel> get copyWith => _$AddModel
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode));
+  final _this = this as AddModelProviderModel;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AddModelProviderModel&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.key, _this.key) || other.key == _this.key)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.authMode, _this.authMode) || other.authMode == _this.authMode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,modelId,key,url,authMode);
+int get hashCode {
+  final _this = this as AddModelProviderModel;
+  return Object.hash(runtimeType,_this.name,_this.modelId,_this.key,_this.url,_this.authMode);
+}
 
 @override
 String toString() {
-  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
+  final _this = this as AddModelProviderModel;
+  return 'AddModelProviderModel(name: ${_this.name}, modelId: ${_this.modelId}, key: ${_this.key}, url: ${_this.url}, authMode: ${_this.authMode})';
 }
 
 
@@ -63,7 +69,7 @@ class _$AddModelProviderModelCopyWithImpl<$Res>
 /// Create a copy of AddModelProviderModel
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? modelId = freezed,Object? key = freezed,Object? url = freezed,Object? authMode = null,}) {
-  return _then(_self.copyWith(
+  return _then(AddModelProviderModel(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,key: freezed == key ? _self.key : key // ignore: cast_nullable_to_non_nullable
@@ -229,16 +235,18 @@ _$AddModelProviderModelCopyWith<_AddModelProviderModel> get copyWith => __$AddMo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AddModelProviderModel&&(identical(other.name, name) || other.name == name)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.key, key) || other.key == key)&&(identical(other.url, url) || other.url == url)&&(identical(other.authMode, authMode) || other.authMode == authMode));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,modelId,key,url,authMode);
+int get hashCode {
+    return Object.hash(runtimeType,name,modelId,key,url,authMode);
+}
 
 @override
 String toString() {
-  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
+    return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
 }
 
 

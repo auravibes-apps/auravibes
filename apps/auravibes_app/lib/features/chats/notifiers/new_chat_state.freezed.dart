@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'new_chat_state.dart';
@@ -9,6 +9,7 @@ part of 'new_chat_state.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -27,16 +28,21 @@ $NewChatStateCopyWith<NewChatState> get copyWith => _$NewChatStateCopyWithImpl<N
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
+  final _this = this as NewChatState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NewChatState&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.providerId, _this.providerId) || other.providerId == _this.providerId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.isLoading, _this.isLoading) || other.isLoading == _this.isLoading));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+int get hashCode {
+  final _this = this as NewChatState;
+  return Object.hash(runtimeType,_this.modelId,_this.providerId,_this.agentId,_this.isLoading);
+}
 
 @override
 String toString() {
-  return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
+  final _this = this as NewChatState;
+  return 'NewChatState(modelId: ${_this.modelId}, providerId: ${_this.providerId}, agentId: ${_this.agentId}, isLoading: ${_this.isLoading})';
 }
 
 
@@ -65,7 +71,7 @@ class _$NewChatStateCopyWithImpl<$Res>
 /// Create a copy of NewChatState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? modelId = freezed,Object? providerId = freezed,Object? agentId = freezed,Object? isLoading = null,}) {
-  return _then(_self.copyWith(
+  return _then(NewChatState(
 modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,providerId: freezed == providerId ? _self.providerId : providerId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
@@ -231,16 +237,18 @@ _$NewChatStateCopyWith<_NewChatState> get copyWith => __$NewChatStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+int get hashCode {
+    return Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+}
 
 @override
 String toString() {
-  return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
+    return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
 }
 
 

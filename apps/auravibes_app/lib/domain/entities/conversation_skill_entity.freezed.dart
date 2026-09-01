@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'conversation_skill_entity.dart';
@@ -9,6 +9,7 @@ part of 'conversation_skill_entity.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -25,16 +26,21 @@ $ConversationSkillEntityCopyWith<ConversationSkillEntity> get copyWith => _$Conv
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationSkillEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.isLoaded, isLoaded) || other.isLoaded == isLoaded)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceSkillId, workspaceSkillId) || other.workspaceSkillId == workspaceSkillId)&&(identical(other.appSkillIdentifier, appSkillIdentifier) || other.appSkillIdentifier == appSkillIdentifier));
+  final _this = this as ConversationSkillEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationSkillEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.isLoaded, _this.isLoaded) || other.isLoaded == _this.isLoaded)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.workspaceSkillId, _this.workspaceSkillId) || other.workspaceSkillId == _this.workspaceSkillId)&&(identical(other.appSkillIdentifier, _this.appSkillIdentifier) || other.appSkillIdentifier == _this.appSkillIdentifier));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,conversationId,isLoaded,createdAt,updatedAt,workspaceSkillId,appSkillIdentifier);
+int get hashCode {
+  final _this = this as ConversationSkillEntity;
+  return Object.hash(runtimeType,_this.id,_this.conversationId,_this.isLoaded,_this.createdAt,_this.updatedAt,_this.workspaceSkillId,_this.appSkillIdentifier);
+}
 
 @override
 String toString() {
-  return 'ConversationSkillEntity(id: $id, conversationId: $conversationId, isLoaded: $isLoaded, createdAt: $createdAt, updatedAt: $updatedAt, workspaceSkillId: $workspaceSkillId, appSkillIdentifier: $appSkillIdentifier)';
+  final _this = this as ConversationSkillEntity;
+  return 'ConversationSkillEntity(id: ${_this.id}, conversationId: ${_this.conversationId}, isLoaded: ${_this.isLoaded}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, workspaceSkillId: ${_this.workspaceSkillId}, appSkillIdentifier: ${_this.appSkillIdentifier})';
 }
 
 
@@ -63,7 +69,7 @@ class _$ConversationSkillEntityCopyWithImpl<$Res>
 /// Create a copy of ConversationSkillEntity
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? conversationId = null,Object? isLoaded = null,Object? createdAt = null,Object? updatedAt = null,Object? workspaceSkillId = freezed,Object? appSkillIdentifier = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ConversationSkillEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,conversationId: null == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String,isLoaded: null == isLoaded ? _self.isLoaded : isLoaded // ignore: cast_nullable_to_non_nullable
@@ -233,16 +239,18 @@ _$ConversationSkillEntityCopyWith<_ConversationSkillEntity> get copyWith => __$C
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationSkillEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.isLoaded, isLoaded) || other.isLoaded == isLoaded)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceSkillId, workspaceSkillId) || other.workspaceSkillId == workspaceSkillId)&&(identical(other.appSkillIdentifier, appSkillIdentifier) || other.appSkillIdentifier == appSkillIdentifier));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationSkillEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.isLoaded, isLoaded) || other.isLoaded == isLoaded)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.workspaceSkillId, workspaceSkillId) || other.workspaceSkillId == workspaceSkillId)&&(identical(other.appSkillIdentifier, appSkillIdentifier) || other.appSkillIdentifier == appSkillIdentifier));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,conversationId,isLoaded,createdAt,updatedAt,workspaceSkillId,appSkillIdentifier);
+int get hashCode {
+    return Object.hash(runtimeType,id,conversationId,isLoaded,createdAt,updatedAt,workspaceSkillId,appSkillIdentifier);
+}
 
 @override
 String toString() {
-  return 'ConversationSkillEntity(id: $id, conversationId: $conversationId, isLoaded: $isLoaded, createdAt: $createdAt, updatedAt: $updatedAt, workspaceSkillId: $workspaceSkillId, appSkillIdentifier: $appSkillIdentifier)';
+    return 'ConversationSkillEntity(id: $id, conversationId: $conversationId, isLoaded: $isLoaded, createdAt: $createdAt, updatedAt: $updatedAt, workspaceSkillId: $workspaceSkillId, appSkillIdentifier: $appSkillIdentifier)';
 }
 
 

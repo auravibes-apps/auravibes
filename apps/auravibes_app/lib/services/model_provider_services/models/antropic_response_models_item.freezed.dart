@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'antropic_response_models_item.dart';
@@ -9,6 +9,7 @@ part of 'antropic_response_models_item.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -28,16 +29,21 @@ $AntropicResponseModelsItemCopyWith<AntropicResponseModelsItem> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsItem&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  final _this = this as AntropicResponseModelsItem;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsItem&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,displayName,id,type,createdAt);
+int get hashCode {
+  final _this = this as AntropicResponseModelsItem;
+  return Object.hash(runtimeType,_this.displayName,_this.id,_this.type,_this.createdAt);
+}
 
 @override
 String toString() {
-  return 'AntropicResponseModelsItem(displayName: $displayName, id: $id, type: $type, createdAt: $createdAt)';
+  final _this = this as AntropicResponseModelsItem;
+  return 'AntropicResponseModelsItem(displayName: ${_this.displayName}, id: ${_this.id}, type: ${_this.type}, createdAt: ${_this.createdAt})';
 }
 
 
@@ -66,7 +72,7 @@ class _$AntropicResponseModelsItemCopyWithImpl<$Res>
 /// Create a copy of AntropicResponseModelsItem
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? displayName = null,Object? id = null,Object? type = null,Object? createdAt = null,}) {
-  return _then(_self.copyWith(
+  return _then(AntropicResponseModelsItem(
 displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
@@ -233,16 +239,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AntropicResponseModelsItem&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AntropicResponseModelsItem&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.id, id) || other.id == id)&&(identical(other.type, type) || other.type == type)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,displayName,id,type,createdAt);
+int get hashCode {
+    return Object.hash(runtimeType,displayName,id,type,createdAt);
+}
 
 @override
 String toString() {
-  return 'AntropicResponseModelsItem(displayName: $displayName, id: $id, type: $type, createdAt: $createdAt)';
+    return 'AntropicResponseModelsItem(displayName: $displayName, id: $id, type: $type, createdAt: $createdAt)';
 }
 
 
@@ -298,16 +306,21 @@ $AntropicResponseModelsErrorMessageCopyWith<AntropicResponseModelsErrorMessage> 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsErrorMessage&&(identical(other.message, message) || other.message == message)&&(identical(other.type, type) || other.type == type));
+  final _this = this as AntropicResponseModelsErrorMessage;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsErrorMessage&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.type, _this.type) || other.type == _this.type));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,type);
+int get hashCode {
+  final _this = this as AntropicResponseModelsErrorMessage;
+  return Object.hash(runtimeType,_this.message,_this.type);
+}
 
 @override
 String toString() {
-  return 'AntropicResponseModelsErrorMessage(message: $message, type: $type)';
+  final _this = this as AntropicResponseModelsErrorMessage;
+  return 'AntropicResponseModelsErrorMessage(message: ${_this.message}, type: ${_this.type})';
 }
 
 
@@ -336,7 +349,7 @@ class _$AntropicResponseModelsErrorMessageCopyWithImpl<$Res>
 /// Create a copy of AntropicResponseModelsErrorMessage
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? type = null,}) {
-  return _then(_self.copyWith(
+  return _then(AntropicResponseModelsErrorMessage(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
 as String,
@@ -496,16 +509,18 @@ _$AntropicResponseModelsErrorMessageCopyWith<_AntropicResponseModelsErrorMessage
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AntropicResponseModelsErrorMessage&&(identical(other.message, message) || other.message == message)&&(identical(other.type, type) || other.type == type));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AntropicResponseModelsErrorMessage&&(identical(other.message, message) || other.message == message)&&(identical(other.type, type) || other.type == type));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,message,type);
+int get hashCode {
+    return Object.hash(runtimeType,message,type);
+}
 
 @override
 String toString() {
-  return 'AntropicResponseModelsErrorMessage(message: $message, type: $type)';
+    return 'AntropicResponseModelsErrorMessage(message: $message, type: $type)';
 }
 
 
@@ -553,7 +568,7 @@ mixin _$AntropicResponseModels {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModels);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModels);
 }
 
 
@@ -562,7 +577,7 @@ int get hashCode => runtimeType.hashCode;
 
 @override
 String toString() {
-  return 'AntropicResponseModels()';
+    return 'AntropicResponseModels()';
 }
 
 
@@ -714,7 +729,7 @@ return error(_that.error,_that.requestId,_that.type);case _:
 
 @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)
 class AntropicResponseModelsData implements AntropicResponseModels {
-  const AntropicResponseModelsData({required final  List<AntropicResponseModelsItem> data, required this.firstId, required this.hasMore, required this.lastId}): _data = data;
+  const AntropicResponseModelsData({required  List<AntropicResponseModelsItem> data, required this.firstId, required this.hasMore, required this.lastId}): _data = data;
   
 
  final  List<AntropicResponseModelsItem> _data;
@@ -738,16 +753,18 @@ $AntropicResponseModelsDataCopyWith<AntropicResponseModelsData> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsData&&const DeepCollectionEquality().equals(other._data, _data)&&(identical(other.firstId, firstId) || other.firstId == firstId)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.lastId, lastId) || other.lastId == lastId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsData&&const DeepCollectionEquality().equals(other.data, _data)&&(identical(other.firstId, firstId) || other.firstId == firstId)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.lastId, lastId) || other.lastId == lastId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_data),firstId,hasMore,lastId);
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_data),firstId,hasMore,lastId);
+}
 
 @override
 String toString() {
-  return 'AntropicResponseModels.data(data: $data, firstId: $firstId, hasMore: $hasMore, lastId: $lastId)';
+    return 'AntropicResponseModels.data(data: $data, firstId: $firstId, hasMore: $hasMore, lastId: $lastId)';
 }
 
 
@@ -809,16 +826,18 @@ $AntropicResponseModelsErrorCopyWith<AntropicResponseModelsError> get copyWith =
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsError&&(identical(other.error, error) || other.error == error)&&(identical(other.requestId, requestId) || other.requestId == requestId)&&(identical(other.type, type) || other.type == type));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is AntropicResponseModelsError&&(identical(other.error, error) || other.error == error)&&(identical(other.requestId, requestId) || other.requestId == requestId)&&(identical(other.type, type) || other.type == type));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,error,requestId,type);
+int get hashCode {
+    return Object.hash(runtimeType,error,requestId,type);
+}
 
 @override
 String toString() {
-  return 'AntropicResponseModels.error(error: $error, requestId: $requestId, type: $type)';
+    return 'AntropicResponseModels.error(error: $error, requestId: $requestId, type: $type)';
 }
 
 
