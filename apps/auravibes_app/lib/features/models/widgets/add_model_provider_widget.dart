@@ -27,6 +27,11 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
+const String _oauthWaitingKey =
+    LocaleKeys.models_screens_add_provider_oauth_waiting;
+const String _cancelConnectionKey =
+    LocaleKeys.models_screens_add_provider_cancel_connection;
+
 class const AddModelProviderWidget({
   required final String workspaceId,
   super.key,
@@ -42,7 +47,8 @@ class const AddModelProviderWidget({
     final scrollController = useScrollController();
     final formKey = useMemoized(GlobalKey<FormState>.new, []);
     final codexDeviceCode = useState<CodexDeviceCode?>(null);
-    final codexDeviceCodeCancelled = useRef(false);
+    final activeCodexOAuthMethod = useState<CodexOAuthMethod?>(null);
+    final codexOAuthCancellation = useRef<_CodexOAuthCancellation?>(null);
 
     final selectedState = ref.watch(
       addModelProviderStateProvider(workspaceId).select(
@@ -56,6 +62,9 @@ class const AddModelProviderWidget({
     final isOAuth = selectedState.authMode == ModelProviderAuthMode.oauth2;
     final isCodex = ModelProviderOAuthProfiles.isCodexProvider(
       selectedState.modelId,
+    );
+    final isSubmitting = ref.watch(
+      addCredentialsModelMutationProvider.select((value) => value.isPending),
     );
     final session = ref.watch(workspaceSessionForRouteProvider(workspaceId));
     final isDesktop =
@@ -111,33 +120,60 @@ class const AddModelProviderWidget({
                   if (codexDeviceCode.value case final deviceCode?) ...[
                     _CodexDeviceCodePanel(
                       deviceCode: deviceCode,
-                      onCancel: () {
-                        codexDeviceCodeCancelled.value = true;
-                        codexDeviceCode.value = null;
-                      },
+                      isPending: isSubmitting,
+                      onCancel: () => _cancelCodexOAuth(
+                        ref,
+                        codexDeviceCode,
+                        activeCodexOAuthMethod,
+                        codexOAuthCancellation,
+                      ),
                     ),
                     const AuraSizedBox(height: .xl),
                   ],
-                  _CreateButton(
-                    workspaceId: workspaceId,
-                    onSubmit: () => unawaited(_submitForm(context, ref)),
-                    isCodex: isCodex,
-                    isDesktop: isDesktop,
-                    supportsBrowserOAuth: capabilities.modelBrowserOAuth,
-                    supportsDeviceOAuth: capabilities.modelDeviceOAuth,
-                    onCodexBrowserSubmit: () => _submitCodexBrowser(
-                      context,
-                      ref,
-                      codexDeviceCode,
-                      codexDeviceCodeCancelled,
+                  if (!(isCodex &&
+                      isSubmitting &&
+                      codexDeviceCode.value != null))
+                    _CreateButton(
+                      workspaceId: workspaceId,
+                      onSubmit: () => unawaited(_submitForm(context, ref)),
+                      isCodex: isCodex,
+                      isDesktop: isDesktop,
+                      supportsBrowserOAuth: capabilities.modelBrowserOAuth,
+                      supportsDeviceOAuth: capabilities.modelDeviceOAuth,
+                      activeCodexOAuthMethod: activeCodexOAuthMethod.value,
+                      onCodexBrowserSubmit: () => _submitCodexBrowser(
+                        context,
+                        ref,
+                        codexDeviceCode,
+                        activeCodexOAuthMethod,
+                        codexOAuthCancellation,
+                      ),
+                      onCodexDeviceSubmit: () => _submitCodexDevice(
+                        context,
+                        ref,
+                        codexDeviceCode,
+                        activeCodexOAuthMethod,
+                        codexOAuthCancellation,
+                      ),
                     ),
-                    onCodexDeviceSubmit: () => _submitCodexDevice(
-                      context,
-                      ref,
-                      codexDeviceCode,
-                      codexDeviceCodeCancelled,
+                  if (isCodex &&
+                      isSubmitting &&
+                      codexDeviceCode.value == null) ...[
+                    const AuraSizedBox(height: .md),
+                    const _CodexOAuthPendingStatus(showSpinner: false),
+                    const AuraSizedBox(height: .md),
+                    AuraButton(
+                      onPressed: () => _cancelCodexOAuth(
+                        ref,
+                        codexDeviceCode,
+                        activeCodexOAuthMethod,
+                        codexOAuthCancellation,
+                      ),
+                      child: const TextLocale(_cancelConnectionKey),
+                      variant: AuraButtonVariant.outlined,
+                      isFullWidth: true,
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -182,12 +218,20 @@ class const AddModelProviderWidget({
     BuildContext context,
     WidgetRef ref,
     ValueNotifier<CodexDeviceCode?> deviceCode,
-    ObjectRef<bool> cancelled,
+    ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
+    ObjectRef<_CodexOAuthCancellation?> cancellationRef,
   ) {
-    cancelled.value = false;
+    final cancellation = _CodexOAuthCancellation();
+    cancellationRef.value = cancellation;
+    activeOAuthMethod.value = CodexOAuthMethod.browser;
     deviceCode.value = null;
     unawaited(
-      _submitForm(context, ref, codexOAuthMethod: CodexOAuthMethod.browser),
+      _submitForm(
+        context,
+        ref,
+        codexOAuthMethod: CodexOAuthMethod.browser,
+        isCodexDeviceCodeCancelled: () => cancellation.isCancelled,
+      ),
     );
   }
 
@@ -195,29 +239,49 @@ class const AddModelProviderWidget({
     BuildContext context,
     WidgetRef ref,
     ValueNotifier<CodexDeviceCode?> deviceCode,
-    ObjectRef<bool> cancelled,
+    ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
+    ObjectRef<_CodexOAuthCancellation?> cancellationRef,
   ) {
-    cancelled.value = false;
+    final cancellation = _CodexOAuthCancellation();
+    cancellationRef.value = cancellation;
+    activeOAuthMethod.value = CodexOAuthMethod.deviceCode;
     deviceCode.value = null;
     unawaited(
       _submitForm(
         context,
         ref,
         codexOAuthMethod: CodexOAuthMethod.deviceCode,
-        onCodexDeviceCode: (value) =>
-            _setCodexDeviceCode(context, deviceCode, value),
-        isCodexDeviceCodeCancelled: () => cancelled.value,
+        onCodexDeviceCode: (value) {
+          if (!context.mounted ||
+              cancellation.isCancelled ||
+              !identical(cancellationRef.value, cancellation)) {
+            return;
+          }
+          deviceCode.value = value;
+        },
+        isCodexDeviceCodeCancelled: () => cancellation.isCancelled,
       ),
     );
   }
 
-  void _setCodexDeviceCode(
-    BuildContext context,
+  void _cancelCodexOAuth(
+    WidgetRef ref,
     ValueNotifier<CodexDeviceCode?> deviceCode,
-    CodexDeviceCode value,
+    ValueNotifier<CodexOAuthMethod?> activeOAuthMethod,
+    ObjectRef<_CodexOAuthCancellation?> cancellationRef,
   ) {
-    if (context.mounted) deviceCode.value = value;
+    cancellationRef.value?.cancel();
+    cancellationRef.value = null;
+    deviceCode.value = null;
+    activeOAuthMethod.value = null;
+    addCredentialsModelMutationProvider.reset(ref);
   }
+}
+
+class _CodexOAuthCancellation {
+  bool isCancelled = false;
+
+  void cancel() => isCancelled = true;
 }
 
 /// Modal header with title and close button.
@@ -364,6 +428,7 @@ class const _CreateButton({
   required final bool isDesktop,
   required final bool supportsBrowserOAuth,
   required final bool supportsDeviceOAuth,
+  required final CodexOAuthMethod? activeCodexOAuthMethod,
   required final VoidCallback onCodexBrowserSubmit,
   required final VoidCallback onCodexDeviceSubmit,
 }) extends HookConsumerWidget {
@@ -389,7 +454,9 @@ class const _CreateButton({
               LocaleKeys.models_screens_add_provider_connect_browser,
             ),
             size: AuraButtonSize.large,
-            isLoading: isSubmitting,
+            isLoading:
+                isSubmitting &&
+                activeCodexOAuthMethod == CodexOAuthMethod.browser,
             isFullWidth: true,
             disabled: disabled,
           ),
@@ -404,7 +471,10 @@ class const _CreateButton({
                   : LocaleKeys.models_screens_add_provider_create_button,
             ),
             size: AuraButtonSize.large,
-            isLoading: isSubmitting,
+            isLoading:
+                !isCodex ||
+                (isSubmitting &&
+                    activeCodexOAuthMethod == CodexOAuthMethod.deviceCode),
             isFullWidth: true,
             disabled: disabled,
           ),
@@ -413,8 +483,32 @@ class const _CreateButton({
   }
 }
 
+class _CodexOAuthPendingStatus extends StatelessWidget {
+  const _CodexOAuthPendingStatus({this.showSpinner = true});
+
+  final bool showSpinner;
+
+  @override
+  Widget build(BuildContext _) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (showSpinner) const AuraSpinner(size: AuraSpinnerSize.small),
+        if (showSpinner) const AuraSizedBox(width: .sm),
+        const Flexible(
+          child: AuraText(
+            child: TextLocale(_oauthWaitingKey),
+            style: AuraTextStyle.bodySmall,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class const _CodexDeviceCodePanel({
   required final CodexDeviceCode deviceCode,
+  required final bool isPending,
   required final VoidCallback onCancel,
 }) extends StatelessWidget {
   @override
@@ -486,11 +580,16 @@ class const _CodexDeviceCodePanel({
               ),
             ],
           ),
-          const AuraSizedBox(height: .lg),
+          if (isPending) ...[
+            const AuraSizedBox(height: .lg),
+            const _CodexOAuthPendingStatus(),
+            const AuraSizedBox(height: .md),
+          ],
           AuraButton(
             onPressed: onCancel,
-            child: const TextLocale(LocaleKeys.common_cancel),
-            size: AuraButtonSize.small,
+            child: const TextLocale(_cancelConnectionKey),
+            variant: AuraButtonVariant.outlined,
+            isFullWidth: true,
           ),
         ],
       ),

@@ -80,6 +80,10 @@ abstract class LocaleKeys {
       'models_screens.add_provider.connect_browser';
   static const models_screens_add_provider_use_device_code =
       'models_screens.add_provider.use_device_code';
+  static const models_screens_add_provider_oauth_waiting =
+      'models_screens.add_provider.oauth_waiting';
+  static const models_screens_add_provider_cancel_connection =
+      'models_screens.add_provider.cancel_connection';
   static const models_screens_add_provider_device_code_instruction =
       'models_screens.add_provider.device_code_instruction';
   static const models_screens_add_provider_device_code_step_code =

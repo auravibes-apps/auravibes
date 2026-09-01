@@ -69,6 +69,8 @@
       "create_button": "Create Provider",
       "connect_browser": "Connect with browser",
       "use_device_code": "Use device code",
+      "oauth_waiting": "Waiting for authorization...",
+      "cancel_connection": "Cancel connection",
       "device_code_instruction": "Open this URL and enter the code.",
       "device_code_step_code": "1. Copy this code",
       "device_code_step_link": "2. Open this link",

@@ -68,6 +68,21 @@ void main() {
       expect(token.accessToken, 'access');
     });
 
+    test('cancels browser authentication', () async {
+      var cancelled = false;
+
+      await expectLater(
+        CodexOAuthService(
+          openBrowser: (_) {
+            cancelled = true;
+
+            return Future<void>.value();
+          },
+        ).authenticateWithBrowser(isCancelled: () => cancelled),
+        throwsA(isA<CodexOAuthCanceledException>()),
+      );
+    });
+
     test('exchanges code response into OAuth token', () async {
       final dio = Dio()
         ..httpClientAdapter = _FakeHttpClientAdapter(

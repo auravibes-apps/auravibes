@@ -14,8 +14,9 @@ import 'package:riverpod/riverpod.dart';
 
 class _ThrowingCodexOAuthService extends CodexOAuthService {
   @override
-  Future<OAuthTokenEntity> authenticateWithBrowser() =>
-      throw StateError('local OAuth touched');
+  Future<OAuthTokenEntity> authenticateWithBrowser({
+    bool Function()? isCancelled,
+  }) => throw StateError('local OAuth touched');
 
   @override
   Future<OAuthTokenEntity> authenticateWithDeviceCode({

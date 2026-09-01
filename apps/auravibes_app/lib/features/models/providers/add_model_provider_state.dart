@@ -195,8 +195,14 @@ class AddModelProviderState extends _$AddModelProviderState {
           onDeviceCode: onCodexDeviceCode,
           isCancelled: isCodexDeviceCodeCancelled,
         ),
-      _ => await oauthService.authenticateWithBrowser(),
+      _ => await oauthService.authenticateWithBrowser(
+        isCancelled: isCodexDeviceCodeCancelled,
+      ),
     };
+
+    if (isCodexDeviceCodeCancelled?.call() ?? false) {
+      throw const CodexOAuthCanceledException();
+    }
 
     return await repo.createModelConnection(
       ModelConnectionToCreate(

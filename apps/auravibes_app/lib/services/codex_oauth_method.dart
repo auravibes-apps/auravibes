@@ -29,7 +29,9 @@ class CodexOAuthService {
   final Dio _dio;
   final Future<void> Function(Uri uri) _openBrowser;
 
-  Future<OAuthTokenEntity> authenticateWithBrowser() async {
+  Future<OAuthTokenEntity> authenticateWithBrowser({
+    bool Function()? isCancelled,
+  }) async {
     final pkce = _generatePkce();
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
@@ -53,9 +55,9 @@ class CodexOAuthService {
     await _openBrowser(authorizeUrl);
 
     try {
-      final code = await codeCompleter.future.timeout(
-        const Duration(minutes: 5),
-      );
+      final code = isCancelled == null
+          ? await codeCompleter.future.timeout(const Duration(minutes: 5))
+          : await _waitForBrowserCode(codeCompleter, isCancelled);
 
       return await exchangeCodeForToken(
         code: code,
@@ -180,6 +182,27 @@ class CodexOAuthService {
   }) async {
     await for (final request in server) {
       if (await _handleBrowserCallback(request, state, completer)) break;
+    }
+  }
+
+  Future<String> _waitForBrowserCode(
+    Completer<String> completer,
+    bool Function() isCancelled,
+  ) async {
+    final deadline = DateTime.now().add(const Duration(minutes: 5));
+    while (true) {
+      if (isCancelled()) throw const CodexOAuthCanceledException();
+      if (completer.isCompleted) return await completer.future;
+
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining.isNegative || remaining == Duration.zero) {
+        throw TimeoutException('Browser auth timed out after 5 minutes');
+      }
+      await Future<void>.delayed(
+        remaining < const Duration(milliseconds: 250)
+            ? remaining
+            : const Duration(milliseconds: 250),
+      );
     }
   }
 
