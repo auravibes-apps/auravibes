@@ -122,8 +122,9 @@ class AuraChoicePicker<T> extends StatelessWidget {
             ],
           );
 
-    result = DefaultTextStyle.merge(
-      style: TextStyle(color: context.auraColors.onSurface),
+    result = DefaultTextStyle(
+      style: DefaultTextStyle.of(context).style
+          .copyWith(color: context.auraColors.onSurface),
       child: result,
     );
 
