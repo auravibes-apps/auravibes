@@ -599,7 +599,7 @@ void main() {
             required workingDirectory,
           }) async {
             capturedArguments = arguments;
-            expect(executable, 'fvm');
+            expect(executable, 'flutter');
 
             return 7;
           },
@@ -607,7 +607,7 @@ void main() {
     expect(code, 7);
     expect(
       capturedArguments,
-      containsAllInOrder(['flutter', 'test', '--exclude-tags=integration']),
+      containsAllInOrder(['test', '--exclude-tags=integration']),
     );
   });
 
@@ -634,7 +634,7 @@ void main() {
               required workingDirectory,
             }) async {
               commands.add(arguments);
-              expect(executable, 'fvm');
+              expect(executable, 'dart');
               expect(workingDirectory, endsWith('packages/core'));
 
               return arguments.contains('coverage:format_coverage') ? 9 : 0;
@@ -676,7 +676,7 @@ void main() {
         required List<String> arguments,
         required String workingDirectory,
       }) async {
-        expect(executable, 'fvm');
+        expect(executable, 'dart');
         expect(arguments, isEmpty);
         expect(workingDirectory, endsWith('packages/core'));
         launches++;

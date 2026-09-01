@@ -57,7 +57,10 @@ Future<List<File>> _reports(Directory inputRoot) async {
   }
 
   final reports = <File>[];
-  await for (final entity in inputRoot.list(recursive: true)) {
+  await for (final entity in inputRoot.list(
+    recursive: true,
+    followLinks: false,
+  )) {
     if (entity is File && entity.uri.pathSegments.lastOrNull == 'lcov.info') {
       final metadata = File('${entity.parent.path}/package-root');
       if (!metadata.existsSync()) {

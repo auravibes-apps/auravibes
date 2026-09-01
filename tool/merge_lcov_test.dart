@@ -94,6 +94,36 @@ end_of_record
     },
   );
 
+  test('does not follow symbolic links while finding reports', () async {
+    final root = await Directory.systemTemp.createTemp('merge-lcov-');
+    addTearDown(() => root.delete(recursive: true));
+    final artifacts = Directory('${root.path}/artifacts')..createSync();
+    await _writeReport(
+      artifacts,
+      name: 'actual',
+      packageRoot: 'packages/core',
+      report: 'SF:lib/value.dart\nDA:1,1\nend_of_record\n',
+    );
+    final linked = Directory('${root.path}/linked')..createSync();
+    await _writeReport(
+      linked,
+      name: 'ignored',
+      packageRoot: 'packages/ignored',
+      report: 'SF:lib/value.dart\nDA:1,1\nend_of_record\n',
+    );
+    final _ = await Link('${artifacts.path}/linked').create(linked.path);
+
+    final output = '${root.path}/coverage/lcov.info';
+    await mergeLcovReports(
+      inputRoot: artifacts.path,
+      outputPath: output,
+      repositoryRoot: root.path,
+      expectedReports: 1,
+    );
+
+    expect(await File(output).readAsString(), contains('packages/core'));
+  });
+
   test('accepts CRLF reports', () async {
     final root = await Directory.systemTemp.createTemp('merge-lcov-');
     addTearDown(() => root.delete(recursive: true));

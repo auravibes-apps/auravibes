@@ -316,7 +316,7 @@ typedef ProcessLauncher = Future<int> Function({
 
 /// One GitHub Actions matrix row for a selected package test group.
 class TestMatrixEntry {
-  const TestMatrixEntry({
+  const new({
     required this.package,
     required this.shardIndex,
     required this.totalShards,
@@ -642,9 +642,9 @@ class _TestGroup {
 }
 
 class _Shard {
-  const _Shard({required this.total, required this.index});
+  const new({required this.total, required this.index});
 
-  factory _Shard.fromOptions({int? totalShards, int? shardIndex}) {
+  factory fromOptions({int? totalShards, int? shardIndex}) {
     if (totalShards == null && shardIndex == null) {
       return const _Shard(total: 1, index: 0);
     }
@@ -795,8 +795,7 @@ _Command _command(
   _TestGroup group, {
   required _Shard shard,
   required bool coverage,
-}) => _Command('fvm', [
-  if (group.package.flutter) 'flutter' else 'dart',
+}) => _Command(group.package.flutter ? 'flutter' : 'dart', [
   'test',
   '--exclude-tags=integration',
   if (coverage && group.package.flutter) '--coverage',
@@ -812,8 +811,7 @@ _Command _command(
 _Command? _coverageCommand(_TestGroup group) {
   if (group.package.flutter) return null;
 
-  return _Command('fvm', [
-    'dart',
+  return _Command('dart', [
     'run',
     'coverage:format_coverage',
     '--lcov',
