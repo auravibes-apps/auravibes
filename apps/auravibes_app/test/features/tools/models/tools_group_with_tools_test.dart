@@ -153,6 +153,12 @@ void main() {
       expect(grouped.mcpErrorMessage, 'timeout');
     });
 
+    test('mcpErrorMessage returns null without connection state', () {
+      final grouped = ToolsGroupWithTools(group: testGroup, tools: const []);
+
+      expect(grouped.mcpErrorMessage, isNull);
+    });
+
     test('isEnabled returns group.isEnabled', () {
       final disabledGroup = ToolsGroupEntity(
         id: 'g4',
