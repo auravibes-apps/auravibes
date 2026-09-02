@@ -81,10 +81,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       });
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to add MCP server with tools.',
-          e,
-        ),
+        McpServersException('Failed to add MCP server with tools.', e),
         stackTrace,
       );
     }
@@ -116,10 +113,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       });
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to delete MCP server.',
-          e,
-        ),
+        McpServersException('Failed to delete MCP server.', e),
         stackTrace,
       );
     }
@@ -185,10 +179,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       rethrow;
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to sync MCP tools.',
-          e,
-        ),
+        McpServersException('Failed to sync MCP tools.', e),
         stackTrace,
       );
     }
@@ -206,10 +197,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       return results.map(_tableToEntity).toList();
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to get MCP servers for workspace.',
-          e,
-        ),
+        McpServersException('Failed to get MCP servers for workspace.', e),
         stackTrace,
       );
     }
@@ -245,10 +233,7 @@ class McpServersRepository implements McpServersRepositoryContract {
       return _tableToEntity(result);
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
-        McpServersException(
-          'Failed to get MCP server by ID.',
-          e,
-        ),
+        McpServersException('Failed to get MCP server by ID.', e),
         stackTrace,
       );
     }

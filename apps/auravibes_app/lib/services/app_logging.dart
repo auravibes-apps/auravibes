@@ -21,11 +21,7 @@ class AppLogging._() {
 
     final previousFlutterError = FlutterError.onError;
     FlutterError.onError = (details) {
-      _logger.severe(
-        'Flutter error',
-        details.exception,
-        details.stack,
-      );
+      _logger.severe('Flutter error', details.exception, details.stack);
       if (previousFlutterError != null) {
         previousFlutterError(details);
       } else {

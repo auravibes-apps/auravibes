@@ -43,9 +43,7 @@ class _SuccessfulMcpFormNotifier extends McpFormNotifier {
 class _ErrorMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
-    return const McpFormState(
-      errorMessage: 'Unexpected failure: secret-token',
-    );
+    return const McpFormState(errorMessage: 'Unexpected failure: secret-token');
   }
 }
 

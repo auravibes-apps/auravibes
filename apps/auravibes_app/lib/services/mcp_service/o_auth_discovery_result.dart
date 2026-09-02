@@ -42,9 +42,7 @@ class OAuthDiscoveryService {
     OAuthConnector registrer,
   ) async {
     try {
-      _logger.info(
-        'Discovering OAuth configuration for MCP server',
-      );
+      _logger.info('Discovering OAuth configuration for MCP server');
 
       final baseUri = Uri.parse(registrer.serverUrl);
       final baseUrl = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
@@ -255,9 +253,7 @@ class OAuthDiscoveryService {
     required String clientName,
   }) async {
     try {
-      _logger.info(
-        'Attempting dynamic OAuth client registration',
-      );
+      _logger.info('Attempting dynamic OAuth client registration');
 
       final clientMetadata = {
         'client_name': clientName,
@@ -297,11 +293,7 @@ class OAuthDiscoveryService {
         );
       }
     } on Exception catch (error, stackTrace) {
-      _logger.warning(
-        'Dynamic client registration error',
-        error,
-        stackTrace,
-      );
+      _logger.warning('Dynamic client registration error', error, stackTrace);
     }
 
     return null;
