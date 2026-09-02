@@ -68,6 +68,31 @@ void main() {
       expect(token.accessToken, 'access');
     });
 
+    test('closes browser server when browser launch fails', () async {
+      int? port;
+
+      await expectLater(
+        CodexOAuthService(
+          openBrowser: (uri) async {
+            port = Uri.parse(uri.queryParameters['redirect_uri']!).port;
+            throw StateError('browser launch failed');
+          },
+        ).authenticateWithBrowser(),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(port, isNotNull);
+      final boundPort = port;
+      if (boundPort == null) {
+        fail('Browser launch did not receive a redirect URI');
+      }
+      final server = await HttpServer.bind(
+        InternetAddress.loopbackIPv4,
+        boundPort,
+      );
+      addTearDown(() => server.close(force: true));
+    });
+
     test('cancels browser authentication', () async {
       var cancelled = false;
 

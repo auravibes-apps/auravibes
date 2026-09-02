@@ -35,26 +35,26 @@ class CodexOAuthService {
     final pkce = _generatePkce();
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
-    final port = server.port;
-    final redirectUri = 'http://localhost:$port/auth/callback';
-    final codeCompleter = Completer<String>();
-
-    unawaited(
-      _listenForBrowserCallback(
-        server: server,
-        state: state,
-        completer: codeCompleter,
-      ),
-    );
-
-    final authorizeUrl = buildAuthorizeUri(
-      redirectUri: redirectUri,
-      codeChallenge: pkce.challenge,
-      state: state,
-    );
-    await _openBrowser(authorizeUrl);
-
     try {
+      final port = server.port;
+      final redirectUri = 'http://localhost:$port/auth/callback';
+      final codeCompleter = Completer<String>();
+
+      unawaited(
+        _listenForBrowserCallback(
+          server: server,
+          state: state,
+          completer: codeCompleter,
+        ),
+      );
+
+      final authorizeUrl = buildAuthorizeUri(
+        redirectUri: redirectUri,
+        codeChallenge: pkce.challenge,
+        state: state,
+      );
+      await _openBrowser(authorizeUrl);
+
       final code = isCancelled == null
           ? await codeCompleter.future.timeout(const Duration(minutes: 5))
           : await _waitForBrowserCode(codeCompleter, isCancelled);
