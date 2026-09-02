@@ -4,7 +4,9 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -34,6 +36,16 @@ void main() {
       name: 'Test Group',
       isEnabled: true,
       permissions: PermissionAccess.ask,
+      createdAt: DateTime(2025),
+      updatedAt: DateTime(2025),
+    );
+    final mcpServer = McpServerEntity(
+      id: 'server_1',
+      workspaceId: 'ws1',
+      name: 'MCP Server',
+      url: 'https://example.com',
+      transport: const McpTransportTypeSSE(),
+      authenticationType: const McpAuthenticationTypeNone(),
       createdAt: DateTime(2025),
       updatedAt: DateTime(2025),
     );
@@ -135,22 +147,27 @@ void main() {
         group: testGroup.copyWith(mcpServerId: 'server_1'),
         tools: const [],
         mcpConnectionState: McpConnectionState(
-          server: McpServerEntity(
-            id: 'server_1',
-            workspaceId: 'ws1',
-            name: 'MCP Server',
-            url: 'https://example.com',
-            transport: const McpTransportTypeSSE(),
-            authenticationType: const McpAuthenticationTypeNone(),
-            createdAt: DateTime(2025),
-            updatedAt: DateTime(2025),
-          ),
+          server: mcpServer,
           status: McpConnectionStatus.error,
           errorMessage: 'timeout',
         ),
       );
 
       expect(grouped.mcpErrorMessage, 'timeout');
+    });
+
+    test('mcpErrorMessage translates generic error key', () {
+      final grouped = ToolsGroupWithTools(
+        group: testGroup,
+        tools: const [],
+        mcpConnectionState: McpConnectionState(
+          server: mcpServer,
+          status: McpConnectionStatus.error,
+          errorMessage: LocaleKeys.tools_screen_mcp_error,
+        ),
+      );
+
+      expect(grouped.mcpErrorMessage, LocaleKeys.tools_screen_mcp_error.tr());
     });
 
     test('mcpErrorMessage returns null without connection state', () {
