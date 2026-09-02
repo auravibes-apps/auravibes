@@ -169,6 +169,10 @@ class const _ErrorBanner({required final String workspaceId})
     if (errorMessage == null) {
       return const SizedBox.shrink();
     }
+    final displayErrorMessage =
+        errorMessage == LocaleKeys.tools_screen_mcp_error
+        ? errorMessage.tr()
+        : errorMessage;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -186,7 +190,7 @@ class const _ErrorBanner({required final String workspaceId})
           const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
-              errorMessage,
+              displayErrorMessage,
               style: TextStyle(color: context.auraColors.error),
             ),
           ),

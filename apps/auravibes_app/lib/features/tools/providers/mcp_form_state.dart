@@ -3,6 +3,7 @@
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:logging/logging.dart';
@@ -14,7 +15,7 @@ part 'mcp_form_state.g.dart';
 final _logger = Logger('mcp_form');
 
 /// State for the MCP form.
-@freezed
+@Freezed(toStringOverride: false)
 abstract class const McpFormState._() with _$McpFormState {
   const factory({
     @Default('') String name,
@@ -162,7 +163,7 @@ class McpFormNotifier extends _$McpFormNotifier {
     _logger.warning(
       'MCP form error workspace=$_workspaceId '
       'transport=${state.transport.name} '
-      'auth=${state.authenticationType.name}: $message',
+      'auth=${state.authenticationType.name}',
     );
     state = state.copyWith(errorMessage: message);
   }
@@ -207,15 +208,15 @@ class McpFormNotifier extends _$McpFormNotifier {
       setSubmitting(value: false);
 
       return true;
-    } on Exception catch (e, s) {
+    } on Exception catch (error, stackTrace) {
       _logger.severe(
         'MCP form submit failed workspace=$_workspaceId '
         'transport=${state.transport.name} '
         'auth=${state.authenticationType.name}',
-        e,
-        s,
+        error,
+        stackTrace,
       );
-      setError('Error: $e');
+      setError(LocaleKeys.tools_screen_mcp_error);
       setSubmitting(value: false);
 
       return false;

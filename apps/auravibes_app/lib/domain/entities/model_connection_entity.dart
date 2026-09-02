@@ -22,7 +22,7 @@ abstract class ModelConnectionEntity with _$ModelConnectionEntity {
   }) = _ModelConnectionEntity;
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class ModelConnectionToCreate with _$ModelConnectionToCreate {
   @Assert(
     'authMode == ModelProviderAuthMode.oauth2 || key != ""',
@@ -55,7 +55,7 @@ abstract class ModelConnectionForEdit with _$ModelConnectionForEdit {
   }) = _ModelConnectionForEdit;
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class ModelConnectionToUpdate with _$ModelConnectionToUpdate {
   // Null means preserve the existing persisted value for that field.
   // ignore: unnecessary-nullable

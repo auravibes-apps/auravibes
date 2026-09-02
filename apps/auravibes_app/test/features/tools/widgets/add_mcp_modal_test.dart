@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -25,6 +26,12 @@ class _FakeMcpFormNotifier extends McpFormNotifier {
   McpFormState build(String workspaceId) => const McpFormState();
 }
 
+class _ValidationMcpFormNotifier extends McpFormNotifier {
+  @override
+  McpFormState build(String workspaceId) =>
+      const McpFormState(errorMessage: 'Name is required.\nURL is required.');
+}
+
 class _SubmittingMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) =>
@@ -42,20 +49,15 @@ class _SuccessfulMcpFormNotifier extends McpFormNotifier {
 class _ErrorMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
-    return const McpFormState(
-      errorMessage:
-          'OAuth discovery failed. OAuth discovery failed. OAuth '
-          'discovery failed. OAuth discovery failed. OAuth discovery failed. '
-          'OAuth discovery failed. OAuth discovery failed. OAuth discovery '
-          'failed. OAuth discovery failed. OAuth discovery failed. OAuth '
-          'discovery failed. OAuth discovery failed.',
-    );
+    return const McpFormState(errorMessage: LocaleKeys.tools_screen_mcp_error);
   }
 }
 
 const _wsId = 'ws1';
 
-class const _Subject() extends StatelessWidget {
+class const _Subject({
+  final McpFormNotifier Function() formNotifier = _FakeMcpFormNotifier.new,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
@@ -63,7 +65,7 @@ class const _Subject() extends StatelessWidget {
         overrides: [
           mcpConnectionProvider.overrideWith(_FakeMcpConnectionNotifier.new),
           // ignore: deprecated_member_use - Required to override generated provider.
-          mcpFormProvider.overrideWith(_FakeMcpFormNotifier.new),
+          mcpFormProvider.overrideWith(formNotifier),
           workspaceSessionForRouteProvider(_wsId).overrideWithValue(
             const AsyncData(
               WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _wsId)),
@@ -237,7 +239,7 @@ void main() {
       expect(find.byType(AuraLoadingOverlay), findsOneWidget);
     });
 
-    testWidgets('long error message remains scrollable', (tester) async {
+    testWidgets('generic error message is localized', (tester) async {
       tester.view.physicalSize = const Size(500, 700);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -290,6 +292,17 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.text(LocaleKeys.tools_screen_mcp_error.tr()), findsOneWidget);
+    });
+
+    testWidgets('validation error message is displayed', (tester) async {
+      await _pumpAndInit(
+        tester,
+        const _Subject(formNotifier: _ValidationMcpFormNotifier.new),
+      );
+      await _showDialog(tester);
+
+      expect(find.text('Name is required.\nURL is required.'), findsOneWidget);
     });
 
     testWidgets('save shows success message and closes dialog', (tester) async {

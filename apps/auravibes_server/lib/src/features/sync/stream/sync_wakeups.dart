@@ -91,7 +91,7 @@ abstract final class SyncWakeups {
                   'job=${job.id}, workspace=${job.workspaceId}, '
                   'kind=${job.kind}.',
         level: LogLevel.warning,
-        exception: error,
+        exception: error.runtimeType,
         stackTrace: stackTrace,
       );
     }

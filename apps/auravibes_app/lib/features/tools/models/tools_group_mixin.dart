@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/skills/constants/skill_tool_permission_co
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 mixin ToolsGroupMixin {
   ToolsGroupEntity? get group;
@@ -48,7 +49,14 @@ mixin ToolsGroupMixin {
 
   bool get needsAttention => hasMcpError || isMcpDisconnected;
 
-  String? get mcpErrorMessage => mcpConnectionState?.errorMessage;
+  String? get mcpErrorMessage {
+    final message = mcpConnectionState?.errorMessage;
+    if (message == null) return null;
+
+    return message == LocaleKeys.tools_screen_mcp_error
+        ? message.tr()
+        : message;
+  }
 
   String? get truncatedErrorMessage {
     final message = mcpErrorMessage;

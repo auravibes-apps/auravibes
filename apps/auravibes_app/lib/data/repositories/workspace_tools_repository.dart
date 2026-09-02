@@ -146,7 +146,7 @@ class WorkspaceToolsRepository(final AppDatabase _database)
     } catch (e, stackTrace) {
       Error.throwWithStackTrace(
         WorkspaceToolsException(
-          'Failed to patch workspace tool config: $e',
+          'Failed to patch workspace tool config.',
           e is Exception ? e : null,
         ),
         stackTrace,
@@ -250,7 +250,7 @@ class WorkspaceToolsException implements Exception {
 
   @override
   String toString() {
-    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+    final causedBy = cause != null ? ' (Caused by: ${cause.runtimeType})' : '';
 
     return 'WorkspaceToolsException: $message$causedBy';
   }

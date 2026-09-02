@@ -9,6 +9,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('app_with_responsive_drawer');
 
 /// App shell with a responsive navigation drawer.
 class AppWithResponsiveDrawer extends StatefulWidget {
@@ -125,8 +128,8 @@ class const _WorkspaceHeader({required final String workspaceId})
           ),
           height: 48,
         );
-      case AsyncError(:final error):
-        debugPrint('Workspace dropdown stream error: $error');
+      case AsyncError(:final error, :final stackTrace):
+        _logger.warning('Workspace dropdown stream error', error, stackTrace);
         header = const AuraText(
           child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         );

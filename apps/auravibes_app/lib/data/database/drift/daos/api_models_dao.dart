@@ -163,9 +163,13 @@ class ApiModelsDao extends DatabaseAccessor<AppDatabase>
         try {
           final inserted = await upsertModel(model);
           results.add(inserted);
-        } on Exception catch (e) {
+        } on Exception catch (error, stackTrace) {
           // Continue with other models if one fails.
-          _log.severe('Failed to insert model ${model.id.value}: $e');
+          _log.severe(
+            'Failed to insert model ${model.id.value}',
+            error,
+            stackTrace,
+          );
         }
       }
 

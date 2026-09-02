@@ -16,6 +16,7 @@ import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.d
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_capabilities.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/o_auth_authenticate.dart';
@@ -59,7 +60,7 @@ enum McpConnectionStatus {
 // ============================================================.
 
 /// State for a single MCP server connection.
-@freezed
+@Freezed(toStringOverride: false)
 abstract class const McpConnectionState._() with _$McpConnectionState {
   const factory({
     /// The MCP server configuration.
@@ -613,7 +614,12 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
 
       // Sync tools to database.
       await _syncMcpToolsToDatabase(server, mcpTools);
-    } on Exception catch (e) {
+    } on Exception catch (error, stackTrace) {
+      _logger.warning(
+        'MCP server connection failed: server=${server.id}',
+        error,
+        stackTrace,
+      );
       // Update state with error.
       _updateConnectionState(
         server.id,
@@ -621,7 +627,7 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
           status: McpConnectionStatus.error,
           client: null,
           tools: [],
-          errorMessage: e.toString(),
+          errorMessage: LocaleKeys.tools_screen_mcp_error,
         ),
       );
     } finally {
@@ -745,13 +751,18 @@ class McpConnectionNotifier extends _$McpConnectionNotifier {
       final discovery = await repository.discoverMcpServer(serverId);
       if (_isDisposed) return;
       _setCloudDiscovery(resolvedServer, discovery);
-    } on Exception catch (error) {
+    } on Exception catch (error, stackTrace) {
       if (_isDisposed) return;
+      _logger.warning(
+        'MCP server cloud discovery failed: server=$serverId',
+        error,
+        stackTrace,
+      );
       _upsertConnection(
         McpConnectionState(
           server: resolvedServer,
           status: McpConnectionStatus.error,
-          errorMessage: error.toString(),
+          errorMessage: LocaleKeys.tools_screen_mcp_error,
         ),
       );
     }

@@ -33,7 +33,7 @@ class WorkspaceStateEndpoint extends Endpoint {
         'Workspace state read failed: workspace=${request.workspaceId}, '
         'kinds=${request.pages.map((page) => page.resourceKind.name).join(',')}.',
         level: LogLevel.warning,
-        exception: error,
+        exception: error.runtimeType,
         stackTrace: stackTrace,
       );
       rethrow;

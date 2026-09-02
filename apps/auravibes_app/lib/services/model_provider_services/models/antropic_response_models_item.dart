@@ -18,7 +18,7 @@ abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
       _$AntropicResponseModelsItemFromJson(json);
 }
 
-@Freezed(toJson: false)
+@Freezed(toJson: false, toStringOverride: false)
 abstract class AntropicResponseModelsErrorMessage
     with _$AntropicResponseModelsErrorMessage {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
@@ -30,7 +30,7 @@ abstract class AntropicResponseModelsErrorMessage
       _$AntropicResponseModelsErrorMessageFromJson(json);
 }
 
-@Freezed(toJson: false)
+@Freezed(toJson: false, toStringOverride: false)
 abstract class AntropicResponseModels with _$AntropicResponseModels {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: FieldRename.snake, createToJson: false)

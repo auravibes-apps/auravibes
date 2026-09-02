@@ -331,11 +331,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.name,_this.workspaceId,_this.modelId,_this.authMode,_this.key,_this.url,_this.oauthToken,_this.oauthMetadata,const DeepCollectionEquality().hash(_this.modelIds));
 }
 
-@override
-String toString() {
-  final _this = this as ModelConnectionToCreate;
-  return 'ModelConnectionToCreate(name: ${_this.name}, workspaceId: ${_this.workspaceId}, modelId: ${_this.modelId}, authMode: ${_this.authMode}, key: ${_this.key}, url: ${_this.url}, oauthToken: ${_this.oauthToken}, oauthMetadata: ${_this.oauthMetadata}, modelIds: ${_this.modelIds})';
-}
 
 
 }
@@ -564,10 +559,6 @@ int get hashCode {
     return Object.hash(runtimeType,name,workspaceId,modelId,authMode,key,url,oauthToken,oauthMetadata,const DeepCollectionEquality().hash(_modelIds));
 }
 
-@override
-String toString() {
-    return 'ModelConnectionToCreate(name: $name, workspaceId: $workspaceId, modelId: $modelId, authMode: $authMode, key: $key, url: $url, oauthToken: $oauthToken, oauthMetadata: $oauthMetadata, modelIds: $modelIds)';
-}
 
 
 }
@@ -934,11 +925,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.name,_this.key,_this.url);
 }
 
-@override
-String toString() {
-  final _this = this as ModelConnectionToUpdate;
-  return 'ModelConnectionToUpdate(name: ${_this.name}, key: ${_this.key}, url: ${_this.url})';
-}
 
 
 }
@@ -1137,10 +1123,6 @@ int get hashCode {
     return Object.hash(runtimeType,name,key,url);
 }
 
-@override
-String toString() {
-    return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
-}
 
 
 }

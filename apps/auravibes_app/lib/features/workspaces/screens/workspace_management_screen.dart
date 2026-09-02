@@ -17,7 +17,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod/experimental/mutation.dart';
+
+final _logger = Logger('workspace_management_screen');
 
 class const WorkspaceManagementScreen({
   required final String workspaceId,
@@ -251,8 +254,8 @@ class const _WorkspaceList({
       if (workspace.id == activeWorkspaceId && context.mounted) {
         await _switchAfterActiveWorkspaceRemoval(context, ref);
       }
-    } on Object catch (error) {
-      if (context.mounted) _showError(context, error);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
     }
   }
 
@@ -407,8 +410,8 @@ class const _AvailableCloudWorkspaceList({
       ref
         ..invalidate(allWorkspacesProvider)
         ..invalidate(cloudWorkspaceStateProvider(account.userId));
-    } on Object catch (error) {
-      if (context.mounted) _showError(context, error);
+    } on Object catch (error, stackTrace) {
+      if (context.mounted) _showError(context, error, stackTrace);
     }
   }
 }
@@ -638,7 +641,7 @@ void _openDetails(
   );
 }
 
-void _showError(BuildContext context, Object error) {
+void _showError(BuildContext context, Object error, [StackTrace? stackTrace]) {
   final message = switch (error) {
     WorkspaceException(:final localizationKey, :final message) =>
       localizationKey?.tr() ?? message,
@@ -646,7 +649,7 @@ void _showError(BuildContext context, Object error) {
     _ => LocaleKeys.workspace_management_unexpected_error.tr(),
   };
   if (error is! WorkspaceException && error is! AppCloudWorkspaceException) {
-    debugPrint('Workspace management failed: $error');
+    _logger.warning('Workspace management failed', error, stackTrace);
   }
   final _ = AuraSnackBars.show(
     context: context,

@@ -73,7 +73,7 @@ Future<void> runObjectCleanupWorker(
     session.log(
       'Object cleanup failed.',
       level: LogLevel.warning,
-      exception: error,
+      exception: error.runtimeType,
       stackTrace: stackTrace,
     );
   }

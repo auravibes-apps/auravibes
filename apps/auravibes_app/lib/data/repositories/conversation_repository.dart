@@ -248,7 +248,7 @@ class const ConversationException(
 ]) implements Exception {
   @override
   String toString() {
-    final causedBy = ' (Caused by: $cause)';
+    final causedBy = ' (Caused by: ${cause.runtimeType})';
 
     return 'ConversationException: $message${cause != null ? causedBy : ''}';
   }

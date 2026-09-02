@@ -42,9 +42,7 @@ class OAuthDiscoveryService {
     OAuthConnector registrer,
   ) async {
     try {
-      _logger.info(
-        'Discovering OAuth configuration for: ${registrer.serverUrl}',
-      );
+      _logger.info('Discovering OAuth configuration for MCP server');
 
       final baseUri = Uri.parse(registrer.serverUrl);
       final baseUrl = '${baseUri.scheme}://${baseUri.host}:${baseUri.port}';
@@ -65,8 +63,8 @@ class OAuthDiscoveryService {
 
       // No OAuth required.
       return null;
-    } on Exception catch (e) {
-      _logger.warning('OAuth discovery failed: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.warning('OAuth discovery failed', error, stackTrace);
 
       return null;
     }
@@ -80,7 +78,7 @@ class OAuthDiscoveryService {
   }) async {
     try {
       final wellKnownUrl = '$baseUrl/.well-known/oauth-authorization-server';
-      _logger.info('Trying well-known endpoint: $wellKnownUrl');
+      _logger.info('Trying well-known OAuth endpoint');
 
       final response = await http
           .get(Uri.parse(wellKnownUrl), headers: _jsonAcceptHeader)
@@ -120,8 +118,8 @@ class OAuthDiscoveryService {
           );
         }
       }
-    } on Exception catch (e) {
-      _logger.fine('Well-known endpoint not available: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine('Well-known endpoint not available', error, stackTrace);
     }
 
     return null;
@@ -132,7 +130,7 @@ class OAuthDiscoveryService {
     String serverUrl,
   ) async {
     try {
-      _logger.info('Probing MCP server directly: $serverUrl');
+      _logger.info('Probing MCP server directly');
       final uri = Uri.tryParse(serverUrl);
       if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
 
@@ -141,8 +139,8 @@ class OAuthDiscoveryService {
           .timeout(const Duration(seconds: 5));
 
       return _parseDirectProbeResponse(response);
-    } on Exception catch (e) {
-      _logger.fine('Direct server probe failed: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine('Direct server probe failed', error, stackTrace);
     }
 
     return null;
@@ -201,8 +199,12 @@ class OAuthDiscoveryService {
         clientId: bodyJson?['client_id'] as String?,
         scope: bodyJson?['scope'] as String?,
       );
-    } on Exception catch (e) {
-      _logger.fine('Could not parse OAuth info from response body: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine(
+        'Could not parse OAuth info from response body',
+        error,
+        stackTrace,
+      );
     }
 
     return null;
@@ -214,7 +216,7 @@ class OAuthDiscoveryService {
   ) async {
     try {
       final metadataUrl = '$baseUrl/oauth/metadata';
-      _logger.info('Trying OAuth metadata endpoint: $metadataUrl');
+      _logger.info('Trying OAuth metadata endpoint');
 
       final response = await http
           .get(Uri.parse(metadataUrl), headers: _jsonAcceptHeader)
@@ -237,8 +239,8 @@ class OAuthDiscoveryService {
           );
         }
       }
-    } on Exception catch (e) {
-      _logger.fine('OAuth metadata endpoint not available: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.fine('OAuth metadata endpoint not available', error, stackTrace);
     }
 
     return null;
@@ -251,9 +253,7 @@ class OAuthDiscoveryService {
     required String clientName,
   }) async {
     try {
-      _logger.info(
-        'Attempting dynamic client registration at: $registrationEndpoint',
-      );
+      _logger.info('Attempting dynamic OAuth client registration');
 
       final clientMetadata = {
         'client_name': clientName,
@@ -289,11 +289,11 @@ class OAuthDiscoveryService {
       } else {
         _logger.warning(
           'Dynamic client registration '
-          'failed: ${response.statusCode} - ${response.body}',
+          'failed with status ${response.statusCode}',
         );
       }
-    } on Exception catch (e) {
-      _logger.warning('Dynamic client registration error: $e');
+    } on Exception catch (error, stackTrace) {
+      _logger.warning('Dynamic client registration error', error, stackTrace);
     }
 
     return null;

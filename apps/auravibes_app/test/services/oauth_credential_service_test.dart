@@ -464,6 +464,52 @@ void main() {
       },
     );
 
+    test(
+      'forceRefresh stores a generic error for invalid token responses',
+      () async {
+        final dio = Dio()
+          ..httpClientAdapter = _FakeHttpClientAdapter(
+            onFetch: (_) async {
+              return ResponseBody.fromString(
+                jsonEncode({'access_token': 123}),
+                200,
+                headers: {
+                  Headers.contentTypeHeader: [Headers.jsonContentType],
+                },
+              );
+            },
+          );
+        final fixture = await createFixture();
+        addTearDown(fixture.close);
+        final service = OAuthCredentialService(
+          fixture.serviceConnectionRepository,
+          dio: dio,
+        );
+        final credentialId = await _insertOAuthCredential(
+          fixture,
+          secret: const ServiceConnectionSecretOAuth2(
+            accessToken: 'access',
+            refreshToken: 'refresh',
+          ),
+          metadata: const ServiceConnectionMetadata(
+            tokenEndpoint: 'https://1.1.1.1/token',
+          ),
+          expiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
+        );
+
+        await expectLater(
+          service.forceRefresh(credentialId),
+          throwsA(isA<FormatException>()),
+        );
+
+        final row = await (fixture.database.select(
+          fixture.database.serviceConnections,
+        )..where((tbl) => tbl.id.equals(credentialId))).getSingle();
+        expect(row.authStatus, ServiceConnectionAuthStatus.needsReauth);
+        expect(row.lastAuthError, 'OAuth refresh response was invalid.');
+      },
+    );
+
     test('getValidAccessToken throws when connection is missing', () async {
       final fixture = await createFixture();
       addTearDown(fixture.close);

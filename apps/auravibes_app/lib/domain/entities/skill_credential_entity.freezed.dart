@@ -331,11 +331,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.credentialDefinitionId,_this.name,const DeepCollectionEquality().hash(_this.attributes));
 }
 
-@override
-String toString() {
-  final _this = this as SkillCredentialToCreate;
-  return 'SkillCredentialToCreate(credentialDefinitionId: ${_this.credentialDefinitionId}, name: ${_this.name}, attributes: ${_this.attributes})';
-}
 
 
 }
@@ -540,10 +535,6 @@ int get hashCode {
     return Object.hash(runtimeType,credentialDefinitionId,name,const DeepCollectionEquality().hash(_attributes));
 }
 
-@override
-String toString() {
-    return 'SkillCredentialToCreate(credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes)';
-}
 
 
 }
@@ -1171,11 +1162,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.name,const DeepCollectionEquality().hash(_this.nonSecretAttributes),const DeepCollectionEquality().hash(_this.secretAttributes),const DeepCollectionEquality().hash(_this.clearSecretAttributeNames));
 }
 
-@override
-String toString() {
-  final _this = this as SkillCredentialToUpdate;
-  return 'SkillCredentialToUpdate(name: ${_this.name}, nonSecretAttributes: ${_this.nonSecretAttributes}, secretAttributes: ${_this.secretAttributes}, clearSecretAttributeNames: ${_this.clearSecretAttributeNames})';
-}
 
 
 }
@@ -1394,10 +1380,6 @@ int get hashCode {
     return Object.hash(runtimeType,name,const DeepCollectionEquality().hash(_nonSecretAttributes),const DeepCollectionEquality().hash(_secretAttributes),const DeepCollectionEquality().hash(_clearSecretAttributeNames));
 }
 
-@override
-String toString() {
-    return 'SkillCredentialToUpdate(name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, clearSecretAttributeNames: $clearSecretAttributeNames)';
-}
 
 
 }

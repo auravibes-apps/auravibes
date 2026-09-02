@@ -113,7 +113,7 @@ class const ServiceConnectionMetadata({
   }
 
   @override
-  String toString() => 'ServiceConnectionMetadata(${jsonEncode(toJson())})';
+  String toString() => 'ServiceConnectionMetadata(fields: ${toJson().keys})';
 }
 
 class const ServiceConnectionAuthCodec._() {

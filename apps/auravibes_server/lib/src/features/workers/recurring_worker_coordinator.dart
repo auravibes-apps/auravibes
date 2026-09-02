@@ -105,7 +105,7 @@ class RecurringWorkerCoordinator(
           session.log(
             'Recurring worker coordinator $operation failed.',
             level: LogLevel.error,
-            exception: error,
+            exception: error.runtimeType,
             stackTrace: stackTrace,
           );
         } finally {
@@ -221,7 +221,7 @@ class RecurringWorkerCoordinator(
                   'Worker coordinator lease renewal failed: '
                   'worker=${definition.key}, coordinator=${coordinator.ownerId}.',
                   level: LogLevel.error,
-                  exception: error,
+                  exception: error.runtimeType,
                   stackTrace: stackTrace,
                 );
                 leaseLost = true;
@@ -322,7 +322,7 @@ class RecurringWorkerCoordinator(
           'coordinator=${coordinator.ownerId}, '
           'fencingToken=${coordinator.fencingToken}.',
           level: LogLevel.error,
-          exception: error,
+          exception: error.runtimeType,
           stackTrace: stackTrace,
         );
       },

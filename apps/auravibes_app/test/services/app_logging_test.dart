@@ -40,11 +40,12 @@ void main() {
       AppLogging.configure(enabled: true);
 
       Logger('test.logger')
-          .severe('failed', StateError('bad'), StackTrace.current);
+          .severe('failed', StateError('opaque-secret'), StackTrace.current);
       await Future<void>.delayed(Duration.zero);
 
       expect(logs, anyElement(contains('[SEVERE] test.logger: failed')));
-      expect(logs, anyElement(contains('Error: Bad state: bad')));
+      expect(logs, anyElement(contains('Error: StateError')));
+      expect(logs.join('\n'), isNot(contains('opaque-secret')));
       expect(logs, anyElement(contains('StackTrace:')));
     });
 
@@ -58,6 +59,35 @@ void main() {
       expect(logs.join('\n'), isNot(contains('secret-token')));
       expect(logs.join('\n'), isNot(contains('abc123')));
       expect(logs.join('\n'), contains('[REDACTED]'));
+    });
+
+    test('redacts OAuth credential-like values', () async {
+      AppLogging.configure(enabled: true);
+
+      Logger('test.logger').warning(
+        'id_token=id-token code_verifier=code-verifier '
+        'authorization_code=authorization-code '
+        'verification_code=verification-code '
+        '{"id_token":"json-id-token","state":"json-state"} '
+        'https://example.test/callback?code=oauth-code&state=oauth-state&nonce=oauth-nonce',
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      final output = logs.join('\n');
+      for (final secret in [
+        'id-token',
+        'code-verifier',
+        'authorization-code',
+        'verification-code',
+        'json-id-token',
+        'json-state',
+        'oauth-code',
+        'oauth-state',
+        'oauth-nonce',
+      ]) {
+        expect(output, isNot(contains(secret)));
+      }
+      expect(output, contains('[REDACTED]'));
     });
 
     test('logs Flutter errors and forwards to previous handler', () async {
@@ -81,7 +111,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(forwarded, isTrue);
-      expect(logs, anyElement(contains('Flutter error: Exception: boom')));
+      expect(logs, anyElement(contains('Flutter error')));
     });
 
     test('logs platform errors and keeps them unhandled', () async {

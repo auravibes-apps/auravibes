@@ -37,11 +37,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.name,_this.description,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.useHttp2,_this.isSubmitting,_this.errorMessage);
 }
 
-@override
-String toString() {
-  final _this = this as McpFormState;
-  return 'McpFormState(name: ${_this.name}, description: ${_this.description}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, bearerToken: ${_this.bearerToken}, useHttp2: ${_this.useHttp2}, isSubmitting: ${_this.isSubmitting}, errorMessage: ${_this.errorMessage})';
-}
 
 
 }
@@ -252,10 +247,6 @@ int get hashCode {
     return Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
 }
 
-@override
-String toString() {
-    return 'McpFormState(name: $name, description: $description, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, useHttp2: $useHttp2, isSubmitting: $isSubmitting, errorMessage: $errorMessage)';
-}
 
 
 }

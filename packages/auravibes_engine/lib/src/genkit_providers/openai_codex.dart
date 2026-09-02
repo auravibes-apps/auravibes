@@ -73,9 +73,9 @@ class const OpenAICodexCodec() {
     if (statusCode >= 200 && statusCode < 300) return;
 
     throw GenkitException(
-      'OpenAI Codex API error: $body',
+      'OpenAI Codex API request failed (HTTP $statusCode).',
       status: StatusCodes.fromHttpStatus(statusCode),
-      details: body,
+      details: _retryableErrorDetail(body),
     );
   }
 }
@@ -83,13 +83,11 @@ class const OpenAICodexCodec() {
 Map<String, dynamic> _decodeStreamEvent(String data) {
   try {
     return jsonDecode(data) as Map<String, dynamic>;
-  } on Object catch (error, stackTrace) {
+  } on Object catch (_, stackTrace) {
     Error.throwWithStackTrace(
       GenkitException(
         'OpenAI Codex stream parse error.',
         status: StatusCodes.INTERNAL,
-        details: data,
-        underlyingException: error,
         stackTrace: stackTrace,
       ),
       stackTrace,
@@ -336,9 +334,9 @@ class _CodexStreamAccumulator {
   Never _throwFailedEvent(Map<String, dynamic> event) {
     final details = _failedEventDetails(event);
     throw GenkitException(
-      'OpenAI Codex API error: ${jsonEncode(details['error'])}',
+      'OpenAI Codex API request failed while streaming.',
       status: StatusCodes.INTERNAL,
-      details: jsonEncode(details),
+      details: _retryableErrorDetail(jsonEncode(details['error'])),
       stackTrace: StackTrace.current,
     );
   }
@@ -400,4 +398,27 @@ Map<String, dynamic> _failedEventDetails(Map<String, dynamic> event) {
 bool isRetryableCodexError(GenkitException error) {
   return error.status == StatusCodes.INTERNAL &&
       '${error.details}'.contains('server_error');
+}
+
+String? _retryableErrorDetail(String body) {
+  try {
+    final decoded = jsonDecode(body);
+    if (decoded == 'server_error') return 'server_error';
+    if (decoded is! Map<String, dynamic>) return null;
+
+    final error = decoded['error'];
+    if (error == 'server_error') return 'server_error';
+    if (error is Map<String, dynamic> &&
+        (error['type'] == 'server_error' || error['code'] == 'server_error')) {
+      return 'server_error';
+    }
+    if (decoded['type'] == 'server_error' ||
+        decoded['code'] == 'server_error') {
+      return 'server_error';
+    }
+  } on Object {
+    return null;
+  }
+
+  return null;
 }

@@ -106,8 +106,8 @@ class WorkspaceSwitcher extends _$WorkspaceSwitcher {
       if (ref.mounted && switchGeneration == _switchGeneration) {
         state = const WorkspaceSwitchState();
       }
-    } on Object catch (e) {
-      _logger.severe('Workspace switch failed: $e');
+    } on Object catch (error, stackTrace) {
+      _logger.severe('Workspace switch failed', error, stackTrace);
       if (ref.mounted && switchGeneration == _switchGeneration) {
         state = WorkspaceSwitchState(
           status: SwitchStatus.error,

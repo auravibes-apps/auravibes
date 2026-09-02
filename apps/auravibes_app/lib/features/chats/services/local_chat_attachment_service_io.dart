@@ -86,7 +86,7 @@ class LocalChatAttachmentServiceIo({
         }
       }
     }
-    _logger.fine('Voice recording input devices: $devices');
+    _logger.fine('Voice recording input devices detected: ${devices.length}');
 
     final directory = await _temporaryRoot();
     final createdDirectory = await directory.create(recursive: true);
@@ -96,7 +96,7 @@ class LocalChatAttachmentServiceIo({
     );
     _recordingPath = path;
     if (Platform.isMacOS) {
-      await _startMacVoiceRecording(path, device);
+      await _startMacVoiceRecording(device);
 
       return;
     }
@@ -105,7 +105,7 @@ class LocalChatAttachmentServiceIo({
       RecordConfig(encoder: AudioEncoder.wav, device: device),
       path: path,
     );
-    _logger.fine('Started voice recording at $path');
+    _logger.fine('Started voice recording');
   }
 
   Future<MessageAttachmentToCreate?> stopVoiceRecording() async {
@@ -121,14 +121,14 @@ class LocalChatAttachmentServiceIo({
 
     final file = File(path);
     if (!await LocalChatAttachmentRecording.waitForRecordedFile(file)) {
-      _logger.warning('Voice recording file was not ready: $path');
+      _logger.warning('Voice recording file was not ready');
 
       return null;
     }
 
     try {
       final attachment = await copyIntoAppStorage(path);
-      _logger.fine('Created voice attachment ${attachment.localPath}');
+      _logger.fine('Created voice attachment');
 
       return attachment;
     } finally {
@@ -170,7 +170,7 @@ class LocalChatAttachmentServiceIo({
     return Directory(p.join(root.path, 'chat_attachments_draft'));
   }
 
-  Future<void> _startMacVoiceRecording(String path, InputDevice? device) async {
+  Future<void> _startMacVoiceRecording(InputDevice? device) async {
     final stream = await _recorder.startStream(
       RecordConfig(
         encoder: AudioEncoder.pcm16bits,
@@ -188,7 +188,7 @@ class LocalChatAttachmentServiceIo({
       onDone: done.complete,
       cancelOnError: true,
     );
-    _logger.fine('Started voice stream recording at $path');
+    _logger.fine('Started voice stream recording');
   }
 
   Future<String?> _stopMacVoiceRecording() async {

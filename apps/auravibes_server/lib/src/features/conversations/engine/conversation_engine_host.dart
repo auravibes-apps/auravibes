@@ -869,8 +869,7 @@ final class const ServerConversationEngineHost({
     final uri = providerRequestUri(connection.providerId, validated.uri);
     session.log(
       'Conversation provider request: job=${job.id}, '
-      'provider=${connection.providerId}, model=${selection.model.modelId}, '
-      'uri=$uri.',
+      'provider=${connection.providerId}, model=${selection.model.modelId}.',
     );
     return _ProviderConfig(
       providerId: connection.providerId,

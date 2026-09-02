@@ -12,7 +12,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'message_tool_call_entity.freezed.dart';
 part 'message_tool_call_entity.g.dart';
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
   const factory({
     required String id,
@@ -268,7 +268,7 @@ abstract class const MessagePatch._() with _$MessagePatch {
   }
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class const ToolToCall._() with _$ToolToCall {
   const factory({
     required ResolvedTool tool,

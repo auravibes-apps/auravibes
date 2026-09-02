@@ -37,11 +37,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.name,_this.modelId,_this.key,_this.url,_this.authMode);
 }
 
-@override
-String toString() {
-  final _this = this as AddModelProviderModel;
-  return 'AddModelProviderModel(name: ${_this.name}, modelId: ${_this.modelId}, key: ${_this.key}, url: ${_this.url}, authMode: ${_this.authMode})';
-}
 
 
 }
@@ -244,10 +239,6 @@ int get hashCode {
     return Object.hash(runtimeType,name,modelId,key,url,authMode);
 }
 
-@override
-String toString() {
-    return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
-}
 
 
 }

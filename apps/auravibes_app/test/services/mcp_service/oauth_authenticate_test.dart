@@ -61,36 +61,31 @@ void main() {
       });
 
       test('throws when error parameter is present', () {
-        expect(
-          () => OAuthAuthenticate.validateGetCode(
+        try {
+          final _ = OAuthAuthenticate.validateGetCode(
             urlResult:
                 'test:/?error=access_denied&error_description=User+cancelled',
             stateParam: 'abc123',
-          ),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'message',
-              allOf(contains('access_denied'), contains('User cancelled')),
-            ),
-          ),
-        );
+          );
+          fail('Expected OAuth authorization to fail');
+        } on Exception catch (error) {
+          expect(error.toString(), 'Exception: OAuth authorization failed.');
+          expect(error.toString(), isNot(contains('access_denied')));
+          expect(error.toString(), isNot(contains('User cancelled')));
+        }
       });
 
       test('throws when error is present without description', () {
-        expect(
-          () => OAuthAuthenticate.validateGetCode(
+        try {
+          final _ = OAuthAuthenticate.validateGetCode(
             urlResult: 'test:/?error=unauthorized',
             stateParam: 'abc123',
-          ),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'message',
-              contains('unauthorized'),
-            ),
-          ),
-        );
+          );
+          fail('Expected OAuth authorization to fail');
+        } on Exception catch (error) {
+          expect(error.toString(), 'Exception: OAuth authorization failed.');
+          expect(error.toString(), isNot(contains('unauthorized')));
+        }
       });
 
       test('throws when state parameter does not match', () {

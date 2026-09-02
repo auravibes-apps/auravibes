@@ -45,9 +45,10 @@ void main() {
 
     test('trackError sanitizes multiline payloads', () {
       final messages = <String>[];
+      final error = Exception('line 1\nline 2');
       MonitoringService(debugLogger: messages.add).trackError(
         'stream_failure',
-        error: Exception('line 1\nline 2'),
+        error: error,
         stackTrace: StackTrace.fromString('frame 1\nframe 2'),
       );
 
@@ -55,7 +56,7 @@ void main() {
         messages,
         equals([
           'Monitoring error [stream_failure]',
-          'Error: Exception: line 1 line 2',
+          'Error: ${error.runtimeType}',
           'StackTrace: frame 1 frame 2',
         ]),
       );

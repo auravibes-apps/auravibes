@@ -17,7 +17,7 @@ abstract class const SkillCredentialEntity._() with _$SkillCredentialEntity {
   }) = _SkillCredentialEntity;
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class const SkillCredentialToCreate._()
     with _$SkillCredentialToCreate {
   const factory({
@@ -48,7 +48,7 @@ abstract class const SkillCredentialForEdit._() with _$SkillCredentialForEdit {
   }) = _SkillCredentialForEdit;
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class const SkillCredentialToUpdate._()
     with _$SkillCredentialToUpdate {
   // Null means preserve the existing credential name.

@@ -42,11 +42,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.server,_this.status,_this.client,const DeepCollectionEquality().hash(_this.tools),_this.errorMessage);
 }
 
-@override
-String toString() {
-  final _this = this as McpConnectionState;
-  return 'McpConnectionState(server: ${_this.server}, status: ${_this.status}, client: ${_this.client}, tools: ${_this.tools}, errorMessage: ${_this.errorMessage})';
-}
 
 
 }
@@ -270,10 +265,6 @@ int get hashCode {
     return Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(_tools),errorMessage);
 }
 
-@override
-String toString() {
-    return 'McpConnectionState(server: $server, status: $status, client: $client, tools: $tools, errorMessage: $errorMessage)';
-}
 
 
 }

@@ -24,6 +24,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('chat_tool_approval_card');
 
 class const ChatToolApprovalCard({
   required final String workspaceId,
@@ -37,8 +40,8 @@ class const ChatToolApprovalCard({
     final asyncCalls = projectedCalls == null
         ? ref.watch(pendingToolCallsProvider(workspaceId, conversationId))
         : null;
-    if (asyncCalls?.hasError ?? false) {
-      debugPrint('[ChatToolApprovalCard] Error: ${asyncCalls?.error}');
+    if (asyncCalls case AsyncError(:final error, :final stackTrace)) {
+      _logger.warning('Pending tool calls failed', error, stackTrace);
 
       return const SizedBox.shrink();
     }
@@ -622,8 +625,8 @@ class const _ConfirmationButtons({
   }) async {
     try {
       await action();
-    } on Exception catch (error) {
-      debugPrint('Tool approval action failed: $error');
+    } on Exception catch (error, stackTrace) {
+      _logger.warning('Tool approval action failed', error, stackTrace);
       if (!context.mounted) return;
       final _ = AuraSnackBars.show(
         context: context,

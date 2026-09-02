@@ -45,11 +45,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.id,_this.name,_this.argumentsRaw,_this.argumentsDigest,_this.turnId,_this.turnRevision,_this.responseRaw,_this.resultStatus);
 }
 
-@override
-String toString() {
-  final _this = this as MessageToolCallEntity;
-  return 'MessageToolCallEntity(id: ${_this.id}, name: ${_this.name}, argumentsRaw: ${_this.argumentsRaw}, argumentsDigest: ${_this.argumentsDigest}, turnId: ${_this.turnId}, turnRevision: ${_this.turnRevision}, responseRaw: ${_this.responseRaw}, resultStatus: ${_this.resultStatus})';
-}
 
 
 }
@@ -266,10 +261,6 @@ int get hashCode {
     return Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
 }
 
-@override
-String toString() {
-    return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, argumentsDigest: $argumentsDigest, turnId: $turnId, turnRevision: $turnRevision, responseRaw: $responseRaw, resultStatus: $resultStatus)';
-}
 
 
 }
@@ -2167,11 +2158,6 @@ int get hashCode {
   return Object.hash(runtimeType,_this.tool,_this.id,_this.argumentsRaw);
 }
 
-@override
-String toString() {
-  final _this = this as ToolToCall;
-  return 'ToolToCall(tool: ${_this.tool}, id: ${_this.id}, argumentsRaw: ${_this.argumentsRaw})';
-}
 
 
 }
@@ -2370,10 +2356,6 @@ int get hashCode {
     return Object.hash(runtimeType,tool,id,argumentsRaw);
 }
 
-@override
-String toString() {
-    return 'ToolToCall(tool: $tool, id: $id, argumentsRaw: $argumentsRaw)';
-}
 
 
 }
