@@ -69,6 +69,8 @@
       "create_button": "Crear Proveedor",
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
+      "oauth_waiting": "Esperando autorización...",
+      "cancel_connection": "Cancelar conexión",
       "device_code_instruction": "Abre esta URL e ingresa el código.",
       "device_code_step_code": "1. Copia este código",
       "device_code_step_link": "2. Abre este enlace",

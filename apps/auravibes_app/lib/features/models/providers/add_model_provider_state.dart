@@ -80,7 +80,7 @@ class AddModelProviderState extends _$AddModelProviderState {
   Future<ModelConnectionEntity?> addModelProvider({
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
+    bool Function()? isCodexOAuthCancelled,
   }) async {
     if (!state.isValid()) {
       return null;
@@ -143,7 +143,7 @@ class AddModelProviderState extends _$AddModelProviderState {
           authMode,
           codexOAuthMethod,
           onCodexDeviceCode,
-          isCodexDeviceCodeCancelled,
+          isCodexOAuthCancelled,
         );
       }
 
@@ -173,7 +173,7 @@ class AddModelProviderState extends _$AddModelProviderState {
     ModelProviderAuthMode authMode,
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
+    bool Function()? isCodexOAuthCancelled,
   ) async {
     if (!ModelProviderOAuthProfiles.isCodexProvider(modelId)) {
       throw ModelConnectionException(
@@ -193,10 +193,16 @@ class AddModelProviderState extends _$AddModelProviderState {
       CodexOAuthMethod.deviceCode =>
         await oauthService.authenticateWithDeviceCode(
           onDeviceCode: onCodexDeviceCode,
-          isCancelled: isCodexDeviceCodeCancelled,
+          isCancelled: isCodexOAuthCancelled,
         ),
-      _ => await oauthService.authenticateWithBrowser(),
+      _ => await oauthService.authenticateWithBrowser(
+        isCancelled: isCodexOAuthCancelled,
+      ),
     };
+
+    if (isCodexOAuthCancelled?.call() ?? false) {
+      throw const CodexOAuthCanceledException();
+    }
 
     return await repo.createModelConnection(
       ModelConnectionToCreate(

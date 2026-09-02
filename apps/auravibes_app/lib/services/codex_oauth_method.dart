@@ -29,33 +29,35 @@ class CodexOAuthService {
   final Dio _dio;
   final Future<void> Function(Uri uri) _openBrowser;
 
-  Future<OAuthTokenEntity> authenticateWithBrowser() async {
+  Future<OAuthTokenEntity> authenticateWithBrowser({
+    bool Function()? isCancelled,
+  }) async {
     final pkce = _generatePkce();
     final state = _randomUrlSafe(32);
     final server = await _bindServer();
-    final port = server.port;
-    final redirectUri = 'http://localhost:$port/auth/callback';
-    final codeCompleter = Completer<String>();
-
-    unawaited(
-      _listenForBrowserCallback(
-        server: server,
-        state: state,
-        completer: codeCompleter,
-      ),
-    );
-
-    final authorizeUrl = buildAuthorizeUri(
-      redirectUri: redirectUri,
-      codeChallenge: pkce.challenge,
-      state: state,
-    );
-    await _openBrowser(authorizeUrl);
-
     try {
-      final code = await codeCompleter.future.timeout(
-        const Duration(minutes: 5),
+      final port = server.port;
+      final redirectUri = 'http://localhost:$port/auth/callback';
+      final codeCompleter = Completer<String>();
+
+      unawaited(
+        _listenForBrowserCallback(
+          server: server,
+          state: state,
+          completer: codeCompleter,
+        ),
       );
+
+      final authorizeUrl = buildAuthorizeUri(
+        redirectUri: redirectUri,
+        codeChallenge: pkce.challenge,
+        state: state,
+      );
+      await _openBrowser(authorizeUrl);
+
+      final code = isCancelled == null
+          ? await codeCompleter.future.timeout(const Duration(minutes: 5))
+          : await _waitForBrowserCode(codeCompleter, isCancelled);
 
       return await exchangeCodeForToken(
         code: code,
@@ -180,6 +182,41 @@ class CodexOAuthService {
   }) async {
     await for (final request in server) {
       if (await _handleBrowserCallback(request, state, completer)) break;
+    }
+  }
+
+  Future<String> _waitForBrowserCode(
+    Completer<String> completer,
+    bool Function() isCancelled,
+  ) async {
+    final cancellation = Completer<void>();
+    Timer? cancellationTimer;
+
+    void checkCancellation() {
+      if (isCancelled()) {
+        cancellation.complete();
+
+        return;
+      }
+      cancellationTimer = Timer(
+        const Duration(milliseconds: 250),
+        checkCancellation,
+      );
+    }
+
+    Future<String> waitForCancellation() async {
+      await cancellation.future;
+      throw const CodexOAuthCanceledException();
+    }
+
+    checkCancellation();
+    try {
+      return await Future.any<String>([
+        completer.future.timeout(const Duration(minutes: 5)),
+        waitForCancellation(),
+      ]);
+    } finally {
+      cancellationTimer?.cancel();
     }
   }
 
