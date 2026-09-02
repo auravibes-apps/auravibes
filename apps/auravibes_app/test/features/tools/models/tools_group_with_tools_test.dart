@@ -1,8 +1,10 @@
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
 import 'package:auravibes_app/domain/models/mcp_connection_view_status.dart';
 import 'package:auravibes_app/features/tools/models/tools_group_with_tools.dart';
+import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -126,6 +128,29 @@ void main() {
       );
       final grouped = ToolsGroupWithTools(group: mcpGroup, tools: []);
       expect(grouped.mcpServerId, 'server_42');
+    });
+
+    test('mcpErrorMessage returns server-provided error code', () {
+      final grouped = ToolsGroupWithTools(
+        group: testGroup.copyWith(mcpServerId: 'server_1'),
+        tools: const [],
+        mcpConnectionState: McpConnectionState(
+          server: McpServerEntity(
+            id: 'server_1',
+            workspaceId: 'ws1',
+            name: 'MCP Server',
+            url: 'https://example.com',
+            transport: const McpTransportTypeSSE(),
+            authenticationType: const McpAuthenticationTypeNone(),
+            createdAt: DateTime(2025),
+            updatedAt: DateTime(2025),
+          ),
+          status: McpConnectionStatus.error,
+          errorMessage: 'timeout',
+        ),
+      );
+
+      expect(grouped.mcpErrorMessage, 'timeout');
     });
 
     test('isEnabled returns group.isEnabled', () {

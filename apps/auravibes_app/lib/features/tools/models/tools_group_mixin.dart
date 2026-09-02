@@ -53,7 +53,9 @@ mixin ToolsGroupMixin {
     final message = mcpConnectionState?.errorMessage;
     if (message == null) return null;
 
-    return LocaleKeys.tools_screen_mcp_error.tr();
+    return message == LocaleKeys.tools_screen_mcp_error
+        ? message.tr()
+        : message;
   }
 
   String? get truncatedErrorMessage {
