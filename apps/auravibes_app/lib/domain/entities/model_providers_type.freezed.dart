@@ -33,16 +33,21 @@ $ApiModelProviderEntityCopyWith<ApiModelProviderEntity> get copyWith => _$ApiMod
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelProviderEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.doc, doc) || other.doc == doc));
+  final _this = this as ApiModelProviderEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ApiModelProviderEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.type, _this.type) || other.type == _this.type)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.doc, _this.doc) || other.doc == _this.doc));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,url,doc);
+int get hashCode {
+  final _this = this as ApiModelProviderEntity;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.type,_this.url,_this.doc);
+}
 
 @override
 String toString() {
-  return 'ApiModelProviderEntity(id: $id, name: $name, type: $type, url: $url, doc: $doc)';
+  final _this = this as ApiModelProviderEntity;
+  return 'ApiModelProviderEntity(id: ${_this.id}, name: ${_this.name}, type: ${_this.type}, url: ${_this.url}, doc: ${_this.doc})';
 }
 
 
@@ -244,16 +249,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelProviderEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.doc, doc) || other.doc == doc));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ApiModelProviderEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.type, type) || other.type == type)&&(identical(other.url, url) || other.url == url)&&(identical(other.doc, doc) || other.doc == doc));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,type,url,doc);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,type,url,doc);
+}
 
 @override
 String toString() {
-  return 'ApiModelProviderEntity(id: $id, name: $name, type: $type, url: $url, doc: $doc)';
+    return 'ApiModelProviderEntity(id: $id, name: $name, type: $type, url: $url, doc: $doc)';
 }
 
 

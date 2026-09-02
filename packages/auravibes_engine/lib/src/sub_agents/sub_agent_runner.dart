@@ -6,35 +6,24 @@ import 'package:auravibes_engine/src/agent_iteration_decision.dart';
 const maxSubAgentTitleLength = 160;
 const maxSubAgentPromptLength = 20000;
 
-typedef ContinueSubAgentTurn =
-    Future<AgentIterationDecision> Function({
-      required String conversationId,
-      required AgentIterationContext context,
-    });
+typedef ContinueSubAgentTurn = Future<AgentIterationDecision> Function({
+  required String conversationId,
+  required AgentIterationContext context,
+});
 
-typedef SubAgentChildStarted =
-    void Function({
-      required String parentId,
-      required String childId,
-    });
+typedef SubAgentChildStarted = void Function({
+  required String parentId,
+  required String childId,
+});
 
-class SubAgentRunner {
-  const SubAgentRunner({
-    required this.agentCatalog,
-    required this.conversationStore,
-    required this.messageStore,
-    required this.startRequest,
-    required this.continueAgentTurn,
-    this.onChildStarted,
-  });
-
-  final SubAgentCatalog agentCatalog;
-  final SubAgentConversationStore conversationStore;
-  final SubAgentMessageStore messageStore;
-  final StartSubAgentRequest startRequest;
-  final ContinueSubAgentTurn continueAgentTurn;
-  final SubAgentChildStarted? onChildStarted;
-
+class const SubAgentRunner({
+  required final SubAgentCatalog agentCatalog,
+  required final SubAgentConversationStore conversationStore,
+  required final SubAgentMessageStore messageStore,
+  required final StartSubAgentRequest startRequest,
+  required final ContinueSubAgentTurn continueAgentTurn,
+  final SubAgentChildStarted? onChildStarted,
+}) {
   Future<String> listAgents(
     String workspaceId, {
     Map<String, dynamic> arguments = const {},
@@ -105,7 +94,7 @@ class SubAgentRunner {
       if (requestHandle.isStopped) {
         completionStatus = SubAgentCompletionStatus.stopped;
 
-        return _result(child.id, 'stopped', agentId: request.agentId);
+        return await _result(child.id, 'stopped', agentId: request.agentId);
       }
       if (decision == AgentIterationDecision.waitForToolApproval) {
         final waitResult = await _waitForToolApproval(
@@ -120,7 +109,7 @@ class SubAgentRunner {
         }
       }
 
-      return _result(child.id, 'done', agentId: request.agentId);
+      return await _result(child.id, 'done', agentId: request.agentId);
     } on Object {
       completionStatus = SubAgentCompletionStatus.error;
 
@@ -199,21 +188,16 @@ class SubAgentRunner {
   }
 }
 
-final class _SubAgentWaitResult {
-  const _SubAgentWaitResult(this.status, this.content);
-
-  final SubAgentCompletionStatus status;
-  final String content;
-}
+final class const _SubAgentWaitResult(
+  final SubAgentCompletionStatus status,
+  final String content,
+);
 
 final class _SubAgentRunRequest {
-  const _SubAgentRunRequest({
-    required this.title,
-    required this.prompt,
-    required this.agentId,
-  }) : error = null;
+  const new({required this.title, required this.prompt, required this.agentId})
+    : error = null;
 
-  factory _SubAgentRunRequest.from(Map<String, dynamic> arguments) {
+  factory from(Map<String, dynamic> arguments) {
     final title = arguments['title'];
     if (title is! String || title.trim().isEmpty) {
       return const _SubAgentRunRequest.error('Missing title.');
@@ -246,10 +230,7 @@ final class _SubAgentRunRequest {
     );
   }
 
-  const _SubAgentRunRequest.error(String this.error)
-    : title = '',
-      prompt = '',
-      agentId = null;
+  const new error(String this.error) : title = '', prompt = '', agentId = null;
 
   final String title;
   final String prompt;
@@ -284,11 +265,10 @@ abstract interface class SubAgentMessageStore {
   Future<String> latestAssistantContent(String conversationId);
 }
 
-typedef StartSubAgentRequest =
-    SubAgentRequestHandle Function({
-      required String parentId,
-      required String childId,
-    });
+typedef StartSubAgentRequest = SubAgentRequestHandle Function({
+  required String parentId,
+  required String childId,
+});
 
 abstract interface class SubAgentRequestHandle {
   Future<SubAgentCompletionStatus> get completion;
@@ -302,41 +282,22 @@ abstract interface class SubAgentRequestHandle {
 
 enum SubAgentCompletionStatus { done, stopped, error }
 
-class SubAgentCatalogEntry {
-  const SubAgentCatalogEntry({
-    required this.id,
-    required this.workspaceId,
-    required this.name,
-    required this.description,
-    required this.types,
-  });
+class const SubAgentCatalogEntry({
+  required final String id,
+  required final String workspaceId,
+  required final String name,
+  required final String description,
+  required final List<String> types,
+});
 
-  final String id;
-  final String workspaceId;
-  final String name;
-  final String description;
-  final List<String> types;
-}
+class const SubAgentConversationRecord({
+  required final String id,
+  required final String workspaceId,
+  required final String? modelId,
+  required final String? parentConversationId,
+});
 
-class SubAgentConversationRecord {
-  const SubAgentConversationRecord({
-    required this.id,
-    required this.workspaceId,
-    required this.modelId,
-    required this.parentConversationId,
-  });
-
-  final String id;
-  final String workspaceId;
-  final String? modelId;
-  final String? parentConversationId;
-}
-
-class SubAgentMessageRecord {
-  const SubAgentMessageRecord({required this.id});
-
-  final String id;
-}
+class const SubAgentMessageRecord({required final String id});
 
 String _error(String message, {String? agentId}) {
   return jsonEncode({

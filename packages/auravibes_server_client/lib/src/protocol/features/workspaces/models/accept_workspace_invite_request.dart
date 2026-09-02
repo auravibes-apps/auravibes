@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
-  AcceptWorkspaceInviteRequest._({
-    required this.inviteId,
-    required this.requestId,
-    required this.expectedInviteRevision,
-  });
-
-  factory AcceptWorkspaceInviteRequest({
+abstract class AcceptWorkspaceInviteRequest._({
+  required var int inviteId,
+  required var String requestId,
+  required var int expectedInviteRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int inviteId,
     required String requestId,
     required int expectedInviteRevision,
   }) = _AcceptWorkspaceInviteRequestImpl;
 
-  factory AcceptWorkspaceInviteRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return AcceptWorkspaceInviteRequest(
@@ -35,12 +33,6 @@ abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
           jsonSerialization['expectedInviteRevision'] as int,
     );
   }
-
-  int inviteId;
-
-  String requestId;
-
-  int expectedInviteRevision;
 
   /// Returns a shallow copy of this [AcceptWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
@@ -66,16 +58,17 @@ abstract class AcceptWorkspaceInviteRequest implements _i1.SerializableModel {
   }
 }
 
-class _AcceptWorkspaceInviteRequestImpl extends AcceptWorkspaceInviteRequest {
-  _AcceptWorkspaceInviteRequestImpl({
-    required int inviteId,
-    required String requestId,
-    required int expectedInviteRevision,
-  }) : super._(
-         inviteId: inviteId,
-         requestId: requestId,
-         expectedInviteRevision: expectedInviteRevision,
-       );
+class _AcceptWorkspaceInviteRequestImpl({
+  required int inviteId,
+  required String requestId,
+  required int expectedInviteRevision,
+}) extends AcceptWorkspaceInviteRequest {
+  this
+    : super._(
+        inviteId: inviteId,
+        requestId: requestId,
+        expectedInviteRevision: expectedInviteRevision,
+      );
 
   /// Returns a shallow copy of this [AcceptWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.

@@ -7,17 +7,11 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'service_connections_action_usecase.g.dart';
 
-class ServiceConnectionsActionUsecase {
-  const ServiceConnectionsActionUsecase(
-    this._reconnectMcpServer,
-    this._forceRefresh,
-    this._deleteServiceConnection,
-  );
-
-  final Future<void> Function(String mcpServerId) _reconnectMcpServer;
-  final Future<OAuthTokenEntity> Function(String connectionId) _forceRefresh;
-  final DeleteServiceConnectionUsecase _deleteServiceConnection;
-
+class const ServiceConnectionsActionUsecase(
+  final Future<void> Function(String mcpServerId) _reconnectMcpServer,
+  final Future<OAuthTokenEntity> Function(String connectionId) _forceRefresh,
+  final DeleteServiceConnectionUsecase _deleteServiceConnection,
+) {
   Future<void> reconnectMcpServer(String mcpServerId) {
     return _reconnectMcpServer(mcpServerId);
   }
@@ -47,3 +41,4 @@ Future<ServiceConnectionsActionUsecase> serviceConnectionsActionUsecase(
   ref.watch(oauthCredentialServiceProvider).forceRefresh,
   await ref.watch(deleteServiceConnectionUsecaseProvider(workspaceId).future),
 );
+// Top-level API/provider declarations are required by their consumers.

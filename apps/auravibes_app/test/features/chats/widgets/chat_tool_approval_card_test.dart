@@ -11,9 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 void main() {
-  Widget buildSubject({
-    required List<Object> overrides,
-  }) {
+  Widget buildSubject({required List<Object> overrides}) {
     return EasyLocalization(
       child: ProviderScope(
         overrides: overrides.cast(),
@@ -49,12 +47,19 @@ void main() {
     String toolCallId = 'tc-1',
     String messageId = 'msg-1',
     String toolName = 'built_in_1_read_file',
+    String argumentsRaw = '{"input": "test.txt"}',
+    String? argumentsDigest,
+    String? turnId,
+    int? turnRevision,
   }) {
     return PendingToolCall(
       toolCall: MessageToolCallEntity(
         id: toolCallId,
         name: toolName,
-        argumentsRaw: '{"input": "test.txt"}',
+        argumentsRaw: argumentsRaw,
+        argumentsDigest: argumentsDigest,
+        turnId: turnId,
+        turnRevision: turnRevision,
       ),
       messageId: messageId,
     );
@@ -75,9 +80,7 @@ void main() {
       await pumpAndInit(
         tester,
         buildSubject(
-          overrides: [
-            pendingToolCallsProvider.overrideWith((ref, _) => []),
-          ],
+          overrides: [pendingToolCallsProvider.overrideWith((ref, _) => [])],
         ),
       );
 
@@ -125,9 +128,7 @@ void main() {
     });
 
     testWidgets('shows formatted tool display name', (tester) async {
-      final pendingCalls = [
-        _createPendingToolCall(),
-      ];
+      final pendingCalls = [_createPendingToolCall()];
       await pumpAndInit(
         tester,
         buildSubject(
@@ -138,6 +139,87 @@ void main() {
       );
 
       expect(find.text('Read File'), findsOneWidget);
+    });
+
+    testWidgets('shows effective skill target for local approval', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          toolName: 'call_skill_tool',
+          argumentsRaw:
+              '{"skill":"DuckDuckGo","tool":"search","args":'
+              '{"api_key":"secret-key","query":"visible"}}',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Duck Duck Go: Search'), findsOneWidget);
+      expect(find.text('Call Skill Tool'), findsNothing);
+      expect(find.textContaining('DuckDuckGo'), findsOneWidget);
+      expect(find.textContaining('Search'), findsOneWidget);
+      expect(find.textContaining('secret-key'), findsNothing);
+      expect(find.textContaining('****'), findsOneWidget);
+    });
+
+    testWidgets('shows effective skill target for cloud approval', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          toolName: 'call_skill_tool',
+          argumentsRaw:
+              '{"skill":"DuckDuckGo","tool":"search","args":'
+              '{"credential":"secret-value"}}',
+          argumentsDigest: 'digest-1',
+          turnId: 'turn-1',
+          turnRevision: 2,
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Duck Duck Go: Search'), findsOneWidget);
+      expect(find.text('Call Skill Tool'), findsNothing);
+      expect(find.textContaining('DuckDuckGo'), findsOneWidget);
+      expect(find.textContaining('Search'), findsOneWidget);
+      expect(find.textContaining('secret-value'), findsNothing);
+      expect(find.textContaining('****'), findsOneWidget);
+    });
+
+    testWidgets('keeps wrapper title for malformed skill target', (
+      tester,
+    ) async {
+      final pendingCalls = [
+        _createPendingToolCall(
+          toolName: 'call_skill_tool',
+          argumentsRaw: '{"skill":"DuckDuckGo"}',
+        ),
+      ];
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            pendingToolCallsProvider.overrideWith((ref, _) => pendingCalls),
+          ],
+        ),
+      );
+
+      expect(find.text('Call Skill Tool'), findsOneWidget);
+      expect(find.text('Duck Duck Go: Search'), findsNothing);
     });
 
     testWidgets('shows decoded arguments when available', (tester) async {
@@ -236,9 +318,7 @@ void main() {
       expect(find.text('Stop All'), findsOneWidget);
     });
 
-    testWidgets('renders SizedBox.shrink when async has error', (
-      tester,
-    ) async {
+    testWidgets('renders SizedBox.shrink when async has error', (tester) async {
       await pumpAndInit(
         tester,
         buildSubject(

@@ -15,10 +15,7 @@ QueryExecutor _testConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -42,9 +39,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(conversation_tools)',
-          )
+          .customSelect('PRAGMA table_info(conversation_tools)')
           .get();
     });
 

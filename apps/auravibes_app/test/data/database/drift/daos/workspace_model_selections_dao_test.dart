@@ -19,10 +19,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -71,14 +68,12 @@ void main() {
             ),
           );
       await fixture.database.workspaceModelSelectionsDao
-          .insertWorkspaceModelSelections(
-            [
-              WorkspaceModelSelectionsCompanion.insert(
-                modelId: 'openai',
-                modelConnectionId: conn.id,
-              ),
-            ],
-          );
+          .insertWorkspaceModelSelections([
+            WorkspaceModelSelectionsCompanion.insert(
+              modelId: 'openai',
+              modelConnectionId: conn.id,
+            ),
+          ]);
       final results = await fixture.database.workspaceModelSelectionsDao
           .getAllWorkspaceModelSelectionsByWorkspace(
             workspaceIds: [workspaceId],
@@ -113,14 +108,12 @@ void main() {
       expect(iterator.current, isEmpty);
 
       await fixture.database.workspaceModelSelectionsDao
-          .insertWorkspaceModelSelections(
-            [
-              WorkspaceModelSelectionsCompanion.insert(
-                modelId: 'openai',
-                modelConnectionId: conn.id,
-              ),
-            ],
-          );
+          .insertWorkspaceModelSelections([
+            WorkspaceModelSelectionsCompanion.insert(
+              modelId: 'openai',
+              modelConnectionId: conn.id,
+            ),
+          ]);
 
       expect(await iterator.moveNext(), isTrue);
       expect(iterator.current, hasLength(1));
@@ -153,14 +146,12 @@ void main() {
             ),
           );
       await fixture.database.workspaceModelSelectionsDao
-          .insertWorkspaceModelSelections(
-            [
-              WorkspaceModelSelectionsCompanion.insert(
-                modelId: 'openai',
-                modelConnectionId: conn.id,
-              ),
-            ],
-          );
+          .insertWorkspaceModelSelections([
+            WorkspaceModelSelectionsCompanion.insert(
+              modelId: 'openai',
+              modelConnectionId: conn.id,
+            ),
+          ]);
       final all = await fixture.database.workspaceModelSelectionsDao
           .getAllWorkspaceModelSelectionsByWorkspace(
             workspaceIds: [workspaceId],

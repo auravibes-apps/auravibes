@@ -15,10 +15,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -53,10 +50,7 @@ void main() {
     test('upsertProvider inserts and retrieves provider', () async {
       final inserted = await fixture.database.apiModelProvidersDao
           .upsertProvider(
-            ApiModelProvidersCompanion.insert(
-              id: 'openai',
-              name: 'OpenAI',
-            ),
+            ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
           );
       expect(inserted.id, equals('openai'));
       expect(inserted.name, equals('OpenAI'));
@@ -81,9 +75,7 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final provider = await fixture.database.apiModelProvidersDao
-          .getProviderById(
-            'openai',
-          );
+          .getProviderById('openai');
       expect(provider, isNotNull);
       expect(
         (provider ?? fail('Expected provider to be non-null')).name,
@@ -93,9 +85,7 @@ void main() {
 
     test('getProviderById returns null when not exists', () async {
       final provider = await fixture.database.apiModelProvidersDao
-          .getProviderById(
-            'nonexistent',
-          );
+          .getProviderById('nonexistent');
       expect(provider, isNull);
     });
 
@@ -107,9 +97,7 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
       );
       final providers = await fixture.database.apiModelProvidersDao
-          .getProvidersByType(
-            'nonexistent',
-          );
+          .getProvidersByType('nonexistent');
       expect(providers, isEmpty);
     });
 
@@ -118,22 +106,16 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'openai', name: 'OpenAI'),
       );
       final deleted = await fixture.database.apiModelProvidersDao
-          .deleteProvider(
-            'openai',
-          );
+          .deleteProvider('openai');
       expect(deleted, isTrue);
       final provider = await fixture.database.apiModelProvidersDao
-          .getProviderById(
-            'openai',
-          );
+          .getProviderById('openai');
       expect(provider, isNull);
     });
 
     test('deleteProvider returns false for nonexistent provider', () async {
       final deleted = await fixture.database.apiModelProvidersDao
-          .deleteProvider(
-            'nonexistent',
-          );
+          .deleteProvider('nonexistent');
       expect(deleted, isFalse);
     });
 
@@ -162,9 +144,7 @@ void main() {
         ApiModelProvidersCompanion.insert(id: 'anthropic', name: 'Anthropic'),
       );
       final results = await fixture.database.apiModelProvidersDao
-          .searchProvidersByName(
-            'Open',
-          );
+          .searchProvidersByName('Open');
       expect(results.length, equals(1));
       expect(results.firstOrNull?.name, equals('OpenAI'));
     });

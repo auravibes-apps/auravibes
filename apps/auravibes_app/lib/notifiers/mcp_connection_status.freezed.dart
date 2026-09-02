@@ -31,12 +31,16 @@ $McpConnectionStateCopyWith<McpConnectionState> get copyWith => _$McpConnectionS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpConnectionState&&(identical(other.server, server) || other.server == server)&&(identical(other.status, status) || other.status == status)&&(identical(other.client, client) || other.client == client)&&const DeepCollectionEquality().equals(other.tools, tools)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  final _this = this as McpConnectionState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpConnectionState&&(identical(other.server, _this.server) || other.server == _this.server)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.client, _this.client) || other.client == _this.client)&&const DeepCollectionEquality().equals(other.tools, _this.tools)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(tools),errorMessage);
+int get hashCode {
+  final _this = this as McpConnectionState;
+  return Object.hash(runtimeType,_this.server,_this.status,_this.client,const DeepCollectionEquality().hash(_this.tools),_this.errorMessage);
+}
 
 
 
@@ -252,12 +256,14 @@ _$McpConnectionStateCopyWith<_McpConnectionState> get copyWith => __$McpConnecti
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpConnectionState&&(identical(other.server, server) || other.server == server)&&(identical(other.status, status) || other.status == status)&&(identical(other.client, client) || other.client == client)&&const DeepCollectionEquality().equals(other._tools, _tools)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpConnectionState&&(identical(other.server, server) || other.server == server)&&(identical(other.status, status) || other.status == status)&&(identical(other.client, client) || other.client == client)&&const DeepCollectionEquality().equals(other.tools, _tools)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(_tools),errorMessage);
+int get hashCode {
+    return Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(_tools),errorMessage);
+}
 
 
 

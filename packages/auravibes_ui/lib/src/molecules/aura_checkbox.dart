@@ -1,31 +1,25 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
-import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart'
     show AuraTint, DesignColors;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+export 'aura_checkbox_list_tile.dart';
+
 /// An Aura checkbox that follows the const-first design system.
 class AuraCheckbox extends StatelessWidget {
   /// Creates an Aura checkbox.
-  const AuraCheckbox({
+  const new({
     required this.value,
     required this.onChanged,
     super.key,
     this.tint,
     this.disabled = false,
     this.autofocus = false,
-  }) : _visualOnly = false;
-
-  const AuraCheckbox._visual({
-    required this.value,
-    required this.tint,
-    required this.disabled,
-  }) : onChanged = null,
-       autofocus = false,
-       _visualOnly = true;
+    this.semanticLabel = 'Checkbox',
+  });
 
   /// Whether the checkbox is selected.
   final bool value;
@@ -42,22 +36,12 @@ class AuraCheckbox extends StatelessWidget {
   /// Whether this checkbox should request focus when built.
   final bool autofocus;
 
-  final bool _visualOnly;
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     final isDisabled = disabled || onChanged == null;
-
-    if (_visualOnly) {
-      final isFocused = _CheckboxFocusState.of(context);
-
-      return _CheckboxVisual(
-        value: value,
-        tint: tint,
-        disabled: isDisabled,
-        isFocused: isFocused,
-      );
-    }
 
     return Semantics(
       child: _CheckboxInteraction(
@@ -84,104 +68,36 @@ class AuraCheckbox extends StatelessWidget {
   }
 }
 
-const _checkIcon = IconData(0xe5ca, fontFamily: 'MaterialIcons');
-
-/// A full-width settings row with an Aura checkbox, title, and optional
-/// subtitle.
-class AuraCheckboxListTile extends StatelessWidget {
-  /// Creates an Aura checkbox list tile.
-  const AuraCheckboxListTile({
-    required this.value,
-    required this.onChanged,
-    required this.title,
-    super.key,
-    this.subtitle,
-    this.tint,
-    this.disabled = false,
-    this.autofocus = false,
-  });
-
-  /// Whether the checkbox is selected.
-  final bool value;
-
-  /// Called when the user toggles the checkbox.
-  final ValueChanged<bool>? onChanged;
-
-  /// The title widget.
-  final Widget title;
-
-  /// Optional subtitle widget.
-  final Widget? subtitle;
-
-  /// Tint used when selected.
-  final AuraTint? tint;
-
-  /// Whether the tile is disabled.
-  final bool disabled;
-
-  /// Whether this checkbox tile should request focus when built.
-  final bool autofocus;
+class const _CheckboxMarkPainter({required final Color color})
+    extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 2;
+    final path = Path()
+      ..moveTo(size.width * 0.1, size.height * 0.5)
+      ..lineTo(size.width * 0.4, size.height * 0.8)
+      ..lineTo(size.width * 0.9, size.height * 0.2);
+    canvas.drawPath(path, paint);
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final isDisabled = disabled || onChanged == null;
-    final subtitle = this.subtitle;
-
-    return Semantics(
-      child: _CheckboxInteraction(
-        value: value,
-        isDisabled: isDisabled,
-        onChanged: onChanged,
-        autofocus: autofocus,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AuraCheckbox._visual(
-              value: value,
-              tint: tint,
-              disabled: isDisabled,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AuraText(child: title),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    AuraText(
-                      child: subtitle,
-                      style: AuraTextStyle.bodySmall,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      enabled: !isDisabled,
-      checked: value,
-    );
+  bool shouldRepaint(_CheckboxMarkPainter oldDelegate) {
+    return color != oldDelegate.color;
   }
 }
 
-class _CheckboxInteraction extends StatefulWidget {
-  const _CheckboxInteraction({
-    required this.value,
-    required this.isDisabled,
-    required this.onChanged,
-    required this.autofocus,
-    required this.child,
-  });
-
-  final bool value;
-  final bool isDisabled;
-  final ValueChanged<bool>? onChanged;
-  final bool autofocus;
-  final Widget child;
-
+class const _CheckboxInteraction({
+  required final bool value,
+  required final bool isDisabled,
+  required final ValueChanged<bool>? onChanged,
+  required final bool autofocus,
+  required final Widget child,
+}) extends StatefulWidget {
   @override
   State<_CheckboxInteraction> createState() => _CheckboxInteractionState();
 }
@@ -201,13 +117,7 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
       child: Actions(
         actions: <Type, Action<Intent>>{
           ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              if (isInteractive) {
-                widget.onChanged?.call(!widget.value);
-              }
-
-              return null;
-            },
+            onInvoke: _handleActivate,
           ),
         },
         child: FocusableActionDetector(
@@ -220,32 +130,43 @@ class _CheckboxInteractionState extends State<_CheckboxInteraction> {
               ? SystemMouseCursors.click
               : SystemMouseCursors.forbidden,
           child: GestureDetector(
-            child: Opacity(
-              opacity: widget.isDisabled ? 0.6 : 1,
-              child: _CheckboxFocusState(
-                isFocused: _isFocused,
-                child: widget.child,
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(
+                child: Opacity(
+                  opacity: widget.isDisabled ? 0.6 : 1,
+                  child: _CheckboxFocusState(
+                    isFocused: _isFocused,
+                    child: widget.child,
+                  ),
+                ),
               ),
             ),
             onTap: isInteractive
                 ? () => widget.onChanged?.call(!widget.value)
                 : null,
             behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
           ),
         ),
       ),
     );
   }
+
+  Null _handleActivate(ActivateIntent _) {
+    if (!widget.isDisabled && widget.onChanged != null) {
+      widget.onChanged?.call(!widget.value);
+    }
+
+    return null;
+  }
 }
 
-class _CheckboxFocusState extends InheritedWidget {
-  const _CheckboxFocusState({
-    required this.isFocused,
-    required super.child,
-  });
-
-  final bool isFocused;
-
+class const _CheckboxFocusState({
+  required final bool isFocused,
+  required super.child,
+}) extends InheritedWidget {
   static bool of(BuildContext context) {
     final state = context
         .dependOnInheritedWidgetOfExactType<_CheckboxFocusState>();
@@ -259,19 +180,14 @@ class _CheckboxFocusState extends InheritedWidget {
   }
 }
 
-class _CheckboxVisual extends StatelessWidget {
-  const _CheckboxVisual({
-    required this.value,
-    required this.tint,
-    required this.disabled,
-    required this.isFocused,
-  });
-
-  final bool value;
-  final AuraTint? tint;
-  final bool disabled;
-  final bool isFocused;
-
+class const _CheckboxVisual({
+  required final bool value,
+  required final AuraTint? tint,
+  required final bool disabled,
+  required final bool isFocused,
+}) extends StatelessWidget {
+  static const _boxSize = 24.0;
+  static const _checkMarkSize = 12.0;
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -285,13 +201,17 @@ class _CheckboxVisual extends StatelessWidget {
         border: Border.all(color: borderColor, width: isFocused ? 3 : 2),
         borderRadius: const BorderRadius.all(Radius.circular(4)),
       ),
-      width: 24,
-      height: 24,
+      width: _boxSize,
+      height: _boxSize,
       child: value
-          ? Icon(
-              _checkIcon,
-              size: 12,
-              color: auraColors.onTint(tint ?? AuraTint.primary),
+          ? SizedBox(
+              width: _checkMarkSize,
+              height: _checkMarkSize,
+              child: CustomPaint(
+                painter: _CheckboxMarkPainter(
+                  color: auraColors.onTint(tint ?? AuraTint.primary),
+                ),
+              ),
             )
           : null,
       duration: context.auraTheme.animation.fast,

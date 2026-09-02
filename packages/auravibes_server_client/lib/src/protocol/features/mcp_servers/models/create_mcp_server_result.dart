@@ -11,24 +11,24 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/mcp_servers/models/discover_mcp_server_result.dart'
     as _i2;
+
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class CreateMcpServerResult implements _i1.SerializableModel {
-  CreateMcpServerResult._({
-    required this.mcpServerId,
-    required this.createdAt,
-    required this.discovery,
-  });
-
-  factory CreateMcpServerResult({
+abstract class CreateMcpServerResult._({
+  required var String mcpServerId,
+  required var DateTime createdAt,
+  required var _i2.DiscoverMcpServerResult discovery,
+}) implements _i1.SerializableModel {
+  factory({
     required String mcpServerId,
     required DateTime createdAt,
     required _i2.DiscoverMcpServerResult discovery,
   }) = _CreateMcpServerResultImpl;
 
-  factory CreateMcpServerResult.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CreateMcpServerResult(
@@ -41,12 +41,6 @@ abstract class CreateMcpServerResult implements _i1.SerializableModel {
       ),
     );
   }
-
-  String mcpServerId;
-
-  DateTime createdAt;
-
-  _i2.DiscoverMcpServerResult discovery;
 
   /// Returns a shallow copy of this [CreateMcpServerResult]
   /// with some or all fields replaced by the given arguments.
@@ -72,16 +66,17 @@ abstract class CreateMcpServerResult implements _i1.SerializableModel {
   }
 }
 
-class _CreateMcpServerResultImpl extends CreateMcpServerResult {
-  _CreateMcpServerResultImpl({
-    required String mcpServerId,
-    required DateTime createdAt,
-    required _i2.DiscoverMcpServerResult discovery,
-  }) : super._(
-         mcpServerId: mcpServerId,
-         createdAt: createdAt,
-         discovery: discovery,
-       );
+class _CreateMcpServerResultImpl({
+  required String mcpServerId,
+  required DateTime createdAt,
+  required _i2.DiscoverMcpServerResult discovery,
+}) extends CreateMcpServerResult {
+  this
+    : super._(
+        mcpServerId: mcpServerId,
+        createdAt: createdAt,
+        discovery: discovery,
+      );
 
   /// Returns a shallow copy of this [CreateMcpServerResult]
   /// with some or all fields replaced by the given arguments.

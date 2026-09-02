@@ -28,7 +28,7 @@ final codexOAuthServiceProvider = Provider<CodexOAuthService>(
   (_) => CodexOAuthService(),
 );
 final openCodexAuthorizationProvider = Provider<Future<void> Function(Uri)>(
-  (_) => openSystemBrowser,
+  (_) => OpenSystemBrowser.call,
 );
 
 @riverpod
@@ -43,29 +43,21 @@ class AddModelProviderState extends _$AddModelProviderState {
   }
 
   void setName(String newName) {
-    state = state.copyWith(
-      name: newName,
-    );
+    state = state.copyWith(name: newName);
   }
 
   void setKey(String newKey) {
-    state = state.copyWith(
-      key: newKey,
-    );
+    state = state.copyWith(key: newKey);
   }
 
   void setModel(String? newValue) {
     final models = ref
-        .watch(
-          apiModelProvidersProvider(workspaceId: _workspaceId),
-        )
+        .watch(apiModelProvidersProvider(workspaceId: _workspaceId))
         .value;
-    final model = models?.firstWhereOrNull(
-      (element) {
-        return element.id == newValue;
-      },
-    );
-    final nextAuthMode = isOpenAICodexProvider(newValue)
+    final model = models?.firstWhereOrNull((element) {
+      return element.id == newValue;
+    });
+    final nextAuthMode = ModelProviderOAuthProfiles.isCodexProvider(newValue)
         ? ModelProviderAuthMode.oauth2
         : ModelProviderAuthMode.apiKey;
     final authModeChanged = state.authMode != nextAuthMode;
@@ -73,22 +65,22 @@ class AddModelProviderState extends _$AddModelProviderState {
       modelId: newValue,
       name:
           model?.name ??
-          (isOpenAICodexProvider(newValue) ? openAICodexDisplayName : null),
+          (ModelProviderOAuthProfiles.isCodexProvider(newValue)
+              ? ModelProviderOAuthProfiles.displayName
+              : null),
       authMode: nextAuthMode,
       key: authModeChanged ? null : state.key,
     );
   }
 
   void setUrl(String? newUrl) {
-    state = state.copyWith(
-      url: newUrl,
-    );
+    state = state.copyWith(url: newUrl);
   }
 
   Future<ModelConnectionEntity?> addModelProvider({
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
+    bool Function()? isCodexOAuthCancelled,
   }) async {
     if (!state.isValid()) {
       return null;
@@ -135,9 +127,8 @@ class AddModelProviderState extends _$AddModelProviderState {
               url: state.url,
             ),
           );
-          final oauth = await CloudModelGateway(gateway).startCodexOAuth(
-            connectionId: connection.id,
-          );
+          final oauth = await CloudModelGateway(gateway)
+              .startCodexOAuth(connectionId: connection.id);
           await ref.read(openCodexAuthorizationProvider)(
             Uri.parse(oauth.authorizationUrl),
           );
@@ -152,7 +143,7 @@ class AddModelProviderState extends _$AddModelProviderState {
           authMode,
           codexOAuthMethod,
           onCodexDeviceCode,
-          isCodexDeviceCodeCancelled,
+          isCodexOAuthCancelled,
         );
       }
 
@@ -182,18 +173,18 @@ class AddModelProviderState extends _$AddModelProviderState {
     ModelProviderAuthMode authMode,
     CodexOAuthMethod? codexOAuthMethod,
     void Function(CodexDeviceCode deviceCode)? onCodexDeviceCode,
-    bool Function()? isCodexDeviceCodeCancelled,
+    bool Function()? isCodexOAuthCancelled,
   ) async {
-    if (!isOpenAICodexProvider(modelId)) {
+    if (!ModelProviderOAuthProfiles.isCodexProvider(modelId)) {
       throw ModelConnectionException(
         LocaleKeys.models_screens_add_provider_errors_oauth_profile_not_found
             .tr(args: [modelId]),
       );
     }
-    if (openAICodexClientId.isEmpty) {
+    if (ModelProviderOAuthProfiles.clientId.isEmpty) {
       throw ModelConnectionException(
         LocaleKeys.models_screens_add_provider_errors_oauth_client_id_missing
-            .tr(args: [openAICodexDisplayName]),
+            .tr(args: [ModelProviderOAuthProfiles.displayName]),
       );
     }
     final modelIds = await _codexRuntimeModelIds();
@@ -202,12 +193,18 @@ class AddModelProviderState extends _$AddModelProviderState {
       CodexOAuthMethod.deviceCode =>
         await oauthService.authenticateWithDeviceCode(
           onDeviceCode: onCodexDeviceCode,
-          isCancelled: isCodexDeviceCodeCancelled,
+          isCancelled: isCodexOAuthCancelled,
         ),
-      _ => await oauthService.authenticateWithBrowser(),
+      _ => await oauthService.authenticateWithBrowser(
+        isCancelled: isCodexOAuthCancelled,
+      ),
     };
 
-    return repo.createModelConnection(
+    if (isCodexOAuthCancelled?.call() ?? false) {
+      throw const CodexOAuthCanceledException();
+    }
+
+    return await repo.createModelConnection(
       ModelConnectionToCreate(
         name: name,
         workspaceId: _workspaceId,
@@ -216,13 +213,14 @@ class AddModelProviderState extends _$AddModelProviderState {
         url: state.url,
         oauthToken: token,
         oauthMetadata: ServiceConnectionMetadata(
-          clientId: openAICodexClientId,
-          issuer: openAICodexIssuer,
-          authorizationEndpoint: openAICodexAuthorizationEndpoint,
-          tokenEndpoint: openAICodexTokenEndpoint,
-          scopes: openAICodexScopes,
+          clientId: ModelProviderOAuthProfiles.clientId,
+          issuer: ModelProviderOAuthProfiles.issuer,
+          authorizationEndpoint:
+              ModelProviderOAuthProfiles.authorizationEndpoint,
+          tokenEndpoint: ModelProviderOAuthProfiles.tokenEndpoint,
+          scopes: ModelProviderOAuthProfiles.scopes,
           accountId: CodexOAuthService.accountIdFromToken(token),
-          provider: openAICodexProviderId,
+          provider: ModelProviderOAuthProfiles.providerId,
         ),
         modelIds: modelIds,
       ),

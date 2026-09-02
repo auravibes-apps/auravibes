@@ -9,11 +9,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'context_usage_level.g.dart';
 
-extension ContextUsageFamilyTestOverride on ContextUsageFamily {
-  Override overrideWithValue(ContextUsageData value) =>
-      overrideWith((_, _) => value);
-}
-
 @riverpod
 ContextUsageData contextUsage(
   Ref ref,
@@ -24,9 +19,7 @@ ContextUsageData contextUsage(
     conversationUsedTokensProvider(workspaceId, conversationId),
   );
   final limitTokens = ref
-      .watch(
-        conversationContextLimitProvider(workspaceId, conversationId),
-      )
+      .watch(conversationContextLimitProvider(workspaceId, conversationId))
       .value;
 
   return ContextUsageData.compute(
@@ -79,23 +72,18 @@ enum ContextUsageLevel {
   };
 }
 
-class ContextUsageData {
-  const ContextUsageData({
-    required this.usedTokens,
-    required this.normalizedLimit,
-    required this.hasLimit,
-    required this.percent,
-    required this.progress,
-    required this.level,
-    required this.overflowTokens,
-    required this.usageLabel,
-    required this.percentLabel,
-  });
-
-  factory ContextUsageData.compute({
-    required int usedTokens,
-    required int? limitTokens,
-  }) {
+class const ContextUsageData({
+  required final int usedTokens,
+  required final int normalizedLimit,
+  required final bool hasLimit,
+  required final int percent,
+  required final double progress,
+  required final ContextUsageLevel level,
+  required final int overflowTokens,
+  required final String usageLabel,
+  required final String percentLabel,
+}) {
+  factory compute({required int usedTokens, required int? limitTokens}) {
     final normalizedLimit = (limitTokens ?? 0) < 0 ? 0 : (limitTokens ?? 0);
     final hasLimit = normalizedLimit > 0;
     final percent = hasLimit
@@ -140,16 +128,6 @@ class ContextUsageData {
     );
   }
 
-  final int usedTokens;
-  final int normalizedLimit;
-  final bool hasLimit;
-  final int percent;
-  final double progress;
-  final ContextUsageLevel level;
-  final int overflowTokens;
-  final String usageLabel;
-  final String percentLabel;
-
   Map<String, String> tooltipArgs() => {
     'used': '$usedTokens',
     'limit': '$normalizedLimit',
@@ -157,7 +135,7 @@ class ContextUsageData {
   };
 }
 
-// ponytail: top-level compact format; default locale follows
-// Intl.systemLocale. Upgrade path: thread app locale via a provider
-// if device locale != app locale.
+// Ponytail. Top-level compact format; default locale follows Intl.systemLocale.
+// Upgrade path. Thread the app locale through a provider if the device locale
+// differs from the app locale.
 final NumberFormat _compactFormat = NumberFormat.compact();

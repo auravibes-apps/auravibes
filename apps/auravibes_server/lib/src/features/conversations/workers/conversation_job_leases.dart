@@ -3,15 +3,10 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../domain/conversation_values.dart';
 
-final class ConversationJobLeaseLostException implements Exception {
-  const ConversationJobLeaseLostException(this.jobId);
+final class const ConversationJobLeaseLostException(final int jobId)
+    implements Exception;
 
-  final int jobId;
-}
-
-class ConversationJobLeases {
-  const ConversationJobLeases();
-
+class const ConversationJobLeases() {
   Future<ConversationJob?> claim(
     Session session, {
     required String workerId,

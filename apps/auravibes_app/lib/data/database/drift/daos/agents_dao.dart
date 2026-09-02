@@ -6,9 +6,9 @@ import 'package:drift/drift.dart';
 part 'agents_dao.g.dart';
 
 @DriftAccessor(tables: [Agents, AgentSkills])
-class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
-  AgentsDao(super.attachedDatabase);
-
+class AgentsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
+    with _$AgentsDaoMixin {
   Stream<List<AgentsTable>> watchAgentsByWorkspace(String workspaceId) =>
       (select(agents)
             ..where((tbl) => tbl.workspaceId.equals(workspaceId))
@@ -25,13 +25,10 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
     agents,
   )..where((tbl) => tbl.id.equals(agentId))).getSingleOrNull();
 
-  Future<List<AgentSkillsTable>> getAgentSkills(String agentId) => (select(
-    agentSkills,
-  )..where((tbl) => tbl.agentId.equals(agentId))).get();
+  Future<List<AgentSkillsTable>> getAgentSkills(String agentId) =>
+      (select(agentSkills)..where((tbl) => tbl.agentId.equals(agentId))).get();
 
-  Future<List<AgentSkillsTable>> getSkillsForAgents(
-    Iterable<String> agentIds,
-  ) {
+  Future<List<AgentSkillsTable>> getSkillsForAgents(Iterable<String> agentIds) {
     final ids = agentIds.toList();
     if (ids.isEmpty) return Future.value(const []);
 
@@ -41,7 +38,7 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
   Future<AgentsTable> createAgent(
     AgentsCompanion agent,
     List<AgentSkillsCompanion> skills,
-  ) async {
+  ) {
     return transaction(() async {
       final created = await into(agents).insertReturning(agent);
       await _replaceSkills(created.id, skills);
@@ -54,7 +51,7 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
     String agentId,
     AgentsCompanion agent,
     List<AgentSkillsCompanion> skills,
-  ) async {
+  ) {
     return transaction(() async {
       final _ = await (update(
         agents,
@@ -85,9 +82,8 @@ class AgentsDao extends DatabaseAccessor<AppDatabase> with _$AgentsDaoMixin {
     )..where((tbl) => tbl.agentId.equals(agentId))).go();
 
     for (final skill in skills) {
-      final _ = await into(
-        agentSkills,
-      ).insert(skill.copyWith(agentId: Value(agentId)));
+      final _ = await into(agentSkills)
+          .insert(skill.copyWith(agentId: Value(agentId)));
     }
   }
 }

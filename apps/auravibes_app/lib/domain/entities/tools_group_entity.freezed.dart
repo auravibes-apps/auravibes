@@ -35,16 +35,21 @@ $ToolsGroupEntityCopyWith<ToolsGroupEntity> get copyWith => _$ToolsGroupEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolsGroupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissions, permissions) || other.permissions == permissions)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.mcpServerId, mcpServerId) || other.mcpServerId == mcpServerId));
+  final _this = this as ToolsGroupEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolsGroupEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissions, _this.permissions) || other.permissions == _this.permissions)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.mcpServerId, _this.mcpServerId) || other.mcpServerId == _this.mcpServerId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,isEnabled,permissions,createdAt,updatedAt,mcpServerId);
+int get hashCode {
+  final _this = this as ToolsGroupEntity;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.isEnabled,_this.permissions,_this.createdAt,_this.updatedAt,_this.mcpServerId);
+}
 
 @override
 String toString() {
-  return 'ToolsGroupEntity(id: $id, workspaceId: $workspaceId, name: $name, isEnabled: $isEnabled, permissions: $permissions, createdAt: $createdAt, updatedAt: $updatedAt, mcpServerId: $mcpServerId)';
+  final _this = this as ToolsGroupEntity;
+  return 'ToolsGroupEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, isEnabled: ${_this.isEnabled}, permissions: ${_this.permissions}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, mcpServerId: ${_this.mcpServerId})';
 }
 
 
@@ -254,16 +259,18 @@ _$ToolsGroupEntityCopyWith<_ToolsGroupEntity> get copyWith => __$ToolsGroupEntit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolsGroupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissions, permissions) || other.permissions == permissions)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.mcpServerId, mcpServerId) || other.mcpServerId == mcpServerId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolsGroupEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissions, permissions) || other.permissions == permissions)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.mcpServerId, mcpServerId) || other.mcpServerId == mcpServerId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,isEnabled,permissions,createdAt,updatedAt,mcpServerId);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,name,isEnabled,permissions,createdAt,updatedAt,mcpServerId);
+}
 
 @override
 String toString() {
-  return 'ToolsGroupEntity(id: $id, workspaceId: $workspaceId, name: $name, isEnabled: $isEnabled, permissions: $permissions, createdAt: $createdAt, updatedAt: $updatedAt, mcpServerId: $mcpServerId)';
+    return 'ToolsGroupEntity(id: $id, workspaceId: $workspaceId, name: $name, isEnabled: $isEnabled, permissions: $permissions, createdAt: $createdAt, updatedAt: $updatedAt, mcpServerId: $mcpServerId)';
 }
 
 
@@ -326,16 +333,21 @@ $ToolsGroupToCreateCopyWith<ToolsGroupToCreate> get copyWith => _$ToolsGroupToCr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolsGroupToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissions, permissions) || other.permissions == permissions)&&(identical(other.mcpServerId, mcpServerId) || other.mcpServerId == mcpServerId));
+  final _this = this as ToolsGroupToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolsGroupToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissions, _this.permissions) || other.permissions == _this.permissions)&&(identical(other.mcpServerId, _this.mcpServerId) || other.mcpServerId == _this.mcpServerId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,isEnabled,permissions,mcpServerId);
+int get hashCode {
+  final _this = this as ToolsGroupToCreate;
+  return Object.hash(runtimeType,_this.name,_this.isEnabled,_this.permissions,_this.mcpServerId);
+}
 
 @override
 String toString() {
-  return 'ToolsGroupToCreate(name: $name, isEnabled: $isEnabled, permissions: $permissions, mcpServerId: $mcpServerId)';
+  final _this = this as ToolsGroupToCreate;
+  return 'ToolsGroupToCreate(name: ${_this.name}, isEnabled: ${_this.isEnabled}, permissions: ${_this.permissions}, mcpServerId: ${_this.mcpServerId})';
 }
 
 
@@ -532,16 +544,18 @@ _$ToolsGroupToCreateCopyWith<_ToolsGroupToCreate> get copyWith => __$ToolsGroupT
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolsGroupToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissions, permissions) || other.permissions == permissions)&&(identical(other.mcpServerId, mcpServerId) || other.mcpServerId == mcpServerId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolsGroupToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissions, permissions) || other.permissions == permissions)&&(identical(other.mcpServerId, mcpServerId) || other.mcpServerId == mcpServerId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,isEnabled,permissions,mcpServerId);
+int get hashCode {
+    return Object.hash(runtimeType,name,isEnabled,permissions,mcpServerId);
+}
 
 @override
 String toString() {
-  return 'ToolsGroupToCreate(name: $name, isEnabled: $isEnabled, permissions: $permissions, mcpServerId: $mcpServerId)';
+    return 'ToolsGroupToCreate(name: $name, isEnabled: $isEnabled, permissions: $permissions, mcpServerId: $mcpServerId)';
 }
 
 

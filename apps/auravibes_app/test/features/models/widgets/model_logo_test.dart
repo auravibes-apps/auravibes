@@ -49,42 +49,35 @@ void main() {
       expect(find.byKey(key), findsOneWidget);
     });
 
-    testWidgets(
-      'default SvgPicture.network path when svgBuilder is null',
-      (tester) async {
-        final mockClient = MockClient((request) async {
-          return http.Response(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>',
-            200,
-          );
-        });
-        addTearDown(mockClient.close);
-
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: ModelLogo(
-                modelId: 'openai',
-                httpClient: mockClient,
-              ),
-            ),
-          ),
+    testWidgets('default SvgPicture.network path when svgBuilder is null', (
+      tester,
+    ) async {
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>',
+          200,
         );
-        final _ = await tester.pumpAndSettle();
+      });
+      addTearDown(mockClient.close);
 
-        expect(find.byType(ModelLogo), findsOneWidget);
-        expect(find.byType(SvgPicture), findsOneWidget);
-        expect(find.byType(AuraSpinner), findsNothing);
-      },
-    );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ModelLogo(modelId: 'openai', httpClient: mockClient),
+          ),
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.byType(ModelLogo), findsOneWidget);
+      expect(find.byType(SvgPicture), findsOneWidget);
+      expect(find.byType(AuraSpinner), findsNothing);
+    });
   });
 }
 
-class _EasyLocalizationWrapper extends StatelessWidget {
-  const _EasyLocalizationWrapper({required this.child});
-
-  final Widget child;
-
+class const _EasyLocalizationWrapper({required final Widget child})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

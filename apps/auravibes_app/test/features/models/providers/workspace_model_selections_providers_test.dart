@@ -16,15 +16,10 @@ import 'package:auravibes_app/services/model_provider_oauth_profiles.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
-class _FakeApiModelRepository implements ApiModelRepository {
-  const _FakeApiModelRepository({
-    this.providers = const [],
-    this.models = const [],
-  });
-
-  final List<ApiModelProviderEntity> providers;
-  final List<ApiModelEntity> models;
-
+class const _FakeApiModelRepository({
+  final List<ApiModelProviderEntity> providers = const [],
+  final List<ApiModelEntity> models = const [],
+}) implements ApiModelRepository {
   @override
   Future<List<ApiModelProviderEntity>> getAllProviders() async => providers;
 
@@ -84,17 +79,11 @@ class _FakeApiModelRepository implements ApiModelRepository {
   }
 }
 
-class _FakeWorkspaceModelSelectionRepository
-    implements WorkspaceModelSelectionRepository {
-  _FakeWorkspaceModelSelectionRepository([
-    this.selections = const [],
-    this.workspaceModelSelectionStream,
-  ]);
-
-  final List<WorkspaceModelSelectionWithConnectionEntity> selections;
+class _FakeWorkspaceModelSelectionRepository([
+  final List<WorkspaceModelSelectionWithConnectionEntity> selections = const [],
   final Stream<List<WorkspaceModelSelectionWithConnectionEntity>>?
-  workspaceModelSelectionStream;
-
+  workspaceModelSelectionStream,
+]) implements WorkspaceModelSelectionRepository {
   @override
   Future<List<WorkspaceModelSelectionWithConnectionEntity>>
   getWorkspaceModelSelections(WorkspaceModelSelectionFilter filter) async {
@@ -169,11 +158,16 @@ WorkspaceModelSelectionWithConnectionEntity _makeSelection({
 }
 
 void main() {
-  final localSessionOverride = workspaceSessionProvider.overrideWithValue(
-    const WorkspaceSession(
-      LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
-    ),
-  );
+  final localSessionOverride =
+      workspaceSessionProvider(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      ).overrideWithValue(
+        const WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+        ),
+      );
   group('listWorkspaceModelSelectionsProvider', () {
     test('returns selections for given workspace', () async {
       final now = DateTime(2024);
@@ -232,10 +226,7 @@ void main() {
 
       final result = await container.read(provider.future);
       expect(result, hasLength(1));
-      expect(
-        result.firstOrNull?.workspaceModelSelection.id,
-        'sel-1',
-      );
+      expect(result.firstOrNull?.workspaceModelSelection.id, 'sel-1');
     });
 
     test('emits updated selections after initial value', () async {
@@ -344,7 +335,7 @@ void main() {
           providerId: 'openai',
           providerName: 'OpenAI',
           modelId: 'gpt-5.5',
-          connectionProviderId: openAICodexProviderId,
+          connectionProviderId: ModelProviderOAuthProfiles.providerId,
         ),
         _makeSelection(
           selectionId: 'sel-codex-old',
@@ -353,7 +344,7 @@ void main() {
           providerId: 'openai',
           providerName: 'OpenAI',
           modelId: 'gpt-3.5-turbo',
-          connectionProviderId: openAICodexProviderId,
+          connectionProviderId: ModelProviderOAuthProfiles.providerId,
         ),
       ];
       const openAIProvider = ApiModelProviderEntity(
@@ -418,10 +409,9 @@ void main() {
 
       final result = await container.read(provider.future);
 
-      expect(
-        result.map((model) => model.workspaceModelSelection.modelId),
-        ['gpt-5.5'],
-      );
+      expect(result.map((model) => model.workspaceModelSelection.modelId), [
+        'gpt-5.5',
+      ]);
       expect(result.single.modelsProvider.id, 'openai-codex');
     });
 
@@ -436,7 +426,7 @@ void main() {
             providerId: 'openai',
             providerName: 'OpenAI',
             modelId: 'gpt-5-spark',
-            connectionProviderId: openAICodexProviderId,
+            connectionProviderId: ModelProviderOAuthProfiles.providerId,
           ),
         ];
         const openAIProvider = ApiModelProviderEntity(

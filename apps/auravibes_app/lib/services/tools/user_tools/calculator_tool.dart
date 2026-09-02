@@ -5,8 +5,10 @@ import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 import 'package:math_expressions/math_expressions.dart';
 
 /// Represents an available tool in the app.
-final class CalculatorTool extends UserToolEntity<String, Object, String> {
-  const CalculatorTool();
+final class const CalculatorTool()
+    extends UserToolEntity<String, Object, String> {
+  @override
+  UserToolType get type => UserToolType.calculator;
 
   @override
   ToolSpec getTool() {
@@ -47,7 +49,4 @@ final class CalculatorTool extends UserToolEntity<String, Object, String> {
       }),
     );
   }
-
-  @override
-  UserToolType get type => UserToolType.calculator;
 }

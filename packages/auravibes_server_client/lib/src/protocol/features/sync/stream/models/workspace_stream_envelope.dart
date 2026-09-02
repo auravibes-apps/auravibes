@@ -11,23 +11,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../../features/sync/stream/models/workspace_stream_envelope_kind.dart'
     as _i2;
 
-abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
-  WorkspaceStreamEnvelope._({
-    required this.kind,
-    required this.workspaceId,
-    required this.sequence,
-    required this.eventId,
-    required this.eventKind,
-    required this.resourceKind,
-    this.resourceId,
-    this.payloadJson,
-    required this.createdAt,
-  });
-
-  factory WorkspaceStreamEnvelope({
+abstract class WorkspaceStreamEnvelope._({
+  required var _i2.WorkspaceStreamEnvelopeKind kind,
+  required var int workspaceId,
+  required var int sequence,
+  required var String eventId,
+  required var String eventKind,
+  required var String resourceKind,
+  var String? resourceId,
+  var String? payloadJson,
+  required var DateTime createdAt,
+}) implements _i1.SerializableModel {
+  factory({
     required _i2.WorkspaceStreamEnvelopeKind kind,
     required int workspaceId,
     required int sequence,
@@ -39,7 +38,7 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
     required DateTime createdAt,
   }) = _WorkspaceStreamEnvelopeImpl;
 
-  factory WorkspaceStreamEnvelope.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceStreamEnvelope(
@@ -58,24 +57,6 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
       ),
     );
   }
-
-  _i2.WorkspaceStreamEnvelopeKind kind;
-
-  int workspaceId;
-
-  int sequence;
-
-  String eventId;
-
-  String eventKind;
-
-  String resourceKind;
-
-  String? resourceId;
-
-  String? payloadJson;
-
-  DateTime createdAt;
 
   /// Returns a shallow copy of this [WorkspaceStreamEnvelope]
   /// with some or all fields replaced by the given arguments.
@@ -113,30 +94,31 @@ abstract class WorkspaceStreamEnvelope implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _WorkspaceStreamEnvelopeImpl extends WorkspaceStreamEnvelope {
-  _WorkspaceStreamEnvelopeImpl({
-    required _i2.WorkspaceStreamEnvelopeKind kind,
-    required int workspaceId,
-    required int sequence,
-    required String eventId,
-    required String eventKind,
-    required String resourceKind,
-    String? resourceId,
-    String? payloadJson,
-    required DateTime createdAt,
-  }) : super._(
-         kind: kind,
-         workspaceId: workspaceId,
-         sequence: sequence,
-         eventId: eventId,
-         eventKind: eventKind,
-         resourceKind: resourceKind,
-         resourceId: resourceId,
-         payloadJson: payloadJson,
-         createdAt: createdAt,
-       );
+class _WorkspaceStreamEnvelopeImpl({
+  required _i2.WorkspaceStreamEnvelopeKind kind,
+  required int workspaceId,
+  required int sequence,
+  required String eventId,
+  required String eventKind,
+  required String resourceKind,
+  String? resourceId,
+  String? payloadJson,
+  required DateTime createdAt,
+}) extends WorkspaceStreamEnvelope {
+  this
+    : super._(
+        kind: kind,
+        workspaceId: workspaceId,
+        sequence: sequence,
+        eventId: eventId,
+        eventKind: eventKind,
+        resourceKind: resourceKind,
+        resourceId: resourceId,
+        payloadJson: payloadJson,
+        createdAt: createdAt,
+      );
 
   /// Returns a shallow copy of this [WorkspaceStreamEnvelope]
   /// with some or all fields replaced by the given arguments.

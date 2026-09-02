@@ -10,32 +10,16 @@ import 'package:auravibes_app/data/database/drift/tables/mcp_servers.dart';
 import 'package:auravibes_app/data/database/drift/tables/service_connections.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/tools_groups.dart';
+import 'package:auravibes_app/data/repositories/mcp_servers_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:drift/drift.dart';
 
-/// Implementation of the McpServersRepository.
-abstract interface class McpServersRepositoryContract {
-  Future<McpServerEntity> addMcpServerWithTools({
-    required String workspaceId,
-    required McpServerToCreate serverToCreate,
-    required List<McpToolInfo> tools,
-  });
-  Future<bool> deleteMcpServer(String serverId);
-  Future<void> syncMcpTools({
-    required String mcpServerId,
-    required List<McpToolInfo> currentTools,
-  });
-  Future<List<McpServerEntity>> getMcpServersForWorkspace(String workspaceId);
-  Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
-    String workspaceId,
-  );
-  Future<McpServerEntity?> getMcpServerById(String serverId);
-}
+export 'mcp_servers_repository_contract.dart';
 
 class McpServersRepository implements McpServersRepositoryContract {
   /// Creates a new [McpServersRepository] instance.
-  McpServersRepository(this._database)
+  new(this._database)
     : _mcpServersDao = _database.mcpServersDao,
       _toolsGroupsDao = _database.toolsGroupsDao,
       _workspaceToolsDao = _database.workspaceToolsDao;
@@ -293,10 +277,7 @@ class McpServersException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
   /// Creates a new McpServersException.
-  const McpServersException(
-    this.message, [
-    this.cause,
-  ]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -315,10 +296,8 @@ class McpServersException implements Exception {
 /// Exception thrown when an MCP server is not found.
 class McpServerNotFoundException extends McpServersException {
   /// Creates a new McpServerNotFoundException.
-  const McpServerNotFoundException(
-    this.serverId, [
-    Exception? cause,
-  ]) : super('MCP server "$serverId" not found', cause);
+  const new(this.serverId, [Exception? cause])
+    : super('MCP server "$serverId" not found', cause);
 
   /// ID of the MCP server that was not found.
   final String serverId;

@@ -26,16 +26,21 @@ $ConversationToolsGroupWithToolsCopyWith<ConversationToolsGroupWithTools> get co
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolsGroupWithTools&&(identical(other.group, group) || other.group == group)&&const DeepCollectionEquality().equals(other.tools, tools)&&(identical(other.defaultGroupType, defaultGroupType) || other.defaultGroupType == defaultGroupType)&&(identical(other.mcpConnectionState, mcpConnectionState) || other.mcpConnectionState == mcpConnectionState));
+  final _this = this as ConversationToolsGroupWithTools;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolsGroupWithTools&&(identical(other.group, _this.group) || other.group == _this.group)&&const DeepCollectionEquality().equals(other.tools, _this.tools)&&(identical(other.defaultGroupType, _this.defaultGroupType) || other.defaultGroupType == _this.defaultGroupType)&&(identical(other.mcpConnectionState, _this.mcpConnectionState) || other.mcpConnectionState == _this.mcpConnectionState));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,group,const DeepCollectionEquality().hash(tools),defaultGroupType,mcpConnectionState);
+int get hashCode {
+  final _this = this as ConversationToolsGroupWithTools;
+  return Object.hash(runtimeType,_this.group,const DeepCollectionEquality().hash(_this.tools),_this.defaultGroupType,_this.mcpConnectionState);
+}
 
 @override
 String toString() {
-  return 'ConversationToolsGroupWithTools(group: $group, tools: $tools, defaultGroupType: $defaultGroupType, mcpConnectionState: $mcpConnectionState)';
+  final _this = this as ConversationToolsGroupWithTools;
+  return 'ConversationToolsGroupWithTools(group: ${_this.group}, tools: ${_this.tools}, defaultGroupType: ${_this.defaultGroupType}, mcpConnectionState: ${_this.mcpConnectionState})';
 }
 
 
@@ -258,16 +263,18 @@ _$ConversationToolsGroupWithToolsCopyWith<_ConversationToolsGroupWithTools> get 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolsGroupWithTools&&(identical(other.group, group) || other.group == group)&&const DeepCollectionEquality().equals(other._tools, _tools)&&(identical(other.defaultGroupType, defaultGroupType) || other.defaultGroupType == defaultGroupType)&&(identical(other.mcpConnectionState, mcpConnectionState) || other.mcpConnectionState == mcpConnectionState));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolsGroupWithTools&&(identical(other.group, group) || other.group == group)&&const DeepCollectionEquality().equals(other.tools, _tools)&&(identical(other.defaultGroupType, defaultGroupType) || other.defaultGroupType == defaultGroupType)&&(identical(other.mcpConnectionState, mcpConnectionState) || other.mcpConnectionState == mcpConnectionState));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,group,const DeepCollectionEquality().hash(_tools),defaultGroupType,mcpConnectionState);
+int get hashCode {
+    return Object.hash(runtimeType,group,const DeepCollectionEquality().hash(_tools),defaultGroupType,mcpConnectionState);
+}
 
 @override
 String toString() {
-  return 'ConversationToolsGroupWithTools(group: $group, tools: $tools, defaultGroupType: $defaultGroupType, mcpConnectionState: $mcpConnectionState)';
+    return 'ConversationToolsGroupWithTools(group: $group, tools: $tools, defaultGroupType: $defaultGroupType, mcpConnectionState: $mcpConnectionState)';
 }
 
 

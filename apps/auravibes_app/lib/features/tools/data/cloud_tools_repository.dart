@@ -23,14 +23,14 @@ class CloudToolsRepository
         WorkspaceToolsRepositoryContract,
         ToolsGroupsRepositoryContract,
         McpServersRepositoryContract {
-  CloudToolsRepository(this._gatewayFuture)
+  new(this._gatewayFuture)
     : _readState = null,
       _patchState = null,
       _create = null,
       _delete = null,
       _discover = null;
 
-  CloudToolsRepository.forTesting({
+  new forTesting({
     required Future<ReadWorkspaceStateResponse> Function({
       required List<WorkspaceResourcePageRequest> pages,
     })
@@ -80,9 +80,7 @@ class CloudToolsRepository
   })?
   _create;
   final Future<void> Function({required String mcpServerId})? _delete;
-  final Future<DiscoverMcpServerResult> Function({
-    required String mcpServerId,
-  })?
+  final Future<DiscoverMcpServerResult> Function({required String mcpServerId})?
   _discover;
 
   Future<CloudWorkspaceStateGateway> get _gateway async =>
@@ -93,99 +91,101 @@ class CloudToolsRepository
         code: 'gatewayUnavailable',
       ));
 
-  Future<ReadWorkspaceStateResponse> _readPages(
-    List<WorkspaceResourcePageRequest> pages,
-  ) async {
-    final read = _readState;
-    if (read != null) return read(pages: pages);
+  @override
+  Future<WorkspaceToolEntity> setToolEnabledById(
+    String id, {
+    required bool isEnabled,
+  }) => _patchTool(id, (data) => data['isEnabled'] = isEnabled);
 
-    return (await _gateway).read(pages: pages);
+  @override
+  Future<void> syncMcpTools({
+    required String mcpServerId,
+    required List<McpToolInfo> currentTools,
+  }) async {
+    final _ = await discoverMcpServer(mcpServerId);
   }
 
-  Future<PatchWorkspaceStateResponse> _patch(
-    List<WorkspacePatchOperation> operations,
-  ) async {
-    final requestId = const UuidV7().generate();
-    final patch = _patchState;
-    if (patch != null) {
-      return patch(requestId: requestId, operations: operations);
+  Future<bool> removeMcpServer(String? id) async {
+    if (id == null) return false;
+    final resource = await _find(.mcpServer, id);
+    if (resource == null) return false;
+    final delete = _delete;
+    if (delete != null) {
+      await delete(mcpServerId: id);
+    } else {
+      await CloudMcpGateway(await _gateway).deleteMcpServer(mcpServerId: id);
     }
 
-    return (await _gateway).patch(
-      requestId: requestId,
-      operations: operations,
+    return true;
+  }
+
+  @override
+  Future<bool> deleteMcpServer(String id) => removeMcpServer(id);
+
+  Future<({McpServerEntity server, DiscoverMcpServerResult discovery})>
+  createMcpServer({
+    required String workspaceId,
+    required McpServerFormToCreate server,
+  }) async {
+    WorkspaceCapabilities.cloud
+      ..require(supported: server.transport is McpTransportTypeStreamableHttp)
+      ..require(
+        supported:
+            server.authenticationType != McpAuthenticationTypeOptions.oauth,
+      );
+    final result = await _createMcpServer(
+      requestId: const UuidV7().generate(),
+      name: server.name.trim(),
+      url: server.url.trim(),
+      transport: 'streamableHttp',
+      useHttp2: switch (server.transport) {
+        McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
+        McpTransportTypeSSE() => false,
+      },
+      description: server.description?.trim(),
+      bearerToken:
+          server.authenticationType == McpAuthenticationTypeOptions.bearerToken
+          ? server.bearerToken
+          : null,
+    );
+
+    return (
+      server: McpServerEntity(
+        id: result.mcpServerId,
+        workspaceId: workspaceId,
+        name: server.name.trim(),
+        url: server.url.trim(),
+        transport: server.transport,
+        authenticationType: const McpAuthenticationType.none(),
+        createdAt: result.createdAt,
+        updatedAt: result.createdAt,
+        description: server.description?.trim(),
+      ),
+      discovery: result.discovery,
     );
   }
 
   Future<DiscoverMcpServerResult> discoverMcpServer(String id) async {
     final discover = _discover;
-    if (discover != null) return discover(mcpServerId: id);
+    if (discover != null) return await discover(mcpServerId: id);
 
-    return CloudMcpGateway(await _gateway).discoverMcpServer(mcpServerId: id);
+    return await CloudMcpGateway(await _gateway)
+        .discoverMcpServer(mcpServerId: id);
   }
 
-  Future<List<WorkspaceResource>> _read(WorkspaceResourceKind kind) async {
-    final resources = <WorkspaceResource>[];
-    String? afterResourceId;
-    do {
-      final page = (await _readPages([
-        WorkspaceResourcePageRequest(
-          resourceKind: kind,
-          afterResourceId: afterResourceId,
-          limit: 100,
-        ),
-      ])).pages.single;
-      resources.addAll(page.resources);
-      afterResourceId = page.nextResourceId;
-    } while (afterResourceId != null);
-
-    return resources;
-  }
-
-  Map<String, dynamic> _data(WorkspaceResource value) =>
-      CloudResourceMapper.decode(value);
-
-  Future<WorkspaceResource> _update(
-    WorkspaceResource resource,
-    Map<String, dynamic> data,
-  ) async => (await _patch([
-    WorkspacePatchOperation(
-      operation: .update,
-      resourceKind: resource.resourceKind,
-      resourceId: resource.resourceId,
-      data: jsonEncode(data),
-      fieldMask: const [],
-      expectedRevision: resource.revision,
-    ),
-  ])).resources.single;
-
-  Future<WorkspaceResource?> _find(
-    WorkspaceResourceKind kind,
-    String id,
+  @override
+  Future<McpServerEntity> addMcpServerWithTools({
+    required String workspaceId,
+    required McpServerToCreate serverToCreate,
+    required List<McpToolInfo> tools,
+  }) => throw const UnsupportedWorkspaceCapabilityException();
+  @override
+  Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
+    String workspaceId,
   ) async =>
-      (await _read(kind)).where((value) => value.resourceId == id).firstOrNull;
-
-  WorkspaceToolEntity _tool(WorkspaceResource resource) {
-    final data = _data(resource);
-
-    return WorkspaceToolEntity(
-      id: resource.resourceId,
-      workspaceId: '${resource.workspaceId}',
-      toolId: CloudResourceMapper.string(data, 'toolId'),
-      isEnabled: CloudResourceMapper.boolean(data, 'isEnabled'),
-      permissionMode: CloudResourceMapper.permission(data['permissionMode']),
-      createdAt: resource.createdAt,
-      updatedAt: resource.updatedAt,
-      config: data['config'] is String ? data['config'] as String : null,
-      description: data['description'] as String?,
-      inputSchema: switch (data['inputSchema']) {
-        final String value => value,
-        null => null,
-        final value => jsonEncode(value),
-      },
-      workspaceToolsGroupId: data['toolGroupId'] as String?,
-    );
-  }
+      (await getMcpServersForWorkspace(workspaceId))
+          .where((server) => server.isEnabled)
+          .toList();
 
   @override
   Future<List<WorkspaceToolEntity>> getWorkspaceTools(String _) async =>
@@ -203,9 +203,10 @@ class CloudToolsRepository
   @override
   Future<List<WorkspaceToolEntity>> getEnabledWorkspaceTools(
     String workspaceId,
-  ) async => (await getWorkspaceTools(
-    workspaceId,
-  )).where((tool) => tool.isEnabled).toList();
+  ) async =>
+      (await getWorkspaceTools(workspaceId))
+          .where((tool) => tool.isEnabled)
+          .toList();
 
   @override
   Future<WorkspaceToolEntity?> getWorkspaceTool(String _, String id) async {
@@ -214,23 +215,13 @@ class CloudToolsRepository
     return resource == null ? null : _tool(resource);
   }
 
-  Future<WorkspaceToolEntity> _patchTool(
-    String id,
-    void Function(Map<String, dynamic>)? patch,
-  ) async {
-    final resource = await _find(.tool, id);
-    if (resource == null) throw StateError('Cloud tool not found: $id');
-    final data = _data(resource);
-    patch?.call(data);
-
-    return _tool(await _update(resource, data));
-  }
+  @override
+  Future<List<McpServerEntity>> getMcpServersForWorkspace(String _) async =>
+      (await _read(.mcpServer)).map(_server).toList();
 
   @override
-  Future<WorkspaceToolEntity> setToolEnabledById(
-    String id, {
-    required bool isEnabled,
-  }) => _patchTool(id, (data) => data['isEnabled'] = isEnabled);
+  Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(String _) async =>
+      (await _read(.toolGroup)).map(_group).toList();
 
   @override
   Future<WorkspaceToolEntity> setToolPermissionMode(
@@ -306,36 +297,14 @@ class CloudToolsRepository
       )
       .firstOrNull;
 
-  ToolsGroupEntity _group(WorkspaceResource resource) {
-    final data = _data(resource);
+  @override
+  Future<bool> deleteToolsGroup(String id) async {
+    final value = await getToolsGroupById(id);
+    if (value == null) return false;
 
-    return ToolsGroupEntity(
-      id: resource.resourceId,
-      workspaceId: '${resource.workspaceId}',
-      name: data['name'] as String,
-      isEnabled: data['isEnabled'] != false,
-      permissions: _access(data['permissionMode']),
-      createdAt: resource.createdAt,
-      updatedAt: resource.updatedAt,
-      mcpServerId: data['mcpServerId'] as String?,
-    );
+    return await removeMcpServer(value.mcpServerId);
   }
 
-  @override
-  Future<List<ToolsGroupEntity>> getToolsGroupsForWorkspace(String _) async =>
-      (await _read(.toolGroup)).map(_group).toList();
-  @override
-  Future<ToolsGroupEntity?> getToolsGroupById(String id) async {
-    final resource = await _find(.toolGroup, id);
-
-    return resource == null ? null : _group(resource);
-  }
-
-  @override
-  Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(String id) async =>
-      (await getToolsGroupsForWorkspace(
-        '',
-      )).where((group) => group.mcpServerId == id).firstOrNull;
   @override
   Future<bool> setToolsGroupEnabled(
     String id, {
@@ -350,11 +319,37 @@ class CloudToolsRepository
   }
 
   @override
-  Future<bool> deleteToolsGroup(String id) async {
-    final value = await getToolsGroupById(id);
-    if (value == null) return false;
+  Future<ToolsGroupEntity?> getToolsGroupById(String id) async {
+    final resource = await _find(.toolGroup, id);
 
-    return removeMcpServer(value.mcpServerId);
+    return resource == null ? null : _group(resource);
+  }
+
+  @override
+  Future<ToolsGroupEntity?> getToolsGroupByMcpServerId(String id) async =>
+      (await getToolsGroupsForWorkspace(''))
+          .where((group) => group.mcpServerId == id)
+          .firstOrNull;
+  @override
+  Future<McpServerEntity?> getMcpServerById(String id) async {
+    final resource = await _find(.mcpServer, id);
+
+    return resource == null ? null : _server(resource);
+  }
+
+  ToolsGroupEntity _group(WorkspaceResource resource) {
+    final data = _data(resource);
+
+    return ToolsGroupEntity(
+      id: resource.resourceId,
+      workspaceId: '${resource.workspaceId}',
+      name: data['name'] as String,
+      isEnabled: data['isEnabled'] != false,
+      permissions: _access(data['permissionMode']),
+      createdAt: resource.createdAt,
+      updatedAt: resource.updatedAt,
+      mcpServerId: data['mcpServerId'] as String?,
+    );
   }
 
   McpServerEntity _server(WorkspaceResource resource) {
@@ -376,73 +371,62 @@ class CloudToolsRepository
     );
   }
 
-  @override
-  Future<List<McpServerEntity>> getMcpServersForWorkspace(String _) async =>
-      (await _read(.mcpServer)).map(_server).toList();
-  @override
-  Future<List<McpServerEntity>> getEnabledMcpServersForWorkspace(
-    String workspaceId,
-  ) async => (await getMcpServersForWorkspace(
-    workspaceId,
-  )).where((server) => server.isEnabled).toList();
-  @override
-  Future<McpServerEntity?> getMcpServerById(String id) async {
-    final resource = await _find(.mcpServer, id);
+  Future<WorkspaceToolEntity> _patchTool(
+    String id,
+    void Function(Map<String, dynamic>)? patch,
+  ) async {
+    final resource = await _find(.tool, id);
+    if (resource == null) throw StateError('Cloud tool not found: $id');
+    final data = _data(resource);
+    patch?.call(data);
 
-    return resource == null ? null : _server(resource);
+    return _tool(await _update(resource, data));
   }
 
-  @override
-  Future<McpServerEntity> addMcpServerWithTools({
-    required String workspaceId,
-    required McpServerToCreate serverToCreate,
-    required List<McpToolInfo> tools,
-  }) => throw const UnsupportedWorkspaceCapabilityException();
+  WorkspaceToolEntity _tool(WorkspaceResource resource) {
+    final data = _data(resource);
 
-  Future<({McpServerEntity server, DiscoverMcpServerResult discovery})>
-  createMcpServer({
-    required String workspaceId,
-    required McpServerFormToCreate server,
-  }) async {
-    WorkspaceCapabilities.cloud
-      ..require(
-        supported: server.transport is McpTransportTypeStreamableHttp,
-      )
-      ..require(
-        supported:
-            server.authenticationType != McpAuthenticationTypeOptions.oauth,
-      );
-    final result = await _createMcpServer(
-      requestId: const UuidV7().generate(),
-      name: server.name.trim(),
-      url: server.url.trim(),
-      transport: 'streamableHttp',
-      useHttp2: switch (server.transport) {
-        McpTransportTypeStreamableHttp(:final useHttp2) => useHttp2,
-        McpTransportTypeSSE() => false,
+    return WorkspaceToolEntity(
+      id: resource.resourceId,
+      workspaceId: '${resource.workspaceId}',
+      toolId: CloudResourceMapper.string(data, 'toolId'),
+      isEnabled: CloudResourceMapper.boolean(data, 'isEnabled'),
+      permissionMode: CloudResourceMapper.permission(data['permissionMode']),
+      createdAt: resource.createdAt,
+      updatedAt: resource.updatedAt,
+      config: data['config'] is String ? data['config'] as String : null,
+      description: data['description'] as String?,
+      inputSchema: switch (data['inputSchema']) {
+        final String value => value,
+        null => null,
+        final value => jsonEncode(value),
       },
-      description: server.description?.trim(),
-      bearerToken:
-          server.authenticationType == McpAuthenticationTypeOptions.bearerToken
-          ? server.bearerToken
-          : null,
-    );
-
-    return (
-      server: McpServerEntity(
-        id: result.mcpServerId,
-        workspaceId: workspaceId,
-        name: server.name.trim(),
-        url: server.url.trim(),
-        transport: server.transport,
-        authenticationType: const McpAuthenticationType.none(),
-        createdAt: result.createdAt,
-        updatedAt: result.createdAt,
-        description: server.description?.trim(),
-      ),
-      discovery: result.discovery,
+      workspaceToolsGroupId: data['toolGroupId'] as String?,
     );
   }
+
+  Future<WorkspaceResource> _update(
+    WorkspaceResource resource,
+    Map<String, dynamic> data,
+  ) async => (await _patch([
+    WorkspacePatchOperation(
+      operation: .update,
+      resourceKind: resource.resourceKind,
+      resourceId: resource.resourceId,
+      data: jsonEncode(data),
+      fieldMask: const [],
+      expectedRevision: resource.revision,
+    ),
+  ])).resources.single;
+
+  Future<WorkspaceResource?> _find(
+    WorkspaceResourceKind kind,
+    String id,
+  ) async =>
+      (await _read(kind)).where((value) => value.resourceId == id).firstOrNull;
+
+  Map<String, dynamic> _data(WorkspaceResource value) =>
+      CloudResourceMapper.decode(value);
 
   Future<CreateMcpServerResult> _createMcpServer({
     required String requestId,
@@ -455,7 +439,7 @@ class CloudToolsRepository
   }) async {
     final create = _create;
     if (create != null) {
-      return create(
+      return await create(
         requestId: requestId,
         name: name,
         url: url,
@@ -466,7 +450,7 @@ class CloudToolsRepository
       );
     }
 
-    return CloudMcpGateway(await _gateway).createMcpServer(
+    return await CloudMcpGateway(await _gateway).createMcpServer(
       requestId: requestId,
       name: name,
       url: url,
@@ -477,28 +461,48 @@ class CloudToolsRepository
     );
   }
 
-  @override
-  Future<bool> deleteMcpServer(String id) => removeMcpServer(id);
-  Future<bool> removeMcpServer(String? id) async {
-    if (id == null) return false;
-    final resource = await _find(.mcpServer, id);
-    if (resource == null) return false;
-    final delete = _delete;
-    if (delete != null) {
-      await delete(mcpServerId: id);
-    } else {
-      await CloudMcpGateway(await _gateway).deleteMcpServer(mcpServerId: id);
-    }
+  Future<List<WorkspaceResource>> _read(WorkspaceResourceKind kind) async {
+    final resources = <WorkspaceResource>[];
+    String? afterResourceId;
+    do {
+      final pages = (await _readPages([
+        WorkspaceResourcePageRequest(
+          resourceKind: kind,
+          afterResourceId: afterResourceId,
+          limit: 100,
+        ),
+      ])).pages;
+      if (pages.isEmpty) break;
+      final page = pages.single;
+      resources.addAll(page.resources);
+      afterResourceId = page.nextResourceId;
+    } while (afterResourceId != null);
 
-    return true;
+    return resources;
   }
 
-  @override
-  Future<void> syncMcpTools({
-    required String mcpServerId,
-    required List<McpToolInfo> currentTools,
-  }) async {
-    final _ = await discoverMcpServer(mcpServerId);
+  Future<PatchWorkspaceStateResponse> _patch(
+    List<WorkspacePatchOperation> operations,
+  ) async {
+    final requestId = const UuidV7().generate();
+    final patch = _patchState;
+    if (patch != null) {
+      return await patch(requestId: requestId, operations: operations);
+    }
+
+    return await (await _gateway).patch(
+      requestId: requestId,
+      operations: operations,
+    );
+  }
+
+  Future<ReadWorkspaceStateResponse> _readPages(
+    List<WorkspaceResourcePageRequest> pages,
+  ) async {
+    final read = _readState;
+    if (read != null) return await read(pages: pages);
+
+    return await (await _gateway).read(pages: pages);
   }
 
   PermissionAccess _access(Object? value) =>

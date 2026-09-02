@@ -14,8 +14,9 @@ import 'package:riverpod/riverpod.dart';
 
 class _ThrowingCodexOAuthService extends CodexOAuthService {
   @override
-  Future<OAuthTokenEntity> authenticateWithBrowser() =>
-      throw StateError('local OAuth touched');
+  Future<OAuthTokenEntity> authenticateWithBrowser({
+    bool Function()? isCancelled,
+  }) => throw StateError('local OAuth touched');
 
   @override
   Future<OAuthTokenEntity> authenticateWithDeviceCode({
@@ -40,9 +41,8 @@ void main() {
     );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          const WorkspaceSession(workspace),
-        ),
+        workspaceSessionProvider(const WorkspaceSession(workspace))
+            .overrideWithValue(const WorkspaceSession(workspace)),
         workspaceSessionForRouteProvider.overrideWith(
           (_, _) async => const WorkspaceSession(workspace),
         ),
@@ -58,8 +58,8 @@ void main() {
         apiModelProvidersProvider(workspaceId: 'local').overrideWith(
           (_) async => const [
             ApiModelProviderEntity(
-              id: openAICodexProviderId,
-              name: openAICodexDisplayName,
+              id: ModelProviderOAuthProfiles.providerId,
+              name: ModelProviderOAuthProfiles.displayName,
               type: ModelProvidersType.openai,
             ),
           ],
@@ -76,7 +76,7 @@ void main() {
     final _ = await container.read(
       apiModelProvidersProvider(workspaceId: 'local').future,
     );
-    notifier.setModel(openAICodexProviderId);
+    notifier.setModel(ModelProviderOAuthProfiles.providerId);
 
     await expectLater(
       notifier.addModelProvider(codexOAuthMethod: CodexOAuthMethod.deviceCode),

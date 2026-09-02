@@ -21,9 +21,9 @@ enum ToolPermissionMode {
 /// This represents user preferences for tools at the workspace level,
 /// allowing different workspaces to have different tool configurations.
 @freezed
-abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
+abstract class const WorkspaceToolEntity._() with _$WorkspaceToolEntity {
   /// Creates a new WorkspaceTool instance.
-  const factory WorkspaceToolEntity({
+  const factory({
     /// Unique ID of this tool record in the database.
     required String id,
 
@@ -57,7 +57,6 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
     /// Optional reference to the tools group this tool belongs to.
     String? workspaceToolsGroupId,
   }) = _WorkspaceToolEntity;
-  const WorkspaceToolEntity._();
 
   /// Returns true if the tool has custom configuration.
   bool get hasConfig => config?.isNotEmpty ?? false;
@@ -87,9 +86,9 @@ abstract class WorkspaceToolEntity with _$WorkspaceToolEntity {
 
 /// Entity for creating/updating workspace tool settings.
 @freezed
-abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
+abstract class const WorkspaceToolToCreate._() with _$WorkspaceToolToCreate {
   /// Creates a new WorkspaceToolToCreate instance.
-  const factory WorkspaceToolToCreate({
+  const factory({
     /// Tool identifier (for example, 'web_search', 'calculator', etc).
     required String toolId,
 
@@ -108,7 +107,6 @@ abstract class WorkspaceToolToCreate with _$WorkspaceToolToCreate {
     /// Optional reference to the tools group this tool belongs to.
     String? workspaceToolsGroupId,
   }) = _WorkspaceToolToCreate;
-  const WorkspaceToolToCreate._();
 
   /// Returns true if the tool type is valid.
   bool get hasValidToolId => toolId.isNotEmpty;

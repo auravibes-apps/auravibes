@@ -13,18 +13,13 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('repository:skill_credentials');
 
-class SkillCredentialsRepository {
-  SkillCredentialsRepository({
-    required AppDatabase database,
-    required this._encryptionService,
-  }) : _database = database,
-       _dao = database.skillCredentialsDao,
-       super();
+class SkillCredentialsRepository({
+  required final AppDatabase _database,
+  required final EncryptionService _encryptionService,
+}) {
+  this : super();
 
-  final AppDatabase _database;
-  final SkillCredentialsDao _dao;
-  final EncryptionService _encryptionService;
-
+  final SkillCredentialsDao _dao = _database.skillCredentialsDao;
   Future<List<SkillCredentialEntity>> getCredentialsForDefinition({
     required String workspaceId,
     required String credentialDefinitionId,
@@ -34,7 +29,7 @@ class SkillCredentialsRepository {
       credentialDefinitionId: credentialDefinitionId,
     );
 
-    return Future.wait(rows.map(_tableToEntity));
+    return await Future.wait(rows.map(_tableToEntity));
   }
 
   Stream<List<SkillCredentialEntity>> watchCredentialsForWorkspace(
@@ -42,16 +37,14 @@ class SkillCredentialsRepository {
   ) {
     return _dao
         .watchCredentialsForWorkspace(workspaceId)
-        .asyncMap(
-          (rows) => Future.wait(rows.map(_tableToEntity)),
-        );
+        .asyncMap((rows) => Future.wait(rows.map(_tableToEntity)));
   }
 
   Future<SkillCredentialEntity?> getCredentialById(String credentialId) async {
     final row = await _dao.getCredentialById(credentialId);
     if (row == null) return null;
 
-    return _tableToEntity(row);
+    return await _tableToEntity(row);
   }
 
   Future<Map<String, String>> readCredentialAttributes(
@@ -62,10 +55,7 @@ class SkillCredentialsRepository {
       throw SkillCredentialsException.notFound(credentialId);
     }
 
-    return {
-      ..._nonSecretAttributes(row),
-      ...await _secretAttributes(row),
-    };
+    return {..._nonSecretAttributes(row), ...await _secretAttributes(row)};
   }
 
   Future<SkillCredentialForEdit?> getCredentialForEdit(
@@ -128,7 +118,7 @@ class SkillCredentialsRepository {
       ),
     );
 
-    return _tableToEntity(row);
+    return await _tableToEntity(row);
   }
 
   Future<SkillCredentialEntity> updateCredential(
@@ -174,7 +164,7 @@ class SkillCredentialsRepository {
       throw SkillCredentialsException.notFound(credentialId);
     }
 
-    return _tableToEntity(updated);
+    return await _tableToEntity(updated);
   }
 
   Future<void> deleteCredential(String credentialId) async {
@@ -301,22 +291,19 @@ class SkillCredentialsRepository {
   }
 }
 
-class SkillCredentialsException implements Exception {
-  const SkillCredentialsException(this.message);
-
-  factory SkillCredentialsException.notFound(String credentialId) {
+class const SkillCredentialsException(final String message)
+    implements Exception {
+  factory notFound(String credentialId) {
     return SkillCredentialsException(
       'Skill credential not found: $credentialId',
     );
   }
 
-  factory SkillCredentialsException.definitionNotFound(String definitionId) {
+  factory definitionNotFound(String definitionId) {
     return SkillCredentialsException(
       'Skill credential definition not found: $definitionId',
     );
   }
-
-  final String message;
 
   @override
   String toString() => 'SkillCredentialsException: $message';

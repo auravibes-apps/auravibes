@@ -4,8 +4,23 @@ import 'package:flutter/widgets.dart';
 @immutable
 /// Definition of aura paddings.
 class AuraEdgeInsetsGeometry {
+  /// No padding on any side.
+  static const none = AuraEdgeInsetsGeometry.all(.none);
+
+  /// Standard base padding on every side.
+  static const base = AuraEdgeInsetsGeometry.all(.base);
+
+  /// Medium padding on every side.
+  static const medium = AuraEdgeInsetsGeometry.all(.md);
+
+  /// Large padding on every side.
+  static const large = AuraEdgeInsetsGeometry.all(.lg);
+
+  /// Small padding on every side.
+  static const small = AuraEdgeInsetsGeometry.all(.sm);
+
   /// Constructor for each side.
-  const AuraEdgeInsetsGeometry.only({
+  const new only({
     this.left = .none,
     this.top = .none,
     this.right = .none,
@@ -13,49 +28,34 @@ class AuraEdgeInsetsGeometry {
   });
 
   /// Constructor for horizontal padding.
-  const AuraEdgeInsetsGeometry.horizontal(AuraSpacing spacing)
+  const new horizontal(AuraSpacing spacing)
     : left = spacing,
       right = spacing,
       top = .none,
       bottom = .none;
 
   /// Constructor for vertical padding.
-  const AuraEdgeInsetsGeometry.vertical(AuraSpacing spacing)
+  const new vertical(AuraSpacing spacing)
     : top = spacing,
       bottom = spacing,
       left = .none,
       right = .none;
 
   /// Constructor for all same padding.
-  const AuraEdgeInsetsGeometry.all(AuraSpacing spacing)
+  const new all(AuraSpacing spacing)
     : left = spacing,
       top = spacing,
       right = spacing,
       bottom = spacing;
 
   /// Constructor for symmetric padding.
-  const AuraEdgeInsetsGeometry.symmetric({
+  const new symmetric({
     AuraSpacing horizontal = .none,
     AuraSpacing vertical = .none,
   }) : left = horizontal,
        right = horizontal,
        top = vertical,
        bottom = vertical;
-
-  /// None spacing.
-  static const none = AuraEdgeInsetsGeometry.all(.none);
-
-  /// Base spacing.
-  static const base = AuraEdgeInsetsGeometry.all(.base);
-
-  /// Medium spacing.
-  static const medium = AuraEdgeInsetsGeometry.all(.md);
-
-  /// Large spacing.
-  static const large = AuraEdgeInsetsGeometry.all(.lg);
-
-  /// Small spacing.
-  static const small = AuraEdgeInsetsGeometry.all(.sm);
 
   /// Left padding.
   final AuraSpacing left;
@@ -67,16 +67,10 @@ class AuraEdgeInsetsGeometry {
   final AuraSpacing right;
 
   /// Bottom padding.
-  final AuraSpacing bottom;
+  final AuraSpacing bottom; // Compare properties.
 
-  EdgeInsetsGeometry _padding(BuildContext context) {
-    return EdgeInsetsGeometry.only(
-      left: context.auraTheme.fromSpacing(left),
-      right: context.auraTheme.fromSpacing(right),
-      top: context.auraTheme.fromSpacing(top),
-      bottom: context.auraTheme.fromSpacing(bottom),
-    );
-  }
+  @override
+  int get hashCode => Object.hashAll([left, top, right, bottom]);
 
   @override
   bool operator ==(Object other) =>
@@ -86,27 +80,24 @@ class AuraEdgeInsetsGeometry {
           left == other.left && // Compare properties.
           right == other.right && // Compare properties.
           top == other.top && // Compare properties.
-          bottom == other.bottom; // Compare properties.
+          bottom == other.bottom;
 
-  @override
-  int get hashCode => Object.hashAll([
-    left,
-    top,
-    right,
-    bottom,
-  ]); // Combine hash codes.
+  EdgeInsetsGeometry _padding(BuildContext context) {
+    return EdgeInsetsGeometry.only(
+      left: context.auraTheme.fromSpacing(left),
+      right: context.auraTheme.fromSpacing(right),
+      top: context.auraTheme.fromSpacing(top),
+      bottom: context.auraTheme.fromSpacing(bottom),
+    );
+  } // Combine hash codes.
 }
 
 /// Padding for const.
 class AuraPadding extends StatelessWidget {
   /// Default constructor.
-  const AuraPadding({
-    required this.child,
-    this.padding = .base,
-    super.key,
-  });
+  const new({required this.child, this.padding = .base, super.key});
 
-  /// Pading chilg.
+  /// The widget below this padding.
   final Widget child;
 
   /// Spacing for padding.
@@ -114,9 +105,6 @@ class AuraPadding extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: padding._padding(context),
-      child: child,
-    );
+    return Padding(padding: padding._padding(context), child: child);
   }
 }

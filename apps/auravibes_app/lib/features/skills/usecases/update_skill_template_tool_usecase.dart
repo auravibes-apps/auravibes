@@ -9,20 +9,13 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class UpdateSkillTemplateToolUsecase {
-  const UpdateSkillTemplateToolUsecase(
-    this._skillTemplateToolsRepository, {
-    this.cloudStore,
-    this.skillsRepository,
-    this.skillCredentialDefinitionsRepository,
-  });
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
-  final CloudSkillStore? cloudStore;
-  final SkillsRepository? skillsRepository;
+class const UpdateSkillTemplateToolUsecase(
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
+  final CloudSkillStore? cloudStore,
+  final SkillsRepository? skillsRepository,
   final SkillCredentialDefinitionsRepository?
-  skillCredentialDefinitionsRepository;
-
+  skillCredentialDefinitionsRepository,
+}) {
   Future<SkillTemplateToolEntity> call(
     String toolId,
     SkillTemplateToolToUpdate tool,
@@ -53,13 +46,15 @@ class UpdateSkillTemplateToolUsecase {
     }
 
     final cloud = cloudStore;
-    if (cloud != null) return cloud.updateTool(toolId, toolToUpdate);
+    if (cloud != null) {
+      return await cloud.updateTool(toolId, toolToUpdate);
+    }
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return repository.updateTool(toolId, toolToUpdate);
+    return await repository.updateTool(toolId, toolToUpdate);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
@@ -98,21 +93,17 @@ class UpdateSkillTemplateToolUsecase {
 
 final ProviderFamily<UpdateSkillTemplateToolUsecase, String>
 updateSkillTemplateToolUsecaseProvider =
-    Provider.family<UpdateSkillTemplateToolUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<UpdateSkillTemplateToolUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return UpdateSkillTemplateToolUsecase(
-          cloud == null
-              ? ref.watch(skillTemplateToolsRepositoryProvider)
-              : null,
-          cloudStore: cloud,
-          skillsRepository: cloud == null
-              ? ref.watch(skillsRepositoryProvider)
-              : null,
-          skillCredentialDefinitionsRepository: cloud == null
-              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-              : null,
-        );
-      },
-    );
+      return UpdateSkillTemplateToolUsecase(
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        cloudStore: cloud,
+        skillsRepository: cloud == null
+            ? ref.watch(skillsRepositoryProvider)
+            : null,
+        skillCredentialDefinitionsRepository: cloud == null
+            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+      );
+    });

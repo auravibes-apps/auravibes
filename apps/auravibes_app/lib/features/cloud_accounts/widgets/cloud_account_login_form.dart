@@ -11,11 +11,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CloudAccountLoginForm extends ConsumerStatefulWidget {
-  const CloudAccountLoginForm({required this.onSignedIn, super.key});
-
-  final ValueChanged<CloudAccountSession> onSignedIn;
-
+class const CloudAccountLoginForm({
+  required final ValueChanged<CloudAccountSession> onSignedIn,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<CloudAccountLoginForm> createState() =>
       _CloudAccountLoginFormState();
@@ -56,10 +55,7 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
           enabled: !_isSubmitting,
         ),
         if (_errorKey case final errorKey?)
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            child: TextLocale(errorKey),
-          ),
+          AuraText(style: AuraTextStyle.bodySmall, child: TextLocale(errorKey)),
         AuraButton(
           onPressed: _login,
           child: const TextLocale(LocaleKeys.workspace_management_cloud_login),
@@ -79,13 +75,10 @@ class _CloudAccountLoginFormState extends ConsumerState<CloudAccountLoginForm> {
     });
 
     try {
-      await cloudAccountMutation.run(ref, (_) async {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
         final account = await ref
             .read(cloudAccountUseCasesProvider)
-            .login(
-              email: _email.text.trim(),
-              password: _password.text,
-            );
+            .login(email: _email.text.trim(), password: _password.text);
         ref.invalidate(cloudAccountsProvider);
         widget.onSignedIn(account);
       });

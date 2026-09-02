@@ -34,24 +34,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ChatMessagesWidget extends HookConsumerWidget {
+class const ChatMessagesWidget({
+  required final String workspaceId,
+  required final String conversationId,
+  required final List<String> messages,
+  final Map<String, MessageEntity>? messageEntitiesById,
+  final List<PendingToolCall> pendingToolCalls = const [],
+  super.key,
+}) extends HookConsumerWidget {
   // Null lets callers fall back to per-message provider reads.
   // ignore: unnecessary-nullable
-  const ChatMessagesWidget({
-    required this.workspaceId,
-    required this.conversationId,
-    required this.messages,
-    this.messageEntitiesById,
-    this.pendingToolCalls = const [],
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-  final List<String> messages;
-  final Map<String, MessageEntity>? messageEntitiesById;
-  final List<PendingToolCall> pendingToolCalls;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = useMemoized(() => messages.reversed.toList(), [messages]);
@@ -68,10 +60,7 @@ class ChatMessagesWidget extends HookConsumerWidget {
             .value ??
         const <ConversationEntity>[];
     final compactionState = ref.watch(
-      conversationCompactionExecutionStateProvider(
-        workspaceId,
-        conversationId,
-      ),
+      conversationCompactionExecutionStateProvider(workspaceId, conversationId),
     );
     final isCompacting =
         compactionState?.status == CompactionExecutionStatus.running;
@@ -107,33 +96,21 @@ class ChatMessagesWidget extends HookConsumerWidget {
   }
 }
 
-class _ChatMessageRow extends HookConsumerWidget {
-  const _ChatMessageRow({
-    required this.messageId,
-    required this.baseMessage,
-    required this.pendingToolCalls,
-    required this.parentConversationId,
-    required this.childConversations,
-    required this.workspaceId,
-  });
-
-  final String messageId;
-  final MessageEntity? baseMessage;
-  final List<PendingToolCall> pendingToolCalls;
-  final String parentConversationId;
-  final List<ConversationEntity> childConversations;
-  final String workspaceId;
-
+class const _ChatMessageRow({
+  required final String messageId,
+  required final MessageEntity? baseMessage,
+  required final List<PendingToolCall> pendingToolCalls,
+  required final String parentConversationId,
+  required final List<ConversationEntity> childConversations,
+  required final String workspaceId,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final streamingResult = ref.watch(
       messagesStreamingProvider.select((state) => state[messageId]?.lastResult),
     );
     final message = switch (baseMessage) {
-      final baseMessage? => _mergeStreamingResult(
-        baseMessage,
-        streamingResult,
-      ),
+      final baseMessage? => _mergeStreamingResult(baseMessage, streamingResult),
       null => ref.watch(
         messageConversationByIdProvider(
           workspaceId,
@@ -221,7 +198,7 @@ class _ChatMessageRow extends HookConsumerWidget {
 
     return message.copyWith(
       content: streamingResult.output.text,
-      metadata: mergeStreamingMessageMetadata(
+      metadata: StreamingMessageMetadata.merge(
         message.metadata,
         streamingResult.entityMetadata,
       ),
@@ -244,11 +221,8 @@ class _ChatMessageRow extends HookConsumerWidget {
   }
 }
 
-class _MessageAttachments extends StatelessWidget {
-  const _MessageAttachments({required this.message});
-
-  final MessageEntity message;
-
+class const _MessageAttachments({required final MessageEntity message})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -265,11 +239,9 @@ class _MessageAttachments extends StatelessWidget {
   }
 }
 
-class _AttachmentPreview extends StatelessWidget {
-  const _AttachmentPreview({required this.attachment});
-
-  final MessageAttachmentEntity attachment;
-
+class const _AttachmentPreview({
+  required final MessageAttachmentEntity attachment,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (attachment.modality == MessageAttachmentModality.image) {
@@ -290,21 +262,13 @@ class _AttachmentPreview extends StatelessWidget {
   }
 }
 
-class _MessageTextContent extends StatelessWidget {
-  const _MessageTextContent({
-    required this.message,
-    required this.thinking,
-    required this.hasContent,
-    required this.hasThinking,
-    required this.status,
-  });
-
-  final MessageEntity message;
-  final String? thinking;
-  final bool hasContent;
-  final bool hasThinking;
-  final AuraMessageDeliveryStatus status;
-
+class const _MessageTextContent({
+  required final MessageEntity message,
+  required final String? thinking,
+  required final bool hasContent,
+  required final bool hasThinking,
+  required final AuraMessageDeliveryStatus status,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (message.isUser) {
@@ -338,14 +302,13 @@ class _MessageTextContent extends StatelessWidget {
   }
 }
 
-class _ReasoningSummary extends StatelessWidget {
-  const _ReasoningSummary({required this.content});
-
-  final String content;
-
+class const _ReasoningSummary({required final String content})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
+    const containerBorderRadius = 10.0;
 
     return AuraContainer(
       child: Column(
@@ -364,9 +327,9 @@ class _ReasoningSummary extends StatelessWidget {
                 LocaleKeys.chats_screens_chat_conversation_reasoning_summary,
                 style: TextStyle(
                   color: auraColors.onSurfaceVariant,
-                  fontSize: context.auraTheme.typography.fontSizeSm,
+                  fontSize: typography.fontSizeSm,
                   fontWeight: FontWeight.w600,
-                  fontFamily: context.auraTheme.typography.bodyFontFamily,
+                  fontFamily: typography.bodyFontFamily,
                 ),
               ),
             ],
@@ -376,9 +339,9 @@ class _ReasoningSummary extends StatelessWidget {
             content,
             style: TextStyle(
               color: auraColors.onSurfaceVariant,
-              fontSize: context.auraTheme.typography.fontSizeSm,
-              height: context.auraTheme.typography.lineHeightBase,
-              fontFamily: context.auraTheme.typography.bodyFontFamily,
+              fontSize: typography.fontSizeSm,
+              height: typography.lineHeightBase,
+              fontFamily: typography.bodyFontFamily,
             ),
           ),
         ],
@@ -386,26 +349,21 @@ class _ReasoningSummary extends StatelessWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
     );
   }
 }
 
-class _AiMessageContent extends StatelessWidget {
-  const _AiMessageContent({
-    required this.content,
-    required this.timestamp,
-    super.key,
-    this.status = AuraMessageDeliveryStatus.sent,
-  });
-
-  final String content;
-  final DateTime timestamp;
-  final AuraMessageDeliveryStatus status;
-
+class const _AiMessageContent({
+  required final String content,
+  required final DateTime timestamp,
+  super.key,
+  final AuraMessageDeliveryStatus status = AuraMessageDeliveryStatus.sent,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,18 +372,18 @@ class _AiMessageContent extends StatelessWidget {
           content,
           style: TextStyle(
             color: auraColors.onSurface,
-            fontSize: context.auraTheme.typography.fontSizeBase,
-            height: context.auraTheme.typography.lineHeightBase,
-            fontFamily: context.auraTheme.typography.bodyFontFamily,
+            fontSize: typography.fontSizeBase,
+            height: typography.lineHeightBase,
+            fontFamily: typography.bodyFontFamily,
           ),
         ),
         const AuraSizedBox(height: .xs),
         Text(
-          formatRelativeTime(timestamp),
+          RelativeTimeFormatter.format(timestamp),
           style: TextStyle(
             color: auraColors.onSurfaceVariant,
-            fontSize: context.auraTheme.typography.fontSizeXs,
-            fontFamily: context.auraTheme.typography.bodyFontFamily,
+            fontSize: typography.fontSizeXs,
+            fontFamily: typography.bodyFontFamily,
           ),
         ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
@@ -438,32 +396,22 @@ class _AiMessageContent extends StatelessWidget {
 }
 
 /// Widget that displays a single tool call with optional confirmation UI.
-class _ToolCallWidget extends ConsumerWidget {
-  const _ToolCallWidget({
-    required this.toolCall,
-    required this.messageId,
-    required this.parentConversationId,
-    required this.childConversations,
-    required this.workspaceId,
-    required this.isAwaitingApproval,
-    super.key,
-  });
-
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-  final String parentConversationId;
-  final List<ConversationEntity> childConversations;
-  final String? workspaceId;
-  final bool isAwaitingApproval;
-
+class const _ToolCallWidget({
+  required final MessageToolCallEntity toolCall,
+  required final String messageId,
+  required final String parentConversationId,
+  required final List<ConversationEntity> childConversations,
+  required final String? workspaceId,
+  required final bool isAwaitingApproval,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const containerBorderRadius = 10.0;
     final currentWorkspaceId = workspaceId;
     final displayNameAsync = currentWorkspaceId == null
         ? null
-        : ref.watch(
-            toolDisplayNameProvider(currentWorkspaceId, toolCall.name),
-          );
+        : ref.watch(toolDisplayNameProvider(currentWorkspaceId, toolCall.name));
     final displayName =
         displayNameAsync?.maybeWhen(
           data: (name) => name,
@@ -477,8 +425,8 @@ class _ToolCallWidget extends ConsumerWidget {
           rawName: toolCall.name,
         );
 
-    final decodedArgs = tryDecodeToolMetadata(toolCall.argumentsRaw);
-    final decodedResponse = tryDecodeToolMetadata(toolCall.responseRaw);
+    final decodedArgs = ToolMetadataDecoder.decode(toolCall.argumentsRaw);
+    final decodedResponse = ToolMetadataDecoder.decode(toolCall.responseRaw);
     final subAgentConversationId =
         _subAgentConversationId(toolCall) ??
         _activeSubAgentConversationId(ref, parentConversationId, toolCall) ??
@@ -502,9 +450,7 @@ class _ToolCallWidget extends ConsumerWidget {
             children: [
               TextSpan(
                 text: displayName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (decodedArgs != null) ...[
                 const TextSpan(text: ' "'),
@@ -521,9 +467,7 @@ class _ToolCallWidget extends ConsumerWidget {
         ),
         if (decodedResponse != null)
           Padding(
-            padding: EdgeInsets.only(
-              top: context.auraTheme.fromSpacing(.xs),
-            ),
+            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
             child: ToolCallResponsePreview(
               toolName: toolCall.name,
               content: decodedResponse,
@@ -553,7 +497,7 @@ class _ToolCallWidget extends ConsumerWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
     );
   }
 
@@ -588,23 +532,22 @@ class _ToolCallWidget extends ConsumerWidget {
 
   Color _getStatusColor(BuildContext context) {
     final status = toolCall.resultStatus;
+    final colors = context.auraColors;
     if (status == null) {
-      return isAwaitingApproval
-          ? context.auraColors.warning
-          : context.auraColors.primary;
+      return isAwaitingApproval ? colors.warning : colors.primary;
     }
 
     return switch (status) {
-      ToolCallResultStatus.running => context.auraColors.primary,
-      ToolCallResultStatus.success => context.auraColors.success,
-      ToolCallResultStatus.skippedByUser => context.auraColors.onSurfaceVariant,
-      ToolCallResultStatus.stoppedByUser => context.auraColors.onSurfaceVariant,
-      ToolCallResultStatus.toolNotFound => context.auraColors.error,
-      ToolCallResultStatus.disabledInWorkspace => context.auraColors.warning,
-      ToolCallResultStatus.disabledInConversation => context.auraColors.warning,
-      ToolCallResultStatus.disabledByAgent => context.auraColors.warning,
-      ToolCallResultStatus.notConfigured => context.auraColors.warning,
-      ToolCallResultStatus.executionError => context.auraColors.error,
+      ToolCallResultStatus.running => colors.primary,
+      ToolCallResultStatus.success => colors.success,
+      ToolCallResultStatus.skippedByUser => colors.onSurfaceVariant,
+      ToolCallResultStatus.stoppedByUser => colors.onSurfaceVariant,
+      ToolCallResultStatus.toolNotFound => colors.error,
+      ToolCallResultStatus.disabledInWorkspace => colors.warning,
+      ToolCallResultStatus.disabledInConversation => colors.warning,
+      ToolCallResultStatus.disabledByAgent => colors.warning,
+      ToolCallResultStatus.notConfigured => colors.warning,
+      ToolCallResultStatus.executionError => colors.error,
     };
   }
 }
@@ -632,13 +575,11 @@ String? _activeSubAgentConversationId(
   }
 
   return ref.watch(
-    activeSubAgentRuntimeProvider.select(
-      (state) {
-        final childIds = state[parentConversationId] ?? const <String>{};
+    activeSubAgentRuntimeProvider.select((state) {
+      final childIds = state[parentConversationId] ?? const <String>{};
 
-        return childIds.length == 1 ? childIds.single : null;
-      },
-    ),
+      return childIds.length == 1 ? childIds.single : null;
+    }),
   );
 }
 
@@ -679,28 +620,16 @@ String? _subAgentTitle(MessageToolCallEntity toolCall) {
   return null;
 }
 
-void _showCompactionDetails(BuildContext context, MessageEntity message) {
-  showDialog<void>(
-    context: context,
-    builder: (_) => AuraAlertDialog(
-      title: const SizedBox.shrink(),
-      message: SizedBox(
-        width: MediaQuery.sizeOf(context).width * 0.8,
-        child: CompactedMessageDetails(message: message),
-      ),
-      dismissLabel: const TextLocale(LocaleKeys.common_close),
-    ),
-  );
-}
-
-class _CompactedMessageWidget extends StatelessWidget {
-  const _CompactedMessageWidget({required this.message, super.key});
-
-  final MessageEntity message;
-
+class const _CompactedMessageWidget({
+  required final MessageEntity message,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    const iconSize = 16.0;
+    const infoIconSize = 14.0;
+    const containerBorderRadius = 10.0;
     final kind = message.metadata?.compactionKind;
     final originLabel = switch (kind) {
       CompactionKind.manual =>
@@ -709,8 +638,8 @@ class _CompactedMessageWidget extends StatelessWidget {
       _ => LocaleKeys.compaction_compacted_widget_label.tr(),
     };
 
-    return GestureDetector(
-      child: AuraContainer(
+    return AuraModal(
+      entryPointChild: AuraContainer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -718,7 +647,7 @@ class _CompactedMessageWidget extends StatelessWidget {
               children: [
                 Icon(
                   Icons.compress_outlined,
-                  size: 16,
+                  size: iconSize,
                   color: auraColors.onSurfaceVariant,
                 ),
                 const AuraSizedBox(width: .xs),
@@ -733,7 +662,7 @@ class _CompactedMessageWidget extends StatelessWidget {
                 const Spacer(),
                 Icon(
                   Icons.info_outline,
-                  size: 14,
+                  size: infoIconSize,
                   color: auraColors.onSurfaceVariant,
                 ),
               ],
@@ -753,73 +682,73 @@ class _CompactedMessageWidget extends StatelessWidget {
         padding: .medium,
         margin: .small,
         variant: AuraContainerVariant.surfaceVariant,
-        borderRadius: 10,
+        borderRadius: containerBorderRadius,
       ),
-      onTap: () => _showCompactionDetails(context, message),
+      contentChild: Builder(
+        builder: (modalContext) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: CompactedMessageDetails(message: message)),
+            AuraButton(
+              onPressed: () =>
+                  Navigator.of(modalContext, rootNavigator: true).pop(),
+              child: const TextLocale(LocaleKeys.common_close),
+              variant: AuraButtonVariant.text,
+            ),
+          ],
+        ),
+      ),
+      barrierLabel: LocaleKeys.common_close.tr(),
+      semanticLabel: LocaleKeys.compaction_compacted_details_title.tr(),
     );
   }
 }
 
-class _ErrorMessageWidget extends StatelessWidget {
-  const _ErrorMessageWidget({required this.content, super.key});
-
-  final String content;
-
+class const _ErrorMessageWidget({required final String content, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    const iconSize = 16.0;
+    const containerBorderRadius = 10.0;
 
     return AuraContainer(
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 16,
-            color: auraColors.onError,
-          ),
+          Icon(Icons.error_outline, size: iconSize, color: auraColors.onError),
           const AuraSizedBox(width: .xs),
-          Flexible(
-            child: TextLocale(content),
-          ),
+          Flexible(child: TextLocale(content)),
         ],
       ),
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
       border: Border.fromBorderSide(BorderSide(color: auraColors.error)),
     );
   }
 }
 
 /// A small status indicator widget with icon and text.
-class _ToolCallStatusIndicator extends StatelessWidget {
-  const _ToolCallStatusIndicator({
-    required this.statusText,
-    required this.icon,
-    required this.color,
-  });
-
-  final Widget statusText;
-  final IconData icon;
-  final Color color;
-
+class const _ToolCallStatusIndicator({
+  required final Widget statusText,
+  required final IconData icon,
+  required final Color color,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    const iconSize = 14.0;
+    const textSize = 12.0;
+
     return Padding(
-      padding: EdgeInsets.only(
-        top: context.auraTheme.fromSpacing(.xs),
-      ),
+      padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
+          Icon(icon, size: iconSize, color: color),
           const AuraSizedBox(width: .xs),
           DefaultTextStyle(
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: color, fontSize: textSize),
             child: statusText,
           ),
         ],
@@ -828,23 +757,18 @@ class _ToolCallStatusIndicator extends StatelessWidget {
   }
 }
 
-class _CompactingIndicator extends StatelessWidget {
-  const _CompactingIndicator();
-
+class const _CompactingIndicator() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    const containerBorderRadius = 10.0;
 
     return AuraContainer(
       child: Row(
         children: [
           const Padding(
             padding: EdgeInsets.all(4),
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: AuraSpinner(),
-            ),
+            child: SizedBox(width: 16, height: 16, child: AuraSpinner()),
           ),
           const AuraSizedBox(width: .sm),
           Text(
@@ -859,7 +783,7 @@ class _CompactingIndicator extends StatelessWidget {
       padding: .medium,
       margin: .small,
       variant: AuraContainerVariant.surfaceVariant,
-      borderRadius: 10,
+      borderRadius: containerBorderRadius,
     );
   }
 }

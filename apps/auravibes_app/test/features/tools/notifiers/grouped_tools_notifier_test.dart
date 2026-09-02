@@ -24,12 +24,16 @@ void main() {
     var workspaceToolsRepository = _FakeWorkspaceToolsRepository();
     var container = ProviderContainer(
       overrides: [
-        toolsGroupsRepositoryProvider.overrideWithValue(
-          toolsGroupsRepository,
-        ),
-        workspaceToolsRepositoryProvider.overrideWithValue(
-          workspaceToolsRepository,
-        ),
+        toolsGroupsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(toolsGroupsRepository),
+        workspaceToolsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(workspaceToolsRepository),
         mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
         mcpServersRepositoryProvider.overrideWithValue(
           _FakeMcpServersRepository(),
@@ -82,12 +86,16 @@ void main() {
       workspaceToolsRepository = _FakeWorkspaceToolsRepository();
       container = ProviderContainer(
         overrides: [
-          toolsGroupsRepositoryProvider.overrideWithValue(
-            toolsGroupsRepository,
-          ),
-          workspaceToolsRepositoryProvider.overrideWithValue(
-            workspaceToolsRepository,
-          ),
+          toolsGroupsRepositoryProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(toolsGroupsRepository),
+          workspaceToolsRepositoryProvider(
+            const WorkspaceSession(
+              LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+            ),
+          ).overrideWithValue(workspaceToolsRepository),
           mcpManagerServiceProvider.overrideWithValue(McpManagerService()),
           mcpServersRepositoryProvider.overrideWithValue(
             _FakeMcpServersRepository(),
@@ -132,9 +140,7 @@ void main() {
       );
 
       expect(result, isNotEmpty);
-      final builtInGroup = result.where(
-        (g) => g.defaultGroupType != null,
-      );
+      final builtInGroup = result.where((g) => g.defaultGroupType != null);
       expect(builtInGroup, isNotEmpty);
     });
 
@@ -174,32 +180,28 @@ void main() {
       expect(toolsGroupsRepository.setEnabledCalled, isFalse);
     });
 
-    test(
-      'setMcpGroupEnabled does nothing when group belongs to '
-      'different workspace',
-      () async {
-        toolsGroupsRepository.groupById = ToolsGroupEntity(
-          id: 'group-1',
-          workspaceId: 'other-workspace',
-          name: 'Other',
-          isEnabled: true,
-          permissions: PermissionAccess.ask,
-          createdAt: createdAt,
-          updatedAt: createdAt,
-        );
+    test('setMcpGroupEnabled ignores another workspace group', () async {
+      toolsGroupsRepository.groupById = ToolsGroupEntity(
+        id: 'group-1',
+        workspaceId: 'other-workspace',
+        name: 'Other',
+        isEnabled: true,
+        permissions: PermissionAccess.ask,
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      );
 
-        final notifier = container.read(
-          groupedToolsProvider('workspace-1').notifier,
-        );
-        final _ = await container.read(
-          groupedToolsProvider('workspace-1').future,
-        );
+      final notifier = container.read(
+        groupedToolsProvider('workspace-1').notifier,
+      );
+      final _ = await container.read(
+        groupedToolsProvider('workspace-1').future,
+      );
 
-        await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
+      await notifier.setMcpGroupEnabled('group-1', isEnabled: false);
 
-        expect(toolsGroupsRepository.setEnabledCalled, isFalse);
-      },
-    );
+      expect(toolsGroupsRepository.setEnabledCalled, isFalse);
+    });
 
     test('deleteMcpGroup does nothing for non-mcp group', () async {
       toolsGroupsRepository.groupById = ToolsGroupEntity(
@@ -304,9 +306,7 @@ class _FakeMcpServersRepository implements McpServersRepository {
   Future<McpServerEntity?> getMcpServerById(String serverId) async => null;
 
   @override
-  Future<List<McpServerEntity>> getMcpServersForWorkspace(
-    String workspaceId,
-  ) {
+  Future<List<McpServerEntity>> getMcpServersForWorkspace(String workspaceId) {
     throw UnimplementedError();
   }
 
@@ -358,10 +358,7 @@ class _FakeWorkspaceToolsRepository implements WorkspaceToolsRepository {
   }
 
   @override
-  Future<String?> getWorkspaceToolConfig(
-    String workspaceId,
-    String toolType,
-  ) {
+  Future<String?> getWorkspaceToolConfig(String workspaceId, String toolType) {
     throw UnimplementedError();
   }
 

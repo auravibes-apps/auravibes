@@ -45,9 +45,7 @@ void main() {
 
     test('trackError sanitizes multiline payloads', () {
       final messages = <String>[];
-      MonitoringService(
-        debugLogger: messages.add,
-      ).trackError(
+      MonitoringService(debugLogger: messages.add).trackError(
         'stream_failure',
         error: Exception('line 1\nline 2'),
         stackTrace: StackTrace.fromString('frame 1\nframe 2'),

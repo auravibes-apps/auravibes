@@ -2,19 +2,14 @@ import 'package:auravibes_ui/src/tokens/tokens.dart';
 import 'package:flutter/widgets.dart';
 
 /// A [SizedBox] whose dimensions are selected by [AuraSpacing] and resolved
-/// from the ambient theme. This keeps sizing rethemeable: a subtree Theme
+/// from the ambient theme. This keeps sizing rethemeable. A subtree Theme
 /// override that rescales spacing resizes every [AuraSizedBox].
 ///
 /// [AuraSpacing.none] resolves to `null` (no constraint), so the default
 /// constructor behaves as a passthrough wrapper.
 class AuraSizedBox extends StatelessWidget {
   /// Default constructor.
-  const AuraSizedBox({
-    this.width = .none,
-    this.height = .none,
-    this.child,
-    super.key,
-  });
+  const new({this.width = .none, this.height = .none, this.child, super.key});
 
   /// Horizontal spacing. Selects the resolved [width].
   final AuraSpacing width;

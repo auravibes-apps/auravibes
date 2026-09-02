@@ -15,7 +15,7 @@ void main() {
             body: AuraCheckbox(
               value: false,
               onChanged: (_) {
-                final _ = Object();
+                return;
               },
             ),
           ),
@@ -51,11 +51,36 @@ void main() {
       expect(selectedValue, isTrue);
     });
 
+    testWidgets('renders selected mark without a Material icon font', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AuraCheckbox(
+              value: true,
+              onChanged: (_) {
+                return;
+              },
+            ),
+          ),
+          theme: ThemeData(extensions: [AuraTheme.light]),
+        ),
+      );
+
+      expect(find.byType(Icon), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(AuraCheckbox),
+          matching: find.byType(CustomPaint),
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets(
       'calls onChanged with toggled value when activated by keyboard',
-      (
-        tester,
-      ) async {
+      (tester) async {
         bool? selectedValue;
 
         await tester.pumpWidget(

@@ -9,52 +9,40 @@ import 'package:flutter/material.dart';
 /// content sections with support for labels and different orientations.
 class AuraDivider extends StatelessWidget {
   /// Creates a horizontal Aura divider.
-  const AuraDivider({
+  const new({
     super.key,
-    this.height,
-    this.thickness,
+    this.thickness = 1,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
   }) : orientation = AuraDividerOrientation.horizontal,
-       width = null,
        label = null;
 
   /// Creates a vertical Aura divider.
-  const AuraDivider.vertical({
+  const new vertical({
     super.key,
-    this.width,
-    this.thickness,
+    this.thickness = 1,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
   }) : orientation = AuraDividerOrientation.vertical,
-       height = null,
        label = null;
 
   /// Creates a horizontal Aura divider with a label.
-  const AuraDivider.withLabel({
+  const new withLabel({
     required this.label,
     super.key,
-    this.height,
-    this.thickness,
+    this.thickness = 1,
     this.color,
     this.indent = 0,
     this.endIndent = 0,
-  }) : orientation = AuraDividerOrientation.horizontal,
-       width = null;
+  }) : orientation = AuraDividerOrientation.horizontal;
 
   /// The orientation of the divider.
   final AuraDividerOrientation orientation;
 
-  /// The height of a horizontal divider or the width of a vertical divider.
-  final double? height;
-
-  /// The width of a vertical divider or the height of a horizontal divider.
-  final double? width;
-
-  /// The thickness of the divider line.
-  final double? thickness;
+  /// The thickness of the divider line and its cross-axis area.
+  final double thickness;
 
   /// The tint of the divider line.
   final AuraTint? color;
@@ -75,38 +63,26 @@ class AuraDivider extends StatelessWidget {
     final dividerColor = color == null
         ? auraTheme.colors.outline
         : auraTheme.colors.colorFor(color);
-    final dividerThickness = thickness ?? DesignBorderWidth.thin;
+    final dividerThickness = thickness;
 
     final label = this.label;
     if (label != null) {
       return Container(
-        height: height ?? context.auraTheme.fromSpacing(.xl),
-        margin: EdgeInsets.only(
-          left: indent,
-          right: endIndent,
-        ),
+        constraints: BoxConstraints(minHeight: dividerThickness),
+        margin: EdgeInsetsDirectional.only(start: indent, end: endIndent),
         child: Row(
           children: [
             Expanded(
-              child: Container(
-                color: dividerColor,
-                height: dividerThickness,
-              ),
+              child: Container(color: dividerColor, height: dividerThickness),
             ),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: context.auraTheme.fromSpacing(.md),
               ),
-              child: AuraText(
-                child: label,
-                style: AuraTextStyle.caption,
-              ),
+              child: AuraText(child: label, style: AuraTextStyle.caption),
             ),
             Expanded(
-              child: Container(
-                color: dividerColor,
-                height: dividerThickness,
-              ),
+              child: Container(color: dividerColor, height: dividerThickness),
             ),
           ],
         ),
@@ -115,31 +91,19 @@ class AuraDivider extends StatelessWidget {
 
     if (orientation == AuraDividerOrientation.vertical) {
       return Container(
-        width: width ?? context.auraTheme.fromSpacing(.md),
-        margin: EdgeInsets.only(
-          top: indent,
-          bottom: endIndent,
-        ),
+        width: dividerThickness,
+        margin: EdgeInsetsDirectional.only(top: indent, bottom: endIndent),
         child: Center(
-          child: Container(
-            color: dividerColor,
-            width: dividerThickness,
-          ),
+          child: Container(color: dividerColor, width: dividerThickness),
         ),
       );
     }
 
     return Container(
-      height: height ?? context.auraTheme.fromSpacing(.md),
-      margin: EdgeInsets.only(
-        left: indent,
-        right: endIndent,
-      ),
+      height: dividerThickness,
+      margin: EdgeInsetsDirectional.only(start: indent, end: endIndent),
       child: Center(
-        child: Container(
-          color: dividerColor,
-          height: dividerThickness,
-        ),
+        child: Container(color: dividerColor, height: dividerThickness),
       ),
     );
   }

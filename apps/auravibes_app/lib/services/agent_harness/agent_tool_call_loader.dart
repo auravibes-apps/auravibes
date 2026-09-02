@@ -1,9 +1,11 @@
 // Required: Existing thresholds and limits use numeric values.
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
+import 'package:auravibes_app/features/tools/usecases/load_conversation_tool_specs_usecase.dart';
 import 'package:auravibes_app/services/agent_harness/agent_tool_status_mapper.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
@@ -17,28 +19,32 @@ typedef ToolToCall = agent.AgentToolToCall<ResolvedTool>;
 typedef LoadLatestMessageToolCallsResult =
     agent.LoadLatestMessageToolCallsResult<ResolvedTool>;
 
-class AgentToolCallLoader extends agent.AgentToolCallLoader<ResolvedTool> {
-  AgentToolCallLoader({
-    required MessageRepository messageRepository,
-    required ToolResolverService toolResolverService,
-  }) : super(
-         provider: AppAgentToolCallProvider(
-           messageRepository: messageRepository,
-           toolResolverService: toolResolverService,
-         ),
-       );
+class AgentToolCallLoader({
+  required MessageRepository messageRepository,
+  required ConversationRepository conversationRepository,
+  required LoadConversationToolSpecsUsecase Function(String workspaceId)
+  loadConversationToolSpecsUsecaseForWorkspace,
+  required ToolResolverService toolResolverService,
+}) extends agent.AgentToolCallLoader<ResolvedTool> {
+  this
+    : super(
+        provider: AppAgentToolCallProvider(
+          messageRepository: messageRepository,
+          conversationRepository: conversationRepository,
+          loadConversationToolSpecsUsecaseForWorkspace:
+              loadConversationToolSpecsUsecaseForWorkspace,
+          toolResolverService: toolResolverService,
+        ),
+      );
 }
 
-class AppAgentToolCallProvider
-    implements agent.AgentToolCallProvider<ResolvedTool> {
-  const AppAgentToolCallProvider({
-    required this.messageRepository,
-    required this.toolResolverService,
-  });
-
-  final MessageRepository messageRepository;
-  final ToolResolverService toolResolverService;
-
+class const AppAgentToolCallProvider({
+  required final MessageRepository messageRepository,
+  required final ConversationRepository conversationRepository,
+  required final LoadConversationToolSpecsUsecase Function(String workspaceId)
+  loadConversationToolSpecsUsecaseForWorkspace,
+  required final ToolResolverService toolResolverService,
+}) implements agent.AgentToolCallProvider<ResolvedTool> {
   @override
   Future<List<agent.AgentToolMessage>> loadMessages(
     String conversationId,
@@ -51,8 +57,23 @@ class AppAgentToolCallProvider
   }
 
   @override
-  ResolvedTool? resolveTool(String toolName) {
-    return toolResolverService.resolveTool(toolName);
+  Future<ResolvedTool?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async {
+    final conversation = await conversationRepository.getConversationById(
+      conversationId,
+    );
+    final catalog = conversation == null
+        ? agent.buildToolCatalog<ResolvedTool>([])
+        : await loadConversationToolSpecsUsecaseForWorkspace(
+            conversation.workspaceId,
+          ).buildCatalog(
+            conversationId: conversationId,
+            workspaceId: conversation.workspaceId,
+          );
+
+    return toolResolverService.resolveTool(toolName, catalog);
   }
 
   agent.AgentToolMessage _toAgentToolMessage(MessageEntity message) {
@@ -67,7 +88,9 @@ class AppAgentToolCallProvider
               id: toolCall.id,
               name: toolCall.name,
               argumentsRaw: toolCall.argumentsRaw,
-              lifecycle: toAgentToolCallLifecycle(toolCall.resultStatus),
+              lifecycle: AgentToolStatusMapper.toLifecycle(
+                toolCall.resultStatus,
+              ),
             ),
       ],
     );
@@ -77,6 +100,9 @@ class AppAgentToolCallProvider
 final agentToolCallLoaderProvider = Provider<AgentToolCallLoader>((ref) {
   return AgentToolCallLoader(
     messageRepository: ref.watch(messageRepositoryProvider),
+    conversationRepository: ref.watch(conversationRepositoryProvider),
+    loadConversationToolSpecsUsecaseForWorkspace: (workspaceId) =>
+        ref.read(loadConversationToolSpecsUsecaseProvider(workspaceId)),
     toolResolverService: const ToolResolverService(),
   );
 });

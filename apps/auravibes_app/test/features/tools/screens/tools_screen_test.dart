@@ -43,12 +43,10 @@ void main() {
               child: const ToolsScreen(workspaceId: 'test-ws'),
             ),
             overrides: [
-              workspaceToolsProvider('test-ws').overrideWith(
-                _MockWorkspaceToolsNotifier.new,
-              ),
-              groupedToolsProvider('test-ws').overrideWith(
-                _MockGroupedToolsNotifier.new,
-              ),
+              workspaceToolsProvider('test-ws')
+                  .overrideWith(_MockWorkspaceToolsNotifier.new),
+              groupedToolsProvider('test-ws')
+                  .overrideWith(_MockGroupedToolsNotifier.new),
               workspaceSessionForRouteProvider('test-ws').overrideWithValue(
                 const AsyncData(
                   WorkspaceSession(
@@ -85,12 +83,10 @@ void main() {
               },
             ),
             overrides: [
-              workspaceToolsProvider('test-ws').overrideWith(
-                _MockWorkspaceToolsNotifier.new,
-              ),
-              groupedToolsProvider('test-ws').overrideWith(
-                _MockGroupedToolsNotifier.new,
-              ),
+              workspaceToolsProvider('test-ws')
+                  .overrideWith(_MockWorkspaceToolsNotifier.new),
+              groupedToolsProvider('test-ws')
+                  .overrideWith(_MockGroupedToolsNotifier.new),
               workspaceSessionForRouteProvider('test-ws').overrideWithValue(
                 const AsyncData(
                   WorkspaceSession(

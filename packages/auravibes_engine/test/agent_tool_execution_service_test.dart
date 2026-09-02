@@ -130,10 +130,7 @@ void main() {
         'slow-id': AgentToolPermissionResult.granted,
         'fast-id': AgentToolPermissionResult.granted,
       },
-      resultFutures: {
-        'slow': slow.future,
-        'fast': fast.future,
-      },
+      resultFutures: {'slow': slow.future, 'fast': fast.future},
     );
     final service = AgentToolExecutionService<String>(provider: provider);
 
@@ -177,9 +174,7 @@ void main() {
         'blocked-id': AgentToolPermissionResult.granted,
         'manual-id': AgentToolPermissionResult.needsConfirmation,
       },
-      results: {
-        'blocked': Exception('blocked'),
-      },
+      results: {'blocked': Exception('blocked')},
     );
     final service = AgentToolExecutionService<String>(provider: provider);
 
@@ -193,6 +188,33 @@ void main() {
       provider.updates.single.resultStatus,
       AgentToolResultStatus.executionError,
     );
+  });
+
+  test('passes original arguments to approval before execution', () async {
+    const argumentsRaw =
+        '{"skill":"research","tool":"search","args":{},"revision":"r1"}';
+    final provider = _FakeExecutionProvider(
+      latestToolCalls: const LoadLatestMessageToolCallsResult(
+        messageId: 'message-1',
+        hasToolCalls: true,
+        toolsToRun: [
+          AgentToolToCall(
+            tool: callSkillToolName,
+            id: 'tool-1',
+            argumentsRaw: argumentsRaw,
+          ),
+        ],
+        notFoundToolCallIds: [],
+        previouslyFailedToolCallIds: [],
+      ),
+    );
+
+    await AgentToolExecutionService<String>(provider: provider)(
+      conversationId: 'conversation-1',
+      workspaceId: 'workspace-1',
+    );
+
+    expect(provider.approvalArgumentsRaw['tool-1'], argumentsRaw);
   });
 }
 
@@ -214,24 +236,18 @@ LoadLatestMessageToolCallsResult<String> _latestToolCalls() {
   );
 }
 
-class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
-  _FakeExecutionProvider({
-    required this.latestToolCalls,
-    this.cancellationRequested = false,
-    this.decisions = const {},
-    this.results = const {},
-    this.resultFutures = const {},
-  });
-
-  final LoadLatestMessageToolCallsResult<String> latestToolCalls;
-  final bool cancellationRequested;
-  final Map<String, AgentToolPermissionResult> decisions;
-  final Map<String, Object?> results;
-  final Map<String, Future<Object?>> resultFutures;
+class _FakeExecutionProvider({
+  required final LoadLatestMessageToolCallsResult<String> latestToolCalls,
+  final bool cancellationRequested = false,
+  final Map<String, AgentToolPermissionResult> decisions = const {},
+  final Map<String, Object?> results = const {},
+  final Map<String, Future<Object?>> resultFutures = const {},
+}) implements AgentToolExecutionProvider<String> {
   final stoppedMessageIds = <String>[];
   final updateBatches = <List<AgentToolResultUpdate>>[];
   final updates = <AgentToolResultUpdate>[];
   final loggedErrors = <String>[];
+  final approvalArgumentsRaw = <String, String>{};
 
   @override
   Future<LoadLatestMessageToolCallsResult<String>> loadLatestToolCalls({
@@ -246,7 +262,9 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     required String workspaceId,
     required String toolCallId,
     required String resolvedTool,
+    required String argumentsRaw,
   }) async {
+    approvalArgumentsRaw[toolCallId] = argumentsRaw;
     return AgentToolApprovalDecision(
       permissionResult:
           decisions[toolCallId] ?? AgentToolPermissionResult.needsConfirmation,
@@ -260,7 +278,7 @@ class _FakeExecutionProvider implements AgentToolExecutionProvider<String> {
     required Map<String, dynamic> arguments,
   }) async {
     final future = resultFutures[tool];
-    if (future != null) return future;
+    if (future != null) return await future;
 
     final result = results[tool];
     if (result is Object) {

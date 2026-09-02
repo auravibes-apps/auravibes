@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 /// A linear progress indicator following the Aura design system.
 class AuraLinearProgressIndicator extends StatelessWidget {
   /// Creates an Aura linear progress indicator.
-  const AuraLinearProgressIndicator({
+  const new({
     required this.value,
     super.key,
     this.height = 4,
@@ -62,11 +62,9 @@ class AuraLinearProgressIndicator extends StatelessWidget {
                 ),
               ),
               FractionallySizedBox(
-                alignment: Alignment.centerLeft,
+                alignment: AlignmentDirectional.centerStart,
                 widthFactor: clampedValue,
-                child: ColoredBox(
-                  color: auraColors.colorFor(tint),
-                ),
+                child: ColoredBox(color: auraColors.colorFor(tint)),
               ),
             ],
           ),

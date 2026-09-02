@@ -29,12 +29,16 @@ $OAuthTokenModelCopyWith<OAuthTokenModel> get copyWith => _$OAuthTokenModelCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OAuthTokenModel&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.idToken, idToken) || other.idToken == idToken)&&(identical(other.expiresIn, expiresIn) || other.expiresIn == expiresIn)&&(identical(other.tokenType, tokenType) || other.tokenType == tokenType)&&(identical(other.scope, scope) || other.scope == scope));
+  final _this = this as OAuthTokenModel;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OAuthTokenModel&&(identical(other.accessToken, _this.accessToken) || other.accessToken == _this.accessToken)&&(identical(other.refreshToken, _this.refreshToken) || other.refreshToken == _this.refreshToken)&&(identical(other.idToken, _this.idToken) || other.idToken == _this.idToken)&&(identical(other.expiresIn, _this.expiresIn) || other.expiresIn == _this.expiresIn)&&(identical(other.tokenType, _this.tokenType) || other.tokenType == _this.tokenType)&&(identical(other.scope, _this.scope) || other.scope == _this.scope));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accessToken,refreshToken,idToken,expiresIn,tokenType,scope);
+int get hashCode {
+  final _this = this as OAuthTokenModel;
+  return Object.hash(runtimeType,_this.accessToken,_this.refreshToken,_this.idToken,_this.expiresIn,_this.tokenType,_this.scope);
+}
 
 
 
@@ -234,12 +238,14 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OAuthTokenModel&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.idToken, idToken) || other.idToken == idToken)&&(identical(other.expiresIn, expiresIn) || other.expiresIn == expiresIn)&&(identical(other.tokenType, tokenType) || other.tokenType == tokenType)&&(identical(other.scope, scope) || other.scope == scope));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _OAuthTokenModel&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.idToken, idToken) || other.idToken == idToken)&&(identical(other.expiresIn, expiresIn) || other.expiresIn == expiresIn)&&(identical(other.tokenType, tokenType) || other.tokenType == tokenType)&&(identical(other.scope, scope) || other.scope == scope));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accessToken,refreshToken,idToken,expiresIn,tokenType,scope);
+int get hashCode {
+    return Object.hash(runtimeType,accessToken,refreshToken,idToken,expiresIn,tokenType,scope);
+}
 
 
 
@@ -299,12 +305,16 @@ $OAuthTokenEntityCopyWith<OAuthTokenEntity> get copyWith => _$OAuthTokenEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is OAuthTokenEntity&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.issuedAt, issuedAt) || other.issuedAt == issuedAt)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.idToken, idToken) || other.idToken == idToken)&&(identical(other.expiresIn, expiresIn) || other.expiresIn == expiresIn)&&(identical(other.tokenType, tokenType) || other.tokenType == tokenType)&&const DeepCollectionEquality().equals(other.scopes, scopes));
+  final _this = this as OAuthTokenEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is OAuthTokenEntity&&(identical(other.accessToken, _this.accessToken) || other.accessToken == _this.accessToken)&&(identical(other.issuedAt, _this.issuedAt) || other.issuedAt == _this.issuedAt)&&(identical(other.refreshToken, _this.refreshToken) || other.refreshToken == _this.refreshToken)&&(identical(other.idToken, _this.idToken) || other.idToken == _this.idToken)&&(identical(other.expiresIn, _this.expiresIn) || other.expiresIn == _this.expiresIn)&&(identical(other.tokenType, _this.tokenType) || other.tokenType == _this.tokenType)&&const DeepCollectionEquality().equals(other.scopes, _this.scopes));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accessToken,issuedAt,refreshToken,idToken,expiresIn,tokenType,const DeepCollectionEquality().hash(scopes));
+int get hashCode {
+  final _this = this as OAuthTokenEntity;
+  return Object.hash(runtimeType,_this.accessToken,_this.issuedAt,_this.refreshToken,_this.idToken,_this.expiresIn,_this.tokenType,const DeepCollectionEquality().hash(_this.scopes));
+}
 
 
 
@@ -514,12 +524,14 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OAuthTokenEntity&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.issuedAt, issuedAt) || other.issuedAt == issuedAt)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.idToken, idToken) || other.idToken == idToken)&&(identical(other.expiresIn, expiresIn) || other.expiresIn == expiresIn)&&(identical(other.tokenType, tokenType) || other.tokenType == tokenType)&&const DeepCollectionEquality().equals(other._scopes, _scopes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _OAuthTokenEntity&&(identical(other.accessToken, accessToken) || other.accessToken == accessToken)&&(identical(other.issuedAt, issuedAt) || other.issuedAt == issuedAt)&&(identical(other.refreshToken, refreshToken) || other.refreshToken == refreshToken)&&(identical(other.idToken, idToken) || other.idToken == idToken)&&(identical(other.expiresIn, expiresIn) || other.expiresIn == expiresIn)&&(identical(other.tokenType, tokenType) || other.tokenType == tokenType)&&const DeepCollectionEquality().equals(other.scopes, _scopes));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,accessToken,issuedAt,refreshToken,idToken,expiresIn,tokenType,const DeepCollectionEquality().hash(_scopes));
+int get hashCode {
+    return Object.hash(runtimeType,accessToken,issuedAt,refreshToken,idToken,expiresIn,tokenType,const DeepCollectionEquality().hash(_scopes));
+}
 
 
 
@@ -602,7 +614,7 @@ mixin _$McpAuthenticationType {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationType);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationType);
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -776,7 +788,7 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeNone);
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeNone);
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -819,12 +831,14 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeOAuth&&(identical(other.token, token) || other.token == token)&&(identical(other.clientId, clientId) || other.clientId == clientId)&&(identical(other.authorizationEndpoint, authorizationEndpoint) || other.authorizationEndpoint == authorizationEndpoint)&&(identical(other.tokenEndpoint, tokenEndpoint) || other.tokenEndpoint == tokenEndpoint));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeOAuth&&(identical(other.token, token) || other.token == token)&&(identical(other.clientId, clientId) || other.clientId == clientId)&&(identical(other.authorizationEndpoint, authorizationEndpoint) || other.authorizationEndpoint == authorizationEndpoint)&&(identical(other.tokenEndpoint, tokenEndpoint) || other.tokenEndpoint == tokenEndpoint));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,token,clientId,authorizationEndpoint,tokenEndpoint);
+int get hashCode {
+    return Object.hash(runtimeType,token,clientId,authorizationEndpoint,tokenEndpoint);
+}
 
 
 
@@ -900,12 +914,14 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeBearerToken&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is McpAuthenticationTypeBearerToken&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,bearerToken);
+int get hashCode {
+    return Object.hash(runtimeType,bearerToken);
+}
 
 
 
@@ -963,16 +979,21 @@ $McpServerToCreateCopyWith<McpServerToCreate> get copyWith => _$McpServerToCreat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description));
+  final _this = this as McpServerToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description);
+int get hashCode {
+  final _this = this as McpServerToCreate;
+  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.serviceConnectionId,_this.description);
+}
 
 @override
 String toString() {
-  return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description)';
+  final _this = this as McpServerToCreate;
+  return 'McpServerToCreate(name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description})';
 }
 
 
@@ -1184,16 +1205,18 @@ _$McpServerToCreateCopyWith<_McpServerToCreate> get copyWith => __$McpServerToCr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description);
+int get hashCode {
+    return Object.hash(runtimeType,name,url,transport,authenticationType,serviceConnectionId,description);
+}
 
 @override
 String toString() {
-  return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description)';
+    return 'McpServerToCreate(name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, serviceConnectionId: $serviceConnectionId, description: $description)';
 }
 
 
@@ -1270,16 +1293,21 @@ $McpServerEntityCopyWith<McpServerEntity> get copyWith => _$McpServerEntityCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  final _this = this as McpServerEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.serviceConnectionId, _this.serviceConnectionId) || other.serviceConnectionId == _this.serviceConnectionId)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,isEnabled);
+int get hashCode {
+  final _this = this as McpServerEntity;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.name,_this.url,_this.transport,_this.authenticationType,_this.createdAt,_this.updatedAt,_this.serviceConnectionId,_this.description,_this.isEnabled);
+}
 
 @override
 String toString() {
-  return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, isEnabled: $isEnabled)';
+  final _this = this as McpServerEntity;
+  return 'McpServerEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, name: ${_this.name}, url: ${_this.url}, transport: ${_this.transport}, authenticationType: ${_this.authenticationType}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, serviceConnectionId: ${_this.serviceConnectionId}, description: ${_this.description}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -1506,16 +1534,18 @@ _$McpServerEntityCopyWith<_McpServerEntity> get copyWith => __$McpServerEntityCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.serviceConnectionId, serviceConnectionId) || other.serviceConnectionId == serviceConnectionId)&&(identical(other.description, description) || other.description == description)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,isEnabled);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,name,url,transport,authenticationType,createdAt,updatedAt,serviceConnectionId,description,isEnabled);
+}
 
 @override
 String toString() {
-  return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, isEnabled: $isEnabled)';
+    return 'McpServerEntity(id: $id, workspaceId: $workspaceId, name: $name, url: $url, transport: $transport, authenticationType: $authenticationType, createdAt: $createdAt, updatedAt: $updatedAt, serviceConnectionId: $serviceConnectionId, description: $description, isEnabled: $isEnabled)';
 }
 
 
@@ -1586,12 +1616,16 @@ $McpServerFormToCreateCopyWith<McpServerFormToCreate> get copyWith => _$McpServe
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.description, description) || other.description == description));
+  final _this = this as McpServerFormToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpServerFormToCreate&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.description, _this.description) || other.description == _this.description));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,description);
+int get hashCode {
+  final _this = this as McpServerFormToCreate;
+  return Object.hash(runtimeType,_this.name,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.description);
+}
 
 
 
@@ -1788,12 +1822,14 @@ _$McpServerFormToCreateCopyWith<_McpServerFormToCreate> get copyWith => __$McpSe
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.description, description) || other.description == description));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpServerFormToCreate&&(identical(other.name, name) || other.name == name)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.description, description) || other.description == description));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,description);
+int get hashCode {
+    return Object.hash(runtimeType,name,url,transport,authenticationType,bearerToken,description);
+}
 
 
 

@@ -12,22 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
-  RenameCloudWorkspaceRequest._({
-    required this.workspaceId,
-    required this.name,
-    required this.requestId,
-    required this.expectedWorkspaceRevision,
-  });
-
-  factory RenameCloudWorkspaceRequest({
+abstract class RenameCloudWorkspaceRequest._({
+  required var int workspaceId,
+  required var String name,
+  required var String requestId,
+  required var int expectedWorkspaceRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String name,
     required String requestId,
     required int expectedWorkspaceRevision,
   }) = _RenameCloudWorkspaceRequestImpl;
 
-  factory RenameCloudWorkspaceRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return RenameCloudWorkspaceRequest(
@@ -38,14 +36,6 @@ abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
           jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
-
-  int workspaceId;
-
-  String name;
-
-  String requestId;
-
-  int expectedWorkspaceRevision;
 
   /// Returns a shallow copy of this [RenameCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
@@ -73,18 +63,19 @@ abstract class RenameCloudWorkspaceRequest implements _i1.SerializableModel {
   }
 }
 
-class _RenameCloudWorkspaceRequestImpl extends RenameCloudWorkspaceRequest {
-  _RenameCloudWorkspaceRequestImpl({
-    required int workspaceId,
-    required String name,
-    required String requestId,
-    required int expectedWorkspaceRevision,
-  }) : super._(
-         workspaceId: workspaceId,
-         name: name,
-         requestId: requestId,
-         expectedWorkspaceRevision: expectedWorkspaceRevision,
-       );
+class _RenameCloudWorkspaceRequestImpl({
+  required int workspaceId,
+  required String name,
+  required String requestId,
+  required int expectedWorkspaceRevision,
+}) extends RenameCloudWorkspaceRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        name: name,
+        requestId: requestId,
+        expectedWorkspaceRevision: expectedWorkspaceRevision,
+      );
 
   /// Returns a shallow copy of this [RenameCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.

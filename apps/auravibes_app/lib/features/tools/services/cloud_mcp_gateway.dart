@@ -2,11 +2,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudMcpGateway {
-  const CloudMcpGateway(this._stateGateway);
-
-  final CloudWorkspaceStateGateway _stateGateway;
-
+class const CloudMcpGateway(final CloudWorkspaceStateGateway _stateGateway) {
   Future<CreateMcpServerResult> createMcpServer({
     required String requestId,
     required String name,
@@ -15,7 +11,7 @@ class CloudMcpGateway {
     required bool useHttp2,
     required String? description,
     required String? bearerToken,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.create(
       CreateMcpServerRequest(
@@ -31,19 +27,20 @@ class CloudMcpGateway {
     ),
   );
 
-  Future<void> deleteMcpServer({required String mcpServerId}) => guardCloudCall(
-    .mcp,
-    () => _stateGateway.client.mcpServer.delete(
-      DeleteMcpServerRequest(
-        workspaceId: _stateGateway.workspace.cloudWorkspaceId,
-        mcpServerId: mcpServerId,
-      ),
-    ),
-  );
+  Future<void> deleteMcpServer({required String mcpServerId}) =>
+      CloudAppErrors.guardCall(
+        .mcp,
+        () => _stateGateway.client.mcpServer.delete(
+          DeleteMcpServerRequest(
+            workspaceId: _stateGateway.workspace.cloudWorkspaceId,
+            mcpServerId: mcpServerId,
+          ),
+        ),
+      );
 
   Future<DiscoverMcpServerResult> discoverMcpServer({
     required String mcpServerId,
-  }) => guardCloudCall(
+  }) => CloudAppErrors.guardCall(
     .mcp,
     () => _stateGateway.client.mcpServer.discoverAndCheck(
       DiscoverMcpServerRequest(

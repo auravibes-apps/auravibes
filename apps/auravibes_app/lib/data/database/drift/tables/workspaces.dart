@@ -11,8 +11,8 @@ class Workspaces extends Table with TableMixin {
   /// Human-readable name of the workspace.
   TextColumn get name => text()();
 
-  /// Type of workspace (local or remote).
-  /// Stored as string to handle enum conversion
+  /// Type of workspace (local or remote). Stored as a string to handle enum
+  /// conversion.
   TextColumn get type => textEnum<WorkspaceType>()();
 
   /// URL for remote workspaces, null for local workspaces.

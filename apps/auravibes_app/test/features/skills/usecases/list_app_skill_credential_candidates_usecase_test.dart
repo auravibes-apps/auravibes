@@ -12,7 +12,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class _ServiceConnectionRepository extends Mock
-    implements ServiceConnectionRepository {}
+    implements ServiceConnectionRepository;
 
 void main() {
   const skill = AppSkillDefinition(
@@ -40,12 +40,10 @@ void main() {
           serviceConnectionRepositoryProvider.overrideWith(
             (_) => throw StateError('local repository touched'),
           ),
-          workspaceSessionForRouteProvider('cloud-workspace').overrideWith(
-            (_) async => session,
-          ),
-          cloudWorkspaceStateGatewayProvider(session).overrideWith(
-            (_) async => throw StateError('cloud unavailable'),
-          ),
+          workspaceSessionForRouteProvider('cloud-workspace')
+              .overrideWith((_) async => session),
+          cloudWorkspaceStateGatewayProvider(session)
+              .overrideWith((_) async => throw StateError('cloud unavailable')),
         ],
       );
       addTearDown(container.dispose);
@@ -133,20 +131,23 @@ void main() {
     );
 
     expect(
-      candidates.map(
-        (candidate) => (id: candidate.id, name: candidate.name),
-      ),
+      candidates.map((candidate) => (id: candidate.id, name: candidate.name)),
       [(id: 'service:matching', name: 'Example Search credential')],
     );
   });
 
   test(
-    'cloud eligibility excludes local callbacks and keeps server tools',
+    'eligibility includes service callbacks but excludes control callbacks',
     () async {
       final repository = _ServiceConnectionRepository();
-      final usecase = ListAppSkillCredentialCandidatesUsecase(
-        () => repository,
-      );
+      when(
+        () => repository.listAppSkillCredentialCandidates(
+          workspaceId: any(named: 'workspaceId'),
+          appSkillServiceId: any(named: 'appSkillServiceId'),
+          compatibleModelProviderIds: any(named: 'compatibleModelProviderIds'),
+        ),
+      ).thenAnswer((_) async => []);
+      final usecase = ListAppSkillCredentialCandidatesUsecase(() => repository);
       const registry = AppSkillRegistry();
       final skillsManager =
           registry.getByIdentifier('skills_manager') ??
@@ -160,6 +161,9 @@ void main() {
       final jina =
           registry.getByIdentifier('jina') ??
           (throw StateError('Jina must be registered.'));
+      final duckDuckGo =
+          registry.getByIdentifier('duckduckgo') ??
+          (throw StateError('DuckDuckGo must be registered.'));
 
       expect(
         await usecase.hasUsableNativeTool(
@@ -186,6 +190,13 @@ void main() {
         await usecase.hasUsableNativeTool(
           workspaceId: 'workspace-1',
           skill: jina,
+        ),
+        isTrue,
+      );
+      expect(
+        await usecase.hasUsableNativeTool(
+          workspaceId: 'workspace-1',
+          skill: duckDuckGo,
         ),
         isTrue,
       );

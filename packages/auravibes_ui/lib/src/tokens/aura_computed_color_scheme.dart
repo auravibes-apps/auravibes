@@ -21,12 +21,37 @@ import 'package:flutter/widgets.dart';
 ///   brightness: AuraBrightness.dark,
 /// );
 /// ```
-class AuraComputedColorScheme extends AuraColorScheme {
+class const AuraComputedColorScheme._({
+  required super.primary,
+  required super.primaryVariant,
+  required super.onPrimary,
+  required super.secondary,
+  required super.secondaryVariant,
+  required super.onSecondary,
+  required super.tertiary,
+  required super.tertiaryVariant,
+  required super.onTertiary,
+  required super.surface,
+  required super.surfaceVariant,
+  required super.onSurface,
+  required super.onSurfaceVariant,
+  required super.background,
+  required super.onBackground,
+  required super.error,
+  required super.onError,
+  required super.warning,
+  required super.onWarning,
+  required super.success,
+  required super.onSuccess,
+  required super.info,
+  required super.onInfo,
+  required super.outline,
+  required super.outlineVariant,
+  required super.shadow,
+  required super.scrim,
+}) extends AuraColorScheme {
   /// Computes a full 24-field scheme from [primaryHue] and [brightness].
-  factory AuraComputedColorScheme({
-    required double primaryHue,
-    required AuraBrightness brightness,
-  }) {
+  factory({required double primaryHue, required AuraBrightness brightness}) {
     final isLight = brightness == AuraBrightness.light;
 
     double l(double lightL, double darkL) => isLight ? lightL : darkL;
@@ -51,11 +76,7 @@ class AuraComputedColorScheme extends AuraColorScheme {
     }
 
     AuraComputedColor brand(double lightL, double darkL, double chroma) =>
-        color(
-          primaryHue,
-          l(lightL, darkL),
-          chroma,
-        );
+        color(primaryHue, l(lightL, darkL), chroma);
     final primary = brand(0.4, 0.78, 0.17);
     final primaryVariant = brand(0.3, 0.68, 0.15);
     final secondaryHue = (primaryHue + 180) % 360;
@@ -63,11 +84,7 @@ class AuraComputedColorScheme extends AuraColorScheme {
       double lightL,
       double darkL,
       double chroma,
-    ) => color(
-      secondaryHue,
-      l(lightL, darkL),
-      chroma,
-    );
+    ) => color(secondaryHue, l(lightL, darkL), chroma);
     final secondary = brandSecondary(0.4, 0.78, 0.17);
     final secondaryVariant = brandSecondary(0.3, 0.68, 0.15);
     final tertiaryHue = (primaryHue + 60) % 360;
@@ -75,26 +92,27 @@ class AuraComputedColorScheme extends AuraColorScheme {
       double lightL,
       double darkL,
       double chroma,
-    ) => color(
-      tertiaryHue,
-      l(lightL, darkL),
-      chroma,
-    );
+    ) => color(tertiaryHue, l(lightL, darkL), chroma);
     final tertiary = brandTertiary(0.4, 0.78, 0.17);
     final tertiaryVariant = brandTertiary(0.3, 0.68, 0.15);
 
-    AuraComputedColor neutral(double lightL, double darkL) => color(
-      primaryHue,
-      l(lightL, darkL),
-      0,
-    );
-    final surface = neutral(0.98, 0.18);
+    AuraComputedColor neutral(double lightL, double darkL) =>
+        color(primaryHue, l(lightL, darkL), 0);
+    const surfaceLightness = 0.98;
+    final surface = neutral(surfaceLightness, 0.18);
     final surfaceVariant = neutral(0.96, 0.22);
     final background = neutral(0.94, 0.15);
     final outline = neutral(0.65, 0.45);
-    final outlineVariant = neutral(0.8, 0.3);
+    const outlineVariantLightness = 0.8;
+    const outlineVariantDarkLightness = 0.3;
+    final outlineVariant = neutral(
+      outlineVariantLightness,
+      outlineVariantDarkLightness,
+    );
 
-    AuraComputedColor semantic(double hue) => color(hue, l(0.3, 0.82), 0.2);
+    const semanticLightness = 0.3;
+    AuraComputedColor semantic(double hue) =>
+        color(hue, l(semanticLightness, 0.82), 0.2);
     final error = semantic(HueColorValues.error);
     final warning = semantic(HueColorValues.warning);
     final success = semantic(HueColorValues.success);
@@ -137,33 +155,4 @@ class AuraComputedColorScheme extends AuraColorScheme {
       scrim: scrim,
     );
   }
-  const AuraComputedColorScheme._({
-    required super.primary,
-    required super.primaryVariant,
-    required super.onPrimary,
-    required super.secondary,
-    required super.secondaryVariant,
-    required super.onSecondary,
-    required super.tertiary,
-    required super.tertiaryVariant,
-    required super.onTertiary,
-    required super.surface,
-    required super.surfaceVariant,
-    required super.onSurface,
-    required super.onSurfaceVariant,
-    required super.background,
-    required super.onBackground,
-    required super.error,
-    required super.onError,
-    required super.warning,
-    required super.onWarning,
-    required super.success,
-    required super.onSuccess,
-    required super.info,
-    required super.onInfo,
-    required super.outline,
-    required super.outlineVariant,
-    required super.shadow,
-    required super.scrim,
-  });
 }

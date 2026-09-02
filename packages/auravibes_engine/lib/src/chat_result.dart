@@ -11,7 +11,7 @@ part 'chat_result.freezed.dart';
 
 @freezed
 abstract class ChatResult<T> with _$ChatResult<T> {
-  const factory ChatResult({
+  const factory({
     required T output,
     @Default(ChatFinishReason.unspecified) ChatFinishReason finishReason,
     LanguageModelUsage? usage,
@@ -22,11 +22,7 @@ abstract class ChatResult<T> with _$ChatResult<T> {
 
 enum ChatMessageRole { system, user, model, tool }
 
-class ChatMessageToolCall {
-  ChatMessageToolCall(this.request);
-
-  final ToolRequest request;
-
+class ChatMessageToolCall(final ToolRequest request) {
   String get callId => request.ref ?? '';
 
   String get toolName => request.name;
@@ -35,23 +31,21 @@ class ChatMessageToolCall {
 }
 
 @freezed
-abstract class ChatMessage with _$ChatMessage {
-  const factory ChatMessage({
+abstract class const ChatMessage._() with _$ChatMessage {
+  const factory({
     required ChatMessageRole role,
     @Default('') String content,
     @Default(<Part>[]) List<Part> parts,
     @Default(<String, dynamic>{}) Map<String, dynamic> metadata,
   }) = _ChatMessage;
 
-  const ChatMessage._();
-
-  factory ChatMessage.user(String content, {List<Part> parts = const []}) =>
+  factory user(String content, {List<Part> parts = const []}) =>
       ChatMessage(role: ChatMessageRole.user, content: content, parts: parts);
 
-  factory ChatMessage.system(String content, {List<Part> parts = const []}) =>
+  factory system(String content, {List<Part> parts = const []}) =>
       ChatMessage(role: ChatMessageRole.system, content: content, parts: parts);
 
-  factory ChatMessage.model(
+  factory model(
     String content, {
     List<Part> parts = const [],
     Map<String, dynamic> metadata = const {},
@@ -96,14 +90,9 @@ enum ChatFinishReason {
 }
 
 @freezed
-abstract class LanguageModelUsage with _$LanguageModelUsage {
-  const factory LanguageModelUsage({
-    int? promptTokens,
-    int? responseTokens,
-    int? totalTokens,
-  }) = _LanguageModelUsage;
-
-  const LanguageModelUsage._();
+abstract class const LanguageModelUsage._() with _$LanguageModelUsage {
+  const factory({int? promptTokens, int? responseTokens, int? totalTokens}) =
+      _LanguageModelUsage;
 
   LanguageModelUsage concat(LanguageModelUsage other) {
     return LanguageModelUsage(

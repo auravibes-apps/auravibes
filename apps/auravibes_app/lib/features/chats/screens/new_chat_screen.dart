@@ -26,11 +26,8 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('new_chat_screen');
 
-class NewChatScreen extends StatelessWidget {
-  const NewChatScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const NewChatScreen({required final String workspaceId, super.key})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TickerMode(
     enabled: true,
@@ -38,11 +35,8 @@ class NewChatScreen extends StatelessWidget {
   );
 }
 
-class _NewChatContent extends ConsumerWidget {
-  const _NewChatContent({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NewChatContent({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final availability = ref.watch(workspaceAvailabilityProvider(workspaceId));
@@ -99,7 +93,7 @@ class _NewChatContent extends ConsumerWidget {
           stackTrace,
         );
         if (context.mounted) {
-          final _ = showAuraSnackBar(
+          final _ = AuraSnackBars.show(
             context: context,
             content: const TextLocale(
               LocaleKeys.chats_screens_chat_conversation_send_error,
@@ -171,11 +165,8 @@ class _NewChatContent extends ConsumerWidget {
   }
 }
 
-class _NewChatUnavailable extends StatelessWidget {
-  const _NewChatUnavailable({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NewChatUnavailable({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraScreen(
@@ -186,9 +177,7 @@ class _NewChatUnavailable extends StatelessWidget {
               child: AuraColumn(
                 children: [
                   AuraIcon(Icons.cloud_off_outlined),
-                  TextLocale(
-                    LocaleKeys.workspace_management_cloud_unavailable,
-                  ),
+                  TextLocale(LocaleKeys.workspace_management_cloud_unavailable),
                 ],
                 spacing: .sm,
                 mainAxisSize: MainAxisSize.min,
@@ -218,11 +207,8 @@ class _NewChatUnavailable extends StatelessWidget {
   }
 }
 
-class _WorkspaceSelector extends ConsumerWidget {
-  const _WorkspaceSelector({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _WorkspaceSelector({required final String workspaceId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
@@ -240,13 +226,7 @@ class _WorkspaceSelector extends ConsumerWidget {
           ],
           key: const Key('new_chat_workspace_selector'),
           value: workspaceId,
-          onChanged: (value) {
-            if (value != null && value != workspaceId) {
-              ref
-                  .read(workspaceSwitcherProvider.notifier)
-                  .switchToWorkspace(value);
-            }
-          },
+          onChanged: (value) => _switchWorkspace(ref, value),
           semanticLabel: LocaleKeys.workspace_management_title.tr(),
         ),
         AsyncLoading() => const AuraDropdownSelector<String>(
@@ -264,13 +244,15 @@ class _WorkspaceSelector extends ConsumerWidget {
       },
     );
   }
+
+  void _switchWorkspace(WidgetRef ref, String? value) {
+    if (value == null || value == workspaceId) return;
+    ref.read(workspaceSwitcherProvider.notifier).switchToWorkspace(value);
+  }
 }
 
-class _NoModelProviderPrompt extends StatelessWidget {
-  const _NoModelProviderPrompt({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _NoModelProviderPrompt({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(

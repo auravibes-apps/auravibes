@@ -1,25 +1,13 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/permission_access.dart';
+import 'package:auravibes_app/data/repositories/agent_tools_repository_contract.dart';
 import 'package:auravibes_app/domain/entities/agent_tool_entity.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 
-abstract interface class AgentToolsRepositoryContract {
-  Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId);
+export 'agent_tools_repository_contract.dart';
 
-  Future<AgentToolOverrideEntity> setAgentToolPermission(
-    String agentId,
-    String toolId, {
-    required ToolPermissionMode permissionMode,
-  });
-
-  Future<bool> clearAgentToolPermission(String agentId, String toolId);
-}
-
-class AgentToolsRepository implements AgentToolsRepositoryContract {
-  const AgentToolsRepository(this._database);
-
-  final AppDatabase _database;
-
+class const AgentToolsRepository(final AppDatabase _database)
+    implements AgentToolsRepositoryContract {
   @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async {
     final rows = await _database.agentToolsDao.getAgentTools(agentId);

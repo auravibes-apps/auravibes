@@ -26,16 +26,21 @@ $WorkspaceSwitchStateCopyWith<WorkspaceSwitchState> get copyWith => _$WorkspaceS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceSwitchState&&(identical(other.status, status) || other.status == status)&&(identical(other.targetWorkspaceId, targetWorkspaceId) || other.targetWorkspaceId == targetWorkspaceId)&&(identical(other.errorLocalizationKey, errorLocalizationKey) || other.errorLocalizationKey == errorLocalizationKey));
+  final _this = this as WorkspaceSwitchState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceSwitchState&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.targetWorkspaceId, _this.targetWorkspaceId) || other.targetWorkspaceId == _this.targetWorkspaceId)&&(identical(other.errorLocalizationKey, _this.errorLocalizationKey) || other.errorLocalizationKey == _this.errorLocalizationKey));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,targetWorkspaceId,errorLocalizationKey);
+int get hashCode {
+  final _this = this as WorkspaceSwitchState;
+  return Object.hash(runtimeType,_this.status,_this.targetWorkspaceId,_this.errorLocalizationKey);
+}
 
 @override
 String toString() {
-  return 'WorkspaceSwitchState(status: $status, targetWorkspaceId: $targetWorkspaceId, errorLocalizationKey: $errorLocalizationKey)';
+  final _this = this as WorkspaceSwitchState;
+  return 'WorkspaceSwitchState(status: ${_this.status}, targetWorkspaceId: ${_this.targetWorkspaceId}, errorLocalizationKey: ${_this.errorLocalizationKey})';
 }
 
 
@@ -226,16 +231,18 @@ _$WorkspaceSwitchStateCopyWith<_WorkspaceSwitchState> get copyWith => __$Workspa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceSwitchState&&(identical(other.status, status) || other.status == status)&&(identical(other.targetWorkspaceId, targetWorkspaceId) || other.targetWorkspaceId == targetWorkspaceId)&&(identical(other.errorLocalizationKey, errorLocalizationKey) || other.errorLocalizationKey == errorLocalizationKey));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceSwitchState&&(identical(other.status, status) || other.status == status)&&(identical(other.targetWorkspaceId, targetWorkspaceId) || other.targetWorkspaceId == targetWorkspaceId)&&(identical(other.errorLocalizationKey, errorLocalizationKey) || other.errorLocalizationKey == errorLocalizationKey));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,targetWorkspaceId,errorLocalizationKey);
+int get hashCode {
+    return Object.hash(runtimeType,status,targetWorkspaceId,errorLocalizationKey);
+}
 
 @override
 String toString() {
-  return 'WorkspaceSwitchState(status: $status, targetWorkspaceId: $targetWorkspaceId, errorLocalizationKey: $errorLocalizationKey)';
+    return 'WorkspaceSwitchState(status: $status, targetWorkspaceId: $targetWorkspaceId, errorLocalizationKey: $errorLocalizationKey)';
 }
 
 

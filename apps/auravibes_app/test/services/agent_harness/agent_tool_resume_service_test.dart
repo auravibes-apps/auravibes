@@ -63,9 +63,8 @@ void main() {
     });
 
     test('returns early when message not found', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => null,
-      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => null);
 
       await expectLater(usecase.call(messageId: messageId), completes);
 
@@ -87,12 +86,10 @@ void main() {
     });
 
     test('returns early when conversation not found', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer((_) async => null);
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => null);
 
       await expectLater(usecase.call(messageId: messageId), completes);
 
@@ -108,12 +105,10 @@ void main() {
     });
 
     test('returns early when decision is not continueIteration', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer((_) async => conversation);
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => conversation);
       when(
         () => toolExecutionService.call(
           conversationId: conversationId,
@@ -135,12 +130,10 @@ void main() {
     });
 
     test('invokes AppAgentService on continueIteration', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer((_) async => conversation);
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => conversation);
       when(
         () => toolExecutionService.call(
           conversationId: conversationId,
@@ -170,9 +163,8 @@ void main() {
     });
 
     test('fetches message by correct messageId', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => null,
-      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => null);
 
       await usecase.call(messageId: messageId);
 
@@ -184,12 +176,10 @@ void main() {
     });
 
     test('fetches conversation using message conversationId', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer((_) async => null);
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => null);
 
       await usecase.call(messageId: messageId);
 
@@ -202,12 +192,10 @@ void main() {
     });
 
     test('passes correct workspaceId to runAllowedTools', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer((_) async => conversation);
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => conversation);
       when(
         () => toolExecutionService.call(
           conversationId: any(named: 'conversationId'),

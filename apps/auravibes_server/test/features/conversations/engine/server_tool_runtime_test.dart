@@ -1,9 +1,72 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_executor.dart';
 import 'package:auravibes_server/src/features/conversations/engine/server_tool_runtime.dart';
+import 'package:auravibes_server/src/generated/protocol.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test('authorizes active agent-associated skills for execution', () {
+    final now = DateTime.utc(2026);
+    WorkspaceResource resource(
+      WorkspaceResourceKind kind,
+      String id,
+      Map<String, Object?> data,
+    ) => WorkspaceResource(
+      workspaceId: 1,
+      resourceKind: kind,
+      resourceId: id,
+      data: jsonEncode(data),
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final conversation = Conversation(
+      workspaceId: 1,
+      stableId: 'conversation-1',
+      title: 'Conversation',
+      agentId: 'agent-1',
+      isPinned: false,
+      revision: 1,
+      projectionRevision: 1,
+      eventSequence: 0,
+      executionState: 'idle',
+      createdAt: now,
+      updatedAt: now,
+    );
+    final resources = [
+      resource(WorkspaceResourceKind.agent, 'agent-1', {
+        'isEnabled': true,
+        'visibility': 'both',
+      }),
+      resource(WorkspaceResourceKind.agentAssociation, 'association-1', {
+        'agentId': 'agent-1',
+        'skillId': 'research',
+      }),
+    ];
+
+    expect(
+      cloudAuthorizedSkillIds(
+        conversation: conversation,
+        resources: resources,
+      ),
+      {'research'},
+    );
+    resources[0] = resource(WorkspaceResourceKind.agent, 'agent-1', {
+      'isEnabled': false,
+      'visibility': 'both',
+    });
+    expect(
+      cloudAuthorizedSkillIds(
+        conversation: conversation,
+        resources: resources,
+      ),
+      isEmpty,
+    );
+  });
+
   test('sanitizes server tool failure codes for logs', () {
     expect(
       serverToolExecutionFailureCode(const FormatException('input details')),
@@ -264,7 +327,10 @@ void main() {
     );
 
     expect(
-      controls.single.spec.inputJsonSchema['properties'],
+      controls
+          .firstWhere((tool) => tool.spec.name == loadSkillToolName)
+          .spec
+          .inputJsonSchema['properties'],
       isNot(
         containsPair(
           'slug',
@@ -460,7 +526,7 @@ void main() {
     );
   });
 
-  test('does not advertise callback-backed service native tools to cloud', () {
+  test('advertises compiled callback-backed service tools to cloud', () {
     final skill = serviceSkillDefinitions.singleWhere(
       (candidate) => candidate.identifier == 'anthropic',
     );
@@ -483,7 +549,7 @@ void main() {
       isChildConversation: false,
     );
 
-    expect(tools, isEmpty);
+    expect(tools, hasLength(skill.nativeTools.length));
     for (final nativeTool in skill.nativeTools) {
       expect(
         serverToolIsExecutable(
@@ -493,7 +559,7 @@ void main() {
             toolIdentifier: nativeTool.slug,
           ),
         ),
-        isFalse,
+        isTrue,
       );
     }
   });
@@ -576,7 +642,7 @@ void main() {
   });
 
   test(
-    'approval pause resumes once and completed replay skips side effect',
+    'approval pause resumes once and running waits for its owner',
     () {
       var sideEffects = 0;
       for (final status in [
@@ -593,10 +659,161 @@ void main() {
 
       expect(sideEffects, 1);
       expect(serverToolReplayAction('pending'), ServerToolReplayAction.pause);
-      expect(
-        serverToolReplayAction('running'),
-        ServerToolReplayAction.recover,
+      expect(serverToolReplayAction('running'), ServerToolReplayAction.skip);
+    },
+  );
+
+  test('running recovery waits for configured stale threshold', () {
+    final claimedAt = DateTime.utc(2026);
+
+    expect(
+      serverToolRunningIsStale(
+        updatedAt: claimedAt,
+        now: claimedAt.add(serverToolRunningRecoveryTimeout),
+      ),
+      isTrue,
+    );
+    expect(
+      serverToolRunningIsStale(
+        updatedAt: claimedAt,
+        now: claimedAt
+            .add(serverToolRunningRecoveryTimeout)
+            .subtract(const Duration(microseconds: 1)),
+      ),
+      isFalse,
+    );
+  });
+
+  test('one-time approval executes once while policy still asks', () {
+    var executions = 0;
+    for (final status in ['approved', 'success']) {
+      if (serverToolReplayAction(status) == ServerToolReplayAction.execute &&
+          serverToolPermissionAllowsExecution(
+            permission: AgentToolPermissionResult.needsConfirmation,
+            persistedStatus: status,
+          )) {
+        executions++;
+      }
+    }
+
+    expect(executions, 1);
+    expect(
+      serverToolPermissionAllowsExecution(
+        permission: AgentToolPermissionResult.needsConfirmation,
+        persistedStatus: null,
+      ),
+      isFalse,
+    );
+    expect(
+      serverToolPermissionAllowsExecution(
+        permission: AgentToolPermissionResult.disabledInWorkspace,
+        persistedStatus: 'approved',
+      ),
+      isFalse,
+    );
+  });
+
+  test('running replay cannot overwrite owner success', () async {
+    var status = 'running';
+    var revision = 2;
+    var executorInvocations = 1;
+    final releaseWinner = Completer<void>();
+    final winner = () async {
+      await releaseWinner.future;
+      if (serverToolCallCanTransition(
+        currentStatus: status,
+        currentRevision: revision,
+        expectedStatus: 'running',
+        expectedRevision: 2,
+      )) {
+        status = 'success';
+        revision++;
+      }
+    }();
+
+    expect(serverToolReplayAction(status), ServerToolReplayAction.skip);
+    releaseWinner.complete();
+    await winner;
+
+    expect(executorInvocations, 1);
+    expect(status, 'success');
+    expect(
+      serverToolCallCanTransition(
+        currentStatus: status,
+        currentRevision: revision,
+        expectedStatus: 'running',
+        expectedRevision: 2,
+      ),
+      isFalse,
+    );
+  });
+
+  test('cloud exposes only fixed skill command schemas', () {
+    final before = fixedCloudSkillCommandTools();
+    final after = fixedCloudSkillCommandTools();
+
+    expect(
+      before.map((tool) => tool.spec),
+      orderedEquals(after.map((tool) => tool.spec)),
+    );
+    expect(
+      before.map((tool) => tool.spec.name),
+      orderedEquals(skillCommandToolNames),
+    );
+    expect(before.any((tool) => tool.spec.name.startsWith('skill__')), isFalse);
+    expect(
+      before.every((tool) => serverToolIsExecutable(tool.descriptor)),
+      isTrue,
+    );
+  });
+
+  test(
+    'builds deterministic cloud manifest from authoritative target specs',
+    () async {
+      final descriptor = AgentResolvedToolName.skillTemplate(
+        tableId: 'tool-1',
+        skillSlug: 'research',
+        toolIdentifier: 'search',
       );
+      final targets = [
+        ServerResolvedTool(
+          descriptor: descriptor,
+          spec: ToolSpec(
+            name: descriptor.fullName,
+            description: 'Search sources.',
+            inputJsonSchema: const {
+              'type': 'object',
+              'properties': {
+                'query': {'type': 'string'},
+              },
+            },
+          ),
+        ),
+      ];
+      const skills = [
+        {
+          'id': 'skill-1',
+          'slug': 'research',
+          'title': 'Research',
+          'content': 'Use primary sources.',
+          'isEnabled': true,
+        },
+      ];
+
+      final first = await buildCloudSkillManifest(
+        slug: 'research',
+        userSkills: skills,
+        tools: targets,
+      );
+      final second = await buildCloudSkillManifest(
+        slug: 'research',
+        userSkills: skills,
+        tools: targets,
+      );
+
+      expect(first?.revision, second?.revision);
+      expect(first?.tools.single.name, 'search');
+      expect(first?.tools.single.inputJsonSchema['properties'], isNotNull);
     },
   );
 }

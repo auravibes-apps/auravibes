@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'conversation_dao.g.dart';
 
 @DriftAccessor(tables: [Conversations])
-class ConversationDao extends DatabaseAccessor<AppDatabase>
+class ConversationDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$ConversationDaoMixin {
-  ConversationDao(super.attachedDatabase);
-
   Future<ConversationsTable> insertConversation(
     ConversationsCompanion conversation,
   ) => into(conversations).insertReturning(conversation);
@@ -71,10 +70,8 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
             tbl.parentConversationId.isNull(),
       )
       ..orderBy([
-        (tbl) => OrderingTerm(
-          expression: tbl.updatedAt,
-          mode: OrderingMode.desc,
-        ),
+        (tbl) =>
+            OrderingTerm(expression: tbl.updatedAt, mode: OrderingMode.desc),
       ]));
   }
 
@@ -83,10 +80,8 @@ class ConversationDao extends DatabaseAccessor<AppDatabase>
     return (select(conversations)
       ..where((tbl) => tbl.parentConversationId.equals(parentConversationId))
       ..orderBy([
-        (tbl) => OrderingTerm(
-          expression: tbl.updatedAt,
-          mode: OrderingMode.desc,
-        ),
+        (tbl) =>
+            OrderingTerm(expression: tbl.updatedAt, mode: OrderingMode.desc),
       ]));
   }
 }

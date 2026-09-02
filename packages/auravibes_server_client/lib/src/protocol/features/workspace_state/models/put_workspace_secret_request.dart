@@ -11,23 +11,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/workspace_state/models/workspace_secret_kind.dart'
     as _i2;
 import '../../../features/workspace_state/models/workspace_secret_scope.dart'
     as _i3;
 
-abstract class PutWorkspaceSecretRequest implements _i1.SerializableModel {
-  PutWorkspaceSecretRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.secretKind,
-    required this.scope,
-    required this.resourceId,
-    this.secret,
-    this.expectedRevision,
-  });
-
-  factory PutWorkspaceSecretRequest({
+abstract class PutWorkspaceSecretRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var _i2.WorkspaceSecretKind secretKind,
+  required var _i3.WorkspaceSecretScope scope,
+  required var String resourceId,
+  var String? secret,
+  var int? expectedRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required _i2.WorkspaceSecretKind secretKind,
@@ -37,7 +36,7 @@ abstract class PutWorkspaceSecretRequest implements _i1.SerializableModel {
     int? expectedRevision,
   }) = _PutWorkspaceSecretRequestImpl;
 
-  factory PutWorkspaceSecretRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return PutWorkspaceSecretRequest(
@@ -54,20 +53,6 @@ abstract class PutWorkspaceSecretRequest implements _i1.SerializableModel {
       expectedRevision: jsonSerialization['expectedRevision'] as int?,
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  _i2.WorkspaceSecretKind secretKind;
-
-  _i3.WorkspaceSecretScope scope;
-
-  String resourceId;
-
-  String? secret;
-
-  int? expectedRevision;
 
   /// Returns a shallow copy of this [PutWorkspaceSecretRequest]
   /// with some or all fields replaced by the given arguments.
@@ -101,26 +86,27 @@ abstract class PutWorkspaceSecretRequest implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _PutWorkspaceSecretRequestImpl extends PutWorkspaceSecretRequest {
-  _PutWorkspaceSecretRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required _i2.WorkspaceSecretKind secretKind,
-    required _i3.WorkspaceSecretScope scope,
-    required String resourceId,
-    String? secret,
-    int? expectedRevision,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         secretKind: secretKind,
-         scope: scope,
-         resourceId: resourceId,
-         secret: secret,
-         expectedRevision: expectedRevision,
-       );
+class _PutWorkspaceSecretRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required _i2.WorkspaceSecretKind secretKind,
+  required _i3.WorkspaceSecretScope scope,
+  required String resourceId,
+  String? secret,
+  int? expectedRevision,
+}) extends PutWorkspaceSecretRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        secretKind: secretKind,
+        scope: scope,
+        resourceId: resourceId,
+        secret: secret,
+        expectedRevision: expectedRevision,
+      );
 
   /// Returns a shallow copy of this [PutWorkspaceSecretRequest]
   /// with some or all fields replaced by the given arguments.

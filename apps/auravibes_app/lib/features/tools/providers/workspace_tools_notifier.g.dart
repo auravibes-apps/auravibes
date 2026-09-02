@@ -189,7 +189,7 @@ final class WorkspaceToolsNotifierProvider
 }
 
 String _$workspaceToolsNotifierHash() =>
-    r'24dd1b4b359fa303ab2c74c210db7f0b3fcfc28e';
+    r'b5e15665f83dd2a257b5da607072f1868ad99a7d';
 
 final class WorkspaceToolsNotifierFamily extends $Family
     with
@@ -247,13 +247,13 @@ abstract class _$WorkspaceToolsNotifier
 }
 
 /// Provider that returns the list of available built-in tools.
-/// that can be added to the workspace
+/// That can be added to the workspace.
 
 @ProviderFor(availableToolsToAdd)
 final availableToolsToAddProvider = AvailableToolsToAddFamily._();
 
 /// Provider that returns the list of available built-in tools.
-/// that can be added to the workspace
+/// That can be added to the workspace.
 
 final class AvailableToolsToAddProvider
     extends
@@ -266,7 +266,7 @@ final class AvailableToolsToAddProvider
         $FutureModifier<List<UserToolType>>,
         $FutureProvider<List<UserToolType>> {
   /// Provider that returns the list of available built-in tools.
-  /// that can be added to the workspace
+  /// That can be added to the workspace.
   AvailableToolsToAddProvider._({
     required AvailableToolsToAddFamily super.from,
     required String super.argument,
@@ -315,7 +315,7 @@ String _$availableToolsToAddHash() =>
     r'87a48b704d9cb6bf3e014813570d0da2a1048687';
 
 /// Provider that returns the list of available built-in tools.
-/// that can be added to the workspace
+/// That can be added to the workspace.
 
 final class AvailableToolsToAddFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<UserToolType>>, String> {
@@ -329,7 +329,7 @@ final class AvailableToolsToAddFamily extends $Family
       );
 
   /// Provider that returns the list of available built-in tools.
-  /// that can be added to the workspace
+  /// That can be added to the workspace.
 
   AvailableToolsToAddProvider call(String workspaceId) =>
       AvailableToolsToAddProvider._(argument: workspaceId, from: this);

@@ -114,10 +114,7 @@ void main() {
     });
 
     test('fromString throws for empty string', () {
-      expect(
-        () => CredentialsModelType.fromString(''),
-        throwsArgumentError,
-      );
+      expect(() => CredentialsModelType.fromString(''), throwsArgumentError);
     });
 
     test('toString returns value', () {
@@ -286,9 +283,9 @@ void main() {
           'data': {'label': 'test-key'},
         });
 
-        nock(
-          'https://openrouter.ai',
-        ).get('/api/v1/models').reply(200, 'not json');
+        nock('https://openrouter.ai')
+            .get('/api/v1/models')
+            .reply(200, 'not json');
 
         final service = ModelProviderServices();
         final result = await service.getWorkspaceModelSelections(

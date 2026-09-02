@@ -29,20 +29,8 @@ discovering URLs, or extracting structured data from public pages.
       _scrapeInputSchema,
       _scrape,
     ),
-    _tool(
-      'crawl',
-      'Crawl',
-      'Crawl a website.',
-      fetchInputSchema,
-      _crawl,
-    ),
-    _tool(
-      'map',
-      'Map',
-      'Map URLs from a website.',
-      _mapInputSchema,
-      _map,
-    ),
+    _tool('crawl', 'Crawl', 'Crawl a website.', fetchInputSchema, _crawl),
+    _tool('map', 'Map', 'Map URLs from a website.', _mapInputSchema, _map),
     _tool(
       'extract',
       'Extract',
@@ -237,10 +225,7 @@ CancelableOperation<Object?> _post(
   String tool,
   Map<String, Object?> body,
 ) {
-  return postJson(
-    context,
-    'https://api.firecrawl.dev/v2/$tool',
-    {'authorization': 'Bearer ${apiKey(input)}'},
-    body,
-  );
+  return postJson(context, 'https://api.firecrawl.dev/v2/$tool', {
+    'authorization': 'Bearer ${apiKey(input)}',
+  }, body);
 }

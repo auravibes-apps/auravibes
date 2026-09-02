@@ -74,9 +74,7 @@ void main() {
       database: database,
       encryptionService: EncryptionService(_FakeSecretKeyManager()),
     );
-    var conversationSkillsRepository = ConversationSkillsRepository(
-      database,
-    );
+    var conversationSkillsRepository = ConversationSkillsRepository(database);
     var serviceConnectionRepository = ServiceConnectionRepository(
       database,
       EncryptionService(_FakeSecretKeyManager()),
@@ -324,9 +322,7 @@ void main() {
       final usecase = duplicateSkillUsecase();
 
       final duplicate = await usecase.call(skill.id);
-      final duplicateTools = await toolsRepository.getSkillTools(
-        duplicate.id,
-      );
+      final duplicateTools = await toolsRepository.getSkillTools(duplicate.id);
 
       expect(duplicate.title, 'Example Services Copy');
       expect(duplicate.slug, 'example_services_copy');
@@ -360,11 +356,7 @@ void main() {
         );
 
         final loadedUserSkill = await conversationSkillsRepository
-            .setWorkspaceSkillLoaded(
-              conversation.id,
-              skill.id,
-              isLoaded: true,
-            );
+            .setWorkspaceSkillLoaded(conversation.id, skill.id, isLoaded: true);
         final loadedAppSkill = await conversationSkillsRepository
             .setAppSkillLoaded(
               conversation.id,
@@ -461,13 +453,16 @@ void main() {
         conversationId: conversation.id,
         workspaceId: workspace.id,
       );
+      final fixedSchemas = {
+        for (final spec in specs) spec.name: spec.inputJsonSchema,
+      };
       expect(
-        _slugEnumFor(specs, loadSkillToolName),
-        containsAll(['example_services', 'skills_manager']),
+        fixedSchemas.keys,
+        containsAll([loadSkillToolName, unloadSkillToolName]),
       );
       expect(
-        specs.map((spec) => spec.name),
-        isNot(contains(unloadSkillToolName)),
+        _propertySchema(specs, loadSkillToolName, 'slug')['enum'],
+        equals(null),
       );
 
       await loadSkillUsecase.call(
@@ -481,12 +476,9 @@ void main() {
       );
 
       expect(
-        _slugEnumFor(specs, loadSkillToolName),
-        isNot(contains('example_services')),
-      );
-      expect(
-        _slugEnumFor(specs, unloadSkillToolName),
-        contains('example_services'),
+        {for (final spec in specs) spec.name: spec.inputJsonSchema},
+        // Dynamic state must not mutate provider-visible schemas.
+        fixedSchemas,
       );
 
       await unloadSkillUsecase.call(
@@ -757,14 +749,8 @@ void main() {
               title: 'Example Service',
               slug: 'example_service',
               attributesJson: jsonEncode({
-                'api_key': {
-                  'description': 'API key',
-                  'optional': true,
-                },
-                'user_id': {
-                  'description': 'User id',
-                  'optional': true,
-                },
+                'api_key': {'description': 'API key', 'optional': true},
+                'user_id': {'description': 'User id', 'optional': true},
               }),
             ),
           );
@@ -840,9 +826,8 @@ void main() {
           const ResolveSkillUrlTemplate(),
           AppSkillHttpClientAdapter(urlService).execute,
         ),
-        (workspaceId) async => WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: workspaceId),
-        ),
+        (workspaceId) async =>
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
       );
 
       var specs = await buildSpecsUsecase.call(
@@ -876,10 +861,7 @@ void main() {
         workspaceId: workspace.id,
         skillSlug: skill.slug,
         toolSlug: 'find_company',
-        arguments: {
-          'company_id': 'acme',
-          'credentialId': credential.id,
-        },
+        arguments: {'company_id': 'acme', 'credentialId': credential.id},
       );
 
       expect(spec.name, 'skill__user__example_services__find_company');
@@ -1067,12 +1049,11 @@ void main() {
       );
       final runUsecase = ResolvedToolService(
         agentCancellationRuntime: AgentCancellationRuntime(),
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) async => '',
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) async => '',
         conversationRepository: conversationRepository,
         listAvailableSkillsUsecase: (_) => listAvailableSkillsUsecase,
         skillCredentialsRepository: skillCredentialsRepository,
@@ -1081,7 +1062,7 @@ void main() {
       final output = await runUsecase.call(
         conversationId: conversation.id,
         tool: ResolvedTool.skillControl(
-          toolIdentifier: listSkillCredentialsToolName,
+          toolIdentifier: SkillToolNames.listCredentials,
         ),
         arguments: {'skillSlug': skill.slug},
       );
@@ -1095,52 +1076,49 @@ void main() {
       ]);
     });
 
-    test(
-      'renders optional Liquid fields in JSON template fields',
-      () {
-        const usecase = ResolveSkillUrlTemplate();
+    test('renders optional Liquid fields in JSON template fields', () {
+      const usecase = ResolveSkillUrlTemplate();
 
-        final request = usecase.call(
-          template: SkillUrlTemplate(
-            url: 'https://example.com',
-            headers: {
-              'X-User': [
-                '{% if credential.user_id %}',
-                '{{ credential.user_id }}',
-                '{% endif %}',
-              ].join(),
-            },
-            query: {
-              'user_id': [
-                '{% if credential.user_id %}',
-                '{{ credential.user_id }}',
-                '{% endif %}',
-              ].join(),
-            },
-            body: [
-              '{"level":2',
-              '{% if credential.user_id %},',
-              '"user_id":{{ credential.user_id | json }}',
-              '{% endif %}}',
+      final request = usecase.call(
+        template: SkillUrlTemplate(
+          url: 'https://example.com',
+          headers: {
+            'X-User': [
+              '{% if credential.user_id %}',
+              '{{ credential.user_id }}',
+              '{% endif %}',
             ].join(),
-          ),
-          inputs: const {},
-          credentials: const {},
-          inputDefinitions: const {},
-          credentialDefinitions: const {
-            'user_id': SkillCredentialAttributeDefinition(
-              description: 'Optional user id',
-              optional: true,
-            ),
           },
-        );
+          query: {
+            'user_id': [
+              '{% if credential.user_id %}',
+              '{{ credential.user_id }}',
+              '{% endif %}',
+            ].join(),
+          },
+          body: [
+            '{"level":2',
+            '{% if credential.user_id %},',
+            '"user_id":{{ credential.user_id | json }}',
+            '{% endif %}}',
+          ].join(),
+        ),
+        inputs: const {},
+        credentials: const {},
+        inputDefinitions: const {},
+        credentialDefinitions: const {
+          'user_id': SkillCredentialAttributeDefinition(
+            description: 'Optional user id',
+            optional: true,
+          ),
+        },
+      );
 
-        expect(request.url, 'https://example.com');
-        expect(request.headers, isNot(contains('X-User')));
-        final body = request.body ?? fail('body missing');
-        expect(jsonDecode(body), {'level': 2});
-      },
-    );
+      expect(request.url, 'https://example.com');
+      expect(request.headers, isNot(contains('X-User')));
+      final body = request.body ?? fail('body missing');
+      expect(jsonDecode(body), {'level': 2});
+    });
 
     test('resolves typed JSON body placeholders', () {
       const usecase = ResolveSkillUrlTemplate();
@@ -1272,10 +1250,7 @@ void main() {
           SkillCredentialToCreate(
             credentialDefinitionId: definition.id,
             name: 'Invalid Credential',
-            attributes: const {
-              'api_key': '',
-              'account_id': 'acct-123',
-            },
+            attributes: const {'api_key': '', 'account_id': 'acct-123'},
           ),
         ),
         throwsA(
@@ -1368,9 +1343,7 @@ void main() {
       await expectLater(
         skillCredentialsRepository.updateCredential(
           credential.id,
-          const SkillCredentialToUpdate(
-            clearSecretAttributeNames: {'api_key'},
-          ),
+          const SkillCredentialToUpdate(clearSecretAttributeNames: {'api_key'}),
         ),
         throwsA(
           isA<FormatException>().having(
@@ -1408,9 +1381,7 @@ void main() {
       final updated = await skillCredentialDefinitionsRepository
           .updateDefinition(
             definition.id,
-            const SkillCredentialDefinitionToUpdate(
-              title: 'Renamed Service',
-            ),
+            const SkillCredentialDefinitionToUpdate(title: 'Renamed Service'),
           );
       expect((await stream.next).map((item) => item.title), [updated.title]);
 
@@ -1485,25 +1456,20 @@ void main() {
         conversationId: conversation.id,
         workspaceId: workspace.id,
       );
-      final definitionResult =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: createSkillCredentialDefinitionToolSlug,
-                arguments: {
-                  'title': 'Example Service',
-                  'attributes': {
-                    'api_key': {'description': 'API key'},
-                    'account_id': {
-                      'description': 'Account id',
-                      'secret': false,
-                    },
-                  },
-                },
-              )
-              as Map<String, Object?>;
+      final definitionResult = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.createSkillCredentialDefinition,
+        arguments: {
+          'title': 'Example Service',
+          'attributes': {
+            'api_key': {'description': 'API key'},
+            'account_id': {'description': 'Account id', 'secret': false},
+          },
+        },
+      ) as Map<String, Object?>;
       final skillResult = await runUsecase.call(
         workspaceId: workspace.id,
-        toolSlug: createUserSkillToolSlug,
+        toolSlug: SkillToolSlugs.createUserSkill,
         arguments: {
           'title': 'Example Services',
           'description': 'Call Example APIs',
@@ -1514,7 +1480,7 @@ void main() {
       );
       final toolResult = await runUsecase.call(
         workspaceId: workspace.id,
-        toolSlug: createSkillTemplateToolSlug,
+        toolSlug: SkillToolSlugs.createSkillTemplateTool,
         arguments: {
           'skillSlug': 'example_services',
           'title': 'Find Company',
@@ -1524,17 +1490,14 @@ void main() {
             'query': {'token': '{credential:api_key}'},
           },
           'inputs': {
-            'company_id': {
-              'description': 'Company id',
-              'type': 'string',
-            },
+            'company_id': {'description': 'Company id', 'type': 'string'},
           },
           'requiresCredential': true,
         },
       );
       final clearCredentialResult = await runUsecase.call(
         workspaceId: workspace.id,
-        toolSlug: updateUserSkillToolSlug,
+        toolSlug: SkillToolSlugs.updateUserSkill,
         arguments: {
           'skillSlug': 'example_services',
           'credentialDefinitionId': '',
@@ -1587,10 +1550,7 @@ void main() {
       expect(definitionResult, containsPair('slug', 'example_service'));
       expect(
         definitionResult['attributes'],
-        containsPair(
-          'account_id',
-          containsPair('secret', false),
-        ),
+        containsPair('account_id', containsPair('secret', false)),
       );
       expect(skillResult, containsPair('slug', 'example_services'));
       expect(skillResult, containsPair('isCredentialOptional', true));
@@ -1607,85 +1567,69 @@ void main() {
       expect(updatedSkill?.credentialDefinitionId, null);
       expect(updatedSkill?.isCredentialOptional, true);
 
-      final listedSkills =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: listUserSkillsToolSlug,
-                arguments: const {},
-              )
-              as Map<String, Object?>;
-      final foundSkill =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: getUserSkillToolSlug,
-                arguments: {'skillSlug': 'example_services'},
-              )
-              as Map<String, Object?>;
-      final listedTools =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: listSkillTemplateToolsToolSlug,
-                arguments: {'skillSlug': 'example_services'},
-              )
-              as Map<String, Object?>;
-      final foundTool =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: getSkillTemplateToolToolSlug,
-                arguments: {
-                  'skillSlug': 'example_services',
-                  'toolSlug': 'find_company',
-                },
-              )
-              as Map<String, Object?>;
-      final updatedTool =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: updateSkillTemplateToolSlug,
-                arguments: {
-                  'skillSlug': 'example_services',
-                  'toolSlug': 'find_company',
-                  'title': 'Find Organization',
-                  'description': 'Find organization records.',
-                },
-              )
-              as Map<String, Object?>;
-      final listedDefinitions =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: listSkillCredentialDefinitionsToolSlug,
-                arguments: const {},
-              )
-              as Map<String, Object?>;
-      final foundDefinition =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: getSkillCredentialDefinitionToolSlug,
-                arguments: {'definitionSlug': 'example_service'},
-              )
-              as Map<String, Object?>;
-      final updatedDefinition =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: updateSkillCredentialDefinitionToolSlug,
-                arguments: {
-                  'definitionSlug': 'example_service',
-                  'title': 'Example Service Credentials',
-                  'attributes': {
-                    'api_key': {'description': 'API key'},
-                    'account_id': {
-                      'description': 'Account id',
-                      'optional': true,
-                      'secret': false,
-                    },
-                  },
-                },
-              )
-              as Map<String, Object?>;
+      final listedSkills = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.listUserSkills,
+        arguments: const {},
+      ) as Map<String, Object?>;
+      final foundSkill = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.getUserSkill,
+        arguments: {'skillSlug': 'example_services'},
+      ) as Map<String, Object?>;
+      final listedTools = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.listSkillTemplateTools,
+        arguments: {'skillSlug': 'example_services'},
+      ) as Map<String, Object?>;
+      final foundTool = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.getSkillTemplateTool,
+        arguments: {
+          'skillSlug': 'example_services',
+          'toolSlug': 'find_company',
+        },
+      ) as Map<String, Object?>;
+      final updatedTool = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.updateSkillTemplateTool,
+        arguments: {
+          'skillSlug': 'example_services',
+          'toolSlug': 'find_company',
+          'title': 'Find Organization',
+          'description': 'Find organization records.',
+        },
+      ) as Map<String, Object?>;
+      final listedDefinitions = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.listSkillCredentialDefinitions,
+        arguments: const {},
+      ) as Map<String, Object?>;
+      final foundDefinition = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.getSkillCredentialDefinition,
+        arguments: {'definitionSlug': 'example_service'},
+      ) as Map<String, Object?>;
+      final updatedDefinition = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.updateSkillCredentialDefinition,
+        arguments: {
+          'definitionSlug': 'example_service',
+          'title': 'Example Service Credentials',
+          'attributes': {
+            'api_key': {'description': 'API key'},
+            'account_id': {
+              'description': 'Account id',
+              'optional': true,
+              'secret': false,
+            },
+          },
+        },
+      ) as Map<String, Object?>;
       await expectLater(
         runUsecase.call(
           workspaceId: workspace.id,
-          toolSlug: createUserSkillToolSlug,
+          toolSlug: SkillToolSlugs.createUserSkill,
           arguments: const {
             'title': 'Bad Credential Skill',
             'description': 'Bad credential definition id',
@@ -1706,7 +1650,7 @@ void main() {
       await expectLater(
         runUsecase.call(
           workspaceId: workspace.id,
-          toolSlug: createUserSkillToolSlug,
+          toolSlug: SkillToolSlugs.createUserSkill,
           arguments: const {
             'title': 'Old Slug Skill',
             'description': 'Old credential slug field',
@@ -1722,30 +1666,24 @@ void main() {
           ),
         ),
       );
-      final deletedTool =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: deleteSkillTemplateToolSlug,
-                arguments: {
-                  'skillSlug': 'example_services',
-                  'toolSlug': 'find_company',
-                },
-              )
-              as Map<String, Object?>;
-      final deletedSkill =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: deleteUserSkillToolSlug,
-                arguments: {'skillSlug': 'example_services'},
-              )
-              as Map<String, Object?>;
-      final deletedDefinition =
-          await runUsecase.call(
-                workspaceId: workspace.id,
-                toolSlug: deleteSkillCredentialDefinitionToolSlug,
-                arguments: {'definitionSlug': 'example_service'},
-              )
-              as Map<String, Object?>;
+      final deletedTool = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.deleteSkillTemplateTool,
+        arguments: {
+          'skillSlug': 'example_services',
+          'toolSlug': 'find_company',
+        },
+      ) as Map<String, Object?>;
+      final deletedSkill = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.deleteUserSkill,
+        arguments: {'skillSlug': 'example_services'},
+      ) as Map<String, Object?>;
+      final deletedDefinition = await runUsecase.call(
+        workspaceId: workspace.id,
+        toolSlug: SkillToolSlugs.deleteSkillCredentialDefinition,
+        arguments: {'definitionSlug': 'example_service'},
+      ) as Map<String, Object?>;
 
       expect(
         listedSkills['skills'],
@@ -1788,30 +1726,21 @@ void main() {
       expect(foundDefinition, containsPair('slug', 'example_service'));
       expect(
         foundDefinition['attributes'],
-        containsPair(
-          'account_id',
-          containsPair('secret', false),
-        ),
+        containsPair('account_id', containsPair('secret', false)),
       );
       expect(updatedDefinition, containsPair('status', 'updated'));
       expect(
         updatedDefinition['attributes'],
         containsPair(
           'account_id',
-          allOf(
-            containsPair('optional', true),
-            containsPair('secret', false),
-          ),
+          allOf(containsPair('optional', true), containsPair('secret', false)),
         ),
       );
       expect(deletedTool, containsPair('status', 'deleted'));
       expect(deletedSkill, containsPair('status', 'deleted'));
       expect(deletedDefinition, containsPair('status', 'deleted'));
       expect(
-        await skillsRepository.getSkillBySlug(
-          workspace.id,
-          'example_services',
-        ),
+        await skillsRepository.getSkillBySlug(workspace.id, 'example_services'),
         null,
       );
       expect(
@@ -1833,21 +1762,19 @@ void main() {
           ),
         );
         final runUsecase = runSkillsManagerToolUsecase();
-        final definitionResult =
-            await runUsecase.call(
-                  workspaceId: workspace.id,
-                  toolSlug: createSkillCredentialDefinitionToolSlug,
-                  arguments: {
-                    'title': 'RescueGroups API',
-                    'attributes': {
-                      'api_key': {'description': 'API key'},
-                    },
-                  },
-                )
-                as Map<String, Object?>;
+        final definitionResult = await runUsecase.call(
+          workspaceId: workspace.id,
+          toolSlug: SkillToolSlugs.createSkillCredentialDefinition,
+          arguments: {
+            'title': 'RescueGroups API',
+            'attributes': {
+              'api_key': {'description': 'API key'},
+            },
+          },
+        ) as Map<String, Object?>;
         final skillResult = await runUsecase.call(
           workspaceId: workspace.id,
-          toolSlug: createUserSkillToolSlug,
+          toolSlug: SkillToolSlugs.createUserSkill,
           arguments: {
             'title': 'RescueGroups',
             'description': 'Call RescueGroups APIs',
@@ -1861,7 +1788,7 @@ void main() {
         await expectLater(
           runUsecase.call(
             workspaceId: workspace.id,
-            toolSlug: createSkillTemplateToolSlug,
+            toolSlug: SkillToolSlugs.createSkillTemplateTool,
             arguments: {
               'skillSlug': 'rescuegroups',
               'title': 'Bad Search',
@@ -1872,10 +1799,7 @@ void main() {
                 'body': '{"filters":{{filters}}}',
               },
               'inputs': {
-                'filters': {
-                  'description': 'Search filters',
-                  'type': 'array',
-                },
+                'filters': {'description': 'Search filters', 'type': 'array'},
               },
             },
           ),
@@ -1888,46 +1812,33 @@ void main() {
           ),
         );
 
-        final toolResult =
-            await runUsecase.call(
-                  workspaceId: workspace.id,
-                  toolSlug: createSkillTemplateToolSlug,
-                  arguments: {
-                    'skillSlug': 'rescuegroups',
-                    'title': 'Search Animals',
-                    'description': 'Search animal records.',
-                    'template': {
-                      'url': 'https://api.rescuegroups.org/http/v2.json',
-                      'method': 'POST',
-                      'headers': {
-                        'Authorization': 'Bearer {{ credential.api_key }}',
-                      },
-                      'bodyFormat': 'json',
-                      'body': [
-                        '{"objectType":"animals",',
-                        '"objectAction":"search",',
-                        '"search":{"filters":{{ input.filters | json }}},',
-                        '"fields":{{ input.fields | json }}}',
-                      ].join(),
-                    },
-                    'inputs': {
-                      'filters': {
-                        'description': 'Search filters',
-                        'type': 'array',
-                      },
-                      'fields': {
-                        'description': 'Fields object',
-                        'type': 'object',
-                      },
-                    },
-                  },
-                )
-                as Map<String, Object?>;
+        final toolResult = await runUsecase.call(
+          workspaceId: workspace.id,
+          toolSlug: SkillToolSlugs.createSkillTemplateTool,
+          arguments: {
+            'skillSlug': 'rescuegroups',
+            'title': 'Search Animals',
+            'description': 'Search animal records.',
+            'template': {
+              'url': 'https://api.rescuegroups.org/http/v2.json',
+              'method': 'POST',
+              'headers': {'Authorization': 'Bearer {{ credential.api_key }}'},
+              'bodyFormat': 'json',
+              'body': [
+                '{"objectType":"animals",',
+                '"objectAction":"search",',
+                '"search":{"filters":{{ input.filters | json }}},',
+                '"fields":{{ input.fields | json }}}',
+              ].join(),
+            },
+            'inputs': {
+              'filters': {'description': 'Search filters', 'type': 'array'},
+              'fields': {'description': 'Fields object', 'type': 'object'},
+            },
+          },
+        ) as Map<String, Object?>;
         final definition = await skillCredentialDefinitionsRepository
-            .getDefinitionBySlug(
-              workspace.id,
-              'rescuegroups_api',
-            );
+            .getDefinitionBySlug(workspace.id, 'rescuegroups_api');
         final definitionId = (definition ?? fail('definition missing')).id;
         final credential = await skillCredentialsRepository.createCredential(
           workspace.id,
@@ -1966,9 +1877,7 @@ void main() {
                 'criteria': 'Dog',
               },
             ],
-            'fields': {
-              'animalGeneralSpecies': <String, Object?>{},
-            },
+            'fields': {'animalGeneralSpecies': <String, Object?>{}},
             'credentialId': credential.id,
           },
         );
@@ -1987,9 +1896,7 @@ void main() {
               },
             ],
           },
-          'fields': {
-            'animalGeneralSpecies': <String, Object?>{},
-          },
+          'fields': {'animalGeneralSpecies': <String, Object?>{}},
         });
       },
     );
@@ -2018,14 +1925,17 @@ void main() {
   });
 }
 
-List<Object?> _slugEnumFor(List<ToolSpec> specs, String toolName) {
+Map<String, dynamic> _propertySchema(
+  List<ToolSpec> specs,
+  String toolName,
+  String propertyName,
+) {
   final schema = specs
       .firstWhere((spec) => spec.name == toolName)
       .inputJsonSchema;
   final properties = schema['properties']! as Map<String, dynamic>;
-  final slugSchema = properties['slug'] as Map<String, dynamic>;
 
-  return slugSchema['enum'] as List<Object?>;
+  return properties[propertyName] as Map<String, dynamic>;
 }
 
 List<Object?> _propertyEnumFor(ToolSpec spec, String propertyName) {
@@ -2068,8 +1978,8 @@ Future<String> _requestBody(RequestOptions options) async {
   return '$data';
 }
 
-class _FakeSecretKeyManager extends SecretKeyManager {
-  _FakeSecretKeyManager() : super();
+class _FakeSecretKeyManager() extends SecretKeyManager {
+  this : super();
 
   @override
   Future<SecretKey> getOrCreateSecretKey() async {

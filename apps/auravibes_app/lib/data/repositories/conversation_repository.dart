@@ -13,15 +13,10 @@ const _parentConversationIdEmpty = 'Parent conversation ID cannot be empty';
 const _unknownValidationError = 'Unknown validation error';
 const _workspaceIdEmpty = 'Workspace ID cannot be empty';
 
-class ConversationRepository {
-  ConversationRepository(
-    this._database, {
-    this._attachmentFileStore = const AttachmentFileStore(),
-  });
-
-  final AppDatabase _database;
-  final AttachmentFileStore _attachmentFileStore;
-
+class ConversationRepository(
+  final AppDatabase _database, {
+  final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+}) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
     int? limit,
@@ -95,9 +90,7 @@ class ConversationRepository {
     );
 
     if (!updated) {
-      throw ConversationException(
-        'Failed to update conversation with ID $id',
-      );
+      throw ConversationException('Failed to update conversation with ID $id');
     }
 
     final updatedConversation = await _database.conversationDao
@@ -118,9 +111,7 @@ class ConversationRepository {
     final attachmentPaths = await _attachmentPathsForConversation(id);
     final deleted = await _database.conversationDao.deleteConversation(id);
     if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map(_deleteAttachmentFile),
-      );
+      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
     }
 
     return deleted;
@@ -130,9 +121,7 @@ class ConversationRepository {
     final rows = await (_database.select(_database.messageAttachments).join([
       innerJoin(
         _database.messages,
-        _database.messages.id.equalsExp(
-          _database.messageAttachments.messageId,
-        ),
+        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
       ),
     ])..where(_database.messages.conversationId.equals(id))).get();
 
@@ -253,12 +242,10 @@ class ConversationRepository {
   }
 }
 
-class ConversationException implements Exception {
-  const ConversationException(this.message, [this.cause]);
-
-  final String message;
-  final Exception? cause;
-
+class const ConversationException(
+  final String message, [
+  final Exception? cause,
+]) implements Exception {
   @override
   String toString() {
     final causedBy = ' (Caused by: ${cause.runtimeType})';
@@ -267,13 +254,12 @@ class ConversationException implements Exception {
   }
 }
 
-class ConversationValidationException extends ConversationException {
-  const ConversationValidationException(super.message, [super.cause]);
-}
+class const ConversationValidationException(super.message, [super.cause])
+    extends ConversationException;
 
-class ConversationNotFoundException extends ConversationException {
-  const ConversationNotFoundException(this.conversationId, [Exception? cause])
-    : super('Conversation with ID "$conversationId" not found', cause);
-
-  final String conversationId;
+class const ConversationNotFoundException(
+  final String conversationId, [
+  Exception? cause,
+]) extends ConversationException {
+  this : super('Conversation with ID "$conversationId" not found', cause);
 }

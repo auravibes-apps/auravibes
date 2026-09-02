@@ -18,10 +18,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -149,9 +146,7 @@ void main() {
         ),
       );
       final groups = await fixture.database.toolsGroupsDao
-          .getToolsGroupsForWorkspace(
-            workspaceId,
-          );
+          .getToolsGroupsForWorkspace(workspaceId);
       expect(groups.length, equals(2));
     });
 
@@ -166,9 +161,7 @@ void main() {
           ),
         );
         final groups = await fixture.database.toolsGroupsDao
-            .getToolsGroupsForWorkspace(
-              'other',
-            );
+            .getToolsGroupsForWorkspace('other');
         expect(groups, isEmpty);
       },
     );
@@ -191,9 +184,7 @@ void main() {
         ),
       );
       final found = await fixture.database.toolsGroupsDao
-          .getToolsGroupByMcpServerId(
-            server.id,
-          );
+          .getToolsGroupByMcpServerId(server.id);
       expect(found, isNotNull);
       expect(
         (found ?? fail('Expected found to be non-null')).name,
@@ -203,9 +194,7 @@ void main() {
 
     test('getToolsGroupByMcpServerId returns null when not found', () async {
       final found = await fixture.database.toolsGroupsDao
-          .getToolsGroupByMcpServerId(
-            'missing',
-          );
+          .getToolsGroupByMcpServerId('missing');
       expect(found, isNull);
     });
 
@@ -218,9 +207,7 @@ void main() {
         ),
       );
       final deleted = await fixture.database.toolsGroupsDao
-          .deleteToolsGroupById(
-            created.id,
-          );
+          .deleteToolsGroupById(created.id);
       expect(deleted, isTrue);
       expect(
         await fixture.database.toolsGroupsDao.getToolsGroupById(created.id),
@@ -230,9 +217,7 @@ void main() {
 
     test('deleteToolsGroupById returns false for nonexistent', () async {
       final deleted = await fixture.database.toolsGroupsDao
-          .deleteToolsGroupById(
-            'missing',
-          );
+          .deleteToolsGroupById('missing');
       expect(deleted, isFalse);
     });
 
@@ -245,10 +230,7 @@ void main() {
         ),
       );
       final updated = await fixture.database.toolsGroupsDao
-          .setToolsGroupEnabled(
-            created.id,
-            isEnabled: false,
-          );
+          .setToolsGroupEnabled(created.id, isEnabled: false);
       expect(updated, isTrue);
       final found = await fixture.database.toolsGroupsDao.getToolsGroupById(
         created.id,

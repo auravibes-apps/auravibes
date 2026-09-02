@@ -6,30 +6,27 @@ import 'package:auravibes_engine/src/agent_stop_service.dart';
 import 'package:auravibes_engine/src/providers/agent_data_provider.dart';
 import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 
-class AgentNamespace {
-  AgentNamespace({
-    required AgentDataProvider data,
-    required AgentModelProvider models,
-    required AgentLoopToolProvider tools,
-    required AgentSendQueueRuntime sendQueueRuntime,
-    required AgentCancellationEffects cancellationEffects,
-    required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
-  }) : _loop = AgentService(
-         data: data,
-         models: models,
-         tools: tools,
-         sendQueueRuntime: sendQueueRuntime,
-         cancellationEffects: cancellationEffects,
-         rateLimitRetryRuntime: rateLimitRetryRuntime,
-       ),
-       _stop = AgentStopService(
-         cancellationEffects: cancellationEffects,
-         sendQueueRuntime: sendQueueRuntime,
-         provider: data,
-       );
-
-  final AgentService _loop;
-  final AgentStopService _stop;
+class AgentNamespace({
+  required AgentDataProvider data,
+  required AgentModelProvider models,
+  required AgentLoopToolProvider tools,
+  required AgentSendQueueRuntime sendQueueRuntime,
+  required AgentCancellationEffects cancellationEffects,
+  required AgentRateLimitRetryRuntime rateLimitRetryRuntime,
+}) {
+  final AgentService _loop = AgentService(
+    data: data,
+    models: models,
+    tools: tools,
+    sendQueueRuntime: sendQueueRuntime,
+    cancellationEffects: cancellationEffects,
+    rateLimitRetryRuntime: rateLimitRetryRuntime,
+  );
+  final AgentStopService _stop = AgentStopService(
+    cancellationEffects: cancellationEffects,
+    sendQueueRuntime: sendQueueRuntime,
+    provider: data,
+  );
 
   Future<AgentIterationDecision> continueTurn({
     required String conversationId,

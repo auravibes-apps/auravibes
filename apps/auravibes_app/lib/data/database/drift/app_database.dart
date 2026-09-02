@@ -101,6 +101,12 @@ part 'app_database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
+  static const _agentsSchemaVersion = 2;
+  static const _agentToolsSchemaVersion = 3;
+  static const _splitSchemaVersion = 4;
+  static const _cloudWorkspaceSchemaVersion = 5;
+  static const _currentSchemaVersion = 6;
+
   /// Creates a new [AppDatabase] instance.
   ///
   /// If [connection] is provided, uses that connection.
@@ -108,12 +114,12 @@ class AppDatabase extends _$AppDatabase {
   /// When [connection] is null, [dbHashSource] is hashed to isolate the
   /// database name for the default connection. If [connection] is provided,
   /// [dbHashSource] has no effect.
-  AppDatabase({QueryExecutor? connection, String? dbHashSource})
+  new({QueryExecutor? connection, String? dbHashSource})
     : super(connection ?? _openConnection(dbHashSource: dbHashSource));
 
   /// Database schema version.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => _currentSchemaVersion;
 
   /// Database creation strategy.
   @override
@@ -123,30 +129,31 @@ class AppDatabase extends _$AppDatabase {
         await m.createAll();
       },
       onUpgrade: (m, from, to) async {
-        if (from < 2) {
+        if (from < _agentsSchemaVersion) {
           await m.createTable(agents);
           await m.createTable(agentSkills);
           await m.addColumn(conversations, conversations.agentId);
         }
-        if (from < 3) {
+        if (from < _agentToolsSchemaVersion) {
           await m.createTable(agentTools);
         }
-        if (from < 4) {
+        if (from < _splitSchemaVersion) {
           await _upgradeToSchema4(m);
         }
-        if (from == 4) {
+        if (from == _splitSchemaVersion) {
           await _upgradeSplitSchema4(m);
         }
-        if (from >= 2 && from < 5) {
+        if (from >= _agentsSchemaVersion &&
+            from < _cloudWorkspaceSchemaVersion) {
           await _upgradeAgentsToSchema5(m);
         }
-        if (from < 5) {
+        if (from < _cloudWorkspaceSchemaVersion) {
           await customStatement(
             'UPDATE agents SET description = substr(trim(content), 1, 512) '
             'WHERE length(description) = 0',
           );
         }
-        if (from < 6) {
+        if (from < _currentSchemaVersion) {
           await m.addColumn(workspaces, workspaces.cloudWorkspaceId);
           await m.addColumn(workspaces, workspaces.cloudAccountId);
         }
@@ -154,11 +161,12 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Builds the Drift database name for a hash source.
+  static String databaseNameForHashSource(String? dbHashSource) =>
+      AppStorageNamespace.forHashSource(dbHashSource);
+
   Future<void> _upgradeToSchema4(Migrator m) async {
-    await m.addColumn(
-      conversations,
-      conversations.parentConversationId,
-    );
+    await m.addColumn(conversations, conversations.parentConversationId);
     await m.createTable(messageAttachments);
   }
 
@@ -195,18 +203,14 @@ class AppDatabase extends _$AppDatabase {
   /// with proper configuration for mobile and desktop platforms.
   static QueryExecutor _openConnection({String? dbHashSource}) {
     return driftDatabase(
+      native: const DriftNativeOptions(shareAcrossIsolates: true),
       name: databaseNameForHashSource(dbHashSource),
       web: .new(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
         driftWorker: Uri.parse('drift_worker.dart.js'),
       ),
-      native: const DriftNativeOptions(shareAcrossIsolates: true),
     );
   }
-
-  /// Builds the Drift database name for a hash source.
-  static String databaseNameForHashSource(String? dbHashSource) =>
-      appStorageNamespaceFor(dbHashSource);
 
   Future<bool> _tableExists(String tableName) async {
     final rows = await customSelect(

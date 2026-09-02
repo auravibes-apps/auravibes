@@ -10,8 +10,7 @@
       "toolArgs": [
         "--flavor",
         "dev",
-        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/",
-        "--dart-define=ENABLE_FLUTTER_DRIVER=true"
+        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/"
       ],
       "program": "lib/main.dart"
     },
@@ -25,7 +24,20 @@
         "--flavor",
         "dev",
         "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/",
-        "--dart-define=DB_HASH_SOURCE=${workspaceFolder}",
+        "--dart-define=DB_HASH_SOURCE=${workspaceFolder}"
+      ],
+      "program": "lib/main.dart"
+    },
+    {
+      "name": "dev Driver",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "debug",
+      "cwd": "apps/auravibes_app",
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--dart-define=AURAVIBES_SERVER_URL=http://localhost:8080/",
         "--dart-define=ENABLE_FLUTTER_DRIVER=true"
       ],
       "program": "lib/main.dart"

@@ -49,9 +49,8 @@ void main() {
 
     group('getAllProviders', () {
       test('returns mapped provider entities', () async {
-        when(
-          () => fixture.mockProvidersDao.getAllProviders(),
-        ).thenAnswer((_) async => [providerRow]);
+        when(() => fixture.mockProvidersDao.getAllProviders())
+            .thenAnswer((_) async => [providerRow]);
 
         final result = await fixture.repository.getAllProviders();
 
@@ -64,9 +63,8 @@ void main() {
       });
 
       test('returns empty list when no providers', () async {
-        when(
-          () => fixture.mockProvidersDao.getAllProviders(),
-        ).thenAnswer((_) async => []);
+        when(() => fixture.mockProvidersDao.getAllProviders())
+            .thenAnswer((_) async => []);
 
         final result = await fixture.repository.getAllProviders();
 
@@ -76,9 +74,8 @@ void main() {
 
     group('getProvidersByType', () {
       test('returns filtered providers', () async {
-        when(
-          () => fixture.mockProvidersDao.getProvidersByType('openai'),
-        ).thenAnswer((_) async => [providerRow]);
+        when(() => fixture.mockProvidersDao.getProvidersByType('openai'))
+            .thenAnswer((_) async => [providerRow]);
 
         final result = await fixture.repository.getProvidersByType('openai');
 
@@ -93,9 +90,8 @@ void main() {
           type: ModelProvidersTableType.openrouter,
           url: 'https://openrouter.ai/api/v1',
         );
-        when(
-          () => fixture.mockProvidersDao.getProvidersByType('openrouter'),
-        ).thenAnswer((_) async => [openRouterRow]);
+        when(() => fixture.mockProvidersDao.getProvidersByType('openrouter'))
+            .thenAnswer((_) async => [openRouterRow]);
 
         final result = await fixture.repository.getProvidersByType(
           'openrouter',
@@ -108,9 +104,8 @@ void main() {
 
     group('getAllModels', () {
       test('returns mapped model entities', () async {
-        when(
-          () => fixture.mockModelsDao.getAllModels(),
-        ).thenAnswer((_) async => [modelRow]);
+        when(() => fixture.mockModelsDao.getAllModels())
+            .thenAnswer((_) async => [modelRow]);
 
         final result = await fixture.repository.getAllModels();
 
@@ -169,9 +164,8 @@ void main() {
 
     group('getModelsByProvider', () {
       test('returns models for provider', () async {
-        when(
-          () => fixture.mockModelsDao.getModelsByProvider('openai'),
-        ).thenAnswer((_) async => [modelRow]);
+        when(() => fixture.mockModelsDao.getModelsByProvider('openai'))
+            .thenAnswer((_) async => [modelRow]);
 
         final result = await fixture.repository.getModelsByProvider('openai');
 
@@ -190,17 +184,15 @@ void main() {
           doc: 'https://docs.openai.com',
         );
 
-        when(
-          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
-        ).thenAnswer((_) async => [providerRow]);
+        when(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
+            .thenAnswer((_) async => [providerRow]);
 
         final result = await fixture.repository.batchUpsertProviders([entity]);
 
         expect(result, hasLength(1));
         expect(result.firstOrNull?.id, 'openai');
-        verify(
-          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
-        ).called(1);
+        verify(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
+            .called(1);
       });
     });
 
@@ -216,9 +208,8 @@ void main() {
           modalitiesOutput: ['text'],
         );
 
-        when(
-          () => fixture.mockModelsDao.batchUpsertModels(any()),
-        ).thenAnswer((_) async => [modelRow]);
+        when(() => fixture.mockModelsDao.batchUpsertModels(any()))
+            .thenAnswer((_) async => [modelRow]);
 
         final result = await fixture.repository.batchUpsertModels([entity]);
 
@@ -228,9 +219,8 @@ void main() {
       });
 
       test('filters null entities from input', () async {
-        when(
-          () => fixture.mockModelsDao.batchUpsertModels(any()),
-        ).thenAnswer((_) async => []);
+        when(() => fixture.mockModelsDao.batchUpsertModels(any()))
+            .thenAnswer((_) async => []);
 
         final _ = await fixture.repository.batchUpsertModels([
           const ApiModelEntity(
@@ -245,9 +235,9 @@ void main() {
         ]);
 
         final captured =
-            verify(
-                  () => fixture.mockModelsDao.batchUpsertModels(captureAny()),
-                ).captured.single
+            verify(() => fixture.mockModelsDao.batchUpsertModels(captureAny()))
+                    .captured
+                    .single
                 as List;
         expect(captured, hasLength(1));
       });
@@ -255,18 +245,14 @@ void main() {
 
     group('replaceAllData', () {
       test('upserts providers and models in a transaction', () async {
-        when(
-          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
-        ).thenAnswer((_) async => [providerRow]);
-        when(
-          () => fixture.mockModelsDao.batchUpsertModels(any()),
-        ).thenThrow(Exception('DB error'));
-        when(
-          () => fixture.mockModelsDao.getAllModels(),
-        ).thenAnswer((_) async => const []);
-        when(
-          () => fixture.mockProvidersDao.getAllProviders(),
-        ).thenAnswer((_) async => const []);
+        when(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
+            .thenAnswer((_) async => [providerRow]);
+        when(() => fixture.mockModelsDao.batchUpsertModels(any()))
+            .thenThrow(Exception('DB error'));
+        when(() => fixture.mockModelsDao.getAllModels())
+            .thenAnswer((_) async => const []);
+        when(() => fixture.mockProvidersDao.getAllProviders())
+            .thenAnswer((_) async => const []);
 
         await expectLater(
           fixture.repository.replaceAllData(
@@ -294,36 +280,25 @@ void main() {
         );
 
         expect(fixture.database.transactionCount, 1);
-        final _ = verifyNever(
-          () => fixture.mockModelsDao.deleteAllModels(),
-        );
+        final _ = verifyNever(() => fixture.mockModelsDao.deleteAllModels());
         final _ = verifyNever(
           () => fixture.mockProvidersDao.deleteAllProviders(),
         );
-        verify(
-          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
-        ).called(1);
+        verify(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
+            .called(1);
         verify(() => fixture.mockModelsDao.batchUpsertModels(any())).called(1);
       });
 
       test('prunes rows missing from replacement data', () async {
-        when(
-          () => fixture.mockProvidersDao.batchUpsertProviders(any()),
-        ).thenAnswer((_) async => [providerRow]);
-        when(
-          () => fixture.mockModelsDao.batchUpsertModels(any()),
-        ).thenAnswer((_) async => [modelRow]);
+        when(() => fixture.mockProvidersDao.batchUpsertProviders(any()))
+            .thenAnswer((_) async => [providerRow]);
+        when(() => fixture.mockModelsDao.batchUpsertModels(any()))
+            .thenAnswer((_) async => [modelRow]);
         when(() => fixture.mockModelsDao.getAllModels()).thenAnswer(
-          (_) async => [
-            modelRow,
-            modelRow.copyWith(id: 'old-model'),
-          ],
+          (_) async => [modelRow, modelRow.copyWith(id: 'old-model')],
         );
         when(() => fixture.mockProvidersDao.getAllProviders()).thenAnswer(
-          (_) async => [
-            providerRow,
-            providerRow.copyWith(id: 'old-provider'),
-          ],
+          (_) async => [providerRow, providerRow.copyWith(id: 'old-provider')],
         );
         when(
           () => fixture.mockModelsDao.deleteModelByProviderAndId(
@@ -331,9 +306,8 @@ void main() {
             'old-model',
           ),
         ).thenAnswer((_) async => true);
-        when(
-          () => fixture.mockProvidersDao.deleteProvider('old-provider'),
-        ).thenAnswer((_) async => true);
+        when(() => fixture.mockProvidersDao.deleteProvider('old-provider'))
+            .thenAnswer((_) async => true);
 
         await fixture.repository.replaceAllData(
           providers: const [
@@ -364,9 +338,8 @@ void main() {
             'old-model',
           ),
         ).called(1);
-        verify(
-          () => fixture.mockProvidersDao.deleteProvider('old-provider'),
-        ).called(1);
+        verify(() => fixture.mockProvidersDao.deleteProvider('old-provider'))
+            .called(1);
       });
     });
 
@@ -376,9 +349,8 @@ void main() {
           id: 'test',
           name: 'Test',
         );
-        when(
-          () => fixture.mockProvidersDao.getAllProviders(),
-        ).thenAnswer((_) async => [rowWithTypeNull]);
+        when(() => fixture.mockProvidersDao.getAllProviders())
+            .thenAnswer((_) async => [rowWithTypeNull]);
 
         final result = await fixture.repository.getAllProviders();
 
@@ -391,9 +363,8 @@ void main() {
           name: 'Anthropic',
           type: ModelProvidersTableType.anthropic,
         );
-        when(
-          () => fixture.mockProvidersDao.getAllProviders(),
-        ).thenAnswer((_) async => [anthropicRow]);
+        when(() => fixture.mockProvidersDao.getAllProviders())
+            .thenAnswer((_) async => [anthropicRow]);
 
         final result = await fixture.repository.getAllProviders();
 
@@ -406,9 +377,8 @@ void main() {
           name: 'OpenRouter',
           type: ModelProvidersTableType.openrouter,
         );
-        when(
-          () => fixture.mockProvidersDao.getAllProviders(),
-        ).thenAnswer((_) async => [openRouterRow]);
+        when(() => fixture.mockProvidersDao.getAllProviders())
+            .thenAnswer((_) async => [openRouterRow]);
 
         final result = await fixture.repository.getAllProviders();
 
@@ -454,11 +424,12 @@ class _ApiModelRepositoryFixture {
   }
 }
 
-class _TestAppDatabase extends AppDatabase {
-  _TestAppDatabase(this._providersDao, this._modelsDao)
-    : super(connection: DatabaseConnection(NativeDatabase.memory()));
-  final ApiModelProvidersDao _providersDao;
-  final ApiModelsDao _modelsDao;
+class _TestAppDatabase(
+  final ApiModelProvidersDao _providersDao,
+  final ApiModelsDao _modelsDao,
+) extends AppDatabase {
+  this : super(connection: DatabaseConnection(NativeDatabase.memory()));
+
   int transactionCount = 0;
 
   @override

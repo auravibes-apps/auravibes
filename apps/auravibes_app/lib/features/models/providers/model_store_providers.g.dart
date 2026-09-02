@@ -67,7 +67,7 @@ final class ModelConnectionStoreProvider
 }
 
 String _$modelConnectionStoreHash() =>
-    r'64d2c67b702c8899317713673cfe7f706a5765c6';
+    r'38bd2cea1100b9daeee30b30c853f007df5ac9b7';
 
 final class ModelConnectionStoreFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ModelConnectionStore>, String> {
@@ -145,7 +145,7 @@ final class ModelSelectionStoreProvider
 }
 
 String _$modelSelectionStoreHash() =>
-    r'fcb229459f50e80b5692efd6faf40b880e3fed75';
+    r'7b33da356fc19c0e9a3328a0dc5c58896b59d760';
 
 final class ModelSelectionStoreFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ModelSelectionStore>, String> {
@@ -222,7 +222,7 @@ final class ModelCatalogStoreProvider
   }
 }
 
-String _$modelCatalogStoreHash() => r'be58382c8e3106dd1e782ec36238a7d585822214';
+String _$modelCatalogStoreHash() => r'adb25f07b89827d8b477962e2dab420ddcb2c8eb';
 
 final class ModelCatalogStoreFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ModelCatalogStore>, String> {

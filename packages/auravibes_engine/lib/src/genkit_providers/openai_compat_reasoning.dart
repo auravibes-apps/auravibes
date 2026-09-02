@@ -3,21 +3,19 @@
 
 import 'package:auravibes_engine/src/genkit_providers/openai_compat_chat_options.dart';
 
-class OpenAICompatReasoningOptions extends OpenAICompatChatOptions {
-  OpenAICompatReasoningOptions({
-    super.temperature,
-    super.topP,
-    super.maxTokens,
-    super.stop,
-    super.presencePenalty,
-    super.frequencyPenalty,
-    super.seed,
-    super.user,
-    this.version,
-    this.reasoningType,
-  });
-
-  factory OpenAICompatReasoningOptions.fromJson(Map<String, dynamic>? json) {
+class OpenAICompatReasoningOptions({
+  super.temperature,
+  super.topP,
+  super.maxTokens,
+  super.stop,
+  super.presencePenalty,
+  super.frequencyPenalty,
+  super.seed,
+  super.user,
+  final String? version,
+  final String? reasoningType,
+}) extends OpenAICompatChatOptions {
+  factory fromJson(Map<String, dynamic>? json) {
     final shared = OpenAICompatChatOptions.fromJson(json);
 
     return OpenAICompatReasoningOptions(
@@ -33,9 +31,6 @@ class OpenAICompatReasoningOptions extends OpenAICompatChatOptions {
       reasoningType: json?['reasoningType'] as String?,
     );
   }
-
-  final String? version;
-  final String? reasoningType;
 
   @override
   Map<String, dynamic> toJson() => {

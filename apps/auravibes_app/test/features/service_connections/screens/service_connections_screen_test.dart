@@ -53,13 +53,12 @@ void main() {
         type: WorkspaceType.local,
       ),
     );
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: workspace.id),
-          ),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
         appDatabaseProvider.overrideWithValue(database),
         encryptionServiceProvider.overrideWithValue(encryptionService),
         cloudWorkspaceStateGatewayProvider.overrideWith((_, _) async => null),
@@ -82,10 +81,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    final definition =
-        await SkillCredentialDefinitionsRepository(
-          database,
-        ).createDefinition(
+    final definition = await SkillCredentialDefinitionsRepository(database)
+        .createDefinition(
           workspace.id,
           const SkillCredentialDefinitionToCreate(
             title: 'GitHub Token',
@@ -106,6 +103,22 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('Main Token'), findsOneWidget);
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Model providers'), findsOneWidget);
+    expect(find.text('Skill credentials'), findsOneWidget);
+    expect(find.text('MCP servers'), findsOneWidget);
+
+    await tester.tap(find.text('Model providers'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Main Token'), findsNothing);
+    expect(find.text('No connections for Model providers'), findsOneWidget);
+
+    await tester.tap(find.text('Skill credentials'));
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Main Token'), findsOneWidget);
+    await tester.tap(find.text('All'));
+    final _ = await tester.pumpAndSettle();
+
     await tester.tap(find.byIcon(Icons.more_vert).first);
     final _ = await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
@@ -183,9 +196,7 @@ void main() {
 
     expect(find.text('Delete model provider'), findsOneWidget);
     expect(
-      find.text(
-        'Delete provider "OpenAI Main"? This action cannot be undone.',
-      ),
+      find.text('Delete provider "OpenAI Main"? This action cannot be undone.'),
       findsOneWidget,
     );
     await tester.tap(find.text('Delete').last);
@@ -204,9 +215,7 @@ void main() {
             serviceId: 'notion-mcp',
             kind: ServiceConnectionKindTable.mcpServer,
             authenticationType: ServiceAuthenticationTypeTable.oauth2,
-            encryptedAuthValue: const Value(
-              '{"access_token":"secret-token"}',
-            ),
+            encryptedAuthValue: const Value('{"access_token":"secret-token"}'),
             metadataJson: Value(
               ServiceConnectionAuthCodec.encodeMetadata(
                 const ServiceConnectionMetadata(
@@ -264,9 +273,8 @@ Future<void> _pumpScreen(
             container: container,
             child: MaterialApp(
               home: ServiceConnectionsScreen(workspaceId: workspaceId),
-              builder: (context, child) => AuraSnackBarHost(
-                child: child ?? const SizedBox.shrink(),
-              ),
+              builder: (context, child) =>
+                  AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,

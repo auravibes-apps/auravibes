@@ -7,7 +7,6 @@ import 'package:auravibes_engine/src/providers/agent_model_provider.dart';
 const defaultAgentRateLimitRetryDelay = Duration(seconds: 60);
 const defaultAgentRateLimitRetryCount = 1;
 
-// ignore: one_member_abstracts, provider interface keeps tool loop injectable.
 abstract interface class AgentLoopToolProvider {
   Future<AgentIterationDecision> runAllowedTools({
     required String conversationId,
@@ -19,31 +18,18 @@ Future<void> _defaultAgentSleep(Duration duration) {
   return Future<void>.delayed(duration);
 }
 
-class AgentService {
-  const AgentService({
-    required this.data,
-    required this.models,
-    required this.tools,
-    required this.sendQueueRuntime,
-    required this.cancellationEffects,
-    required this.rateLimitRetryRuntime,
-    this.rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
-    this.rateLimitRetryCount = defaultAgentRateLimitRetryCount,
-    this.now = DateTime.now,
-    this.sleep = _defaultAgentSleep,
-  });
-
-  final AgentDataProvider data;
-  final AgentModelProvider models;
-  final AgentLoopToolProvider tools;
-  final AgentSendQueueRuntime sendQueueRuntime;
-  final AgentCancellationEffects cancellationEffects;
-  final AgentRateLimitRetryRuntime rateLimitRetryRuntime;
-  final Duration rateLimitRetryDelay;
-  final int rateLimitRetryCount;
-  final DateTime Function() now;
-  final Future<void> Function(Duration duration) sleep;
-
+class const AgentService({
+  required final AgentDataProvider data,
+  required final AgentModelProvider models,
+  required final AgentLoopToolProvider tools,
+  required final AgentSendQueueRuntime sendQueueRuntime,
+  required final AgentCancellationEffects cancellationEffects,
+  required final AgentRateLimitRetryRuntime rateLimitRetryRuntime,
+  final Duration rateLimitRetryDelay = defaultAgentRateLimitRetryDelay,
+  final int rateLimitRetryCount = defaultAgentRateLimitRetryCount,
+  final DateTime Function() now = DateTime.now,
+  final Future<void> Function(Duration duration) sleep = _defaultAgentSleep,
+}) {
   Future<AgentIterationDecision> call({
     required String conversationId,
     required AgentIterationContext context,
@@ -156,7 +142,7 @@ class AgentService {
       origin: currentContext?.origin ?? AgentIterationOrigin.userMessage,
     );
     if (!continueResult.hasToolCalls) {
-      return _continueAfterNoToolCalls(
+      return await _continueAfterNoToolCalls(
         conversationId,
         cancellationScope,
         currentContext,
@@ -173,10 +159,7 @@ class AgentService {
       currentContext,
     );
 
-    return _AgentIterationStep(
-      currentContext,
-      postToolCancel ?? decision,
-    );
+    return _AgentIterationStep(currentContext, postToolCancel ?? decision);
   }
 
   Future<_AgentIterationStep> _continueAfterNoToolCalls(
@@ -268,7 +251,7 @@ class AgentService {
       }
     }
 
-    return _cancelIfRequested(conversationId, cancellationScope, context);
+    return await _cancelIfRequested(conversationId, cancellationScope, context);
   }
 
   Duration? _rateLimitRetryDelayFor(Object error) {
@@ -304,9 +287,7 @@ class AgentService {
   }
 }
 
-class _AgentIterationStep {
-  const _AgentIterationStep(this.context, this.decision);
-
-  final AgentIterationContext? context;
-  final AgentIterationDecision decision;
-}
+class const _AgentIterationStep(
+  final AgentIterationContext? context,
+  final AgentIterationDecision decision,
+);

@@ -16,7 +16,7 @@ class AuraTile extends StatefulWidget {
   // Null onTap creates a non-interactive tile for status rows.
   // ignore: unnecessary-nullable
   /// Creates a Aura tile.
-  const AuraTile({
+  const new({
     required this.child,
     super.key,
     this.onTap,
@@ -26,6 +26,8 @@ class AuraTile extends StatefulWidget {
     this.leading,
     this.trailing,
     this.enabled = true,
+    this.expand = true,
+    this.semanticLabel,
   });
 
   /// The callback that is called when the tile is tapped.
@@ -52,6 +54,12 @@ class AuraTile extends StatefulWidget {
   /// Whether the tile is enabled for interaction.
   final bool enabled;
 
+  /// Whether the tile expands to the available width.
+  final bool expand;
+
+  /// A semantic label for interactive tiles.
+  final String? semanticLabel;
+
   @override
   State<AuraTile> createState() => _AuraTileState();
 }
@@ -62,6 +70,13 @@ class _AuraTileState extends State<AuraTile> {
   bool _pressed = false;
 
   bool get _canInteract => widget.enabled && !widget.isLoading;
+
+  double get _overlayAlpha {
+    if (_pressed) return 0.16;
+    if (_hovered || _focused) return 0.08;
+
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,10 +106,7 @@ class _AuraTileState extends State<AuraTile> {
     } else {
       content = Row(
         children: [
-          if (leading != null) ...[
-            leading,
-            const AuraSizedBox(width: .sm),
-          ],
+          if (leading != null) ...[leading, const AuraSizedBox(width: .sm)],
           Flexible(
             fit: .tight,
             child: DefaultTextStyle(
@@ -105,10 +117,7 @@ class _AuraTileState extends State<AuraTile> {
               child: widget.child,
             ),
           ),
-          if (trailing != null) ...[
-            const AuraSizedBox(width: .sm),
-            trailing,
-          ],
+          if (trailing != null) ...[const AuraSizedBox(width: .sm), trailing],
         ],
       );
     }
@@ -121,9 +130,7 @@ class _AuraTileState extends State<AuraTile> {
           BorderSide(color: _getBorderColor(auraColors)),
         ),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.lg),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
         ),
         boxShadow: _getBoxShadow(),
       ),
@@ -131,35 +138,47 @@ class _AuraTileState extends State<AuraTile> {
       duration: auraTheme.animation.normal,
     );
 
-    return SizedBox(
-      width: double.infinity,
-      child: FocusableActionDetector(
-        enabled: _canInteract,
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              widget.onTap?.call();
+    final tileContent = FocusableActionDetector(
+      enabled: _canInteract,
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            widget.onTap?.call();
 
-              return null;
-            },
-          ),
-        },
-        onShowFocusHighlight: (value) => setState(() => _focused = value),
-        onShowHoverHighlight: (value) => setState(() => _hovered = value),
-        mouseCursor: _canInteract
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.basic,
-        child: GestureDetector(
-          child: tile,
-          onTapDown: _canInteract
-              ? (_) => setState(() => _pressed = true)
-              : null,
-          onTapUp: _canInteract ? (_) => _clearPressed() : null,
-          onTap: _canInteract ? widget.onTap : null,
-          onTapCancel: _clearPressed,
-          behavior: HitTestBehavior.opaque,
+            return null;
+          },
         ),
+      },
+      onShowFocusHighlight: (value) => setState(() => _focused = value),
+      onShowHoverHighlight: (value) => setState(() => _hovered = value),
+      mouseCursor: _canInteract
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: GestureDetector(
+        child: tile,
+        onTapDown: _canInteract ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: _canInteract ? (_) => _clearPressed() : null,
+        onTap: _canInteract ? widget.onTap : null,
+        onTapCancel: _clearPressed,
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
       ),
+    );
+
+    final sizedTile = widget.expand
+        ? SizedBox(width: double.infinity, child: tileContent)
+        : tileContent;
+
+    if (!_canInteract) return sizedTile;
+
+    return Semantics(
+      child: sizedTile,
+      container: true,
+      excludeSemantics: true,
+      enabled: true,
+      button: true,
+      label: widget.semanticLabel ?? 'Tile',
+      onTap: widget.onTap,
     );
   }
 
@@ -195,13 +214,6 @@ class _AuraTileState extends State<AuraTile> {
     if (_focused && _canInteract) return colors.primary;
 
     return Colors.transparent;
-  }
-
-  double get _overlayAlpha {
-    if (_pressed) return 0.16;
-    if (_hovered || _focused) return 0.08;
-
-    return 0;
   }
 
   List<BoxShadow> _getBoxShadow() {

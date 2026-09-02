@@ -36,9 +36,14 @@ bool supportsAttachmentModality(
 bool supportsFileAttachments(Iterable<String> modelModalities) {
   final supported = modelModalities.map((value) => value.toLowerCase()).toSet();
 
-  return const {'file', 'pdf', 'document', 'image', 'audio', 'video'}.any(
-    supported.contains,
-  );
+  return const {
+    'file',
+    'pdf',
+    'document',
+    'image',
+    'audio',
+    'video',
+  }.any(supported.contains);
 }
 
 bool _supportsSpecificFileType(Set<String> supported, String? mimeType) {

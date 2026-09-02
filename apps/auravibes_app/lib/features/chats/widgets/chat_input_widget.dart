@@ -43,46 +43,27 @@ const String _voiceRecordLabelKey =
 const String _imageAttachmentLabelKey =
     LocaleKeys.chats_screens_chat_conversation_image_attachment_label;
 
-class ChatInputWidget extends HookConsumerWidget {
-  const ChatInputWidget({
-    required this.workspaceId,
-    required this.onSendMessage,
-    required this.onToolsPress,
-    required this.modelSheetControl,
-    required this.agentSheetControl,
-    required this.modelCompactControl,
-    required this.agentCompactControl,
-    this.modalitiesInput = const [],
-    this.onSkillsPress,
-    this.onContinueAgent,
-    this.disabledHint,
-    this.disabled = false,
-    this.isBusy = false,
-    this.showStopButton,
-    this.onStop,
-    this.onCompact,
-    this.isCompacting = false,
-    super.key,
-  });
-
-  final bool disabled;
-  final String workspaceId;
-  final bool isBusy;
-  final bool? showStopButton;
-  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
-  final VoidCallback onToolsPress;
-  final VoidCallback? onSkillsPress;
-  final VoidCallback? onContinueAgent;
-  final List<String> modalitiesInput;
-  final Widget modelSheetControl;
-  final Widget agentSheetControl;
-  final Widget modelCompactControl;
-  final Widget agentCompactControl;
-  final Widget? disabledHint;
-  final VoidCallback? onStop;
-  final VoidCallback? onCompact;
-  final bool isCompacting;
-
+class const ChatInputWidget({
+  required final String workspaceId,
+  required final FutureOr<void> Function(ChatDraft draft) onSendMessage,
+  required final VoidCallback onToolsPress,
+  required final Widget modelSheetControl,
+  required final Widget agentSheetControl,
+  required final Widget modelCompactControl,
+  required final Widget agentCompactControl,
+  final List<String> modalitiesInput = const [],
+  final VoidCallback? onSkillsPress,
+  final VoidCallback? onContinueAgent,
+  final Widget? disabledHint,
+  final bool disabled = false,
+  final bool isBusy = false,
+  final bool? showStopButton,
+  final VoidCallback? onStop,
+  final VoidCallback? onCompact,
+  final bool isCompacting = false,
+  super.key,
+}) extends HookConsumerWidget {
+  static const _maxInputLines = 2;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController();
@@ -95,9 +76,8 @@ class ChatInputWidget extends HookConsumerWidget {
     final recordingTimer = useRef<Timer?>(null);
     final recordingStart = useRef<Future<void>?>(null);
     final workspaceCapabilities = ref.watch(
-      workspaceSessionForRouteProvider(workspaceId).select(
-        (session) => session.value?.capabilities,
-      ),
+      workspaceSessionForRouteProvider(workspaceId)
+          .select((session) => session.value?.capabilities),
     );
 
     final isTextEmpty = useListenableSelector(
@@ -122,30 +102,28 @@ class ChatInputWidget extends HookConsumerWidget {
       isEmpty: isEmpty,
     );
 
-    useEffect(
-      () {
-        return actions.disposeDraft;
-      },
-      const [],
-    );
+    Dispose? disposeDraft() => actions.disposeDraft;
+
+    useEffect(disposeDraft, const []);
 
     final shouldShowStopButton = showStopButton ?? isBusy;
     final supportsLocalAttachments =
         (workspaceCapabilities?.attachments ?? false) && !kIsWeb;
     final supportsAudio =
         supportsLocalAttachments &&
-        supportsAttachmentModality(
+        ChatAttachmentModality.supports(
           MessageAttachmentModality.audio,
           modalitiesInput,
         );
     final supportsImage =
         (workspaceCapabilities?.attachments ?? false) &&
-        supportsAttachmentModality(
+        ChatAttachmentModality.supports(
           MessageAttachmentModality.image,
           modalitiesInput,
         );
     final supportsFile =
-        supportsLocalAttachments && supportsFileAttachments(modalitiesInput);
+        supportsLocalAttachments &&
+        ChatAttachmentModality.supportsFiles(modalitiesInput);
     final isMacOS = defaultTargetPlatform == TargetPlatform.macOS;
     const messagePlaceholderKey =
         LocaleKeys.chats_screens_chat_conversation_message_placeholder;
@@ -161,7 +139,7 @@ class ChatInputWidget extends HookConsumerWidget {
               placeholder: const TextLocale(messagePlaceholderKey),
               textInputAction: TextInputAction.send,
               readOnly: isRecording.value,
-              maxLines: 2,
+              maxLines: _maxInputLines,
               onSubmitted: (value) {
                 unawaited(actions.sendMessage());
               },
@@ -214,39 +192,22 @@ class ChatInputWidget extends HookConsumerWidget {
   }
 }
 
-class _ChatInputActions {
-  const _ChatInputActions({
-    required this.ref,
-    required this.controller,
-    required this.focusNode,
-    required this.attachments,
-    required this.isSending,
-    required this.isRecording,
-    required this.isStartingRecording,
-    required this.recordingElapsed,
-    required this.recordingTimer,
-    required this.recordingStart,
-    required this.modalitiesInput,
-    required this.onSendMessage,
-    required this.disabled,
-    required this.isEmpty,
-  });
-
-  final WidgetRef ref;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueNotifier<List<MessageAttachmentToCreate>> attachments;
-  final ValueNotifier<bool> isSending;
-  final ValueNotifier<bool> isRecording;
-  final ValueNotifier<bool> isStartingRecording;
-  final ValueNotifier<Duration> recordingElapsed;
-  final ObjectRef<Timer?> recordingTimer;
-  final ObjectRef<Future<void>?> recordingStart;
-  final List<String> modalitiesInput;
-  final FutureOr<void> Function(ChatDraft draft) onSendMessage;
-  final bool disabled;
-  final bool isEmpty;
-
+class const _ChatInputActions({
+  required final WidgetRef ref,
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+  required final ValueNotifier<List<MessageAttachmentToCreate>> attachments,
+  required final ValueNotifier<bool> isSending,
+  required final ValueNotifier<bool> isRecording,
+  required final ValueNotifier<bool> isStartingRecording,
+  required final ValueNotifier<Duration> recordingElapsed,
+  required final ObjectRef<Timer?> recordingTimer,
+  required final ObjectRef<Future<void>?> recordingStart,
+  required final List<String> modalitiesInput,
+  required final FutureOr<void> Function(ChatDraft draft) onSendMessage,
+  required final bool disabled,
+  required final bool isEmpty,
+}) {
   void disposeDraft() {
     if (isRecording.value || isStartingRecording.value) {
       unawaited(
@@ -306,16 +267,17 @@ class _ChatInputActions {
       try {
         await sendResult;
       } on Object catch (error, stackTrace) {
+        _logger.warning('Failed to send draft', error, stackTrace);
+        if (!ref.context.mounted) return;
         if (controller.text.isEmpty && attachments.value.isEmpty) {
           controller.text = message;
           attachments.value = draftAttachments;
         }
-        _logger.warning('Failed to send draft', error, stackTrace);
 
         return;
       }
     } finally {
-      isSending.value = false;
+      if (ref.context.mounted) isSending.value = false;
     }
   }
 
@@ -324,12 +286,12 @@ class _ChatInputActions {
         .read(localChatAttachmentUsecaseProvider)
         .copyIntoAppStorage(
           path,
-          displayName: uniqueAttachmentDisplayName(
+          displayName: AttachmentDisplayNames.unique(
             displayName,
             attachments.value.map((attachment) => attachment.displayName),
           ),
         );
-    if (!supportsAttachmentModality(
+    if (!ChatAttachmentModality.supports(
       attachment.modality,
       modalitiesInput,
       mimeType: attachment.mimeType,
@@ -346,9 +308,8 @@ class _ChatInputActions {
     unawaited(
       (() async {
         try {
-          final allowedExtensions = filePickerAllowedExtensions(
-            modalitiesInput,
-          );
+          final allowedExtensions =
+              ChatAttachmentModality.pickerAllowedExtensions(modalitiesInput);
           final result = await fp.FilePicker.pickFiles(
             allowedExtensions: allowedExtensions,
             type: allowedExtensions == null
@@ -400,12 +361,11 @@ class _ChatInputActions {
           final startedAt = DateTime.now();
           isStartingRecording.value = false;
           recordingTimer.value?.cancel();
-          recordingTimer.value = Timer.periodic(
-            const Duration(seconds: 1),
-            (_) {
-              recordingElapsed.value = DateTime.now().difference(startedAt);
-            },
-          );
+          recordingTimer.value = Timer.periodic(const Duration(seconds: 1), (
+            _,
+          ) {
+            recordingElapsed.value = DateTime.now().difference(startedAt);
+          });
         } on Object catch (_) {
           clearRecordingState();
         }
@@ -475,7 +435,7 @@ class _ChatInputActions {
     Iterable<MessageAttachmentToCreate> existingAttachments,
   ) {
     return attachment.copyWith(
-      displayName: uniqueAttachmentDisplayName(
+      displayName: AttachmentDisplayNames.unique(
         _voiceRecordLabelKey.tr(),
         existingAttachments.map((attachment) => attachment.displayName),
       ),
@@ -546,59 +506,32 @@ AuraPopupMenuItem _attachmentMenuItem({
   );
 }
 
-class _ChatInputFooter extends StatelessWidget {
-  const _ChatInputFooter({
-    required this.actions,
-    required this.attachments,
-    required this.disabled,
-    required this.isBusy,
-    required this.isCompacting,
-    required this.isEmpty,
-    required this.isMacOS,
-    required this.isRecording,
-    required this.isSending,
-    required this.isStartingRecording,
-    required this.modelCompactControl,
-    required this.modelSheetControl,
-    required this.onToolsPress,
-    required this.recordingElapsed,
-    required this.shouldShowStopButton,
-    required this.supportsAudio,
-    required this.supportsFile,
-    required this.supportsImage,
-    required this.supportsLocalAttachments,
-    this.disabledHint,
-    this.onCompact,
-    this.onContinueAgent,
-    this.onSkillsPress,
-    this.onStop,
-  });
-
-  final _ChatInputActions actions;
-  final List<MessageAttachmentToCreate> attachments;
-  final bool disabled;
-  final Widget? disabledHint;
-  final bool isBusy;
-  final bool isCompacting;
-  final bool isEmpty;
-  final bool isMacOS;
-  final bool isRecording;
-  final bool isSending;
-  final bool isStartingRecording;
-  final Widget modelCompactControl;
-  final Widget modelSheetControl;
-  final VoidCallback? onCompact;
-  final VoidCallback? onContinueAgent;
-  final VoidCallback? onSkillsPress;
-  final VoidCallback? onStop;
-  final VoidCallback onToolsPress;
-  final Duration recordingElapsed;
-  final bool shouldShowStopButton;
-  final bool supportsAudio;
-  final bool supportsFile;
-  final bool supportsImage;
-  final bool supportsLocalAttachments;
-
+class const _ChatInputFooter({
+  required final _ChatInputActions actions,
+  required final List<MessageAttachmentToCreate> attachments,
+  required final bool disabled,
+  required final bool isBusy,
+  required final bool isCompacting,
+  required final bool isEmpty,
+  required final bool isMacOS,
+  required final bool isRecording,
+  required final bool isSending,
+  required final bool isStartingRecording,
+  required final Widget modelCompactControl,
+  required final Widget modelSheetControl,
+  required final VoidCallback onToolsPress,
+  required final Duration recordingElapsed,
+  required final bool shouldShowStopButton,
+  required final bool supportsAudio,
+  required final bool supportsFile,
+  required final bool supportsImage,
+  required final bool supportsLocalAttachments,
+  final Widget? disabledHint,
+  final VoidCallback? onCompact,
+  final VoidCallback? onContinueAgent,
+  final VoidCallback? onSkillsPress,
+  final VoidCallback? onStop,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -629,11 +562,120 @@ class _ChatInputFooter extends StatelessWidget {
           ],
           Row(
             children: [
-              if (!isRecording) ..._idleControls(context),
-              if (isRecording)
-                ..._recordingControls()
-              else if (supportsAudio)
-                ..._audioControls(),
+              if (!isRecording) ...[
+                AuraPopupMenuButton(
+                  items: [
+                    _attachmentMenuItem(
+                      titleKey: _attachFileKey,
+                      icon: Icons.attach_file,
+                      enabled: supportsFile,
+                      onTap: actions.pickFiles,
+                    ),
+                    if (!isMacOS)
+                      _attachmentMenuItem(
+                        titleKey: _attachPhotoKey,
+                        icon: Icons.photo_outlined,
+                        enabled: supportsLocalAttachments && supportsImage,
+                        onTap: () => actions.pickImage(ImageSource.gallery),
+                      ),
+                    if (defaultTargetPlatform == TargetPlatform.android ||
+                        defaultTargetPlatform == TargetPlatform.iOS)
+                      _attachmentMenuItem(
+                        titleKey: _attachCameraKey,
+                        icon: Icons.photo_camera_outlined,
+                        enabled: supportsLocalAttachments && supportsImage,
+                        onTap: () => actions.pickImage(ImageSource.camera),
+                      ),
+                    AuraPopupMenuItem(
+                      title: const TextLocale(LocaleKeys.menu_tools),
+                      onTap: onToolsPress,
+                      leading: const AuraIcon(Icons.build_circle_outlined),
+                    ),
+                    if (onSkillsPress case final onSkillsPress?)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.skills_selector_title,
+                        ),
+                        onTap: onSkillsPress,
+                        leading: const AuraIcon(Icons.psychology_alt_outlined),
+                      ),
+                    if (onContinueAgent != null)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys
+                              .chats_screens_chat_conversation_continue_agent,
+                        ),
+                        onTap: onContinueAgent,
+                        leading: const AuraIcon(Icons.play_circle_outline),
+                      ),
+                    if (onCompact != null &&
+                        !disabled &&
+                        !isBusy &&
+                        !isCompacting)
+                      AuraPopupMenuItem(
+                        title: const TextLocale(
+                          LocaleKeys.compaction_manual_button_tooltip,
+                        ),
+                        onTap: onCompact,
+                        leading: const AuraIcon(Icons.compress_outlined),
+                      ),
+                  ],
+                  icon: Icons.tune_rounded,
+                  tooltip: LocaleKeys
+                      .chats_screens_chat_conversation_options_tooltip
+                      .tr(),
+                ),
+                const AuraSizedBox(width: .xs),
+                Expanded(
+                  child: GestureDetector(
+                    child: modelCompactControl,
+                    onTap: () => _showSelectorSheet(
+                      context: context,
+                      title: const TextLocale(
+                        LocaleKeys.models_screens_select_model,
+                      ),
+                      child: modelSheetControl,
+                    ),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ],
+              if (isRecording) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.close_rounded,
+                    onPressed: actions.cancelRecording,
+                    disabled: isStartingRecording,
+                    tooltip: _cancelRecordingKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+                Expanded(child: _RecordingIndicator(elapsed: recordingElapsed)),
+                const AuraSizedBox(width: .xs),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.stop_rounded,
+                    onPressed: actions.stopRecording,
+                    disabled: isStartingRecording,
+                    tint: AuraTint.error,
+                    tooltip: _stopRecordingKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ] else if (supportsAudio) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: AuraIconButton(
+                    icon: Icons.mic_none_outlined,
+                    onPressed: actions.startRecording,
+                    disabled: disabled,
+                    tooltip: _recordVoiceKey.tr(),
+                  ),
+                ),
+                const AuraSizedBox(width: .xs),
+              ],
               if (onStop case final onStop?) ...[
                 Visibility(
                   child: AuraTooltip(
@@ -668,121 +710,6 @@ class _ChatInputFooter extends StatelessWidget {
     );
   }
 
-  List<Widget> _idleControls(BuildContext context) {
-    return [
-      AuraPopupMenuButton(
-        items: [
-          _attachmentMenuItem(
-            titleKey: _attachFileKey,
-            icon: Icons.attach_file,
-            enabled: supportsFile,
-            onTap: actions.pickFiles,
-          ),
-          if (!isMacOS)
-            _attachmentMenuItem(
-              titleKey: _attachPhotoKey,
-              icon: Icons.photo_outlined,
-              enabled: supportsLocalAttachments && supportsImage,
-              onTap: () => actions.pickImage(ImageSource.gallery),
-            ),
-          if (defaultTargetPlatform == TargetPlatform.android ||
-              defaultTargetPlatform == TargetPlatform.iOS)
-            _attachmentMenuItem(
-              titleKey: _attachCameraKey,
-              icon: Icons.photo_camera_outlined,
-              enabled: supportsLocalAttachments && supportsImage,
-              onTap: () => actions.pickImage(ImageSource.camera),
-            ),
-          AuraPopupMenuItem(
-            title: const TextLocale(LocaleKeys.menu_tools),
-            onTap: onToolsPress,
-            leading: const AuraIcon(Icons.build_circle_outlined),
-          ),
-          if (onSkillsPress case final onSkillsPress?)
-            AuraPopupMenuItem(
-              title: const TextLocale(LocaleKeys.skills_selector_title),
-              onTap: onSkillsPress,
-              leading: const AuraIcon(Icons.psychology_alt_outlined),
-            ),
-          if (onContinueAgent != null)
-            AuraPopupMenuItem(
-              title: const TextLocale(
-                LocaleKeys.chats_screens_chat_conversation_continue_agent,
-              ),
-              onTap: onContinueAgent,
-              leading: const AuraIcon(Icons.play_circle_outline),
-            ),
-          if (onCompact != null && !disabled && !isBusy && !isCompacting)
-            AuraPopupMenuItem(
-              title: const TextLocale(
-                LocaleKeys.compaction_manual_button_tooltip,
-              ),
-              onTap: onCompact,
-              leading: const AuraIcon(Icons.compress_outlined),
-            ),
-        ],
-        icon: Icons.tune_rounded,
-        tooltip: LocaleKeys.chats_screens_chat_conversation_options_tooltip
-            .tr(),
-      ),
-      const AuraSizedBox(width: .xs),
-      Expanded(
-        child: GestureDetector(
-          child: modelCompactControl,
-          onTap: () => _showSelectorSheet(
-            context: context,
-            title: const TextLocale(LocaleKeys.models_screens_select_model),
-            child: modelSheetControl,
-          ),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
-  List<Widget> _recordingControls() {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.close_rounded,
-          onPressed: actions.cancelRecording,
-          disabled: isStartingRecording,
-          tooltip: _cancelRecordingKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-      Expanded(child: _RecordingIndicator(elapsed: recordingElapsed)),
-      const AuraSizedBox(width: .xs),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.stop_rounded,
-          onPressed: actions.stopRecording,
-          disabled: isStartingRecording,
-          tint: AuraTint.error,
-          tooltip: _stopRecordingKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
-  List<Widget> _audioControls() {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: AuraIconButton(
-          icon: Icons.mic_none_outlined,
-          onPressed: actions.startRecording,
-          disabled: disabled,
-          tooltip: _recordVoiceKey.tr(),
-        ),
-      ),
-      const AuraSizedBox(width: .xs),
-    ];
-  }
-
   void _removeAttachment(MessageAttachmentToCreate attachment) {
     actions.deleteUnsentAttachment(attachment);
     actions.attachments.value = [
@@ -792,17 +719,11 @@ class _ChatInputFooter extends StatelessWidget {
   }
 }
 
-class _AttachmentChips extends StatelessWidget {
-  const _AttachmentChips({
-    required this.attachments,
-    required this.onRemove,
-    this.enabled = true,
-  });
-
-  final List<MessageAttachmentToCreate> attachments;
-  final ValueChanged<MessageAttachmentToCreate> onRemove;
-  final bool enabled;
-
+class const _AttachmentChips({
+  required final List<MessageAttachmentToCreate> attachments,
+  required final ValueChanged<MessageAttachmentToCreate> onRemove,
+  final bool enabled = true,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
@@ -820,11 +741,8 @@ class _AttachmentChips extends StatelessWidget {
   }
 }
 
-class _RecordingIndicator extends StatelessWidget {
-  const _RecordingIndicator({required this.elapsed});
-
-  final Duration elapsed;
-
+class const _RecordingIndicator({required final Duration elapsed})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.auraColors;
@@ -832,11 +750,7 @@ class _RecordingIndicator extends StatelessWidget {
     return AuraText(
       child: Row(
         children: [
-          Icon(
-            Icons.graphic_eq,
-            size: 18,
-            color: colors.error,
-          ),
+          Icon(Icons.graphic_eq, size: 18, color: colors.error),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -858,22 +772,21 @@ String _formatElapsed(Duration elapsed) {
   return '$minutes:$seconds';
 }
 
-@visibleForTesting
-String uniqueAttachmentDisplayName(
-  String displayName,
-  Iterable<String> existingNames,
-) {
-  if (!existingNames.contains(displayName)) return displayName;
+abstract final class AttachmentDisplayNames {
+  @visibleForTesting
+  static String unique(String displayName, Iterable<String> existingNames) {
+    if (!existingNames.contains(displayName)) return displayName;
 
-  final extension = p.extension(displayName);
-  final baseName = extension.isEmpty
-      ? displayName
-      : p.basenameWithoutExtension(displayName);
-  var index = 1;
-  while (true) {
-    final candidate = '$baseName ($index)$extension';
-    if (!existingNames.contains(candidate)) return candidate;
-    index += 1;
+    final extension = p.extension(displayName);
+    final baseName = extension.isEmpty
+        ? displayName
+        : p.basenameWithoutExtension(displayName);
+    var index = 1;
+    while (true) {
+      final candidate = '$baseName ($index)$extension';
+      if (!existingNames.contains(candidate)) return candidate;
+      index += 1;
+    }
   }
 }
 

@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class StartCodexOAuthResult implements _i1.SerializableModel {
-  StartCodexOAuthResult._({
-    required this.transactionId,
-    required this.authorizationUrl,
-    required this.expiresAt,
-  });
-
-  factory StartCodexOAuthResult({
+abstract class StartCodexOAuthResult._({
+  required var String transactionId,
+  required var String authorizationUrl,
+  required var DateTime expiresAt,
+}) implements _i1.SerializableModel {
+  factory({
     required String transactionId,
     required String authorizationUrl,
     required DateTime expiresAt,
   }) = _StartCodexOAuthResultImpl;
 
-  factory StartCodexOAuthResult.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return StartCodexOAuthResult(
@@ -36,12 +34,6 @@ abstract class StartCodexOAuthResult implements _i1.SerializableModel {
       ),
     );
   }
-
-  String transactionId;
-
-  String authorizationUrl;
-
-  DateTime expiresAt;
 
   /// Returns a shallow copy of this [StartCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.
@@ -67,16 +59,17 @@ abstract class StartCodexOAuthResult implements _i1.SerializableModel {
   }
 }
 
-class _StartCodexOAuthResultImpl extends StartCodexOAuthResult {
-  _StartCodexOAuthResultImpl({
-    required String transactionId,
-    required String authorizationUrl,
-    required DateTime expiresAt,
-  }) : super._(
-         transactionId: transactionId,
-         authorizationUrl: authorizationUrl,
-         expiresAt: expiresAt,
-       );
+class _StartCodexOAuthResultImpl({
+  required String transactionId,
+  required String authorizationUrl,
+  required DateTime expiresAt,
+}) extends StartCodexOAuthResult {
+  this
+    : super._(
+        transactionId: transactionId,
+        authorizationUrl: authorizationUrl,
+        expiresAt: expiresAt,
+      );
 
   /// Returns a shallow copy of this [StartCodexOAuthResult]
   /// with some or all fields replaced by the given arguments.

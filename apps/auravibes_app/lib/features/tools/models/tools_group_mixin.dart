@@ -22,7 +22,7 @@ mixin ToolsGroupMixin {
 
   String? get localizedDisplayNameKey {
     if (!isDefaultGroup) {
-      if (group?.name == skillToolsGroupName) {
+      if (group?.name == SkillToolPermissionConstants.skillToolsGroupName) {
         return LocaleKeys.more_screen_skills_title;
       }
 

@@ -26,16 +26,21 @@ $SkillTemplateToolEntityCopyWith<SkillTemplateToolEntity> get copyWith => _$Skil
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.skillId, skillId) || other.skillId == skillId)&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  final _this = this as SkillTemplateToolEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.skillId, _this.skillId) || other.skillId == _this.skillId)&&(identical(other.templateType, _this.templateType) || other.templateType == _this.templateType)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,skillId,templateType,title,description,slug,templateJson,inputsJson,isEnabled,requiresCredential,createdAt,updatedAt);
+int get hashCode {
+  final _this = this as SkillTemplateToolEntity;
+  return Object.hash(runtimeType,_this.id,_this.skillId,_this.templateType,_this.title,_this.description,_this.slug,_this.templateJson,_this.inputsJson,_this.isEnabled,_this.requiresCredential,_this.createdAt,_this.updatedAt);
+}
 
 @override
 String toString() {
-  return 'SkillTemplateToolEntity(id: $id, skillId: $skillId, templateType: $templateType, title: $title, description: $description, slug: $slug, templateJson: $templateJson, inputsJson: $inputsJson, isEnabled: $isEnabled, requiresCredential: $requiresCredential, createdAt: $createdAt, updatedAt: $updatedAt)';
+  final _this = this as SkillTemplateToolEntity;
+  return 'SkillTemplateToolEntity(id: ${_this.id}, skillId: ${_this.skillId}, templateType: ${_this.templateType}, title: ${_this.title}, description: ${_this.description}, slug: ${_this.slug}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, isEnabled: ${_this.isEnabled}, requiresCredential: ${_this.requiresCredential}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -244,16 +249,18 @@ _$SkillTemplateToolEntityCopyWith<_SkillTemplateToolEntity> get copyWith => __$S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.skillId, skillId) || other.skillId == skillId)&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.skillId, skillId) || other.skillId == skillId)&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,skillId,templateType,title,description,slug,templateJson,inputsJson,isEnabled,requiresCredential,createdAt,updatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,skillId,templateType,title,description,slug,templateJson,inputsJson,isEnabled,requiresCredential,createdAt,updatedAt);
+}
 
 @override
 String toString() {
-  return 'SkillTemplateToolEntity(id: $id, skillId: $skillId, templateType: $templateType, title: $title, description: $description, slug: $slug, templateJson: $templateJson, inputsJson: $inputsJson, isEnabled: $isEnabled, requiresCredential: $requiresCredential, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'SkillTemplateToolEntity(id: $id, skillId: $skillId, templateType: $templateType, title: $title, description: $description, slug: $slug, templateJson: $templateJson, inputsJson: $inputsJson, isEnabled: $isEnabled, requiresCredential: $requiresCredential, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -316,16 +323,21 @@ $SkillTemplateToolToCreateCopyWith<SkillTemplateToolToCreate> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToCreate&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  final _this = this as SkillTemplateToolToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToCreate&&(identical(other.templateType, _this.templateType) || other.templateType == _this.templateType)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,templateType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+int get hashCode {
+  final _this = this as SkillTemplateToolToCreate;
+  return Object.hash(runtimeType,_this.templateType,_this.title,_this.description,_this.templateJson,_this.inputsJson,_this.requiresCredential,_this.isEnabled);
+}
 
 @override
 String toString() {
-  return 'SkillTemplateToolToCreate(templateType: $templateType, title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
+  final _this = this as SkillTemplateToolToCreate;
+  return 'SkillTemplateToolToCreate(templateType: ${_this.templateType}, title: ${_this.title}, description: ${_this.description}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, requiresCredential: ${_this.requiresCredential}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -524,16 +536,18 @@ _$SkillTemplateToolToCreateCopyWith<_SkillTemplateToolToCreate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToCreate&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToCreate&&(identical(other.templateType, templateType) || other.templateType == templateType)&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,templateType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+int get hashCode {
+    return Object.hash(runtimeType,templateType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+}
 
 @override
 String toString() {
-  return 'SkillTemplateToolToCreate(templateType: $templateType, title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
+    return 'SkillTemplateToolToCreate(templateType: $templateType, title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
 }
 
 
@@ -591,16 +605,21 @@ $SkillTemplateToolToUpdateCopyWith<SkillTemplateToolToUpdate> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+  final _this = this as SkillTemplateToolToUpdate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillTemplateToolToUpdate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.templateJson, _this.templateJson) || other.templateJson == _this.templateJson)&&(identical(other.inputsJson, _this.inputsJson) || other.inputsJson == _this.inputsJson)&&(identical(other.requiresCredential, _this.requiresCredential) || other.requiresCredential == _this.requiresCredential)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+int get hashCode {
+  final _this = this as SkillTemplateToolToUpdate;
+  return Object.hash(runtimeType,_this.title,_this.description,_this.templateJson,_this.inputsJson,_this.requiresCredential,_this.isEnabled);
+}
 
 @override
 String toString() {
-  return 'SkillTemplateToolToUpdate(title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
+  final _this = this as SkillTemplateToolToUpdate;
+  return 'SkillTemplateToolToUpdate(title: ${_this.title}, description: ${_this.description}, templateJson: ${_this.templateJson}, inputsJson: ${_this.inputsJson}, requiresCredential: ${_this.requiresCredential}, isEnabled: ${_this.isEnabled})';
 }
 
 
@@ -797,16 +816,18 @@ _$SkillTemplateToolToUpdateCopyWith<_SkillTemplateToolToUpdate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillTemplateToolToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.description, description) || other.description == description)&&(identical(other.templateJson, templateJson) || other.templateJson == templateJson)&&(identical(other.inputsJson, inputsJson) || other.inputsJson == inputsJson)&&(identical(other.requiresCredential, requiresCredential) || other.requiresCredential == requiresCredential)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+int get hashCode {
+    return Object.hash(runtimeType,title,description,templateJson,inputsJson,requiresCredential,isEnabled);
+}
 
 @override
 String toString() {
-  return 'SkillTemplateToolToUpdate(title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
+    return 'SkillTemplateToolToUpdate(title: $title, description: $description, templateJson: $templateJson, inputsJson: $inputsJson, requiresCredential: $requiresCredential, isEnabled: $isEnabled)';
 }
 
 

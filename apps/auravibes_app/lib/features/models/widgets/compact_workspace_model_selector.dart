@@ -8,22 +8,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CompactWorkspaceModelSelector extends HookConsumerWidget {
-  const CompactWorkspaceModelSelector({
-    required this.workspaceId,
-    required this.workspaceModelSelectionId,
-    required this.onChanged,
-    this.compactMode = false,
-    this.sheetMode = false,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String? workspaceModelSelectionId;
-  final ValueChanged<String?> onChanged;
-  final bool compactMode;
-  final bool sheetMode;
-
+class const CompactWorkspaceModelSelector({
+  required final String workspaceId,
+  required final String? workspaceModelSelectionId,
+  required final ValueChanged<String?> onChanged,
+  final bool compactMode = false,
+  final bool sheetMode = false,
+  super.key,
+}) extends HookConsumerWidget {
+  static const _selectorWidth = 220.0;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupedModelsAsync = ref.watch(
@@ -46,7 +39,7 @@ class CompactWorkspaceModelSelector extends HookConsumerWidget {
         sheetMode
             ? AppErrorWidget(error: error, stackTrace: stackTrace)
             : SizedBox(
-                width: 220,
+                width: _selectorWidth,
                 child: AppErrorWidget(error: error, stackTrace: stackTrace),
               ),
       AsyncData(:final value) => _CompactModelSelectorBody(
@@ -60,22 +53,14 @@ class CompactWorkspaceModelSelector extends HookConsumerWidget {
   }
 }
 
-class _CompactModelSelectorBody extends StatelessWidget {
-  const _CompactModelSelectorBody({
-    required this.groupedModels,
-    required this.workspaceModelSelectionId,
-    required this.onChanged,
-    required this.compactMode,
-    required this.sheetMode,
-  });
-
-  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels;
-  final String? workspaceModelSelectionId;
-  final ValueChanged<String?> onChanged;
-  final bool compactMode;
-  final bool sheetMode;
-
+class const _CompactModelSelectorBody({
+  required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels,
+  required final String? workspaceModelSelectionId,
+  required final ValueChanged<String?> onChanged,
+  required final bool compactMode,
+  required final bool sheetMode,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (compactMode && !sheetMode) {
@@ -94,20 +79,13 @@ class _CompactModelSelectorBody extends StatelessWidget {
   }
 }
 
-class _SearchableModelSelectorBody extends HookWidget {
-  const _SearchableModelSelectorBody({
-    required this.groupedModels,
-    required this.workspaceModelSelectionId,
-    required this.onChanged,
-    required this.sheetMode,
-  });
-
-  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels;
-  final String? workspaceModelSelectionId;
-  final ValueChanged<String?> onChanged;
-  final bool sheetMode;
-
+class const _SearchableModelSelectorBody({
+  required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels,
+  required final String? workspaceModelSelectionId,
+  required final ValueChanged<String?> onChanged,
+  required final bool sheetMode,
+}) extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController();
@@ -148,24 +126,16 @@ class _SearchableModelSelectorBody extends HookWidget {
   }
 }
 
-class _ModelSheetSelector extends StatelessWidget {
-  const _ModelSheetSelector({
-    required this.controller,
-    required this.groupedModels,
-    required this.filteredModels,
-    required this.workspaceModelSelectionId,
-    required this.onChanged,
-    required this.onSearchChanged,
-  });
-
-  final TextEditingController controller;
-  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels;
-  final List<WorkspaceModelSelectionWithConnectionEntity> filteredModels;
-  final String? workspaceModelSelectionId;
-  final ValueChanged<String?> onChanged;
-  final ValueChanged<String> onSearchChanged;
-
+class const _ModelSheetSelector({
+  required final TextEditingController controller,
+  required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels,
+  required final List<WorkspaceModelSelectionWithConnectionEntity>
+  filteredModels,
+  required final String? workspaceModelSelectionId,
+  required final ValueChanged<String?> onChanged,
+  required final ValueChanged<String> onSearchChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groupedModels.isEmpty) {
@@ -214,24 +184,16 @@ class _ModelSheetSelector extends StatelessWidget {
   }
 }
 
-class _CompactModelDropdown extends StatelessWidget {
-  const _CompactModelDropdown({
-    required this.groupedModels,
-    required this.filteredModels,
-    required this.workspaceModelSelectionId,
-    required this.onChanged,
-    required this.controller,
-    required this.onSearchChanged,
-  });
-
-  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels;
-  final List<WorkspaceModelSelectionWithConnectionEntity> filteredModels;
-  final String? workspaceModelSelectionId;
-  final ValueChanged<String?> onChanged;
-  final TextEditingController controller;
-  final ValueChanged<String> onSearchChanged;
-
+class const _CompactModelDropdown({
+  required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels,
+  required final List<WorkspaceModelSelectionWithConnectionEntity>
+  filteredModels,
+  required final String? workspaceModelSelectionId,
+  required final ValueChanged<String?> onChanged,
+  required final TextEditingController controller,
+  required final ValueChanged<String> onSearchChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -245,7 +207,7 @@ class _CompactModelDropdown extends StatelessWidget {
 
     if (groupedModels.isEmpty) {
       return const SizedBox(
-        width: 220,
+        width: CompactWorkspaceModelSelector._selectorWidth,
         child: AuraDropdownSelector<String>(
           options: [],
           placeholder: TextLocale(
@@ -260,7 +222,7 @@ class _CompactModelDropdown extends StatelessWidget {
     }
 
     return SizedBox(
-      width: 220,
+      width: CompactWorkspaceModelSelector._selectorWidth,
       child: AuraDropdownSelector<String>(
         options: filteredModels
             .map(
@@ -307,16 +269,11 @@ class _CompactModelDropdown extends StatelessWidget {
   }
 }
 
-class _ModelCompactChip extends StatelessWidget {
-  const _ModelCompactChip({
-    required this.groupedModels,
-    required this.workspaceModelSelectionId,
-  });
-
-  final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
-  groupedModels;
-  final String? workspaceModelSelectionId;
-
+class const _ModelCompactChip({
+  required final Map<String, List<WorkspaceModelSelectionWithConnectionEntity>>
+  groupedModels,
+  required final String? workspaceModelSelectionId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (groupedModels.isEmpty) {
@@ -346,11 +303,7 @@ class _ModelCompactChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             )
-          : Text(
-              selectedName,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+          : Text(selectedName, overflow: TextOverflow.ellipsis, maxLines: 1),
     );
   }
 }
@@ -368,11 +321,7 @@ WorkspaceModelSelectionWithConnectionEntity? _selectedModel(
   return null;
 }
 
-class _ModelChip extends StatelessWidget {
-  const _ModelChip({required this.label});
-
-  final Widget label;
-
+class const _ModelChip({required final Widget label}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -395,11 +344,9 @@ class _ModelChip extends StatelessWidget {
   }
 }
 
-class _ModelSheetOptionContent extends StatelessWidget {
-  const _ModelSheetOptionContent({required this.model});
-
-  final WorkspaceModelSelectionWithConnectionEntity model;
-
+class const _ModelSheetOptionContent({
+  required final WorkspaceModelSelectionWithConnectionEntity model,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selection = model.workspaceModelSelection;
@@ -422,10 +369,7 @@ class _ModelSheetOptionContent extends StatelessWidget {
           runSpacing: context.auraTheme.fromSpacing(.xs),
           children: [
             AuraBadge.text(
-              child: Text(
-                selection.modelId,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
               variant: AuraBadgeVariant.soft,
               size: AuraBadgeSize.small,
             ),
@@ -460,11 +404,9 @@ bool _matchesSearch(
       credentialName.contains(searchTerm);
 }
 
-class _ModelOptionSubtitle extends StatelessWidget {
-  const _ModelOptionSubtitle({required this.model});
-
-  final WorkspaceModelSelectionWithConnectionEntity model;
-
+class const _ModelOptionSubtitle({
+  required final WorkspaceModelSelectionWithConnectionEntity model,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selection = model.workspaceModelSelection;
@@ -476,10 +418,7 @@ class _ModelOptionSubtitle extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           AuraText(
-            child: Text(
-              selection.modelId,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(selection.modelId, overflow: TextOverflow.ellipsis),
             style: AuraTextStyle.bodySmall,
           ),
           AuraText(

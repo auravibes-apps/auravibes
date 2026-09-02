@@ -12,18 +12,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class BeginUploadRequest implements _i1.SerializableModel {
-  BeginUploadRequest._({
-    required this.workspaceId,
-    required this.requestId,
-    required this.purpose,
-    required this.displayName,
-    required this.mimeType,
-    required this.sizeBytes,
-    required this.checksumSha256,
-  });
-
-  factory BeginUploadRequest({
+abstract class BeginUploadRequest._({
+  required var int workspaceId,
+  required var String requestId,
+  required var String purpose,
+  required var String displayName,
+  required var String mimeType,
+  required var int sizeBytes,
+  required var String checksumSha256,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String requestId,
     required String purpose,
@@ -33,7 +31,7 @@ abstract class BeginUploadRequest implements _i1.SerializableModel {
     required String checksumSha256,
   }) = _BeginUploadRequestImpl;
 
-  factory BeginUploadRequest.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return BeginUploadRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
@@ -44,20 +42,6 @@ abstract class BeginUploadRequest implements _i1.SerializableModel {
       checksumSha256: jsonSerialization['checksumSha256'] as String,
     );
   }
-
-  int workspaceId;
-
-  String requestId;
-
-  String purpose;
-
-  String displayName;
-
-  String mimeType;
-
-  int sizeBytes;
-
-  String checksumSha256;
 
   /// Returns a shallow copy of this [BeginUploadRequest]
   /// with some or all fields replaced by the given arguments.
@@ -91,24 +75,25 @@ abstract class BeginUploadRequest implements _i1.SerializableModel {
   }
 }
 
-class _BeginUploadRequestImpl extends BeginUploadRequest {
-  _BeginUploadRequestImpl({
-    required int workspaceId,
-    required String requestId,
-    required String purpose,
-    required String displayName,
-    required String mimeType,
-    required int sizeBytes,
-    required String checksumSha256,
-  }) : super._(
-         workspaceId: workspaceId,
-         requestId: requestId,
-         purpose: purpose,
-         displayName: displayName,
-         mimeType: mimeType,
-         sizeBytes: sizeBytes,
-         checksumSha256: checksumSha256,
-       );
+class _BeginUploadRequestImpl({
+  required int workspaceId,
+  required String requestId,
+  required String purpose,
+  required String displayName,
+  required String mimeType,
+  required int sizeBytes,
+  required String checksumSha256,
+}) extends BeginUploadRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        requestId: requestId,
+        purpose: purpose,
+        displayName: displayName,
+        mimeType: mimeType,
+        sizeBytes: sizeBytes,
+        checksumSha256: checksumSha256,
+      );
 
   /// Returns a shallow copy of this [BeginUploadRequest]
   /// with some or all fields replaced by the given arguments.

@@ -7,16 +7,14 @@ import 'package:auravibes_app/services/secret_key_manager.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:riverpod/riverpod.dart';
 
-class EncryptionService {
-  EncryptionService(this._keyManager);
-  final SecretKeyManager _keyManager;
-  final AesGcm _algorithm = AesGcm.with256bits();
+class EncryptionService(final SecretKeyManager _keyManager) {
   static const int _nonceLength = 12;
   static const int _macLength = 16;
   static const int _minimumPayloadLength = _nonceLength + _macLength;
+  final AesGcm _algorithm = AesGcm.with256bits();
 
   /// Encrypts a string and returns base64-encoded ciphertext.
-  /// Format: [12-byte nonce][ciphertext][16-byte MAC]
+  /// Format: [12-byte nonce][ciphertext][16-byte MAC].
   Future<String> encrypt(String plaintext) async {
     final key = await _keyManager.getOrCreateSecretKey();
     final nonce = _algorithm.newNonce();

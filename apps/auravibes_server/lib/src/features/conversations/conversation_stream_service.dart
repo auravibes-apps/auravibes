@@ -5,9 +5,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../generated/protocol.dart';
 import '../sync/stream/sync_wakeups.dart';
 
-class ConversationStreamService {
-  const ConversationStreamService();
-
+class const ConversationStreamService() {
   static const pageSize = 100;
   static const pollInterval = Duration(seconds: 1);
 

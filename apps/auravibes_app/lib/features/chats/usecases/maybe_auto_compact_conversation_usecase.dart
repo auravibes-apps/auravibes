@@ -16,24 +16,15 @@ import 'package:riverpod/riverpod.dart';
 
 const _kDefaultMaxOutputTokens = 4096;
 
-class MaybeAutoCompactConversationUsecase {
-  const MaybeAutoCompactConversationUsecase({
-    required this.compactConversationUsecase,
-    this.conversationRepository,
-    this.modelSelectionStore,
-    this.apiModelRepository,
-    this.shouldCompactConversationUsecase,
-    this.cloudShouldCompact,
-  });
-
-  final ConversationRepository? conversationRepository;
+class const MaybeAutoCompactConversationUsecase({
+  required final CompactConversationUsecase compactConversationUsecase,
+  final ConversationRepository? conversationRepository,
   final Future<ModelSelectionStore> Function(String workspaceId)?
-  modelSelectionStore;
-  final ApiModelRepository? apiModelRepository;
-  final ShouldCompactConversationUsecase? shouldCompactConversationUsecase;
-  final CompactConversationUsecase compactConversationUsecase;
-  final Future<bool> Function(String conversationId)? cloudShouldCompact;
-
+  modelSelectionStore,
+  final ApiModelRepository? apiModelRepository,
+  final ShouldCompactConversationUsecase? shouldCompactConversationUsecase,
+  final Future<bool> Function(String conversationId)? cloudShouldCompact,
+}) {
   Future<void> call({required String conversationId}) async {
     final cloudDecision = cloudShouldCompact;
     if (cloudDecision != null) {
@@ -56,17 +47,14 @@ class MaybeAutoCompactConversationUsecase {
         shouldCompact == null) {
       throw StateError('Local compaction dependencies unavailable');
     }
-    final conversation = await repository.getConversationById(
-      conversationId,
-    );
+    final conversation = await repository.getConversationById(conversationId);
     if (conversation == null) return;
 
     final modelId = conversation.modelId;
     if (modelId == null) return;
 
-    final foundModel = await (await getModelStore(
-      conversation.workspaceId,
-    )).getById(modelId);
+    final foundModel = await (await getModelStore(conversation.workspaceId))
+        .getById(modelId);
     if (foundModel == null) return;
 
     final apiModel = await models.getModelByProviderAndModelId(
@@ -96,31 +84,25 @@ class MaybeAutoCompactConversationUsecase {
 }
 
 final maybeAutoCompactConversationUsecaseProvider =
-    Provider<MaybeAutoCompactConversationUsecase>(
-      (ref) {
-        return MaybeAutoCompactConversationUsecase(
-          compactConversationUsecase: CompactConversationUsecase(
-            compactionExecution: ref.watch(
-              compactionExecutionRuntimeProvider,
-            ),
-            messageRepository: ref.watch(messageRepositoryProvider),
-            conversationRepository: ref.watch(conversationRepositoryProvider),
-            modelSelectionStore: (workspaceId) => ref.read(
-              modelSelectionStoreProvider(workspaceId).future,
-            ),
-            chatbotService: ref.watch(chatbotServiceProvider),
-            selectCompactionRangeUsecase: ref.watch(
-              selectCompactionRangeUsecaseProvider,
-            ),
-          ),
+    Provider<MaybeAutoCompactConversationUsecase>((ref) {
+      return MaybeAutoCompactConversationUsecase(
+        compactConversationUsecase: CompactConversationUsecase(
+          compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
+          messageRepository: ref.watch(messageRepositoryProvider),
           conversationRepository: ref.watch(conversationRepositoryProvider),
-          modelSelectionStore: (workspaceId) => ref.read(
-            modelSelectionStoreProvider(workspaceId).future,
+          modelSelectionStore: (workspaceId) =>
+              ref.read(modelSelectionStoreProvider(workspaceId).future),
+          chatbotService: ref.watch(chatbotServiceProvider),
+          selectCompactionRangeUsecase: ref.watch(
+            selectCompactionRangeUsecaseProvider,
           ),
-          apiModelRepository: ref.watch(apiModelRepositoryProvider),
-          shouldCompactConversationUsecase: ref.watch(
-            shouldCompactConversationUsecaseProvider,
-          ),
-        );
-      },
-    );
+        ),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
+        modelSelectionStore: (workspaceId) =>
+            ref.read(modelSelectionStoreProvider(workspaceId).future),
+        apiModelRepository: ref.watch(apiModelRepositoryProvider),
+        shouldCompactConversationUsecase: ref.watch(
+          shouldCompactConversationUsecaseProvider,
+        ),
+      );
+    });

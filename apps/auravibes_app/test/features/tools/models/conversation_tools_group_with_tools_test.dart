@@ -47,9 +47,7 @@ void main() {
     test('enabledToolsCount is 0 when all disabled', () {
       final group = ConversationToolsGroupWithTools(
         group: null,
-        tools: [
-          _toolState(isEnabled: false),
-        ],
+        tools: [_toolState(isEnabled: false)],
         defaultGroupType: DefaultToolGroupType.builtIn,
       );
       expect(group.enabledToolsCount, 0);
@@ -116,9 +114,7 @@ void main() {
     test('areAnyToolsEnabled returns false when all disabled', () {
       final group = ConversationToolsGroupWithTools(
         group: null,
-        tools: [
-          _toolState(isEnabled: false),
-        ],
+        tools: [_toolState(isEnabled: false)],
         defaultGroupType: DefaultToolGroupType.builtIn,
       );
       expect(group.areAnyToolsEnabled, isFalse);
@@ -126,10 +122,7 @@ void main() {
 
     test('assertion fails when both group and defaultGroupType are null', () {
       expect(
-        () => ConversationToolsGroupWithTools(
-          group: null,
-          tools: [],
-        ),
+        () => ConversationToolsGroupWithTools(group: null, tools: []),
         throwsA(isA<AssertionError>()),
       );
     });

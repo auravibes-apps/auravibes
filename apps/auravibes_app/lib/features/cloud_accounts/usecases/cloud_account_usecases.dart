@@ -7,17 +7,12 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart';
 
-class CloudAccountUseCases {
-  const CloudAccountUseCases({
-    required this._store,
-    required this._workspaceRepository,
-    required this.invalidateAccount,
-  });
-
-  final ServerpodAuthStore _store;
-  final WorkspaceRepository _workspaceRepository;
-  final void Function(String serverUrl, String userId) invalidateAccount;
-
+class const CloudAccountUseCases({
+  required final ServerpodAuthStore _store,
+  required final WorkspaceRepository _workspaceRepository,
+  required final void Function(String serverUrl, String userId)
+  invalidateAccount,
+}) {
   Future<CloudAccountSession> login({
     required String email,
     required String password,
@@ -25,7 +20,7 @@ class CloudAccountUseCases {
     final client = _newClient();
     final auth = await client.emailIdp.login(email: email, password: password);
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<UuidValue> startRegistration({required String email}) {
@@ -52,7 +47,7 @@ class CloudAccountUseCases {
       password: password,
     );
 
-    return _saveSignedInAccount(client, auth);
+    return await _saveSignedInAccount(client, auth);
   }
 
   Future<UuidValue> startPasswordReset({required String email}) {
@@ -83,7 +78,7 @@ class CloudAccountUseCases {
     required String serverUrl,
     required String userId,
   }) async {
-    final origin = canonicalServerOrigin(serverUrl);
+    final origin = CloudAccountIdentity.canonicalServerOrigin(serverUrl);
     final _ = await _workspaceRepository.deleteCloudWorkspaceMirrorsForAccount(
       userId,
       serverUrl: origin,
@@ -117,7 +112,9 @@ class CloudAccountUseCases {
     await client.auth.updateSignedInUser(auth);
     final account = await client.account.currentUser();
     final session = CloudAccountSession(
-      serverUrl: canonicalServerOrigin(AppEnvConfig.auravibesServerUrl),
+      serverUrl: CloudAccountIdentity.canonicalServerOrigin(
+        AppEnvConfig.auravibesServerUrl,
+      ),
       userId: account.userId,
       email: account.email,
     );
@@ -127,11 +124,7 @@ class CloudAccountUseCases {
   }
 }
 
-class CloudAccountException implements Exception {
-  const CloudAccountException(this.message);
-
-  final String message;
-
+class const CloudAccountException(final String message) implements Exception {
   @override
   String toString() => message;
 }

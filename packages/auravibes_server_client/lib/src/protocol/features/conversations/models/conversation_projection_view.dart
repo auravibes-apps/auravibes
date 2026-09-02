@@ -12,20 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationProjectionView implements _i1.SerializableModel {
-  ConversationProjectionView._({
-    required this.id,
-    required this.workspaceId,
-    required this.executionState,
-    required this.projectionRevision,
-    required this.sequence,
-    this.modelId,
-    this.agentId,
-    this.activeExecutionId,
-    required this.updatedAt,
-  });
-
-  factory ConversationProjectionView({
+abstract class ConversationProjectionView._({
+  required var String id,
+  required var int workspaceId,
+  required var String executionState,
+  required var int projectionRevision,
+  required var int sequence,
+  var String? modelId,
+  var String? agentId,
+  var String? activeExecutionId,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     required String id,
     required int workspaceId,
     required String executionState,
@@ -37,7 +35,7 @@ abstract class ConversationProjectionView implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _ConversationProjectionViewImpl;
 
-  factory ConversationProjectionView.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationProjectionView(
@@ -54,24 +52,6 @@ abstract class ConversationProjectionView implements _i1.SerializableModel {
       ),
     );
   }
-
-  String id;
-
-  int workspaceId;
-
-  String executionState;
-
-  int projectionRevision;
-
-  int sequence;
-
-  String? modelId;
-
-  String? agentId;
-
-  String? activeExecutionId;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationProjectionView]
   /// with some or all fields replaced by the given arguments.
@@ -109,30 +89,31 @@ abstract class ConversationProjectionView implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationProjectionViewImpl extends ConversationProjectionView {
-  _ConversationProjectionViewImpl({
-    required String id,
-    required int workspaceId,
-    required String executionState,
-    required int projectionRevision,
-    required int sequence,
-    String? modelId,
-    String? agentId,
-    String? activeExecutionId,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         executionState: executionState,
-         projectionRevision: projectionRevision,
-         sequence: sequence,
-         modelId: modelId,
-         agentId: agentId,
-         activeExecutionId: activeExecutionId,
-         updatedAt: updatedAt,
-       );
+class _ConversationProjectionViewImpl({
+  required String id,
+  required int workspaceId,
+  required String executionState,
+  required int projectionRevision,
+  required int sequence,
+  String? modelId,
+  String? agentId,
+  String? activeExecutionId,
+  required DateTime updatedAt,
+}) extends ConversationProjectionView {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        executionState: executionState,
+        projectionRevision: projectionRevision,
+        sequence: sequence,
+        modelId: modelId,
+        agentId: agentId,
+        activeExecutionId: activeExecutionId,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [ConversationProjectionView]
   /// with some or all fields replaced by the given arguments.

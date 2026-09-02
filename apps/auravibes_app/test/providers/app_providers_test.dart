@@ -10,9 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(
-      () => DatabaseConnection(
-        LazyDatabase(() async => NativeDatabase.memory()),
-      ),
+      () =>
+          DatabaseConnection(LazyDatabase(() async => NativeDatabase.memory())),
     ),
   );
 }
@@ -72,7 +71,7 @@ void main() {
 
       expect(
         AppDatabase.databaseNameForHashSource(source),
-        appStorageNamespaceFor(source),
+        AppStorageNamespace.forHashSource(source),
       );
     });
 

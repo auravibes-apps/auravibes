@@ -82,60 +82,57 @@ void main() {
   });
 
   test('maps the cloud tool-call status vocabulary intentionally', () {
-    expect(cloudToolCallResultStatus('pending'), isNull);
+    expect(CloudMessageTools.resultStatus('pending'), isNull);
+    expect(CloudMessageTools.resultStatus('needsConfirmation'), isNull);
     expect(
-      cloudToolCallResultStatus('needsConfirmation'),
-      isNull,
-    );
-    expect(
-      cloudToolCallResultStatus('approved'),
+      CloudMessageTools.resultStatus('approved'),
       ToolCallResultStatus.running,
     );
     expect(
-      cloudToolCallResultStatus('running'),
+      CloudMessageTools.resultStatus('running'),
       ToolCallResultStatus.running,
     );
     expect(
-      cloudToolCallResultStatus('success'),
+      CloudMessageTools.resultStatus('success'),
       ToolCallResultStatus.success,
     );
     expect(
-      cloudToolCallResultStatus('denied'),
+      CloudMessageTools.resultStatus('denied'),
       ToolCallResultStatus.skippedByUser,
     );
     expect(
-      cloudToolCallResultStatus('toolNotFound'),
+      CloudMessageTools.resultStatus('toolNotFound'),
       ToolCallResultStatus.toolNotFound,
     );
     expect(
-      cloudToolCallResultStatus('disabledInWorkspace'),
+      CloudMessageTools.resultStatus('disabledInWorkspace'),
       ToolCallResultStatus.disabledInWorkspace,
     );
     expect(
-      cloudToolCallResultStatus('disabledInConversation'),
+      CloudMessageTools.resultStatus('disabledInConversation'),
       ToolCallResultStatus.disabledInConversation,
     );
     expect(
-      cloudToolCallResultStatus('disabledByAgent'),
+      CloudMessageTools.resultStatus('disabledByAgent'),
       ToolCallResultStatus.disabledByAgent,
     );
     expect(
-      cloudToolCallResultStatus('notConfigured'),
+      CloudMessageTools.resultStatus('notConfigured'),
       ToolCallResultStatus.notConfigured,
     );
     expect(
-      cloudToolCallResultStatus('executionError'),
+      CloudMessageTools.resultStatus('executionError'),
       ToolCallResultStatus.executionError,
     );
     expect(
-      cloudToolCallResultStatus('unknown'),
+      CloudMessageTools.resultStatus('unknown'),
       ToolCallResultStatus.executionError,
     );
   });
 
   test('cloud pending tool calls become approval inputs', () {
     final now = DateTime.utc(2026);
-    final pendingCalls = cloudPendingToolCalls(
+    final pendingCalls = CloudMessageTools.pendingToolCalls(
       _cloudState(
         projectionRevision: 7,
         messages: [
@@ -204,18 +201,17 @@ void main() {
     final controller = StreamController<ConversationEntity?>.broadcast();
     addTearDown(controller.close);
 
-    final repo = _StubConversationRepository(
-      watchStream: controller.stream,
-    );
+    final repo = _StubConversationRepository(watchStream: controller.stream);
 
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
           conversationSelectedProvider.overrideWithValue(_chatId),
           conversationRepositoryProvider.overrideWithValue(repo),
-          conversationChatProvider(_workspaceId, _chatId).overrideWith(
-            _ForeverLoadingChatNotifier.new,
-          ),
+          conversationChatProvider(
+            _workspaceId,
+            _chatId,
+          ).overrideWith(_ForeverLoadingChatNotifier.new),
         ],
         child: const MaterialApp(
           home: ChatConversationScreen(
@@ -240,9 +236,10 @@ void main() {
           conversationRepositoryProvider.overrideWithValue(
             _StubConversationRepository(),
           ),
-          conversationChatProvider(_workspaceId, _chatId).overrideWith(
-            _ErrorChatNotifier.new,
-          ),
+          conversationChatProvider(
+            _workspaceId,
+            _chatId,
+          ).overrideWith(_ErrorChatNotifier.new),
         ],
         child: const MaterialApp(
           home: ChatConversationScreen(
@@ -300,9 +297,7 @@ void main() {
             _StubConversationRepository(),
           ),
           conversationChatProvider(_workspaceId, _chatId).overrideWith(
-            () => _ResultChatNotifier(
-              const ConversationWorkspaceMismatch(),
-            ),
+            () => _ResultChatNotifier(const ConversationWorkspaceMismatch()),
           ),
         ],
         child: const MaterialApp(
@@ -495,107 +490,9 @@ void main() {
     expect(entity.isPinned, isTrue);
   });
 
-  testWidgets(
-    'renders ChatConversationScreen when ConversationFound',
-    (tester) async {
-      final conversation = ConversationEntity(
-        id: _chatId,
-        title: 'Chat',
-        workspaceId: _workspaceId,
-        isPinned: false,
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-      );
-
-      await tester.runAsync(() async {
-        await tester.pumpWidget(
-          EasyLocalization(
-            child: Builder(
-              builder: (context) {
-                return TestProviderScope(
-                  overrides: [
-                    workspaceSessionForRouteProvider(
-                      _workspaceId,
-                    ).overrideWithValue(
-                      const AsyncData(
-                        WorkspaceSession(
-                          LocalWorkspaceRef(localWorkspaceId: _workspaceId),
-                        ),
-                      ),
-                    ),
-                    conversationSelectedProvider.overrideWithValue(_chatId),
-                    conversationRepositoryProvider.overrideWithValue(
-                      _StubConversationRepository(),
-                    ),
-                    conversationChatProvider(
-                      _workspaceId,
-                      _chatId,
-                    ).overrideWith(
-                      () => _ResultChatNotifier(
-                        ConversationFound(conversation),
-                      ),
-                    ),
-                    conversationBusyStateProvider.overrideWith(
-                      (ref, _) async => const ConversationBusyState(
-                        isStreaming: false,
-                        hasPendingTools: false,
-                      ),
-                    ),
-                    chatMessagesProvider.overrideWith(
-                      (ref, _) => Stream.value(const <MessageEntity>[]),
-                    ),
-                    chatMessageIdsProvider.overrideWith(
-                      (ref, _) => const <String>[],
-                    ),
-                    contextUsageProvider.overrideWith(
-                      (ref, _) => ContextUsageData.compute(
-                        usedTokens: 0,
-                        limitTokens: null,
-                      ),
-                    ),
-                    pendingToolCallsProvider.overrideWith(
-                      (ref, _) async => const <PendingToolCall>[],
-                    ),
-                    listModelsGroupedByProviderProvider(
-                      workspaceId: _workspaceId,
-                    ).overrideWith(
-                      (ref) => Stream.value(const {}),
-                    ),
-                    agentsProvider(_workspaceId).overrideWith(
-                      (ref) => Stream.value(const []),
-                    ),
-                  ],
-                  child: MaterialApp(
-                    home: const ChatConversationScreen(
-                      workspaceId: _workspaceId,
-                      chatId: _chatId,
-                    ),
-                    locale: context.locale,
-                    localizationsDelegates: context.localizationDelegates,
-                    supportedLocales: context.supportedLocales,
-                  ),
-                );
-              },
-            ),
-            supportedLocales: const [Locale('en')],
-            path: 'assets/i18n',
-            fallbackLocale: const Locale('en'),
-            startLocale: const Locale('en'),
-            useOnlyLangCode: true,
-            useFallbackTranslations: true,
-          ),
-        );
-        await tester.pump();
-        await tester.pump();
-      });
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.text('Chat'), findsOneWidget);
-    },
-  );
-
-  testWidgets('passes running compaction state to chat input', (tester) async {
+  testWidgets('renders ChatConversationScreen when ConversationFound', (
+    tester,
+  ) async {
     final conversation = ConversationEntity(
       id: _chatId,
       title: 'Chat',
@@ -612,23 +509,20 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider(
-                    _workspaceId,
-                  ).overrideWithValue(
-                    const AsyncData(
-                      WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                  workspaceSessionForRouteProvider(_workspaceId)
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
                   conversationChatProvider(_workspaceId, _chatId).overrideWith(
-                    () => _ResultChatNotifier(
-                      ConversationFound(conversation),
-                    ),
+                    () => _ResultChatNotifier(ConversationFound(conversation)),
                   ),
                   conversationBusyStateProvider.overrideWith(
                     (ref, _) async => const ConversationBusyState(
@@ -651,14 +545,97 @@ void main() {
                   pendingToolCallsProvider.overrideWith(
                     (ref, _) async => const <PendingToolCall>[],
                   ),
-                  listModelsGroupedByProviderProvider(
+                  listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                      .overrideWith((ref) => Stream.value(const {})),
+                  agentsProvider(_workspaceId)
+                      .overrideWith((ref) => Stream.value(const [])),
+                ],
+                child: MaterialApp(
+                  home: const ChatConversationScreen(
                     workspaceId: _workspaceId,
-                  ).overrideWith(
-                    (ref) => Stream.value(const {}),
+                    chatId: _chatId,
                   ),
-                  agentsProvider(_workspaceId).overrideWith(
-                    (ref) => Stream.value(const []),
+                  locale: context.locale,
+                  localizationsDelegates: context.localizationDelegates,
+                  supportedLocales: context.supportedLocales,
+                ),
+              );
+            },
+          ),
+          supportedLocales: const [Locale('en')],
+          path: 'assets/i18n',
+          fallbackLocale: const Locale('en'),
+          startLocale: const Locale('en'),
+          useOnlyLangCode: true,
+          useFallbackTranslations: true,
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+    });
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Chat'), findsOneWidget);
+  });
+
+  testWidgets('passes running compaction state to chat input', (tester) async {
+    final conversation = ConversationEntity(
+      id: _chatId,
+      title: 'Chat',
+      workspaceId: _workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        EasyLocalization(
+          child: Builder(
+            builder: (context) {
+              return TestProviderScope(
+                overrides: [
+                  workspaceSessionForRouteProvider(_workspaceId)
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                          ),
+                        ),
+                      ),
+                  conversationSelectedProvider.overrideWithValue(_chatId),
+                  conversationRepositoryProvider.overrideWithValue(
+                    _StubConversationRepository(),
                   ),
+                  conversationChatProvider(_workspaceId, _chatId).overrideWith(
+                    () => _ResultChatNotifier(ConversationFound(conversation)),
+                  ),
+                  conversationBusyStateProvider.overrideWith(
+                    (ref, _) async => const ConversationBusyState(
+                      isStreaming: false,
+                      hasPendingTools: false,
+                    ),
+                  ),
+                  chatMessagesProvider.overrideWith(
+                    (ref, _) => Stream.value(const <MessageEntity>[]),
+                  ),
+                  chatMessageIdsProvider.overrideWith(
+                    (ref, _) => const <String>[],
+                  ),
+                  contextUsageProvider.overrideWith(
+                    (ref, _) => ContextUsageData.compute(
+                      usedTokens: 0,
+                      limitTokens: null,
+                    ),
+                  ),
+                  pendingToolCallsProvider.overrideWith(
+                    (ref, _) async => const <PendingToolCall>[],
+                  ),
+                  listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                      .overrideWith((ref) => Stream.value(const {})),
+                  agentsProvider(_workspaceId)
+                      .overrideWith((ref) => Stream.value(const [])),
                   compactionExecutionStateProvider(_chatId).overrideWithValue(
                     CompactionExecutionState(
                       conversationId: _chatId,
@@ -710,16 +687,18 @@ void main() {
     final refreshCompleter = Completer<ConversationBusyState>();
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
+        workspaceSessionProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+          ),
+        ).overrideWithValue(
           const WorkspaceSession(
             LocalWorkspaceRef(localWorkspaceId: _workspaceId),
           ),
         ),
         workspaceSessionForRouteProvider(_workspaceId).overrideWithValue(
           const AsyncData(
-            WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: _workspaceId),
-            ),
+            WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: _workspaceId)),
           ),
         ),
         conversationSelectedProvider.overrideWithValue(_chatId),
@@ -727,9 +706,7 @@ void main() {
           _StubConversationRepository(),
         ),
         conversationChatProvider(_workspaceId, _chatId).overrideWith(
-          () => _ResultChatNotifier(
-            ConversationFound(conversation),
-          ),
+          () => _ResultChatNotifier(ConversationFound(conversation)),
         ),
         conversationBusyStateProvider.overrideWith((ref, _) {
           final refresh = ref.watch(_busyRefreshProvider);
@@ -747,26 +724,18 @@ void main() {
         chatMessagesProvider.overrideWith(
           (ref, _) => Stream.value(const <MessageEntity>[]),
         ),
-        chatMessageIdsProvider.overrideWith(
-          (ref, _) => const <String>[],
-        ),
+        chatMessageIdsProvider.overrideWith((ref, _) => const <String>[]),
         contextUsageProvider.overrideWith(
-          (ref, _) => ContextUsageData.compute(
-            usedTokens: 0,
-            limitTokens: null,
-          ),
+          (ref, _) =>
+              ContextUsageData.compute(usedTokens: 0, limitTokens: null),
         ),
         pendingToolCallsProvider.overrideWith(
           (ref, _) async => const <PendingToolCall>[],
         ),
-        listModelsGroupedByProviderProvider(
-          workspaceId: _workspaceId,
-        ).overrideWith(
-          (ref) => Stream.value(const {}),
-        ),
-        agentsProvider(_workspaceId).overrideWith(
-          (ref) => Stream.value(const []),
-        ),
+        listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+            .overrideWith((ref) => Stream.value(const {})),
+        agentsProvider(_workspaceId)
+            .overrideWith((ref) => Stream.value(const [])),
       ],
     );
     addTearDown(container.dispose);
@@ -838,23 +807,20 @@ void main() {
             builder: (context) {
               return TestProviderScope(
                 overrides: [
-                  workspaceSessionForRouteProvider(
-                    _workspaceId,
-                  ).overrideWithValue(
-                    const AsyncData(
-                      WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                  workspaceSessionForRouteProvider(_workspaceId)
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: _workspaceId),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                   conversationSelectedProvider.overrideWithValue(_chatId),
                   conversationRepositoryProvider.overrideWithValue(
                     _StubConversationRepository(),
                   ),
                   conversationChatProvider(_workspaceId, _chatId).overrideWith(
-                    () => _ResultChatNotifier(
-                      ConversationFound(conversation),
-                    ),
+                    () => _ResultChatNotifier(ConversationFound(conversation)),
                   ),
                   conversationBusyStateProvider.overrideWith(
                     (ref, _) async => const ConversationBusyState(
@@ -880,14 +846,10 @@ void main() {
                   pendingToolCallsProvider.overrideWith(
                     (ref, _) async => const <PendingToolCall>[],
                   ),
-                  listModelsGroupedByProviderProvider(
-                    workspaceId: _workspaceId,
-                  ).overrideWith(
-                    (ref) => Stream.value(const {}),
-                  ),
-                  agentsProvider(_workspaceId).overrideWith(
-                    (ref) => Stream.value(const []),
-                  ),
+                  listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                      .overrideWith((ref) => Stream.value(const {})),
+                  agentsProvider(_workspaceId)
+                      .overrideWith((ref) => Stream.value(const [])),
                 ],
                 child: MaterialApp(
                   home: const ChatConversationScreen(
@@ -924,9 +886,8 @@ void main() {
     'routes cloud Continue with the authoritative projection revision',
     (tester) async {
       final endpoint = _CloudConversationEndpoint();
-      when(() => endpoint.continueConversation(any())).thenAnswer(
-        (_) async => _cloudSnapshot(),
-      );
+      when(() => endpoint.continueConversation(any()))
+          .thenAnswer((_) async => _cloudSnapshot());
       final usecase = _cloudTurnUsecase(endpoint);
 
       await _pumpCloudConversationScreen(
@@ -945,9 +906,9 @@ void main() {
       await tester.pump();
 
       final request =
-          verify(
-                () => endpoint.continueConversation(captureAny()),
-              ).captured.single
+          verify(() => endpoint.continueConversation(captureAny()))
+                  .captured
+                  .single
               as ContinueConversationRequest;
       expect(request.conversationId, _chatId);
       expect(request.expectedProjectionRevision, 42);
@@ -1013,20 +974,19 @@ Future<void> _pumpCloudConversationScreen(
           builder: (context) {
             return TestProviderScope(
               overrides: [
-                workspaceSessionForRouteProvider(
-                  _workspaceId,
-                ).overrideWithValue(
-                  const AsyncData(
-                    WorkspaceSession(
-                      CloudWorkspaceRef(
-                        localWorkspaceId: _workspaceId,
-                        serverUrl: 'https://example.com',
-                        accountId: 'account',
-                        cloudWorkspaceId: 7,
+                workspaceSessionForRouteProvider(_workspaceId)
+                    .overrideWithValue(
+                      const AsyncData(
+                        WorkspaceSession(
+                          CloudWorkspaceRef(
+                            localWorkspaceId: _workspaceId,
+                            serverUrl: 'https://example.com',
+                            accountId: 'account',
+                            cloudWorkspaceId: 7,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
                 conversationSelectedProvider.overrideWithValue(_chatId),
                 conversationRepositoryProvider.overrideWithValue(
                   _StubConversationRepository(),
@@ -1040,15 +1000,12 @@ Future<void> _pumpCloudConversationScreen(
                     hasPendingTools: false,
                   ),
                 ),
-                cloudConversationStateProvider.overrideWith(
-                  (ref, _) async* {
-                    yield initialState;
-                    yield* updates;
-                  },
-                ),
-                cloudTurnUsecaseProvider(_workspaceId).overrideWith(
-                  (ref) => cloudUsecase,
-                ),
+                cloudConversationStateProvider.overrideWith((ref, _) async* {
+                  yield initialState;
+                  yield* updates;
+                }),
+                cloudTurnUsecaseProvider(_workspaceId)
+                    .overrideWith((ref) => cloudUsecase),
                 chatMessagesProvider.overrideWith(
                   (ref, _) => Stream.value(const <MessageEntity>[]),
                 ),
@@ -1061,12 +1018,10 @@ Future<void> _pumpCloudConversationScreen(
                     limitTokens: null,
                   ),
                 ),
-                listModelsGroupedByProviderProvider(
-                  workspaceId: _workspaceId,
-                ).overrideWith((ref) => Stream.value(const {})),
-                agentsProvider(_workspaceId).overrideWith(
-                  (ref) => Stream.value(const []),
-                ),
+                listModelsGroupedByProviderProvider(workspaceId: _workspaceId)
+                    .overrideWith((ref) => Stream.value(const {})),
+                agentsProvider(_workspaceId)
+                    .overrideWith((ref) => Stream.value(const [])),
               ],
               child: MaterialApp(
                 home: const ChatConversationScreen(
@@ -1101,9 +1056,8 @@ _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
   required String executionState,
 }) async {
   final endpoint = _CloudConversationEndpoint();
-  when(() => endpoint.continueConversation(any())).thenAnswer(
-    (_) async => _cloudSnapshot(),
-  );
+  when(() => endpoint.continueConversation(any()))
+      .thenAnswer((_) async => _cloudSnapshot());
   final usecaseCompleter = Completer<CloudTurnUsecase?>();
   final updates = StreamController<CloudConversationState>();
   addTearDown(updates.close);
@@ -1121,10 +1075,7 @@ _expectCloudContinueToBeIgnoredWhenStateBecomesBusy(
   await tester.pump();
 
   updates.add(
-    _cloudState(
-      projectionRevision: 43,
-      executionState: executionState,
-    ),
+    _cloudState(projectionRevision: 43, executionState: executionState),
   );
   await tester.pump();
   final _ = usecaseCompleter.complete(_cloudTurnUsecase(endpoint));
@@ -1187,15 +1138,14 @@ ConversationSnapshot _cloudSnapshot() => ConversationSnapshot(
   sequence: 43,
 );
 
-class _CloudWorkspaceGateway extends Mock
-    implements CloudWorkspaceStateGateway {}
+class _CloudWorkspaceGateway extends Mock implements CloudWorkspaceStateGateway;
 
-class _CloudClient extends Mock implements Client {}
+class _CloudClient extends Mock implements Client;
 
-class _CloudConversationEndpoint extends Mock implements EndpointConversation {}
+class _CloudConversationEndpoint extends Mock implements EndpointConversation;
 
 class _ContinueConversationRequestFake extends Fake
-    implements ContinueConversationRequest {}
+    implements ContinueConversationRequest;
 
 class _ForeverLoadingChatNotifier extends ConversationChatNotifier {
   @override
@@ -1214,10 +1164,8 @@ class _ErrorChatNotifier extends ConversationChatNotifier {
   }
 }
 
-class _ResultChatNotifier extends ConversationChatNotifier {
-  _ResultChatNotifier(this.result);
-  final ConversationResult result;
-
+class _ResultChatNotifier(final ConversationResult result)
+    extends ConversationChatNotifier {
   @override
   Future<ConversationResult> build(
     String workspaceId,
@@ -1225,11 +1173,8 @@ class _ResultChatNotifier extends ConversationChatNotifier {
   ) async => result;
 }
 
-class _StaticRateLimitRetryNotifier extends ConversationRateLimitRetryNotifier {
-  _StaticRateLimitRetryNotifier(this.retryDeadline);
-
-  final DateTime retryDeadline;
-
+class _StaticRateLimitRetryNotifier(final DateTime retryDeadline)
+    extends ConversationRateLimitRetryNotifier {
   @override
   Map<String, DateTime> build() => {_chatId: retryDeadline};
 }
@@ -1243,10 +1188,9 @@ class _BusyRefreshNotifier extends Notifier<int> {
   }
 }
 
-class _StubConversationRepository implements ConversationRepository {
-  _StubConversationRepository({this.watchStream});
-  final Stream<ConversationEntity?>? watchStream;
-
+class _StubConversationRepository({
+  final Stream<ConversationEntity?>? watchStream,
+}) implements ConversationRepository {
   @override
   Stream<ConversationEntity?> watchConversationById(String id) {
     return watchStream ?? const Stream.empty();

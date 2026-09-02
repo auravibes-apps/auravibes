@@ -13,24 +13,15 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
 import 'package:riverpod/riverpod.dart';
 
-class RunAppSkillToolUsecase {
-  RunAppSkillToolUsecase(
-    this._appSkillRegistry,
-    this._serviceConnectionRepository,
-    this._skillCredentialsRepository,
-    this._listAppSkillCredentialCandidatesUsecase,
-    this._appSkillExecutor,
-    this._oauthCredentialService,
-  );
-
-  final AppSkillRegistry _appSkillRegistry;
-  final ServiceConnectionRepository _serviceConnectionRepository;
-  final SkillCredentialsRepository _skillCredentialsRepository;
+class RunAppSkillToolUsecase(
+  final AppSkillRegistry _appSkillRegistry,
+  final ServiceConnectionRepository _serviceConnectionRepository,
+  final SkillCredentialsRepository _skillCredentialsRepository,
   final ListAppSkillCredentialCandidatesUsecase
-  _listAppSkillCredentialCandidatesUsecase;
-  final AppSkillExecutor _appSkillExecutor;
-  final OAuthCredentialService? _oauthCredentialService;
-
+  _listAppSkillCredentialCandidatesUsecase,
+  final AppSkillExecutor _appSkillExecutor,
+  final OAuthCredentialService? _oauthCredentialService,
+) {
   Future<Object?> call({
     required String workspaceId,
     required String skillSlug,
@@ -131,19 +122,19 @@ class RunAppSkillToolUsecase {
       throw StateError('Credential is not available for this app skill tool.');
     }
     if (trimmed.startsWith('skill:')) {
-      return _skillCredentialsRepository.readCredentialAttributes(
+      return await _skillCredentialsRepository.readCredentialAttributes(
         trimmed.replaceFirst('skill:', ''),
       );
     }
     if (trimmed.startsWith('service:')) {
-      return _serviceConnectionAttributes(
+      return await _serviceConnectionAttributes(
         workspaceId: workspaceId,
         connectionId: trimmed.replaceFirst('service:', ''),
         skill: skill,
       );
     }
     if (trimmed.startsWith('model:')) {
-      return _serviceConnectionAttributes(
+      return await _serviceConnectionAttributes(
         workspaceId: workspaceId,
         connectionId: trimmed.replaceFirst('model:', ''),
         skill: skill,
@@ -158,9 +149,7 @@ class RunAppSkillToolUsecase {
     required String connectionId,
     required AppSkillDefinition skill,
   }) async {
-    final connection = await _serviceConnectionRepository.getById(
-      connectionId,
-    );
+    final connection = await _serviceConnectionRepository.getById(connectionId);
     if (connection == null ||
         connection.workspaceId != workspaceId ||
         !connection.isEnabled) {
@@ -214,7 +203,7 @@ class RunAppSkillToolUsecase {
     final service = _oauthCredentialService;
     if (service == null) return fallbackAccessToken;
 
-    return service.getValidAccessToken(connectionId);
+    return await service.getValidAccessToken(connectionId);
   }
 }
 

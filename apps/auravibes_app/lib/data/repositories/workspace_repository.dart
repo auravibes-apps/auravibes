@@ -12,16 +12,11 @@ import 'package:drift/drift.dart';
 /// This class provides a concrete implementation of workspace data operations
 /// using the Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
-class WorkspaceRepository {
-  WorkspaceRepository(
-    this._database, {
-    this._attachmentFileStore = const AttachmentFileStore(),
-  });
-
+class WorkspaceRepository(
   /// The database instance for workspace operations.
-  final AppDatabase _database;
-  final AttachmentFileStore _attachmentFileStore;
-
+  final AppDatabase _database, {
+  final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+}) {
   Future<List<WorkspaceEntity>> getAllWorkspaces() async {
     final workspaceTables = await _database.workspaceDao.getAllWorkspaces();
 
@@ -73,10 +68,7 @@ class WorkspaceRepository {
       throw WorkspaceNotFoundException(id);
     }
 
-    _validateWorkspacePatch(
-      workspace,
-      _mapToWorkspace(currentWorkspaceTable),
-    );
+    _validateWorkspacePatch(workspace, _mapToWorkspace(currentWorkspaceTable));
 
     final workspaceCompanion = _mapPatchToWorkspacesCompanion(workspace);
     final updated = await _database.workspaceDao.patchWorkspace(
@@ -108,9 +100,7 @@ class WorkspaceRepository {
     final attachmentPaths = await _attachmentPathsForWorkspace(id);
     final deleted = await _database.workspaceDao.deleteWorkspace(id);
     if (deleted) {
-      final _ = await Future.wait(
-        attachmentPaths.map(_deleteAttachmentFile),
-      );
+      final _ = await Future.wait(attachmentPaths.map(_deleteAttachmentFile));
     }
 
     return deleted;
@@ -163,7 +153,7 @@ class WorkspaceRepository {
     );
 
     if (existing == null) {
-      return createWorkspace(
+      return await createWorkspace(
         WorkspaceToCreate(
           name: name,
           type: WorkspaceType.remote,
@@ -174,7 +164,7 @@ class WorkspaceRepository {
       );
     }
 
-    return patchWorkspace(
+    return await patchWorkspace(
       existing.id,
       WorkspacePatch(
         name: name,
@@ -198,7 +188,7 @@ class WorkspaceRepository {
     );
     if (existing == null) return false;
 
-    return deleteWorkspace(existing.id);
+    return await deleteWorkspace(existing.id);
   }
 
   Future<int> deleteCloudWorkspaceMirrorsForAccount(
@@ -218,34 +208,6 @@ class WorkspaceRepository {
     }
 
     return deleted;
-  }
-
-  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
-    final rows = await (_database.select(_database.messageAttachments).join([
-      innerJoin(
-        _database.messages,
-        _database.messages.id.equalsExp(
-          _database.messageAttachments.messageId,
-        ),
-      ),
-      innerJoin(
-        _database.conversations,
-        _database.conversations.id.equalsExp(_database.messages.conversationId),
-      ),
-    ])..where(_database.conversations.workspaceId.equals(id))).get();
-
-    return [
-      for (final row in rows)
-        row.readTable(_database.messageAttachments).localPath,
-    ];
-  }
-
-  Future<void> _deleteAttachmentFile(String localPath) async {
-    try {
-      await _attachmentFileStore.deleteFile(localPath);
-    } on Object {
-      return;
-    }
   }
 
   Future<bool> workspaceExists(String id) {
@@ -284,7 +246,33 @@ class WorkspaceRepository {
       return false; // Return false instead of throwing for patch operations.
     }
 
-    return _database.workspaceDao.patchWorkspaceTimestamp(id);
+    return await _database.workspaceDao.patchWorkspaceTimestamp(id);
+  }
+
+  Future<List<String>> _attachmentPathsForWorkspace(String id) async {
+    final rows = await (_database.select(_database.messageAttachments).join([
+      innerJoin(
+        _database.messages,
+        _database.messages.id.equalsExp(_database.messageAttachments.messageId),
+      ),
+      innerJoin(
+        _database.conversations,
+        _database.conversations.id.equalsExp(_database.messages.conversationId),
+      ),
+    ])..where(_database.conversations.workspaceId.equals(id))).get();
+
+    return [
+      for (final row in rows)
+        row.readTable(_database.messageAttachments).localPath,
+    ];
+  }
+
+  Future<void> _deleteAttachmentFile(String localPath) async {
+    try {
+      await _attachmentFileStore.deleteFile(localPath);
+    } on Object {
+      return;
+    }
   }
 
   /// Maps a [workspacesTable] database record to a [WorkspaceEntity]
@@ -369,7 +357,7 @@ class WorkspaceRepository {
 /// Base exception for workspace-related operations.
 class WorkspaceException implements Exception {
   /// Creates a new WorkspaceException.
-  const WorkspaceException(this.message, {this.localizationKey, this.cause});
+  const new(this.message, {this.localizationKey, this.cause});
 
   /// Error message describing the exception.
   /// Used as fallback when localization is unavailable.
@@ -392,17 +380,13 @@ class WorkspaceException implements Exception {
 /// Exception thrown when workspace validation fails.
 class WorkspaceValidationException extends WorkspaceException {
   /// Creates a new WorkspaceValidationException.
-  const WorkspaceValidationException(
-    super.message, {
-    super.localizationKey,
-    super.cause,
-  });
+  const new(super.message, {super.localizationKey, super.cause});
 }
 
 /// Exception thrown when a workspace is not found.
 class WorkspaceNotFoundException extends WorkspaceException {
   /// Creates a new WorkspaceNotFoundException.
-  const WorkspaceNotFoundException(this.workspaceId, {super.cause})
+  const new(this.workspaceId, {super.cause})
     : super(
         'Workspace with ID "$workspaceId" not found',
         localizationKey: LocaleKeys.workspace_management_error_not_found,

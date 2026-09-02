@@ -12,16 +12,14 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class InviteWorkspaceMemberRequest implements _i1.SerializableModel {
-  InviteWorkspaceMemberRequest._({
-    required this.workspaceId,
-    required this.email,
-    required this.role,
-    required this.requestId,
-    required this.expectedWorkspaceRevision,
-  });
-
-  factory InviteWorkspaceMemberRequest({
+abstract class InviteWorkspaceMemberRequest._({
+  required var int workspaceId,
+  required var String email,
+  required var String role,
+  required var String requestId,
+  required var int expectedWorkspaceRevision,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String email,
     required String role,
@@ -29,7 +27,7 @@ abstract class InviteWorkspaceMemberRequest implements _i1.SerializableModel {
     required int expectedWorkspaceRevision,
   }) = _InviteWorkspaceMemberRequestImpl;
 
-  factory InviteWorkspaceMemberRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return InviteWorkspaceMemberRequest(
@@ -41,16 +39,6 @@ abstract class InviteWorkspaceMemberRequest implements _i1.SerializableModel {
           jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
-
-  int workspaceId;
-
-  String email;
-
-  String role;
-
-  String requestId;
-
-  int expectedWorkspaceRevision;
 
   /// Returns a shallow copy of this [InviteWorkspaceMemberRequest]
   /// with some or all fields replaced by the given arguments.
@@ -80,20 +68,21 @@ abstract class InviteWorkspaceMemberRequest implements _i1.SerializableModel {
   }
 }
 
-class _InviteWorkspaceMemberRequestImpl extends InviteWorkspaceMemberRequest {
-  _InviteWorkspaceMemberRequestImpl({
-    required int workspaceId,
-    required String email,
-    required String role,
-    required String requestId,
-    required int expectedWorkspaceRevision,
-  }) : super._(
-         workspaceId: workspaceId,
-         email: email,
-         role: role,
-         requestId: requestId,
-         expectedWorkspaceRevision: expectedWorkspaceRevision,
-       );
+class _InviteWorkspaceMemberRequestImpl({
+  required int workspaceId,
+  required String email,
+  required String role,
+  required String requestId,
+  required int expectedWorkspaceRevision,
+}) extends InviteWorkspaceMemberRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        email: email,
+        role: role,
+        requestId: requestId,
+        expectedWorkspaceRevision: expectedWorkspaceRevision,
+      );
 
   /// Returns a shallow copy of this [InviteWorkspaceMemberRequest]
   /// with some or all fields replaced by the given arguments.

@@ -3,9 +3,7 @@ import 'package:serverpod/serverpod.dart';
 import '../../../generated/protocol.dart';
 import '../services/models_dev_catalog_sync_service.dart';
 
-class ModelCatalogSyncWorker {
-  const ModelCatalogSyncWorker();
-
+class const ModelCatalogSyncWorker() {
   static const interval = Duration(hours: 12);
   Future<void> run(
     Session session, {

@@ -11,19 +11,18 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const SettingsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
+  static const _navigationIconSize = 16.0;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    const screenPadding = 16.0;
     final themeAsync = ref.watch(themeProvider);
     final currentTheme = themeAsync.asData?.value ?? AppTheme.system;
 
     return AuraScreen(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(screenPadding),
         child: AuraColumn(
           children: [
             AuraCard(
@@ -67,7 +66,7 @@ class SettingsScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Icon(
                           Icons.arrow_forward_ios,
-                          size: 16,
+                          size: _navigationIconSize,
                           color: context.auraColors.onSurfaceVariant,
                         ),
                       ],
@@ -106,37 +105,37 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref,
     AppTheme currentTheme,
   ) {
-    showAuraAlertDialog(
+    void onThemeChanged(AppTheme value) {
+      Navigator.of(context, rootNavigator: true).pop();
+      ref.read(themeProvider.notifier).setTheme(value);
+    }
+
+    AuraDialogs.alert(
       context: context,
       title: const TextLocale(LocaleKeys.settings_screen_theme_title),
-      message: AuraRadioGroup<AppTheme>(
-        value: currentTheme,
-        onChanged: (value) {
-          if (value != null) {
-            Navigator.of(context, rootNavigator: true).pop();
-            ref.read(themeProvider.notifier).setTheme(value);
-          }
-        },
+      message: AuraChoicePicker<AppTheme>(
         options: const [
-          AuraRadioOption(
+          AuraChoiceOption(
             value: AppTheme.system,
-            label: TextLocale(
-              LocaleKeys.settings_screen_theme_system_default,
-            ),
+            label: TextLocale(LocaleKeys.settings_screen_theme_system_default),
           ),
-          AuraRadioOption(
+          AuraChoiceOption(
             value: AppTheme.light,
             label: TextLocale(LocaleKeys.settings_screen_theme_light),
           ),
-          AuraRadioOption(
+          AuraChoiceOption(
             value: AppTheme.dark,
             label: TextLocale(LocaleKeys.settings_screen_theme_dark),
           ),
         ],
+        value: [currentTheme],
+        onChanged: (values) {
+          final selected = values.firstOrNull;
+          if (selected == null) return;
+          onThemeChanged(selected);
+        },
       ),
-      dismissLabel: const TextLocale(
-        LocaleKeys.settings_screen_actions_cancel,
-      ),
+      dismissLabel: const TextLocale(LocaleKeys.settings_screen_actions_cancel),
     );
   }
 }

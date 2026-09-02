@@ -13,11 +13,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class CloudAccountRegisterForm extends ConsumerStatefulWidget {
-  const CloudAccountRegisterForm({required this.onSignedIn, super.key});
-
-  final ValueChanged<CloudAccountSession> onSignedIn;
-
+class const CloudAccountRegisterForm({
+  required final ValueChanged<CloudAccountSession> onSignedIn,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<CloudAccountRegisterForm> createState() =>
       _CloudAccountRegisterFormState();
@@ -86,10 +85,7 @@ class _CloudAccountRegisterFormState
           ),
         ],
         if (_errorKey case final errorKey?)
-          AuraText(
-            style: AuraTextStyle.bodySmall,
-            child: TextLocale(errorKey),
-          ),
+          AuraText(style: AuraTextStyle.bodySmall, child: TextLocale(errorKey)),
         AuraButton(
           onPressed: _registerStep,
           child: TextLocale(
@@ -130,7 +126,7 @@ class _CloudAccountRegisterFormState
       _isSubmitting = true;
     });
     try {
-      await cloudAccountMutation.run(ref, (_) async {
+      await WorkspaceManagementMutations.cloudAccount.run(ref, (_) async {
         final useCases = ref.read(cloudAccountUseCasesProvider);
         final requestId = _registrationRequestId;
         if (requestId == null) {

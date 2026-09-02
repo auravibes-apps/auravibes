@@ -15,10 +15,7 @@ QueryExecutor _testConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -42,9 +39,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(workspace_model_selections)',
-          )
+          .customSelect('PRAGMA table_info(workspace_model_selections)')
           .get();
     });
 
@@ -83,9 +78,7 @@ void main() {
     });
 
     test('primary key on id', () {
-      final idCol = columns.firstWhere(
-        (r) => r.read<String>('name') == 'id',
-      );
+      final idCol = columns.firstWhere((r) => r.read<String>('name') == 'id');
       expect(idCol.read<int>('pk'), greaterThan(0));
       expect(columns.where((r) => r.read<int>('pk') > 0), hasLength(1));
       expect(

@@ -26,16 +26,21 @@ $McpToolInfoCopyWith<McpToolInfo> get copyWith => _$McpToolInfoCopyWithImpl<McpT
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpToolInfo&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.inputSchema, inputSchema)&&(identical(other.supportsProgress, supportsProgress) || other.supportsProgress == supportsProgress)&&(identical(other.supportsCancellation, supportsCancellation) || other.supportsCancellation == supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, metadata));
+  final _this = this as McpToolInfo;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpToolInfo&&(identical(other.toolName, _this.toolName) || other.toolName == _this.toolName)&&(identical(other.description, _this.description) || other.description == _this.description)&&const DeepCollectionEquality().equals(other.inputSchema, _this.inputSchema)&&(identical(other.supportsProgress, _this.supportsProgress) || other.supportsProgress == _this.supportsProgress)&&(identical(other.supportsCancellation, _this.supportsCancellation) || other.supportsCancellation == _this.supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolName,description,const DeepCollectionEquality().hash(inputSchema),supportsProgress,supportsCancellation,const DeepCollectionEquality().hash(metadata));
+int get hashCode {
+  final _this = this as McpToolInfo;
+  return Object.hash(runtimeType,_this.toolName,_this.description,const DeepCollectionEquality().hash(_this.inputSchema),_this.supportsProgress,_this.supportsCancellation,const DeepCollectionEquality().hash(_this.metadata));
+}
 
 @override
 String toString() {
-  return 'McpToolInfo(toolName: $toolName, description: $description, inputSchema: $inputSchema, supportsProgress: $supportsProgress, supportsCancellation: $supportsCancellation, metadata: $metadata)';
+  final _this = this as McpToolInfo;
+  return 'McpToolInfo(toolName: ${_this.toolName}, description: ${_this.description}, inputSchema: ${_this.inputSchema}, supportsProgress: ${_this.supportsProgress}, supportsCancellation: ${_this.supportsCancellation}, metadata: ${_this.metadata})';
 }
 
 
@@ -246,16 +251,18 @@ _$McpToolInfoCopyWith<_McpToolInfo> get copyWith => __$McpToolInfoCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpToolInfo&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other._inputSchema, _inputSchema)&&(identical(other.supportsProgress, supportsProgress) || other.supportsProgress == supportsProgress)&&(identical(other.supportsCancellation, supportsCancellation) || other.supportsCancellation == supportsCancellation)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpToolInfo&&(identical(other.toolName, toolName) || other.toolName == toolName)&&(identical(other.description, description) || other.description == description)&&const DeepCollectionEquality().equals(other.inputSchema, _inputSchema)&&(identical(other.supportsProgress, supportsProgress) || other.supportsProgress == supportsProgress)&&(identical(other.supportsCancellation, supportsCancellation) || other.supportsCancellation == supportsCancellation)&&const DeepCollectionEquality().equals(other.metadata, _metadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,toolName,description,const DeepCollectionEquality().hash(_inputSchema),supportsProgress,supportsCancellation,const DeepCollectionEquality().hash(_metadata));
+int get hashCode {
+    return Object.hash(runtimeType,toolName,description,const DeepCollectionEquality().hash(_inputSchema),supportsProgress,supportsCancellation,const DeepCollectionEquality().hash(_metadata));
+}
 
 @override
 String toString() {
-  return 'McpToolInfo(toolName: $toolName, description: $description, inputSchema: $inputSchema, supportsProgress: $supportsProgress, supportsCancellation: $supportsCancellation, metadata: $metadata)';
+    return 'McpToolInfo(toolName: $toolName, description: $description, inputSchema: $inputSchema, supportsProgress: $supportsProgress, supportsCancellation: $supportsCancellation, metadata: $metadata)';
 }
 
 

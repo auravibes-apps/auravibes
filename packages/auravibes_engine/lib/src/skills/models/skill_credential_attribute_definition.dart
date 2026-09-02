@@ -1,16 +1,10 @@
 import 'dart:convert';
 
-class SkillCredentialAttributeDefinition {
-  const SkillCredentialAttributeDefinition({
-    required this.description,
-    this.optional = false,
-    this.secret = true,
-  });
-
-  final String description;
-  final bool optional;
-  final bool secret;
-
+class const SkillCredentialAttributeDefinition({
+  required final String description,
+  final bool optional = false,
+  final bool secret = true,
+}) {
   static Map<String, SkillCredentialAttributeDefinition> parseMap(
     String value,
   ) {

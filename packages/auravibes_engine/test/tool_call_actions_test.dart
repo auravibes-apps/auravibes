@@ -6,9 +6,7 @@ void main() {
   group('ApproveToolCallService', () {
     test('marks unresolved tool as not found and resumes', () async {
       final provider = _FakeApproveToolCallProvider(resolvedTool: null);
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -25,9 +23,7 @@ void main() {
         resolvedTool: 'calculator',
         runResult: '2',
       );
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -36,6 +32,7 @@ void main() {
       );
 
       expect(provider.calls, [
+        'resolve:conversation-1:calculator',
         'grant:conversation-1:calculator',
         'running:message-1:tool-1',
         'run:1+1',
@@ -50,9 +47,7 @@ void main() {
         runResult: '2',
         isCancelled: true,
       );
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -68,9 +63,7 @@ void main() {
         resolvedTool: 'calculator',
         runError: StateError('blocked'),
       );
-      final usecase = ApproveToolCallService<String>(
-        provider: provider,
-      );
+      final usecase = ApproveToolCallService<String>(provider: provider);
 
       await usecase.call(
         messageId: 'message-1',
@@ -86,9 +79,7 @@ void main() {
   group('SkipToolCallService', () {
     test('skips then resumes when mutation succeeds', () async {
       final provider = _FakeSkipToolCallProvider(shouldSkip: true);
-      final usecase = SkipToolCallService(
-        provider: provider,
-      );
+      final usecase = SkipToolCallService(provider: provider);
 
       await usecase.call(messageId: 'message-1', toolCallId: 'tool-1');
 
@@ -97,9 +88,7 @@ void main() {
 
     test('does not resume when mutation is skipped', () async {
       final provider = _FakeSkipToolCallProvider(shouldSkip: false);
-      final usecase = SkipToolCallService(
-        provider: provider,
-      );
+      final usecase = SkipToolCallService(provider: provider);
 
       await usecase.call(messageId: 'message-1', toolCallId: 'tool-1');
 
@@ -108,18 +97,12 @@ void main() {
   });
 }
 
-class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
-  _FakeApproveToolCallProvider({
-    required this.resolvedTool,
-    this.runResult,
-    this.runError,
-    this.isCancelled = false,
-  });
-
-  final String? resolvedTool;
-  final Object? runResult;
-  final Object? runError;
-  final bool isCancelled;
+class _FakeApproveToolCallProvider({
+  required final String? resolvedTool,
+  final Object? runResult,
+  final Object? runError,
+  final bool isCancelled = false,
+}) implements ApproveToolCallProvider<String> {
   final calls = <String>[];
   final updates = <AgentToolResultStatus>[];
   bool didResume = false;
@@ -137,7 +120,14 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
   }
 
   @override
-  String? resolveTool(String toolName) => resolvedTool;
+  Future<String?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async {
+    calls.add('resolve:$conversationId:$toolName');
+
+    return resolvedTool;
+  }
 
   @override
   Future<void> grantToolForConversation({
@@ -199,10 +189,8 @@ class _FakeApproveToolCallProvider implements ApproveToolCallProvider<String> {
   }) {}
 }
 
-class _FakeSkipToolCallProvider implements SkipToolCallProvider {
-  _FakeSkipToolCallProvider({required this.shouldSkip});
-
-  final bool shouldSkip;
+class _FakeSkipToolCallProvider({required final bool shouldSkip})
+    implements SkipToolCallProvider {
   final calls = <String>[];
   bool didResume = false;
 

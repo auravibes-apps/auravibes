@@ -10,18 +10,12 @@ import 'package:auravibes_app/utils/coalescing_save_extension.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:rxdart/rxdart.dart';
 
-class GenerateTitleUsecase {
-  const GenerateTitleUsecase({
-    required this.conversationRepo,
-    required this.chatbotService,
-    required this.titlesStreamingRuntime,
-    required this.monitoringService,
-  });
-
-  final ConversationRepository conversationRepo;
-  final ChatbotService chatbotService;
-  final TitlesStreamingRuntime titlesStreamingRuntime;
-  final MonitoringService monitoringService;
+class const GenerateTitleUsecase({
+  required final ConversationRepository conversationRepo,
+  required final ChatbotService chatbotService,
+  required final TitlesStreamingRuntime titlesStreamingRuntime,
+  required final MonitoringService monitoringService,
+}) {
   void call({
     required String conversationId,
     required String firstMessage,
@@ -54,9 +48,7 @@ class GenerateTitleUsecase {
           store: (t) async {
             final _ = await conversationRepo.patchConversation(
               conversationId,
-              .new(
-                title: t,
-              ),
+              .new(title: t),
             );
           },
         )
@@ -64,13 +56,11 @@ class GenerateTitleUsecase {
   }
 }
 
-final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>(
-  (ref) {
-    return GenerateTitleUsecase(
-      conversationRepo: ref.watch(conversationRepositoryProvider),
-      chatbotService: ref.watch(chatbotServiceProvider),
-      titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
-      monitoringService: ref.watch(monitoringServiceProvider),
-    );
-  },
-);
+final generateTitleUsecaseProvider = Provider<GenerateTitleUsecase>((ref) {
+  return GenerateTitleUsecase(
+    conversationRepo: ref.watch(conversationRepositoryProvider),
+    chatbotService: ref.watch(chatbotServiceProvider),
+    titlesStreamingRuntime: ref.watch(titlesStreamingRuntimeProvider),
+    monitoringService: ref.watch(monitoringServiceProvider),
+  );
+});

@@ -99,11 +99,46 @@ void main() {
       [
         {
           'role': 'user',
-          'content':
-              '<skill><name>Research</name><content>Use primary sources.</content></skill>',
+          'content': '<skill><name>Research</name><content>Use primary sources.</content></skill>',
         },
       ],
     );
+  });
+
+  test('cloud skill context includes manifest revision and schema', () {
+    final messages = buildCloudSkillContextMessages(
+      conversationSkills: [
+        AgentSkill(
+          title: 'Research',
+          content: 'Use primary sources.',
+          manifest: SkillManifest(
+            slug: 'research',
+            title: 'Research',
+            instructions: 'Use primary sources.',
+            revision: 'revision-1',
+            tools: [
+              SkillManifestTool(
+                name: 'search',
+                description: 'Search sources.',
+                inputJsonSchema: const {
+                  'type': 'object',
+                  'properties': {
+                    'query': {'type': 'string'},
+                  },
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+      agentSkills: const [],
+    );
+
+    final content = messages.single['content']! as String;
+    expect(content, contains('<skill_manifest>'));
+    expect(content, contains('&quot;slug&quot;:&quot;research&quot;'));
+    expect(content, contains('&quot;name&quot;:&quot;search&quot;'));
+    expect(content, contains('&quot;revision&quot;:&quot;revision-1&quot;'));
   });
 
   test('refresh retains all completed tool exchanges in order', () {
@@ -211,7 +246,7 @@ void main() {
             'content': 'A text',
             'tool_calls': [
               {
-                'id': 'tool_63_61_6c_6c_2d_61',
+                'id': 'call-a',
                 'type': 'function',
                 'function': {'name': 'a', 'arguments': '{}'},
               },
@@ -219,7 +254,7 @@ void main() {
           },
           {
             'role': 'tool',
-            'tool_call_id': 'tool_63_61_6c_6c_2d_61',
+            'tool_call_id': 'call-a',
             'content': 'a-result',
           },
           {
@@ -227,7 +262,7 @@ void main() {
             'content': 'B text',
             'tool_calls': [
               {
-                'id': 'tool_63_61_6c_6c_2d_62',
+                'id': 'call-b',
                 'type': 'function',
                 'function': {'name': 'b', 'arguments': '{}'},
               },
@@ -235,13 +270,54 @@ void main() {
           },
           {
             'role': 'tool',
-            'tool_call_id': 'tool_63_61_6c_6c_2d_62',
+            'tool_call_id': 'call-b',
             'content': 'b-result',
           },
         ],
       );
     },
   );
+
+  test('running calls are not provider-resolved results', () {
+    final now = DateTime(2026);
+    final assistant = ConversationMessage(
+      id: 1,
+      workspaceId: 1,
+      conversationId: 1,
+      turnId: 1,
+      stableId: 'assistant-1',
+      role: 'assistant',
+      kind: 'text',
+      status: 'running',
+      content: '',
+      metadataJson: null,
+      revision: 1,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final running = ConversationToolCall(
+      workspaceId: 1,
+      conversationId: 1,
+      turnId: 1,
+      messageId: 1,
+      stableId: 'call-running',
+      name: 'tool',
+      argumentsJson: '{}',
+      argumentsDigest: 'digest',
+      status: 'running',
+      revision: 2,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    expect(
+      persistedProviderToolExchanges(
+        messages: [assistant],
+        calls: [running],
+      ),
+      isEmpty,
+    );
+  });
 
   test(
     'all-denied continuation includes the original tool call and denial',

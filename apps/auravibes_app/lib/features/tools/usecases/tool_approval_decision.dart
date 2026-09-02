@@ -13,41 +13,29 @@ import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:riverpod/src/providers/provider.dart';
 
-class ToolApprovalDecision {
-  const ToolApprovalDecision({
-    required this.toolCallId,
-    required this.permissionResult,
-    this.permissionTableId,
-  });
-
-  final String toolCallId;
-  final ToolPermissionResult permissionResult;
-  final String? permissionTableId;
-
+class const ToolApprovalDecision({
+  required final String toolCallId,
+  required final ToolPermissionResult permissionResult,
+  final String? permissionTableId,
+}) {
   bool get needsConfirmation =>
       permissionResult == ToolPermissionResult.needsConfirmation;
 }
 
-class ResolveToolApprovalDecisionUsecase {
-  const ResolveToolApprovalDecisionUsecase({
-    required this.conversationToolsRepository,
-    required this.toolsGroupsRepository,
-    required this.workspaceToolsRepository,
-    this.syncSkillToolPermissionsUsecase,
-  });
-
-  final ConversationToolsRepository conversationToolsRepository;
-  final ToolsGroupsRepositoryContract toolsGroupsRepository;
-  final WorkspaceToolsRepositoryContract workspaceToolsRepository;
-  final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase;
-
+class const ResolveToolApprovalDecisionUsecase({
+  required final ConversationToolsRepository conversationToolsRepository,
+  required final ToolsGroupsRepositoryContract toolsGroupsRepository,
+  required final WorkspaceToolsRepositoryContract workspaceToolsRepository,
+  final SyncSkillToolPermissionsUsecase? syncSkillToolPermissionsUsecase,
+}) {
   Future<ToolApprovalDecision> call({
     required String conversationId,
     required String workspaceId,
     required String toolCallId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (_isRunSubAgentTool(resolvedTool)) {
+    if ((resolvedTool.isSkillControl || resolvedTool.isSkillCommand) &&
+        resolvedTool.toolIdentifier == agent.listSkillsToolName) {
       return ToolApprovalDecision(
         toolCallId: toolCallId,
         permissionResult: ToolPermissionResult.granted,
@@ -85,10 +73,16 @@ class ResolveToolApprovalDecisionUsecase {
     required String workspaceId,
     required ResolvedTool resolvedTool,
   }) async {
-    if (resolvedTool.isSkillControl ||
+    if (resolvedTool.isSkillCommand ||
+        resolvedTool.isSkillControl ||
         resolvedTool.isSkillTemplate ||
         resolvedTool.isSkillNative) {
-      return syncSkillToolPermissionsUsecase?.permissionTableIdFor(
+      if (resolvedTool.toolIdentifier == agent.callSkillToolName &&
+          resolvedTool.target == null) {
+        return null;
+      }
+
+      return await syncSkillToolPermissionsUsecase?.permissionTableIdFor(
         conversationId: conversationId,
         workspaceId: workspaceId,
         toolName: resolvedTool.fullName,
@@ -115,14 +109,6 @@ class ResolveToolApprovalDecisionUsecase {
   }
 }
 
-bool _isRunSubAgentTool(ResolvedTool resolvedTool) {
-  if (resolvedTool.fullName == agent.runSubAgentToolName) return true;
-
-  return resolvedTool.isSkillNative &&
-      resolvedTool.skillSlug == agent.agentsSkillSlug &&
-      resolvedTool.toolIdentifier == agent.runSubAgentToolName;
-}
-
 final ProviderFamily<ResolveToolApprovalDecisionUsecase, String>
 resolveToolApprovalDecisionUsecaseProvider =
     Provider.family<ResolveToolApprovalDecisionUsecase, String>((
@@ -130,9 +116,7 @@ resolveToolApprovalDecisionUsecaseProvider =
       workspaceId,
     ) {
       final session = ref
-          .watch(
-            workspaceSessionForRouteProvider(workspaceId),
-          )
+          .watch(workspaceSessionForRouteProvider(workspaceId))
           .requireValue;
 
       return ResolveToolApprovalDecisionUsecase(

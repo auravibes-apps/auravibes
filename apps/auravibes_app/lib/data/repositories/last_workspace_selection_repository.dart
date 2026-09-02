@@ -3,14 +3,10 @@ import 'dart:async';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LastWorkspaceSelectionRepository implements WorkspaceSelectionRepository {
-  LastWorkspaceSelectionRepository(
-    this._preferences, {
-    this.storageKey = 'last_selected_workspace_id',
-  });
-
-  final Future<SharedPreferences> _preferences;
-  final String storageKey;
+class LastWorkspaceSelectionRepository(
+  final Future<SharedPreferences> _preferences, {
+  final String storageKey = 'last_selected_workspace_id',
+}) implements WorkspaceSelectionRepository {
   Future<void> _writeQueue = Future<void>.value();
 
   @override

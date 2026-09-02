@@ -12,19 +12,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class TestAndSyncModelConnectionRequest
-    implements _i1.SerializableModel {
-  TestAndSyncModelConnectionRequest._({
-    required this.workspaceId,
-    required this.connectionId,
-  });
-
-  factory TestAndSyncModelConnectionRequest({
+abstract class TestAndSyncModelConnectionRequest._({
+  required var int workspaceId,
+  required var String connectionId,
+}) implements _i1.SerializableModel {
+  factory({
     required int workspaceId,
     required String connectionId,
   }) = _TestAndSyncModelConnectionRequestImpl;
 
-  factory TestAndSyncModelConnectionRequest.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return TestAndSyncModelConnectionRequest(
@@ -32,10 +29,6 @@ abstract class TestAndSyncModelConnectionRequest
       connectionId: jsonSerialization['connectionId'] as String,
     );
   }
-
-  int workspaceId;
-
-  String connectionId;
 
   /// Returns a shallow copy of this [TestAndSyncModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
@@ -59,15 +52,15 @@ abstract class TestAndSyncModelConnectionRequest
   }
 }
 
-class _TestAndSyncModelConnectionRequestImpl
-    extends TestAndSyncModelConnectionRequest {
-  _TestAndSyncModelConnectionRequestImpl({
-    required int workspaceId,
-    required String connectionId,
-  }) : super._(
-         workspaceId: workspaceId,
-         connectionId: connectionId,
-       );
+class _TestAndSyncModelConnectionRequestImpl({
+  required int workspaceId,
+  required String connectionId,
+}) extends TestAndSyncModelConnectionRequest {
+  this
+    : super._(
+        workspaceId: workspaceId,
+        connectionId: connectionId,
+      );
 
   /// Returns a shallow copy of this [TestAndSyncModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.

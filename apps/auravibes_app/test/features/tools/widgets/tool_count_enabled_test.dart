@@ -38,11 +38,8 @@ class _LoadingToolsNotifier extends WorkspaceToolsNotifier {
       _completer.future;
 }
 
-class _DataToolsNotifier extends WorkspaceToolsNotifier {
-  _DataToolsNotifier(this.tools);
-
-  final List<WorkspaceToolEntity> tools;
-
+class _DataToolsNotifier(final List<WorkspaceToolEntity> tools)
+    extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => tools;
 }
@@ -62,9 +59,8 @@ void main() {
       EasyLocalization(
         child: TestProviderScope(
           overrides: [
-            workspaceToolsProvider(
-              workspaceId,
-            ).overrideWith(_LoadingToolsNotifier.new),
+            workspaceToolsProvider(workspaceId)
+                .overrideWith(_LoadingToolsNotifier.new),
           ],
           child: MaterialApp(
             home: Theme(
@@ -103,9 +99,8 @@ void main() {
           builder: (context) {
             return TestProviderScope(
               overrides: [
-                workspaceToolsProvider(workspaceId).overrideWith(
-                  () => _DataToolsNotifier(tools),
-                ),
+                workspaceToolsProvider(workspaceId)
+                    .overrideWith(() => _DataToolsNotifier(tools)),
               ],
               child: MaterialApp(
                 home: Theme(
@@ -140,9 +135,8 @@ void main() {
     await tester.pumpWidget(
       TestProviderScope(
         overrides: [
-          workspaceToolsProvider(workspaceId).overrideWith(
-            _ErrorToolsNotifier.new,
-          ),
+          workspaceToolsProvider(workspaceId)
+              .overrideWith(_ErrorToolsNotifier.new),
         ],
         child: MaterialApp(
           home: Theme(

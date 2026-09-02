@@ -7,18 +7,12 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class DisableSkillUsecase {
-  const DisableSkillUsecase(
-    this._skillsRepository,
-    this._appSkillWorkspaceSettingsRepository, {
-    this.cloudStore,
-  });
-
-  final SkillsRepository? _skillsRepository;
+class const DisableSkillUsecase(
+  final SkillsRepository? _skillsRepository,
   final AppSkillWorkspaceSettingsRepository?
-  _appSkillWorkspaceSettingsRepository;
-  final CloudSkillStore? cloudStore;
-
+  _appSkillWorkspaceSettingsRepository, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<void> call({
     required String workspaceId,
     required SkillSource source,
@@ -74,16 +68,14 @@ class DisableSkillUsecase {
 }
 
 final ProviderFamily<DisableSkillUsecase, String> disableSkillUsecaseProvider =
-    Provider.family<DisableSkillUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<DisableSkillUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return DisableSkillUsecase(
-          cloud == null ? ref.watch(skillsRepositoryProvider) : null,
-          cloud == null
-              ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
-              : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return DisableSkillUsecase(
+        cloud == null ? ref.watch(skillsRepositoryProvider) : null,
+        cloud == null
+            ? ref.watch(appSkillWorkspaceSettingsRepositoryProvider)
+            : null,
+        cloudStore: cloud,
+      );
+    });

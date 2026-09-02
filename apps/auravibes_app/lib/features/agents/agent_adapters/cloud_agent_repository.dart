@@ -7,22 +7,16 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
 typedef ReadCloudAgents = Future<List<WorkspaceResource>> Function();
-typedef PatchCloudAgents =
-    Future<PatchWorkspaceStateResponse> Function({
-      required String requestId,
-      required List<WorkspacePatchOperation> operations,
-    });
+typedef PatchCloudAgents = Future<PatchWorkspaceStateResponse> Function({
+  required String requestId,
+  required List<WorkspacePatchOperation> operations,
+});
 
-class CloudAgentRepository implements AgentRepository {
-  CloudAgentRepository({
-    required this.workspaceId,
-    required this.read,
-    required this.patch,
-  });
-
-  final String workspaceId;
-  final ReadCloudAgents read;
-  final PatchCloudAgents patch;
+class CloudAgentRepository({
+  required final String workspaceId,
+  required final ReadCloudAgents read,
+  required final PatchCloudAgents patch,
+}) implements AgentRepository {
   final Map<String, int> _revisions = {};
 
   @override
@@ -85,10 +79,7 @@ class CloudAgentRepository implements AgentRepository {
   }
 
   @override
-  Future<AgentEntity> updateAgent(
-    String agentId,
-    AgentToUpdate agent,
-  ) async {
+  Future<AgentEntity> updateAgent(String agentId, AgentToUpdate agent) async {
     final resources = await read();
     final associations = _agentSkillAssociations(resources, agentId);
     for (final resource in resources) {
@@ -116,10 +107,7 @@ class CloudAgentRepository implements AgentRepository {
     );
     _revisions[agentId] = resource.revision;
 
-    return _decode(
-      resource,
-      response.resources,
-    );
+    return _decode(resource, response.resources);
   }
 
   @override

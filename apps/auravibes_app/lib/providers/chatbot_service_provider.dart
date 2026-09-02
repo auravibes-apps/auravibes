@@ -7,11 +7,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'chatbot_service_provider.g.dart';
 
 /// Provider that creates a ChatbotService without tools.
-/// (for title generation, etc.)
+/// For title generation and similar tasks.
 @Riverpod(keepAlive: true)
-ChatbotService chatbotService(
-  Ref ref,
-) {
+ChatbotService chatbotService(Ref ref) {
   return ChatbotService(
     serviceConnectionRepository: ref.watch(serviceConnectionRepositoryProvider),
     oauthCredentialService: ref.watch(oauthCredentialServiceProvider),

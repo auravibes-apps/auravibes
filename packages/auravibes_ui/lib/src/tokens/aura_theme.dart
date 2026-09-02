@@ -13,14 +13,7 @@ import 'package:flutter/material.dart';
 /// at build time through [fromSpacing] / [fromBorderRadius] / [typography].
 @immutable
 class AuraTheme extends ThemeExtension<AuraTheme> {
-  /// Creates a Aura theme extension.
-  const AuraTheme({
-    required this.colors,
-    required this.animation,
-    this.spacing = const AuraSpacingScale._standard(),
-    this.borderRadius = const AuraBorderRadiusScale._standard(),
-    this.typography = const AuraTypographyScale._standard(),
-  });
+  static const _standardAnimation = AuraAnimationTheme._standard();
 
   /// Light theme variant.
   static final light = AuraTheme(
@@ -36,7 +29,15 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
 
   static final _lightColors = AuraColorScheme._light();
   static final _darkColors = AuraColorScheme._dark();
-  static const _standardAnimation = AuraAnimationTheme._standard();
+
+  /// Creates a Aura theme extension.
+  const new({
+    required this.colors,
+    required this.animation,
+    this.spacing = const AuraSpacingScale._standard(),
+    this.borderRadius = const AuraBorderRadiusScale._standard(),
+    this.typography = const AuraTypographyScale._standard(),
+  });
 
   /// Color scheme for the theme.
   final AuraColorScheme colors;
@@ -91,37 +92,47 @@ class AuraTheme extends ThemeExtension<AuraTheme> {
       borderRadius.resolve(value);
 }
 
-/// Theme-owned spacing scale: one [double] per [AuraSpacing] step.
+/// Theme-owned spacing scale. It contains one [double] per [AuraSpacing] step.
 ///
-/// Values are absent from the [AuraSpacing] enum on purpose so a subtree
+/// Values are absent from the [AuraSpacing] enum on purpose. A subtree
 /// `Theme` override can rescale spacing. [AuraSpacingScale._standard] carries
 /// the design-system defaults (base unit 16px).
 @immutable
 class AuraSpacingScale {
+  static const _noneValue = 0.0;
+  static const _baseValue = 16.0;
+  static const _extraSmallValue = 4.0;
+  static const _smallValue = 8.0;
+  static const _mediumValue = 16.0;
+  static const _largeValue = 24.0;
+  static const _extraLargeValue = 32.0;
+  static const _extraLarge2Value = 48.0;
+  static const _extraLarge3Value = 64.0;
+
   /// Creates a spacing scale.
-  const AuraSpacingScale({
-    this.none = 0,
-    this.base = 16,
-    this.xs = 4,
-    this.sm = 8,
-    this.md = 16,
-    this.lg = 24,
-    this.xl = 32,
-    this.xl2 = 48,
-    this.xl3 = 64,
+  const new({
+    this.none = _noneValue,
+    this.base = _baseValue,
+    this.xs = _extraSmallValue,
+    this.sm = _smallValue,
+    this.md = _mediumValue,
+    this.lg = _largeValue,
+    this.xl = _extraLargeValue,
+    this.xl2 = _extraLarge2Value,
+    this.xl3 = _extraLarge3Value,
   });
 
   /// Design-system standard spacing scale.
-  const AuraSpacingScale._standard()
-    : none = 0,
-      base = 16,
-      xs = 4,
-      sm = 8,
-      md = 16,
-      lg = 24,
-      xl = 32,
-      xl2 = 48,
-      xl3 = 64;
+  const new _standard()
+    : none = _noneValue,
+      base = _baseValue,
+      xs = _extraSmallValue,
+      sm = _smallValue,
+      md = _mediumValue,
+      lg = _largeValue,
+      xl = _extraLargeValue,
+      xl2 = _extraLarge2Value,
+      xl3 = _extraLarge3Value;
 
   /// Value for [AuraSpacing.none].
   final double none;
@@ -171,8 +182,8 @@ class AuraSpacingScale {
     if (t >= 1) return other;
 
     return AuraSpacingScale(
-      none: _lerpDouble(none, other.none, t),
       base: _lerpDouble(base, other.base, t),
+      none: _lerpDouble(none, other.none, t),
       xs: _lerpDouble(xs, other.xs, t),
       sm: _lerpDouble(sm, other.sm, t),
       md: _lerpDouble(md, other.md, t),
@@ -187,24 +198,31 @@ class AuraSpacingScale {
 /// Theme-owned border-radius scale: one [double] per [AuraBorderRadius] step.
 @immutable
 class AuraBorderRadiusScale {
+  static const _noneValue = 0.0;
+  static const _smallValue = 2.0;
+  static const _mediumValue = 6.0;
+  static const _largeValue = 8.0;
+  static const _extraLargeValue = 16.0;
+  static const _fullValue = 9999.0;
+
   /// Creates a border-radius scale.
-  const AuraBorderRadiusScale({
-    this.none = 0,
-    this.sm = 2,
-    this.md = 6,
-    this.lg = 8,
-    this.xl = 16,
-    this.full = 9999,
+  const new({
+    this.none = _noneValue,
+    this.sm = _smallValue,
+    this.md = _mediumValue,
+    this.lg = _largeValue,
+    this.xl = _extraLargeValue,
+    this.full = _fullValue,
   });
 
   /// Design-system standard border-radius scale.
-  const AuraBorderRadiusScale._standard()
-    : none = 0,
-      sm = 2,
-      md = 6,
-      lg = 8,
-      xl = 16,
-      full = 9999;
+  const new _standard()
+    : none = _noneValue,
+      sm = _smallValue,
+      md = _mediumValue,
+      lg = _largeValue,
+      xl = _extraLargeValue,
+      full = _fullValue;
 
   /// Value for [AuraBorderRadius.none].
   final double none;
@@ -252,77 +270,100 @@ class AuraBorderRadiusScale {
   }
 }
 
-/// Theme-owned typography scale: font sizes, weights, line heights, letter
+/// Theme-owned typography scale. It contains font sizes, weights, line heights,
 /// spacings, and font families.
 ///
 /// Font families are strings and do not interpolate; [lerp] picks the source
 /// or target family at the halfway point (mirroring [AuraAnimationTheme]).
 @immutable
 class AuraTypographyScale {
+  static const _xl5Line = 1.0;
+  static const _smFont = 14.0;
+  static const _baseFont = 16.0;
+  static const _lgFont = 18.0;
+  static const _xlFont = 20.0;
+  static const _xl2Font = 24.0;
+  static const _xl3Font = 30.0;
+  static const _xl4Font = 36.0;
+  static const _xl5Font = 48.0;
+  static const _xsLine = 1.2;
+  static const _smLine = 1.25;
+  static const _baseLine = 1.5;
+  static const _lgLine = 1.55;
+  static const _xlLine = 1.6;
+  static const _xl2Line = 1.3;
+  static const _xl3Line = 1.2;
+  static const _xl4Line = 1.1;
+  static const _xsFont = 12.0;
+  static const _normalLetterSpacing = 0.0;
+  static const _wideLetterSpacing = 0.025;
+  static const _tightLetterSpacing = -0.025;
+  static const _halfway = 0.5;
+
   /// Creates a typography scale.
-  const AuraTypographyScale({
+  const new({
     this.headingFontFamily = 'Inter',
     this.bodyFontFamily = 'Inter',
     this.monoFontFamily = 'JetBrains Mono',
-    this.fontSizeXs = 12,
-    this.fontSizeSm = 14,
-    this.fontSizeBase = 16,
-    this.fontSizeLg = 18,
-    this.fontSizeXl = 20,
-    this.fontSize2Xl = 24,
-    this.fontSize3Xl = 30,
-    this.fontSize4Xl = 36,
-    this.fontSize5Xl = 48,
+    this.fontSizeXs = _xsFont,
+    this.fontSizeSm = _smFont,
+    this.fontSizeBase = _baseFont,
+    this.fontSizeLg = _lgFont,
+    this.fontSizeXl = _xlFont,
+    this.fontSize2Xl = _xl2Font,
+    this.fontSize3Xl = _xl3Font,
+    this.fontSize4Xl = _xl4Font,
+    this.fontSize5Xl = _xl5Font,
     this.fontWeightLight = FontWeight.w300,
     this.fontWeightRegular = FontWeight.w400,
     this.fontWeightMedium = FontWeight.w500,
     this.fontWeightSemibold = FontWeight.w600,
     this.fontWeightBold = FontWeight.w700,
-    this.lineHeightXs = 1.2,
-    this.lineHeightSm = 1.25,
-    this.lineHeightBase = 1.5,
-    this.lineHeightLg = 1.55,
-    this.lineHeightXl = 1.6,
-    this.lineHeight2Xl = 1.3,
-    this.lineHeight3Xl = 1.2,
-    this.lineHeight4Xl = 1.1,
-    this.lineHeight5Xl = 1,
-    this.letterSpacingTight = -0.025,
-    this.letterSpacingNormal = 0,
-    this.letterSpacingWide = 0.025,
+    this.lineHeightXs = _xsLine,
+    this.lineHeightSm = _smLine,
+    this.lineHeightBase = _baseLine,
+    this.lineHeightLg = _lgLine,
+    this.lineHeightXl = _xlLine,
+    this.lineHeight2Xl = _xl2Line,
+    this.lineHeight3Xl = _xl3Line,
+    this.lineHeight4Xl = _xl4Line,
+    this.lineHeight5Xl = _xl5Line,
+    this.letterSpacingTight = _tightLetterSpacing,
+    this.letterSpacingNormal = _normalLetterSpacing,
+    this.letterSpacingWide = _wideLetterSpacing,
   });
 
   /// Design-system standard typography scale.
-  const AuraTypographyScale._standard()
+  const new _standard()
     : headingFontFamily = 'Inter',
       bodyFontFamily = 'Inter',
       monoFontFamily = 'JetBrains Mono',
-      fontSizeXs = 12,
-      fontSizeSm = 14,
-      fontSizeBase = 16,
-      fontSizeLg = 18,
-      fontSizeXl = 20,
-      fontSize2Xl = 24,
-      fontSize3Xl = 30,
-      fontSize4Xl = 36,
-      fontSize5Xl = 48,
+      fontSizeXs = _xsFont,
+      fontSizeSm = _smFont,
+      fontSizeBase = _baseFont,
+      fontSizeLg = _lgFont,
+      fontSizeXl = _xlFont,
+      fontSize2Xl = _xl2Font,
+      fontSize3Xl = _xl3Font,
+      fontSize4Xl = _xl4Font,
+      fontSize5Xl = _xl5Font,
       fontWeightLight = FontWeight.w300,
       fontWeightRegular = FontWeight.w400,
       fontWeightMedium = FontWeight.w500,
       fontWeightSemibold = FontWeight.w600,
       fontWeightBold = FontWeight.w700,
-      lineHeightXs = 1.2,
-      lineHeightSm = 1.25,
-      lineHeightBase = 1.5,
-      lineHeightLg = 1.55,
-      lineHeightXl = 1.6,
-      lineHeight2Xl = 1.3,
-      lineHeight3Xl = 1.2,
-      lineHeight4Xl = 1.1,
-      lineHeight5Xl = 1,
-      letterSpacingTight = -0.025,
-      letterSpacingNormal = 0,
-      letterSpacingWide = 0.025;
+      lineHeightXs = _xsLine,
+      lineHeightSm = _smLine,
+      lineHeightBase = _baseLine,
+      lineHeightLg = _lgLine,
+      lineHeightXl = _xlLine,
+      lineHeight2Xl = _xl2Line,
+      lineHeight3Xl = _xl3Line,
+      lineHeight4Xl = _xl4Line,
+      lineHeight5Xl = _xl5Line,
+      letterSpacingTight = -_wideLetterSpacing,
+      letterSpacingNormal = _normalLetterSpacing,
+      letterSpacingWide = _wideLetterSpacing;
 
   /// Font family for headings and display text.
   final String headingFontFamily;
@@ -359,8 +400,8 @@ class AuraTypographyScale {
   /// 4X large font size (36px).
   final double fontSize4Xl;
 
-  /// 5X large font size (48px).
-  final double fontSize5Xl;
+  /// Wide letter spacing (0.025).
+  final double letterSpacingWide;
 
   // Font weights.
 
@@ -416,8 +457,8 @@ class AuraTypographyScale {
   /// Normal letter spacing (0).
   final double letterSpacingNormal;
 
-  /// Wide letter spacing (0.025).
-  final double letterSpacingWide;
+  /// 5X large font size (48px).
+  final double fontSize5Xl;
 
   /// Linearly interpolate between two typography scales.
   AuraTypographyScale lerp(AuraTypographyScale other, double t) {
@@ -425,9 +466,11 @@ class AuraTypographyScale {
     if (t >= 1) return other;
 
     return AuraTypographyScale(
-      headingFontFamily: t < 0.5 ? headingFontFamily : other.headingFontFamily,
-      bodyFontFamily: t < 0.5 ? bodyFontFamily : other.bodyFontFamily,
-      monoFontFamily: t < 0.5 ? monoFontFamily : other.monoFontFamily,
+      headingFontFamily: t < _halfway
+          ? headingFontFamily
+          : other.headingFontFamily,
+      bodyFontFamily: t < _halfway ? bodyFontFamily : other.bodyFontFamily,
+      monoFontFamily: t < _halfway ? monoFontFamily : other.monoFontFamily,
       fontSizeXs: _lerpDouble(fontSizeXs, other.fontSizeXs, t),
       fontSizeSm: _lerpDouble(fontSizeSm, other.fontSizeSm, t),
       fontSizeBase: _lerpDouble(fontSizeBase, other.fontSizeBase, t),
@@ -457,11 +500,7 @@ class AuraTypographyScale {
         other.fontWeightSemibold,
         t,
       ),
-      fontWeightBold: _lerpFontWeight(
-        fontWeightBold,
-        other.fontWeightBold,
-        t,
-      ),
+      fontWeightBold: _lerpFontWeight(fontWeightBold, other.fontWeightBold, t),
       lineHeightXs: _lerpDouble(lineHeightXs, other.lineHeightXs, t),
       lineHeightSm: _lerpDouble(lineHeightSm, other.lineHeightSm, t),
       lineHeightBase: _lerpDouble(lineHeightBase, other.lineHeightBase, t),
@@ -493,14 +532,18 @@ class AuraTypographyScale {
 double _lerpDouble(double a, double b, double t) => a + (b - a) * t;
 
 FontWeight _lerpFontWeight(FontWeight a, FontWeight b, double t) {
-  return FontWeight.lerp(a, b, t) ?? (t < 0.5 ? a : b);
+  return FontWeight.lerp(a, b, t) ?? (t < AuraTypographyScale._halfway ? a : b);
 }
 
 /// Color scheme that adapts to light and dark themes.
 @immutable
 class AuraColorScheme {
+  static const _lightnessLight = 0.45;
+  static const _lightnessDark = 0.4;
+  static const _standardChroma = 0.2;
+
   /// Creates a [AuraColorScheme] with the specified colors.
-  const AuraColorScheme({
+  const new({
     required this.primary,
     required this.primaryVariant,
     required this.onPrimary,
@@ -531,7 +574,7 @@ class AuraColorScheme {
   });
 
   /// Creates a light color scheme.
-  AuraColorScheme._light()
+  new _light()
     : primary = DesignColors.primaryBase,
       primaryVariant = DesignColors.primaryDark,
       onPrimary = DesignColors.primaryContrast,
@@ -549,26 +592,26 @@ class AuraColorScheme {
       onBackground = DesignColors.neutral900,
       error = OKLCHColor(
         hue: HueColorValues.error,
-        lightness: 0.6,
-        chroma: 0.2,
+        lightness: _lightnessLight,
+        chroma: _standardChroma,
       ).toColor(),
       onError = const Color(0xFFFFFFFF),
       warning = OKLCHColor(
         hue: HueColorValues.warning,
-        lightness: 0.6,
-        chroma: 0.2,
+        lightness: _lightnessLight,
+        chroma: _standardChroma,
       ).toColor(),
       onWarning = const Color(0xFFFFFFFF),
       success = OKLCHColor(
         hue: HueColorValues.success,
-        lightness: 0.6,
-        chroma: 0.2,
+        lightness: _lightnessLight,
+        chroma: _standardChroma,
       ).toColor(),
       onSuccess = const Color(0xFFFFFFFF),
       info = OKLCHColor(
         hue: HueColorValues.info,
-        lightness: 0.6,
-        chroma: 0.2,
+        lightness: _lightnessLight,
+        chroma: _standardChroma,
       ).toColor(),
       onInfo = const Color(0xFFFFFFFF),
       outline = DesignColors.neutral300,
@@ -577,7 +620,7 @@ class AuraColorScheme {
       scrim = const Color(0x80000000);
 
   /// Creates a dark color scheme.
-  AuraColorScheme._dark()
+  new _dark()
     : primary = DesignColors.primaryLight,
       primaryVariant = DesignColors.primaryBase,
       onPrimary = Colors.black,
@@ -595,35 +638,35 @@ class AuraColorScheme {
       onBackground = DesignColors.neutral100,
       error = OKLCHColor(
         hue: HueColorValues.error,
-        lightness: 0.4,
-        chroma: 0.2,
+        lightness: _lightnessDark,
+        chroma: _standardChroma,
       ).toColor(),
-      onError = Colors.black,
+      onError = Colors.white,
       warning = OKLCHColor(
         hue: HueColorValues.warning,
-        lightness: 0.4,
-        chroma: 0.2,
+        lightness: _lightnessDark,
+        chroma: _standardChroma,
       ).toColor(),
-      onWarning = Colors.black,
+      onWarning = Colors.white,
       success = OKLCHColor(
         hue: HueColorValues.success,
-        lightness: 0.4,
-        chroma: 0.2,
+        lightness: _lightnessDark,
+        chroma: _standardChroma,
       ).toColor(),
-      onSuccess = Colors.black,
+      onSuccess = Colors.white,
       info = OKLCHColor(
         hue: HueColorValues.info,
-        lightness: 0.4,
-        chroma: 0.2,
+        lightness: _lightnessDark,
+        chroma: _standardChroma,
       ).toColor(),
-      onInfo = Colors.black,
+      onInfo = Colors.white,
       outline = DesignColors.neutral600,
       outlineVariant = DesignColors.neutral700,
       shadow = const Color(0xFF000000),
       scrim = const Color(0xB3000000);
 
-  /// Primary color for main UI elements.
-  final Color primary;
+  /// Variant of the tertiary color.
+  final Color tertiaryVariant;
 
   /// Variant of the primary color for highlights.
   final Color primaryVariant;
@@ -643,8 +686,8 @@ class AuraColorScheme {
   /// Tertiary color for accents.
   final Color tertiary;
 
-  /// Variant of the tertiary color.
-  final Color tertiaryVariant;
+  /// Primary color for main UI elements.
+  final Color primary;
 
   /// Color for text/icons on tertiary color.
   final Color onTertiary;
@@ -679,8 +722,8 @@ class AuraColorScheme {
   /// Color for text/icons on warning color.
   final Color onWarning;
 
-  /// Success color.
-  final Color success;
+  /// Scrim color for overlays.
+  final Color scrim;
 
   /// Color for text/icons on success color.
   final Color onSuccess;
@@ -700,8 +743,17 @@ class AuraColorScheme {
   /// Shadow color.
   final Color shadow;
 
-  /// Scrim color for overlays.
-  final Color scrim;
+  /// Success color.
+  final Color success;
+
+  /// Default foreground color.
+  Color get foreground => onBackground;
+
+  /// Default foreground color for surface elements.
+  Color get foregroundOnSurface => onSurface;
+
+  /// Muted foreground color for secondary text and icons.
+  Color get mutedForeground => onSurfaceVariant;
 
   /// Linearly interpolate between two color schemes.
   AuraColorScheme lerp(AuraColorScheme other, double t) {
@@ -710,11 +762,7 @@ class AuraColorScheme {
       primaryVariant: _lerpColor(primaryVariant, other.primaryVariant, t),
       onPrimary: _lerpColor(onPrimary, other.onPrimary, t),
       secondary: _lerpColor(secondary, other.secondary, t),
-      secondaryVariant: _lerpColor(
-        secondaryVariant,
-        other.secondaryVariant,
-        t,
-      ),
+      secondaryVariant: _lerpColor(secondaryVariant, other.secondaryVariant, t),
       onSecondary: _lerpColor(onSecondary, other.onSecondary, t),
       tertiary: _lerpColor(tertiary, other.tertiary, t),
       tertiaryVariant: _lerpColor(tertiaryVariant, other.tertiaryVariant, t),
@@ -722,11 +770,7 @@ class AuraColorScheme {
       surface: _lerpColor(surface, other.surface, t),
       surfaceVariant: _lerpColor(surfaceVariant, other.surfaceVariant, t),
       onSurface: _lerpColor(onSurface, other.onSurface, t),
-      onSurfaceVariant: _lerpColor(
-        onSurfaceVariant,
-        other.onSurfaceVariant,
-        t,
-      ),
+      onSurfaceVariant: _lerpColor(onSurfaceVariant, other.onSurfaceVariant, t),
       background: _lerpColor(background, other.background, t),
       onBackground: _lerpColor(onBackground, other.onBackground, t),
       error: _lerpColor(error, other.error, t),
@@ -743,19 +787,6 @@ class AuraColorScheme {
       scrim: _lerpColor(scrim, other.scrim, t),
     );
   }
-
-  Color _lerpColor(Color begin, Color end, double t) {
-    return Color.lerp(begin, end, t) ?? begin;
-  }
-
-  /// Default foreground color.
-  Color get foreground => onBackground;
-
-  /// Default foreground color for surface elements.
-  Color get foregroundOnSurface => onSurface;
-
-  /// Muted foreground color for secondary text and icons.
-  Color get mutedForeground => onSurfaceVariant;
 
   /// Resolve a user-selectable tint.
   Color colorFor(AuraTint tint) {
@@ -782,6 +813,10 @@ class AuraColorScheme {
       AuraTint.info => onInfo,
     };
   }
+
+  Color _lerpColor(Color begin, Color end, double t) {
+    return Color.lerp(begin, end, t) ?? begin;
+  }
 }
 
 /// Animation theme that provides consistent timing values.
@@ -791,14 +826,14 @@ class AuraColorScheme {
 @immutable
 class AuraAnimationTheme {
   /// Creates an animation theme with the specified values.
-  const AuraAnimationTheme({
+  const new({
     this.fast = DesignDuration.fast,
     this.normal = DesignDuration.normal,
     this.slow = DesignDuration.slow,
   });
 
   /// Creates the standard animation theme.
-  const AuraAnimationTheme._standard()
+  const new _standard()
     : fast = DesignDuration.fast,
       normal = DesignDuration.normal,
       slow = DesignDuration.slow;
@@ -818,7 +853,7 @@ class AuraAnimationTheme {
   /// Linearly interpolate between two animation themes.
   AuraAnimationTheme lerp(AuraAnimationTheme other, double t) {
     // Animation durations don't interpolate, return this or other based on t.
-    return t < 0.5 ? this : other;
+    return t < AuraTypographyScale._halfway ? this : other;
   }
 }
 

@@ -10,6 +10,7 @@ import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/skills/models/workspace_skill.dart';
 import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:drift/drift.dart';
@@ -45,11 +46,8 @@ void main() {
         content: 'Summarize things.',
       ),
     );
-    await AppSkillWorkspaceSettingsRepository(database).setAppSkillEnabled(
-      workspace.id,
-      'skills_manager',
-      isEnabled: false,
-    );
+    await AppSkillWorkspaceSettingsRepository(database)
+        .setAppSkillEnabled(workspace.id, 'skills_manager', isEnabled: false);
     final _ = await database
         .into(database.tools)
         .insert(
@@ -60,15 +58,17 @@ void main() {
             isEnabled: const Value(true),
           ),
         );
-    final _ = await WorkspaceToolsRepository(database).getWorkspaceTools(
-      workspace.id,
-    );
+    final _ = await WorkspaceToolsRepository(database)
+        .getWorkspaceTools(workspace.id);
 
     return (database: database, workspace: workspace);
   }
 
   testWidgets('renders profile cards and focused managers', (tester) async {
     final fixture = await createFixture();
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: fixture.workspace.id),
+    );
 
     await tester.pumpWidget(
       TestableApp(
@@ -79,29 +79,32 @@ void main() {
           workspaceSkillsProvider(fixture.workspace.id).overrideWith(
             (_) async => const [
               WorkspaceSkill(
+                source: SkillSource.user,
                 id: 'summarizer',
                 slug: 'summarizer',
                 title: 'Summarizer',
                 description: 'Summarize things.',
-                source: SkillSource.user,
                 kind: SkillKind.template,
                 isEnabled: true,
               ),
             ],
           ),
-          workspaceToolsRepositoryProvider.overrideWithValue(
-            WorkspaceToolsRepository(fixture.database),
-          ),
+          workspaceToolsRepositoryProvider(session)
+              .overrideWithValue(WorkspaceToolsRepository(fixture.database)),
         ],
         workspaceId: fixture.workspace.id,
+        workspaceSession: session,
       ),
     );
     await _pumpUntilFound(tester, find.text('Prompt'));
 
     expect(find.text('Prompt'), findsOneWidget);
     expect(find.text('Edit prompt'), findsOneWidget);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -300));
-    final _ = await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Skills'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Skills'), findsOneWidget);
     await tester.drag(find.byType(ListView).first, const Offset(0, -500));
     final _ = await tester.pumpAndSettle();

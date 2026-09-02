@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 /// labels, and notification counts across the application.
 class AuraBadge extends StatelessWidget {
   /// Creates a Aura badge.
-  const AuraBadge({
+  const new({
     required this.child,
     super.key,
     this.variant = AuraBadgeVariant.primary,
@@ -20,7 +20,7 @@ class AuraBadge extends StatelessWidget {
   });
 
   /// Creates a Aura badge with text content.
-  AuraBadge.text({
+  new text({
     required Widget child,
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
@@ -31,7 +31,7 @@ class AuraBadge extends StatelessWidget {
          variant: variant,
          size: size,
          semanticLabel: semanticLabel,
-         child: AuraText(
+         child: _AuraBadgeText(
            child: child,
            style: size == AuraBadgeSize.small
                ? AuraTextStyle.caption
@@ -40,7 +40,7 @@ class AuraBadge extends StatelessWidget {
        );
 
   /// Creates a Aura badge with a count number.
-  AuraBadge.count({
+  new count({
     required int count,
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
@@ -52,7 +52,7 @@ class AuraBadge extends StatelessWidget {
          variant: variant,
          size: size,
          semanticLabel: semanticLabel ?? '$count notifications',
-         child: AuraText(
+         child: _AuraBadgeText(
            child: Text(count > maxCount ? '$maxCount+' : count.toString()),
            style: size == AuraBadgeSize.small
                ? AuraTextStyle.caption
@@ -61,7 +61,7 @@ class AuraBadge extends StatelessWidget {
        );
 
   /// Creates a Aura badge with a dot indicator.
-  const AuraBadge.dot({
+  const new dot({
     Key? key,
     AuraBadgeVariant variant = AuraBadgeVariant.primary,
     String? semanticLabel,
@@ -88,15 +88,14 @@ class AuraBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final foreground = _getForegroundColor(auraColors);
 
     Widget badge = Container(
       padding: _getPadding(spacing: context.auraTheme.spacing),
       decoration: BoxDecoration(
         color: _getBackgroundColor(auraColors),
         border: variant == AuraBadgeVariant.outlined
-            ? Border.all(
-                color: _getBorderColor(auraColors),
-              )
+            ? Border.all(color: _getBorderColor(auraColors))
             : null,
         borderRadius: BorderRadius.circular(
           context.auraTheme.fromBorderRadius(_getBorderRadius()),
@@ -104,18 +103,18 @@ class AuraBadge extends StatelessWidget {
       ),
       child: DefaultTextStyle(
         style: TextStyle(
-          color: _getForegroundColor(auraColors),
+          color: foreground,
           fontWeight: context.auraTheme.typography.fontWeightMedium,
         ),
-        child: child,
+        child: IconTheme(
+          data: IconThemeData(color: foreground),
+          child: child,
+        ),
       ),
     );
 
     if (semanticLabel != null) {
-      badge = Semantics(
-        child: badge,
-        label: semanticLabel,
-      );
+      badge = Semantics(child: badge, label: semanticLabel);
     }
 
     return badge;
@@ -200,6 +199,27 @@ class AuraBadge extends StatelessWidget {
 
   Color _getOutlinedForegroundColor(AuraColorScheme colors) {
     return colors.mutedForeground;
+  }
+}
+
+class const _AuraBadgeText({
+  required final Widget child,
+  required final AuraTextStyle style,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final foreground = DefaultTextStyle.of(context).style.color;
+
+    return AuraText(
+      child: IconTheme(
+        data: IconThemeData(color: foreground),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: foreground),
+          child: child,
+        ),
+      ),
+      style: style,
+    );
   }
 }
 

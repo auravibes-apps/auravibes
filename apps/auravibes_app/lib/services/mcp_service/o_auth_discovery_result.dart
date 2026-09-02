@@ -2,6 +2,7 @@
 // Required: Existing test and UI helpers keep compact return flow.
 // Required: Existing helpers remain top-level for local feature use.
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -9,37 +10,25 @@ import 'package:logging/logging.dart';
 const _jsonAcceptHeader = {'Accept': 'application/json'};
 
 /// Result of OAuth discovery for an MCP server.
-class OAuthDiscoveryResult {
-  const OAuthDiscoveryResult({
-    required this.authorizationUrl,
-    required this.tokenUrl,
-    required this.clientId,
-    required this.scope,
-  });
-
+class const OAuthDiscoveryResult({
   /// OAuth authorization endpoint URL.
-  final String authorizationUrl;
+  required final String authorizationUrl,
 
   /// OAuth token endpoint URL.
-  final String tokenUrl;
+  required final String tokenUrl,
 
   /// OAuth client ID (may be null for public clients).
-  final String? clientId;
+  required final String? clientId,
 
   /// OAuth scope string.
-  final String? scope;
-}
+  required final String? scope,
+});
 
-class OAuthConnector {
-  const OAuthConnector({
-    required this.clientName,
-    required this.serverUrl,
-    required this.redirectUrl,
-  });
-  final String clientName;
-  final String serverUrl;
-  final String redirectUrl;
-}
+class const OAuthConnector({
+  required final String clientName,
+  required final String serverUrl,
+  required final String redirectUrl,
+});
 
 /// Service for automatically discovering OAuth configuration from MCP servers
 ///
@@ -94,13 +83,10 @@ class OAuthDiscoveryService {
       _logger.info('Trying well-known OAuth endpoint');
 
       final response = await http
-          .get(
-            Uri.parse(wellKnownUrl),
-            headers: _jsonAcceptHeader,
-          )
+          .get(Uri.parse(wellKnownUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authorizationEndpoint =
@@ -151,10 +137,7 @@ class OAuthDiscoveryService {
       if (uri == null || !uri.hasScheme || !uri.hasAuthority) return null;
 
       final response = await http
-          .get(
-            uri,
-            headers: {'Accept': 'text/event-stream'},
-          )
+          .get(uri, headers: {'Accept': 'text/event-stream'})
           .timeout(const Duration(seconds: 5));
 
       return _parseDirectProbeResponse(response);
@@ -238,13 +221,10 @@ class OAuthDiscoveryService {
       _logger.info('Trying OAuth metadata endpoint');
 
       final response = await http
-          .get(
-            Uri.parse(metadataUrl),
-            headers: _jsonAcceptHeader,
-          )
+          .get(Uri.parse(metadataUrl), headers: _jsonAcceptHeader)
           .timeout(const Duration(seconds: 5));
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == HttpStatus.ok) {
         final metadata = json.decode(response.body) as Map<String, dynamic>;
 
         final authUrl = metadata['authorization_url'] as String?;
@@ -292,15 +272,13 @@ class OAuthDiscoveryService {
       final response = await http
           .post(
             Uri.parse(registrationEndpoint),
-            headers: {
-              'Content-Type': 'application/json',
-              ..._jsonAcceptHeader,
-            },
+            headers: {'Content-Type': 'application/json', ..._jsonAcceptHeader},
             body: json.encode(clientMetadata),
           )
           .timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == HttpStatus.ok ||
+          response.statusCode == HttpStatus.created) {
         final registrationResponse =
             json.decode(response.body) as Map<String, dynamic>;
         final clientId = registrationResponse['client_id'] as String?;

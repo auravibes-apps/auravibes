@@ -11,9 +11,8 @@ import 'package:riverpod/riverpod.dart';
 QueryExecutor _testConnection() {
   return DatabaseConnection.delayed(
     Future(
-      () => DatabaseConnection(
-        LazyDatabase(() async => NativeDatabase.memory()),
-      ),
+      () =>
+          DatabaseConnection(LazyDatabase(() async => NativeDatabase.memory())),
     ),
   );
 }

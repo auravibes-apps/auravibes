@@ -2,23 +2,14 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/tool_spec.dart';
 
-class SkillToolMaterializationInput {
-  const SkillToolMaterializationInput({
-    required this.name,
-    required this.description,
-    required this.schema,
-    required this.requiresCredential,
-    this.credentialIds = const [],
-    this.isAvailable = true,
-  });
-
-  final String name;
-  final String description;
-  final Map<String, Object?> schema;
-  final bool requiresCredential;
-  final Iterable<String> credentialIds;
-  final bool isAvailable;
-}
+class const SkillToolMaterializationInput({
+  required final String name,
+  required final String description,
+  required final Map<String, Object?> schema,
+  required final bool requiresCredential,
+  final Iterable<String> credentialIds = const [],
+  final bool isAvailable = true,
+});
 
 ToolSpec? materializeSkillTool(SkillToolMaterializationInput input) {
   final ids = input.credentialIds.toSet();
@@ -106,10 +97,7 @@ Map<String, Object?> materializeSkillToolSchema(
   if (ids.isEmpty) {
     properties.remove('credentialId');
   } else {
-    properties['credentialId'] = {
-      'type': 'string',
-      'enum': ids,
-    };
+    properties['credentialId'] = {'type': 'string', 'enum': ids};
     if (requiresCredential && ids.length > 1) required.add('credentialId');
   }
   result['properties'] = properties;
@@ -123,8 +111,12 @@ Map<String, Object?> materializeSkillToolSchema(
 
 List<ToolSpec> uniqueToolSpecs(Iterable<ToolSpec> specs) {
   final names = <String>{};
-  return [
-    for (final spec in specs)
-      if (names.add(spec.name)) spec,
-  ];
+  final unique = <ToolSpec>[];
+  for (final spec in specs) {
+    if (!names.add(spec.name)) {
+      throw StateError('Duplicate tool name: ${spec.name}');
+    }
+    unique.add(spec);
+  }
+  return unique;
 }

@@ -27,16 +27,21 @@ $ConversationToolStateCopyWith<ConversationToolState> get copyWith => _$Conversa
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolState&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
+  final _this = this as ConversationToolState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationToolState&&(identical(other.tool, _this.tool) || other.tool == _this.tool)&&(identical(other.isEnabled, _this.isEnabled) || other.isEnabled == _this.isEnabled)&&(identical(other.permissionMode, _this.permissionMode) || other.permissionMode == _this.permissionMode)&&(identical(other.isWorkspaceEnabled, _this.isWorkspaceEnabled) || other.isWorkspaceEnabled == _this.isWorkspaceEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,tool,isEnabled,permissionMode,isWorkspaceEnabled);
+int get hashCode {
+  final _this = this as ConversationToolState;
+  return Object.hash(runtimeType,_this.tool,_this.isEnabled,_this.permissionMode,_this.isWorkspaceEnabled);
+}
 
 @override
 String toString() {
-  return 'ConversationToolState(tool: $tool, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
+  final _this = this as ConversationToolState;
+  return 'ConversationToolState(tool: ${_this.tool}, isEnabled: ${_this.isEnabled}, permissionMode: ${_this.permissionMode}, isWorkspaceEnabled: ${_this.isWorkspaceEnabled})';
 }
 
 
@@ -239,16 +244,18 @@ _$ConversationToolStateCopyWith<_ConversationToolState> get copyWith => __$Conve
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolState&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationToolState&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.isEnabled, isEnabled) || other.isEnabled == isEnabled)&&(identical(other.permissionMode, permissionMode) || other.permissionMode == permissionMode)&&(identical(other.isWorkspaceEnabled, isWorkspaceEnabled) || other.isWorkspaceEnabled == isWorkspaceEnabled));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,tool,isEnabled,permissionMode,isWorkspaceEnabled);
+int get hashCode {
+    return Object.hash(runtimeType,tool,isEnabled,permissionMode,isWorkspaceEnabled);
+}
 
 @override
 String toString() {
-  return 'ConversationToolState(tool: $tool, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
+    return 'ConversationToolState(tool: $tool, isEnabled: $isEnabled, permissionMode: $permissionMode, isWorkspaceEnabled: $isWorkspaceEnabled)';
 }
 
 

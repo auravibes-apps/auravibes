@@ -8,16 +8,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ConversationContextUsagePill extends ConsumerWidget {
-  const ConversationContextUsagePill({
-    required this.workspaceId,
-    required this.conversationId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-
+class const ConversationContextUsagePill({
+  required final String workspaceId,
+  required final String conversationId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(contextUsageProvider(workspaceId, conversationId));
@@ -26,9 +21,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
     final auraColors = context.auraColors;
 
     return Padding(
-      padding: EdgeInsets.only(
-        right: context.auraTheme.fromSpacing(.sm),
-      ),
+      padding: EdgeInsets.only(right: context.auraTheme.fromSpacing(.sm)),
       child: AuraTooltip(
         message: tooltip,
         child: Semantics(
@@ -66,9 +59,7 @@ class ConversationContextUsagePill extends ConsumerWidget {
               vertical: .xs,
             ),
             variant: AuraContainerVariant.surfaceVariant,
-            borderRadius: context.auraTheme.fromBorderRadius(
-              .full,
-            ),
+            borderRadius: context.auraTheme.fromBorderRadius(.full),
             border: Border.fromBorderSide(
               BorderSide(color: auraColors.outlineVariant),
             ),
@@ -90,24 +81,22 @@ String _tooltip(ContextUsageData data) {
         .chats_screens_chat_conversation_context_usage_limit_unavailable
         .tr();
   }
+  final tooltipArgs = data.tooltipArgs();
 
   return switch (data.level) {
     ContextUsageLevel.normal =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_normal
-          .tr(namedArgs: data.tooltipArgs()),
+          .tr(namedArgs: tooltipArgs),
     ContextUsageLevel.elevated =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_elevated
-          .tr(namedArgs: data.tooltipArgs()),
+          .tr(namedArgs: tooltipArgs),
     ContextUsageLevel.warning =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_warning
-          .tr(namedArgs: data.tooltipArgs()),
+          .tr(namedArgs: tooltipArgs),
     ContextUsageLevel.overflow =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_tooltip_overflow
           .tr(
-            namedArgs: {
-              ...data.tooltipArgs(),
-              'overflow': '${data.overflowTokens}',
-            },
+            namedArgs: {...tooltipArgs, 'overflow': '${data.overflowTokens}'},
           ),
     ContextUsageLevel.unknown =>
       LocaleKeys.chats_screens_chat_conversation_context_usage_limit_unavailable
@@ -120,9 +109,7 @@ String _semanticValue(ContextUsageData data) {
       .chats_screens_chat_conversation_context_usage_semantic_limit_unavailable;
 
   if (!data.hasLimit) {
-    return semanticLimitUnavailable.tr(
-      namedArgs: {'usage': data.usageLabel},
-    );
+    return semanticLimitUnavailable.tr(namedArgs: {'usage': data.usageLabel});
   }
 
   return switch (data.level) {

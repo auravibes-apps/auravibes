@@ -9,11 +9,9 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
-class CloudSkillSettingsAdapter {
-  const CloudSkillSettingsAdapter(this._gateway);
-
-  final CloudWorkspaceStateGateway _gateway;
-
+class const CloudSkillSettingsAdapter(
+  final CloudWorkspaceStateGateway _gateway,
+) {
   Stream<List<WorkspaceSkill>> watchSkills() {
     return _gateway
         .watchResources(const [
@@ -72,7 +70,10 @@ class CloudSkillSettingsAdapter {
   ) async {
     final state = await watchCompactionSettingsState().first;
 
-    return saveCompactionSettings(settings, expectedRevision: state.revision);
+    return await saveCompactionSettings(
+      settings,
+      expectedRevision: state.revision,
+    );
   }
 
   Future<void> resetCompactionSettings() async {
@@ -179,13 +180,13 @@ class CloudSkillSettingsAdapter {
           final kind = SkillKind.values.byName(data['kind'] as String);
 
           return WorkspaceSkill(
+            source: SkillSource.values.byName(
+              data['source'] as String? ?? SkillSource.user.name,
+            ),
             id: resource.resourceId,
             slug: data['slug'] as String,
             title: data['title'] as String,
             description: data['description'] as String,
-            source: SkillSource.values.byName(
-              data['source'] as String? ?? SkillSource.user.name,
-            ),
             kind: kind,
             isEnabled:
                 settings[resource.resourceId] ?? data['isEnabled'] as bool,

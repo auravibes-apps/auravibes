@@ -36,15 +36,10 @@ extension AgentToolResultStatusX on AgentToolResultStatus {
   };
 }
 
-class AgentToolExecutionResult {
-  const AgentToolExecutionResult({
-    required this.resultStatus,
-    this.responseRaw,
-  });
-
-  final AgentToolResultStatus resultStatus;
-  final String? responseRaw;
-}
+class const AgentToolExecutionResult({
+  required final AgentToolResultStatus resultStatus,
+  final String? responseRaw,
+});
 
 typedef AgentResolvedToolRunner<TTool extends Object> =
     Future<Object?> Function({
@@ -55,26 +50,19 @@ typedef AgentResolvedToolRunner<TTool extends Object> =
 
 typedef AgentToolCancellationChecker = bool Function(String conversationId);
 
-typedef AgentToolExecutionErrorLogger<TTool extends Object> =
-    void Function({
-      required String conversationId,
-      required String toolCallId,
-      required TTool tool,
-      required Object error,
-      required StackTrace stackTrace,
-    });
+typedef AgentToolExecutionErrorLogger<TTool extends Object> = void Function({
+  required String conversationId,
+  required String toolCallId,
+  required TTool tool,
+  required Object error,
+  required StackTrace stackTrace,
+});
 
-class AgentToolExecutionDispatcher<TTool extends Object> {
-  const AgentToolExecutionDispatcher({
-    required this.runResolvedTool,
-    required this.isCancellationRequested,
-    required this.logToolExecutionError,
-  });
-
-  final AgentResolvedToolRunner<TTool> runResolvedTool;
-  final AgentToolCancellationChecker isCancellationRequested;
-  final AgentToolExecutionErrorLogger<TTool> logToolExecutionError;
-
+class const AgentToolExecutionDispatcher<TTool extends Object>({
+  required final AgentResolvedToolRunner<TTool> runResolvedTool,
+  required final AgentToolCancellationChecker isCancellationRequested,
+  required final AgentToolExecutionErrorLogger<TTool> logToolExecutionError,
+}) {
   Future<AgentToolExecutionResult> call({
     required String conversationId,
     required String toolCallId,
@@ -102,7 +90,12 @@ class AgentToolExecutionDispatcher<TTool extends Object> {
 
       return AgentToolExecutionResult(
         resultStatus: AgentToolResultStatus.success,
-        responseRaw: result.toString(),
+        responseRaw: switch (result) {
+          final String value => value,
+          final Map<Object?, Object?> value => jsonEncode(value),
+          final List<Object?> value => jsonEncode(value),
+          _ => result.toString(),
+        },
       );
     } on FormatException catch (error, stackTrace) {
       logToolExecutionError(

@@ -12,18 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ProviderAdmissionLock implements _i1.SerializableModel {
-  ProviderAdmissionLock._({
-    this.id,
-    required this.key,
-  });
-
-  factory ProviderAdmissionLock({
+abstract class ProviderAdmissionLock._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var String key,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required String key,
   }) = _ProviderAdmissionLockImpl;
 
-  factory ProviderAdmissionLock.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ProviderAdmissionLock(
@@ -31,13 +32,6 @@ abstract class ProviderAdmissionLock implements _i1.SerializableModel {
       key: jsonSerialization['key'] as String,
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  String key;
 
   /// Returns a shallow copy of this [ProviderAdmissionLock]
   /// with some or all fields replaced by the given arguments.
@@ -61,16 +55,17 @@ abstract class ProviderAdmissionLock implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ProviderAdmissionLockImpl extends ProviderAdmissionLock {
-  _ProviderAdmissionLockImpl({
-    int? id,
-    required String key,
-  }) : super._(
-         id: id,
-         key: key,
-       );
+class _ProviderAdmissionLockImpl({
+  int? id,
+  required String key,
+}) extends ProviderAdmissionLock {
+  this
+    : super._(
+        id: id,
+        key: key,
+      );
 
   /// Returns a shallow copy of this [ProviderAdmissionLock]
   /// with some or all fields replaced by the given arguments.

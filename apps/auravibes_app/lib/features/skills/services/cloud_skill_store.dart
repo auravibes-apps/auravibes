@@ -10,26 +10,28 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:characters/characters.dart';
 import 'package:uuid/v7.dart';
 
-class CloudSkillStore {
-  CloudSkillStore(this._store, this.workspaceId);
+class CloudSkillStore(
+  final CloudWorkspaceResourceStore _store,
+  final String workspaceId,
+) {
+  Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
+      (await _active(WorkspaceResourceKind.skillDefinition))
+          .map(_definition)
+          .toList();
 
-  final CloudWorkspaceResourceStore _store;
-  final String workspaceId;
-
-  Future<List<SkillEntity>> skills() async =>
-      (await _active(WorkspaceResourceKind.skill)).map(_skill).toList();
-
-  Future<SkillEntity?> skill(String id) async => (await _active(
-    WorkspaceResourceKind.skill,
-  )).where((item) => item.resourceId == id).map(_skill).firstOrNull;
+  Future<SkillEntity?> skill(String id) async =>
+      (await _active(WorkspaceResourceKind.skill))
+          .where((item) => item.resourceId == id)
+          .map(_skill)
+          .firstOrNull;
 
   Future<SkillEntity> createSkill(SkillToCreate value) async {
     final now = DateTime.now().toUtc();
     final id = const UuidV7().generate();
     final entity = SkillEntity(
+      source: SkillSource.user,
       id: id,
       workspaceId: workspaceId,
-      source: SkillSource.user,
       kind: value.kind,
       title: value.title.trim(),
       slug: generateSkillSlug(value.title),
@@ -81,13 +83,16 @@ class CloudSkillStore {
       _delete(WorkspaceResourceKind.skill, id);
 
   Future<List<SkillTemplateToolEntity>> tools(String skillId) async =>
-      (await _active(
-        WorkspaceResourceKind.skillTemplateTool,
-      )).where((item) => _data(item)['skillId'] == skillId).map(_tool).toList();
+      (await _active(WorkspaceResourceKind.skillTemplateTool))
+          .where((item) => _data(item)['skillId'] == skillId)
+          .map(_tool)
+          .toList();
 
-  Future<SkillTemplateToolEntity?> tool(String id) async => (await _active(
-    WorkspaceResourceKind.skillTemplateTool,
-  )).where((item) => item.resourceId == id).map(_tool).firstOrNull;
+  Future<SkillTemplateToolEntity?> tool(String id) async =>
+      (await _active(WorkspaceResourceKind.skillTemplateTool))
+          .where((item) => item.resourceId == id)
+          .map(_tool)
+          .firstOrNull;
 
   Future<SkillTemplateToolEntity> createTool(
     String skillId,
@@ -149,10 +154,7 @@ class CloudSkillStore {
       kind: WorkspaceResourceKind.skillTemplateTool,
       id: id,
       revision: resource.revision,
-      data: _toolData(
-        updated,
-        skillSlug: _data(skill)['slug'] as String,
-      ),
+      data: _toolData(updated, skillSlug: _data(skill)['slug'] as String),
     );
 
     return updated;
@@ -161,15 +163,14 @@ class CloudSkillStore {
   Future<void> deleteTool(String id) =>
       _delete(WorkspaceResourceKind.skillTemplateTool, id);
 
-  Future<List<SkillCredentialDefinitionEntity>> definitions() async =>
-      (await _active(
-        WorkspaceResourceKind.skillDefinition,
-      )).map(_definition).toList();
+  Future<List<SkillEntity>> skills() async =>
+      (await _active(WorkspaceResourceKind.skill)).map(_skill).toList();
 
   Future<SkillCredentialDefinitionEntity?> definition(String id) async =>
-      (await _active(
-        WorkspaceResourceKind.skillDefinition,
-      )).where((item) => item.resourceId == id).map(_definition).firstOrNull;
+      (await _active(WorkspaceResourceKind.skillDefinition))
+          .where((item) => item.resourceId == id)
+          .map(_definition)
+          .firstOrNull;
 
   Future<SkillCredentialDefinitionEntity> createDefinition(
     SkillCredentialDefinitionToCreate value,
@@ -277,14 +278,13 @@ class CloudSkillStore {
   }
 
   Future<SkillCredentialForEdit?> credentialForEdit(String id) async {
-    final resource =
-        (await _active(
-          WorkspaceResourceKind.serviceConnection,
-        )).where((item) {
+    final resource = (await _active(WorkspaceResourceKind.serviceConnection))
+        .where((item) {
           if (item.resourceId != id) return false;
 
           return _data(item)['kind'] == 'skillCredential';
-        }).firstOrNull;
+        })
+        .firstOrNull;
     if (resource == null) return null;
     final credential = _credential(resource);
     final definition = await this.definition(credential.credentialDefinitionId);
@@ -404,9 +404,9 @@ class CloudSkillStore {
     if (await skill(id) == null) {
       final now = DateTime.now().toUtc();
       final appSkill = SkillEntity(
+        source: SkillSource.app,
         id: id,
         workspaceId: workspaceId,
-        source: SkillSource.app,
         kind: SkillKind.native,
         title: title ?? id,
         slug: slug ?? id,
@@ -501,23 +501,24 @@ class CloudSkillStore {
     );
   }
 
+  Future<List<({String skillId})>> selectionResources(
+    String conversationId,
+  ) async =>
+      (await _active(WorkspaceResourceKind.conversationSkillSelection))
+          .map(_data)
+          .where((data) => data['conversationId'] == conversationId)
+          .map((data) => (skillId: data['skillId'] as String))
+          .toList();
+
   Future<bool> isAppSkillEnabled(String id) async {
-    final setting = (await _active(
-      WorkspaceResourceKind.skillSetting,
-    )).where((item) => item.resourceId == id).firstOrNull;
+    final setting = (await _active(WorkspaceResourceKind.skillSetting))
+        .where((item) => item.resourceId == id)
+        .firstOrNull;
 
     return setting == null
         ? id == 'skills_manager' || id == agentsSkillSlug
         : _data(setting)['isEnabled'] as bool;
   }
-
-  Future<List<({String skillId})>> selectionResources(
-    String conversationId,
-  ) async => (await _active(WorkspaceResourceKind.conversationSkillSelection))
-      .map(_data)
-      .where((data) => data['conversationId'] == conversationId)
-      .map((data) => (skillId: data['skillId'] as String))
-      .toList();
 
   Future<List<WorkspaceResource>> _active(WorkspaceResourceKind kind) async =>
       (await _store.watch(kind).first)
@@ -541,11 +542,11 @@ class CloudSkillStore {
     final data = _data(value);
 
     return SkillEntity(
-      id: value.resourceId,
-      workspaceId: workspaceId,
       source: SkillSource.values.byName(
         data['source'] as String? ?? SkillSource.user.name,
       ),
+      id: value.resourceId,
+      workspaceId: workspaceId,
       kind: SkillKind.values.byName(data['kind'] as String),
       title: data['title'] as String,
       slug: data['slug'] as String,
@@ -667,8 +668,12 @@ class CloudSkillStore {
     final value = values.where((item) => item.isNotEmpty).firstOrNull;
     if (value == null) return null;
 
-    return value.characters.length <= 6
+    const suffixLength = 6;
+
+    return value.characters.length <= suffixLength
         ? value
-        : value.characters.getRange(value.characters.length - 6).toString();
+        : value.characters
+              .getRange(value.characters.length - suffixLength)
+              .toString();
   }
 }

@@ -17,16 +17,11 @@ const _messageContentCannotBeEmpty = 'Message content cannot be empty';
 /// This class provides a concrete implementation of message data operations
 /// using Drift database. It handles the mapping between domain entities
 /// and database records, and provides proper error handling using exceptions.
-class MessageRepository {
-  MessageRepository(
-    this._database, {
-    this._attachmentFileStore = const AttachmentFileStore(),
-  });
-
+class MessageRepository(
   /// The database instance for message operations.
-  final AppDatabase _database;
-  final AttachmentFileStore _attachmentFileStore;
-
+  final AppDatabase _database, {
+  final AttachmentFileStore _attachmentFileStore = const AttachmentFileStore(),
+}) {
   Future<List<MessageEntity>> getMessagesByConversation(
     String conversationId,
   ) async {
@@ -34,7 +29,7 @@ class MessageRepository {
       conversationId,
     );
 
-    return _mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getLatestAssistantMessagesByConversations(
@@ -117,7 +112,7 @@ class MessageRepository {
     final messageTables = await _database.messageDao
         .getMessagesByConversationPaginated(conversationId, limit, offset);
 
-    return _mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getMessagesByType(
@@ -129,7 +124,7 @@ class MessageRepository {
       _messageTypeToTableType(messageType),
     );
 
-    return _mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getUserMessages(String conversationId) async {
@@ -137,7 +132,7 @@ class MessageRepository {
       conversationId,
     );
 
-    return _mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<List<MessageEntity>> getSystemMessages(String conversationId) async {
@@ -145,7 +140,7 @@ class MessageRepository {
       conversationId,
     );
 
-    return _mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<MessageEntity?> getMessageById(String id) async {
@@ -153,7 +148,7 @@ class MessageRepository {
 
     if (messageTable == null) return null;
 
-    return _mapToMessageWithAttachments(messageTable);
+    return await _mapToMessageWithAttachments(messageTable);
   }
 
   Future<MessageEntity> createMessage(MessageToCreate message) async {
@@ -193,7 +188,7 @@ class MessageRepository {
 
       await _deleteDraftAttachmentFiles(message.attachments);
 
-      return _mapToMessageWithAttachments(createdMessage);
+      return await _mapToMessageWithAttachments(createdMessage);
     } on Exception {
       await _deleteDraftAttachmentFiles(promotedAttachments);
 
@@ -201,10 +196,7 @@ class MessageRepository {
     }
   }
 
-  Future<MessageEntity> patchMessage(
-    String id,
-    MessagePatch message,
-  ) async {
+  Future<MessageEntity> patchMessage(String id, MessagePatch message) async {
     _validateMessagePatch(message);
 
     if (message.status == MessageStatus.sent && message.content == null) {
@@ -216,9 +208,7 @@ class MessageRepository {
       if (existingMessage.content.trim().isEmpty &&
           existingMessage.attachments.isEmpty &&
           !_hasMessagePayload(metadata)) {
-        throw const MessageValidationException(
-          _messageContentCannotBeEmpty,
-        );
+        throw const MessageValidationException(_messageContentCannotBeEmpty);
       }
     }
 
@@ -232,7 +222,7 @@ class MessageRepository {
       throw MessageNotFoundException(id);
     }
 
-    return _mapToMessageWithAttachments(updatedMessage);
+    return await _mapToMessageWithAttachments(updatedMessage);
   }
 
   Future<bool> deleteMessage(String id) async {
@@ -260,7 +250,7 @@ class MessageRepository {
       status.value,
     );
 
-    return _mapToMessagesWithAttachments(messageTables);
+    return await _mapToMessagesWithAttachments(messageTables);
   }
 
   Future<int> getMessageCountByConversation(String conversationId) {
@@ -284,7 +274,7 @@ class MessageRepository {
 
     if (row == null) return null;
 
-    return _mapToMessageWithAttachments(row);
+    return await _mapToMessageWithAttachments(row);
   }
 
   Future<List<MessageEntity>> _mapToMessagesWithAttachments(
@@ -462,10 +452,10 @@ class MessageRepository {
   MessagesCompanion _mapPatchToMessagesCompanion(MessagePatch message) {
     return MessagesCompanion(
       content: Value.absentIfNull(message.content),
-      status: Value.absentIfNull(
-        _messageStatusToTableStatus(message.status),
+      status: Value.absentIfNull(_messageStatusToTableStatus(message.status)),
+      metadata: Value.absentIfNull(
+        JsonCodec.encode(message.metadata?.toJson()),
       ),
-      metadata: Value.absentIfNull(safeJsonEncode(message.metadata?.toJson())),
     );
   }
 
@@ -538,10 +528,7 @@ class MessageException implements Exception {
   // Cause is optional because not all domain failures wrap an exception.
   // ignore: unnecessary-nullable
   /// Creates a new MessageException.
-  const MessageException(
-    this.message, [
-    this.cause,
-  ]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -560,13 +547,13 @@ class MessageException implements Exception {
 /// Exception thrown when message validation fails.
 class MessageValidationException extends MessageException {
   /// Creates a new MessageValidationException.
-  const MessageValidationException(super.message, [super.cause]);
+  const new(super.message, [super.cause]);
 }
 
 /// Exception thrown when a message is not found.
 class MessageNotFoundException extends MessageException {
   /// Creates a new MessageNotFoundException.
-  const MessageNotFoundException(this.messageId, [Exception? cause])
+  const new(this.messageId, [Exception? cause])
     : super('Message with ID "$messageId" not found', cause);
 
   /// ID of the message that was not found.

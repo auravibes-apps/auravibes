@@ -93,10 +93,7 @@ void main() {
     test('syncMcpTools completes', () async {
       final repo = _StubMcpServersRepository();
 
-      await repo.syncMcpTools(
-        mcpServerId: 'mcp-1',
-        currentTools: [],
-      );
+      await repo.syncMcpTools(mcpServerId: 'mcp-1', currentTools: []);
 
       expect(true, true);
     });

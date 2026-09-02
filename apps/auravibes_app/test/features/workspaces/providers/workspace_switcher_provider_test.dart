@@ -78,18 +78,14 @@ void main() {
   group('WorkspaceSwitcher', () {
     var fakeRouter = _FakeGoRouter();
     var container = ProviderContainer(
-      overrides: [
-        routerProvider.overrideWithValue(fakeRouter),
-      ],
+      overrides: [routerProvider.overrideWithValue(fakeRouter)],
     );
 
     setUp(() {
       SharedPreferences.setMockInitialValues({});
       fakeRouter = _FakeGoRouter();
       container = ProviderContainer(
-        overrides: [
-          routerProvider.overrideWithValue(fakeRouter),
-        ],
+        overrides: [routerProvider.overrideWithValue(fakeRouter)],
       );
       // Keep provider alive during async timer-based tests.
       final _ = container.listen(workspaceSwitcherProvider, (_, _) {
@@ -158,9 +154,7 @@ void main() {
         expect(pendingSelection.savedWorkspaceIds, ['ws-1']);
 
         pendingSelection.completeSave(0);
-        await _waitUntil(
-          () => pendingSelection.savedWorkspaceIds.length == 2,
-        );
+        await _waitUntil(() => pendingSelection.savedWorkspaceIds.length == 2);
         expect(pendingSelection.savedWorkspaceIds, ['ws-1', 'ws-2']);
 
         pendingSelection.completeSave(1);
@@ -228,11 +222,12 @@ void main() {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
       final states = <WorkspaceSwitchState>[];
 
-      final _ = container.listen(
+      final subscription = container.listen(
         workspaceSwitcherProvider,
         (previous, next) => states.add(next),
         fireImmediately: true,
       );
+      addTearDown(subscription.close);
 
       notifier.switchToWorkspace('ws-1');
       await Future<void>.delayed(const Duration(milliseconds: 350));
@@ -303,17 +298,14 @@ void main() {
       expect(fakeRouter.lastLocation, '/workspaces/ws-3/chat/new');
     });
 
-    test(
-      'switchToWorkspace opens the workspace new chat route',
-      () async {
-        final notifier = container.read(workspaceSwitcherProvider.notifier);
+    test('switchToWorkspace opens the workspace new chat route', () async {
+      final notifier = container.read(workspaceSwitcherProvider.notifier);
 
-        notifier.switchToWorkspace('ws-1');
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+      notifier.switchToWorkspace('ws-1');
+      await Future<void>.delayed(const Duration(milliseconds: 350));
 
-        expect(fakeRouter.lastLocation, '/workspaces/ws-1/chat/new');
-      },
-    );
+      expect(fakeRouter.lastLocation, '/workspaces/ws-1/chat/new');
+    });
 
     test('navigation location format is correct', () async {
       final notifier = container.read(workspaceSwitcherProvider.notifier);
@@ -321,10 +313,7 @@ void main() {
       notifier.switchToWorkspace('workspace-abc-123');
       await Future<void>.delayed(const Duration(milliseconds: 350));
 
-      expect(
-        fakeRouter.lastLocation,
-        '/workspaces/workspace-abc-123/chat/new',
-      );
+      expect(fakeRouter.lastLocation, '/workspaces/workspace-abc-123/chat/new');
     });
   });
 }

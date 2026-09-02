@@ -8,21 +8,15 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:uuid/v7.dart';
 
 typedef ReadCloudAgentTools = Future<List<WorkspaceResource>> Function();
-typedef PatchCloudAgentTools =
-    Future<PatchWorkspaceStateResponse> Function({
-      required String requestId,
-      required List<WorkspacePatchOperation> operations,
-    });
+typedef PatchCloudAgentTools = Future<PatchWorkspaceStateResponse> Function({
+  required String requestId,
+  required List<WorkspacePatchOperation> operations,
+});
 
-class CloudAgentToolsRepository implements AgentToolsRepositoryContract {
-  const CloudAgentToolsRepository({required this.read, required this.patch});
-
-  final ReadCloudAgentTools read;
-  final PatchCloudAgentTools patch;
-
-  Map<String, dynamic> _data(WorkspaceResource resource) =>
-      CloudResourceMapper.decode(resource);
-
+class const CloudAgentToolsRepository({
+  required final ReadCloudAgentTools read,
+  required final PatchCloudAgentTools patch,
+}) implements AgentToolsRepositoryContract {
   @override
   Future<List<AgentToolOverrideEntity>> getAgentTools(String agentId) async =>
       (await read())
@@ -111,4 +105,7 @@ class CloudAgentToolsRepository implements AgentToolsRepositoryContract {
 
     return true;
   }
+
+  Map<String, dynamic> _data(WorkspaceResource resource) =>
+      CloudResourceMapper.decode(resource);
 }

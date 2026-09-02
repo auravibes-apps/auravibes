@@ -30,9 +30,8 @@ void main() {
         container: container,
       );
 
-      when(() => messageRepository.getMessagesByConversation(any())).thenAnswer(
-        (_) async => const [],
-      );
+      when(() => messageRepository.getMessagesByConversation(any()))
+          .thenAnswer((_) async => const []);
     });
 
     tearDown(() {
@@ -42,9 +41,7 @@ void main() {
     test('returns busy when the conversation is actively streaming', () async {
       container
           .read(conversationStreamingProvider.notifier)
-          .start(
-            'conversation-1',
-          );
+          .start('conversation-1');
 
       final result = await usecase.call(conversationId: 'conversation-1');
 

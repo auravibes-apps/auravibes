@@ -8,17 +8,11 @@ import 'package:auravibes_app/features/skills/usecases/create_skill_template_too
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class DuplicateSkillTemplateToolUsecase {
-  const DuplicateSkillTemplateToolUsecase(
-    this._skillTemplateToolsRepository, {
-    required this.createSkillTemplateToolUsecase,
-    this.cloudStore,
-  });
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
-  final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase;
-  final CloudSkillStore? cloudStore;
-
+class const DuplicateSkillTemplateToolUsecase(
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
+  required final CreateSkillTemplateToolUsecase createSkillTemplateToolUsecase,
+  final CloudSkillStore? cloudStore,
+}) {
   Future<SkillTemplateToolEntity> call(String toolId) async {
     final cloud = cloudStore;
     final tool = cloud != null
@@ -30,7 +24,7 @@ class DuplicateSkillTemplateToolUsecase {
 
     final title = await _copyTitle(tool);
 
-    return createSkillTemplateToolUsecase.call(
+    return await createSkillTemplateToolUsecase.call(
       tool.skillId,
       SkillTemplateToolToCreate(
         templateType: tool.templateType,
@@ -57,10 +51,7 @@ class DuplicateSkillTemplateToolUsecase {
           tool.skillId,
         )).where((item) => item.slug == slug).firstOrNull,
         (cloud: _, repository: final repository?) =>
-          await repository.getToolBySlug(
-            tool.skillId,
-            slug,
-          ),
+          await repository.getToolBySlug(tool.skillId, slug),
         _ => throw StateError('Skill template tool store is unavailable'),
       };
       if (existing == null) return title;
@@ -71,18 +62,17 @@ class DuplicateSkillTemplateToolUsecase {
 
 final ProviderFamily<DuplicateSkillTemplateToolUsecase, String>
 duplicateSkillTemplateToolUsecaseProvider =
-    Provider.family<DuplicateSkillTemplateToolUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<DuplicateSkillTemplateToolUsecase, String>((
+      ref,
+      workspaceId,
+    ) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return DuplicateSkillTemplateToolUsecase(
-          cloud == null
-              ? ref.watch(skillTemplateToolsRepositoryProvider)
-              : null,
-          createSkillTemplateToolUsecase: ref.watch(
-            createSkillTemplateToolUsecaseProvider(workspaceId),
-          ),
-          cloudStore: cloud,
-        );
-      },
-    );
+      return DuplicateSkillTemplateToolUsecase(
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        createSkillTemplateToolUsecase: ref.watch(
+          createSkillTemplateToolUsecaseProvider(workspaceId),
+        ),
+        cloudStore: cloud,
+      );
+    });

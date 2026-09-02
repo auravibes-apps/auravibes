@@ -10,22 +10,15 @@ import 'package:flutter/material.dart';
 /// Displays up to 3 lines of the response text. If the content exceeds
 /// 3 lines (considering line wraps), a "Show more" button appears that
 /// opens a modal with the full markdown-rendered content.
-class ToolCallResponsePreview extends StatefulWidget {
-  const ToolCallResponsePreview({
-    required this.toolName,
-    required this.content,
-    super.key,
-    this.showExpandButton = true,
-  });
-
+class const ToolCallResponsePreview({
   /// The name of the tool that generated the response.
-  final String toolName;
+  required final String toolName,
 
   /// The raw response content to display.
-  final String content;
-
-  final bool showExpandButton;
-
+  required final String content,
+  super.key,
+  final bool showExpandButton = true,
+}) extends StatefulWidget {
   /// Maximum number of lines to show in the preview.
   static const int maxPreviewLines = 3;
 
@@ -58,6 +51,50 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Preview text with max 3 lines.
+        Text(
+          widget.content,
+          key: _textKey,
+          style: TextStyle(
+            color: context.auraColors.onSurface.withValues(alpha: 0.8),
+            fontSize: 13,
+            height: 1.4,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: ToolCallResponsePreview.maxPreviewLines,
+        ),
+
+        // Show more button (only if content exceeds max lines).
+        if (_exceedsMaxLines && widget.showExpandButton)
+          Padding(
+            padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs)),
+            child: AuraButton(
+              onPressed: _showFullContent,
+              child: const AuraRow(
+                children: [
+                  TextLocale(LocaleKeys.common_show_more),
+                  AuraIcon(
+                    Icons.open_in_new,
+                    size: AuraIconSize.small,
+                    tint: AuraTint.primary,
+                  ),
+                ],
+                spacing: .xs,
+                mainAxisSize: MainAxisSize.min,
+              ),
+              variant: AuraButtonVariant.ghost,
+              size: AuraButtonSize.small,
+            ),
+          ),
+      ],
+    );
+  }
+
   void _measureTextOverflow() {
     final context = _textKey.currentContext;
     if (context == null) return;
@@ -87,52 +124,6 @@ class _ToolCallResponsePreviewState extends State<ToolCallResponsePreview> {
       context,
       toolName: widget.toolName,
       content: widget.content,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Preview text with max 3 lines.
-        Text(
-          widget.content,
-          key: _textKey,
-          style: TextStyle(
-            color: context.auraColors.onSurface.withValues(alpha: 0.8),
-            fontSize: 13,
-            height: 1.4,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: ToolCallResponsePreview.maxPreviewLines,
-        ),
-
-        // Show more button (only if content exceeds max lines).
-        if (_exceedsMaxLines && widget.showExpandButton)
-          Padding(
-            padding: EdgeInsets.only(
-              top: context.auraTheme.fromSpacing(.xs),
-            ),
-            child: AuraButton(
-              onPressed: _showFullContent,
-              child: const AuraRow(
-                children: [
-                  TextLocale(LocaleKeys.common_show_more),
-                  AuraIcon(
-                    Icons.open_in_new,
-                    size: AuraIconSize.small,
-                    tint: AuraTint.primary,
-                  ),
-                ],
-                spacing: .xs,
-                mainAxisSize: MainAxisSize.min,
-              ),
-              variant: AuraButtonVariant.ghost,
-              size: AuraButtonSize.small,
-            ),
-          ),
-      ],
     );
   }
 }

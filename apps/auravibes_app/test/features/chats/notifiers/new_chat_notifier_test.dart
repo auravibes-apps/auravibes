@@ -89,10 +89,7 @@ void main() {
 
     test('setModelId updates modelId', () {
       container.read(newChatProvider('ws-1').notifier).setModelId('model-1');
-      expect(
-        container.read(newChatProvider('ws-1')).modelId,
-        'model-1',
-      );
+      expect(container.read(newChatProvider('ws-1')).modelId, 'model-1');
     });
 
     test('setModelId can set to null', () {
@@ -112,10 +109,7 @@ void main() {
     test('setProvider can set to null', () {
       container.read(newChatProvider('ws-1').notifier).setProvider('openai');
       container.read(newChatProvider('ws-1').notifier).setProvider(null);
-      expect(
-        container.read(newChatProvider('ws-1')).providerId,
-        isNull,
-      );
+      expect(container.read(newChatProvider('ws-1')).providerId, isNull);
     });
 
     test('startConversation throws when no model selected', () {
@@ -139,9 +133,8 @@ void main() {
     test('startConversation sets isLoading and returns conversation', () async {
       final sendContainer = ProviderContainer(
         overrides: [
-          sendNewMessageUsecaseProvider('ws-1').overrideWithValue(
-            _FakeSendNewMessageUsecase(),
-          ),
+          sendNewMessageUsecaseProvider('ws-1')
+              .overrideWithValue(_FakeSendNewMessageUsecase()),
         ],
       );
       addTearDown(sendContainer.dispose);
@@ -156,18 +149,14 @@ void main() {
 
       expect(result, isA<ConversationEntity>());
       expect(result.id, 'new-conv');
-      expect(
-        sendContainer.read(newChatProvider('ws-1')).isLoading,
-        isFalse,
-      );
+      expect(sendContainer.read(newChatProvider('ws-1')).isLoading, isFalse);
     });
 
     test('startConversation resets isLoading on error', () async {
       final sendContainer = ProviderContainer(
         overrides: [
-          sendNewMessageUsecaseProvider('ws-1').overrideWithValue(
-            _ErrorSendNewMessageUsecase(),
-          ),
+          sendNewMessageUsecaseProvider('ws-1')
+              .overrideWithValue(_ErrorSendNewMessageUsecase()),
         ],
       );
       addTearDown(sendContainer.dispose);
@@ -183,10 +172,7 @@ void main() {
             );
       } on Object catch (_) {}
 
-      expect(
-        sendContainer.read(newChatProvider('ws-1')).isLoading,
-        isFalse,
-      );
+      expect(sendContainer.read(newChatProvider('ws-1')).isLoading, isFalse);
     });
   });
 }

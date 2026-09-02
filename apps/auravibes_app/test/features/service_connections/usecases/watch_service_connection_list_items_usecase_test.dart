@@ -25,15 +25,14 @@ void main() {
       final fixture = await _createFixture();
       addTearDown(fixture.close);
       final definition =
-          await SkillCredentialDefinitionsRepository(
-            fixture.database,
-          ).createDefinition(
-            fixture.workspace.id,
-            const SkillCredentialDefinitionToCreate(
-              title: 'GitHub Token',
-              attributesJson: '{"token":{"description":"API token"}}',
-            ),
-          );
+          await SkillCredentialDefinitionsRepository(fixture.database)
+              .createDefinition(
+                fixture.workspace.id,
+                const SkillCredentialDefinitionToCreate(
+                  title: 'GitHub Token',
+                  attributesJson: '{"token":{"description":"API token"}}',
+                ),
+              );
       final _ =
           await SkillCredentialsRepository(
             database: fixture.database,
@@ -107,10 +106,7 @@ void main() {
     test('invalid MCP metadata field types do not fail the stream', () async {
       final fixture = await _createFixture();
       addTearDown(fixture.close);
-      await _insertMcpCredential(
-        fixture,
-        metadataJson: '{"client_id":123}',
-      );
+      await _insertMcpCredential(fixture, metadataJson: '{"client_id":123}');
       final usecase = _createUsecase(fixture);
 
       final items = await usecase(fixture.workspace.id).first;
@@ -185,10 +181,7 @@ Future<_Fixture> _createFixture() async {
     connection: DatabaseConnection(NativeDatabase.memory()),
   );
   final workspace = await WorkspaceRepository(database).createWorkspace(
-    const WorkspaceToCreate(
-      name: 'Workspace',
-      type: WorkspaceType.local,
-    ),
+    const WorkspaceToCreate(name: 'Workspace', type: WorkspaceType.local),
   );
 
   return _Fixture(
@@ -253,17 +246,11 @@ WatchServiceConnectionListItemsUsecase _createUsecase(
   );
 }
 
-class _Fixture {
-  const _Fixture({
-    required this.database,
-    required this.encryptionService,
-    required this.workspace,
-  });
-
-  final AppDatabase database;
-  final EncryptionService encryptionService;
-  final WorkspaceEntity workspace;
-
+class const _Fixture({
+  required final AppDatabase database,
+  required final EncryptionService encryptionService,
+  required final WorkspaceEntity workspace,
+}) {
   Future<void> close() {
     return database.close();
   }

@@ -12,7 +12,7 @@ import 'package:flutter/widgets.dart';
 /// consistency with the design tokens.
 class AuraButton extends StatelessWidget {
   /// Creates a Aura button.
-  const AuraButton({
+  const new({
     required this.onPressed,
     required this.child,
     super.key,
@@ -22,6 +22,7 @@ class AuraButton extends StatelessWidget {
     this.isLoading = false,
     this.isFullWidth = false,
     this.disabled = false,
+    this.semanticLabel,
   });
 
   /// The callback that is called when the button is tapped.
@@ -48,48 +49,53 @@ class AuraButton extends StatelessWidget {
   /// The tint of the button.
   final AuraTint? tint;
 
+  /// A semantic label for the button.
+  final String? semanticLabel;
+
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final content = isLoading
+        ? AuraLoadingCircle(
+            tint: tint ?? AuraTint.primary,
+            size: 20,
+            itemBuilder: (context, _) => DecoratedBox(
+              decoration: BoxDecoration(
+                color: _getLoadingColor(auraColors),
+                shape: BoxShape.circle,
+              ),
+            ),
+          )
+        : DefaultTextStyle(
+            style: _getTextStyle(
+              auraColors,
+              typography: context.auraTheme.typography,
+            ),
+            child: child,
+          );
 
     return SizedBox(
       width: isFullWidth ? double.infinity : null,
       child: AuraPressable(
         child: AuraPadding(
           child: Center(
-            child: isLoading
-                ? AuraLoadingCircle(
-                    tint: tint ?? AuraTint.primary,
-                    size: 20,
-                    itemBuilder: (context, _) => DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _getLoadingColor(auraColors),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  )
-                : DefaultTextStyle(
-                    style: _getTextStyle(
-                      auraColors,
-                      typography: context.auraTheme.typography,
-                    ),
-                    child: child,
-                  ),
+            widthFactor: isFullWidth ? null : 1,
+            heightFactor: 1,
+            child: content,
           ),
           padding: _getPadding(),
         ),
-        color: _getForegroundColor(auraColors).withValues(alpha: 0.16),
+        color: _getForegroundColor(auraColors),
         decoration: BoxDecoration(
           color: _getBackgroundColor(auraColors),
           border: _getBorder(auraColors),
           borderRadius: BorderRadius.all(
-            Radius.circular(
-              context.auraTheme.fromBorderRadius(.xl),
-            ),
+            Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
           ),
           boxShadow: _getBoxShadow(),
         ),
         onPressed: (disabled || isLoading) ? null : onPressed,
+        semanticLabel: semanticLabel,
       ),
     );
   }
@@ -116,14 +122,15 @@ class AuraButton extends StatelessWidget {
 
   Color _getForegroundColor(AuraColorScheme colors) {
     if (disabled) return colors.onSurfaceVariant;
+    final primaryColor = colors.colorFor(tint ?? AuraTint.primary);
 
     return switch (variant) {
       AuraButtonVariant.primary => colors.onTint(tint ?? AuraTint.primary),
       AuraButtonVariant.secondary => colors.onTint(AuraTint.secondary),
-      AuraButtonVariant.outlined => colors.colorFor(tint ?? AuraTint.primary),
-      AuraButtonVariant.ghost => colors.colorFor(tint ?? AuraTint.primary),
+      AuraButtonVariant.outlined => primaryColor,
+      AuraButtonVariant.ghost => primaryColor,
       AuraButtonVariant.elevated => colors.onTint(tint ?? AuraTint.primary),
-      AuraButtonVariant.text => colors.colorFor(tint ?? AuraTint.primary),
+      AuraButtonVariant.text => primaryColor,
     };
   }
 

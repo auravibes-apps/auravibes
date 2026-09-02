@@ -7,6 +7,7 @@ enum ResolvedToolType {
   mcp,
   native,
   skillControl,
+  skillCommand,
   skillNative,
   skillTemplate,
 }
@@ -15,21 +16,25 @@ enum ResolvedToolType {
 ///
 /// This abstraction allows the tool calling manager to handle both types
 /// uniformly while preserving the necessary information for execution.
-class ResolvedTool {
-  const ResolvedTool._({
-    required this.type,
-    required this.tableId,
-    required this.toolIdentifier,
-    this.builtInTool,
-    this.mcpServerId,
-    this.mcpSlug,
-    this.nativeTool,
-    this.skillSlug,
-    this.skillToolSlug,
-  });
+class const ResolvedTool._({
+  /// The type of tool (built-in or MCP).
+  required final ResolvedToolType type,
 
+  /// The database table ID for permission checks.
+  required final String tableId,
+
+  /// The tool identifier (for example, "calculator" or original MCP tool name).
+  required final String toolIdentifier,
+  final UserToolType? builtInTool,
+  final String? mcpServerId,
+  final String? mcpSlug,
+  final NativeToolType? nativeTool,
+  final String? skillSlug,
+  final String? skillToolSlug,
+  final AgentResolvedToolName? target,
+}) {
   /// Creates a resolved built-in tool.
-  factory ResolvedTool.builtIn({
+  factory builtIn({
     required String tableId,
     required String toolIdentifier,
     required UserToolType tooltype,
@@ -43,7 +48,7 @@ class ResolvedTool {
   }
 
   /// Creates a resolved MCP tool.
-  factory ResolvedTool.mcp({
+  factory mcp({
     required String tableId,
     required String toolIdentifier,
     required String mcpServerId,
@@ -58,7 +63,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.native({
+  factory native({
     required String tableId,
     required NativeToolType nativeToolType,
   }) {
@@ -70,9 +75,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillControl({
-    required String toolIdentifier,
-  }) {
+  factory skillControl({required String toolIdentifier}) {
     return ResolvedTool._(
       type: ResolvedToolType.skillControl,
       tableId: toolIdentifier,
@@ -80,7 +83,19 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillTemplate({
+  factory skillCommand({
+    required String commandName,
+    AgentResolvedToolName? target,
+  }) {
+    return ResolvedTool._(
+      type: ResolvedToolType.skillCommand,
+      tableId: commandName,
+      toolIdentifier: commandName,
+      target: target,
+    );
+  }
+
+  factory skillTemplate({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
@@ -93,7 +108,7 @@ class ResolvedTool {
     );
   }
 
-  factory ResolvedTool.skillNative({
+  factory skillNative({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
@@ -107,27 +122,6 @@ class ResolvedTool {
     );
   }
 
-  /// The type of tool (built-in or MCP).
-  final ResolvedToolType type;
-
-  /// The database table ID for permission checks.
-  final String tableId;
-
-  /// The tool identifier (for example, "calculator" or original MCP tool name).
-  final String toolIdentifier;
-
-  final UserToolType? builtInTool;
-
-  final String? mcpServerId;
-
-  final String? mcpSlug;
-
-  final NativeToolType? nativeTool;
-
-  final String? skillSlug;
-
-  final String? skillToolSlug;
-
   bool get isBuiltIn => type == ResolvedToolType.builtIn;
 
   bool get isMcp => type == ResolvedToolType.mcp;
@@ -136,11 +130,15 @@ class ResolvedTool {
 
   bool get isSkillControl => type == ResolvedToolType.skillControl;
 
+  bool get isSkillCommand => type == ResolvedToolType.skillCommand;
+
   bool get isSkillNative => type == ResolvedToolType.skillNative;
 
   bool get isSkillTemplate => type == ResolvedToolType.skillTemplate;
 
   String get fullName => switch ((type: type, skillSlug: skillSlug)) {
+    (type: ResolvedToolType.skillCommand, skillSlug: _) =>
+      target?.fullName ?? toolIdentifier,
     (type: ResolvedToolType.skillTemplate, skillSlug: final skillSlug?) =>
       AgentResolvedToolName.skillTemplate(
         tableId: tableId,

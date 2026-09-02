@@ -9,20 +9,17 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:genkit/genkit.dart' hide FinishReason;
 import 'package:schemantic/schemantic.dart';
 
-class ChatbotService {
-  ChatbotService({
-    required ServiceConnectionRepository serviceConnectionRepository,
-    OAuthCredentialService? oauthCredentialService,
-    ProviderFactory? providerFactory,
-  }) : _providerFactory =
-           providerFactory ??
-           ProviderFactory(
-             serviceConnectionRepository: serviceConnectionRepository,
-             resolveOAuthAccessToken:
-                 oauthCredentialService?.getValidAccessToken,
-           );
-
-  final ProviderFactory _providerFactory;
+class ChatbotService({
+  required ServiceConnectionRepository serviceConnectionRepository,
+  OAuthCredentialService? oauthCredentialService,
+  ProviderFactory? providerFactory,
+}) {
+  final ProviderFactory _providerFactory =
+      providerFactory ??
+      ProviderFactory(
+        serviceConnectionRepository: serviceConnectionRepository,
+        resolveOAuthAccessToken: oauthCredentialService?.getValidAccessToken,
+      );
 
   Stream<ChatResult<ChatMessage>> sendMessage(
     WorkspaceModelSelectionWithConnectionEntity chatProvider,
@@ -195,10 +192,7 @@ class ChatbotService {
     );
 
     return ChatResult<ChatMessage>(
-      output: ChatMessage(
-        role: ChatMessageRole.model,
-        parts: toolCallParts,
-      ),
+      output: ChatMessage(role: ChatMessageRole.model, parts: toolCallParts),
       finishReason: normalized.finishReason,
       usage: normalized.usage,
       metadata: normalized.metadata,

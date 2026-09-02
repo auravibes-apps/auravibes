@@ -9,20 +9,13 @@ import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class CreateSkillTemplateToolUsecase {
-  const CreateSkillTemplateToolUsecase(
-    this._skillTemplateToolsRepository, {
-    this.cloudStore,
-    this.skillsRepository,
-    this.skillCredentialDefinitionsRepository,
-  });
-
-  final SkillTemplateToolsRepository? _skillTemplateToolsRepository;
-  final CloudSkillStore? cloudStore;
-  final SkillsRepository? skillsRepository;
+class const CreateSkillTemplateToolUsecase(
+  final SkillTemplateToolsRepository? _skillTemplateToolsRepository, {
+  final CloudSkillStore? cloudStore,
+  final SkillsRepository? skillsRepository,
   final SkillCredentialDefinitionsRepository?
-  skillCredentialDefinitionsRepository;
-
+  skillCredentialDefinitionsRepository,
+}) {
   Future<SkillTemplateToolEntity> call(
     String skillId,
     SkillTemplateToolToCreate tool,
@@ -38,13 +31,13 @@ class CreateSkillTemplateToolUsecase {
       templateJson: canonicalSkillUrlTemplateJson(tool.templateJson),
     );
     final cloud = cloudStore;
-    if (cloud != null) return cloud.createTool(skillId, canonical);
+    if (cloud != null) return await cloud.createTool(skillId, canonical);
     final repository = _skillTemplateToolsRepository;
     if (repository == null) {
       throw StateError('Skill template tool store is unavailable');
     }
 
-    return repository.createTool(skillId, canonical);
+    return await repository.createTool(skillId, canonical);
   }
 
   Future<Map<String, SkillCredentialAttributeDefinition>>
@@ -83,21 +76,17 @@ class CreateSkillTemplateToolUsecase {
 
 final ProviderFamily<CreateSkillTemplateToolUsecase, String>
 createSkillTemplateToolUsecaseProvider =
-    Provider.family<CreateSkillTemplateToolUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<CreateSkillTemplateToolUsecase, String>((ref, workspaceId) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return CreateSkillTemplateToolUsecase(
-          cloud == null
-              ? ref.watch(skillTemplateToolsRepositoryProvider)
-              : null,
-          cloudStore: cloud,
-          skillsRepository: cloud == null
-              ? ref.watch(skillsRepositoryProvider)
-              : null,
-          skillCredentialDefinitionsRepository: cloud == null
-              ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
-              : null,
-        );
-      },
-    );
+      return CreateSkillTemplateToolUsecase(
+        cloud == null ? ref.watch(skillTemplateToolsRepositoryProvider) : null,
+        cloudStore: cloud,
+        skillsRepository: cloud == null
+            ? ref.watch(skillsRepositoryProvider)
+            : null,
+        skillCredentialDefinitionsRepository: cloud == null
+            ? ref.watch(skillCredentialDefinitionsRepositoryProvider)
+            : null,
+      );
+    });

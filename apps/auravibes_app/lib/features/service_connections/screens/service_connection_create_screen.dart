@@ -23,20 +23,13 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('service_connection_create_screen');
 
-class ServiceConnectionCreateScreen extends ConsumerStatefulWidget {
-  const ServiceConnectionCreateScreen({
-    required this.workspaceId,
-    this.initialType,
-    this.initialCredentialDefinitionId,
-    this.initialAppSkillId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final ServiceConnectionCreateType? initialType;
-  final String? initialCredentialDefinitionId;
-  final String? initialAppSkillId;
-
+class const ServiceConnectionCreateScreen({
+  required final String workspaceId,
+  final ServiceConnectionCreateType? initialType,
+  final String? initialCredentialDefinitionId,
+  final String? initialAppSkillId,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ServiceConnectionCreateScreen> createState() =>
       _ServiceConnectionCreateScreenState();
@@ -78,18 +71,7 @@ class _ServiceConnectionCreateScreenState
         children: [
           Padding(
             padding: const EdgeInsets.all(12),
-            child: _TypeSelector(
-              value: _type,
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() {
-                  _type = value;
-                  _definitionId = null;
-                  _appSkillId = null;
-                  _resetAttributeControllers();
-                });
-              },
-            ),
+            child: _TypeSelector(value: _type, onChanged: _onTypeChanged),
           ),
           Expanded(
             child: switch (_type) {
@@ -110,12 +92,7 @@ class _ServiceConnectionCreateScreenState
                 onNameChanged: (_) => setState(() {
                   final _ = Object();
                 }),
-                onDefinitionChanged: (value) {
-                  setState(() {
-                    _definitionId = value;
-                    _resetAttributeControllers();
-                  });
-                },
+                onDefinitionChanged: _onDefinitionChanged,
                 onSave: () => unawaited(_saveSkillCredential()),
               ),
               ServiceConnectionCreateType.appSkillCredential =>
@@ -185,7 +162,7 @@ class _ServiceConnectionCreateScreenState
         stackTrace,
       );
       if (!mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
@@ -255,7 +232,7 @@ class _ServiceConnectionCreateScreenState
         stackTrace,
       );
       if (!mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(
           LocaleKeys.skill_credentials_save_error.tr(context: context),
@@ -284,6 +261,23 @@ class _ServiceConnectionCreateScreenState
     }
     if (!mounted) return;
     context.go('/workspaces/${widget.workspaceId}/more/service-connections');
+  }
+
+  void _onTypeChanged(ServiceConnectionCreateType? value) {
+    if (value == null) return;
+    setState(() {
+      _type = value;
+      _definitionId = null;
+      _appSkillId = null;
+      _resetAttributeControllers();
+    });
+  }
+
+  void _onDefinitionChanged(String? value) {
+    setState(() {
+      _definitionId = value;
+      _resetAttributeControllers();
+    });
   }
 
   void _resetAttributeControllers() {
@@ -321,43 +315,45 @@ extension ServiceConnectionCreateTypeQuery on ServiceConnectionCreateType {
   }
 }
 
-class _TypeSelector extends StatelessWidget {
-  const _TypeSelector({required this.value, required this.onChanged});
-
-  final ServiceConnectionCreateType value;
-  final ValueChanged<ServiceConnectionCreateType?> onChanged;
-
+class const _TypeSelector({
+  required final ServiceConnectionCreateType value,
+  required final ValueChanged<ServiceConnectionCreateType?> onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AuraDropdownSelector<ServiceConnectionCreateType>(
+    return AuraChoicePicker<ServiceConnectionCreateType>(
       options: [
-        AuraDropdownOption(
+        AuraChoiceOption(
           value: ServiceConnectionCreateType.modelProvider,
-          child: Text(
+          label: Text(
             LocaleKeys.service_connections_type_model_provider.tr(
               context: context,
             ),
           ),
         ),
-        AuraDropdownOption(
+        AuraChoiceOption(
           value: ServiceConnectionCreateType.skillCredential,
-          child: Text(
+          label: Text(
             LocaleKeys.service_connections_type_skill_credential.tr(
               context: context,
             ),
           ),
         ),
-        AuraDropdownOption(
+        AuraChoiceOption(
           value: ServiceConnectionCreateType.appSkillCredential,
-          child: Text(
+          label: Text(
             LocaleKeys.service_connections_type_app_skill_credential.tr(
               context: context,
             ),
           ),
         ),
       ],
-      value: value,
-      onChanged: onChanged,
+      value: [value],
+      onChanged: (values) {
+        final selected = values.firstOrNull;
+        if (selected == null) return;
+        onChanged(selected);
+      },
       label: Text(
         LocaleKeys.service_connections_create_type_label.tr(context: context),
       ),
@@ -365,27 +361,16 @@ class _TypeSelector extends StatelessWidget {
   }
 }
 
-class _CredentialForm extends ConsumerWidget {
-  const _CredentialForm({
-    required this.workspaceId,
-    required this.selectedDefinitionId,
-    required this.nameController,
-    required this.attributeControllers,
-    required this.isSaving,
-    required this.onNameChanged,
-    required this.onDefinitionChanged,
-    required this.onSave,
-  });
-
-  final String workspaceId;
-  final String? selectedDefinitionId;
-  final TextEditingController nameController;
-  final Map<String, TextEditingController> attributeControllers;
-  final bool isSaving;
-  final ValueChanged<String> onNameChanged;
-  final ValueChanged<String?> onDefinitionChanged;
-  final VoidCallback onSave;
-
+class const _CredentialForm({
+  required final String workspaceId,
+  required final String? selectedDefinitionId,
+  required final TextEditingController nameController,
+  required final Map<String, TextEditingController> attributeControllers,
+  required final bool isSaving,
+  required final ValueChanged<String> onNameChanged,
+  required final ValueChanged<String?> onDefinitionChanged,
+  required final VoidCallback onSave,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final definitionsAsync = ref.watch(
@@ -419,27 +404,16 @@ class _CredentialForm extends ConsumerWidget {
   }
 }
 
-class _AppSkillCredentialForm extends StatelessWidget {
-  const _AppSkillCredentialForm({
-    required this.selectedAppSkillId,
-    required this.nameController,
-    required this.apiKeyController,
-    required this.isSaving,
-    required this.onNameChanged,
-    required this.onAppSkillChanged,
-    required this.onApiKeyChanged,
-    required this.onSave,
-  });
-
-  final String? selectedAppSkillId;
-  final TextEditingController nameController;
-  final TextEditingController apiKeyController;
-  final bool isSaving;
-  final ValueChanged<String> onNameChanged;
-  final ValueChanged<String?> onAppSkillChanged;
-  final ValueChanged<String> onApiKeyChanged;
-  final VoidCallback onSave;
-
+class const _AppSkillCredentialForm({
+  required final String? selectedAppSkillId,
+  required final TextEditingController nameController,
+  required final TextEditingController apiKeyController,
+  required final bool isSaving,
+  required final ValueChanged<String> onNameChanged,
+  required final ValueChanged<String?> onAppSkillChanged,
+  required final ValueChanged<String> onApiKeyChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final skills = _appSkillCredentialOptions();
@@ -479,9 +453,7 @@ class _AppSkillCredentialForm extends StatelessWidget {
               ),
               AuraInput(
                 controller: apiKeyController,
-                label: Text(
-                  _credentialValueLabel(context, selectedAppSkillId),
-                ),
+                label: Text(_credentialValueLabel(context, selectedAppSkillId)),
                 keyboardType: TextInputType.visiblePassword,
                 obscureText: true,
                 onChanged: onApiKeyChanged,
@@ -536,27 +508,16 @@ String _credentialValueLabel(BuildContext context, String? appSkillId) {
   );
 }
 
-class _CredentialFormContent extends StatelessWidget {
-  const _CredentialFormContent({
-    required this.definitions,
-    required this.selectedDefinitionId,
-    required this.nameController,
-    required this.attributeControllers,
-    required this.isSaving,
-    required this.onNameChanged,
-    required this.onDefinitionChanged,
-    required this.onSave,
-  });
-
-  final List<SkillCredentialDefinitionEntity> definitions;
-  final String? selectedDefinitionId;
-  final TextEditingController nameController;
-  final Map<String, TextEditingController> attributeControllers;
-  final bool isSaving;
-  final ValueChanged<String> onNameChanged;
-  final ValueChanged<String?> onDefinitionChanged;
-  final VoidCallback onSave;
-
+class const _CredentialFormContent({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final String? selectedDefinitionId,
+  required final TextEditingController nameController,
+  required final Map<String, TextEditingController> attributeControllers,
+  required final bool isSaving,
+  required final ValueChanged<String> onNameChanged,
+  required final ValueChanged<String?> onDefinitionChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedDefinition = definitions
@@ -616,17 +577,11 @@ class _CredentialFormContent extends StatelessWidget {
   }
 }
 
-class _DefinitionSelector extends StatelessWidget {
-  const _DefinitionSelector({
-    required this.definitions,
-    required this.selectedDefinitionId,
-    required this.onChanged,
-  });
-
-  final List<SkillCredentialDefinitionEntity> definitions;
-  final String? selectedDefinitionId;
-  final ValueChanged<String?> onChanged;
-
+class const _DefinitionSelector({
+  required final List<SkillCredentialDefinitionEntity> definitions,
+  required final String? selectedDefinitionId,
+  required final ValueChanged<String?> onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraDropdownSelector<String>(
@@ -646,15 +601,10 @@ class _DefinitionSelector extends StatelessWidget {
   }
 }
 
-class _CredentialAttributesFields extends StatelessWidget {
-  const _CredentialAttributesFields({
-    required this.definition,
-    required this.controllers,
-  });
-
-  final SkillCredentialDefinitionEntity definition;
-  final Map<String, TextEditingController> controllers;
-
+class const _CredentialAttributesFields({
+  required final SkillCredentialDefinitionEntity definition,
+  required final Map<String, TextEditingController> controllers,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final attributes = SkillCredentialAttributeDefinition.parseMap(

@@ -12,22 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationTurnView implements _i1.SerializableModel {
-  ConversationTurnView._({
-    required this.id,
-    required this.conversationId,
-    this.userMessageId,
-    this.assistantMessageId,
-    required this.status,
-    required this.revision,
-    required this.acceptedSequence,
-    this.cancellationRequestedAt,
-    this.terminalAt,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory ConversationTurnView({
+abstract class ConversationTurnView._({
+  required var String id,
+  required var String conversationId,
+  var String? userMessageId,
+  var String? assistantMessageId,
+  required var String status,
+  required var int revision,
+  required var int acceptedSequence,
+  var DateTime? cancellationRequestedAt,
+  var DateTime? terminalAt,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     required String id,
     required String conversationId,
     String? userMessageId,
@@ -41,7 +39,7 @@ abstract class ConversationTurnView implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _ConversationTurnViewImpl;
 
-  factory ConversationTurnView.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationTurnView(
@@ -69,28 +67,6 @@ abstract class ConversationTurnView implements _i1.SerializableModel {
       ),
     );
   }
-
-  String id;
-
-  String conversationId;
-
-  String? userMessageId;
-
-  String? assistantMessageId;
-
-  String status;
-
-  int revision;
-
-  int acceptedSequence;
-
-  DateTime? cancellationRequestedAt;
-
-  DateTime? terminalAt;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationTurnView]
   /// with some or all fields replaced by the given arguments.
@@ -133,34 +109,35 @@ abstract class ConversationTurnView implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationTurnViewImpl extends ConversationTurnView {
-  _ConversationTurnViewImpl({
-    required String id,
-    required String conversationId,
-    String? userMessageId,
-    String? assistantMessageId,
-    required String status,
-    required int revision,
-    required int acceptedSequence,
-    DateTime? cancellationRequestedAt,
-    DateTime? terminalAt,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         conversationId: conversationId,
-         userMessageId: userMessageId,
-         assistantMessageId: assistantMessageId,
-         status: status,
-         revision: revision,
-         acceptedSequence: acceptedSequence,
-         cancellationRequestedAt: cancellationRequestedAt,
-         terminalAt: terminalAt,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-       );
+class _ConversationTurnViewImpl({
+  required String id,
+  required String conversationId,
+  String? userMessageId,
+  String? assistantMessageId,
+  required String status,
+  required int revision,
+  required int acceptedSequence,
+  DateTime? cancellationRequestedAt,
+  DateTime? terminalAt,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+}) extends ConversationTurnView {
+  this
+    : super._(
+        id: id,
+        conversationId: conversationId,
+        userMessageId: userMessageId,
+        assistantMessageId: assistantMessageId,
+        status: status,
+        revision: revision,
+        acceptedSequence: acceptedSequence,
+        cancellationRequestedAt: cancellationRequestedAt,
+        terminalAt: terminalAt,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [ConversationTurnView]
   /// with some or all fields replaced by the given arguments.

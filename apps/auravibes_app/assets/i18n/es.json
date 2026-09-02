@@ -69,6 +69,8 @@
       "create_button": "Crear Proveedor",
       "connect_browser": "Conectar con navegador",
       "use_device_code": "Usar código de dispositivo",
+      "oauth_waiting": "Esperando autorización...",
+      "cancel_connection": "Cancelar conexión",
       "device_code_instruction": "Abre esta URL e ingresa el código.",
       "device_code_step_code": "1. Copia este código",
       "device_code_step_link": "2. Abre este enlace",
@@ -122,6 +124,7 @@
     "save_error": "No se pudo guardar la conexión",
     "empty_title": "No hay conexiones",
     "empty_subtitle": "Agrega un proveedor de modelo o credencial de habilidad para conectar este espacio de trabajo.",
+    "empty_filter": "No hay conexiones de {type}",
     "delete_credential_title": "Eliminar credencial de habilidad",
     "delete_credential_confirm": "¿Eliminar la credencial \"{name}\"? Esta acción no se puede deshacer.",
     "delete_credential_error": "No se pudo eliminar la credencial de habilidad",
@@ -132,6 +135,12 @@
     "candidate": {
       "model_provider": "Proveedor de modelo {serviceId}",
       "app_skill": "Habilidad de servicio {serviceId}"
+    },
+    "filter": {
+      "all": "Todas",
+      "model_providers": "Proveedores de modelo",
+      "skill_credentials": "Credenciales de habilidad",
+      "mcp_servers": "Servidores MCP"
     },
     "type": {
       "model_provider": "Proveedor de Modelo",

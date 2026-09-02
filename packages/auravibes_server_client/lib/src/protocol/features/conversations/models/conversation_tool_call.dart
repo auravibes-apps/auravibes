@@ -12,28 +12,29 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationToolCall implements _i1.SerializableModel {
-  ConversationToolCall._({
-    this.id,
-    required this.workspaceId,
-    required this.conversationId,
-    required this.turnId,
-    required this.messageId,
-    required this.stableId,
-    required this.name,
-    required this.argumentsJson,
-    required this.argumentsDigest,
-    required this.status,
-    this.decision,
-    this.decisionByUserId,
-    this.decisionAt,
-    this.resultJson,
-    required this.revision,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory ConversationToolCall({
+abstract class ConversationToolCall._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var int conversationId,
+  required var int turnId,
+  required var int messageId,
+  required var String stableId,
+  required var String name,
+  required var String argumentsJson,
+  required var String argumentsDigest,
+  required var String status,
+  var String? decision,
+  var String? decisionByUserId,
+  var DateTime? decisionAt,
+  var String? resultJson,
+  required var int revision,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -53,7 +54,7 @@ abstract class ConversationToolCall implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _ConversationToolCallImpl;
 
-  factory ConversationToolCall.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationToolCall(
@@ -82,43 +83,6 @@ abstract class ConversationToolCall implements _i1.SerializableModel {
       ),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  int conversationId;
-
-  int turnId;
-
-  int messageId;
-
-  String stableId;
-
-  String name;
-
-  String argumentsJson;
-
-  String argumentsDigest;
-
-  String status;
-
-  String? decision;
-
-  String? decisionByUserId;
-
-  DateTime? decisionAt;
-
-  String? resultJson;
-
-  int revision;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationToolCall]
   /// with some or all fields replaced by the given arguments.
@@ -172,46 +136,47 @@ abstract class ConversationToolCall implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationToolCallImpl extends ConversationToolCall {
-  _ConversationToolCallImpl({
-    int? id,
-    required int workspaceId,
-    required int conversationId,
-    required int turnId,
-    required int messageId,
-    required String stableId,
-    required String name,
-    required String argumentsJson,
-    required String argumentsDigest,
-    required String status,
-    String? decision,
-    String? decisionByUserId,
-    DateTime? decisionAt,
-    String? resultJson,
-    required int revision,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         conversationId: conversationId,
-         turnId: turnId,
-         messageId: messageId,
-         stableId: stableId,
-         name: name,
-         argumentsJson: argumentsJson,
-         argumentsDigest: argumentsDigest,
-         status: status,
-         decision: decision,
-         decisionByUserId: decisionByUserId,
-         decisionAt: decisionAt,
-         resultJson: resultJson,
-         revision: revision,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-       );
+class _ConversationToolCallImpl({
+  int? id,
+  required int workspaceId,
+  required int conversationId,
+  required int turnId,
+  required int messageId,
+  required String stableId,
+  required String name,
+  required String argumentsJson,
+  required String argumentsDigest,
+  required String status,
+  String? decision,
+  String? decisionByUserId,
+  DateTime? decisionAt,
+  String? resultJson,
+  required int revision,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+}) extends ConversationToolCall {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        turnId: turnId,
+        messageId: messageId,
+        stableId: stableId,
+        name: name,
+        argumentsJson: argumentsJson,
+        argumentsDigest: argumentsDigest,
+        status: status,
+        decision: decision,
+        decisionByUserId: decisionByUserId,
+        decisionAt: decisionAt,
+        resultJson: resultJson,
+        revision: revision,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [ConversationToolCall]
   /// with some or all fields replaced by the given arguments.

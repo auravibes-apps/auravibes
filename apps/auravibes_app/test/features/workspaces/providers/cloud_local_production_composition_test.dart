@@ -47,11 +47,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
-class _Client extends Mock implements Client {}
+class _Client extends Mock implements Client;
 
-class _Conversation extends Mock implements EndpointConversation {}
+class _Conversation extends Mock implements EndpointConversation;
 
 Never _local(String dependency) =>
     throw StateError('Cloud composition touched local $dependency');
@@ -70,9 +70,7 @@ void main() {
   );
 
   setUpAll(() {
-    registerFallbackValue(
-      ListConversationsRequest(workspaceId: 0, limit: 0),
-    );
+    registerFallbackValue(ListConversationsRequest(workspaceId: 0, limit: 0));
     registerFallbackValue(
       ListConversationMessagesRequest(
         workspaceId: 0,
@@ -109,16 +107,14 @@ void main() {
         ),
       ],
     );
-    when(
-      () => conversation.listMessages(any()),
-    ).thenAnswer((_) async => const []);
-    when(() => gateway.watchResources(any())).thenAnswer(
-      (_) => Stream.value(const <WorkspaceResource>[]),
-    );
+    when(() => conversation.listMessages(any()))
+        .thenAnswer((_) async => const []);
+    when(() => gateway.watchResources(any()))
+        .thenAnswer((_) => Stream.value(const <WorkspaceResource>[]));
 
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(cloud),
+        workspaceSessionProvider(cloud).overrideWithValue(cloud),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => cloud),
         cloudWorkspaceStateGatewayProvider.overrideWith(
           (_, _) async => gateway,
@@ -126,28 +122,25 @@ void main() {
         cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
           (_, _) async => gateway,
         ),
-        cloudConversationStateProvider.overrideWith(
-          (_, _) async* {
-            yield CloudConversationState(
-              conversation: ConversationProjectionView(
-                id: 'conversation-a',
-                workspaceId: 11,
-                executionState: 'idle',
-                projectionRevision: 3,
-                sequence: 0,
-                updatedAt: now,
-              ),
-              messages: const [],
-              pendingMessages: const [],
-              activeExecution: null,
-              toolCalls: const [],
+        cloudConversationStateProvider.overrideWith((_, _) async* {
+          yield CloudConversationState(
+            conversation: ConversationProjectionView(
+              id: 'conversation-a',
+              workspaceId: 11,
+              executionState: 'idle',
+              projectionRevision: 3,
               sequence: 0,
-            );
-          },
-        ),
-        toolsGroupsRepositoryProvider.overrideWithValue(
-          CloudToolsRepository(Future.value(gateway)),
-        ),
+              updatedAt: now,
+            ),
+            messages: const [],
+            pendingMessages: const [],
+            activeExecution: null,
+            toolCalls: const [],
+            sequence: 0,
+          );
+        }),
+        toolsGroupsRepositoryProvider(cloud)
+            .overrideWithValue(CloudToolsRepository(Future.value(gateway))),
         workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
         appDatabaseProvider.overrideWith((_) => _local('Drift database')),
         conversationRepositoryProvider.overrideWith(
@@ -192,15 +185,11 @@ void main() {
         oauthCredentialServiceProvider.overrideWith(
           (_) => _local('OAuth credential service'),
         ),
-        mcpManagerServiceProvider.overrideWith(
-          (_) => _local('MCP manager'),
-        ),
+        mcpManagerServiceProvider.overrideWith((_) => _local('MCP manager')),
         chatbotServiceProvider.overrideWith(
           (_) => _local('provider transport'),
         ),
-        auraAgentServiceProvider.overrideWith(
-          (_) => _local('agent runtime'),
-        ),
+        auraAgentServiceProvider.overrideWith((_) => _local('agent runtime')),
       ],
     );
     addTearDown(container.dispose);
@@ -221,14 +210,8 @@ void main() {
     addTearDown(messagesSubscription.close);
     addTearDown(compactionSubscription.close);
 
-    expect(
-      await container.read(conversations.future),
-      hasLength(1),
-    );
-    expect(
-      await container.read(messages.future),
-      isEmpty,
-    );
+    expect(await container.read(conversations.future), hasLength(1));
+    expect(await container.read(messages.future), isEmpty);
     expect(
       await container.read(cloudConversationUsecaseProvider('mirror-a').future),
       isNotNull,
@@ -289,10 +272,7 @@ void main() {
       await container.read(workspaceSkillsProvider('mirror-a').future),
       isEmpty,
     );
-    expect(
-      await container.read(compaction.future),
-      isNotNull,
-    );
+    expect(await container.read(compaction.future), isNotNull);
   });
 
   test('local production composition avoids every server dependency', () async {
@@ -302,12 +282,11 @@ void main() {
     addTearDown(database.close);
     final container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(local),
+        workspaceSessionProvider(local).overrideWithValue(local),
         workspaceSessionForRouteProvider.overrideWith((_, _) async => local),
         appDatabaseProvider.overrideWithValue(database),
-        toolsGroupsRepositoryProvider.overrideWithValue(
-          ToolsGroupsRepository(database),
-        ),
+        toolsGroupsRepositoryProvider(local)
+            .overrideWithValue(ToolsGroupsRepository(database)),
         serverpodClientForWorkspaceProvider.overrideWith(
           (_, _) => _local('workspace server client'),
         ),

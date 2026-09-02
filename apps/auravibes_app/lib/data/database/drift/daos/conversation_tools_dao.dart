@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'conversation_tools_dao.g.dart';
 
 @DriftAccessor(tables: [ConversationTools])
-class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
+class ConversationToolsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$ConversationToolsDaoMixin {
-  ConversationToolsDao(super.attachedDatabase);
-
   /// Get a specific conversation tool setting.
   Future<ConversationToolsTable?> getConversationTool(
     String conversationId,
@@ -27,9 +26,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
   ) =>
       (select(conversationTools)
             ..where((tbl) => tbl.conversationId.equals(conversationId))
-            ..orderBy([
-              (tbl) => OrderingTerm(expression: tbl.toolId),
-            ]))
+            ..orderBy([(tbl) => OrderingTerm(expression: tbl.toolId)]))
           .get();
 
   /// Upsert a conversation tool setting (enabled with permission).
@@ -87,7 +84,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
       return updated;
     } else {
       // Insert new.
-      return into(conversationTools).insertReturning(
+      return await into(conversationTools).insertReturning(
         ConversationToolsCompanion(
           conversationId: Value(conversationId),
           toolId: Value(toolId),
@@ -125,7 +122,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
 
       return updated;
     } else {
-      return into(conversationTools).insertReturning(
+      return await into(conversationTools).insertReturning(
         ConversationToolsCompanion(
           conversationId: Value(conversationId),
           toolId: Value(toolId),
@@ -168,9 +165,7 @@ class ConversationToolsDao extends DatabaseAccessor<AppDatabase>
   Future<int> getConversationToolsCount(String conversationId) =>
       (selectOnly(conversationTools)
             ..addColumns([conversationTools.id.count()])
-            ..where(
-              conversationTools.conversationId.equals(conversationId),
-            ))
+            ..where(conversationTools.conversationId.equals(conversationId)))
           .map((row) => row.read(conversationTools.id.count()) ?? 0)
           .getSingle();
 

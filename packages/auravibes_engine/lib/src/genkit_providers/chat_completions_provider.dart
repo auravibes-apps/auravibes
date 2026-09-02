@@ -8,27 +8,19 @@ import 'dart:convert';
 import 'package:genkit/plugin.dart';
 import 'package:openai_dart/openai_dart.dart' as sdk;
 
-class ProviderTransportResponse {
-  const ProviderTransportResponse({
-    required this.statusCode,
-    required this.body,
-  });
+class const ProviderTransportResponse({
+  required final int statusCode,
+  required final Stream<List<int>> body,
+});
 
-  final int statusCode;
-  final Stream<List<int>> body;
-}
+typedef ProviderTransport = Future<ProviderTransportResponse> Function(
+  Map<String, dynamic> body,
+);
 
-typedef ProviderTransport =
-    Future<ProviderTransportResponse> Function(
-      Map<String, dynamic> body,
-    );
-
-class ChatCompletionsModelDefinition {
-  const ChatCompletionsModelDefinition({required this.name, this.info});
-
-  final String name;
-  final ModelInfo? info;
-}
+class const ChatCompletionsModelDefinition({
+  required final String name,
+  final ModelInfo? info,
+});
 
 mixin ChatCompletionsSamplingOptions {
   double? get temperature;
@@ -52,21 +44,17 @@ mixin ChatCompletionsSamplingOptions {
   };
 }
 
-class ChatCompletionsCodec {
-  const ChatCompletionsCodec({
-    required this.errorLabel,
-    required this.customize,
-  });
-  final String errorLabel;
+class const ChatCompletionsCodec({
+  required final String errorLabel,
 
   /// Parses provider-specific request config once into the resolved model
   /// name and the extra body entries to merge into the request.
-  final ({String model, Map<String, dynamic> extraBody}) Function(
+  required final ({String model, Map<String, dynamic> extraBody}) Function(
     String modelName,
     Map<String, dynamic>? config,
   )
-  customize;
-
+  customize,
+}) {
   Future<ModelResponse> complete(
     ProviderTransport transport,
     Map<String, dynamic> body,

@@ -2,11 +2,7 @@ import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
-class CloudTurnUsecase {
-  const CloudTurnUsecase(this._gateway);
-
-  final CloudChatGateway _gateway;
-
+class const CloudTurnUsecase(final CloudChatGateway _gateway) {
   Future<TurnSnapshot> get(String turnId) => _gateway.getTurn(turnId: turnId);
 
   Future<ConversationMutationResult> decide({
@@ -65,7 +61,7 @@ class CloudTurnUsecase {
       if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
       final latest = await _gateway.getConversation(conversationId);
 
-      return _gateway.continueTurn(
+      return await _gateway.continueTurn(
         requestId: DateTime.now().microsecondsSinceEpoch.toString(),
         conversationId: conversationId,
         expectedConversationRevision: latest.revision,
@@ -104,9 +100,7 @@ class CloudTurnUsecase {
       if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
       final snapshot = await get(turnId);
       final call = snapshot.toolCalls
-          .where(
-            (candidate) => candidate.id == toolCallId,
-          )
+          .where((candidate) => candidate.id == toolCallId)
           .firstOrNull;
       if (call == null ||
           call.status != 'pending' ||
@@ -114,7 +108,7 @@ class CloudTurnUsecase {
         rethrow;
       }
 
-      return action(snapshot.turn.revision);
+      return await action(snapshot.turn.revision);
     }
   }
 
@@ -129,7 +123,7 @@ class CloudTurnUsecase {
       if (error.code != ConversationErrorCode.staleRevision.name) rethrow;
       final snapshot = await get(turnId);
 
-      return action(snapshot.turn.revision);
+      return await action(snapshot.turn.revision);
     }
   }
 }

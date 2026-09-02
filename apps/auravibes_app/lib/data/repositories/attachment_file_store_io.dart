@@ -5,11 +5,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/v7.dart';
 
 // ignore: unused-code, conditional export implementation used on IO platforms.
-class AttachmentFileStore {
-  const AttachmentFileStore({this.storageNamespace = 'auravibes_app'});
-
-  final String storageNamespace;
-
+class const AttachmentFileStoreIo({
+  final String storageNamespace = 'auravibes_app',
+}) {
   Future<String> persistDraftFile(String localPath) async {
     if (!await _isDraftFile(localPath)) return localPath;
 
@@ -66,3 +64,6 @@ class AttachmentFileStore {
     return p.join(basePath, storageNamespace, directory);
   }
 }
+
+// ignore: unused-code, conditional export implementation used on IO platforms.
+typedef AttachmentFileStore = AttachmentFileStoreIo;

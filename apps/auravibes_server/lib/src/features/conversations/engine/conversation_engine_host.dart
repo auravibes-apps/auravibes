@@ -15,39 +15,26 @@ import 'conversation_host_effects.dart';
 import 'server_tool_executor.dart';
 import 'server_tool_runtime.dart';
 
-class ConversationEngineResult {
-  const ConversationEngineResult({
-    required this.content,
-    required this.finishReason,
-    required this.inputTokens,
-    required this.outputTokens,
-    required this.totalTokens,
-    this.awaitingApproval = false,
-  });
+class const ConversationEngineResult({
+  required final String content,
+  required final String finishReason,
+  required final int inputTokens,
+  required final int outputTokens,
+  required final int totalTokens,
+  final bool awaitingApproval = false,
+});
 
-  final String content;
-  final String finishReason;
-  final int inputTokens;
-  final int outputTokens;
-  final int totalTokens;
-  final bool awaitingApproval;
-}
-
-class ConversationCompactionResult {
-  const ConversationCompactionResult({
-    required this.summary,
-    required this.range,
-  });
-
-  final String summary;
-  final AgentCompactionRangeSelected range;
-}
+class const ConversationCompactionResult({
+  required final String summary,
+  required final AgentCompactionRangeSelected range,
+});
 
 typedef ConversationProviderTransport =
     Future<ProviderTransportResponse> Function(Map<String, dynamic> body);
 
-typedef ConversationHostLookup =
-    Future<List<InternetAddress>> Function(String host);
+typedef ConversationHostLookup = Future<List<InternetAddress>> Function(
+  String host,
+);
 
 String providerCredential(String providerId, String secret) {
   if (providerId != 'openai-codex') return secret;
@@ -122,7 +109,10 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
   required Iterable<ConversationMessage> messages,
   required Iterable<ConversationToolCall> calls,
 }) {
-  final callsById = {for (final call in calls) call.stableId: call};
+  final callsById = {
+    for (final call in calls.where((call) => call.status != 'running'))
+      call.stableId: call,
+  };
   final replayedCallIds = <String>{};
   final exchanges = <Map<String, dynamic>>[];
   for (final message in messages) {
@@ -164,7 +154,11 @@ List<Map<String, dynamic>> persistedProviderToolExchanges({
     }
   }
   final unbatchedCalls = calls
-      .where((call) => !replayedCallIds.contains(call.stableId))
+      .where(
+        (call) =>
+            call.status != 'running' &&
+            !replayedCallIds.contains(call.stableId),
+      )
       .toList(growable: false);
   if (unbatchedCalls.isNotEmpty) {
     exchanges.addAll(
@@ -236,23 +230,17 @@ abstract interface class ConversationEngineHost {
   });
 }
 
-final class ServerConversationEngineHost implements ConversationEngineHost {
-  const ServerConversationEngineHost({
-    this.cancellationProbe = const DatabaseConversationCancellationProbe(),
-    this.admissionGate = const DatabaseConversationAdmissionGate(),
-    this.attachmentReader = const ServerConversationAttachmentReader(),
-    this.toolRuntime,
-    this.providerTransport,
-    this.lookup = InternetAddress.lookup,
-  });
-
-  final ConversationCancellationProbe cancellationProbe;
-  final ConversationAdmissionGate admissionGate;
-  final ConversationAttachmentReader attachmentReader;
-  final ServerToolRuntime? toolRuntime;
-  final ConversationProviderTransport? providerTransport;
-  final ConversationHostLookup lookup;
-
+final class const ServerConversationEngineHost({
+  final ConversationCancellationProbe cancellationProbe =
+      const DatabaseConversationCancellationProbe(),
+  final ConversationAdmissionGate admissionGate =
+      const DatabaseConversationAdmissionGate(),
+  final ConversationAttachmentReader attachmentReader =
+      const ServerConversationAttachmentReader(),
+  final ServerToolRuntime? toolRuntime,
+  final ConversationProviderTransport? providerTransport,
+  final ConversationHostLookup lookup = InternetAddress.lookup,
+}) implements ConversationEngineHost {
   @override
   Future<ConversationEngineResult> executeTurn(
     Session session, {
@@ -344,8 +332,14 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
           awaitingApproval: true,
         );
       }
+
+      if (completedCalls.any((call) => call.status == 'running')) {
+        throw const ConversationEngineConfigurationException(
+          'tool_execution_in_progress',
+        );
+      }
       final resolvedCalls = completedCalls
-          .where((call) => call.status != 'pending')
+          .where((call) => call.status != 'pending' && call.status != 'running')
           .toList(growable: false);
       final persistedMessages = await ConversationMessage.db.find(
         session,
@@ -575,11 +569,13 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
         session,
         job.workspaceId,
         conversationSkillIds,
+        isChildConversation: conversation.parentConversationStableId != null,
       ),
       agentSkills: await _skillsForIds(
         session,
         job.workspaceId,
         agentContext.skillIds,
+        isChildConversation: conversation.parentConversationStableId != null,
       ),
     );
   }
@@ -630,8 +626,9 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
   Future<List<AgentSkill>> _skillsForIds(
     Session session,
     int workspaceId,
-    Iterable<String> skillIds,
-  ) async {
+    Iterable<String> skillIds, {
+    required bool isChildConversation,
+  }) async {
     final skills = <AgentSkill>[];
     for (final skillId in skillIds) {
       final skill = await _activeResource(
@@ -693,7 +690,64 @@ final class ServerConversationEngineHost implements ConversationEngineHost {
           cloudServiceSkillReady(definition, serviceConnections);
     });
     skills.addAll(cloudAppSkillsForIds(enabledAppSkillIds));
-    return skills;
+    final userSkills = appResources
+        .where(
+          (resource) =>
+              resource.resourceKind == WorkspaceResourceKind.skill &&
+              _jsonObject(resource.data)['source'] != 'app',
+        )
+        .map(
+          (resource) => {
+            'id': resource.resourceId,
+            ..._jsonObject(resource.data),
+          },
+        )
+        .toList(growable: false);
+    final targets = materializeCloudSkillTools(
+      selectedSkillIds: skillIds.toSet(),
+      userSkills: userSkills,
+      templateTools: appResources
+          .where(
+            (resource) =>
+                resource.resourceKind ==
+                WorkspaceResourceKind.skillTemplateTool,
+          )
+          .map(
+            (resource) => {
+              'id': resource.resourceId,
+              ..._jsonObject(resource.data),
+            },
+          ),
+      appSkillSettings: appSettings,
+      serviceConnections: serviceConnections,
+      isChildConversation: isChildConversation,
+    );
+    final withManifests = <AgentSkill>[];
+    for (final skill in skills) {
+      final user = userSkills
+          .where((candidate) => candidate['id'] == skill.identity)
+          .firstOrNull;
+      final app = serviceSkillDefinitions
+          .where((candidate) => candidate.identifier == skill.identity)
+          .firstOrNull;
+      final slug = user?['slug'] as String? ?? app?.slug ?? skill.identity;
+      final manifest = slug == null
+          ? null
+          : await buildCloudSkillManifest(
+              slug: slug,
+              userSkills: userSkills,
+              tools: targets,
+            );
+      withManifests.add(
+        AgentSkill(
+          title: skill.title,
+          content: skill.content,
+          identity: skill.identity,
+          manifest: manifest,
+        ),
+      );
+    }
+    return withManifests;
   }
 
   Future<WorkspaceResource?> _activeResource(
@@ -1019,10 +1073,8 @@ AgentTranscriptMessageSnapshot _messageSnapshot(ConversationMessage message) {
   );
 }
 
-final class ConversationEngineConfigurationException implements Exception {
-  const ConversationEngineConfigurationException(this.code);
-  final String code;
-}
+final class const ConversationEngineConfigurationException(final String code)
+    implements Exception;
 
 Map<String, dynamic> _jsonObject(String source) {
   final value = jsonDecode(source);
@@ -1032,17 +1084,10 @@ Map<String, dynamic> _jsonObject(String source) {
   return value;
 }
 
-class _ProviderConfig {
-  const _ProviderConfig({
-    required this.providerId,
-    required this.modelId,
-    required this.uri,
-    required this.address,
-    required this.headers,
-  });
-  final String providerId;
-  final String modelId;
-  final Uri uri;
-  final InternetAddress address;
-  final Map<String, String> headers;
-}
+class const _ProviderConfig({
+  required final String providerId,
+  required final String modelId,
+  required final Uri uri,
+  required final InternetAddress address,
+  required final Map<String, String> headers,
+});

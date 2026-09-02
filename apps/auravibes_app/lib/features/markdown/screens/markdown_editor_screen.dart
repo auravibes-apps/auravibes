@@ -6,21 +6,17 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:textf/textf.dart';
 
-class MarkdownEditorScreen extends StatefulWidget {
-  const MarkdownEditorScreen({
-    required this.initialMarkdown,
-    this.maxCharacters,
-    super.key,
-  });
-
-  final String initialMarkdown;
-  final int? maxCharacters;
-
+class const MarkdownEditorScreen({
+  required final String initialMarkdown,
+  final int? maxCharacters,
+  super.key,
+}) extends StatefulWidget {
   @override
   State<MarkdownEditorScreen> createState() => _MarkdownEditorScreenState();
 }
 
 class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
+  static const _minimumEditorLines = 12;
   final _controller = TextfEditingController();
   final _focusNode = FocusNode();
   bool _isFocused = false;
@@ -52,9 +48,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
     return AuraScreen(
       child: TextFieldTapRegion(
         child: Container(
-          decoration: BoxDecoration(
-            color: editorBackgroundColor,
-          ),
+          decoration: BoxDecoration(color: editorBackgroundColor),
           child: Column(
             children: [
               AnimatedContainer(
@@ -79,9 +73,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                               decoration: InputDecoration(
                                 hintText: LocaleKeys
                                     .markdown_editor_editor_label
-                                    .tr(
-                                      context: context,
-                                    ),
+                                    .tr(context: context),
                                 hintStyle: TextStyle(
                                   color: auraColors.onSurfaceVariant.withValues(
                                     alpha: 0.6,
@@ -103,7 +95,7 @@ class _MarkdownEditorScreenState extends State<MarkdownEditorScreen> {
                                 fontFamily: typography.bodyFontFamily,
                               ),
                               maxLines: null,
-                              minLines: 12,
+                              minLines: _minimumEditorLines,
                             ),
                           ],
                           spacing: .md,

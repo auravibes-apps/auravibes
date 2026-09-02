@@ -17,16 +17,11 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class ServiceConnectionEditScreen extends ConsumerStatefulWidget {
-  const ServiceConnectionEditScreen({
-    required this.workspaceId,
-    required this.connectionId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String connectionId;
-
+class const ServiceConnectionEditScreen({
+  required final String workspaceId,
+  required final String connectionId,
+  super.key,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ServiceConnectionEditScreen> createState() =>
       _ServiceConnectionEditScreenState();
@@ -144,9 +139,7 @@ class _ServiceConnectionEditScreenState
     }
     final credential = await ref
         .read(skillCredentialOperationsProvider(widget.workspaceId))
-        .getForEdit(
-          widget.connectionId,
-        );
+        .getForEdit(widget.connectionId);
     if (credential != null) {
       final definition = await ref.read(
         skillCredentialDefinitionProvider(
@@ -176,10 +169,7 @@ class _ServiceConnectionEditScreenState
   void _initialize(_ConnectionEditState state) {
     if (_initialized) return;
     switch (state) {
-      case _SkillCredentialEditState(
-        :final credential,
-        :final definition,
-      ):
+      case _SkillCredentialEditState(:final credential, :final definition):
         _nameController.text = credential.name;
         final attributes = SkillCredentialAttributeDefinition.parseMap(
           definition.attributesJson,
@@ -211,20 +201,30 @@ class _ServiceConnectionEditScreenState
   Future<void> _saveSkillCredential(BuildContext context) async {
     setState(() => _isSaving = true);
     try {
+      final nonSecretAttributes = Map.fromEntries(
+        _nonSecretControllers.entries.map((entry) {
+          final value = entry.value.text;
+
+          return MapEntry(entry.key, value);
+        }),
+      );
+      final secretAttributes = Map.fromEntries(
+        _secretControllers.entries
+            .map((entry) {
+              final value = entry.value.text;
+
+              return MapEntry(entry.key, value);
+            })
+            .where((entry) => entry.value.isNotEmpty),
+      );
       final _ = await ref
           .read(skillCredentialOperationsProvider(widget.workspaceId))
           .update(
             widget.connectionId,
             SkillCredentialToUpdate(
               name: _nameController.text.trim(),
-              nonSecretAttributes: {
-                for (final entry in _nonSecretControllers.entries)
-                  entry.key: entry.value.text,
-              },
-              secretAttributes: {
-                for (final entry in _secretControllers.entries)
-                  if (entry.value.text.isNotEmpty) entry.key: entry.value.text,
-              },
+              nonSecretAttributes: nonSecretAttributes,
+              secretAttributes: secretAttributes,
               clearSecretAttributeNames: _clearedSecrets,
             ),
           );
@@ -232,7 +232,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.skill_credentials_save_error),
         variant: AuraSnackBarVariant.error,
@@ -262,11 +262,9 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
-        content: const TextLocale(
-          LocaleKeys.service_connections_save_error,
-        ),
+        content: const TextLocale(LocaleKeys.service_connections_save_error),
         variant: AuraSnackBarVariant.error,
       );
     } finally {
@@ -308,7 +306,7 @@ class _ServiceConnectionEditScreenState
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: const TextLocale(LocaleKeys.service_connections_save_error),
         variant: AuraSnackBarVariant.error,
@@ -319,51 +317,31 @@ class _ServiceConnectionEditScreenState
   }
 }
 
-sealed class _ConnectionEditState {}
+sealed class _ConnectionEditState;
 
-class _SkillCredentialEditState extends _ConnectionEditState {
-  _SkillCredentialEditState({
-    required this.credential,
-    required this.definition,
-  });
+class _SkillCredentialEditState({
+  required final SkillCredentialForEdit credential,
+  required final SkillCredentialDefinitionEntity definition,
+}) extends _ConnectionEditState;
 
-  final SkillCredentialForEdit credential;
-  final SkillCredentialDefinitionEntity definition;
-}
+class _ModelProviderEditState({
+  required final ModelConnectionForEdit connection,
+}) extends _ConnectionEditState;
 
-class _ModelProviderEditState extends _ConnectionEditState {
-  _ModelProviderEditState({required this.connection});
+class _GenericServiceConnectionEditState({
+  required final GenericServiceConnectionForEdit connection,
+}) extends _ConnectionEditState;
 
-  final ModelConnectionForEdit connection;
-}
-
-class _GenericServiceConnectionEditState extends _ConnectionEditState {
-  _GenericServiceConnectionEditState({required this.connection});
-
-  final GenericServiceConnectionForEdit connection;
-}
-
-class _SkillCredentialEditForm extends StatelessWidget {
-  const _SkillCredentialEditForm({
-    required this.state,
-    required this.nameController,
-    required this.nonSecretControllers,
-    required this.secretControllers,
-    required this.clearedSecrets,
-    required this.isSaving,
-    required this.onChanged,
-    required this.onSave,
-  });
-
-  final _SkillCredentialEditState state;
-  final TextEditingController nameController;
-  final Map<String, TextEditingController> nonSecretControllers;
-  final Map<String, TextEditingController> secretControllers;
-  final Set<String> clearedSecrets;
-  final bool isSaving;
-  final VoidCallback onChanged;
-  final VoidCallback onSave;
-
+class const _SkillCredentialEditForm({
+  required final _SkillCredentialEditState state,
+  required final TextEditingController nameController,
+  required final Map<String, TextEditingController> nonSecretControllers,
+  required final Map<String, TextEditingController> secretControllers,
+  required final Set<String> clearedSecrets,
+  required final bool isSaving,
+  required final VoidCallback onChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final attributes = SkillCredentialAttributeDefinition.parseMap(
@@ -383,9 +361,7 @@ class _SkillCredentialEditForm extends StatelessWidget {
               AuraInput(
                 controller: nameController,
                 label: Text(
-                  LocaleKeys.skill_credentials_name_label.tr(
-                    context: context,
-                  ),
+                  LocaleKeys.skill_credentials_name_label.tr(context: context),
                 ),
                 onChanged: (_) => onChanged(),
               ),
@@ -417,23 +393,14 @@ class _SkillCredentialEditForm extends StatelessWidget {
   }
 }
 
-class _SkillCredentialAttributeInput extends StatelessWidget {
-  const _SkillCredentialAttributeInput(
-    this.entry, {
-    required this.editState,
-    required this.secretControllers,
-    required this.nonSecretControllers,
-    required this.clearedSecrets,
-    required this.onChanged,
-  });
-
-  final MapEntry<String, SkillCredentialAttributeDefinition> entry;
-  final _SkillCredentialEditState editState;
-  final Map<String, TextEditingController> secretControllers;
-  final Map<String, TextEditingController> nonSecretControllers;
-  final Set<String> clearedSecrets;
-  final VoidCallback onChanged;
-
+class const _SkillCredentialAttributeInput(
+  final MapEntry<String, SkillCredentialAttributeDefinition> entry, {
+  required final _SkillCredentialEditState editState,
+  required final Map<String, TextEditingController> secretControllers,
+  required final Map<String, TextEditingController> nonSecretControllers,
+  required final Set<String> clearedSecrets,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entry.value.secret) {
@@ -460,23 +427,14 @@ class _SkillCredentialAttributeInput extends StatelessWidget {
   }
 }
 
-class _SecretAttributeInput extends StatelessWidget {
-  const _SecretAttributeInput({
-    required this.name,
-    required this.definition,
-    required this.state,
-    required this.controller,
-    required this.clearedSecrets,
-    required this.onChanged,
-  });
-
-  final String name;
-  final SkillCredentialAttributeDefinition definition;
-  final SkillCredentialSecretState? state;
-  final TextEditingController controller;
-  final Set<String> clearedSecrets;
-  final VoidCallback onChanged;
-
+class const _SecretAttributeInput({
+  required final String name,
+  required final SkillCredentialAttributeDefinition definition,
+  required final SkillCredentialSecretState? state,
+  required final TextEditingController controller,
+  required final Set<String> clearedSecrets,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final keySuffix = state?.keySuffix;
@@ -499,11 +457,7 @@ class _SecretAttributeInput extends StatelessWidget {
       suffixIcon: definition.optional
           ? AuraIconButton(
               icon: Icons.clear,
-              onPressed: () {
-                controller.clear();
-                final _ = clearedSecrets.add(name);
-                onChanged();
-              },
+              onPressed: _clearSecret,
               tooltip: LocaleKeys.skill_credentials_clear_secret.tr(
                 context: context,
               ),
@@ -517,30 +471,29 @@ class _SecretAttributeInput extends StatelessWidget {
       },
     );
   }
+
+  void _clearSecret() {
+    controller.clear();
+    final _ = clearedSecrets.add(name);
+    onChanged();
+  }
 }
 
-class _ModelProviderEditForm extends StatelessWidget {
-  const _ModelProviderEditForm({
-    required this.state,
-    required this.nameController,
-    required this.keyController,
-    required this.urlController,
-    required this.isSaving,
-    required this.onChanged,
-    required this.onSave,
-  });
-
-  final _ModelProviderEditState state;
-  final TextEditingController nameController;
-  final TextEditingController keyController;
-  final TextEditingController urlController;
-  final bool isSaving;
-  final VoidCallback onChanged;
-  final VoidCallback onSave;
-
+class const _ModelProviderEditForm({
+  required final _ModelProviderEditState state,
+  required final TextEditingController nameController,
+  required final TextEditingController keyController,
+  required final TextEditingController urlController,
+  required final bool isSaving,
+  required final VoidCallback onChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final suffix = state.connection.keySuffix;
+    final savedSecretLabel = LocaleKeys.skill_credentials_secret_saved.tr(
+      context: context,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -566,10 +519,7 @@ class _ModelProviderEditForm extends StatelessWidget {
                       ? LocaleKeys.skill_credentials_secret_saved.tr(
                           context: context,
                         )
-                      : '${LocaleKeys.skill_credentials_secret_saved.tr(
-                              context: context,
-                            )} '
-                            '****$suffix',
+                      : '$savedSecretLabel ****$suffix',
                 ),
                 label: const TextLocale(
                   LocaleKeys.models_screens_add_provider_fields_key_label,
@@ -605,32 +555,24 @@ class _ModelProviderEditForm extends StatelessWidget {
   }
 }
 
-class _GenericServiceConnectionEditForm extends StatelessWidget {
-  const _GenericServiceConnectionEditForm({
-    required this.state,
-    required this.nameController,
-    required this.secretController,
-    required this.clearSecret,
-    required this.isSaving,
-    required this.onChanged,
-    required this.onClearSecret,
-    required this.onSave,
-  });
-
-  final _GenericServiceConnectionEditState state;
-  final TextEditingController nameController;
-  final TextEditingController secretController;
-  final bool clearSecret;
-  final bool isSaving;
-  final VoidCallback onChanged;
-  final VoidCallback onClearSecret;
-  final VoidCallback onSave;
-
+class const _GenericServiceConnectionEditForm({
+  required final _GenericServiceConnectionEditState state,
+  required final TextEditingController nameController,
+  required final TextEditingController secretController,
+  required final bool clearSecret,
+  required final bool isSaving,
+  required final VoidCallback onChanged,
+  required final VoidCallback onClearSecret,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final suffix = state.connection.keySuffix;
     final savedSecret = state.connection.hasSecret && !clearSecret;
     final savedSecretSuffix = suffix == null ? '' : ' ****$suffix';
+    final savedSecretLabel = LocaleKeys.skill_credentials_secret_saved.tr(
+      context: context,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -652,11 +594,7 @@ class _GenericServiceConnectionEditForm extends StatelessWidget {
               AuraInput(
                 controller: secretController,
                 placeholder: savedSecret
-                    ? Text(
-                        '${LocaleKeys.skill_credentials_secret_saved.tr(
-                          context: context,
-                        )}$savedSecretSuffix',
-                      )
+                    ? Text('$savedSecretLabel$savedSecretSuffix')
                     : null,
                 label: Text(
                   _genericCredentialValueLabel(

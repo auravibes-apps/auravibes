@@ -15,10 +15,7 @@ QueryExecutor _testConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -42,9 +39,7 @@ void main() {
     setUp(() async {
       fixture.reset();
       columns = await fixture.database
-          .customSelect(
-            'PRAGMA table_info(conversations)',
-          )
+          .customSelect('PRAGMA table_info(conversations)')
           .get();
     });
 
@@ -80,9 +75,7 @@ void main() {
     });
 
     test('title is not null', () {
-      final col = columns.firstWhere(
-        (r) => r.read<String>('name') == 'title',
-      );
+      final col = columns.firstWhere((r) => r.read<String>('name') == 'title');
       expect(col.read<int>('notnull'), 1);
     });
 

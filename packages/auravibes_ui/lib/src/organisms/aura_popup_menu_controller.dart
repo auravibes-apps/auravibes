@@ -1,12 +1,15 @@
-import 'package:auravibes_ui/ui.dart';
+import 'package:auravibes_ui/src/atoms/aura_tile.dart';
+import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_portal/flutter_portal.dart';
 
+export 'aura_popup_menu_button.dart';
+
 /// Controller for managing the visibility of a context menu.
 class AuraPopupMenuController {
   /// Creates a new context menu controller.
-  AuraPopupMenuController();
+  new();
 
   _AuraPopupMenuState? _state;
 
@@ -23,46 +26,6 @@ class AuraPopupMenuController {
   void toggle() => _state?.toggle();
 }
 
-/// Icon button that opens an [AuraPopupMenu].
-class AuraPopupMenuButton extends StatefulWidget {
-  /// Creates an Aura popup menu button.
-  const AuraPopupMenuButton({
-    required this.items,
-    super.key,
-    this.icon = Icons.more_vert,
-    this.tooltip,
-  });
-
-  /// The icon shown in the trigger button.
-  final IconData icon;
-
-  /// Tooltip shown for the trigger button.
-  final String? tooltip;
-
-  /// The menu entries shown when opened.
-  final List<AuraPopupMenuEntry> items;
-
-  @override
-  State<AuraPopupMenuButton> createState() => _AuraPopupMenuButtonState();
-}
-
-class _AuraPopupMenuButtonState extends State<AuraPopupMenuButton> {
-  final _controller = AuraPopupMenuController();
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraPopupMenu(
-      child: AuraIconButton(
-        icon: widget.icon,
-        onPressed: _controller.toggle,
-        tooltip: widget.tooltip,
-      ),
-      items: widget.items,
-      controller: _controller,
-    );
-  }
-}
-
 /// A popup menu widget that displays a list of menu items.
 ///
 /// The menu can be controlled programmatically using an
@@ -74,7 +37,7 @@ class AuraPopupMenu extends StatefulWidget {
   /// [items] is the list of menu entries to display.
   /// [controller] is used to programmatically control menu visibility.
   /// [focusNode] defines the keyboard focus for this widget.
-  const AuraPopupMenu({
+  const new({
     required this.child,
     required this.items,
     required this.controller,
@@ -128,30 +91,8 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     _initFocusNode(widget.focusNode);
     _menuFocusScopeNode = FocusScopeNode(
       debugLabel: 'AuraPopupMenu menu',
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _visible) {
-          close();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
+      onKeyEvent: _handleMenuKeyEvent,
     );
-    widget.controller._state = this;
-  }
-
-  @override
-  void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      if (_ownsFocusNode) {
-        _requiredFocusNode.dispose();
-      }
-      _initFocusNode(widget.focusNode);
-    }
     widget.controller._state = this;
   }
 
@@ -166,9 +107,16 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
     super.dispose();
   }
 
-  void _initFocusNode(FocusNode? focusNode) {
-    _focusNode = focusNode ?? FocusNode();
-    _ownsFocusNode = focusNode == null;
+  @override
+  void didUpdateWidget(covariant AuraPopupMenu oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.focusNode != widget.focusNode) {
+      if (_ownsFocusNode) {
+        _requiredFocusNode.dispose();
+      }
+      _initFocusNode(widget.focusNode);
+    }
+    widget.controller._state = this;
   }
 
   void open() {
@@ -209,77 +157,78 @@ class _AuraPopupMenuState extends State<AuraPopupMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      child: PortalTarget(
-        visible: _visible,
-        portalFollower: GestureDetector(
-          onTap: close,
-          behavior: HitTestBehavior.opaque,
-        ),
-        child: PortalTarget(
-          visible: _visible,
-          anchor: const Aligned(
-            follower: .topCenter,
-            target: .bottomCenter,
-            portal: .bottomCenter,
-            shiftToWithinBound: .new(x: true, y: true),
-          ),
-          portalFollower: TapRegion(
-            child: FocusScope(
-              node: _requiredMenuFocusScopeNode,
-              child: SizedBox(
-                width: 200,
-                child: AuraCard(
-                  child: _AuraPopupMenuCloseScope(
-                    close: close,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: .start,
-                      children: widget.items
-                          .map((e) => Builder(builder: e.build))
-                          .toList(),
-                    ),
-                  ),
-                  padding: .none,
-                  style: AuraCardStyle.border,
+    return PortalTarget(
+      visible: _visible,
+      anchor: const Aligned(
+        follower: .topCenter,
+        target: .bottomCenter,
+        portal: .bottomCenter,
+        shiftToWithinBound: .new(x: true, y: true),
+      ),
+      portalFollower: TapRegion(
+        child: FocusScope(
+          node: _requiredMenuFocusScopeNode,
+          child: SizedBox(
+            width: 200,
+            child: AuraCard(
+              child: _AuraPopupMenuCloseScope(
+                close: close,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: .start,
+                  children: widget.items
+                      .map((e) => Builder(builder: e.build))
+                      .toList(),
                 ),
               ),
+              padding: .none,
+              style: AuraCardStyle.border,
             ),
-            onTapOutside: (_) => close(),
-            groupId: this,
-          ),
-          child: TapRegion(
-            child: widget.child,
-            groupId: this,
           ),
         ),
+        onTapOutside: (_) => close(),
+        groupId: this,
       ),
-      focusNode: _requiredFocusNode,
-      onKeyEvent: (node, event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.escape &&
-            _visible) {
-          close();
-
-          return KeyEventResult.handled;
-        }
-
-        return KeyEventResult.ignored;
-      },
-      skipTraversal: true,
-      descendantsAreFocusable: true,
+      child: Focus(
+        child: TapRegion(child: widget.child, groupId: this),
+        focusNode: _requiredFocusNode,
+        onKeyEvent: _handleMenuKeyEvent,
+        descendantsAreFocusable: false,
+      ),
     );
+  }
+
+  KeyEventResult _handleMenuKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent &&
+        node == _requiredFocusNode &&
+        (event.logicalKey == LogicalKeyboardKey.enter ||
+            event.logicalKey == LogicalKeyboardKey.space)) {
+      toggle();
+
+      return KeyEventResult.handled;
+    }
+
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.escape &&
+        _visible) {
+      close();
+
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  void _initFocusNode(FocusNode? focusNode) {
+    _focusNode = focusNode ?? FocusNode();
+    _ownsFocusNode = focusNode == null;
   }
 }
 
-class _AuraPopupMenuCloseScope extends InheritedWidget {
-  const _AuraPopupMenuCloseScope({
-    required this.close,
-    required super.child,
-  });
-
-  final VoidCallback close;
-
+class const _AuraPopupMenuCloseScope({
+  required final VoidCallback close,
+  required super.child,
+}) extends InheritedWidget {
   static VoidCallback? maybeOf(BuildContext context) {
     return context
         .dependOnInheritedWidgetOfExactType<_AuraPopupMenuCloseScope>()
@@ -296,10 +245,9 @@ class _AuraPopupMenuCloseScope extends InheritedWidget {
 ///
 /// This abstract class defines the interface for all menu items,
 /// including regular items, dividers, and custom builders.
-// ignore: one_member_abstracts - Required as extension point for menu entries.
 abstract class AuraPopupMenuEntry {
   /// Creates a new menu entry.
-  const AuraPopupMenuEntry();
+  const new();
 
   /// Builds the widget for this menu entry.
   Widget build(BuildContext context);
@@ -310,14 +258,11 @@ abstract class AuraPopupMenuEntry {
 /// Displays a horizontal line between menu items.
 class AuraPopupMenuDivider extends AuraPopupMenuEntry {
   /// Creates a new menu divider.
-  const AuraPopupMenuDivider();
+  const new();
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(
-      height: 1,
-      thickness: 1,
-    );
+    return const Divider(height: 1, thickness: 1);
   }
 }
 
@@ -332,7 +277,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
   /// [onTap] is the callback when the item is tapped.
   /// [leading] is an optional widget displayed before the title.
   /// [trailing] is an optional widget displayed after the title.
-  const AuraPopupMenuItem({
+  const new({
     required this.title,
     this.onTap,
     this.leading,
@@ -366,6 +311,7 @@ class AuraPopupMenuItem extends AuraPopupMenuEntry {
       variant: variant,
       leading: leading,
       trailing: trailing,
+      semanticLabel: 'Menu item',
     );
   }
 }

@@ -23,18 +23,13 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SidebarConversationsWidget extends ConsumerWidget {
+class const SidebarConversationsWidget({
+  required final String? workspaceId,
+  super.key,
+  final int limit = 10,
+}) extends ConsumerWidget {
   // Null workspace ID means no workspace has been selected yet.
   // ignore: unnecessary-nullable
-  const SidebarConversationsWidget({
-    required this.workspaceId,
-    super.key,
-    this.limit = 10,
-  });
-
-  final String? workspaceId;
-  final int limit;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceId = this.workspaceId;
@@ -43,9 +38,11 @@ class SidebarConversationsWidget extends ConsumerWidget {
     }
 
     final currentChatId = _currentChatId(
-      GoRouter.maybeOf(
-        context,
-      )?.routeInformationProvider.value.uri.pathSegments,
+      GoRouter.maybeOf(context)
+          ?.routeInformationProvider
+          .value
+          .uri
+          .pathSegments,
     );
     final chatListAsync = ref.watch(
       conversationsStreamProvider(workspaceId: workspaceId, limit: limit),
@@ -91,7 +88,8 @@ class SidebarConversationsWidget extends ConsumerWidget {
 
   String? _currentChatId(List<String>? pathSegments) {
     if (pathSegments == null) return null;
-    if (pathSegments.length < 4) return null;
+    const minimumRouteSegments = 4;
+    if (pathSegments.length < minimumRouteSegments) return null;
     final [firstSegment, _, thirdSegment, fourthSegment, ...] = pathSegments;
     if (firstSegment != 'workspaces') return null;
     if (thirdSegment != 'chats') return null;
@@ -107,11 +105,9 @@ class SidebarConversationsWidget extends ConsumerWidget {
   }
 }
 
-class _SidebarConversationsError<T extends Object> extends StatelessWidget {
-  const _SidebarConversationsError({required this.error});
-
-  final T error;
-
+class const _SidebarConversationsError<T extends Object>({
+  required final T error,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -121,7 +117,7 @@ class _SidebarConversationsError<T extends Object> extends StatelessWidget {
           horizontal: context.auraTheme.fromSpacing(.sm),
         ),
         child: AuraText(
-          child: TextLocale(cloudErrorLocalizationKey(error)),
+          child: TextLocale(CloudAppErrors.localizationKey(error)),
           style: AuraTextStyle.bodySmall,
           tint: AuraTint.error,
         ),
@@ -130,9 +126,7 @@ class _SidebarConversationsError<T extends Object> extends StatelessWidget {
   }
 }
 
-class _SidebarConversationsSectionHeader extends StatelessWidget {
-  const _SidebarConversationsSectionHeader();
-
+class const _SidebarConversationsSectionHeader() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -141,18 +135,14 @@ class _SidebarConversationsSectionHeader extends StatelessWidget {
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
       child: const AuraText(
-        child: TextLocale(
-          LocaleKeys.sidebar_recent_chats,
-        ),
+        child: TextLocale(LocaleKeys.sidebar_recent_chats),
         style: AuraTextStyle.caption,
       ),
     );
   }
 }
 
-class _SidebarConversationsEmptyState extends StatelessWidget {
-  const _SidebarConversationsEmptyState();
-
+class const _SidebarConversationsEmptyState() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -161,9 +151,7 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
         horizontal: context.auraTheme.fromSpacing(.sm),
       ),
       child: const AuraText(
-        child: TextLocale(
-          LocaleKeys.sidebar_no_recent_chats,
-        ),
+        child: TextLocale(LocaleKeys.sidebar_no_recent_chats),
         style: AuraTextStyle.bodySmall,
         textAlign: TextAlign.center,
       ),
@@ -171,11 +159,9 @@ class _SidebarConversationsEmptyState extends StatelessWidget {
   }
 }
 
-class _SidebarConversationsViewAllButton extends StatelessWidget {
-  const _SidebarConversationsViewAllButton({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _SidebarConversationsViewAllButton({
+  required final String workspaceId,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -187,9 +173,7 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
       ),
       child: AuraButton(
         onPressed: () => ChatsRoute(workspaceId: workspaceId).go(context),
-        child: const TextLocale(
-          LocaleKeys.sidebar_view_all_chats,
-        ),
+        child: const TextLocale(LocaleKeys.sidebar_view_all_chats),
         variant: AuraButtonVariant.ghost,
         size: AuraButtonSize.small,
         isFullWidth: true,
@@ -198,17 +182,11 @@ class _SidebarConversationsViewAllButton extends StatelessWidget {
   }
 }
 
-class _SidebarConversationTile extends ConsumerStatefulWidget {
-  const _SidebarConversationTile({
-    required this.chat,
-    required this.workspaceId,
-    required this.isActive,
-  });
-
-  final ConversationEntity chat;
-  final String workspaceId;
-  final bool isActive;
-
+class const _SidebarConversationTile({
+  required final ConversationEntity chat,
+  required final String workspaceId,
+  required final bool isActive,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_SidebarConversationTile> createState() =>
       _SidebarConversationTileState();
@@ -222,24 +200,6 @@ class _SidebarConversationTileState
   void dispose() {
     _menuController.close();
     super.dispose();
-  }
-
-  Future<void> _handleDelete(BuildContext context) async {
-    final confirmed = await showDeleteConversationConfirmDialog(context);
-    if (!confirmed) return;
-
-    final cloud = await ref.read(
-      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
-    );
-    if (cloud != null) {
-      await cloud.delete(widget.chat);
-
-      return;
-    }
-
-    final _ = await ref
-        .read(conversationRepositoryProvider)
-        .deleteConversation(widget.chat.id);
   }
 
   @override
@@ -294,11 +254,27 @@ class _SidebarConversationTileState
       ),
     );
   }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final confirmed = await DeleteConversationConfirmDialog.show(context);
+    if (!confirmed) return;
+
+    final cloud = await ref.read(
+      cloudConversationUsecaseProvider(widget.chat.workspaceId).future,
+    );
+    if (cloud != null) {
+      await cloud.delete(widget.chat);
+
+      return;
+    }
+
+    final _ = await ref
+        .read(conversationRepositoryProvider)
+        .deleteConversation(widget.chat.id);
+  }
 }
 
-class _CompactingRow extends StatelessWidget {
-  const _CompactingRow();
-
+class const _CompactingRow() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -308,20 +284,14 @@ class _CompactingRow extends StatelessWidget {
       ),
       child: const AuraTile(
         child: AuraText(
-          child: TextLocale(
-            LocaleKeys.compaction_compacting_row_label,
-          ),
+          child: TextLocale(LocaleKeys.compaction_compacting_row_label),
           style: AuraTextStyle.bodySmall,
         ),
         variant: AuraTileVariant.ghost,
         size: AuraTileSize.small,
         leading: Padding(
           padding: EdgeInsets.all(4),
-          child: SizedBox(
-            width: 16,
-            height: 16,
-            child: AuraSpinner(),
-          ),
+          child: SizedBox(width: 16, height: 16, child: AuraSpinner()),
         ),
         enabled: false,
       ),

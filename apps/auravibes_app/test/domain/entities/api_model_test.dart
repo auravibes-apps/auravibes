@@ -7,15 +7,8 @@ void main() {
       'id': 'gpt-4',
       'name': 'GPT-4',
       'open_weights': false,
-      'cost': {
-        'input': 30.0,
-        'output': 60.0,
-        'cache_read': 15.0,
-      },
-      'limit': {
-        'context': 128000,
-        'output': 4096,
-      },
+      'cost': {'input': 30.0, 'output': 60.0, 'cache_read': 15.0},
+      'limit': {'context': 128000, 'output': 4096},
       'modalities': {
         'input': ['text', 'image'],
         'output': ['text'],

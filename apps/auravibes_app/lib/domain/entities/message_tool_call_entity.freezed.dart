@@ -19,8 +19,8 @@ mixin _$MessageToolCallEntity {
  String get id; String get name; String get argumentsRaw;@JsonKey(includeIfNull: false) String? get argumentsDigest;@JsonKey(includeIfNull: false) String? get turnId;@JsonKey(includeIfNull: false) int? get turnRevision;/// The raw response from tool execution, if successful.
  String? get responseRaw;/// The result status of this tool call.
 ///
-/// - null: Tool is awaiting approval
-/// - non-null: Tool is running or completed with this result status
+/// Null means the tool is awaiting approval. A non-null value means the
+/// tool is running or completed with this result status.
 @JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) ToolCallResultStatus? get resultStatus;
 /// Create a copy of MessageToolCallEntity
 /// with the given fields replaced by the non-null parameter values.
@@ -34,12 +34,16 @@ $MessageToolCallEntityCopyWith<MessageToolCallEntity> get copyWith => _$MessageT
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+  final _this = this as MessageToolCallEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToolCallEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.argumentsRaw, _this.argumentsRaw) || other.argumentsRaw == _this.argumentsRaw)&&(identical(other.argumentsDigest, _this.argumentsDigest) || other.argumentsDigest == _this.argumentsDigest)&&(identical(other.turnId, _this.turnId) || other.turnId == _this.turnId)&&(identical(other.turnRevision, _this.turnRevision) || other.turnRevision == _this.turnRevision)&&(identical(other.responseRaw, _this.responseRaw) || other.responseRaw == _this.responseRaw)&&(identical(other.resultStatus, _this.resultStatus) || other.resultStatus == _this.resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
+int get hashCode {
+  final _this = this as MessageToolCallEntity;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.argumentsRaw,_this.argumentsDigest,_this.turnId,_this.turnRevision,_this.responseRaw,_this.resultStatus);
+}
 
 
 
@@ -231,8 +235,8 @@ class _MessageToolCallEntity extends MessageToolCallEntity {
 @override final  String? responseRaw;
 /// The result status of this tool call.
 ///
-/// - null: Tool is awaiting approval
-/// - non-null: Tool is running or completed with this result status
+/// Null means the tool is awaiting approval. A non-null value means the
+/// tool is running or completed with this result status.
 @override@JsonKey(fromJson: _toolCallResultStatusFromJson, toJson: _toolCallResultStatusToJson) final  ToolCallResultStatus? resultStatus;
 
 /// Create a copy of MessageToolCallEntity
@@ -248,12 +252,14 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToolCallEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw)&&(identical(other.argumentsDigest, argumentsDigest) || other.argumentsDigest == argumentsDigest)&&(identical(other.turnId, turnId) || other.turnId == turnId)&&(identical(other.turnRevision, turnRevision) || other.turnRevision == turnRevision)&&(identical(other.responseRaw, responseRaw) || other.responseRaw == responseRaw)&&(identical(other.resultStatus, resultStatus) || other.resultStatus == resultStatus));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
+int get hashCode {
+    return Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
+}
 
 
 
@@ -312,16 +318,21 @@ $MessageAttachmentEntityCopyWith<MessageAttachmentEntity> get copyWith => _$Mess
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  final _this = this as MessageAttachmentEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.messageId, _this.messageId) || other.messageId == _this.messageId)&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+int get hashCode {
+  final _this = this as MessageAttachmentEntity;
+  return Object.hash(runtimeType,_this.id,_this.messageId,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes,_this.createdAt,_this.updatedAt);
+}
 
 @override
 String toString() {
-  return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
+  final _this = this as MessageAttachmentEntity;
+  return 'MessageAttachmentEntity(id: ${_this.id}, messageId: ${_this.messageId}, localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -526,16 +537,18 @@ _$MessageAttachmentEntityCopyWith<_MessageAttachmentEntity> get copyWith => __$M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.messageId, messageId) || other.messageId == messageId)&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,messageId,localPath,fileName,displayName,mimeType,modality,sizeBytes,createdAt,updatedAt);
+}
 
 @override
 String toString() {
-  return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'MessageAttachmentEntity(id: $id, messageId: $messageId, localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -596,16 +609,21 @@ $MessageAttachmentToCreateCopyWith<MessageAttachmentToCreate> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
+  final _this = this as MessageAttachmentToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageAttachmentToCreate&&(identical(other.localPath, _this.localPath) || other.localPath == _this.localPath)&&(identical(other.fileName, _this.fileName) || other.fileName == _this.fileName)&&(identical(other.displayName, _this.displayName) || other.displayName == _this.displayName)&&(identical(other.mimeType, _this.mimeType) || other.mimeType == _this.mimeType)&&(identical(other.modality, _this.modality) || other.modality == _this.modality)&&(identical(other.sizeBytes, _this.sizeBytes) || other.sizeBytes == _this.sizeBytes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+int get hashCode {
+  final _this = this as MessageAttachmentToCreate;
+  return Object.hash(runtimeType,_this.localPath,_this.fileName,_this.displayName,_this.mimeType,_this.modality,_this.sizeBytes);
+}
 
 @override
 String toString() {
-  return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
+  final _this = this as MessageAttachmentToCreate;
+  return 'MessageAttachmentToCreate(localPath: ${_this.localPath}, fileName: ${_this.fileName}, displayName: ${_this.displayName}, mimeType: ${_this.mimeType}, modality: ${_this.modality}, sizeBytes: ${_this.sizeBytes})';
 }
 
 
@@ -802,16 +820,18 @@ _$MessageAttachmentToCreateCopyWith<_MessageAttachmentToCreate> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageAttachmentToCreate&&(identical(other.localPath, localPath) || other.localPath == localPath)&&(identical(other.fileName, fileName) || other.fileName == fileName)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.mimeType, mimeType) || other.mimeType == mimeType)&&(identical(other.modality, modality) || other.modality == modality)&&(identical(other.sizeBytes, sizeBytes) || other.sizeBytes == sizeBytes));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+int get hashCode {
+    return Object.hash(runtimeType,localPath,fileName,displayName,mimeType,modality,sizeBytes);
+}
 
 @override
 String toString() {
-  return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
+    return 'MessageAttachmentToCreate(localPath: $localPath, fileName: $fileName, displayName: $displayName, mimeType: $mimeType, modality: $modality, sizeBytes: $sizeBytes)';
 }
 
 
@@ -871,16 +891,21 @@ $MessageMetadataEntityCopyWith<MessageMetadataEntity> get copyWith => _$MessageM
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.thinking, thinking) || other.thinking == thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, modelMetadata)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
+  final _this = this as MessageMetadataEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, _this.toolCalls)&&(identical(other.promptTokens, _this.promptTokens) || other.promptTokens == _this.promptTokens)&&(identical(other.completionTokens, _this.completionTokens) || other.completionTokens == _this.completionTokens)&&(identical(other.totalTokens, _this.totalTokens) || other.totalTokens == _this.totalTokens)&&(identical(other.thinking, _this.thinking) || other.thinking == _this.thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, _this.modelMetadata)&&(identical(other.metadataVersion, _this.metadataVersion) || other.metadataVersion == _this.metadataVersion)&&(identical(other.isCompactionSummary, _this.isCompactionSummary) || other.isCompactionSummary == _this.isCompactionSummary)&&(identical(other.compactionKind, _this.compactionKind) || other.compactionKind == _this.compactionKind)&&(identical(other.compactedFromMessageId, _this.compactedFromMessageId) || other.compactedFromMessageId == _this.compactedFromMessageId)&&(identical(other.compactedThroughMessageId, _this.compactedThroughMessageId) || other.compactedThroughMessageId == _this.compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, _this.compactedMessageIds)&&(identical(other.compactionCreatedAt, _this.compactionCreatedAt) || other.compactionCreatedAt == _this.compactionCreatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(toolCalls),promptTokens,completionTokens,totalTokens,thinking,const DeepCollectionEquality().hash(modelMetadata),metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(compactedMessageIds),compactionCreatedAt);
+int get hashCode {
+  final _this = this as MessageMetadataEntity;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.toolCalls),_this.promptTokens,_this.completionTokens,_this.totalTokens,_this.thinking,const DeepCollectionEquality().hash(_this.modelMetadata),_this.metadataVersion,_this.isCompactionSummary,_this.compactionKind,_this.compactedFromMessageId,_this.compactedThroughMessageId,const DeepCollectionEquality().hash(_this.compactedMessageIds),_this.compactionCreatedAt);
+}
 
 @override
 String toString() {
-  return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, thinking: $thinking, modelMetadata: $modelMetadata, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
+  final _this = this as MessageMetadataEntity;
+  return 'MessageMetadataEntity(toolCalls: ${_this.toolCalls}, promptTokens: ${_this.promptTokens}, completionTokens: ${_this.completionTokens}, totalTokens: ${_this.totalTokens}, thinking: ${_this.thinking}, modelMetadata: ${_this.modelMetadata}, metadataVersion: ${_this.metadataVersion}, isCompactionSummary: ${_this.isCompactionSummary}, compactionKind: ${_this.compactionKind}, compactedFromMessageId: ${_this.compactedFromMessageId}, compactedThroughMessageId: ${_this.compactedThroughMessageId}, compactedMessageIds: ${_this.compactedMessageIds}, compactionCreatedAt: ${_this.compactionCreatedAt})';
 }
 
 
@@ -1112,16 +1137,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageMetadataEntity&&const DeepCollectionEquality().equals(other._toolCalls, _toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.thinking, thinking) || other.thinking == thinking)&&const DeepCollectionEquality().equals(other._modelMetadata, _modelMetadata)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other._compactedMessageIds, _compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageMetadataEntity&&const DeepCollectionEquality().equals(other.toolCalls, _toolCalls)&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.completionTokens, completionTokens) || other.completionTokens == completionTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens)&&(identical(other.thinking, thinking) || other.thinking == thinking)&&const DeepCollectionEquality().equals(other.modelMetadata, _modelMetadata)&&(identical(other.metadataVersion, metadataVersion) || other.metadataVersion == metadataVersion)&&(identical(other.isCompactionSummary, isCompactionSummary) || other.isCompactionSummary == isCompactionSummary)&&(identical(other.compactionKind, compactionKind) || other.compactionKind == compactionKind)&&(identical(other.compactedFromMessageId, compactedFromMessageId) || other.compactedFromMessageId == compactedFromMessageId)&&(identical(other.compactedThroughMessageId, compactedThroughMessageId) || other.compactedThroughMessageId == compactedThroughMessageId)&&const DeepCollectionEquality().equals(other.compactedMessageIds, _compactedMessageIds)&&(identical(other.compactionCreatedAt, compactionCreatedAt) || other.compactionCreatedAt == compactionCreatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_toolCalls),promptTokens,completionTokens,totalTokens,thinking,const DeepCollectionEquality().hash(_modelMetadata),metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(_compactedMessageIds),compactionCreatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(_toolCalls),promptTokens,completionTokens,totalTokens,thinking,const DeepCollectionEquality().hash(_modelMetadata),metadataVersion,isCompactionSummary,compactionKind,compactedFromMessageId,compactedThroughMessageId,const DeepCollectionEquality().hash(_compactedMessageIds),compactionCreatedAt);
+}
 
 @override
 String toString() {
-  return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, thinking: $thinking, modelMetadata: $modelMetadata, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
+    return 'MessageMetadataEntity(toolCalls: $toolCalls, promptTokens: $promptTokens, completionTokens: $completionTokens, totalTokens: $totalTokens, thinking: $thinking, modelMetadata: $modelMetadata, metadataVersion: $metadataVersion, isCompactionSummary: $isCompactionSummary, compactionKind: $compactionKind, compactedFromMessageId: $compactedFromMessageId, compactedThroughMessageId: $compactedThroughMessageId, compactedMessageIds: $compactedMessageIds, compactionCreatedAt: $compactionCreatedAt)';
 }
 
 
@@ -1194,16 +1221,21 @@ $MessageEntityCopyWith<MessageEntity> get copyWith => _$MessageEntityCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, attachments));
+  final _this = this as MessageEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(attachments));
+int get hashCode {
+  final _this = this as MessageEntity;
+  return Object.hash(runtimeType,_this.id,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.createdAt,_this.updatedAt,_this.metadata,const DeepCollectionEquality().hash(_this.attachments));
+}
 
 @override
 String toString() {
-  return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments)';
+  final _this = this as MessageEntity;
+  return 'MessageEntity(id: ${_this.id}, conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, metadata: ${_this.metadata}, attachments: ${_this.attachments})';
 }
 
 
@@ -1435,16 +1467,18 @@ _$MessageEntityCopyWith<_MessageEntity> get copyWith => __$MessageEntityCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other._attachments, _attachments));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(_attachments));
+int get hashCode {
+    return Object.hash(runtimeType,id,conversationId,content,messageType,isUser,status,createdAt,updatedAt,metadata,const DeepCollectionEquality().hash(_attachments));
+}
 
 @override
 String toString() {
-  return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments)';
+    return 'MessageEntity(id: $id, conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -1522,16 +1556,21 @@ $MessageToCreateCopyWith<MessageToCreate> get copyWith => _$MessageToCreateCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, attachments));
+  final _this = this as MessageToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessageToCreate&&(identical(other.conversationId, _this.conversationId) || other.conversationId == _this.conversationId)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.messageType, _this.messageType) || other.messageType == _this.messageType)&&(identical(other.isUser, _this.isUser) || other.isUser == _this.isUser)&&(identical(other.status, _this.status) || other.status == _this.status)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&const DeepCollectionEquality().equals(other.attachments, _this.attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata,const DeepCollectionEquality().hash(attachments));
+int get hashCode {
+  final _this = this as MessageToCreate;
+  return Object.hash(runtimeType,_this.conversationId,_this.content,_this.messageType,_this.isUser,_this.status,_this.metadata,const DeepCollectionEquality().hash(_this.attachments));
+}
 
 @override
 String toString() {
-  return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata, attachments: $attachments)';
+  final _this = this as MessageToCreate;
+  return 'MessageToCreate(conversationId: ${_this.conversationId}, content: ${_this.content}, messageType: ${_this.messageType}, isUser: ${_this.isUser}, status: ${_this.status}, metadata: ${_this.metadata}, attachments: ${_this.attachments})';
 }
 
 
@@ -1741,16 +1780,18 @@ _$MessageToCreateCopyWith<_MessageToCreate> get copyWith => __$MessageToCreateCo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other._attachments, _attachments));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessageToCreate&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId)&&(identical(other.content, content) || other.content == content)&&(identical(other.messageType, messageType) || other.messageType == messageType)&&(identical(other.isUser, isUser) || other.isUser == isUser)&&(identical(other.status, status) || other.status == status)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&const DeepCollectionEquality().equals(other.attachments, _attachments));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata,const DeepCollectionEquality().hash(_attachments));
+int get hashCode {
+    return Object.hash(runtimeType,conversationId,content,messageType,isUser,status,metadata,const DeepCollectionEquality().hash(_attachments));
+}
 
 @override
 String toString() {
-  return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata, attachments: $attachments)';
+    return 'MessageToCreate(conversationId: $conversationId, content: $content, messageType: $messageType, isUser: $isUser, status: $status, metadata: $metadata, attachments: $attachments)';
 }
 
 
@@ -1810,16 +1851,21 @@ $MessagePatchCopyWith<MessagePatch> get copyWith => _$MessagePatchCopyWithImpl<M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessagePatch&&(identical(other.content, content) || other.content == content)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&(identical(other.status, status) || other.status == status));
+  final _this = this as MessagePatch;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessagePatch&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.metadata, _this.metadata) || other.metadata == _this.metadata)&&(identical(other.status, _this.status) || other.status == _this.status));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content,metadata,status);
+int get hashCode {
+  final _this = this as MessagePatch;
+  return Object.hash(runtimeType,_this.content,_this.metadata,_this.status);
+}
 
 @override
 String toString() {
-  return 'MessagePatch(content: $content, metadata: $metadata, status: $status)';
+  final _this = this as MessagePatch;
+  return 'MessagePatch(content: ${_this.content}, metadata: ${_this.metadata}, status: ${_this.status})';
 }
 
 
@@ -2024,16 +2070,18 @@ _$MessagePatchCopyWith<_MessagePatch> get copyWith => __$MessagePatchCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessagePatch&&(identical(other.content, content) || other.content == content)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&(identical(other.status, status) || other.status == status));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessagePatch&&(identical(other.content, content) || other.content == content)&&(identical(other.metadata, metadata) || other.metadata == metadata)&&(identical(other.status, status) || other.status == status));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,content,metadata,status);
+int get hashCode {
+    return Object.hash(runtimeType,content,metadata,status);
+}
 
 @override
 String toString() {
-  return 'MessagePatch(content: $content, metadata: $metadata, status: $status)';
+    return 'MessagePatch(content: $content, metadata: $metadata, status: $status)';
 }
 
 
@@ -2099,12 +2147,16 @@ $ToolToCallCopyWith<ToolToCall> get copyWith => _$ToolToCallCopyWithImpl<ToolToC
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolToCall&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.id, id) || other.id == id)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw));
+  final _this = this as ToolToCall;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ToolToCall&&(identical(other.tool, _this.tool) || other.tool == _this.tool)&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.argumentsRaw, _this.argumentsRaw) || other.argumentsRaw == _this.argumentsRaw));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,tool,id,argumentsRaw);
+int get hashCode {
+  final _this = this as ToolToCall;
+  return Object.hash(runtimeType,_this.tool,_this.id,_this.argumentsRaw);
+}
 
 
 
@@ -2295,12 +2347,14 @@ _$ToolToCallCopyWith<_ToolToCall> get copyWith => __$ToolToCallCopyWithImpl<_Too
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolToCall&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.id, id) || other.id == id)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ToolToCall&&(identical(other.tool, tool) || other.tool == tool)&&(identical(other.id, id) || other.id == id)&&(identical(other.argumentsRaw, argumentsRaw) || other.argumentsRaw == argumentsRaw));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,tool,id,argumentsRaw);
+int get hashCode {
+    return Object.hash(runtimeType,tool,id,argumentsRaw);
+}
 
 
 

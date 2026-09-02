@@ -12,24 +12,16 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:riverpod/riverpod.dart';
 
-export 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart'
-    show skillToolsGroupName;
+export 'package:auravibes_app/features/skills/constants/skill_tool_permission_constants.dart';
 
-class SyncSkillToolPermissionsUsecase {
-  const SyncSkillToolPermissionsUsecase({
-    required this.database,
-    required this.buildDynamicSkillToolSpecs,
-    required this.buildSkillTemplateToolSpecs,
-    required this.buildAppSkillNativeToolSpecs,
-    this.listConversationAgentSkillsUsecase,
-  });
-
-  final AppDatabase database;
-  final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs;
-  final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs;
-  final BuildAppSkillNativeToolSpecsUsecase buildAppSkillNativeToolSpecs;
-  final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase;
-
+class const SyncSkillToolPermissionsUsecase({
+  required final AppDatabase database,
+  required final BuildDynamicSkillToolSpecsUsecase buildDynamicSkillToolSpecs,
+  required final BuildSkillTemplateToolSpecsUsecase buildSkillTemplateToolSpecs,
+  required final BuildAppSkillNativeToolSpecsUsecase
+  buildAppSkillNativeToolSpecs,
+  final ListConversationAgentSkillsUsecase? listConversationAgentSkillsUsecase,
+}) {
   Future<void> call({
     required String conversationId,
     required String workspaceId,
@@ -38,6 +30,20 @@ class SyncSkillToolPermissionsUsecase {
       conversationId: conversationId,
       workspaceId: workspaceId,
     );
+  }
+
+  Future<String?> permissionTableIdFor({
+    required String conversationId,
+    required String workspaceId,
+    required String toolName,
+  }) async {
+    final tools = await _syncTools(
+      conversationId: conversationId,
+      workspaceId: workspaceId,
+    );
+    final toolsByName = {for (final tool in tools) tool.toolId: tool};
+
+    return toolsByName[toolName]?.id;
   }
 
   Future<List<ToolsTable>> _syncTools({
@@ -67,7 +73,7 @@ class SyncSkillToolPermissionsUsecase {
       ),
     ];
 
-    return database.transaction(() async {
+    return await database.transaction(() async {
       final group = await _ensureSkillToolsGroup(workspaceId);
       final existing = await database.workspaceToolsDao.getToolsByGroupId(
         group.id,
@@ -106,38 +112,24 @@ class SyncSkillToolPermissionsUsecase {
       }
 
       if (insertedTool) {
-        return database.workspaceToolsDao.getToolsByGroupId(group.id);
+        return await database.workspaceToolsDao.getToolsByGroupId(group.id);
       }
 
       return existing;
     });
   }
 
-  Future<String?> permissionTableIdFor({
-    required String conversationId,
-    required String workspaceId,
-    required String toolName,
-  }) async {
-    final tools = await _syncTools(
-      conversationId: conversationId,
-      workspaceId: workspaceId,
-    );
-    final toolsByName = {for (final tool in tools) tool.toolId: tool};
-
-    return toolsByName[toolName]?.id;
-  }
-
   Future<ToolsGroupsTable> _ensureSkillToolsGroup(String workspaceId) async {
     final existing = await database.toolsGroupsDao.getToolsGroupByName(
       workspaceId: workspaceId,
-      name: skillToolsGroupName,
+      name: SkillToolPermissionConstants.skillToolsGroupName,
     );
     if (existing != null) return existing;
 
-    return database.toolsGroupsDao.insertToolsGroup(
+    return await database.toolsGroupsDao.insertToolsGroup(
       ToolsGroupsCompanion.insert(
         workspaceId: workspaceId,
-        name: skillToolsGroupName,
+        name: SkillToolPermissionConstants.skillToolsGroupName,
         permissions: PermissionAccess.ask,
       ),
     );
@@ -163,15 +155,17 @@ final syncSkillToolPermissionsUsecaseProvider =
       );
     });
 
-bool isSkillPermissionToolName(String toolName) {
-  final resolved = const AgentToolNameResolver(
-    skillControlToolNames: {
-      loadSkillToolName,
-      unloadSkillToolName,
-      listSkillCredentialsToolName,
-    },
-  ).resolve(toolName);
+abstract final class SkillPermissionTools {
+  static bool isSkillPermissionToolName(String toolName) {
+    final resolved = const AgentToolNameResolver(
+      skillControlToolNames: {
+        loadSkillToolName,
+        unloadSkillToolName,
+        SkillToolNames.listCredentials,
+      },
+    ).resolve(toolName);
 
-  return resolved?.isSkill == true ||
-      resolved?.kind == AgentResolvedToolKind.skillControl;
+    return resolved?.isSkill == true ||
+        resolved?.kind == AgentResolvedToolKind.skillControl;
+  }
 }

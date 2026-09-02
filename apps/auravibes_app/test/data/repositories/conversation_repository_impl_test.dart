@@ -80,9 +80,8 @@ void main() {
         controller.add([]);
         addTearDown(controller.close);
 
-        when(
-          () => mockDao.watchConversationsByWorkspace('ws-1', limit: 5),
-        ).thenAnswer((_) => controller.stream);
+        when(() => mockDao.watchConversationsByWorkspace('ws-1', limit: 5))
+            .thenAnswer((_) => controller.stream);
 
         final _ = await repository
             .watchConversationsByWorkspace('ws-1', limit: 5)
@@ -103,9 +102,8 @@ void main() {
         controller.add(createConversationRow());
         addTearDown(controller.close);
 
-        when(
-          () => mockDao.watchConversationById('conv-1'),
-        ).thenAnswer((_) => controller.stream);
+        when(() => mockDao.watchConversationById('conv-1'))
+            .thenAnswer((_) => controller.stream);
 
         final result = await repository.watchConversationById('conv-1').first;
 
@@ -118,9 +116,8 @@ void main() {
         controller.add(null);
         addTearDown(controller.close);
 
-        when(
-          () => mockDao.watchConversationById('nonexistent'),
-        ).thenAnswer((_) => controller.stream);
+        when(() => mockDao.watchConversationById('nonexistent'))
+            .thenAnswer((_) => controller.stream);
 
         final result = await repository
             .watchConversationById('nonexistent')
@@ -132,9 +129,8 @@ void main() {
 
     group('getConversationById', () {
       test('returns entity when found', () async {
-        when(
-          () => mockDao.getConversationById('conv-1'),
-        ).thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
 
         final result = await repository.getConversationById('conv-1');
 
@@ -146,9 +142,8 @@ void main() {
       });
 
       test('returns null when not found', () async {
-        when(
-          () => mockDao.getConversationById('nonexistent'),
-        ).thenAnswer((_) async => null);
+        when(() => mockDao.getConversationById('nonexistent'))
+            .thenAnswer((_) async => null);
 
         final result = await repository.getConversationById('nonexistent');
 
@@ -172,9 +167,8 @@ void main() {
           isPinned: true,
         );
 
-        when(
-          () => mockDao.insertConversation(any()),
-        ).thenAnswer((_) async => createdRow);
+        when(() => mockDao.insertConversation(any()))
+            .thenAnswer((_) async => createdRow);
 
         final result = await repository.createConversation(toCreate);
 
@@ -185,10 +179,7 @@ void main() {
       });
 
       test('throws on empty title', () async {
-        const toCreate = ConversationToCreate(
-          title: '',
-          workspaceId: 'ws-1',
-        );
+        const toCreate = ConversationToCreate(title: '', workspaceId: 'ws-1');
 
         await expectLater(
           repository.createConversation(toCreate),
@@ -234,16 +225,13 @@ void main() {
           isPinned: true,
         );
 
-        when(
-          () => mockDao.getConversationById('conv-1'),
-        ).thenAnswer((_) async => createConversationRow());
-        when(
-          () => mockDao.patchConversation('conv-1', any()),
-        ).thenAnswer((_) async => true);
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.patchConversation('conv-1', any()))
+            .thenAnswer((_) async => true);
 
-        when(
-          () => mockDao.getConversationById('conv-1'),
-        ).thenAnswer((_) async => updatedRow);
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => updatedRow);
 
         const patch = ConversationPatch(title: 'Updated Title', isPinned: true);
         final result = await repository.patchConversation('conv-1', patch);
@@ -255,9 +243,8 @@ void main() {
       test(
         'throws ConversationNotFoundException when conversation missing',
         () async {
-          when(
-            () => mockDao.getConversationById('nonexistent'),
-          ).thenAnswer((_) async => null);
+          when(() => mockDao.getConversationById('nonexistent'))
+              .thenAnswer((_) async => null);
 
           const patch = ConversationPatch(title: 'Updated');
 
@@ -269,12 +256,10 @@ void main() {
       );
 
       test('throws ConversationException when update fails', () async {
-        when(
-          () => mockDao.getConversationById('conv-1'),
-        ).thenAnswer((_) async => createConversationRow());
-        when(
-          () => mockDao.patchConversation('conv-1', any()),
-        ).thenAnswer((_) async => false);
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.patchConversation('conv-1', any()))
+            .thenAnswer((_) async => false);
 
         const patch = ConversationPatch(title: 'Updated');
 
@@ -305,12 +290,10 @@ void main() {
 
     group('deleteConversation', () {
       test('returns true when deleted', () async {
-        when(
-          () => mockDao.getConversationById('conv-1'),
-        ).thenAnswer((_) async => createConversationRow());
-        when(
-          () => mockDao.deleteConversation('conv-1'),
-        ).thenAnswer((_) async => true);
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.deleteConversation('conv-1'))
+            .thenAnswer((_) async => true);
 
         final result = await repository.deleteConversation('conv-1');
 
@@ -346,12 +329,10 @@ void main() {
                 sizeBytes: const Value(10),
               ),
             );
-        when(
-          () => mockDao.getConversationById('conv-1'),
-        ).thenAnswer((_) async => createConversationRow());
-        when(
-          () => mockDao.deleteConversation('conv-1'),
-        ).thenAnswer((_) async => true);
+        when(() => mockDao.getConversationById('conv-1'))
+            .thenAnswer((_) async => createConversationRow());
+        when(() => mockDao.deleteConversation('conv-1'))
+            .thenAnswer((_) async => true);
 
         final result = await repository.deleteConversation('conv-1');
 
@@ -360,9 +341,8 @@ void main() {
       });
 
       test('returns false when not found', () async {
-        when(
-          () => mockDao.getConversationById('nonexistent'),
-        ).thenAnswer((_) async => null);
+        when(() => mockDao.getConversationById('nonexistent'))
+            .thenAnswer((_) async => null);
 
         final result = await repository.deleteConversation('nonexistent');
 
@@ -373,10 +353,9 @@ void main() {
   });
 }
 
-class _TestAppDatabase extends AppDatabase {
-  _TestAppDatabase(this._conversationDao)
-    : super(connection: DatabaseConnection(NativeDatabase.memory()));
-  final ConversationDao _conversationDao;
+class _TestAppDatabase(final ConversationDao _conversationDao)
+    extends AppDatabase {
+  this : super(connection: DatabaseConnection(NativeDatabase.memory()));
 
   @override
   ConversationDao get conversationDao => _conversationDao;

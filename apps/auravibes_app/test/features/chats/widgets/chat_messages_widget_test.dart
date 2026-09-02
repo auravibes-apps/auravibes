@@ -95,9 +95,7 @@ void main() {
           messages: ['msg-1'],
           overrides: [
             messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(
-                content: 'Hello AI',
-              ),
+              (ref, id) => _createMessage(content: 'Hello AI'),
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
@@ -148,10 +146,7 @@ void main() {
           messages: ['msg-1'],
           overrides: [
             messageConversationByIdProvider.overrideWith(
-              (ref, id) => _createMessage(
-                content: 'Hello user',
-                isUser: false,
-              ),
+              (ref, id) => _createMessage(content: 'Hello user', isUser: false),
             ),
             isMessageStreamingProvider.overrideWith((ref, id) => false),
             conversationBusyStateProvider.overrideWith(
@@ -559,9 +554,7 @@ void main() {
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
     });
 
-    testWidgets('renders tool call with not configured status', (
-      tester,
-    ) async {
+    testWidgets('renders tool call with not configured status', (tester) async {
       const toolCall = MessageToolCallEntity(
         id: 'tc-1',
         name: 'built_in_1_calculator',
@@ -752,6 +745,18 @@ void main() {
       expect(find.byIcon(Icons.compress_outlined), findsOneWidget);
       expect(find.text('Automatic'), findsOneWidget);
       expect(find.text('Summary of older messages'), findsOneWidget);
+
+      await tester.tap(find.byIcon(Icons.info_outline));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Compaction Details'), findsOneWidget);
+      expect(find.text('Close'), findsOneWidget);
+
+      await tester.tap(find.text('Close'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(find.text('Compaction Details'), findsNothing);
+      expect(find.text('Summary of older messages'), findsOneWidget);
     });
 
     testWidgets('renders error widget for non-user system error message', (
@@ -787,32 +792,22 @@ void main() {
 }
 
 class _MockConversationRepository extends Mock
-    implements ConversationRepository {}
+    implements ConversationRepository;
 
-class _ChatMessagesTestSubject extends StatelessWidget {
-  const _ChatMessagesTestSubject({
-    required this.conversationId,
-    required this.messages,
-    required this.overrides,
-    required this.pendingToolCalls,
-    this.messageEntitiesById,
-  });
-
-  final String conversationId;
-  final Map<String, MessageEntity>? messageEntitiesById;
-  final List<String> messages;
-  final List<Object> overrides;
-  final List<PendingToolCall> pendingToolCalls;
-
+class const _ChatMessagesTestSubject({
+  required final String conversationId,
+  required final List<String> messages,
+  required final List<Object> overrides,
+  required final List<PendingToolCall> pendingToolCalls,
+  final Map<String, MessageEntity>? messageEntitiesById,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final conversationRepository = _MockConversationRepository();
-    when(
-      () => conversationRepository.watchConversationById(conversationId),
-    ).thenAnswer((_) => Stream.value(null));
-    when(
-      () => conversationRepository.watchChildConversations(conversationId),
-    ).thenAnswer((_) => Stream.value(const []));
+    when(() => conversationRepository.watchConversationById(conversationId))
+        .thenAnswer((_) => Stream.value(null));
+    when(() => conversationRepository.watchChildConversations(conversationId))
+        .thenAnswer((_) => Stream.value(const []));
 
     return TestProviderScope(
       overrides: [

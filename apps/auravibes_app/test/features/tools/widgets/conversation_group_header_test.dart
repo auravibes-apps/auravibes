@@ -37,10 +37,7 @@ ToolsGroupEntity _group({String id = 'g1', String name = 'Test Group'}) {
   );
 }
 
-ConversationToolState _toolState({
-  String id = 't1',
-  bool isEnabled = true,
-}) {
+ConversationToolState _toolState({String id = 't1', bool isEnabled = true}) {
   return ConversationToolState(
     tool: _tool(id: id),
     isEnabled: isEnabled,
@@ -62,11 +59,7 @@ McpServerEntity _mcpServer({String id = 'mcp-1'}) {
   );
 }
 
-class _Subject extends StatelessWidget {
-  const _Subject({required this.child});
-
-  final Widget child;
-
+class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(

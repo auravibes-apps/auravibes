@@ -17,10 +17,7 @@ QueryExecutor createTestConnection() {
   );
 }
 
-final class _DatabaseFixture {
-  _DatabaseFixture(this.createConnection);
-
-  final QueryExecutor Function() createConnection;
+final class _DatabaseFixture(final QueryExecutor Function() createConnection) {
   AppDatabase? _database;
 
   AppDatabase get database =>
@@ -82,9 +79,7 @@ void main() {
             ),
           );
       final found = await fixture.database.modelConnectionsDao
-          .getModelConnectionById(
-            created.id,
-          );
+          .getModelConnectionById(created.id);
       expect(found, isNotNull);
       expect(
         (found ?? fail('Expected found to be non-null')).name,
@@ -94,9 +89,7 @@ void main() {
 
     test('getModelConnectionById returns null for nonexistent', () async {
       final found = await fixture.database.modelConnectionsDao
-          .getModelConnectionById(
-            'missing',
-          );
+          .getModelConnectionById('missing');
       expect(found, isNull);
     });
 
@@ -117,9 +110,7 @@ void main() {
             );
 
         final found = await fixture.database.modelConnectionsDao
-            .getModelConnectionById(
-              created.id,
-            );
+            .getModelConnectionById(created.id);
         expect(found, isNull);
       },
     );
@@ -153,9 +144,7 @@ void main() {
               ),
             );
         final conns = await fixture.database.modelConnectionsDao
-            .getAllModelConnectionsByWorkspace(
-              workspaceIds: [workspaceId],
-            );
+            .getAllModelConnectionsByWorkspace(workspaceIds: [workspaceId]);
         expect(conns.length, equals(1));
         expect(conns.firstOrNull?.name, equals('C1'));
       },

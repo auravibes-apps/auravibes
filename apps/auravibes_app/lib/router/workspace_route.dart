@@ -33,22 +33,21 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 part 'workspace_route.g.dart';
+part 'intro_route.dart';
 
+// Required: Framework declaration must remain top-level.
+// ignore: prefer-static-class
 const introPath = '/intro';
+// Required: GoRouter route global must remain top-level.
+// ignore: prefer-static-class
 const workspacePathPrefix = '/workspaces';
 
+// Required: GoRouter navigator key must remain top-level.
+// ignore: prefer-static-class
 final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
+// Required: GoRouter navigator key must remain top-level.
+// ignore: prefer-static-class
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
-
-@TypedGoRoute<IntroRoute>(path: introPath)
-class IntroRoute extends GoRouteData with $IntroRoute {
-  const IntroRoute();
-
-  @override
-  Widget build(BuildContext context, GoRouterState state) {
-    return const IntroScreen();
-  }
-}
 
 @TypedGoRoute<WorkspaceRoute>(
   path: '$workspacePathPrefix/:workspaceId',
@@ -94,18 +93,12 @@ class IntroRoute extends GoRouteData with $IntroRoute {
                     ),
                   ],
                 ),
-                TypedGoRoute<ToolsRoute>(
-                  path: 'tools',
-                ),
-                TypedGoRoute<ModelsRoute>(
-                  path: 'models',
-                ),
+                TypedGoRoute<ToolsRoute>(path: 'tools'),
+                TypedGoRoute<ModelsRoute>(path: 'models'),
                 TypedGoRoute<ServiceConnectionsRoute>(
                   path: 'service-connections',
                   routes: [
-                    TypedGoRoute<ServiceConnectionCreateRoute>(
-                      path: 'new',
-                    ),
+                    TypedGoRoute<ServiceConnectionCreateRoute>(path: 'new'),
                     TypedGoRoute<ServiceConnectionEditRoute>(
                       path: ':connectionId',
                     ),
@@ -114,18 +107,14 @@ class IntroRoute extends GoRouteData with $IntroRoute {
                 TypedGoRoute<SkillsRoute>(
                   path: 'skills',
                   routes: [
-                    TypedGoRoute<SkillCreateRoute>(
-                      path: 'new',
-                    ),
+                    TypedGoRoute<SkillCreateRoute>(path: 'new'),
                     TypedGoRoute<SkillToolCreateRoute>(
                       path: ':skillId/tools/new',
                     ),
                     TypedGoRoute<SkillToolEditRoute>(
                       path: ':skillId/tools/:toolId',
                     ),
-                    TypedGoRoute<SkillDetailRoute>(
-                      path: ':skillId',
-                    ),
+                    TypedGoRoute<SkillDetailRoute>(path: ':skillId'),
                   ],
                 ),
                 TypedGoRoute<SkillCredentialDefinitionsRoute>(
@@ -142,12 +131,8 @@ class IntroRoute extends GoRouteData with $IntroRoute {
                 TypedGoRoute<AgentsRoute>(
                   path: 'agents',
                   routes: [
-                    TypedGoRoute<AgentCreateRoute>(
-                      path: 'new',
-                    ),
-                    TypedGoRoute<AgentDetailRoute>(
-                      path: ':agentId',
-                    ),
+                    TypedGoRoute<AgentCreateRoute>(path: 'new'),
+                    TypedGoRoute<AgentDetailRoute>(path: ':agentId'),
                   ],
                 ),
               ],
@@ -155,19 +140,15 @@ class IntroRoute extends GoRouteData with $IntroRoute {
           ],
         ),
         TypedStatefulShellBranch(
-          routes: [
-            TypedGoRoute<SettingsRoute>(path: 'settings'),
-          ],
+          routes: [TypedGoRoute<SettingsRoute>(path: 'settings')],
         ),
       ],
     ),
   ],
 )
-class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
-  WorkspaceRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class WorkspaceRoute({required final String workspaceId})
+    extends GoRouteData
+    with $WorkspaceRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return const SizedBox.shrink();
@@ -185,11 +166,8 @@ class WorkspaceRoute extends GoRouteData with $WorkspaceRoute {
   }
 }
 
-class MyShellRouteData extends StatefulShellRouteData {
-  const MyShellRouteData();
-
+class const MyShellRouteData() extends StatefulShellRouteData {
   static final GlobalKey<NavigatorState> $navigatorKey = shellNavigatorKey;
-
   @override
   Widget builder(
     BuildContext context,
@@ -198,9 +176,7 @@ class MyShellRouteData extends StatefulShellRouteData {
   ) {
     final workspaceId = state.pathParameters['workspaceId'];
     if (workspaceId == null || workspaceId.isEmpty) {
-      throw StateError(
-        'workspaceId must be present in route pathParameters',
-      );
+      throw StateError('workspaceId must be present in route pathParameters');
     }
 
     return _WorkspaceSessionGate(
@@ -210,25 +186,29 @@ class MyShellRouteData extends StatefulShellRouteData {
   }
 }
 
-class _WorkspaceSessionGate extends ConsumerWidget {
-  const _WorkspaceSessionGate({
-    required this.workspaceId,
-    required this.navigationShell,
-  });
-
-  final String workspaceId;
-  final StatefulNavigationShell navigationShell;
-
+class const _WorkspaceSessionGate({
+  required final String workspaceId,
+  required final StatefulNavigationShell navigationShell,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(workspaceSessionForRouteProvider(workspaceId))) {
-      AsyncData() => _workspaceShell(),
+      AsyncData() => _WorkspaceShell(
+        workspaceId: workspaceId,
+        navigationShell: navigationShell,
+      ),
       AsyncError(:final error) => ErrorWidget(error),
       _ => const SizedBox.shrink(),
     };
   }
+}
 
-  Widget _workspaceShell() => PopScope(
+class const _WorkspaceShell({
+  required final String workspaceId,
+  required final StatefulNavigationShell navigationShell,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopScope(
     child: AuraSidebarWrapper(
       navigationShell: navigationShell,
       workspaceId: workspaceId,
@@ -237,52 +217,39 @@ class _WorkspaceSessionGate extends ConsumerWidget {
   );
 }
 
-class ChatsRoute extends GoRouteData with $ChatsRoute {
-  ChatsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class ChatsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $ChatsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ChatsListScreen(workspaceId: workspaceId);
   }
 }
 
-class NewChatRoute extends GoRouteData with $NewChatRoute {
-  NewChatRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class NewChatRoute({required final String workspaceId})
+    extends GoRouteData
+    with $NewChatRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return NewChatScreen(workspaceId: workspaceId);
   }
 }
 
-class ConversationRoute extends GoRouteData with $ConversationRoute {
-  ConversationRoute({required this.workspaceId, required this.chatId});
-
-  final String workspaceId;
-  final String chatId;
-
+class ConversationRoute({
+  required final String workspaceId,
+  required final String chatId,
+}) extends GoRouteData with $ConversationRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ChatConversationScreen(workspaceId: workspaceId, chatId: chatId);
   }
 }
 
-class SubAgentConversationRoute extends GoRouteData
-    with $SubAgentConversationRoute {
-  SubAgentConversationRoute({
-    required this.workspaceId,
-    required this.chatId,
-    required this.subAgentConversationId,
-  });
-
-  final String workspaceId;
-  final String chatId;
-  final String subAgentConversationId;
-
+class SubAgentConversationRoute({
+  required final String workspaceId,
+  required final String chatId,
+  required final String subAgentConversationId,
+}) extends GoRouteData with $SubAgentConversationRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return _SubAgentConversationGate(
@@ -293,17 +260,11 @@ class SubAgentConversationRoute extends GoRouteData
   }
 }
 
-class _SubAgentConversationGate extends ConsumerWidget {
-  const _SubAgentConversationGate({
-    required this.workspaceId,
-    required this.parentConversationId,
-    required this.chatId,
-  });
-
-  final String workspaceId;
-  final String parentConversationId;
-  final String chatId;
-
+class const _SubAgentConversationGate({
+  required final String workspaceId,
+  required final String parentConversationId,
+  required final String chatId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversation = ref.watch(
@@ -324,119 +285,95 @@ class _SubAgentConversationGate extends ConsumerWidget {
   }
 }
 
-class ToolsRoute extends GoRouteData with $ToolsRoute {
-  ToolsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class ToolsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $ToolsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ToolsScreen(workspaceId: workspaceId);
   }
 }
 
-class ModelsRoute extends GoRouteData with $ModelsRoute {
-  ModelsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class ModelsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $ModelsRoute {
   @override
   String redirect(BuildContext context, GoRouterState state) {
     return ServiceConnectionsRoute(workspaceId: workspaceId).location;
   }
 }
 
-class SkillsRoute extends GoRouteData with $SkillsRoute {
-  SkillsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class SkillsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $SkillsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillsScreen(workspaceId: workspaceId);
   }
 }
 
-class SkillCreateRoute extends GoRouteData with $SkillCreateRoute {
-  SkillCreateRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class SkillCreateRoute({required final String workspaceId})
+    extends GoRouteData
+    with $SkillCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillDetailScreen(workspaceId: workspaceId);
   }
 }
 
-class AgentsRoute extends GoRouteData with $AgentsRoute {
-  AgentsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class AgentsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $AgentsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return AgentsScreen(workspaceId: workspaceId);
   }
 }
 
-class AgentCreateRoute extends GoRouteData with $AgentCreateRoute {
-  AgentCreateRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class AgentCreateRoute({required final String workspaceId})
+    extends GoRouteData
+    with $AgentCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return AgentDetailScreen(workspaceId: workspaceId);
   }
 }
 
-class AgentDetailRoute extends GoRouteData with $AgentDetailRoute {
-  AgentDetailRoute({required this.workspaceId, required this.agentId});
-
-  final String workspaceId;
-  final String agentId;
-
+class AgentDetailRoute({
+  required final String workspaceId,
+  required final String agentId,
+}) extends GoRouteData with $AgentDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return AgentDetailScreen(workspaceId: workspaceId, agentId: agentId);
   }
 }
 
-class SkillDetailRoute extends GoRouteData with $SkillDetailRoute {
-  SkillDetailRoute({required this.workspaceId, required this.skillId});
-
-  final String workspaceId;
-  final String skillId;
-
+class SkillDetailRoute({
+  required final String workspaceId,
+  required final String skillId,
+}) extends GoRouteData with $SkillDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillDetailScreen(workspaceId: workspaceId, skillId: skillId);
   }
 }
 
-class SkillToolCreateRoute extends GoRouteData with $SkillToolCreateRoute {
-  SkillToolCreateRoute({required this.workspaceId, required this.skillId});
-
-  final String workspaceId;
-  final String skillId;
-
+class SkillToolCreateRoute({
+  required final String workspaceId,
+  required final String skillId,
+}) extends GoRouteData with $SkillToolCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillToolEditScreen(workspaceId: workspaceId, skillId: skillId);
   }
 }
 
-class SkillToolEditRoute extends GoRouteData with $SkillToolEditRoute {
-  SkillToolEditRoute({
-    required this.workspaceId,
-    required this.skillId,
-    required this.toolId,
-  });
-
-  final String workspaceId;
-  final String skillId;
-  final String toolId;
-
+class SkillToolEditRoute({
+  required final String workspaceId,
+  required final String skillId,
+  required final String toolId,
+}) extends GoRouteData with $SkillToolEditRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillToolEditScreen(
@@ -447,40 +384,28 @@ class SkillToolEditRoute extends GoRouteData with $SkillToolEditRoute {
   }
 }
 
-class SkillCredentialDefinitionsRoute extends GoRouteData
+class SkillCredentialDefinitionsRoute({required final String workspaceId})
+    extends GoRouteData
     with $SkillCredentialDefinitionsRoute {
-  SkillCredentialDefinitionsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillCredentialDefinitionsScreen(workspaceId: workspaceId);
   }
 }
 
-class SkillCredentialDefinitionCreateRoute extends GoRouteData
+class SkillCredentialDefinitionCreateRoute({required final String workspaceId})
+    extends GoRouteData
     with $SkillCredentialDefinitionCreateRoute {
-  SkillCredentialDefinitionCreateRoute({required this.workspaceId});
-
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillCredentialDefinitionEditScreen(workspaceId: workspaceId);
   }
 }
 
-class SkillCredentialDefinitionEditRoute extends GoRouteData
-    with $SkillCredentialDefinitionEditRoute {
-  SkillCredentialDefinitionEditRoute({
-    required this.workspaceId,
-    required this.definitionId,
-  });
-
-  final String workspaceId;
-  final String definitionId;
-
+class SkillCredentialDefinitionEditRoute({
+  required final String workspaceId,
+  required final String definitionId,
+}) extends GoRouteData with $SkillCredentialDefinitionEditRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SkillCredentialDefinitionEditScreen(
@@ -490,31 +415,21 @@ class SkillCredentialDefinitionEditRoute extends GoRouteData
   }
 }
 
-class ServiceConnectionsRoute extends GoRouteData
+class ServiceConnectionsRoute({required final String workspaceId})
+    extends GoRouteData
     with $ServiceConnectionsRoute {
-  ServiceConnectionsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ServiceConnectionsScreen(workspaceId: workspaceId);
   }
 }
 
-class ServiceConnectionCreateRoute extends GoRouteData
-    with $ServiceConnectionCreateRoute {
-  ServiceConnectionCreateRoute({
-    required this.workspaceId,
-    this.type,
-    @TypedQueryParameter(name: 'credentialDefinitionId')
-    this.credentialDefinitionId,
-  });
-
-  final String workspaceId;
-  final String? type;
-  final String? credentialDefinitionId;
-
+class ServiceConnectionCreateRoute({
+  required final String workspaceId,
+  final String? type,
+  @TypedQueryParameter(name: 'credentialDefinitionId')
+  final String? credentialDefinitionId,
+}) extends GoRouteData with $ServiceConnectionCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ServiceConnectionCreateScreen(
@@ -526,16 +441,10 @@ class ServiceConnectionCreateRoute extends GoRouteData
   }
 }
 
-class ServiceConnectionEditRoute extends GoRouteData
-    with $ServiceConnectionEditRoute {
-  ServiceConnectionEditRoute({
-    required this.workspaceId,
-    required this.connectionId,
-  });
-
-  final String workspaceId;
-  final String connectionId;
-
+class ServiceConnectionEditRoute({
+  required final String workspaceId,
+  required final String connectionId,
+}) extends GoRouteData with $ServiceConnectionEditRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return ServiceConnectionEditScreen(
@@ -545,51 +454,38 @@ class ServiceConnectionEditRoute extends GoRouteData
   }
 }
 
-class SettingsRoute extends GoRouteData with $SettingsRoute {
-  SettingsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class SettingsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $SettingsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return SettingsScreen(workspaceId: workspaceId);
   }
 }
 
-class MoreRoute extends GoRouteData with $MoreRoute {
-  MoreRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class MoreRoute({required final String workspaceId})
+    extends GoRouteData
+    with $MoreRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return MoreScreen(workspaceId: workspaceId);
   }
 }
 
-class CloudAccountsRoute extends GoRouteData with $CloudAccountsRoute {
-  CloudAccountsRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class CloudAccountsRoute({required final String workspaceId})
+    extends GoRouteData
+    with $CloudAccountsRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountsScreen(workspaceId: workspaceId);
   }
 }
 
-class CloudWorkspaceDetailRoute extends GoRouteData
-    with $CloudWorkspaceDetailRoute {
-  CloudWorkspaceDetailRoute({
-    required this.workspaceId,
-    required this.cloudAccountId,
-    required this.cloudWorkspaceId,
-  });
-
-  final String workspaceId;
-  final String cloudAccountId;
-  final int cloudWorkspaceId;
-
+class CloudWorkspaceDetailRoute({
+  required final String workspaceId,
+  required final String cloudAccountId,
+  required final int cloudWorkspaceId,
+}) extends GoRouteData with $CloudWorkspaceDetailRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudWorkspaceDetailScreen(
@@ -600,12 +496,10 @@ class CloudWorkspaceDetailRoute extends GoRouteData
   }
 }
 
-class CloudAccountAddRoute extends GoRouteData with $CloudAccountAddRoute {
-  CloudAccountAddRoute({required this.workspaceId, this.returnPath});
-
-  final String workspaceId;
-  final String? returnPath;
-
+class CloudAccountAddRoute({
+  required final String workspaceId,
+  final String? returnPath,
+}) extends GoRouteData with $CloudAccountAddRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountAddScreen(
@@ -615,12 +509,10 @@ class CloudAccountAddRoute extends GoRouteData with $CloudAccountAddRoute {
   }
 }
 
-class CloudAccountLoginRoute extends GoRouteData with $CloudAccountLoginRoute {
-  CloudAccountLoginRoute({required this.workspaceId, this.returnPath});
-
-  final String workspaceId;
-  final String? returnPath;
-
+class CloudAccountLoginRoute({
+  required final String workspaceId,
+  final String? returnPath,
+}) extends GoRouteData with $CloudAccountLoginRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountLoginScreen(
@@ -630,13 +522,10 @@ class CloudAccountLoginRoute extends GoRouteData with $CloudAccountLoginRoute {
   }
 }
 
-class CloudAccountRegisterRoute extends GoRouteData
-    with $CloudAccountRegisterRoute {
-  CloudAccountRegisterRoute({required this.workspaceId, this.returnPath});
-
-  final String workspaceId;
-  final String? returnPath;
-
+class CloudAccountRegisterRoute({
+  required final String workspaceId,
+  final String? returnPath,
+}) extends GoRouteData with $CloudAccountRegisterRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountRegisterScreen(
@@ -646,13 +535,10 @@ class CloudAccountRegisterRoute extends GoRouteData
   }
 }
 
-class CloudAccountForgotPasswordRoute extends GoRouteData
-    with $CloudAccountForgotPasswordRoute {
-  CloudAccountForgotPasswordRoute({required this.workspaceId, this.returnPath});
-
-  final String workspaceId;
-  final String? returnPath;
-
+class CloudAccountForgotPasswordRoute({
+  required final String workspaceId,
+  final String? returnPath,
+}) extends GoRouteData with $CloudAccountForgotPasswordRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CloudAccountForgotPasswordScreen(
@@ -662,25 +548,21 @@ class CloudAccountForgotPasswordRoute extends GoRouteData
   }
 }
 
-class WorkspaceManagementRoute extends GoRouteData
+class WorkspaceManagementRoute({required final String workspaceId})
+    extends GoRouteData
     with $WorkspaceManagementRoute {
-  WorkspaceManagementRoute({required this.workspaceId});
-
-  final String workspaceId;
-
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return WorkspaceManagementScreen(workspaceId: workspaceId);
   }
 }
 
-class WorkspaceCreateRoute extends GoRouteData with $WorkspaceCreateRoute {
-  WorkspaceCreateRoute({required this.workspaceId});
-
-  final String workspaceId;
-
+class WorkspaceCreateRoute({required final String workspaceId})
+    extends GoRouteData
+    with $WorkspaceCreateRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return CreateWorkspaceScreen(workspaceId: workspaceId);
   }
 }
+// Top-level API/provider declarations are required by their consumers.

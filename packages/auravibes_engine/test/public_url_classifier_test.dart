@@ -11,10 +11,8 @@ void main() {
       'example.com',
     );
     expect(
-      () => requirePublicUriSyntax(
-        'http://example.com/path',
-        requireHttps: true,
-      ),
+      () =>
+          requirePublicUriSyntax('http://example.com/path', requireHttps: true),
       throwsFormatException,
     );
     expect(
@@ -68,17 +66,25 @@ void main() {
       isTrue,
     );
     expect(
-      isPrivateIpAddress(
-        [...List.filled(10, 0), 0xff, 0xff, 127, 0, 0, 1],
-        isIpv6: true,
-      ),
+      isPrivateIpAddress([
+        ...List.filled(10, 0),
+        0xff,
+        0xff,
+        127,
+        0,
+        0,
+        1,
+      ], isIpv6: true),
       isTrue,
     );
     expect(
-      isPrivateIpAddress(
-        [0x20, 1, 0x48, 0x60, ...List.filled(12, 0)],
-        isIpv6: true,
-      ),
+      isPrivateIpAddress([
+        0x20,
+        1,
+        0x48,
+        0x60,
+        ...List.filled(12, 0),
+      ], isIpv6: true),
       isFalse,
     );
   });

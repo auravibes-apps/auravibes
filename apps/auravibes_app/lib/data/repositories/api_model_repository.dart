@@ -11,7 +11,7 @@ import 'package:auravibes_app/features/models/models/model_stores.dart';
 /// data operations using the Drift database. It handles the mapping between
 /// domain entities and database records, and provides proper error handling.
 class ApiModelRepository implements ModelCatalogStore {
-  ApiModelRepository(this._database);
+  new(this._database);
 
   /// The database instance for API model operations.
   final AppDatabase _database;
@@ -74,9 +74,7 @@ class ApiModelRepository implements ModelCatalogStore {
   Stream<List<ApiModelEntity>> watchModelsByProvider(String providerId) {
     return _database.apiModelsDao
         .watchModelsByProvider(providerId)
-        .map(
-          (models) => models.map(_mapToModelEntity).toList(),
-        );
+        .map((models) => models.map(_mapToModelEntity).toList());
   }
 
   // Batch operations.

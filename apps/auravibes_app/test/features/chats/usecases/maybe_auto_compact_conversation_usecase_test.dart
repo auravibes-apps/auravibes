@@ -20,12 +20,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
-class MockConversationRepository extends Mock
-    implements ConversationRepository {}
+class MockConversationRepository extends Mock implements ConversationRepository;
 
-class MockMessageRepository extends Mock implements MessageRepository {}
+class MockMessageRepository extends Mock implements MessageRepository;
 
-class MockChatbotService extends Mock implements ChatbotService {}
+class MockChatbotService extends Mock implements ChatbotService;
 
 class MockWorkspaceModelSelectionsRepository extends Mock
     implements WorkspaceModelSelectionRepository {
@@ -34,13 +33,13 @@ class MockWorkspaceModelSelectionsRepository extends Mock
       getWorkspaceModelSelectionById(id);
 }
 
-class MockApiModelRepository extends Mock implements ApiModelRepository {}
+class MockApiModelRepository extends Mock implements ApiModelRepository;
 
 class MockShouldCompactConversationUsecase extends Mock
-    implements ShouldCompactConversationUsecase {}
+    implements ShouldCompactConversationUsecase;
 
 class MockCompactConversationUsecase extends Mock
-    implements CompactConversationUsecase {}
+    implements CompactConversationUsecase;
 
 class MaybeAutoCompactFixture {
   MockConversationRepository? _mockConvRepo;
@@ -166,9 +165,8 @@ void main() {
   setUp(fixture.setUp);
 
   test('exits early when conversation not found', () async {
-    when(
-      () => fixture.mockConvRepo.getConversationById('conv-1'),
-    ).thenAnswer((_) async => null);
+    when(() => fixture.mockConvRepo.getConversationById('conv-1'))
+        .thenAnswer((_) async => null);
 
     await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
@@ -184,9 +182,8 @@ void main() {
   });
 
   test('exits early when conversation has no modelId', () async {
-    when(
-      () => fixture.mockConvRepo.getConversationById('conv-1'),
-    ).thenAnswer((_) async => _makeConv(modelId: null));
+    when(() => fixture.mockConvRepo.getConversationById('conv-1'))
+        .thenAnswer((_) async => _makeConv(modelId: null));
 
     await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
@@ -199,21 +196,17 @@ void main() {
   });
 
   test('exits early when model selection not found', () async {
-    when(
-      () => fixture.mockConvRepo.getConversationById('conv-1'),
-    ).thenAnswer((_) async => _makeConv());
-    when(
-      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
-    ).thenAnswer((_) async => null);
+    when(() => fixture.mockConvRepo.getConversationById('conv-1'))
+        .thenAnswer((_) async => _makeConv());
+    when(() => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'))
+        .thenAnswer((_) async => null);
 
     await expectLater(fixture.usecase(conversationId: 'conv-1'), completes);
 
     expect(
       () => verifyNever(
-        () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
-          any(),
-          any(),
-        ),
+        () =>
+            fixture.mockApiModelRepo.getModelByProviderAndModelId(any(), any()),
       ),
       returnsNormally,
     );
@@ -226,12 +219,10 @@ void main() {
       trigger: CompactionTrigger.auto,
     );
 
-    when(
-      () => fixture.mockConvRepo.getConversationById('conv-1'),
-    ).thenAnswer((_) async => _makeConv());
-    when(
-      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
-    ).thenAnswer((_) async => _completion);
+    when(() => fixture.mockConvRepo.getConversationById('conv-1'))
+        .thenAnswer((_) async => _makeConv());
+    when(() => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'))
+        .thenAnswer((_) async => _completion);
     when(
       () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
         'provider-1',
@@ -275,12 +266,10 @@ void main() {
       trigger: CompactionTrigger.auto,
     );
 
-    when(
-      () => fixture.mockConvRepo.getConversationById('conv-1'),
-    ).thenAnswer((_) async => _makeConv());
-    when(
-      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
-    ).thenAnswer((_) async => _completion);
+    when(() => fixture.mockConvRepo.getConversationById('conv-1'))
+        .thenAnswer((_) async => _makeConv());
+    when(() => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'))
+        .thenAnswer((_) async => _completion);
     when(
       () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
         'provider-1',
@@ -318,12 +307,10 @@ void main() {
       trigger: CompactionTrigger.auto,
     );
 
-    when(
-      () => fixture.mockConvRepo.getConversationById('conv-1'),
-    ).thenAnswer((_) async => _makeConv());
-    when(
-      () => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'),
-    ).thenAnswer((_) async => _completion);
+    when(() => fixture.mockConvRepo.getConversationById('conv-1'))
+        .thenAnswer((_) async => _makeConv());
+    when(() => fixture.mockModelRepo.getWorkspaceModelSelectionById('comp-1'))
+        .thenAnswer((_) async => _completion);
     when(
       () => fixture.mockApiModelRepo.getModelByProviderAndModelId(
         'provider-1',
@@ -365,9 +352,7 @@ void main() {
         messageRepositoryProvider.overrideWith(
           (ref) => MockMessageRepository(),
         ),
-        chatbotServiceProvider.overrideWith(
-          (ref) => MockChatbotService(),
-        ),
+        chatbotServiceProvider.overrideWith((ref) => MockChatbotService()),
         workspaceModelSelectionRepositoryProvider.overrideWith(
           (ref) => fixture.mockModelRepo,
         ),
@@ -377,9 +362,8 @@ void main() {
         shouldCompactConversationUsecaseProvider.overrideWith(
           (ref) => fixture.mockShouldCompact,
         ),
-        compactConversationUsecaseProvider('ws-1').overrideWith(
-          (ref) => fixture.mockCompact,
-        ),
+        compactConversationUsecaseProvider('ws-1')
+            .overrideWith((ref) => fixture.mockCompact),
       ],
     );
     addTearDown(container.dispose);

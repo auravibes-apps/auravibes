@@ -11,8 +11,8 @@ part 'mcp_tool_info.freezed.dart';
 
 /// Information about a tool provided by an MCP server.
 @freezed
-abstract class McpToolInfo with _$McpToolInfo {
-  const factory McpToolInfo({
+abstract class const McpToolInfo._() with _$McpToolInfo {
+  const factory({
     required String toolName,
     required String description,
     required Map<String, dynamic> inputSchema,
@@ -20,8 +20,6 @@ abstract class McpToolInfo with _$McpToolInfo {
     bool? supportsCancellation,
     Map<String, dynamic>? metadata,
   }) = _McpToolInfo;
-
-  const McpToolInfo._();
 
   /// Generate a prefixed tool name to avoid conflicts.
   ///

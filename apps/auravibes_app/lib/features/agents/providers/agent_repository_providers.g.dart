@@ -119,7 +119,7 @@ final class AgentToolsRepositoryProvider
 }
 
 String _$agentToolsRepositoryHash() =>
-    r'b9126ee855a2b18ff90ed55ffd6bfe63a31f525a';
+    r'c5686288a3cfa938d0784410dae95f2fc1d95717';
 
 final class AgentToolsRepositoryFamily extends $Family
     with $FunctionalFamilyOverride<AgentToolsRepositoryContract, String> {

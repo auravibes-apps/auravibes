@@ -133,9 +133,8 @@ void main() {
 const _fallback = 'Unknown error';
 
 String _mapErrorMessage(Object error) {
-  if (error case ModelConnectionException(
-    :final message,
-  ) when message.trim().isNotEmpty) {
+  if (error case ModelConnectionException(:final message)
+      when message.trim().isNotEmpty) {
     return message;
   }
 

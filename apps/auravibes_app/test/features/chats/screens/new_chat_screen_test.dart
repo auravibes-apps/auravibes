@@ -27,9 +27,7 @@ Future<void> _pumpNewChatWithinPausedBranch(
           enabled: tickerEnabled,
           child: Theme(
             data: ThemeData(extensions: [AuraTheme.light]),
-            child: const Portal(
-              child: NewChatScreen(workspaceId: 'test-ws'),
-            ),
+            child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
           ),
         ),
         overrides: overrides,
@@ -142,9 +140,7 @@ void main() {
 
     testWidgets(
       'renders unavailable New Chat for an unauthenticated workspace',
-      (
-        tester,
-      ) async {
+      (tester) async {
         await _pumpNewChatWithinPausedBranch(
           tester,
           overrides: [
@@ -187,9 +183,7 @@ void main() {
           TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
-              child: const Portal(
-                child: NewChatScreen(workspaceId: 'test-ws'),
-              ),
+              child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
             ),
             overrides: _newChatOverrides(),
             workspaceId: 'test-ws',
@@ -216,9 +210,7 @@ void main() {
           TestableApp(
             child: Theme(
               data: ThemeData(extensions: [AuraTheme.light]),
-              child: const Portal(
-                child: NewChatScreen(workspaceId: 'test-ws'),
-              ),
+              child: const Portal(child: NewChatScreen(workspaceId: 'test-ws')),
             ),
             overrides: _newChatOverrides(
               state: const NewChatState(isLoading: true),

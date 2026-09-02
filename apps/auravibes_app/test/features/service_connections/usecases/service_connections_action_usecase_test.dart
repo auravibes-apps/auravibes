@@ -15,10 +15,8 @@ void main() {
 
           return Future<void>.value();
         },
-        (_) async => OAuthTokenEntity(
-          accessToken: 'access',
-          issuedAt: DateTime(2026),
-        ),
+        (_) async =>
+            OAuthTokenEntity(accessToken: 'access', issuedAt: DateTime(2026)),
         MockDeleteServiceConnectionUsecase(),
       );
 
@@ -64,10 +62,8 @@ void main() {
       ).thenAnswer((_) => Future<void>.value());
       final usecase = ServiceConnectionsActionUsecase(
         (_) => Future<void>.value(),
-        (_) async => OAuthTokenEntity(
-          accessToken: 'access',
-          issuedAt: DateTime(2026),
-        ),
+        (_) async =>
+            OAuthTokenEntity(accessToken: 'access', issuedAt: DateTime(2026)),
         deleteUsecase,
       );
 
@@ -90,4 +86,4 @@ void main() {
 }
 
 class MockDeleteServiceConnectionUsecase extends Mock
-    implements DeleteServiceConnectionUsecase {}
+    implements DeleteServiceConnectionUsecase;

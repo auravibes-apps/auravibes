@@ -23,22 +23,23 @@ void main() {
     var conversationRepository = MockConversationRepository();
     var conversationToolsRepository = MockConversationToolsRepository();
     var resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+    var loadToolSpecs = MockLoadConversationToolSpecsUsecase();
     var agentToolResumeService = MockAgentToolResumeService();
     var provider = AppApproveToolCallDataProvider(
       messageRepository: messageRepository,
       conversationRepository: conversationRepository,
       conversationToolsRepository: conversationToolsRepository,
       resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+      loadConversationToolSpecsUsecase: loadToolSpecs,
       toolResolverService: const ToolResolverService(),
       agentToolResumeService: agentToolResumeService,
       runResolvedToolUsecase: ResolvedToolService(
         agentCancellationRuntime: AgentCancellationRuntime(),
-        mcpToolCaller:
-            ({
-              required mcpServerId,
-              required toolIdentifier,
-              required arguments,
-            }) => Future.value(''),
+        mcpToolCaller: ({
+          required mcpServerId,
+          required toolIdentifier,
+          required arguments,
+        }) => Future.value(''),
       ),
       agentCancellationRuntime: AgentCancellationRuntime(),
       onToolCallChanged: _noop,
@@ -52,6 +53,14 @@ void main() {
       tableId: 'calculator',
       toolIdentifier: 'calculator',
       tooltype: UserToolType.calculator,
+    );
+    final conversation = ConversationEntity(
+      id: conversationId,
+      title: 'Conversation',
+      workspaceId: workspaceId,
+      isPinned: false,
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
     );
     final message = MessageEntity(
       id: messageId,
@@ -78,22 +87,23 @@ void main() {
       conversationRepository = MockConversationRepository();
       conversationToolsRepository = MockConversationToolsRepository();
       resolveToolApprovalDecision = MockResolveToolApprovalDecisionUsecase();
+      loadToolSpecs = MockLoadConversationToolSpecsUsecase();
       agentToolResumeService = MockAgentToolResumeService();
       provider = AppApproveToolCallDataProvider(
         messageRepository: messageRepository,
         conversationRepository: conversationRepository,
         conversationToolsRepository: conversationToolsRepository,
         resolveToolApprovalDecisionUsecase: resolveToolApprovalDecision,
+        loadConversationToolSpecsUsecase: loadToolSpecs,
         toolResolverService: const ToolResolverService(),
         agentToolResumeService: agentToolResumeService,
         runResolvedToolUsecase: ResolvedToolService(
           agentCancellationRuntime: AgentCancellationRuntime(),
-          mcpToolCaller:
-              ({
-                required mcpServerId,
-                required toolIdentifier,
-                required arguments,
-              }) => Future.value(''),
+          mcpToolCaller: ({
+            required mcpServerId,
+            required toolIdentifier,
+            required arguments,
+          }) => Future.value(''),
         ),
         agentCancellationRuntime: AgentCancellationRuntime(),
         onToolCallChanged: _noop,
@@ -101,9 +111,8 @@ void main() {
     });
 
     test('loads approvable tool call from message metadata', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
 
       final result = await provider.loadToolCall(
         messageId: messageId,
@@ -115,19 +124,70 @@ void main() {
       expect(result?.argumentsRaw, '{"input":"1+1"}');
     });
 
-    test('returns null when message or tool call is missing', () async {
-      when(() => messageRepository.getMessageById('missing')).thenAnswer(
-        (_) async => null,
+    test('resolves approval through catalog model name', () async {
+      final target = ResolvedTool.mcp(
+        tableId: 'github-row',
+        toolIdentifier: 'search',
+        mcpServerId: 'github-server',
+        mcpSlug: 'github',
       );
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
+      final catalog = agent.buildToolCatalog<ResolvedTool>([
+        agent.ToolCatalogCandidate.external(
+          spec: agent.ToolSpec(
+            name: 'search',
+            description: '',
+            inputJsonSchema: {},
+          ),
+          target: target,
+          sourceId: 'github-server',
+        ),
+      ]);
+      final generatedName = catalog.specs.single.name;
+      final generatedMessage = message.copyWith(
+        metadata: MessageMetadataEntity(
+          toolCalls: [
+            MessageToolCallEntity(
+              id: 'tool-1',
+              name: generatedName,
+              argumentsRaw: '{}',
+            ),
+          ],
+        ),
+      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => generatedMessage);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => conversation);
+      when(
+        () => loadToolSpecs.buildCatalog(
+          conversationId: conversationId,
+          workspaceId: workspaceId,
+        ),
+      ).thenAnswer((_) async => catalog);
+
+      final loaded = await provider.loadToolCall(
+        messageId: messageId,
+        toolCallId: 'tool-1',
       );
 
+      expect(loaded?.name, generatedName);
       expect(
-        await provider.loadToolCall(
-          messageId: 'missing',
-          toolCallId: 'tool-1',
-        ),
+        (await provider.resolveTool(
+          conversationId: conversationId,
+          toolName: generatedName,
+        ))?.mcpServerId,
+        'github-server',
+      );
+    });
+
+    test('returns null when message or tool call is missing', () async {
+      when(() => messageRepository.getMessageById('missing'))
+          .thenAnswer((_) async => null);
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+
+      expect(
+        await provider.loadToolCall(messageId: 'missing', toolCallId: 'tool-1'),
         isNull,
       );
       expect(
@@ -140,18 +200,17 @@ void main() {
     });
 
     test('grants resolved tool permission for the conversation', () async {
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer(
-        (_) async => ConversationEntity(
-          id: conversationId,
-          title: 'Conversation',
-          workspaceId: workspaceId,
-          isPinned: false,
-          createdAt: DateTime(2026),
-          updatedAt: DateTime(2026),
-        ),
-      );
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer(
+            (_) async => ConversationEntity(
+              id: conversationId,
+              title: 'Conversation',
+              workspaceId: workspaceId,
+              isPinned: false,
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+          );
       when(
         () => resolveToolApprovalDecision.resolvePermissionTableId(
           conversationId: conversationId,
@@ -185,9 +244,8 @@ void main() {
     });
 
     test('skips permission grant when conversation is missing', () async {
-      when(
-        () => conversationRepository.getConversationById(conversationId),
-      ).thenAnswer((_) async => null);
+      when(() => conversationRepository.getConversationById(conversationId))
+          .thenAnswer((_) async => null);
 
       await expectLater(
         provider.grantToolForConversation(
@@ -207,12 +265,10 @@ void main() {
     });
 
     test('updates tool call result status in message metadata', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
-        (_) async => message,
-      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => messageRepository.patchMessage(messageId, any()))
+          .thenAnswer((_) async => message);
 
       const cases = {
         agent.AgentToolResultStatus.success: ToolCallResultStatus.success,
@@ -255,12 +311,10 @@ void main() {
     });
 
     test('marks tool call running in message metadata', () async {
-      when(() => messageRepository.getMessageById(messageId)).thenAnswer(
-        (_) async => message,
-      );
-      when(() => messageRepository.patchMessage(messageId, any())).thenAnswer(
-        (_) async => message,
-      );
+      when(() => messageRepository.getMessageById(messageId))
+          .thenAnswer((_) async => message);
+      when(() => messageRepository.patchMessage(messageId, any()))
+          .thenAnswer((_) async => message);
 
       await provider.markToolCallRunning(
         messageId: messageId,
@@ -268,9 +322,9 @@ void main() {
       );
 
       final patch =
-          verify(
-                () => messageRepository.patchMessage(messageId, captureAny()),
-              ).captured.single
+          verify(() => messageRepository.patchMessage(messageId, captureAny()))
+                  .captured
+                  .single
               as MessagePatch;
       expect(
         patch.metadata?.toolCalls.single.resultStatus,
@@ -280,9 +334,8 @@ void main() {
     });
 
     test('resumes conversation through resume service', () async {
-      when(
-        () => agentToolResumeService.call(messageId: messageId),
-      ).thenAnswer((_) => Future<void>.value());
+      when(() => agentToolResumeService.call(messageId: messageId))
+          .thenAnswer((_) => Future<void>.value());
 
       await expectLater(
         provider.resumeConversationIfReady(messageId: messageId),

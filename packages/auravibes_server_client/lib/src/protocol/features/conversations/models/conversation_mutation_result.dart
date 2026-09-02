@@ -12,22 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationMutationResult implements _i1.SerializableModel {
-  ConversationMutationResult._({
-    this.turnId,
-    required this.conversationId,
-    required this.revision,
-    required this.status,
-  });
-
-  factory ConversationMutationResult({
+abstract class ConversationMutationResult._({
+  var String? turnId,
+  required var String conversationId,
+  required var int revision,
+  required var String status,
+}) implements _i1.SerializableModel {
+  factory({
     String? turnId,
     required String conversationId,
     required int revision,
     required String status,
   }) = _ConversationMutationResultImpl;
 
-  factory ConversationMutationResult.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationMutationResult(
@@ -37,14 +35,6 @@ abstract class ConversationMutationResult implements _i1.SerializableModel {
       status: jsonSerialization['status'] as String,
     );
   }
-
-  String? turnId;
-
-  String conversationId;
-
-  int revision;
-
-  String status;
 
   /// Returns a shallow copy of this [ConversationMutationResult]
   /// with some or all fields replaced by the given arguments.
@@ -72,20 +62,21 @@ abstract class ConversationMutationResult implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _ConversationMutationResultImpl extends ConversationMutationResult {
-  _ConversationMutationResultImpl({
-    String? turnId,
-    required String conversationId,
-    required int revision,
-    required String status,
-  }) : super._(
-         turnId: turnId,
-         conversationId: conversationId,
-         revision: revision,
-         status: status,
-       );
+class _ConversationMutationResultImpl({
+  String? turnId,
+  required String conversationId,
+  required int revision,
+  required String status,
+}) extends ConversationMutationResult {
+  this
+    : super._(
+        turnId: turnId,
+        conversationId: conversationId,
+        revision: revision,
+        status: status,
+      );
 
   /// Returns a shallow copy of this [ConversationMutationResult]
   /// with some or all fields replaced by the given arguments.

@@ -12,26 +12,27 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceInvite implements _i1.SerializableModel {
-  WorkspaceInvite._({
-    this.id,
-    required this.workspaceId,
-    required this.email,
-    required this.normalizedEmail,
-    required this.role,
-    required this.invitedByUserId,
-    this.acceptedByUserId,
-    required this.revision,
-    required this.createdAt,
-    required this.updatedAt,
-    this.expiresAt,
-    this.acceptedAt,
-    this.declinedAt,
-    this.revokedAt,
-    this.pendingKey,
-  });
-
-  factory WorkspaceInvite({
+abstract class WorkspaceInvite._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var int workspaceId,
+  required var String email,
+  required var String normalizedEmail,
+  required var String role,
+  required var String invitedByUserId,
+  var String? acceptedByUserId,
+  required var int revision,
+  required var DateTime createdAt,
+  required var DateTime updatedAt,
+  var DateTime? expiresAt,
+  var DateTime? acceptedAt,
+  var DateTime? declinedAt,
+  var DateTime? revokedAt,
+  var String? pendingKey,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required int workspaceId,
     required String email,
@@ -49,7 +50,7 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
     String? pendingKey,
   }) = _WorkspaceInviteImpl;
 
-  factory WorkspaceInvite.fromJson(Map<String, dynamic> jsonSerialization) {
+  factory fromJson(Map<String, dynamic> jsonSerialization) {
     return WorkspaceInvite(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -80,39 +81,6 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
       pendingKey: jsonSerialization['pendingKey'] as String?,
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  int workspaceId;
-
-  String email;
-
-  String normalizedEmail;
-
-  String role;
-
-  String invitedByUserId;
-
-  String? acceptedByUserId;
-
-  int revision;
-
-  DateTime createdAt;
-
-  DateTime updatedAt;
-
-  DateTime? expiresAt;
-
-  DateTime? acceptedAt;
-
-  DateTime? declinedAt;
-
-  DateTime? revokedAt;
-
-  String? pendingKey;
 
   /// Returns a shallow copy of this [WorkspaceInvite]
   /// with some or all fields replaced by the given arguments.
@@ -162,42 +130,43 @@ abstract class WorkspaceInvite implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _WorkspaceInviteImpl extends WorkspaceInvite {
-  _WorkspaceInviteImpl({
-    int? id,
-    required int workspaceId,
-    required String email,
-    required String normalizedEmail,
-    required String role,
-    required String invitedByUserId,
-    String? acceptedByUserId,
-    required int revision,
-    required DateTime createdAt,
-    required DateTime updatedAt,
-    DateTime? expiresAt,
-    DateTime? acceptedAt,
-    DateTime? declinedAt,
-    DateTime? revokedAt,
-    String? pendingKey,
-  }) : super._(
-         id: id,
-         workspaceId: workspaceId,
-         email: email,
-         normalizedEmail: normalizedEmail,
-         role: role,
-         invitedByUserId: invitedByUserId,
-         acceptedByUserId: acceptedByUserId,
-         revision: revision,
-         createdAt: createdAt,
-         updatedAt: updatedAt,
-         expiresAt: expiresAt,
-         acceptedAt: acceptedAt,
-         declinedAt: declinedAt,
-         revokedAt: revokedAt,
-         pendingKey: pendingKey,
-       );
+class _WorkspaceInviteImpl({
+  int? id,
+  required int workspaceId,
+  required String email,
+  required String normalizedEmail,
+  required String role,
+  required String invitedByUserId,
+  String? acceptedByUserId,
+  required int revision,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  DateTime? expiresAt,
+  DateTime? acceptedAt,
+  DateTime? declinedAt,
+  DateTime? revokedAt,
+  String? pendingKey,
+}) extends WorkspaceInvite {
+  this
+    : super._(
+        id: id,
+        workspaceId: workspaceId,
+        email: email,
+        normalizedEmail: normalizedEmail,
+        role: role,
+        invitedByUserId: invitedByUserId,
+        acceptedByUserId: acceptedByUserId,
+        revision: revision,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        expiresAt: expiresAt,
+        acceptedAt: acceptedAt,
+        declinedAt: declinedAt,
+        revokedAt: revokedAt,
+        pendingKey: pendingKey,
+      );
 
   /// Returns a shallow copy of this [WorkspaceInvite]
   /// with some or all fields replaced by the given arguments.

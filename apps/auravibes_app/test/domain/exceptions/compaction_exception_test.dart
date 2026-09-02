@@ -32,10 +32,7 @@ void main() {
   group('CompactionUnavailableException', () {
     test('has correct locale key', () {
       const ex = CompactionUnavailableException();
-      expect(
-        ex.localeKey,
-        LocaleKeys.compaction_errors_compaction_unavailable,
-      );
+      expect(ex.localeKey, LocaleKeys.compaction_errors_compaction_unavailable);
     });
   });
 

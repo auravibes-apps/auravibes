@@ -11,7 +11,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:riverpod/riverpod.dart';
 
 class MockCompactionSettingsRepository extends Mock
-    implements WorkspaceCompactionSettingsRepository {}
+    implements WorkspaceCompactionSettingsRepository;
 
 void main() {
   const testWorkspaceId = 'workspace-1';
@@ -166,9 +166,8 @@ void main() {
     test('reads overridden value', () {
       final container = ProviderContainer(
         overrides: [
-          compactionSettingsProvider(testWorkspaceId).overrideWithValue(
-            const AsyncData(CompactionSettings.defaults),
-          ),
+          compactionSettingsProvider(testWorkspaceId)
+              .overrideWithValue(const AsyncData(CompactionSettings.defaults)),
         ],
       );
       addTearDown(container.dispose);
@@ -188,9 +187,8 @@ void main() {
 
       final container = ProviderContainer(
         overrides: [
-          compactionSettingsProvider(testWorkspaceId).overrideWithValue(
-            const AsyncData(custom),
-          ),
+          compactionSettingsProvider(testWorkspaceId)
+              .overrideWithValue(const AsyncData(custom)),
         ],
       );
       addTearDown(container.dispose);
@@ -219,21 +217,14 @@ void main() {
         usagePercentageThreshold: 70,
         remainingTokenThreshold: 4000,
       );
-      when(
-        () => mockRepository.saveOverrides(testWorkspaceId, newSettings),
-      ).thenAnswer(
-        (_) async => newSettings.copyWith(updatedAt: DateTime(2026)),
-      );
-
-      final _ =
-          await (await container.read(
-            saveWorkspaceCompactionSettingsUsecaseProvider(
-              testWorkspaceId,
-            ).future,
-          ))(
-            workspaceId: testWorkspaceId,
-            settings: newSettings,
+      when(() => mockRepository.saveOverrides(testWorkspaceId, newSettings))
+          .thenAnswer(
+            (_) async => newSettings.copyWith(updatedAt: DateTime(2026)),
           );
+
+      final _ = await (await container.read(
+        saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId).future,
+      ))(workspaceId: testWorkspaceId, settings: newSettings);
 
       expect(
         () => verify(
@@ -251,15 +242,10 @@ void main() {
       );
 
       expect(
-        () async =>
-            (await container.read(
-              saveWorkspaceCompactionSettingsUsecaseProvider(
-                testWorkspaceId,
-              ).future,
-            ))(
-              workspaceId: testWorkspaceId,
-              settings: invalid,
-            ),
+        () async => await (await container.read(
+          saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId)
+              .future,
+        ))(workspaceId: testWorkspaceId, settings: invalid),
         throwsA(isA<CompactionSettingsValidationException>()),
       );
     });
@@ -272,15 +258,10 @@ void main() {
       );
 
       expect(
-        () async =>
-            (await container.read(
-              saveWorkspaceCompactionSettingsUsecaseProvider(
-                testWorkspaceId,
-              ).future,
-            ))(
-              workspaceId: testWorkspaceId,
-              settings: invalid,
-            ),
+        () async => await (await container.read(
+          saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId)
+              .future,
+        ))(workspaceId: testWorkspaceId, settings: invalid),
         throwsA(isA<CompactionSettingsValidationException>()),
       );
     });
@@ -293,15 +274,10 @@ void main() {
       );
 
       expect(
-        () async =>
-            (await container.read(
-              saveWorkspaceCompactionSettingsUsecaseProvider(
-                testWorkspaceId,
-              ).future,
-            ))(
-              workspaceId: testWorkspaceId,
-              settings: invalid,
-            ),
+        () async => await (await container.read(
+          saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId)
+              .future,
+        ))(workspaceId: testWorkspaceId, settings: invalid),
         throwsA(isA<CompactionSettingsValidationException>()),
       );
     });
@@ -313,19 +289,12 @@ void main() {
         usagePercentageThreshold: 5,
         remainingTokenThreshold: 1,
       );
-      when(
-        () => mockRepository.saveOverrides(testWorkspaceId, valid),
-      ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
+      when(() => mockRepository.saveOverrides(testWorkspaceId, valid))
+          .thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      final result =
-          await (await container.read(
-            saveWorkspaceCompactionSettingsUsecaseProvider(
-              testWorkspaceId,
-            ).future,
-          ))(
-            workspaceId: testWorkspaceId,
-            settings: valid,
-          );
+      final result = await (await container.read(
+        saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId).future,
+      ))(workspaceId: testWorkspaceId, settings: valid);
 
       expect(result.usagePercentageThreshold, 5);
     });
@@ -337,19 +306,12 @@ void main() {
         usagePercentageThreshold: 100,
         remainingTokenThreshold: 10000,
       );
-      when(
-        () => mockRepository.saveOverrides(testWorkspaceId, valid),
-      ).thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
+      when(() => mockRepository.saveOverrides(testWorkspaceId, valid))
+          .thenAnswer((_) async => valid.copyWith(updatedAt: DateTime(2026)));
 
-      final result =
-          await (await container.read(
-            saveWorkspaceCompactionSettingsUsecaseProvider(
-              testWorkspaceId,
-            ).future,
-          ))(
-            workspaceId: testWorkspaceId,
-            settings: valid,
-          );
+      final result = await (await container.read(
+        saveWorkspaceCompactionSettingsUsecaseProvider(testWorkspaceId).future,
+      ))(workspaceId: testWorkspaceId, settings: valid);
 
       expect(result.usagePercentageThreshold, 100);
     });

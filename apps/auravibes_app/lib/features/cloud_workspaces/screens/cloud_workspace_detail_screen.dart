@@ -15,22 +15,14 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('cloud_workspace_detail_screen');
 
-class CloudWorkspaceDetailScreen extends ConsumerWidget {
-  const CloudWorkspaceDetailScreen({
-    required this.workspaceId,
-    required this.cloudAccountId,
-    required this.cloudWorkspaceId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String cloudAccountId;
-  final int cloudWorkspaceId;
-
-  CloudWorkspaceDetailKey get _key => (
-    accountId: cloudAccountId,
-    workspaceId: cloudWorkspaceId,
-  );
+class const CloudWorkspaceDetailScreen({
+  required final String workspaceId,
+  required final String cloudAccountId,
+  required final int cloudWorkspaceId,
+  super.key,
+}) extends ConsumerWidget {
+  CloudWorkspaceDetailKey get _key =>
+      (accountId: cloudAccountId, workspaceId: cloudWorkspaceId);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -71,19 +63,12 @@ class CloudWorkspaceDetailScreen extends ConsumerWidget {
   }
 }
 
-class _DetailBody extends ConsumerWidget {
-  const _DetailBody({
-    required this.state,
-    required this.accountId,
-    required this.mirror,
-    required this.onChanged,
-  });
-
-  final CloudWorkspaceDetailState state;
-  final String accountId;
-  final WorkspaceEntity? mirror;
-  final VoidCallback onChanged;
-
+class const _DetailBody({
+  required final CloudWorkspaceDetailState state,
+  required final String accountId,
+  required final WorkspaceEntity? mirror,
+  required final VoidCallback onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detail = state.detail;
@@ -276,7 +261,7 @@ Future<void> _runCloudAction(
   } on Object catch (error, stackTrace) {
     _logger.warning('Cloud workspace action failed', error, stackTrace);
     if (!context.mounted) return;
-    final _ = showAuraSnackBar(
+    final _ = AuraSnackBars.show(
       context: context,
       content: const TextLocale(LocaleKeys.workspace_management_cloud_error),
       variant: AuraSnackBarVariant.error,
@@ -284,20 +269,13 @@ Future<void> _runCloudAction(
   }
 }
 
-class _MemberTile extends ConsumerWidget {
-  const _MemberTile({
-    required this.accountId,
-    required this.workspace,
-    required this.member,
-    required this.capabilities,
-    required this.onChanged,
-  });
-  final String accountId;
-  final CloudWorkspaceSummary workspace;
-  final CloudWorkspaceMemberSummary member;
-  final CloudWorkspaceCapabilities capabilities;
-  final VoidCallback onChanged;
-
+class const _MemberTile({
+  required final String accountId,
+  required final CloudWorkspaceSummary workspace,
+  required final CloudWorkspaceMemberSummary member,
+  required final CloudWorkspaceCapabilities capabilities,
+  required final VoidCallback onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
     child: AuraColumn(
@@ -386,18 +364,12 @@ class _MemberTile extends ConsumerWidget {
   }
 }
 
-class _OutgoingInviteTile extends ConsumerWidget {
-  const _OutgoingInviteTile({
-    required this.accountId,
-    required this.workspaceId,
-    required this.invite,
-    required this.onChanged,
-  });
-  final String accountId;
-  final int workspaceId;
-  final CloudWorkspaceInviteSummary invite;
-  final VoidCallback onChanged;
-
+class const _OutgoingInviteTile({
+  required final String accountId,
+  required final int workspaceId,
+  required final CloudWorkspaceInviteSummary invite,
+  required final VoidCallback onChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
     child: Text(invite.email),
@@ -518,24 +490,26 @@ Future<_InviteRequest?> _invitePrompt(
           children: [
             TextField(controller: controller, autofocus: true),
             if (allowAdmin)
-              DropdownButton<String>(
-                value: role,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(
+              AuraChoicePicker<String>(
+                options: const [
+                  AuraChoiceOption(
                     value: 'member',
-                    child: TextLocale(
+                    label: TextLocale(
                       LocaleKeys.workspace_management_cloud_role_member,
                     ),
                   ),
-                  DropdownMenuItem(
+                  AuraChoiceOption(
                     value: 'admin',
-                    child: TextLocale(
+                    label: TextLocale(
                       LocaleKeys.workspace_management_cloud_role_admin,
                     ),
                   ),
                 ],
-                onChanged: (value) => setState(() => role = value ?? 'member'),
+                value: [role],
+                onChanged: (values) {
+                  if (values.isEmpty) return;
+                  setState(() => role = values.first);
+                },
               ),
           ],
         ),
@@ -545,9 +519,8 @@ Future<_InviteRequest?> _invitePrompt(
             child: const TextLocale(LocaleKeys.common_cancel),
           ),
           TextButton(
-            onPressed: () => Navigator.of(
-              context,
-            ).pop((email: controller.text, role: role)),
+            onPressed: () =>
+                Navigator.of(context).pop((email: controller.text, role: role)),
             child: const TextLocale(LocaleKeys.common_add),
           ),
         ],

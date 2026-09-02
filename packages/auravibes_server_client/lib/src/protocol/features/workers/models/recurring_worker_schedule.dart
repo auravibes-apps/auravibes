@@ -12,18 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class RecurringWorkerSchedule implements _i1.SerializableModel {
-  RecurringWorkerSchedule._({
-    this.id,
-    required this.workerKey,
-    required this.nextRunAt,
-    this.runToken,
-    this.leaderFencingToken,
-    this.runLeaseExpiresAt,
-    required this.updatedAt,
-  });
-
-  factory RecurringWorkerSchedule({
+abstract class RecurringWorkerSchedule._({
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  var int? id,
+  required var String workerKey,
+  required var DateTime nextRunAt,
+  var String? runToken,
+  var int? leaderFencingToken,
+  var DateTime? runLeaseExpiresAt,
+  required var DateTime updatedAt,
+}) implements _i1.SerializableModel {
+  factory({
     int? id,
     required String workerKey,
     required DateTime nextRunAt,
@@ -33,7 +34,7 @@ abstract class RecurringWorkerSchedule implements _i1.SerializableModel {
     required DateTime updatedAt,
   }) = _RecurringWorkerScheduleImpl;
 
-  factory RecurringWorkerSchedule.fromJson(
+  factory fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return RecurringWorkerSchedule(
@@ -54,23 +55,6 @@ abstract class RecurringWorkerSchedule implements _i1.SerializableModel {
       ),
     );
   }
-
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  int? id;
-
-  String workerKey;
-
-  DateTime nextRunAt;
-
-  String? runToken;
-
-  int? leaderFencingToken;
-
-  DateTime? runLeaseExpiresAt;
-
-  DateTime updatedAt;
 
   /// Returns a shallow copy of this [RecurringWorkerSchedule]
   /// with some or all fields replaced by the given arguments.
@@ -105,26 +89,27 @@ abstract class RecurringWorkerSchedule implements _i1.SerializableModel {
   }
 }
 
-class _Undefined {}
+class _Undefined;
 
-class _RecurringWorkerScheduleImpl extends RecurringWorkerSchedule {
-  _RecurringWorkerScheduleImpl({
-    int? id,
-    required String workerKey,
-    required DateTime nextRunAt,
-    String? runToken,
-    int? leaderFencingToken,
-    DateTime? runLeaseExpiresAt,
-    required DateTime updatedAt,
-  }) : super._(
-         id: id,
-         workerKey: workerKey,
-         nextRunAt: nextRunAt,
-         runToken: runToken,
-         leaderFencingToken: leaderFencingToken,
-         runLeaseExpiresAt: runLeaseExpiresAt,
-         updatedAt: updatedAt,
-       );
+class _RecurringWorkerScheduleImpl({
+  int? id,
+  required String workerKey,
+  required DateTime nextRunAt,
+  String? runToken,
+  int? leaderFencingToken,
+  DateTime? runLeaseExpiresAt,
+  required DateTime updatedAt,
+}) extends RecurringWorkerSchedule {
+  this
+    : super._(
+        id: id,
+        workerKey: workerKey,
+        nextRunAt: nextRunAt,
+        runToken: runToken,
+        leaderFencingToken: leaderFencingToken,
+        runLeaseExpiresAt: runLeaseExpiresAt,
+        updatedAt: updatedAt,
+      );
 
   /// Returns a shallow copy of this [RecurringWorkerSchedule]
   /// with some or all fields replaced by the given arguments.

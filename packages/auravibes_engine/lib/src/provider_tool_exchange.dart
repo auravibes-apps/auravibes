@@ -2,30 +2,19 @@ import 'dart:convert';
 
 import 'package:auravibes_engine/src/chat_result.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
+import 'package:crypto/crypto.dart';
 
-class CompletionRequest {
-  const CompletionRequest({
-    required this.messages,
-    this.tools = const [],
-    this.stream = true,
-  });
+class const CompletionRequest({
+  required final List<Map<String, Object?>> messages,
+  final List<ToolSpec> tools = const [],
+  final bool stream = true,
+});
 
-  final List<Map<String, Object?>> messages;
-  final List<ToolSpec> tools;
-  final bool stream;
-}
-
-class CompletionResult {
-  const CompletionResult({
-    required this.finishReason,
-    this.usage,
-    this.metadata = const {},
-  });
-
-  final ChatFinishReason finishReason;
-  final LanguageModelUsage? usage;
-  final Map<String, Object?> metadata;
-}
+class const CompletionResult({
+  required final ChatFinishReason finishReason,
+  final LanguageModelUsage? usage,
+  final Map<String, Object?> metadata = const {},
+});
 
 CompletionResult normalizeCompletionResult({
   required bool hasToolCalls,
@@ -49,22 +38,21 @@ CompletionResult normalizeCompletionResult({
   metadata: Map.unmodifiable(metadata),
 );
 
-class ProviderToolCallRecord {
-  const ProviderToolCallRecord({
-    required this.id,
-    required this.name,
-    required this.arguments,
-  });
-  final String id;
-  final String name;
-  final Map<String, Object?> arguments;
-}
+class const ProviderToolCallRecord({
+  required final String id,
+  required final String name,
+  required final Map<String, Object?> arguments,
+});
+
+final _providerToolCallIdPattern = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 
 String providerSafeToolCallId(String? value) {
   final raw = value ?? '';
-  if (raw.isEmpty) return 'tool_empty';
-  final encoded = raw.codeUnits.map((unit) => unit.toRadixString(16)).join('_');
-  return 'tool_$encoded';
+  if (_providerToolCallIdPattern.hasMatch(raw)) return raw;
+
+  final digest = sha256.convert(utf8.encode(raw)).bytes.take(16).toList();
+  final alias = base64Url.encode(digest).replaceAll('=', '');
+  return 'tool_$alias';
 }
 
 List<Map<String, Object?>> providerToolExchangeMessages(

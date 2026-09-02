@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 /// consistent styling across the application by using the AuraFieldWrapper.
 class AuraInput extends StatefulWidget {
   /// Creates a Aura input field.
-  const AuraInput({
+  const new({
     super.key,
     this.controller,
     this.initialValue,
@@ -172,12 +172,6 @@ class _AuraInputState extends State<AuraInput> {
     super.dispose();
   }
 
-  void _onFocusChange() {
-    setState(() {
-      _isFocused = _requiredFocusNode.hasFocus;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
@@ -213,7 +207,6 @@ class _AuraInputState extends State<AuraInput> {
                       isDense: false,
                       contentPadding: EdgeInsets.zero,
                       border: InputBorder.none,
-                      semanticCounterText: widget.semanticLabel,
                     ),
                     keyboardType: widget.keyboardType,
                     textInputAction: widget.textInputAction,
@@ -255,6 +248,12 @@ class _AuraInputState extends State<AuraInput> {
       isFocused: _isFocused,
       semanticLabel: widget.semanticLabel,
     );
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _requiredFocusNode.hasFocus;
+    });
   }
 
   AuraFieldState _convertToFieldState(AuraInputState state) {

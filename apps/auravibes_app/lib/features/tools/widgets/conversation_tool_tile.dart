@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/features/tools/notifiers/conversation_tool_state.dart';
+import 'package:auravibes_app/features/tools/widgets/tool_permission_selector.dart';
 import 'package:auravibes_app/features/tools/widgets/user_tool_type_widgets.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
@@ -12,25 +13,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+export 'tool_permission_selector.dart';
+
 /// Tile widget for a single conversation tool.
 ///
 /// Shows:
-/// - Tool icon with enabled/disabled styling
-/// - Tool name and description
-/// - Toggle indicator (check circle / empty circle / blocked)
-/// - Permission selector when tool is enabled
-class ConversationToolTile extends HookConsumerWidget {
-  const ConversationToolTile({
-    required this.toolState,
-    required this.workspaceId,
-    this.conversationId,
-    super.key,
-  });
-
-  final ConversationToolState toolState;
-  final String workspaceId;
-  final String? conversationId;
-
+/// - Tool icon with enabled/disabled styling.
+/// - Tool name and description.
+/// - Toggle indicator (check circle / empty circle / blocked).
+/// - Permission selector when tool is enabled.
+class const ConversationToolTile({
+  required final ConversationToolState toolState,
+  required final String workspaceId,
+  final String? conversationId,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final toolsNotifier = ref.read(
@@ -41,21 +38,17 @@ class ConversationToolTile extends HookConsumerWidget {
     );
     final toolId = toolState.tool.id;
 
-    final onToggle = useCallback(
-      () {
-        unawaited(toolsNotifier.toggleTool(toolId));
-      },
-      [toolsNotifier, toolId],
-    );
+    void onToggleCallback() {
+      unawaited(toolsNotifier.toggleTool(toolId));
+    }
+
+    final onToggle = useCallback(onToggleCallback, [toolsNotifier, toolId]);
 
     final onPermissionChanged = useCallback<void Function(ToolPermissionMode?)>(
       (mode) {
         if (mode == null) return;
         unawaited(
-          toolsNotifier.setToolPermission(
-            toolId,
-            permissionMode: mode,
-          ),
+          toolsNotifier.setToolPermission(toolId, permissionMode: mode),
         );
       },
       [toolsNotifier, toolId],
@@ -88,17 +81,11 @@ class ConversationToolTile extends HookConsumerWidget {
   }
 }
 
-class _ToolSummaryRow extends StatelessWidget {
-  const _ToolSummaryRow({
-    required this.toolState,
-    required this.isEnabled,
-    required this.isWorkspaceEnabled,
-  });
-
-  final ConversationToolState toolState;
-  final bool isEnabled;
-  final bool isWorkspaceEnabled;
-
+class const _ToolSummaryRow({
+  required final ConversationToolState toolState,
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraPadding(
@@ -127,53 +114,40 @@ class _ToolSummaryRow extends StatelessWidget {
   }
 }
 
-class _ToolIcon extends StatelessWidget {
-  const _ToolIcon({
-    required this.toolState,
-    required this.isEnabled,
-    required this.isWorkspaceEnabled,
-  });
-
-  final ConversationToolState toolState;
-  final bool isEnabled;
-  final bool isWorkspaceEnabled;
-
+class const _ToolIcon({
+  required final ConversationToolState toolState,
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    const iconSize = 40.0;
+
     return Container(
       decoration: BoxDecoration(
         color: isEnabled && isWorkspaceEnabled
             ? context.auraColors.primary.withValues(alpha: 0.1)
             : context.auraColors.surfaceVariant,
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.md),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.md)),
         ),
       ),
-      width: 40,
-      height: 40,
+      width: iconSize,
+      height: iconSize,
       child: toolState.tool.getIconWidget(),
     );
   }
 }
 
-class _ToolDescription extends StatelessWidget {
-  const _ToolDescription({
-    required this.toolState,
-    required this.isWorkspaceEnabled,
-  });
-
-  final ConversationToolState toolState;
-  final bool isWorkspaceEnabled;
-
+class const _ToolDescription({
+  required final ConversationToolState toolState,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(
-          child: toolState.tool.getNameWidget(),
-        ),
+        AuraText(child: toolState.tool.getNameWidget()),
         if (isWorkspaceEnabled)
           AuraText(
             child: DefaultTextStyle.merge(
@@ -200,24 +174,16 @@ class _ToolDescription extends StatelessWidget {
   }
 }
 
-class _ToolToggleIcon extends StatelessWidget {
-  const _ToolToggleIcon({
-    required this.isEnabled,
-    required this.isWorkspaceEnabled,
-  });
-
-  final bool isEnabled;
-  final bool isWorkspaceEnabled;
-
+class const _ToolToggleIcon({
+  required final bool isEnabled,
+  required final bool isWorkspaceEnabled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!isWorkspaceEnabled) {
       return const Opacity(
         opacity: 0.5,
-        child: AuraIcon(
-          Icons.block,
-          size: AuraIconSize.small,
-        ),
+        child: AuraIcon(Icons.block, size: AuraIconSize.small),
       );
     }
 
@@ -228,15 +194,10 @@ class _ToolToggleIcon extends StatelessWidget {
   }
 }
 
-class _ToolPermissionSection extends StatelessWidget {
-  const _ToolPermissionSection({
-    required this.value,
-    required this.onChanged,
-  });
-
-  final ToolPermissionMode value;
-  final void Function(ToolPermissionMode?) onChanged;
-
+class const _ToolPermissionSection({
+  required final ToolPermissionMode value,
+  required final void Function(ToolPermissionMode?) onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
@@ -259,40 +220,6 @@ class _ToolPermissionSection extends StatelessWidget {
       ],
       spacing: .none,
       crossAxisAlignment: CrossAxisAlignment.start,
-    );
-  }
-}
-
-/// Permission mode selector widget.
-///
-/// Displays a button group for selecting between
-/// "Always Ask" and "Always Allow".
-class ToolPermissionSelector extends StatelessWidget {
-  const ToolPermissionSelector({
-    required this.value,
-    required this.onChanged,
-    super.key,
-  });
-
-  final ToolPermissionMode value;
-  final void Function(ToolPermissionMode?) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AuraButtonGroup<ToolPermissionMode>.single(
-      items: const [
-        AuraButtonGroupItem(
-          value: ToolPermissionMode.alwaysAsk,
-          child: TextLocale(LocaleKeys.tools_screen_permission_always_ask),
-        ),
-        AuraButtonGroupItem(
-          value: ToolPermissionMode.alwaysAllow,
-          child: TextLocale(LocaleKeys.tools_screen_permission_always_allow),
-        ),
-      ],
-      selectedValue: value,
-      onChanged: onChanged,
-      size: AuraButtonGroupSize.sm,
     );
   }
 }

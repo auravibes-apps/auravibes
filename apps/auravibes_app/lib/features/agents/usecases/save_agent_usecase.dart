@@ -4,11 +4,7 @@ import 'package:auravibes_app/features/agents/agent_adapters/agent_repository.da
 import 'package:auravibes_app/features/agents/providers/agent_repository_providers.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class SaveAgentUsecase {
-  const SaveAgentUsecase(this._repository);
-
-  final AgentRepository _repository;
-
+class const SaveAgentUsecase(final AgentRepository _repository) {
   Future<AgentEntity> create(String workspaceId, AgentToCreate agent) {
     return _repository.createAgent(workspaceId, agent);
   }
@@ -19,9 +15,6 @@ class SaveAgentUsecase {
 }
 
 final ProviderFamily<SaveAgentUsecase, String> saveAgentUsecaseProvider =
-    Provider.family<SaveAgentUsecase, String>((
-      ref,
-      workspaceId,
-    ) {
+    Provider.family<SaveAgentUsecase, String>((ref, workspaceId) {
       return SaveAgentUsecase(ref.watch(agentRepositoryProvider(workspaceId)));
     });

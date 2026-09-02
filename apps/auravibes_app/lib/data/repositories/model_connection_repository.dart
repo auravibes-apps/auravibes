@@ -26,25 +26,21 @@ typedef _ModelConnectionUpdatePayload = ({
 /// operations using the Drift database. It handles the mapping between domain
 /// entities and database records, and provides proper error handling using
 /// exceptions.
-class ModelConnectionRepository implements ModelConnectionStore {
-  ModelConnectionRepository({
-    required this._database,
-    required this._encryptionService,
-    ModelProviderServices? modelProviderServices,
-  }) : _modelProviderServices =
-           modelProviderServices ?? ModelProviderServices();
-
-  final AppDatabase _database;
-  final EncryptionService _encryptionService;
-  final ModelProviderServices _modelProviderServices;
+class ModelConnectionRepository({
+  required final AppDatabase _database,
+  required final EncryptionService _encryptionService,
+  ModelProviderServices? modelProviderServices,
+}) implements ModelConnectionStore {
   static const _missingApiKeyMessage = 'Model connection has no API key';
+  final ModelProviderServices _modelProviderServices =
+      modelProviderServices ?? ModelProviderServices();
 
   @override
   Future<ModelConnectionEntity> createModelConnection(
     ModelConnectionToCreate modelConnection,
   ) async {
     if (modelConnection.authMode == ModelProviderAuthMode.oauth2) {
-      return _createOAuthModelConnection(modelConnection);
+      return await _createOAuthModelConnection(modelConnection);
     }
 
     final modelProvider = await _database.apiModelProvidersDao.getProviderById(
@@ -94,9 +90,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
       );
 
       final workspaceModelSelections = models
-          .map(
-            (model) => model.copyWith(modelConnectionId: created.id),
-          )
+          .map((model) => model.copyWith(modelConnectionId: created.id))
           .toList();
 
       await _database.workspaceModelSelectionsDao
@@ -112,6 +106,94 @@ class ModelConnectionRepository implements ModelConnectionStore {
     return _modelProviderTableToEntity(createdModelConnection);
   }
 
+  @override
+  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
+    String modelConnectionId,
+  ) async {
+    final modelConnection = await _database.modelConnectionsDao
+        .getModelConnectionById(modelConnectionId);
+    if (modelConnection == null) return null;
+
+    return ModelConnectionForEdit(
+      id: modelConnection.id,
+      name: modelConnection.name,
+      modelId: modelConnection.serviceId,
+      workspaceId: modelConnection.workspaceId,
+      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
+      authMode: _authMode(modelConnection.authenticationType),
+      url: modelConnection.url,
+      keySuffix: modelConnection.keySuffix,
+    );
+  }
+
+  @override
+  Future<ModelConnectionEntity> updateModelConnection(
+    String modelConnectionId,
+    ModelConnectionToUpdate modelConnection,
+  ) async {
+    final existing = await _editableModelConnection(modelConnectionId);
+    final payload = await _updatePayload(existing, modelConnection);
+    final updated = await _database.transaction(
+      () => _updateConnectionAndSelections(
+        modelConnectionId,
+        modelConnection,
+        payload,
+      ),
+    );
+    if (updated == null) {
+      throw ModelConnectionException(
+        'Model connection with ID "$modelConnectionId" not found',
+      );
+    }
+
+    return _modelProviderTableToEntity(updated);
+  }
+
+  Future<List<ModelConnectionEntity>> getModelConnections(
+    ModelConnectionFilter filter,
+  ) async {
+    if (filter.workspaces.isEmpty) {
+      return [];
+    }
+    final modelConnections = await _database.modelConnectionsDao
+        .getAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces);
+
+    return modelConnections.map(_modelProviderTableToEntity).toList();
+  }
+
+  @override
+  Stream<List<ModelConnectionEntity>> watchModelConnections(
+    ModelConnectionFilter filter,
+  ) {
+    if (filter.workspaces.isEmpty) {
+      return Stream.value(const []);
+    }
+
+    return _database.modelConnectionsDao
+        .watchAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces)
+        .map(
+          (modelConnections) =>
+              modelConnections.map(_modelProviderTableToEntity).toList(),
+        );
+  }
+
+  @override
+  Future<void> deleteModelConnection(String modelConnectionId) async {
+    // Verify the model connection exists before attempting deletion.
+    final modelConnection = await _database.modelConnectionsDao
+        .getModelConnectionById(modelConnectionId);
+    if (modelConnection == null) {
+      throw ModelConnectionException(
+        'Model connection with ID "$modelConnectionId" not found',
+      );
+    }
+
+    // Delete from database.
+    await _database.modelConnectionsDao.deleteModelConnection(
+      modelConnectionId,
+    );
+  }
+
   Future<ModelConnectionEntity> _createOAuthModelConnection(
     ModelConnectionToCreate modelConnection,
   ) async {
@@ -121,7 +203,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
       throw const ModelConnectionException('OAuth token is required');
     }
 
-    if (!isOpenAICodexProvider(modelConnection.modelId)) {
+    if (!ModelProviderOAuthProfiles.isCodexProvider(modelConnection.modelId)) {
       throw ModelConnectionException(
         'OAuth profile not found: ${modelConnection.modelId}',
       );
@@ -180,49 +262,6 @@ class ModelConnectionRepository implements ModelConnectionStore {
     return _modelProviderTableToEntity(createdModelConnection);
   }
 
-  @override
-  Future<ModelConnectionForEdit?> getModelConnectionForEdit(
-    String modelConnectionId,
-  ) async {
-    final modelConnection = await _database.modelConnectionsDao
-        .getModelConnectionById(modelConnectionId);
-    if (modelConnection == null) return null;
-
-    return ModelConnectionForEdit(
-      id: modelConnection.id,
-      name: modelConnection.name,
-      modelId: modelConnection.serviceId,
-      workspaceId: modelConnection.workspaceId,
-      hasKey: modelConnection.encryptedAuthValue?.isNotEmpty == true,
-      authMode: _authMode(modelConnection.authenticationType),
-      url: modelConnection.url,
-      keySuffix: modelConnection.keySuffix,
-    );
-  }
-
-  @override
-  Future<ModelConnectionEntity> updateModelConnection(
-    String modelConnectionId,
-    ModelConnectionToUpdate modelConnection,
-  ) async {
-    final existing = await _editableModelConnection(modelConnectionId);
-    final payload = await _updatePayload(existing, modelConnection);
-    final updated = await _database.transaction(
-      () => _updateConnectionAndSelections(
-        modelConnectionId,
-        modelConnection,
-        payload,
-      ),
-    );
-    if (updated == null) {
-      throw ModelConnectionException(
-        'Model connection with ID "$modelConnectionId" not found',
-      );
-    }
-
-    return _modelProviderTableToEntity(updated);
-  }
-
   Future<ServiceConnectionTable> _editableModelConnection(
     String modelConnectionId,
   ) async {
@@ -271,9 +310,7 @@ class ModelConnectionRepository implements ModelConnectionStore {
         _decodeApiKey(
           await _encryptionService.decrypt(
             existingEncryptedKey ??
-                (throw const ModelConnectionException(
-                  _missingApiKeyMessage,
-                )),
+                (throw const ModelConnectionException(_missingApiKeyMessage)),
           ),
         );
     final hasUrlUpdate = modelConnection.url != null;
@@ -309,8 +346,8 @@ class ModelConnectionRepository implements ModelConnectionStore {
   Future<String?> _updatedEncryptedKey(
     String? key,
     String? existingEncryptedKey,
-  ) async {
-    if (key == null) return existingEncryptedKey;
+  ) {
+    if (key == null) return Future.value(existingEncryptedKey);
 
     return _encryptionService.encrypt(
       ServiceConnectionAuthCodec.encodeSecret(
@@ -375,34 +412,6 @@ class ModelConnectionRepository implements ModelConnectionStore {
     return updatedUrl?.isEmpty == true ? null : updatedUrl;
   }
 
-  Future<List<ModelConnectionEntity>> getModelConnections(
-    ModelConnectionFilter filter,
-  ) async {
-    if (filter.workspaces.isEmpty) {
-      return [];
-    }
-    final modelConnections = await _database.modelConnectionsDao
-        .getAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces);
-
-    return modelConnections.map(_modelProviderTableToEntity).toList();
-  }
-
-  @override
-  Stream<List<ModelConnectionEntity>> watchModelConnections(
-    ModelConnectionFilter filter,
-  ) {
-    if (filter.workspaces.isEmpty) {
-      return Stream.value(const []);
-    }
-
-    return _database.modelConnectionsDao
-        .watchAllModelConnectionsByWorkspace(workspaceIds: filter.workspaces)
-        .map(
-          (modelConnections) =>
-              modelConnections.map(_modelProviderTableToEntity).toList(),
-        );
-  }
-
   ServiceConnectionsCompanion _modelProviderToCreateToCompanion(
     ModelConnectionToCreate modelConnection,
     String encryptedApiKey,
@@ -421,7 +430,9 @@ class ModelConnectionRepository implements ModelConnectionStore {
   }
 
   String _keySuffix(String key) {
-    return key.lastCharacters(6);
+    const keySuffixLength = 6;
+
+    return key.lastCharacters(keySuffixLength);
   }
 
   String _decodeApiKey(String decrypted) {
@@ -478,31 +489,12 @@ class ModelConnectionRepository implements ModelConnectionStore {
       modelConnectionId: Value(workspaceModelSelection.modelConnectionId),
     );
   }
-
-  @override
-  Future<void> deleteModelConnection(String modelConnectionId) async {
-    // Verify the model connection exists before attempting deletion.
-    final modelConnection = await _database.modelConnectionsDao
-        .getModelConnectionById(
-          modelConnectionId,
-        );
-    if (modelConnection == null) {
-      throw ModelConnectionException(
-        'Model connection with ID "$modelConnectionId" not found',
-      );
-    }
-
-    // Delete from database.
-    await _database.modelConnectionsDao.deleteModelConnection(
-      modelConnectionId,
-    );
-  }
 }
 
 /// Base exception for model connection-related operations.
 class ModelConnectionException implements Exception {
   /// Creates a new ModelConnectionException.
-  const ModelConnectionException(this.message, [this.cause]);
+  const new(this.message, [this.cause]);
 
   /// Error message describing the exception.
   final String message;
@@ -521,23 +513,23 @@ class ModelConnectionException implements Exception {
 /// Exception thrown when a model connection has no models.
 class ModelConnectionNoModelsException extends ModelConnectionException {
   /// Creates a new ModelConnectionNoModelsException.
-  const ModelConnectionNoModelsException(this.modelId, [Exception? cause])
+  const new(this.modelId, [Exception? cause])
     : super('ModelProvider with type "$modelId" not found models', cause);
 
   /// ID of the workspaceModelSelection that was not found.
   final String modelId;
 }
 
-class ModelConnectionModelNotFoundException extends ModelConnectionException {
-  const ModelConnectionModelNotFoundException(this.modelId, [Exception? cause])
-    : super('ModelProvider with id "$modelId" not found', cause);
-
-  final String modelId;
+class const ModelConnectionModelNotFoundException(
+  final String modelId, [
+  Exception? cause,
+]) extends ModelConnectionException {
+  this : super('ModelProvider with id "$modelId" not found', cause);
 }
 
-class ModelConnectionNoTypeException extends ModelConnectionException {
-  const ModelConnectionNoTypeException(this.modelId, [Exception? cause])
-    : super('ModelProvider with id "$modelId" has no type', cause);
-
-  final String modelId;
+class const ModelConnectionNoTypeException(
+  final String modelId, [
+  Exception? cause,
+]) extends ModelConnectionException {
+  this : super('ModelProvider with id "$modelId" has no type', cause);
 }

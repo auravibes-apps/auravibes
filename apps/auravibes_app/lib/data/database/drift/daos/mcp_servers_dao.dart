@@ -12,15 +12,13 @@ part 'mcp_servers_dao.g.dart';
 class McpServersDao extends DatabaseAccessor<AppDatabase>
     with _$McpServersDaoMixin {
   /// Creates a new [McpServersDao] instance.
-  McpServersDao(super.attachedDatabase);
+  new(super.attachedDatabase);
 
   /// Get all MCP servers for a workspace.
   ///
   /// Returns all MCP servers belonging to the specified workspace,
   /// ordered by creation date (newest first).
-  Future<List<McpServersTable>> getMcpServersForWorkspace(
-    String workspaceId,
-  ) =>
+  Future<List<McpServersTable>> getMcpServersForWorkspace(String workspaceId) =>
       (select(mcpServers)
             ..where((t) => t.workspaceId.equals(workspaceId))
             ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
@@ -67,6 +65,6 @@ class McpServersDao extends DatabaseAccessor<AppDatabase>
       McpServersCompanion(isEnabled: Value(isEnabled)),
     );
 
-    return getMcpServerById(id);
+    return await getMcpServerById(id);
   }
 }

@@ -8,10 +8,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// Creates a testable widget wrapped with EasyLocalization and Riverpod.
 class TestableApp extends StatefulWidget {
   /// Creates a [TestableApp].
-  const TestableApp({
+  const new({
     required this.child,
     this.overrides = const [],
     this.workspaceId = 'test-workspace',
+    this.workspaceSession,
     super.key,
   });
 
@@ -24,6 +25,9 @@ class TestableApp extends StatefulWidget {
   /// Local workspace used by workspace-aware providers.
   final String workspaceId;
 
+  /// Session instance used as the generated provider family argument.
+  final WorkspaceSession? workspaceSession;
+
   @override
   State<TestableApp> createState() => _TestableAppState();
 }
@@ -34,18 +38,15 @@ class _TestableAppState extends State<TestableApp> {
   @override
   void initState() {
     super.initState();
+    final session =
+        widget.workspaceSession ??
+        WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
+        );
     _container = ProviderContainer(
       overrides: [
-        workspaceSessionProvider.overrideWithValue(
-          WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
-          ),
-        ),
-        workspaceSessionForRouteProvider.overrideWith(
-          (_, _) async => WorkspaceSession(
-            LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
-          ),
-        ),
+        workspaceSessionProvider(session).overrideWithValue(session),
+        workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
         ...widget.overrides.cast(),
       ],
     );
@@ -66,9 +67,8 @@ class _TestableAppState extends State<TestableApp> {
         child: Builder(
           builder: (context) => MaterialApp(
             home: widget.child,
-            builder: (context, child) => AuraSnackBarHost(
-              child: child ?? const SizedBox.shrink(),
-            ),
+            builder: (context, child) =>
+                AuraSnackBarHost(child: child ?? const SizedBox.shrink()),
             locale: context.locale,
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,

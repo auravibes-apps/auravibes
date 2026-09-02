@@ -18,7 +18,7 @@ import 'package:auravibes_app/utils/try_decode_tool_metadata.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     as agent
-    show AgentToolGrantLevel;
+    show AgentResolvedToolName, AgentToolGrantLevel, callSkillToolName;
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -28,18 +28,12 @@ import 'package:logging/logging.dart';
 
 final _logger = Logger('chat_tool_approval_card');
 
-class ChatToolApprovalCard extends HookConsumerWidget {
-  const ChatToolApprovalCard({
-    required this.workspaceId,
-    required this.conversationId,
-    this.pendingCalls,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String conversationId;
-  final List<PendingToolCall>? pendingCalls;
-
+class const ChatToolApprovalCard({
+  required final String workspaceId,
+  required final String conversationId,
+  final List<PendingToolCall>? pendingCalls,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectedCalls = pendingCalls;
@@ -57,16 +51,15 @@ class ChatToolApprovalCard extends HookConsumerWidget {
 
     final currentIndex = useState(0);
     final lastIndex = resolvedPendingCalls.length - 1;
-    useEffect(
-      () {
-        if (currentIndex.value > lastIndex) {
-          currentIndex.value = lastIndex;
-        }
+    Dispose? resetCurrentIndex() {
+      if (currentIndex.value > lastIndex) {
+        currentIndex.value = lastIndex;
+      }
 
-        return null;
-      },
-      [lastIndex],
-    );
+      return null;
+    }
+
+    useEffect(resetCurrentIndex, [lastIndex]);
 
     final clamped = math.min(currentIndex.value, lastIndex);
 
@@ -86,63 +79,48 @@ class ChatToolApprovalCard extends HookConsumerWidget {
   }
 }
 
-class _ApprovalCardContent extends ConsumerWidget {
-  const _ApprovalCardContent({
-    required this.workspaceId,
-    required this.current,
-    required this.currentIndex,
-    required this.totalCount,
-    required this.hasPrev,
-    required this.hasNext,
-    required this.onPrev,
-    required this.onNext,
-  });
-
-  final String workspaceId;
-
-  final PendingToolCall current;
-  final int currentIndex;
-  final int totalCount;
-  final bool hasPrev;
-  final bool hasNext;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
-
+class const _ApprovalCardContent({
+  required final String workspaceId,
+  required final PendingToolCall current,
+  required final int currentIndex,
+  required final int totalCount,
+  required final bool hasPrev,
+  required final bool hasNext,
+  required final VoidCallback onPrev,
+  required final VoidCallback onNext,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auraColors = context.auraColors;
     final toolCall = current.toolCall;
+    final effectiveTarget = _effectiveDisplayTarget(
+      toolCall.name,
+      toolCall.argumentsRaw,
+    );
+    final presentationToolName = effectiveTarget?.fullName ?? toolCall.name;
 
     final displayNameAsync = ref.watch(
-      toolDisplayNameProvider(workspaceId, toolCall.name),
+      toolDisplayNameProvider(workspaceId, presentationToolName),
     );
     final displayName = displayNameAsync.maybeWhen(
       data: (name) => name,
       orElse: () => ToolNameFormatter.formatDisplayName(
-        ToolNameFormatter.parse(toolCall.name),
+        effectiveTarget ?? ToolNameFormatter.parse(toolCall.name),
         rawName: toolCall.name,
       ),
     );
 
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       decoration: BoxDecoration(
         color: auraColors.warning.withValues(alpha: 0.08),
-        border: Border.all(
-          color: auraColors.warning.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: auraColors.warning.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.lg),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.lg)),
         ),
       ),
       width: double.infinity,
-      margin: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.md),
-      ),
+      margin: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
       child: AuraColumn(
         children: [
           _NavigationHeader(
@@ -169,36 +147,47 @@ class _ApprovalCardContent extends ConsumerWidget {
       ),
     );
   }
+
+  agent.AgentResolvedToolName? _effectiveDisplayTarget(
+    String toolName,
+    String argumentsRaw,
+  ) {
+    if (toolName != agent.callSkillToolName) return null;
+
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(argumentsRaw);
+    } on FormatException {
+      return null;
+    }
+    if (decoded is! Map) return null;
+
+    final Object? skill = decoded['skill'];
+    final Object? tool = decoded['tool'];
+    if (skill is! String || skill.isEmpty || tool is! String || tool.isEmpty) {
+      return null;
+    }
+
+    return ToolNameFormatter.parse(['skill', 'app', skill, tool].join('__'));
+  }
 }
 
-class _NavigationHeader extends StatelessWidget {
-  const _NavigationHeader({
-    required this.currentIndex,
-    required this.totalCount,
-    required this.hasPrev,
-    required this.hasNext,
-    required this.onPrev,
-    required this.onNext,
-  });
-
-  final int currentIndex;
-  final int totalCount;
-  final bool hasPrev;
-  final bool hasNext;
-  final VoidCallback onPrev;
-  final VoidCallback onNext;
-
+class const _NavigationHeader({
+  required final int currentIndex,
+  required final int totalCount,
+  required final bool hasPrev,
+  required final bool hasNext,
+  required final VoidCallback onPrev,
+  required final VoidCallback onNext,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
 
     return Row(
       children: [
-        Icon(
-          Icons.build_outlined,
-          size: 16,
-          color: auraColors.warning,
-        ),
+        Icon(Icons.build_outlined, size: 16, color: auraColors.warning),
         const AuraSizedBox(width: .xs),
         Expanded(
           child: Text(
@@ -207,7 +196,7 @@ class _NavigationHeader extends StatelessWidget {
             ),
             style: TextStyle(
               color: auraColors.onSurface,
-              fontSize: context.auraTheme.typography.fontSizeSm,
+              fontSize: typography.fontSizeSm,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -226,15 +215,10 @@ class _NavigationHeader extends StatelessWidget {
   }
 }
 
-class _NavButton extends StatelessWidget {
-  const _NavButton({
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-
+class const _NavButton({
+  required final IconData icon,
+  required final VoidCallback? onPressed,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraIconButton(
@@ -246,37 +230,27 @@ class _NavButton extends StatelessWidget {
   }
 }
 
-class _ToolCallInfo extends StatelessWidget {
-  const _ToolCallInfo({
-    required this.displayName,
-    required this.toolName,
-    required this.argumentsRaw,
-    required this.sourceLabel,
-  });
-
-  final String displayName;
-  final String toolName;
-  final String argumentsRaw;
-  final String? sourceLabel;
-
+class const _ToolCallInfo({
+  required final String displayName,
+  required final String toolName,
+  required final String argumentsRaw,
+  required final String? sourceLabel,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auraColors = context.auraColors;
+    final typography = context.auraTheme.typography;
     final decodedArgs = _approvalArgumentsPreview(
       toolName: toolName,
       argumentsRaw: argumentsRaw,
     );
 
     return Container(
-      padding: EdgeInsets.all(
-        context.auraTheme.fromSpacing(.sm),
-      ),
+      padding: EdgeInsets.all(context.auraTheme.fromSpacing(.sm)),
       decoration: BoxDecoration(
         color: auraColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.sm),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.sm)),
         ),
       ),
       width: double.infinity,
@@ -296,7 +270,7 @@ class _ToolCallInfo extends StatelessWidget {
               sourceLabel,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: context.auraTheme.typography.fontSizeXs,
+                fontSize: typography.fontSizeXs,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -306,7 +280,7 @@ class _ToolCallInfo extends StatelessWidget {
               decodedArgs,
               style: TextStyle(
                 color: auraColors.onSurfaceVariant,
-                fontSize: context.auraTheme.typography.fontSizeXs,
+                fontSize: typography.fontSizeXs,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 3,
@@ -339,7 +313,7 @@ String? _approvalArgumentsPreview({
   try {
     decoded = jsonDecode(argumentsRaw);
   } on Exception catch (_) {
-    return tryDecodeToolMetadata(argumentsRaw);
+    return ToolMetadataDecoder.decode(argumentsRaw);
   }
 
   final urlSummary = _urlRequestSummary(decoded);
@@ -430,17 +404,11 @@ Map<String, String>? _urlRequestSummary(Object? arguments) {
   };
 }
 
-class _ConfirmationButtons extends ConsumerWidget {
-  const _ConfirmationButtons({
-    required this.workspaceId,
-    required this.toolCall,
-    required this.messageId,
-  });
-
-  final String workspaceId;
-  final MessageToolCallEntity toolCall;
-  final String messageId;
-
+class const _ConfirmationButtons({
+  required final String workspaceId,
+  required final MessageToolCallEntity toolCall,
+  required final String messageId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCloudCall =
@@ -489,9 +457,7 @@ class _ConfirmationButtons extends ConsumerWidget {
             Expanded(
               child: AuraButton(
                 onPressed: () => _onStopAll(ref, context),
-                child: const TextLocale(
-                  LocaleKeys.tool_confirmation_stop_all,
-                ),
+                child: const TextLocale(LocaleKeys.tool_confirmation_stop_all),
                 variant: AuraButtonVariant.outlined,
                 tint: .error,
                 size: AuraButtonSize.small,
@@ -530,7 +496,7 @@ class _ConfirmationButtons extends ConsumerWidget {
           };
         }
 
-        return ref
+        return await ref
             .read(auraAgentServiceProvider)
             .tools
             .approve(
@@ -571,7 +537,7 @@ class _ConfirmationButtons extends ConsumerWidget {
           };
         }
 
-        return ref
+        return await ref
             .read(auraAgentServiceProvider)
             .tools
             .approve(
@@ -608,13 +574,10 @@ class _ConfirmationButtons extends ConsumerWidget {
           };
         }
 
-        return ref
+        return await ref
             .read(auraAgentServiceProvider)
             .tools
-            .skip(
-              toolCallId: toolCall.id,
-              messageId: messageId,
-            );
+            .skip(toolCallId: toolCall.id, messageId: messageId);
       },
     );
   }
@@ -624,7 +587,7 @@ class _ConfirmationButtons extends ConsumerWidget {
     final revision = toolCall.turnRevision;
     final argumentsDigest = toolCall.argumentsDigest;
     if (turnId != null && revision != null && argumentsDigest != null) {
-      return _runAction(
+      return await _runAction(
         context,
         errorMessageKey: LocaleKeys.tool_approval_errors_stop_all,
         action: () async {
@@ -650,9 +613,7 @@ class _ConfirmationButtons extends ConsumerWidget {
         return ref
             .read(auraAgentServiceProvider)
             .tools
-            .stopPending(
-              messageId: messageId,
-            );
+            .stopPending(messageId: messageId);
       },
     );
   }
@@ -667,7 +628,7 @@ class _ConfirmationButtons extends ConsumerWidget {
     } on Exception catch (error, stackTrace) {
       _logger.warning('Tool approval action failed', error, stackTrace);
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: TextLocale(errorMessageKey),
         variant: AuraSnackBarVariant.error,

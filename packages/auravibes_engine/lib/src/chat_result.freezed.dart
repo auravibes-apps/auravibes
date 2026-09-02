@@ -26,16 +26,21 @@ $ChatResultCopyWith<T, ChatResult<T>> get copyWith => _$ChatResultCopyWithImpl<T
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other.metadata, metadata)&&(identical(other.thinking, thinking) || other.thinking == thinking));
+  final _this = this as ChatResult<T>;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatResult<T>&&const DeepCollectionEquality().equals(other.output, _this.output)&&(identical(other.finishReason, _this.finishReason) || other.finishReason == _this.finishReason)&&(identical(other.usage, _this.usage) || other.usage == _this.usage)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata)&&(identical(other.thinking, _this.thinking) || other.thinking == _this.thinking));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(metadata),thinking);
+int get hashCode {
+  final _this = this as ChatResult<T>;
+  return Object.hash(runtimeType,const DeepCollectionEquality().hash(_this.output),_this.finishReason,_this.usage,const DeepCollectionEquality().hash(_this.metadata),_this.thinking);
+}
 
 @override
 String toString() {
-  return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, thinking: $thinking)';
+  final _this = this as ChatResult<T>;
+  return 'ChatResult<$T>(output: ${_this.output}, finishReason: ${_this.finishReason}, usage: ${_this.usage}, metadata: ${_this.metadata}, thinking: ${_this.thinking})';
 }
 
 
@@ -248,16 +253,18 @@ _$ChatResultCopyWith<T, _ChatResult<T>> get copyWith => __$ChatResultCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other._metadata, _metadata)&&(identical(other.thinking, thinking) || other.thinking == thinking));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatResult<T>&&const DeepCollectionEquality().equals(other.output, output)&&(identical(other.finishReason, finishReason) || other.finishReason == finishReason)&&(identical(other.usage, usage) || other.usage == usage)&&const DeepCollectionEquality().equals(other.metadata, _metadata)&&(identical(other.thinking, thinking) || other.thinking == thinking));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(_metadata),thinking);
+int get hashCode {
+    return Object.hash(runtimeType,const DeepCollectionEquality().hash(output),finishReason,usage,const DeepCollectionEquality().hash(_metadata),thinking);
+}
 
 @override
 String toString() {
-  return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, thinking: $thinking)';
+    return 'ChatResult<$T>(output: $output, finishReason: $finishReason, usage: $usage, metadata: $metadata, thinking: $thinking)';
 }
 
 
@@ -325,16 +332,21 @@ $ChatMessageCopyWith<ChatMessage> get copyWith => _$ChatMessageCopyWithImpl<Chat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatMessage&&(identical(other.role, role) || other.role == role)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.parts, parts)&&const DeepCollectionEquality().equals(other.metadata, metadata));
+  final _this = this as ChatMessage;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ChatMessage&&(identical(other.role, _this.role) || other.role == _this.role)&&(identical(other.content, _this.content) || other.content == _this.content)&&const DeepCollectionEquality().equals(other.parts, _this.parts)&&const DeepCollectionEquality().equals(other.metadata, _this.metadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,role,content,const DeepCollectionEquality().hash(parts),const DeepCollectionEquality().hash(metadata));
+int get hashCode {
+  final _this = this as ChatMessage;
+  return Object.hash(runtimeType,_this.role,_this.content,const DeepCollectionEquality().hash(_this.parts),const DeepCollectionEquality().hash(_this.metadata));
+}
 
 @override
 String toString() {
-  return 'ChatMessage(role: $role, content: $content, parts: $parts, metadata: $metadata)';
+  final _this = this as ChatMessage;
+  return 'ChatMessage(role: ${_this.role}, content: ${_this.content}, parts: ${_this.parts}, metadata: ${_this.metadata})';
 }
 
 
@@ -539,16 +551,18 @@ _$ChatMessageCopyWith<_ChatMessage> get copyWith => __$ChatMessageCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatMessage&&(identical(other.role, role) || other.role == role)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._parts, _parts)&&const DeepCollectionEquality().equals(other._metadata, _metadata));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ChatMessage&&(identical(other.role, role) || other.role == role)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.parts, _parts)&&const DeepCollectionEquality().equals(other.metadata, _metadata));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,role,content,const DeepCollectionEquality().hash(_parts),const DeepCollectionEquality().hash(_metadata));
+int get hashCode {
+    return Object.hash(runtimeType,role,content,const DeepCollectionEquality().hash(_parts),const DeepCollectionEquality().hash(_metadata));
+}
 
 @override
 String toString() {
-  return 'ChatMessage(role: $role, content: $content, parts: $parts, metadata: $metadata)';
+    return 'ChatMessage(role: $role, content: $content, parts: $parts, metadata: $metadata)';
 }
 
 
@@ -603,16 +617,21 @@ $LanguageModelUsageCopyWith<LanguageModelUsage> get copyWith => _$LanguageModelU
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LanguageModelUsage&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.responseTokens, responseTokens) || other.responseTokens == responseTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens));
+  final _this = this as LanguageModelUsage;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LanguageModelUsage&&(identical(other.promptTokens, _this.promptTokens) || other.promptTokens == _this.promptTokens)&&(identical(other.responseTokens, _this.responseTokens) || other.responseTokens == _this.responseTokens)&&(identical(other.totalTokens, _this.totalTokens) || other.totalTokens == _this.totalTokens));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,promptTokens,responseTokens,totalTokens);
+int get hashCode {
+  final _this = this as LanguageModelUsage;
+  return Object.hash(runtimeType,_this.promptTokens,_this.responseTokens,_this.totalTokens);
+}
 
 @override
 String toString() {
-  return 'LanguageModelUsage(promptTokens: $promptTokens, responseTokens: $responseTokens, totalTokens: $totalTokens)';
+  final _this = this as LanguageModelUsage;
+  return 'LanguageModelUsage(promptTokens: ${_this.promptTokens}, responseTokens: ${_this.responseTokens}, totalTokens: ${_this.totalTokens})';
 }
 
 
@@ -803,16 +822,18 @@ _$LanguageModelUsageCopyWith<_LanguageModelUsage> get copyWith => __$LanguageMod
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LanguageModelUsage&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.responseTokens, responseTokens) || other.responseTokens == responseTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _LanguageModelUsage&&(identical(other.promptTokens, promptTokens) || other.promptTokens == promptTokens)&&(identical(other.responseTokens, responseTokens) || other.responseTokens == responseTokens)&&(identical(other.totalTokens, totalTokens) || other.totalTokens == totalTokens));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,promptTokens,responseTokens,totalTokens);
+int get hashCode {
+    return Object.hash(runtimeType,promptTokens,responseTokens,totalTokens);
+}
 
 @override
 String toString() {
-  return 'LanguageModelUsage(promptTokens: $promptTokens, responseTokens: $responseTokens, totalTokens: $totalTokens)';
+    return 'LanguageModelUsage(promptTokens: $promptTokens, responseTokens: $responseTokens, totalTokens: $totalTokens)';
 }
 
 

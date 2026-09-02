@@ -15,8 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NewChatState {
 
- String? get modelId;/// Stores the provider ID (or name-equivalent).
-/// - for display and filtering models
+ String? get modelId;/// Stores the provider ID (or name equivalent) for displaying and
+/// filtering models.
  String? get providerId; String? get agentId; bool get isLoading;
 /// Create a copy of NewChatState
 /// with the given fields replaced by the non-null parameter values.
@@ -28,16 +28,21 @@ $NewChatStateCopyWith<NewChatState> get copyWith => _$NewChatStateCopyWithImpl<N
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
+  final _this = this as NewChatState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NewChatState&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.providerId, _this.providerId) || other.providerId == _this.providerId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.isLoading, _this.isLoading) || other.isLoading == _this.isLoading));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+int get hashCode {
+  final _this = this as NewChatState;
+  return Object.hash(runtimeType,_this.modelId,_this.providerId,_this.agentId,_this.isLoading);
+}
 
 @override
 String toString() {
-  return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
+  final _this = this as NewChatState;
+  return 'NewChatState(modelId: ${_this.modelId}, providerId: ${_this.providerId}, agentId: ${_this.agentId}, isLoading: ${_this.isLoading})';
 }
 
 
@@ -216,8 +221,8 @@ class _NewChatState implements NewChatState {
   
 
 @override final  String? modelId;
-/// Stores the provider ID (or name-equivalent).
-/// - for display and filtering models
+/// Stores the provider ID (or name equivalent) for displaying and
+/// filtering models.
 @override final  String? providerId;
 @override final  String? agentId;
 @override@JsonKey() final  bool isLoading;
@@ -232,16 +237,18 @@ _$NewChatStateCopyWith<_NewChatState> get copyWith => __$NewChatStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _NewChatState&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.providerId, providerId) || other.providerId == providerId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.isLoading, isLoading) || other.isLoading == isLoading));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+int get hashCode {
+    return Object.hash(runtimeType,modelId,providerId,agentId,isLoading);
+}
 
 @override
 String toString() {
-  return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
+    return 'NewChatState(modelId: $modelId, providerId: $providerId, agentId: $agentId, isLoading: $isLoading)';
 }
 
 

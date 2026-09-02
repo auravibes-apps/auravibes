@@ -3,20 +3,16 @@ import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart'
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 
-class AuraAppBarWithDrawer extends StatelessWidget
-    implements PreferredSizeWidget {
-  const AuraAppBarWithDrawer({
-    required this.title,
-    super.key,
-    this.actions,
-    this.bottom,
-    this.leading,
-  });
-
-  final Widget title;
-  final List<Widget>? actions;
-  final PreferredSizeWidget? bottom;
-  final Widget? leading;
+class const AuraAppBarWithDrawer({
+  required final Widget title,
+  super.key,
+  final List<Widget>? actions,
+  final PreferredSizeWidget? bottom,
+  final Widget? leading,
+}) extends StatelessWidget implements PreferredSizeWidget {
+  @override
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -28,20 +24,12 @@ class AuraAppBarWithDrawer extends StatelessWidget
           leading ??
           AuraIconButton(
             icon: Icons.menu,
-            onPressed: () {
-              final controller = ResponsiveSlidingDrawerProvider.maybeOf(
-                context,
-              );
-              if (controller != null) {
-                controller.toggle();
-              }
-            },
+            onPressed: () => _toggleDrawer(context),
           ),
     );
   }
 
-  @override
-  Size get preferredSize => Size.fromHeight(
-    kToolbarHeight + (bottom?.preferredSize.height ?? 0),
-  );
+  void _toggleDrawer(BuildContext context) {
+    ResponsiveSlidingDrawerProvider.maybeOf(context)?.toggle();
+  }
 }

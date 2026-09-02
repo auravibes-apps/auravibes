@@ -26,16 +26,21 @@ $MessagesStreamingStateCopyWith<MessagesStreamingState> get copyWith => _$Messag
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessagesStreamingState&&(identical(other.streamSubscription, streamSubscription) || other.streamSubscription == streamSubscription)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult));
+  final _this = this as MessagesStreamingState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MessagesStreamingState&&(identical(other.streamSubscription, _this.streamSubscription) || other.streamSubscription == _this.streamSubscription)&&(identical(other.lastResult, _this.lastResult) || other.lastResult == _this.lastResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,streamSubscription,lastResult);
+int get hashCode {
+  final _this = this as MessagesStreamingState;
+  return Object.hash(runtimeType,_this.streamSubscription,_this.lastResult);
+}
 
 @override
 String toString() {
-  return 'MessagesStreamingState(streamSubscription: $streamSubscription, lastResult: $lastResult)';
+  final _this = this as MessagesStreamingState;
+  return 'MessagesStreamingState(streamSubscription: ${_this.streamSubscription}, lastResult: ${_this.lastResult})';
 }
 
 
@@ -236,16 +241,18 @@ _$MessagesStreamingStateCopyWith<_MessagesStreamingState> get copyWith => __$Mes
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessagesStreamingState&&(identical(other.streamSubscription, streamSubscription) || other.streamSubscription == streamSubscription)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _MessagesStreamingState&&(identical(other.streamSubscription, streamSubscription) || other.streamSubscription == streamSubscription)&&(identical(other.lastResult, lastResult) || other.lastResult == lastResult));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,streamSubscription,lastResult);
+int get hashCode {
+    return Object.hash(runtimeType,streamSubscription,lastResult);
+}
 
 @override
 String toString() {
-  return 'MessagesStreamingState(streamSubscription: $streamSubscription, lastResult: $lastResult)';
+    return 'MessagesStreamingState(streamSubscription: $streamSubscription, lastResult: $lastResult)';
 }
 
 

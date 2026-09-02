@@ -82,11 +82,7 @@ const _skipAiKey = Key('intro_skip_ai_button');
 
 Key _progressStepKey(int index) => Key('intro_progress_step_$index');
 
-void _expectProgressStepColor(
-  WidgetTester tester,
-  int index,
-  Color color,
-) {
+void _expectProgressStepColor(WidgetTester tester, int index, Color color) {
   final step = tester.widget<DecoratedBox>(find.byKey(_progressStepKey(index)));
 
   expect((step.decoration as BoxDecoration).color, color);
@@ -107,7 +103,12 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
 }
 
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
-  await tester.ensureVisible(finder);
+  await tester.scrollUntilVisible(
+    finder,
+    100,
+    scrollable: find.byType(Scrollable).first,
+  );
+  final _ = await tester.pumpAndSettle();
   await tester.tap(finder);
 }
 
@@ -126,12 +127,9 @@ Future<void> _createWorkspace(WidgetTester tester, String name) async {
 }
 
 class _IntroFixture {
-  _IntroFixture()
-    : this._(
-        AppDatabase(connection: NativeDatabase.memory()),
-      );
+  new() : this._(AppDatabase(connection: NativeDatabase.memory()));
 
-  _IntroFixture._(this.database)
+  new _(this.database)
     : container = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),

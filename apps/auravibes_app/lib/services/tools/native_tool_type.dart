@@ -2,10 +2,8 @@
 import 'package:async/async.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' show ToolSpec;
 
-enum NativeToolType {
+enum NativeToolType(final String value) {
   url('url');
-
-  const NativeToolType(this.value);
 
   static NativeToolType? fromValue(String value) {
     for (final enumVariant in NativeToolType.values) {
@@ -14,13 +12,9 @@ enum NativeToolType {
 
     return null;
   }
-
-  final String value;
 }
 
-abstract class NativeToolEntity<Input, Output> {
-  const NativeToolEntity();
-
+abstract class const NativeToolEntity<Input, Output>() {
   NativeToolType get type;
 
   ToolSpec getTool();

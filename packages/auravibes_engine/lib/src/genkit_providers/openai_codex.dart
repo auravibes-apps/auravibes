@@ -7,9 +7,7 @@ import 'dart:convert';
 import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
 import 'package:genkit/plugin.dart';
 
-class OpenAICodexCodec {
-  const OpenAICodexCodec();
-
+class const OpenAICodexCodec() {
   Future<ModelResponse> complete(
     ProviderTransport transport,
     Map<String, dynamic> body,
@@ -126,10 +124,7 @@ List<Map<String, dynamic>> _messageToInput(Message message) {
   final role = message.role == Role.model ? 'assistant' : message.role.value;
 
   return [
-    {
-      'role': role,
-      'content': _contentToInput(message.content),
-    },
+    {'role': role, 'content': _contentToInput(message.content)},
     if (message.role == Role.model) ..._toolCallsToInput(message.content),
   ];
 }
@@ -232,10 +227,7 @@ Map<String, dynamic> _toolToJson(ToolDefinition tool) {
     'description': tool.description,
     'parameters':
         tool.inputSchema ??
-        <String, dynamic>{
-          'type': 'object',
-          'properties': <String, dynamic>{},
-        },
+        <String, dynamic>{'type': 'object', 'properties': <String, dynamic>{}},
   };
 }
 

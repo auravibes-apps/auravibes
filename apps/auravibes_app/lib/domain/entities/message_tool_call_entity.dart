@@ -13,8 +13,8 @@ part 'message_tool_call_entity.freezed.dart';
 part 'message_tool_call_entity.g.dart';
 
 @Freezed(toStringOverride: false)
-abstract class MessageToolCallEntity with _$MessageToolCallEntity {
-  const factory MessageToolCallEntity({
+abstract class const MessageToolCallEntity._() with _$MessageToolCallEntity {
+  const factory({
     required String id,
     required String name,
     required String argumentsRaw,
@@ -27,21 +27,19 @@ abstract class MessageToolCallEntity with _$MessageToolCallEntity {
 
     /// The result status of this tool call.
     ///
-    /// - null: Tool is awaiting approval
-    /// - non-null: Tool is running or completed with this result status
+    /// Null means the tool is awaiting approval. A non-null value means the
+    /// tool is running or completed with this result status.
     @JsonKey(
       fromJson: _toolCallResultStatusFromJson,
       toJson: _toolCallResultStatusToJson,
     )
     ToolCallResultStatus? resultStatus,
   }) = _MessageToolCallEntity;
-  const MessageToolCallEntity._();
-
-  factory MessageToolCallEntity.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$MessageToolCallEntityFromJson(json);
 
   Map<String, dynamic> get arguments {
-    return safeJsonDecode(argumentsRaw) ?? {};
+    return JsonCodec.decode(argumentsRaw) ?? {};
   }
 
   /// Whether this tool call has been resolved (success or failure).
@@ -80,7 +78,7 @@ enum MessageAttachmentModality { image, audio, file }
 
 @freezed
 abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
-  const factory MessageAttachmentEntity({
+  const factory({
     required String id,
     required String messageId,
     required String localPath,
@@ -96,7 +94,7 @@ abstract class MessageAttachmentEntity with _$MessageAttachmentEntity {
 
 @freezed
 abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
-  const factory MessageAttachmentToCreate({
+  const factory({
     required String localPath,
     required String fileName,
     required String displayName,
@@ -107,8 +105,8 @@ abstract class MessageAttachmentToCreate with _$MessageAttachmentToCreate {
 }
 
 @freezed
-abstract class MessageMetadataEntity with _$MessageMetadataEntity {
-  const factory MessageMetadataEntity({
+abstract class const MessageMetadataEntity._() with _$MessageMetadataEntity {
+  const factory({
     @Default(<MessageToolCallEntity>[]) List<MessageToolCallEntity> toolCalls,
     int? promptTokens,
     int? completionTokens,
@@ -123,10 +121,12 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
     @Default(<String>[]) List<String> compactedMessageIds,
     DateTime? compactionCreatedAt,
   }) = _MessageMetadataEntity;
-  const MessageMetadataEntity._();
-
-  factory MessageMetadataEntity.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$MessageMetadataEntityFromJson(json);
+
+  int get usedTokens {
+    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
+  }
 
   static MessageMetadataEntity? fromJsonString(String? metadata) {
     if (metadata == null) return null;
@@ -138,10 +138,6 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
       return null;
     }
   }
-
-  int get usedTokens {
-    return totalTokens ?? ((promptTokens ?? 0) + (completionTokens ?? 0));
-  }
 }
 
 /// Entity representing a message in a conversation.
@@ -149,8 +145,8 @@ abstract class MessageMetadataEntity with _$MessageMetadataEntity {
 /// A message contains the actual content and metadata
 /// for communication within a conversation.
 @freezed
-abstract class MessageEntity with _$MessageEntity {
-  const factory MessageEntity({
+abstract class const MessageEntity._() with _$MessageEntity {
+  const factory({
     /// Unique identifier for the message.
     required String id,
 
@@ -181,7 +177,6 @@ abstract class MessageEntity with _$MessageEntity {
     @Default(<MessageAttachmentEntity>[])
     List<MessageAttachmentEntity> attachments,
   }) = _MessageEntity;
-  const MessageEntity._();
 
   /// Returns true if the message has valid content.
   bool get hasValidContent =>
@@ -195,9 +190,9 @@ abstract class MessageEntity with _$MessageEntity {
 
 /// Entity for creating a new message.
 @freezed
-abstract class MessageToCreate with _$MessageToCreate {
+abstract class const MessageToCreate._() with _$MessageToCreate {
   /// Creates a new MessageToCreate instance.
-  const factory MessageToCreate({
+  const factory({
     /// ID of the conversation this message belongs to.
     required String conversationId,
 
@@ -218,7 +213,6 @@ abstract class MessageToCreate with _$MessageToCreate {
     @Default(<MessageAttachmentToCreate>[])
     List<MessageAttachmentToCreate> attachments,
   }) = _MessageToCreate;
-  const MessageToCreate._();
 
   /// Returns true if the message has valid content.
   bool get hasValidContent {
@@ -235,7 +229,7 @@ abstract class MessageToCreate with _$MessageToCreate {
     if (status == MessageStatus.unfinished && !isUser) {
       return metadata == null ||
           metadata.trim().isEmpty ||
-          safeJsonDecode(metadata) != null;
+          JsonCodec.decode(metadata) != null;
     }
 
     if (status == MessageStatus.sent) {
@@ -245,7 +239,7 @@ abstract class MessageToCreate with _$MessageToCreate {
     return !isUser &&
         metadata != null &&
         metadata.trim().isNotEmpty &&
-        safeJsonDecode(metadata) != null;
+        JsonCodec.decode(metadata) != null;
   }
 
   /// Returns true if the message is in a valid state.
@@ -256,9 +250,9 @@ abstract class MessageToCreate with _$MessageToCreate {
 
 /// Entity for patching an existing message.
 @freezed
-abstract class MessagePatch with _$MessagePatch {
+abstract class const MessagePatch._() with _$MessagePatch {
   /// Creates a new MessagePatch instance.
-  const factory MessagePatch({
+  const factory({
     /// Content of the message (JSON structure based on message type).
     String? content,
 
@@ -267,7 +261,6 @@ abstract class MessagePatch with _$MessagePatch {
 
     MessageStatus? status,
   }) = _MessagePatch;
-  const MessagePatch._();
 
   /// Returns true if the message is in a valid state.
   bool get isValid {
@@ -276,11 +269,10 @@ abstract class MessagePatch with _$MessagePatch {
 }
 
 @Freezed(toStringOverride: false)
-abstract class ToolToCall with _$ToolToCall {
-  const factory ToolToCall({
+abstract class const ToolToCall._() with _$ToolToCall {
+  const factory({
     required ResolvedTool tool,
     required String id,
     required String argumentsRaw,
   }) = _ToolToCall;
-  const ToolToCall._();
 }

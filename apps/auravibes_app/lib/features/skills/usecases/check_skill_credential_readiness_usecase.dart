@@ -6,15 +6,10 @@ import 'package:auravibes_app/features/skills/providers/skill_repository_provide
 import 'package:auravibes_app/features/skills/services/cloud_skill_store.dart';
 import 'package:riverpod/src/providers/provider.dart';
 
-class CheckSkillCredentialReadinessUsecase {
-  const CheckSkillCredentialReadinessUsecase(
-    this._skillCredentialsRepository, {
-    this.cloudStore,
-  });
-
-  final SkillCredentialsRepository? _skillCredentialsRepository;
-  final CloudSkillStore? cloudStore;
-
+class const CheckSkillCredentialReadinessUsecase(
+  final SkillCredentialsRepository? _skillCredentialsRepository, {
+  final CloudSkillStore? cloudStore,
+}) {
   Future<bool> call({
     required String workspaceId,
     required SkillEntity skill,
@@ -25,7 +20,7 @@ class CheckSkillCredentialReadinessUsecase {
     }
     if (skill.isCredentialOptional) return true;
     final cloud = cloudStore;
-    if (cloud != null) return cloud.credentialReady(skill);
+    if (cloud != null) return await cloud.credentialReady(skill);
 
     final repository = _skillCredentialsRepository;
     if (repository == null) {
@@ -42,13 +37,14 @@ class CheckSkillCredentialReadinessUsecase {
 
 final ProviderFamily<CheckSkillCredentialReadinessUsecase, String>
 checkSkillCredentialReadinessUsecaseProvider =
-    Provider.family<CheckSkillCredentialReadinessUsecase, String>(
-      (ref, workspaceId) {
-        final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
+    Provider.family<CheckSkillCredentialReadinessUsecase, String>((
+      ref,
+      workspaceId,
+    ) {
+      final cloud = ref.watch(cloudSkillStoreProvider(workspaceId));
 
-        return CheckSkillCredentialReadinessUsecase(
-          cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
-          cloudStore: cloud,
-        );
-      },
-    );
+      return CheckSkillCredentialReadinessUsecase(
+        cloud == null ? ref.watch(skillCredentialsRepositoryProvider) : null,
+        cloudStore: cloud,
+      );
+    });

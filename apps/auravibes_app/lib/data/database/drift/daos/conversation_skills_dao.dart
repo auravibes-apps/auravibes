@@ -5,10 +5,9 @@ import 'package:drift/drift.dart';
 part 'conversation_skills_dao.g.dart';
 
 @DriftAccessor(tables: [ConversationSkills])
-class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
+class ConversationSkillsDao(super.attachedDatabase)
+    extends DatabaseAccessor<AppDatabase>
     with _$ConversationSkillsDaoMixin {
-  ConversationSkillsDao(super.attachedDatabase);
-
   Future<List<ConversationSkillsTable>> getConversationSkills(
     String conversationId,
   ) =>
@@ -49,7 +48,7 @@ class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
       workspaceSkillId,
     );
     if (existing == null) {
-      return into(conversationSkills).insertReturning(
+      return await into(conversationSkills).insertReturning(
         ConversationSkillsCompanion(
           conversationId: Value(conversationId),
           workspaceSkillId: Value(workspaceSkillId),
@@ -59,15 +58,14 @@ class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
     }
 
     final _ =
-        await (update(conversationSkills)..where(
-              (tbl) => tbl.id.equals(existing.id),
-            ))
-            .write(
-              ConversationSkillsCompanion(
-                updatedAt: Value(DateTime.now()),
-                isLoaded: Value(isLoaded),
-              ),
-            );
+        await (update(
+          conversationSkills,
+        )..where((tbl) => tbl.id.equals(existing.id))).write(
+          ConversationSkillsCompanion(
+            updatedAt: Value(DateTime.now()),
+            isLoaded: Value(isLoaded),
+          ),
+        );
     final updated = await getConversationWorkspaceSkill(
       conversationId,
       workspaceSkillId,
@@ -89,7 +87,7 @@ class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
       appSkillIdentifier,
     );
     if (existing == null) {
-      return into(conversationSkills).insertReturning(
+      return await into(conversationSkills).insertReturning(
         ConversationSkillsCompanion(
           conversationId: Value(conversationId),
           appSkillIdentifier: Value(appSkillIdentifier),
@@ -99,15 +97,14 @@ class ConversationSkillsDao extends DatabaseAccessor<AppDatabase>
     }
 
     final _ =
-        await (update(conversationSkills)..where(
-              (tbl) => tbl.id.equals(existing.id),
-            ))
-            .write(
-              ConversationSkillsCompanion(
-                updatedAt: Value(DateTime.now()),
-                isLoaded: Value(isLoaded),
-              ),
-            );
+        await (update(
+          conversationSkills,
+        )..where((tbl) => tbl.id.equals(existing.id))).write(
+          ConversationSkillsCompanion(
+            updatedAt: Value(DateTime.now()),
+            isLoaded: Value(isLoaded),
+          ),
+        );
     final updated = await getConversationAppSkill(
       conversationId,
       appSkillIdentifier,

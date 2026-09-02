@@ -26,16 +26,21 @@ $SkillCredentialDefinitionEntityCopyWith<SkillCredentialDefinitionEntity> get co
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialDefinitionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.title, title) || other.title == title)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+  final _this = this as SkillCredentialDefinitionEntity;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialDefinitionEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.slug, _this.slug) || other.slug == _this.slug)&&(identical(other.attributesJson, _this.attributesJson) || other.attributesJson == _this.attributesJson)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,title,slug,attributesJson,createdAt,updatedAt);
+int get hashCode {
+  final _this = this as SkillCredentialDefinitionEntity;
+  return Object.hash(runtimeType,_this.id,_this.workspaceId,_this.title,_this.slug,_this.attributesJson,_this.createdAt,_this.updatedAt);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialDefinitionEntity(id: $id, workspaceId: $workspaceId, title: $title, slug: $slug, attributesJson: $attributesJson, createdAt: $createdAt, updatedAt: $updatedAt)';
+  final _this = this as SkillCredentialDefinitionEntity;
+  return 'SkillCredentialDefinitionEntity(id: ${_this.id}, workspaceId: ${_this.workspaceId}, title: ${_this.title}, slug: ${_this.slug}, attributesJson: ${_this.attributesJson}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -234,16 +239,18 @@ _$SkillCredentialDefinitionEntityCopyWith<_SkillCredentialDefinitionEntity> get 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialDefinitionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.title, title) || other.title == title)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialDefinitionEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.title, title) || other.title == title)&&(identical(other.slug, slug) || other.slug == slug)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,workspaceId,title,slug,attributesJson,createdAt,updatedAt);
+int get hashCode {
+    return Object.hash(runtimeType,id,workspaceId,title,slug,attributesJson,createdAt,updatedAt);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialDefinitionEntity(id: $id, workspaceId: $workspaceId, title: $title, slug: $slug, attributesJson: $attributesJson, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'SkillCredentialDefinitionEntity(id: $id, workspaceId: $workspaceId, title: $title, slug: $slug, attributesJson: $attributesJson, createdAt: $createdAt, updatedAt: $updatedAt)';
 }
 
 
@@ -301,16 +308,21 @@ $SkillCredentialDefinitionToCreateCopyWith<SkillCredentialDefinitionToCreate> ge
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialDefinitionToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson));
+  final _this = this as SkillCredentialDefinitionToCreate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialDefinitionToCreate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.attributesJson, _this.attributesJson) || other.attributesJson == _this.attributesJson));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,attributesJson);
+int get hashCode {
+  final _this = this as SkillCredentialDefinitionToCreate;
+  return Object.hash(runtimeType,_this.title,_this.attributesJson);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialDefinitionToCreate(title: $title, attributesJson: $attributesJson)';
+  final _this = this as SkillCredentialDefinitionToCreate;
+  return 'SkillCredentialDefinitionToCreate(title: ${_this.title}, attributesJson: ${_this.attributesJson})';
 }
 
 
@@ -499,16 +511,18 @@ _$SkillCredentialDefinitionToCreateCopyWith<_SkillCredentialDefinitionToCreate> 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialDefinitionToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialDefinitionToCreate&&(identical(other.title, title) || other.title == title)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,attributesJson);
+int get hashCode {
+    return Object.hash(runtimeType,title,attributesJson);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialDefinitionToCreate(title: $title, attributesJson: $attributesJson)';
+    return 'SkillCredentialDefinitionToCreate(title: $title, attributesJson: $attributesJson)';
 }
 
 
@@ -561,16 +575,21 @@ $SkillCredentialDefinitionToUpdateCopyWith<SkillCredentialDefinitionToUpdate> ge
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialDefinitionToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson));
+  final _this = this as SkillCredentialDefinitionToUpdate;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SkillCredentialDefinitionToUpdate&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.attributesJson, _this.attributesJson) || other.attributesJson == _this.attributesJson));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,attributesJson);
+int get hashCode {
+  final _this = this as SkillCredentialDefinitionToUpdate;
+  return Object.hash(runtimeType,_this.title,_this.attributesJson);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialDefinitionToUpdate(title: $title, attributesJson: $attributesJson)';
+  final _this = this as SkillCredentialDefinitionToUpdate;
+  return 'SkillCredentialDefinitionToUpdate(title: ${_this.title}, attributesJson: ${_this.attributesJson})';
 }
 
 
@@ -759,16 +778,18 @@ _$SkillCredentialDefinitionToUpdateCopyWith<_SkillCredentialDefinitionToUpdate> 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialDefinitionToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SkillCredentialDefinitionToUpdate&&(identical(other.title, title) || other.title == title)&&(identical(other.attributesJson, attributesJson) || other.attributesJson == attributesJson));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,title,attributesJson);
+int get hashCode {
+    return Object.hash(runtimeType,title,attributesJson);
+}
 
 @override
 String toString() {
-  return 'SkillCredentialDefinitionToUpdate(title: $title, attributesJson: $attributesJson)';
+    return 'SkillCredentialDefinitionToUpdate(title: $title, attributesJson: $attributesJson)';
 }
 
 

@@ -154,10 +154,7 @@ void main() {
   });
 
   test('rejects unsupported status at runtime', () {
-    expect(
-      () => ChangedFile(status: 'unsupported'),
-      throwsArgumentError,
-    );
+    expect(() => ChangedFile(status: 'unsupported'), throwsArgumentError);
   });
 
   test('freezes result package inputs and outputs', () {
@@ -248,6 +245,24 @@ void main() {
     );
     expect(changedTest.packages, {
       'packages/core': ['test/unrelated_test.dart'],
+    });
+
+    final helperSources = {
+      ..._sources,
+      'packages/core/test/test_helper.dart': 'class TestHelper {}',
+      'packages/core/test/behavior_test.dart':
+          '''import 'test_helper.dart';\nvoid main() {}''',
+    };
+    final changedHelper = selectChangedTests(
+      changes: [
+        const ChangedFile.modified('packages/core/test/test_helper.dart'),
+      ],
+      headSources: helperSources,
+      baseSources: helperSources,
+      packageRoots: _roots,
+    );
+    expect(changedHelper.packages, {
+      'packages/core': ['test/behavior_test.dart'],
     });
   });
 
@@ -409,10 +424,7 @@ void main() {
 
     final parseFailure = selectChangedTests(
       changes: [const ChangedFile.modified('packages/core/lib/bad.dart')],
-      headSources: {
-        ..._sources,
-        'packages/core/lib/bad.dart': 'class {',
-      },
+      headSources: {..._sources, 'packages/core/lib/bad.dart': 'class {'},
       baseSources: _sources,
       packageRoots: _roots,
     );
@@ -468,6 +480,93 @@ void main() {
     );
   });
 
+  test(
+    'matrix normalizes shard package and caps shards by test count',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final selection = SelectionResult(
+        mode: SelectionMode.affected,
+        packages: {
+          'packages/core': [
+            'test/behavior_test.dart',
+            'test/features/example_test.dart',
+          ],
+        },
+        reason: 'test',
+      );
+
+      final matrix = await buildTestMatrix(
+        selection,
+        rootPath: root.path,
+        shardPackage: r'packages\core',
+        shardCount: 3,
+      );
+
+      expect(matrix, {
+        'include': [
+          {
+            'package': 'packages/core',
+            'shardIndex': 0,
+            'totalShards': 2,
+            'artifact': 'packages-core-0',
+          },
+          {
+            'package': 'packages/core',
+            'shardIndex': 1,
+            'totalShards': 2,
+            'artifact': 'packages-core-1',
+          },
+        ],
+      });
+    },
+  );
+
+  test('matrix emits no rows for no affected tests', () async {
+    final matrix = await buildTestMatrix(
+      SelectionResult(
+        mode: SelectionMode.none,
+        packages: const {},
+        reason: 'docs',
+      ),
+      rootPath: Directory.current.path,
+      shardPackage: 'apps/auravibes_app',
+      shardCount: 3,
+    );
+
+    expect(matrix, const {'include': <Object>[]});
+  });
+
+  test(
+    'matrix enumerates full suites without sharding other packages',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+
+      final matrix = await buildTestMatrix(
+        SelectionResult(
+          mode: SelectionMode.full,
+          packages: const {},
+          reason: 'global',
+        ),
+        rootPath: root.path,
+        shardPackage: 'apps/auravibes_app',
+        shardCount: 3,
+      );
+
+      expect(matrix, {
+        'include': [
+          {
+            'package': 'packages/core',
+            'shardIndex': 0,
+            'totalShards': 1,
+            'artifact': 'packages-core-0',
+          },
+        ],
+      });
+    },
+  );
+
   test('runner validates paths before launching', () async {
     final root = await _runnerFixture();
     addTearDown(() => root.delete(recursive: true));
@@ -494,7 +593,59 @@ void main() {
           },
     );
     expect(code, isNonZero);
+    expect(
+      await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/test_helper.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              launches++;
+
+              return 0;
+            },
+      ),
+      isNonZero,
+    );
     expect(launches, 0);
+  });
+
+  test('full runner excludes helper files from explicit test paths', () async {
+    final root = await _runnerFixture();
+    addTearDown(() => root.delete(recursive: true));
+    var capturedArguments = <String>[];
+
+    final code = await runSelectedTests(
+      SelectionResult(
+        mode: SelectionMode.full,
+        packages: const {},
+        reason: 'global',
+      ),
+      rootPath: root.path,
+      launcher:
+          ({
+            required executable,
+            required arguments,
+            required workingDirectory,
+          }) async {
+            capturedArguments = arguments;
+
+            return 0;
+          },
+    );
+
+    expect(code, 0);
+    expect(capturedArguments, contains('test/behavior_test.dart'));
+    expect(capturedArguments, isNot(contains('test/test_helper.dart')));
   });
 
   test('runner selects Flutter command and propagates failure', () async {
@@ -518,7 +669,7 @@ void main() {
             required workingDirectory,
           }) async {
             capturedArguments = arguments;
-            expect(executable, 'fvm');
+            expect(executable, 'flutter');
 
             return 7;
           },
@@ -526,9 +677,227 @@ void main() {
     expect(code, 7);
     expect(
       capturedArguments,
-      containsAllInOrder(['flutter', 'test', '--exclude-tags=integration']),
+      containsAllInOrder(['test', '--exclude-tags=integration']),
     );
   });
+
+  test(
+    'runner uses the workspace FVM Flutter executable when present',
+    () async {
+      final root = await _runnerFixture(flutter: true);
+      addTearDown(() => root.delete(recursive: true));
+      final bin = await Directory('${root.path}/.fvm/flutter_sdk/bin')
+          .create(recursive: true);
+      final flutter = await File('${bin.path}/flutter').create();
+      String? capturedExecutable;
+
+      final code = await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/behavior_test.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              capturedExecutable = executable;
+
+              return 0;
+            },
+      );
+
+      expect(code, 0);
+      expect(capturedExecutable, flutter.path);
+    },
+  );
+
+  test(
+    'coverage runner uses the workspace FVM Dart executable when present',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final bin = await Directory('${root.path}/.fvm/flutter_sdk/bin')
+          .create(recursive: true);
+      final dart = await File('${bin.path}/dart').create();
+      final executables = <String>[];
+
+      final code = await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/behavior_test.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              executables.add(executable);
+
+              return 0;
+            },
+        coverage: true,
+      );
+
+      expect(code, 0);
+      expect(executables, [dart.path, dart.path]);
+    },
+  );
+
+  test(
+    'runner filters to one package, shards, and propagates coverage failure',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final selection = SelectionResult(
+        mode: SelectionMode.affected,
+        packages: {
+          'packages/core': ['test/behavior_test.dart'],
+        },
+        reason: 'test',
+      );
+      final commands = <List<String>>[];
+      final code = await runSelectedTests(
+        selection,
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              commands.add(arguments);
+              expect(executable, 'dart');
+              expect(workingDirectory, endsWith('packages/core'));
+
+              return arguments.contains('coverage:format_coverage') ? 9 : 0;
+            },
+        packageRoot: 'packages/core',
+        totalShards: 2,
+        shardIndex: 1,
+        coverage: true,
+      );
+
+      expect(code, 9);
+      expect(
+        commands.firstOrNull,
+        containsAll([
+          '--coverage=coverage',
+          '--total-shards=2',
+          '--shard-index=1',
+        ]),
+      );
+      expect(commands.last, containsAll(['run', 'coverage:format_coverage']));
+    },
+  );
+
+  test(
+    'runner rejects an unselected package and invalid shard before launch',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final selection = SelectionResult(
+        mode: SelectionMode.affected,
+        packages: {
+          'packages/core': ['test/behavior_test.dart'],
+        },
+        reason: 'test',
+      );
+      var launches = 0;
+      Future<int> launcher({
+        required String executable,
+        required List<String> arguments,
+        required String workingDirectory,
+      }) async {
+        expect(executable, 'dart');
+        expect(arguments, isEmpty);
+        expect(workingDirectory, endsWith('packages/core'));
+        launches++;
+
+        return 0;
+      }
+
+      expect(
+        await runSelectedTests(
+          selection,
+          rootPath: root.path,
+          launcher: launcher,
+          packageRoot: 'packages/missing',
+        ),
+        isNonZero,
+      );
+      expect(
+        await runSelectedTests(
+          selection,
+          rootPath: root.path,
+          launcher: launcher,
+          totalShards: 2,
+          shardIndex: 2,
+        ),
+        isNonZero,
+      );
+      expect(launches, 0);
+    },
+  );
+
+  test(
+    'runner rejects sharding multiple selected packages before launching',
+    () async {
+      final root = await _runnerFixture();
+      addTearDown(() => root.delete(recursive: true));
+      final other = Directory('${root.path}/packages/other');
+      final _ = await Directory('${other.path}/test').create(recursive: true);
+      final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
+name: fixture
+workspace:
+  - packages/core
+  - packages/other
+''');
+      final _ = await File('${other.path}/pubspec.yaml').writeAsString('''
+name: other
+''');
+      final _ = await File('${other.path}/test/other_test.dart')
+          .writeAsString('void main() {}');
+      var launches = 0;
+
+      final code = await runSelectedTests(
+        SelectionResult(
+          mode: SelectionMode.affected,
+          packages: {
+            'packages/core': ['test/behavior_test.dart'],
+            'packages/other': ['test/other_test.dart'],
+          },
+          reason: 'test',
+        ),
+        rootPath: root.path,
+        launcher:
+            ({
+              required executable,
+              required arguments,
+              required workingDirectory,
+            }) async {
+              launches++;
+
+              return 0;
+            },
+        totalShards: 2,
+        shardIndex: 0,
+      );
+
+      expect(code, isNonZero);
+      expect(launches, 0);
+    },
+  );
 
   test('Serverpod runner limits paths to supported subtrees', () async {
     final root = await _runnerFixture(serverpod: true);
@@ -567,9 +936,8 @@ Future<Directory> _runnerFixture({
 }) async {
   final root = await Directory.systemTemp.createTemp('changed-selector-');
   final package = Directory('${root.path}/packages/core');
-  final _ = await Directory('${package.path}/test/features').create(
-    recursive: true,
-  );
+  final _ = await Directory('${package.path}/test/features')
+      .create(recursive: true);
   final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
 name: fixture
 workspace:
@@ -580,12 +948,12 @@ name: core
 dependencies:
 ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
 ''');
-  final _ = await File(
-    '${package.path}/test/behavior_test.dart',
-  ).writeAsString('void main() {}');
-  final _ = await File(
-    '${package.path}/test/features/example_test.dart',
-  ).writeAsString('void main() {}');
+  final _ = await File('${package.path}/test/behavior_test.dart')
+      .writeAsString('void main() {}');
+  final _ = await File('${package.path}/test/features/example_test.dart')
+      .writeAsString('void main() {}');
+  final _ = await File('${package.path}/test/test_helper.dart')
+      .writeAsString('class TestHelper {}');
   if (serverpod) {
     final _ = await File(
       '${package.path}/test/integration/test_tools/serverpod_test_tools.dart',
@@ -595,10 +963,7 @@ ${flutter ? '  flutter:\n    sdk: flutter\n' : ''}
   return root;
 }
 
-const _roots = <String, String>{
-  'core': 'packages/core',
-  'ui': 'packages/ui',
-};
+const _roots = <String, String>{'core': 'packages/core', 'ui': 'packages/ui'};
 
 const _sources = <String, String>{
   'packages/core/lib/leaf.dart': 'class Leaf {}',

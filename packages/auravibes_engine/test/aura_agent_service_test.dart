@@ -1,5 +1,6 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:test/test.dart';
+
 import 'support/fake_cancellation_effects.dart';
 
 void main() {
@@ -159,13 +160,17 @@ class _FakeToolProvider
   }
 
   @override
-  String? resolveTool(String toolName) => 'tool';
+  Future<String?> resolveTool({
+    required String conversationId,
+    required String toolName,
+  }) async => 'tool';
 
   Future<AgentToolApprovalDecision> resolveToolApprovalDecision({
     required String conversationId,
     required String workspaceId,
     required String toolCallId,
     required String resolvedTool,
+    required String argumentsRaw,
   }) async {
     return const AgentToolApprovalDecision(
       permissionResult: AgentToolPermissionResult.granted,
@@ -294,9 +299,7 @@ class _FakeToolProvider
   }) {}
 }
 
-class _EmptySendQueueRuntime implements AgentSendQueueRuntime {
-  const _EmptySendQueueRuntime();
-
+class const _EmptySendQueueRuntime() implements AgentSendQueueRuntime {
   @override
   void clear(String conversationId) {}
 

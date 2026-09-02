@@ -17,11 +17,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class SkillsScreen extends ConsumerWidget {
-  const SkillsScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const SkillsScreen({required final String workspaceId, super.key})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final skillsAsync = ref.watch(workspaceSkillsProvider(workspaceId));
@@ -47,7 +44,7 @@ class SkillsScreen extends ConsumerWidget {
         AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError(:final error) => Center(
           child: AuraText(
-            child: TextLocale(cloudErrorLocalizationKey(error)),
+            child: TextLocale(CloudAppErrors.localizationKey(error)),
           ),
         ),
       },
@@ -78,10 +75,7 @@ class SkillsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openSkill(
-    BuildContext context,
-    String skillId,
-  ) async {
+  Future<void> _openSkill(BuildContext context, String skillId) async {
     final container = ProviderScope.containerOf(context, listen: false);
     final result = await context.push<bool>(
       '/workspaces/$workspaceId/more/skills/$skillId',
@@ -145,31 +139,24 @@ class SkillsScreen extends ConsumerWidget {
   }
 }
 
-class _SkillsScreenBody extends ConsumerWidget {
-  const _SkillsScreenBody({
-    required this.skills,
-    required this.onCreateSkill,
-    required this.onOpenSkill,
-    required this.onDeleteSkill,
-    required this.onSkillEnabledChanged,
-  });
-
-  final List<WorkspaceSkill> skills;
-  final Future<void> Function(BuildContext context) onCreateSkill;
-  final Future<void> Function(BuildContext context, String skillId) onOpenSkill;
-  final Future<void> Function(
+class const _SkillsScreenBody({
+  required final List<WorkspaceSkill> skills,
+  required final Future<void> Function(BuildContext context) onCreateSkill,
+  required final Future<void> Function(BuildContext context, String skillId)
+  onOpenSkill,
+  required final Future<void> Function(
     BuildContext context,
     WidgetRef ref,
     WorkspaceSkill skill,
   )
-  onDeleteSkill;
-  final Future<void> Function(
+  onDeleteSkill,
+  required final Future<void> Function(
     WidgetRef ref,
     WorkspaceSkill skill,
     ({bool isEnabled}) change,
   )
-  onSkillEnabledChanged;
-
+  onSkillEnabledChanged,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (skills.isEmpty) {
@@ -214,21 +201,23 @@ class _SkillsScreenBody extends ConsumerWidget {
   }
 }
 
-class _SkillTile extends StatelessWidget {
-  const _SkillTile({
-    required this.skill,
-    required this.onOpen,
-    required this.onDelete,
-    required this.onChanged,
-  });
-
-  final WorkspaceSkill skill;
-  final VoidCallback onOpen;
-  final VoidCallback onDelete;
-  final ValueChanged<bool> onChanged;
+class const _SkillTile({
+  required final WorkspaceSkill skill,
+  required final VoidCallback onOpen,
+  required final VoidCallback onDelete,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  IconData get _icon {
+    return switch (skill.source) {
+      SkillSource.user => Icons.psychology_alt_outlined,
+      SkillSource.app => Icons.auto_awesome_outlined,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
+    const tagSpacing = 8.0;
+
     return AuraCard(
       child: AuraRow(
         children: [
@@ -255,7 +244,7 @@ class _SkillTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 Wrap(
-                  spacing: 8,
+                  spacing: tagSpacing,
                   runSpacing: 4,
                   children: [
                     _SkillChip(label: _sourceLabel(context)),
@@ -310,13 +299,6 @@ class _SkillTile extends StatelessWidget {
     return description;
   }
 
-  IconData get _icon {
-    return switch (skill.source) {
-      SkillSource.user => Icons.psychology_alt_outlined,
-      SkillSource.app => Icons.auto_awesome_outlined,
-    };
-  }
-
   String _sourceLabel(BuildContext context) {
     return switch (skill.source) {
       SkillSource.user => LocaleKeys.skills_screen_source_user.tr(
@@ -340,18 +322,11 @@ class _SkillTile extends StatelessWidget {
   }
 }
 
-class _SkillChip extends StatelessWidget {
-  const _SkillChip({required this.label});
-
-  final String label;
-
+class const _SkillChip({required final String label}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraBadge(
-      child: AuraText(
-        child: Text(label),
-        style: AuraTextStyle.caption,
-      ),
+      child: AuraText(child: Text(label), style: AuraTextStyle.caption),
       variant: AuraBadgeVariant.outlined,
       size: AuraBadgeSize.small,
     );

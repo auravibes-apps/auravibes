@@ -22,11 +22,10 @@ import 'package:riverpod/experimental/mutation.dart';
 
 final _logger = Logger('workspace_management_screen');
 
-class WorkspaceManagementScreen extends ConsumerWidget {
-  const WorkspaceManagementScreen({required this.workspaceId, super.key});
-
-  final String workspaceId;
-
+class const WorkspaceManagementScreen({
+  required final String workspaceId,
+  super.key,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaces = ref.watch(allWorkspacesProvider);
@@ -59,19 +58,12 @@ class WorkspaceManagementScreen extends ConsumerWidget {
   }
 }
 
-class _WorkspaceList extends ConsumerWidget {
-  const _WorkspaceList({
-    required this.activeWorkspaceId,
-    required this.accounts,
-    required this.editingWorkspace,
-    required this.workspaces,
-  });
-
-  final String activeWorkspaceId;
-  final AsyncValue<List<CloudAccountSession>> accounts;
-  final WorkspaceEntity? editingWorkspace;
-  final List<WorkspaceEntity> workspaces;
-
+class const _WorkspaceList({
+  required final String activeWorkspaceId,
+  required final AsyncValue<List<CloudAccountSession>> accounts,
+  required final WorkspaceEntity? editingWorkspace,
+  required final List<WorkspaceEntity> workspaces,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final local = workspaces.where((item) => item.cloudWorkspaceId == null);
@@ -175,11 +167,11 @@ class _WorkspaceList extends ConsumerWidget {
     String id,
     String name,
   ) async {
-    final _ = await editWorkspaceMutation.run(ref, (_) {
+    final _ = await WorkspaceManagementMutations.edit.run(ref, (_) {
       return ref.read(editWorkspaceUseCaseProvider).call(id: id, name: name);
     });
     if (!context.mounted) return;
-    switch (ref.read(editWorkspaceMutation)) {
+    switch (ref.read(WorkspaceManagementMutations.edit)) {
       case MutationSuccess():
         ref.read(workspaceManagementModeProvider.notifier).clearEditing();
       case MutationError(:final error):
@@ -194,7 +186,7 @@ class _WorkspaceList extends ConsumerWidget {
     WidgetRef ref,
     WorkspaceEntity workspace,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.workspace_management_delete_title),
       message: Text(
@@ -210,16 +202,15 @@ class _WorkspaceList extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
 
-    await deleteWorkspaceMutation.run(ref, (_) {
+    await WorkspaceManagementMutations.delete.run(ref, (_) {
       return ref
           .read(deleteWorkspaceUseCaseProvider)
-          .call(
-            id: workspace.id,
-            activeWorkspaceId: activeWorkspaceId,
-          );
+          .call(id: workspace.id, activeWorkspaceId: activeWorkspaceId);
     });
     if (!context.mounted) return;
-    if (ref.read(deleteWorkspaceMutation) case MutationError(:final error)) {
+    if (ref.read(WorkspaceManagementMutations.delete) case MutationError(
+      :final error,
+    )) {
       _showError(context, error);
 
       return;
@@ -234,7 +225,7 @@ class _WorkspaceList extends ConsumerWidget {
     WidgetRef ref,
     WorkspaceEntity workspace,
   ) async {
-    final confirmed = await showAuraConfirmDialog(
+    final confirmed = await AuraDialogs.confirm(
       context: context,
       title: const TextLocale(LocaleKeys.workspace_management_cloud_detach),
       message: Text(
@@ -288,19 +279,12 @@ class _WorkspaceList extends ConsumerWidget {
   }
 }
 
-class _AvailableCloudAccountGroup extends ConsumerWidget {
-  const _AvailableCloudAccountGroup({
-    required this.account,
-    required this.accounts,
-    required this.localWorkspaces,
-    required this.workspaceId,
-  });
-
-  final CloudAccountSession account;
-  final List<CloudAccountSession> accounts;
-  final List<WorkspaceEntity> localWorkspaces;
-  final String workspaceId;
-
+class const _AvailableCloudAccountGroup({
+  required final CloudAccountSession account,
+  required final List<CloudAccountSession> accounts,
+  required final List<WorkspaceEntity> localWorkspaces,
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cloudWorkspaceStateProvider(account.userId));
@@ -335,11 +319,8 @@ class _AvailableCloudAccountGroup extends ConsumerWidget {
   }
 }
 
-class _CloudAccountDisconnected extends StatelessWidget {
-  const _CloudAccountDisconnected({required this.workspaceId});
-
-  final String workspaceId;
-
+class const _CloudAccountDisconnected({required final String workspaceId})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
@@ -366,19 +347,12 @@ class _CloudAccountDisconnected extends StatelessWidget {
   }
 }
 
-class _AvailableCloudWorkspaceList extends ConsumerWidget {
-  const _AvailableCloudWorkspaceList({
-    required this.account,
-    required this.accounts,
-    required this.localWorkspaces,
-    required this.workspaces,
-  });
-
-  final CloudAccountSession account;
-  final List<CloudAccountSession> accounts;
-  final List<WorkspaceEntity> localWorkspaces;
-  final List<CloudWorkspaceSummary> workspaces;
-
+class const _AvailableCloudWorkspaceList({
+  required final CloudAccountSession account,
+  required final List<CloudAccountSession> accounts,
+  required final List<WorkspaceEntity> localWorkspaces,
+  required final List<CloudWorkspaceSummary> workspaces,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final available = workspaces.where((workspace) {
@@ -442,21 +416,13 @@ class _AvailableCloudWorkspaceList extends ConsumerWidget {
   }
 }
 
-class _LocalWorkspaceTile extends StatelessWidget {
-  const _LocalWorkspaceTile({
-    required this.workspace,
-    required this.isActive,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final WorkspaceEntity workspace;
-  final bool isActive;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
+class const _LocalWorkspaceTile({
+  required final WorkspaceEntity workspace,
+  required final bool isActive,
+  required final VoidCallback onTap,
+  required final VoidCallback onEdit,
+  required final VoidCallback onDelete,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
@@ -481,23 +447,14 @@ class _LocalWorkspaceTile extends StatelessWidget {
   }
 }
 
-class _ConnectedWorkspaceTile extends StatelessWidget {
-  const _ConnectedWorkspaceTile({
-    required this.workspace,
-    required this.accountEmail,
-    required this.isActive,
-    required this.onTap,
-    required this.onDetails,
-    required this.onRemove,
-  });
-
-  final WorkspaceEntity workspace;
-  final String? accountEmail;
-  final bool isActive;
-  final VoidCallback onTap;
-  final VoidCallback onDetails;
-  final VoidCallback onRemove;
-
+class const _ConnectedWorkspaceTile({
+  required final WorkspaceEntity workspace,
+  required final String? accountEmail,
+  required final bool isActive,
+  required final VoidCallback onTap,
+  required final VoidCallback onDetails,
+  required final VoidCallback onRemove,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraTile(
@@ -534,19 +491,12 @@ class _ConnectedWorkspaceTile extends StatelessWidget {
   }
 }
 
-class _AvailableWorkspaceTile extends StatelessWidget {
-  const _AvailableWorkspaceTile({
-    required this.workspace,
-    required this.connectedAccountEmail,
-    required this.onDetails,
-    required this.onConnect,
-  });
-
-  final CloudWorkspaceSummary workspace;
-  final String? connectedAccountEmail;
-  final VoidCallback onDetails;
-  final VoidCallback onConnect;
-
+class const _AvailableWorkspaceTile({
+  required final CloudWorkspaceSummary workspace,
+  required final String? connectedAccountEmail,
+  required final VoidCallback onDetails,
+  required final VoidCallback onConnect,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final email = connectedAccountEmail;
@@ -585,12 +535,10 @@ class _AvailableWorkspaceTile extends StatelessWidget {
   }
 }
 
-class _WorkspaceName extends StatelessWidget {
-  const _WorkspaceName({required this.name, required this.isActive});
-
-  final String name;
-  final bool isActive;
-
+class const _WorkspaceName({
+  required final String name,
+  required final bool isActive,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
@@ -608,11 +556,7 @@ class _WorkspaceName extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.keyName);
-
-  final String keyName;
-
+class const _SectionTitle(final String keyName) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -625,17 +569,11 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _EditWorkspaceTile extends StatefulWidget {
-  const _EditWorkspaceTile({
-    required this.workspace,
-    required this.onSave,
-    required this.onCancel,
-  });
-
-  final WorkspaceEntity workspace;
-  final ValueChanged<String> onSave;
-  final VoidCallback onCancel;
-
+class const _EditWorkspaceTile({
+  required final WorkspaceEntity workspace,
+  required final ValueChanged<String> onSave,
+  required final VoidCallback onCancel,
+}) extends StatefulWidget {
   @override
   State<_EditWorkspaceTile> createState() => _EditWorkspaceTileState();
 }
@@ -691,9 +629,7 @@ void _openDetails(
   required String? cloudWorkspaceId,
 }) {
   final parsedId = int.tryParse(cloudWorkspaceId ?? '');
-  final workspaceId = GoRouterState.of(
-    context,
-  ).pathParameters['workspaceId'];
+  final workspaceId = GoRouterState.of(context).pathParameters['workspaceId'];
   if (accountId == null || parsedId == null || workspaceId == null) return;
 
   context.go(
@@ -715,7 +651,7 @@ void _showError(BuildContext context, Object error, [StackTrace? stackTrace]) {
   if (error is! WorkspaceException && error is! AppCloudWorkspaceException) {
     _logger.warning('Workspace management failed', error, stackTrace);
   }
-  final _ = showAuraSnackBar(
+  final _ = AuraSnackBars.show(
     context: context,
     content: Text(message),
     variant: AuraSnackBarVariant.error,

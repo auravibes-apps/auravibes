@@ -10,11 +10,11 @@ part 'new_chat_state.g.dart';
 
 @freezed
 abstract class NewChatState with _$NewChatState {
-  const factory NewChatState({
+  const factory({
     String? modelId,
 
-    /// Stores the provider ID (or name-equivalent).
-    /// - for display and filtering models
+    /// Stores the provider ID (or name equivalent) for displaying and
+    /// filtering models.
     String? providerId,
     String? agentId,
     @Default(false) bool isLoading,
@@ -54,7 +54,7 @@ class NewChatNotifier extends _$NewChatNotifier {
 
     state = state.copyWith(isLoading: true);
     try {
-      return sendNewMessageUsecase.call(
+      return await sendNewMessageUsecase.call(
         draft: draft,
         workspaceModelSelectionId: modelId,
         workspaceId: workspaceId,

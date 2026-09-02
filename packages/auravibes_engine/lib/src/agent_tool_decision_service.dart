@@ -1,10 +1,6 @@
 import 'package:auravibes_engine/src/agent_iteration_decision.dart';
 
-enum AgentToolCallState {
-  pending,
-  resolved,
-  stopped,
-}
+enum AgentToolCallState { pending, resolved, stopped }
 
 AgentIterationDecision decideAgentToolIteration(
   List<AgentToolCallState>? toolCalls,
@@ -22,18 +18,13 @@ AgentIterationDecision decideAgentToolIteration(
   return AgentIterationDecision.continueIteration;
 }
 
-// ignore: one_member_abstracts, provider interface keeps DB reads injectable.
 abstract interface class AgentToolDecisionProvider {
   Future<List<AgentToolCallState>?> getToolCallStates(String messageId);
 }
 
-class AgentToolDecisionService {
-  const AgentToolDecisionService({
-    required this.provider,
-  });
-
-  final AgentToolDecisionProvider provider;
-
+class const AgentToolDecisionService({
+  required final AgentToolDecisionProvider provider,
+}) {
   Future<AgentIterationDecision> call({required String messageId}) async {
     final toolCalls = await provider.getToolCallStates(messageId);
     return decideAgentToolIteration(toolCalls);

@@ -6,10 +6,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'mcp_transport_type.freezed.dart';
 part 'mcp_transport_type.g.dart';
 
-sealed class McpTransportType {
-  const McpTransportType();
-
-  factory McpTransportType.fromJson(Map<String, dynamic> json) {
+sealed class const McpTransportType() {
+  factory fromJson(Map<String, dynamic> json) {
     final type = json.get<String>('type');
     switch (type) {
       case 'sse':
@@ -24,48 +22,34 @@ sealed class McpTransportType {
   Map<String, dynamic> toJson();
 }
 
-class McpTransportTypeSSE extends McpTransportType {
-  const McpTransportTypeSSE();
-
-  factory McpTransportTypeSSE.fromJson(Map<String, dynamic> _) {
+class const McpTransportTypeSSE() extends McpTransportType {
+  factory fromJson(Map<String, dynamic> _) {
     return const McpTransportTypeSSE();
   }
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': 'sse',
-    };
+    return {'type': 'sse'};
   }
 }
 
-class McpTransportTypeStreamableHttp extends McpTransportType {
-  const McpTransportTypeStreamableHttp({
-    this.useHttp2 = false,
-  });
-
-  factory McpTransportTypeStreamableHttp.fromJson(Map<String, dynamic> json) {
-    return McpTransportTypeStreamableHttp(
-      useHttp2: json.get('useHttp2'),
-    );
+class const McpTransportTypeStreamableHttp({final bool useHttp2 = false})
+    extends McpTransportType {
+  factory fromJson(Map<String, dynamic> json) {
+    return McpTransportTypeStreamableHttp(useHttp2: json.get('useHttp2'));
   }
-
-  final bool useHttp2;
 
   @override
   Map<String, dynamic> toJson() {
-    return {
-      'type': 'streamableHttp',
-      'useHttp2': useHttp2,
-    };
+    return {'type': 'streamableHttp', 'useHttp2': useHttp2};
   }
 }
 
 @Freezed(toStringOverride: false)
-abstract class OAuthTokenModel with _$OAuthTokenModel {
+abstract class const OAuthTokenModel._() with _$OAuthTokenModel {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.
   @JsonSerializable(fieldRename: .snake)
-  const factory OAuthTokenModel({
+  const factory({
     required String accessToken,
     String? refreshToken,
     String? idToken,
@@ -74,10 +58,8 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
     String? scope,
   }) = _OAuthTokenModel;
 
-  factory OAuthTokenModel.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$OAuthTokenModelFromJson(json);
-  const OAuthTokenModel._();
-
   OAuthTokenEntity toEntity() {
     return OAuthTokenEntity(
       accessToken: accessToken,
@@ -92,8 +74,8 @@ abstract class OAuthTokenModel with _$OAuthTokenModel {
 }
 
 @Freezed(toStringOverride: false)
-abstract class OAuthTokenEntity with _$OAuthTokenEntity {
-  const factory OAuthTokenEntity({
+abstract class const OAuthTokenEntity._() with _$OAuthTokenEntity {
+  const factory({
     required String accessToken,
     required DateTime issuedAt,
     String? refreshToken,
@@ -103,9 +85,7 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     List<String>? scopes,
   }) = _OAuthTokenEntity;
 
-  const OAuthTokenEntity._();
-
-  factory OAuthTokenEntity.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$OAuthTokenEntityFromJson(json);
 
   /// Returns true if the stored OAuth token is expired or unavailable.
@@ -121,8 +101,8 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
     );
   }
 
-  /// Returns true if OAuth token needs refresh.
-  /// (has token but it's expired or about to expire)
+  /// Returns true if the OAuth token needs refresh (has a token but it is
+  /// expired or about to expire).
   bool get needsOAuthTokenRefresh =>
       isOAuthTokenExpired && refreshToken != null;
 
@@ -145,22 +125,20 @@ abstract class OAuthTokenEntity with _$OAuthTokenEntity {
 }
 
 @Freezed(toStringOverride: false)
-sealed class McpAuthenticationType with _$McpAuthenticationType {
-  const McpAuthenticationType._();
-  const factory McpAuthenticationType.none() = McpAuthenticationTypeNone;
+sealed class const McpAuthenticationType._() with _$McpAuthenticationType {
+  const factory none() = McpAuthenticationTypeNone;
 
-  const factory McpAuthenticationType.oauth({
+  const factory oauth({
     required OAuthTokenEntity token,
     required String clientId,
     required String authorizationEndpoint,
     required String tokenEndpoint,
   }) = McpAuthenticationTypeOAuth;
 
-  const factory McpAuthenticationType.bearerToken({
-    required String bearerToken,
-  }) = McpAuthenticationTypeBearerToken;
+  const factory bearerToken({required String bearerToken}) =
+      McpAuthenticationTypeBearerToken;
 
-  factory McpAuthenticationType.fromJson(Map<String, dynamic> json) =>
+  factory fromJson(Map<String, dynamic> json) =>
       _$McpAuthenticationTypeFromJson(json);
 
   Future<McpAuthenticationType> copyCryptor(
@@ -183,9 +161,9 @@ sealed class McpAuthenticationType with _$McpAuthenticationType {
 
 /// Entity for creating/updating MCP server configurations.
 @freezed
-abstract class McpServerToCreate with _$McpServerToCreate {
+abstract class const McpServerToCreate._() with _$McpServerToCreate {
   /// Creates a new McpServerToCreate instance.
-  const factory McpServerToCreate({
+  const factory({
     /// User-friendly name for the MCP server.
     required String name,
 
@@ -204,8 +182,6 @@ abstract class McpServerToCreate with _$McpServerToCreate {
     /// Optional description of what this MCP server provides.
     String? description,
   }) = _McpServerToCreate;
-  const McpServerToCreate._();
-
   String get slugServerName {
     final slug = name
         .toLowerCase()
@@ -221,10 +197,11 @@ abstract class McpServerToCreate with _$McpServerToCreate {
 /// This represents user-configured MCP servers that can be connected to
 /// for extending AI capabilities with external tools and resources.
 @freezed
-abstract class McpServerEntity extends McpServerToCreate
+abstract class const McpServerEntity._()
+    extends McpServerToCreate
     with _$McpServerEntity {
   /// Creates a new McpServerEntity instance.
-  const factory McpServerEntity({
+  const factory({
     /// Unique ID of this MCP server record in the database.
     required String id,
 
@@ -258,23 +235,16 @@ abstract class McpServerEntity extends McpServerToCreate
     /// Whether the MCP server is enabled.
     @Default(true) bool isEnabled,
   }) = _McpServerEntity;
-  const McpServerEntity._() : super._();
+  this : super._();
 }
 
-enum McpAuthenticationTypeOptions {
-  none,
-  oauth,
-  bearerToken,
-}
+enum McpAuthenticationTypeOptions { none, oauth, bearerToken }
 
-enum McpTransportTypeOptions {
-  streamableHttp,
-  sse,
-}
+enum McpTransportTypeOptions { streamableHttp, sse }
 
 @Freezed(toStringOverride: false)
-abstract class McpServerFormToCreate with _$McpServerFormToCreate {
-  const factory McpServerFormToCreate({
+abstract class const McpServerFormToCreate._() with _$McpServerFormToCreate {
+  const factory({
     required String name,
 
     required String url,
@@ -287,8 +257,6 @@ abstract class McpServerFormToCreate with _$McpServerFormToCreate {
 
     String? description,
   }) = _McpServerFormToCreate;
-  const McpServerFormToCreate._();
-
   bool get isValid {
     if (name.isEmpty || url.isEmpty) {
       return false;

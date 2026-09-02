@@ -35,11 +35,10 @@ void main() {
 
     group('createWorkspaceModelSelections', () {
       test('delegates to dao with companions', () async {
-        when(() => mockDao.insertWorkspaceModelSelections(any())).thenAnswer((
-          _,
-        ) async {
-          return;
-        });
+        when(() => mockDao.insertWorkspaceModelSelections(any()))
+            .thenAnswer((_) async {
+              return;
+            });
 
         final selections = [
           const WorkspaceModelSelectionToCreate(
@@ -55,26 +54,25 @@ void main() {
         await repository.createWorkspaceModelSelections(selections);
 
         expect(
-          () => verify(
-            () => mockDao.insertWorkspaceModelSelections(any()),
-          ).called(1),
+          () =>
+              verify(() => mockDao.insertWorkspaceModelSelections(any()))
+                  .called(1),
           returnsNormally,
         );
       });
 
       test('handles empty list', () async {
-        when(() => mockDao.insertWorkspaceModelSelections(any())).thenAnswer((
-          _,
-        ) async {
-          return;
-        });
+        when(() => mockDao.insertWorkspaceModelSelections(any()))
+            .thenAnswer((_) async {
+              return;
+            });
 
         await repository.createWorkspaceModelSelections([]);
 
         expect(
-          () => verify(
-            () => mockDao.insertWorkspaceModelSelections(any()),
-          ).called(1),
+          () =>
+              verify(() => mockDao.insertWorkspaceModelSelections(any()))
+                  .called(1),
           returnsNormally,
         );
       });
@@ -189,9 +187,8 @@ void main() {
           ),
         );
 
-        when(
-          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
-        ).thenAnswer((_) async => withConnection);
+        when(() => mockDao.getWorkspaceModelSelectionById('sel-1'))
+            .thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
@@ -206,9 +203,8 @@ void main() {
       });
 
       test('returns null when not found', () async {
-        when(
-          () => mockDao.getWorkspaceModelSelectionById('nonexistent'),
-        ).thenAnswer((_) async => null);
+        when(() => mockDao.getWorkspaceModelSelectionById('nonexistent'))
+            .thenAnswer((_) async => null);
 
         final result = await repository.getWorkspaceModelSelectionById(
           'nonexistent',
@@ -240,15 +236,11 @@ void main() {
             workspaceId: 'ws-1',
             isEnabled: true,
           ),
-          modelProvider: const ApiModelProvidersTable(
-            id: 'test',
-            name: 'Test',
-          ),
+          modelProvider: const ApiModelProvidersTable(id: 'test', name: 'Test'),
         );
 
-        when(
-          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
-        ).thenAnswer((_) async => withConnection);
+        when(() => mockDao.getWorkspaceModelSelectionById('sel-1'))
+            .thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
@@ -288,9 +280,8 @@ void main() {
           ),
         );
 
-        when(
-          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
-        ).thenAnswer((_) async => withConnection);
+        when(() => mockDao.getWorkspaceModelSelectionById('sel-1'))
+            .thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
@@ -330,9 +321,8 @@ void main() {
           ),
         );
 
-        when(
-          () => mockDao.getWorkspaceModelSelectionById('sel-1'),
-        ).thenAnswer((_) async => withConnection);
+        when(() => mockDao.getWorkspaceModelSelectionById('sel-1'))
+            .thenAnswer((_) async => withConnection);
 
         final result = await repository.getWorkspaceModelSelectionById('sel-1');
 
@@ -347,10 +337,9 @@ void main() {
   });
 }
 
-class _TestAppDatabase extends AppDatabase {
-  _TestAppDatabase(this._selectionsDao)
-    : super(connection: DatabaseConnection(NativeDatabase.memory()));
-  final WorkspaceModelSelectionsDao _selectionsDao;
+class _TestAppDatabase(final WorkspaceModelSelectionsDao _selectionsDao)
+    extends AppDatabase {
+  this : super(connection: DatabaseConnection(NativeDatabase.memory()));
 
   @override
   WorkspaceModelSelectionsDao get workspaceModelSelectionsDao => _selectionsDao;

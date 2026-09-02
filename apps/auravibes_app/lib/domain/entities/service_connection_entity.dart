@@ -1,29 +1,18 @@
 import 'package:auravibes_app/domain/entities/service_connection_auth.dart';
 
-enum ServiceConnectionAuthenticationType { none, apiKey, bearerToken, oauth2 }
+import 'package:auravibes_app/domain/entities/service_connection_authentication_type.dart';
 
-class ServiceConnectionEntity {
-  const ServiceConnectionEntity({
-    required this.id,
-    required this.workspaceId,
-    required this.authenticationType,
-    required this.isEnabled,
-    required this.metadataJson,
-    required this.expiresAt,
-    required this.lastRefreshedAt,
-    required this.updatedAt,
-    required this.authStatus,
-    required this.lastAuthError,
-  });
+export 'service_connection_authentication_type.dart';
 
-  final String id;
-  final String workspaceId;
-  final ServiceConnectionAuthenticationType authenticationType;
-  final bool isEnabled;
-  final String? metadataJson;
-  final DateTime? expiresAt;
-  final DateTime? lastRefreshedAt;
-  final DateTime updatedAt;
-  final ServiceConnectionAuthStatus? authStatus;
-  final String? lastAuthError;
-}
+class const ServiceConnectionEntity({
+  required final String id,
+  required final String workspaceId,
+  required final ServiceConnectionAuthenticationType authenticationType,
+  required final bool isEnabled,
+  required final String? metadataJson,
+  required final DateTime? expiresAt,
+  required final DateTime? lastRefreshedAt,
+  required final DateTime updatedAt,
+  required final ServiceConnectionAuthStatus? authStatus,
+  required final String? lastAuthError,
+});

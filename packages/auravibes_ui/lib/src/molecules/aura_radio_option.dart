@@ -7,19 +7,12 @@ import 'package:flutter/widgets.dart';
 /// A custom painter for drawing the radio button circles.
 ///
 /// Draws an outer circle with border and an inner filled circle when selected.
-class _RadioPainter extends CustomPainter {
-  _RadioPainter({
-    required this.isSelected,
-    required this.isFocused,
-    required this.color,
-    required this.borderColor,
-  });
-
-  final bool isSelected;
-  final bool isFocused;
-  final Color color;
-  final Color borderColor;
-
+class _RadioPainter({
+  required final bool isSelected,
+  required final bool isFocused,
+  required final Color color,
+  required final Color borderColor,
+}) extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
@@ -66,11 +59,12 @@ class _RadioPainter extends CustomPainter {
 /// Used with AuraRadioGroup to define the available selections.
 class AuraRadioOption<T> {
   /// Creates a radio option with a value, label, and optional subtitle.
-  const AuraRadioOption({
+  const new({
     required this.value,
     required this.label,
     this.subtitle,
     this.disabled = false,
+    this.semanticLabel,
   });
 
   /// The value this option represents.
@@ -84,6 +78,9 @@ class AuraRadioOption<T> {
 
   /// Whether this option is disabled.
   final bool disabled;
+
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
 }
 
 /// An individual radio button that communicates with its parent group.
@@ -91,16 +88,11 @@ class AuraRadioOption<T> {
 /// Follows the const-first design pattern using [AuraTint] for
 /// compile-time color configuration.
 ///
-/// ## Selection Contract
+/// Selection contract. An equal value and group value is selected and has no
+/// interaction. An unequal value is unselected and tappable. A disabled item
+/// or an item with a null callback is greyed out and has no response.
 ///
-/// | Condition | Visual State | Interaction |
-/// |-----------|--------------|-------------|
-/// | value == groupValue | Selected (filled) | None |
-/// | value != groupValue | Unselected (empty) | Tappable |
-/// | disabled == true | Greyed out | No response |
-/// | onChanged == null | Greyed out | No response |
-///
-/// ## Example
+/// Example.
 ///
 /// ```dart
 /// AuraRadio<String>(
@@ -112,13 +104,14 @@ class AuraRadioOption<T> {
 /// ```
 class AuraRadio<T> extends StatefulWidget {
   /// Creates an AuraRadio widget.
-  const AuraRadio({
+  const new({
     required this.value,
     required this.groupValue,
     required this.onChanged,
     super.key,
     this.tint,
     this.disabled = false,
+    this.semanticLabel = 'Radio button',
   });
 
   /// The value represented by this radio button.
@@ -138,35 +131,17 @@ class AuraRadio<T> extends StatefulWidget {
   /// Whether the radio button is disabled.
   final bool disabled;
 
+  /// A semantic label announced by assistive technologies.
+  final String? semanticLabel;
+
   @override
   State<AuraRadio<T>> createState() => _AuraRadioState<T>();
 }
 
 class _AuraRadioState<T> extends State<AuraRadio<T>> {
+  static const _radioSize = 24.0;
   bool _isFocused = false;
   bool _isHovered = false;
-
-  Color _getActiveColor(BuildContext context) {
-    final auraColors = context.auraColors;
-
-    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
-  }
-
-  Color _getBorderColor(BuildContext context, bool isDisabled) {
-    final auraColors = context.auraColors;
-    if (isDisabled) return auraColors.outlineVariant;
-    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
-      return _getActiveColor(context);
-    }
-
-    return auraColors.outline;
-  }
-
-  void _select() {
-    if (widget.disabled || widget.onChanged == null) return;
-
-    widget.onChanged?.call(widget.value);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -197,29 +172,59 @@ class _AuraRadioState<T> extends State<AuraRadio<T>> {
             ? SystemMouseCursors.forbidden
             : SystemMouseCursors.click,
         child: GestureDetector(
-          child: Opacity(
-            opacity: isDisabled ? 0.6 : 1.0,
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CustomPaint(
-                painter: _RadioPainter(
-                  isSelected: isSelected,
-                  isFocused: _isFocused,
-                  color: effectiveColor,
-                  borderColor: borderColor,
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: Opacity(
+                opacity: isDisabled ? 0.6 : 1.0,
+                child: SizedBox(
+                  width: _radioSize,
+                  height: _radioSize,
+                  child: CustomPaint(
+                    painter: _RadioPainter(
+                      isSelected: isSelected,
+                      isFocused: _isFocused,
+                      color: effectiveColor,
+                      borderColor: borderColor,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
           onTap: isDisabled ? null : _select,
           behavior: HitTestBehavior.opaque,
+          excludeFromSemantics: true,
         ),
       ),
       enabled: !isDisabled,
       checked: isSelected,
       inMutuallyExclusiveGroup: true,
+      label: widget.semanticLabel,
       onTap: isDisabled ? null : _select,
     );
+  }
+
+  Color _getActiveColor(BuildContext context) {
+    final auraColors = context.auraColors;
+
+    return auraColors.colorFor(widget.tint ?? AuraTint.primary);
+  }
+
+  Color _getBorderColor(BuildContext context, bool isDisabled) {
+    final auraColors = context.auraColors;
+    if (isDisabled) return auraColors.outlineVariant;
+    if (widget.value == widget.groupValue || _isFocused || _isHovered) {
+      return _getActiveColor(context);
+    }
+
+    return auraColors.onSurfaceVariant;
+  }
+
+  void _select() {
+    if (widget.disabled || widget.onChanged == null) return;
+
+    widget.onChanged?.call(widget.value);
   }
 }

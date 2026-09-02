@@ -26,12 +26,16 @@ $McpFormStateCopyWith<McpFormState> get copyWith => _$McpFormStateCopyWithImpl<M
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+  final _this = this as McpFormState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is McpFormState&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.description, _this.description) || other.description == _this.description)&&(identical(other.url, _this.url) || other.url == _this.url)&&(identical(other.transport, _this.transport) || other.transport == _this.transport)&&(identical(other.authenticationType, _this.authenticationType) || other.authenticationType == _this.authenticationType)&&(identical(other.bearerToken, _this.bearerToken) || other.bearerToken == _this.bearerToken)&&(identical(other.useHttp2, _this.useHttp2) || other.useHttp2 == _this.useHttp2)&&(identical(other.isSubmitting, _this.isSubmitting) || other.isSubmitting == _this.isSubmitting)&&(identical(other.errorMessage, _this.errorMessage) || other.errorMessage == _this.errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+int get hashCode {
+  final _this = this as McpFormState;
+  return Object.hash(runtimeType,_this.name,_this.description,_this.url,_this.transport,_this.authenticationType,_this.bearerToken,_this.useHttp2,_this.isSubmitting,_this.errorMessage);
+}
 
 
 
@@ -234,12 +238,14 @@ _$McpFormStateCopyWith<_McpFormState> get copyWith => __$McpFormStateCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _McpFormState&&(identical(other.name, name) || other.name == name)&&(identical(other.description, description) || other.description == description)&&(identical(other.url, url) || other.url == url)&&(identical(other.transport, transport) || other.transport == transport)&&(identical(other.authenticationType, authenticationType) || other.authenticationType == authenticationType)&&(identical(other.bearerToken, bearerToken) || other.bearerToken == bearerToken)&&(identical(other.useHttp2, useHttp2) || other.useHttp2 == useHttp2)&&(identical(other.isSubmitting, isSubmitting) || other.isSubmitting == isSubmitting)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+int get hashCode {
+    return Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
+}
 
 
 

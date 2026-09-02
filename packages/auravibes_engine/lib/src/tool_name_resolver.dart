@@ -1,3 +1,5 @@
+import 'package:auravibes_engine/src/skills/skill_command.dart';
+
 enum AgentResolvedToolKind {
   builtIn,
   mcp,
@@ -7,21 +9,16 @@ enum AgentResolvedToolKind {
   skillTemplate,
 }
 
-class AgentResolvedToolName {
-  const AgentResolvedToolName._({
-    required this.kind,
-    required this.tableId,
-    required this.toolIdentifier,
-    this.mcpServerId,
-    this.mcpSlug,
-    this.skillSlug,
-    this.skillToolSlug,
-  });
-
-  factory AgentResolvedToolName.builtIn({
-    required String tableId,
-    required String toolIdentifier,
-  }) {
+class const AgentResolvedToolName._({
+  required final AgentResolvedToolKind kind,
+  required final String tableId,
+  required final String toolIdentifier,
+  final String? mcpServerId,
+  final String? mcpSlug,
+  final String? skillSlug,
+  final String? skillToolSlug,
+}) {
+  factory builtIn({required String tableId, required String toolIdentifier}) {
     return AgentResolvedToolName._(
       kind: AgentResolvedToolKind.builtIn,
       tableId: tableId,
@@ -29,7 +26,7 @@ class AgentResolvedToolName {
     );
   }
 
-  factory AgentResolvedToolName.mcp({
+  factory mcp({
     required String tableId,
     required String toolIdentifier,
     required String mcpServerId,
@@ -44,10 +41,7 @@ class AgentResolvedToolName {
     );
   }
 
-  factory AgentResolvedToolName.native({
-    required String tableId,
-    required String toolIdentifier,
-  }) {
+  factory native({required String tableId, required String toolIdentifier}) {
     return AgentResolvedToolName._(
       kind: AgentResolvedToolKind.native,
       tableId: tableId,
@@ -55,9 +49,7 @@ class AgentResolvedToolName {
     );
   }
 
-  factory AgentResolvedToolName.skillControl({
-    required String toolIdentifier,
-  }) {
+  factory skillControl({required String toolIdentifier}) {
     return AgentResolvedToolName._(
       kind: AgentResolvedToolKind.skillControl,
       tableId: toolIdentifier,
@@ -65,7 +57,7 @@ class AgentResolvedToolName {
     );
   }
 
-  factory AgentResolvedToolName.skillTemplate({
+  factory skillTemplate({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
@@ -78,7 +70,7 @@ class AgentResolvedToolName {
     );
   }
 
-  factory AgentResolvedToolName.skillNative({
+  factory skillNative({
     required String tableId,
     required String skillSlug,
     required String toolIdentifier,
@@ -91,14 +83,6 @@ class AgentResolvedToolName {
       skillToolSlug: toolIdentifier,
     );
   }
-
-  final AgentResolvedToolKind kind;
-  final String tableId;
-  final String toolIdentifier;
-  final String? mcpServerId;
-  final String? mcpSlug;
-  final String? skillSlug;
-  final String? skillToolSlug;
 
   String get fullName {
     return switch (kind) {
@@ -119,13 +103,9 @@ class AgentResolvedToolName {
       kind == AgentResolvedToolKind.skillNative;
 }
 
-class AgentToolNameResolver {
-  const AgentToolNameResolver({
-    this.skillControlToolNames = const <String>{},
-  });
-
-  final Set<String> skillControlToolNames;
-
+class const AgentToolNameResolver({
+  final Set<String> skillControlToolNames = skillCommandToolNames,
+}) {
   AgentResolvedToolName? resolve(String compositeToolName) {
     if (skillControlToolNames.contains(compositeToolName)) {
       return AgentResolvedToolName.skillControl(
@@ -182,9 +162,7 @@ class AgentToolNameResolver {
   ({String mcpServerId, String mcpSlug, String toolIdentifier})? _parseMcpTool(
     String compositeId,
   ) {
-    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(
-      compositeId,
-    );
+    final match = RegExp(r'^mcp_([^_]+)_([^_]+)_(.+)$').firstMatch(compositeId);
     if (match == null) return null;
 
     final mcpId = match.group(1);
@@ -193,11 +171,7 @@ class AgentToolNameResolver {
     if (mcpId == null || mcpSlug == null || tool == null) return null;
     if (mcpId.isEmpty || mcpSlug.isEmpty || tool.isEmpty) return null;
 
-    return (
-      mcpServerId: mcpId,
-      mcpSlug: mcpSlug,
-      toolIdentifier: tool,
-    );
+    return (mcpServerId: mcpId, mcpSlug: mcpSlug, toolIdentifier: tool);
   }
 
   ({String tableId, String toolIdentifier})? _parseTableTool(

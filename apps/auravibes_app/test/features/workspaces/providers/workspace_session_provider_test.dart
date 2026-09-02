@@ -97,12 +97,8 @@ void main() {
     addTearDown(firstSubscription.close);
     addTearDown(secondSubscription.close);
 
-    final first = await container.read(
-      firstProvider.future,
-    );
-    final second = await container.read(
-      secondProvider.future,
-    );
+    final first = await container.read(firstProvider.future);
+    final second = await container.read(secondProvider.future);
 
     expect(first.cloud?.serverUrl, 'https://one.example');
     expect(first.cloud?.accountId, 'shared-account');

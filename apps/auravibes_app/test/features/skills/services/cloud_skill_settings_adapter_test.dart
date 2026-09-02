@@ -8,11 +8,11 @@ import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-class _Gateway extends Mock implements CloudWorkspaceStateGateway {}
+class _Gateway extends Mock implements CloudWorkspaceStateGateway;
 
-class _Client extends Mock implements Client {}
+class _Client extends Mock implements Client;
 
-class _Conversation extends Mock implements EndpointConversation {}
+class _Conversation extends Mock implements EndpointConversation;
 
 void main() {
   var gateway = _Gateway();
@@ -117,10 +117,8 @@ void main() {
         operations: any(named: 'operations'),
       ),
     ).thenAnswer(
-      (_) async => PatchWorkspaceStateResponse(
-        resources: const [],
-        sequence: 4,
-      ),
+      (_) async =>
+          PatchWorkspaceStateResponse(resources: const [], sequence: 4),
     );
 
     final _ = await adapter.saveCompactionSettings(
@@ -156,10 +154,8 @@ void main() {
         operations: any(named: 'operations'),
       ),
     ).thenAnswer(
-      (_) async => PatchWorkspaceStateResponse(
-        resources: const [],
-        sequence: 2,
-      ),
+      (_) async =>
+          PatchWorkspaceStateResponse(resources: const [], sequence: 2),
     );
 
     await adapter.resetCompactionSettings();
@@ -183,10 +179,8 @@ void main() {
         operations: any(named: 'operations'),
       ),
     ).thenAnswer(
-      (_) async => PatchWorkspaceStateResponse(
-        resources: const [],
-        sequence: 2,
-      ),
+      (_) async =>
+          PatchWorkspaceStateResponse(resources: const [], sequence: 2),
     );
 
     await adapter.setConversationSkill(
@@ -267,9 +261,7 @@ void main() {
     );
     when(() => gateway.client).thenReturn(client);
     when(() => client.conversation).thenReturn(conversation);
-    when(
-      () => conversation.compact(any()),
-    ).thenAnswer(
+    when(() => conversation.compact(any())).thenAnswer(
       (_) async => ConversationMutationResult(
         conversationId: 'conversation-1',
         revision: 8,

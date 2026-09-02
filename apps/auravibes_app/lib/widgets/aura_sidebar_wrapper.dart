@@ -3,21 +3,17 @@
 // Required: UI callbacks stay local to their widgets.
 // Required: Feature widgets keep closely related private widgets together.
 // Required: Existing helpers remain top-level for local feature use.
-import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
+import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:collection/collection.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 
-final _logger = Logger('AuraSidebarWrapper');
+export 'app_with_responsive_drawer.dart';
 
 /// A sidebar widget that handles business logic and navigation state.
 ///
@@ -68,17 +64,23 @@ int _calculateSelectedIndex(BuildContext context, int shellIndex) {
     }
   }
 
+  const newChatIndex = 0;
+  const appSettingsIndex = 1;
+  const footerSettingsIndex = 2;
+
   return switch (shellIndex) {
-    0 => 0, // New Chat.
-    1 => 1, // App Settings.
-    2 => 2, // Settings (footer).
+    newChatIndex => newChatIndex, // New Chat.
+    appSettingsIndex => appSettingsIndex, // App Settings.
+    footerSettingsIndex => footerSettingsIndex, // Settings (footer).
     _ => -1,
   };
 }
 
 class AuraSidebarWrapper extends HookConsumerWidget {
+  static final Logger _logger = Logger('AuraSidebarWrapper');
+
   /// Creates a Aura sidebar widget.
-  const AuraSidebarWrapper({
+  const new({
     required this.navigationShell,
     required this.workspaceId,
     super.key,
@@ -103,17 +105,7 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     return AppWithResponsiveDrawer(
       child: navigationShell,
       navigationItems: _navigationItems,
-      onNavigationTap: (index) {
-        if (workspaceId.isEmpty) {
-          _logger.fine(
-            '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
-          );
-
-          return;
-        }
-
-        _goBranch(index);
-      },
+      onNavigationTap: _handleNavigationTap,
       selectedIndex: selectedIndex,
       workspaceId: workspaceId,
     );
@@ -122,133 +114,16 @@ class AuraSidebarWrapper extends HookConsumerWidget {
   void _goBranch(int index) {
     navigationShell.goBranch(index, initialLocation: true);
   }
-}
 
-class AppWithResponsiveDrawer extends StatefulWidget {
-  const AppWithResponsiveDrawer({
-    required this.child,
-    required this.navigationItems,
-    required this.onNavigationTap,
-    required this.selectedIndex,
-    required this.workspaceId,
-    super.key,
-  });
+  void _handleNavigationTap(int index) {
+    if (workspaceId.isEmpty) {
+      _logger.fine(
+        '[Navigation] onNavigationTap: workspaceId missing, ignoring tap',
+      );
 
-  final Widget child;
-  final List<AuraNavigationData> navigationItems;
-  final void Function(int) onNavigationTap;
-  final int selectedIndex;
-  final String workspaceId;
-
-  @override
-  State<AppWithResponsiveDrawer> createState() =>
-      _AppWithResponsiveDrawerState();
-}
-
-class _AppWithResponsiveDrawerState extends State<AppWithResponsiveDrawer> {
-  final ResponsiveSlidingDrawerController _controller =
-      ResponsiveSlidingDrawerController();
-  GoRouter? _router;
-  Uri? _previousRoute;
-
-  GoRouter get _requiredRouter {
-    final router = _router;
-    if (router == null) {
-      throw StateError('_router is not initialized');
+      return;
     }
 
-    return router;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _router = GoRouter.of(context);
-    _previousRoute = _router?.routeInformationProvider.value.uri;
-    _router?.routeInformationProvider.addListener(_onRouteChanged);
-  }
-
-  void _onRouteChanged() {
-    final currentRoute = _requiredRouter.routeInformationProvider.value.uri;
-    if (currentRoute != _previousRoute) {
-      _controller.closeIfMobile();
-
-      setState(() {
-        _previousRoute = currentRoute;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _router?.routeInformationProvider.removeListener(_onRouteChanged);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ResponsiveSlidingDrawer(
-      drawer: Material(
-        child: AuraSidebar(
-          navigationItems: widget.navigationItems,
-          onNavigationTap: widget.onNavigationTap,
-          selectedIndex: widget.selectedIndex,
-          header: _WorkspaceHeader(workspaceId: widget.workspaceId),
-          middleSection: SidebarConversationsWidget(
-            workspaceId: widget.workspaceId,
-          ),
-        ),
-      ),
-      body: ResponsiveSlidingDrawerProvider(
-        controller: _controller,
-        child: widget.child,
-      ),
-      isDarkMode: Theme.of(context).brightness == Brightness.dark,
-      controller: _controller,
-    );
-  }
-}
-
-class _WorkspaceHeader extends ConsumerWidget {
-  const _WorkspaceHeader({required this.workspaceId});
-
-  final String workspaceId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final workspacesAsync = ref.watch(allWorkspacesProvider);
-    final Widget header;
-    switch (workspacesAsync) {
-      case AsyncData(:final value):
-        final workspace = value
-            .where((item) => item.id == workspaceId)
-            .firstOrNull;
-        header = AuraText(
-          child: Text(
-            workspace?.name ?? LocaleKeys.workspace_management_loading.tr(),
-          ),
-          style: AuraTextStyle.heading6,
-        );
-      case AsyncLoading():
-        header = const AuraContainer(
-          child: Center(
-            child: TextLocale(LocaleKeys.workspace_management_loading),
-          ),
-          height: 48,
-        );
-      case AsyncError(:final error, :final stackTrace):
-        _logger.warning('Workspace dropdown stream error', error, stackTrace);
-        header = const AuraText(
-          child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
-        );
-    }
-
-    return SafeArea(
-      bottom: false,
-      child: AuraPadding(
-        child: header,
-        padding: .small,
-      ),
-    );
+    _goBranch(index);
   }
 }

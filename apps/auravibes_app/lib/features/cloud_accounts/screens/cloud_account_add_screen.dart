@@ -6,15 +6,17 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class CloudAccountAddScreen extends StatelessWidget {
-  const CloudAccountAddScreen({
-    required this.workspaceId,
-    required this.returnPath,
-    super.key,
-  });
+class const CloudAccountAddScreen({
+  required final String workspaceId,
+  required final String? returnPath,
+  super.key,
+}) extends StatelessWidget {
+  String get _returnPath {
+    final path = returnPath;
+    if (path != null && path.isNotEmpty) return path;
 
-  final String workspaceId;
-  final String? returnPath;
+    return CloudAccountsRoute(workspaceId: workspaceId).location;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +24,7 @@ class CloudAccountAddScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const AuraText(
-            child: TextLocale(LocaleKeys.cloud_accounts_add_body),
-          ),
+          const AuraText(child: TextLocale(LocaleKeys.cloud_accounts_add_body)),
           const AuraText(
             child: TextLocale(LocaleKeys.cloud_accounts_return_hint),
             style: AuraTextStyle.bodySmall,
@@ -56,12 +56,5 @@ class CloudAccountAddScreen extends StatelessWidget {
         title: TextLocale(LocaleKeys.cloud_accounts_add_title),
       ),
     );
-  }
-
-  String get _returnPath {
-    final path = returnPath;
-    if (path != null && path.isNotEmpty) return path;
-
-    return CloudAccountsRoute(workspaceId: workspaceId).location;
   }
 }

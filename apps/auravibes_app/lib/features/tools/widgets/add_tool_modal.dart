@@ -16,10 +16,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// Modal for adding new tools to the workspace.
-class AddToolModal extends HookConsumerWidget {
-  const AddToolModal({required this.workspaceId, super.key});
-
-  final String workspaceId;
+class const AddToolModal({required final String workspaceId, super.key})
+    extends HookConsumerWidget {
+  static const _iconSize = 40.0;
 
   /// Shows the add tool modal as a dialog.
   static Future<void> show(
@@ -40,22 +39,19 @@ class AddToolModal extends HookConsumerWidget {
       availableToolsToAddProvider(workspaceId),
     );
 
-    useEffect(
-      () {
-        void listener() => searchQuery.value = searchController.text;
-        searchController.addListener(listener);
+    Dispose? updateSearchQuery() {
+      void listener() => searchQuery.value = searchController.text;
+      searchController.addListener(listener);
 
-        return () => searchController.removeListener(listener);
-      },
-      [searchController],
-    );
+      return () => searchController.removeListener(listener);
+    }
+
+    useEffect(updateSearchQuery, [searchController]);
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
-          Radius.circular(
-            context.auraTheme.fromBorderRadius(.xl),
-          ),
+          Radius.circular(context.auraTheme.fromBorderRadius(.xl)),
         ),
       ),
       child: Container(
@@ -68,9 +64,7 @@ class AddToolModal extends HookConsumerWidget {
           children: [
             // Header with close button.
             Container(
-              padding: EdgeInsets.all(
-                context.auraTheme.fromSpacing(.md),
-              ),
+              padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -95,17 +89,13 @@ class AddToolModal extends HookConsumerWidget {
 
             // Search input.
             Padding(
-              padding: EdgeInsets.all(
-                context.auraTheme.fromSpacing(.md),
-              ),
+              padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
               child: AuraInput(
                 controller: searchController,
                 placeholder: const TextLocale(
                   LocaleKeys.tools_screen_search_tools,
                 ),
-                prefixIcon: const AuraIcon(
-                  Icons.search,
-                ),
+                prefixIcon: const AuraIcon(Icons.search),
                 size: AuraInputSize.small,
               ),
             ),
@@ -136,17 +126,11 @@ class AddToolModal extends HookConsumerWidget {
   }
 }
 
-class _AvailableToolsList extends StatelessWidget {
-  const _AvailableToolsList({
-    required this.workspaceId,
-    required this.tools,
-    required this.searchQuery,
-  });
-
-  final String workspaceId;
-  final List<UserToolType> tools;
-  final String searchQuery;
-
+class const _AvailableToolsList({
+  required final String workspaceId,
+  required final List<UserToolType> tools,
+  required final String searchQuery,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Filter tools based on search query.
@@ -160,9 +144,7 @@ class _AvailableToolsList extends StatelessWidget {
 
     if (filteredTools.isEmpty) {
       return Padding(
-        padding: EdgeInsets.all(
-          context.auraTheme.fromSpacing(.lg),
-        ),
+        padding: EdgeInsets.all(context.auraTheme.fromSpacing(.lg)),
         child: Center(
           child: AuraColumn(
             children: [
@@ -193,10 +175,7 @@ class _AvailableToolsList extends StatelessWidget {
       itemBuilder: (context, index) {
         final toolType = filteredTools[index];
 
-        return _AvailableToolTile(
-          toolType: toolType,
-          workspaceId: workspaceId,
-        );
+        return _AvailableToolTile(toolType: toolType, workspaceId: workspaceId);
       },
       separatorBuilder: (context, index) => const AuraSizedBox(height: .sm),
       itemCount: filteredTools.length,
@@ -204,12 +183,10 @@ class _AvailableToolsList extends StatelessWidget {
   }
 }
 
-class _AvailableToolTile extends ConsumerWidget {
-  const _AvailableToolTile({required this.toolType, required this.workspaceId});
-
-  final UserToolType toolType;
-  final String workspaceId;
-
+class const _AvailableToolTile({
+  required final UserToolType toolType,
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return AuraTile(
@@ -236,13 +213,11 @@ class _AvailableToolTile extends ConsumerWidget {
         decoration: BoxDecoration(
           color: context.auraColors.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.all(
-            Radius.circular(
-              context.auraTheme.fromBorderRadius(.md),
-            ),
+            Radius.circular(context.auraTheme.fromBorderRadius(.md)),
           ),
         ),
-        width: 40,
-        height: 40,
+        width: AddToolModal._iconSize,
+        height: AddToolModal._iconSize,
         child: toolType.getIconWidget(),
       ),
       trailing: const AuraIcon(

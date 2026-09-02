@@ -9,6 +9,7 @@ import 'package:auravibes_app/features/models/usecases/cloud_model_connection_us
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+part 'local_model_selection_store.dart';
 part 'model_store_providers.g.dart';
 
 @riverpod
@@ -16,60 +17,64 @@ Future<ModelConnectionStore> modelConnectionStore(
   Ref ref,
   String workspaceId,
 ) async {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-  );
-  if (gateway == null) return ref.watch(modelConnectionRepositoryProvider);
+  final keepAlive = ref.keepAlive();
+  try {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+    );
+    if (gateway == null) {
+      return await ref.watch(modelConnectionRepositoryProvider);
+    }
 
-  return CloudModelStore(
-    workspaceId,
-    CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-  );
+    return CloudModelStore(
+      workspaceId,
+      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
+    );
+  } finally {
+    keepAlive.close();
+  }
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ModelSelectionStore> modelSelectionStore(
   Ref ref,
   String workspaceId,
 ) async {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-  );
-  if (gateway == null) {
-    return _LocalModelSelectionStore(
-      ref.watch(workspaceModelSelectionRepositoryProvider),
+  final keepAlive = ref.keepAlive();
+  try {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
     );
-  }
+    if (gateway == null) {
+      return _LocalModelSelectionStore(
+        ref.watch(workspaceModelSelectionRepositoryProvider),
+      );
+    }
 
-  return CloudModelStore(
-    workspaceId,
-    CloudModelConnectionUsecases(CloudModelGateway(gateway)),
-  );
+    return CloudModelStore(
+      workspaceId,
+      CloudModelConnectionUsecases(CloudModelGateway(gateway)),
+    );
+  } finally {
+    keepAlive.close();
+  }
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Future<ModelCatalogStore> modelCatalogStore(Ref ref, String workspaceId) async {
-  final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
-  );
-  if (gateway == null) return ref.watch(apiModelRepositoryProvider);
+  final keepAlive = ref.keepAlive();
+  try {
+    final gateway = await ref.watch(
+      cloudWorkspaceStateGatewayForWorkspaceProvider(workspaceId).future,
+    );
+    if (gateway == null) return await ref.watch(apiModelRepositoryProvider);
 
-  return CloudModelCatalogStore(CloudModelGateway(gateway));
+    return CloudModelCatalogStore(CloudModelGateway(gateway));
+  } finally {
+    keepAlive.close();
+  }
 }
 
-class _LocalModelSelectionStore implements ModelSelectionStore {
-  const _LocalModelSelectionStore(this._repository);
-
-  final WorkspaceModelSelectionRepository _repository;
-
-  @override
-  Future<WorkspaceModelSelectionWithConnectionEntity?> getById(String id) =>
-      _repository.getWorkspaceModelSelectionById(id);
-
-  @override
-  Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(
-    String workspaceId,
-  ) => _repository.watchWorkspaceModelSelections(
-    WorkspaceModelSelectionFilter(workspaces: [workspaceId]),
-  );
-}
+// Top-level API/provider declarations are required by their consumers.

@@ -33,28 +33,17 @@ import 'package:auravibes_engine/auravibes_engine.dart'
         requireCompactionSummary;
 import 'package:riverpod/src/providers/provider.dart';
 
-class CompactConversationUsecase {
-  const CompactConversationUsecase({
-    required this.compactionExecution,
-    this.messageRepository,
-    this.conversationRepository,
-    this.modelSelectionStore,
-    this.chatbotService,
-    this.selectCompactionRangeUsecase,
-    this.cloudCompaction,
-    this.cloudConversation,
-  });
-
-  final MessageRepository? messageRepository;
-  final ConversationRepository? conversationRepository;
+class const CompactConversationUsecase({
+  required final CompactionExecutionRuntime compactionExecution,
+  final MessageRepository? messageRepository,
+  final ConversationRepository? conversationRepository,
   final Future<ModelSelectionStore> Function(String workspaceId)?
-  modelSelectionStore;
-  final ChatbotService? chatbotService;
-  final SelectCompactionRangeUsecase? selectCompactionRangeUsecase;
-  final CompactionExecutionRuntime compactionExecution;
-  final CloudCompactionUsecase? cloudCompaction;
-  final Future<ConversationEntity?> Function(String id)? cloudConversation;
-
+  modelSelectionStore,
+  final ChatbotService? chatbotService,
+  final SelectCompactionRangeUsecase? selectCompactionRangeUsecase,
+  final CloudCompactionUsecase? cloudCompaction,
+  final Future<ConversationEntity?> Function(String id)? cloudConversation,
+}) {
   static const String _failureMessageKey =
       LocaleKeys.compaction_errors_auto_blocked;
   static const BuildPromptChatMessages _buildPromptChatMessages =
@@ -73,7 +62,7 @@ class CompactConversationUsecase {
       final conversation = await getCloudConversation(conversationId);
       if (conversation == null) throw const CompactionUnavailableException();
 
-      return cloud(conversation: conversation, trigger: trigger);
+      return await cloud(conversation: conversation, trigger: trigger);
     }
     final conversations = conversationRepository;
     final getModelStore = modelSelectionStore;
@@ -108,9 +97,8 @@ class CompactConversationUsecase {
         throw const CompactionUnavailableException();
       }
 
-      final foundModel = await (await getModelStore(
-        conversation.workspaceId,
-      )).getById(modelId);
+      final foundModel = await (await getModelStore(conversation.workspaceId))
+          .getById(modelId);
       if (foundModel == null) {
         throw const CompactionUnavailableException();
       }
@@ -171,9 +159,7 @@ class CompactConversationUsecase {
     return [
       ChatMessage.system(conversationCompactionSystemPrompt),
       ...await _buildPromptChatMessages.call(messages),
-      ChatMessage.user(
-        conversationCompactionRequestPrompt,
-      ),
+      ChatMessage.user(conversationCompactionRequestPrompt),
     ];
   }
 
@@ -266,55 +252,48 @@ class CompactConversationUsecase {
 
 final ProviderFamily<CompactConversationUsecase, String>
 compactConversationUsecaseProvider =
-    Provider.family<CompactConversationUsecase, String>(
-      (ref, workspaceId) {
-        final isCloud =
-            ref
-                .watch(
-                  workspaceSessionForRouteProvider(workspaceId),
-                )
-                .requireValue
-                .cloud !=
-            null;
-        if (isCloud) {
-          final execution = ref.watch(compactionExecutionRuntimeProvider);
-          final conversations = ref
-              .watch(
-                cloudConversationUsecaseProvider(workspaceId),
-              )
-              .value;
-          final turns = ref.watch(cloudTurnUsecaseProvider(workspaceId)).value;
-          if (conversations == null || turns == null) {
-            throw StateError('Cloud compaction dependencies unavailable');
-          }
-
-          return CompactConversationUsecase(
-            compactionExecution: execution,
-            cloudCompaction: CloudCompactionUsecase(
-              conversations: conversations,
-              turns: turns,
-              execution: execution,
-            ),
-            cloudConversation: (id) => ref.read(
-              conversationByIdStreamProvider(
-                workspaceId,
-                conversationId: id,
-              ).future,
-            ),
-          );
+    Provider.family<CompactConversationUsecase, String>((ref, workspaceId) {
+      final isCloud =
+          ref
+              .watch(workspaceSessionForRouteProvider(workspaceId))
+              .requireValue
+              .cloud !=
+          null;
+      if (isCloud) {
+        final execution = ref.watch(compactionExecutionRuntimeProvider);
+        final conversations = ref
+            .watch(cloudConversationUsecaseProvider(workspaceId))
+            .value;
+        final turns = ref.watch(cloudTurnUsecaseProvider(workspaceId)).value;
+        if (conversations == null || turns == null) {
+          throw StateError('Cloud compaction dependencies unavailable');
         }
 
         return CompactConversationUsecase(
-          compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
-          messageRepository: ref.watch(messageRepositoryProvider),
-          conversationRepository: ref.watch(conversationRepositoryProvider),
-          modelSelectionStore: (workspaceId) => ref.read(
-            modelSelectionStoreProvider(workspaceId).future,
+          compactionExecution: execution,
+          cloudCompaction: CloudCompactionUsecase(
+            conversations: conversations,
+            turns: turns,
+            execution: execution,
           ),
-          chatbotService: ref.watch(chatbotServiceProvider),
-          selectCompactionRangeUsecase: ref.watch(
-            selectCompactionRangeUsecaseProvider,
+          cloudConversation: (id) => ref.read(
+            conversationByIdStreamProvider(
+              workspaceId,
+              conversationId: id,
+            ).future,
           ),
         );
-      },
-    );
+      }
+
+      return CompactConversationUsecase(
+        compactionExecution: ref.watch(compactionExecutionRuntimeProvider),
+        messageRepository: ref.watch(messageRepositoryProvider),
+        conversationRepository: ref.watch(conversationRepositoryProvider),
+        modelSelectionStore: (workspaceId) =>
+            ref.read(modelSelectionStoreProvider(workspaceId).future),
+        chatbotService: ref.watch(chatbotServiceProvider),
+        selectCompactionRangeUsecase: ref.watch(
+          selectCompactionRangeUsecaseProvider,
+        ),
+      );
+    });

@@ -43,10 +43,8 @@ void main() {
             apiKey: 'key',
             codec: ChatCompletionsCodec(
               errorLabel: 'UriTest',
-              customize: (modelName, config) => (
-                model: modelName,
-                extraBody: const <String, dynamic>{},
-              ),
+              customize: (modelName, config) =>
+                  (model: modelName, extraBody: const <String, dynamic>{}),
             ),
             models: const [ChatCompletionsModelDefinition(name: 'm')],
             httpClient: client,
@@ -78,12 +76,10 @@ http.StreamedResponse _jsonResponse(Map<String, Object?> body) {
   );
 }
 
-final class _FakeClient extends http.BaseClient {
-  _FakeClient(this.handler);
-
+final class _FakeClient(
   final Future<http.StreamedResponse> Function(http.BaseRequest request)
-  handler;
-
+  handler,
+) extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) =>
       handler(request);

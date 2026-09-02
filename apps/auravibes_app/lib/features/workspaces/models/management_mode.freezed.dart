@@ -26,16 +26,21 @@ $WorkspaceManagementStateCopyWith<WorkspaceManagementState> get copyWith => _$Wo
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceManagementState&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.editingWorkspace, editingWorkspace) || other.editingWorkspace == editingWorkspace));
+  final _this = this as WorkspaceManagementState;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is WorkspaceManagementState&&(identical(other.mode, _this.mode) || other.mode == _this.mode)&&(identical(other.editingWorkspace, _this.editingWorkspace) || other.editingWorkspace == _this.editingWorkspace));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,mode,editingWorkspace);
+int get hashCode {
+  final _this = this as WorkspaceManagementState;
+  return Object.hash(runtimeType,_this.mode,_this.editingWorkspace);
+}
 
 @override
 String toString() {
-  return 'WorkspaceManagementState(mode: $mode, editingWorkspace: $editingWorkspace)';
+  final _this = this as WorkspaceManagementState;
+  return 'WorkspaceManagementState(mode: ${_this.mode}, editingWorkspace: ${_this.editingWorkspace})';
 }
 
 
@@ -236,16 +241,18 @@ _$WorkspaceManagementStateCopyWith<_WorkspaceManagementState> get copyWith => __
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceManagementState&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.editingWorkspace, editingWorkspace) || other.editingWorkspace == editingWorkspace));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _WorkspaceManagementState&&(identical(other.mode, mode) || other.mode == mode)&&(identical(other.editingWorkspace, editingWorkspace) || other.editingWorkspace == editingWorkspace));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,mode,editingWorkspace);
+int get hashCode {
+    return Object.hash(runtimeType,mode,editingWorkspace);
+}
 
 @override
 String toString() {
-  return 'WorkspaceManagementState(mode: $mode, editingWorkspace: $editingWorkspace)';
+    return 'WorkspaceManagementState(mode: $mode, editingWorkspace: $editingWorkspace)';
 }
 
 

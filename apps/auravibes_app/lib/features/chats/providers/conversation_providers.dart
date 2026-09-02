@@ -34,6 +34,7 @@ Stream<ConversationEntity?> conversationByIdStream(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,
@@ -58,6 +59,7 @@ Stream<List<ConversationEntity>> conversationsStream(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 Stream<List<ConversationEntity>> childConversationsStream(
   Ref ref,
   String workspaceId, {
@@ -84,6 +86,7 @@ Stream<List<ConversationEntity>> childConversationsStream(
 }
 
 @riverpod
+// ignore: prefer-static-class (required framework top-level declaration)
 String? streamingTitle(Ref ref, String conversationId) {
   final titles = ref.watch(titlesStreamsProvider);
 
@@ -95,9 +98,8 @@ Stream<List<ConversationEntity>> _cloudConversations(
   CloudWorkspaceRef cloud,
 ) async* {
   final gateway = await ref.watch(
-    cloudWorkspaceStateGatewayForWorkspaceProvider(
-      cloud.localWorkspaceId,
-    ).future,
+    cloudWorkspaceStateGatewayForWorkspaceProvider(cloud.localWorkspaceId)
+        .future,
   );
   if (gateway == null) return;
 

@@ -13,9 +13,7 @@ import 'package:auravibes_engine/auravibes_engine.dart';
 ///
 /// Note: Tool names must match pattern ^[a-zA-Z0-9_-]{1,128}$
 /// so we use underscores as separators instead of colons.
-class ToolNameFormatter {
-  const ToolNameFormatter._();
-
+class const ToolNameFormatter._() {
   /// Parses a composite tool ID into its components.
   ///
   /// Returns an [AgentResolvedToolName] with the parsed components,
@@ -62,33 +60,39 @@ class ToolNameFormatter {
     String rawName = '',
     String? mcpServerName,
   }) {
-    return switch (parsedId) {
-      AgentResolvedToolName(
+    switch (parsedId) {
+      case AgentResolvedToolName(
         kind: AgentResolvedToolKind.mcp,
         mcpSlug: final mcpSlug?,
         :final toolIdentifier,
-      ) =>
-        '${mcpServerName ?? mcpSlug.toHumanReadable()}: '
-            '${toolIdentifier.toHumanReadable()}',
-      AgentResolvedToolName(
+      ):
+        final readableToolIdentifier = toolIdentifier.toHumanReadable();
+        return '${mcpServerName ?? mcpSlug.toHumanReadable()}: '
+            '$readableToolIdentifier';
+      case AgentResolvedToolName(
         kind: AgentResolvedToolKind.builtIn || AgentResolvedToolKind.native,
         :final toolIdentifier,
-      ) =>
-        toolIdentifier.toHumanReadable(),
-      AgentResolvedToolName(
+      ):
+        final readableToolIdentifier = toolIdentifier.toHumanReadable();
+        return readableToolIdentifier;
+      case AgentResolvedToolName(
         kind: AgentResolvedToolKind.skillTemplate ||
             AgentResolvedToolKind.skillNative,
         skillSlug: final skillSlug?,
         :final toolIdentifier,
-      ) =>
-        '${skillSlug.toHumanReadable()}: ${toolIdentifier.toHumanReadable()}',
-      AgentResolvedToolName(
+      ):
+        final readableToolIdentifier = toolIdentifier.toHumanReadable();
+        return '${skillSlug.toHumanReadable()}: $readableToolIdentifier';
+      case AgentResolvedToolName(
         kind: AgentResolvedToolKind.skillControl,
         :final toolIdentifier,
-      ) =>
-        toolIdentifier.toHumanReadable(),
-      AgentResolvedToolName() => throw StateError('Invalid resolved tool name'),
-      null => rawName.toHumanReadable(),
-    };
+      ):
+        final readableToolIdentifier = toolIdentifier.toHumanReadable();
+        return readableToolIdentifier;
+      case AgentResolvedToolName():
+        throw StateError('Invalid resolved tool name');
+      case null:
+        return rawName.toHumanReadable();
+    }
   }
 }

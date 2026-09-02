@@ -74,65 +74,54 @@ void main() {
 
     tearDown(fixture.dispose);
 
-    test(
-      'groups tools into built-in and native default groups',
-      () async {
-        final workspaceToolsRepository = fixture.workspaceToolsRepository;
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        workspaceToolsRepository.workspaceTools = [
-          builtInTool,
-          nativeTool,
-        ];
-        toolsGroupsRepository.groups = [];
+    test('groups tools into built-in and native default groups', () async {
+      final workspaceToolsRepository = fixture.workspaceToolsRepository;
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      workspaceToolsRepository.workspaceTools = [builtInTool, nativeTool];
+      toolsGroupsRepository.groups = [];
 
-        final result = await container.read(
-          groupedConversationToolsProvider(
-            workspaceId: 'workspace-1',
-          ).future,
-        );
+      final result = await container.read(
+        groupedConversationToolsProvider(workspaceId: 'workspace-1').future,
+      );
 
-        expect(result, hasLength(2));
-        expect(
-          result.any(
-            (g) =>
-                g.isDefaultGroup &&
-                g.defaultGroupType == DefaultToolGroupType.builtIn,
-          ),
-          isTrue,
-        );
-        expect(
-          result.any(
-            (g) =>
-                g.isDefaultGroup &&
-                g.defaultGroupType == DefaultToolGroupType.native,
-          ),
-          isTrue,
-        );
-      },
-    );
+      expect(result, hasLength(2));
+      expect(
+        result.any(
+          (g) =>
+              g.isDefaultGroup &&
+              g.defaultGroupType == DefaultToolGroupType.builtIn,
+        ),
+        isTrue,
+      );
+      expect(
+        result.any(
+          (g) =>
+              g.isDefaultGroup &&
+              g.defaultGroupType == DefaultToolGroupType.native,
+        ),
+        isTrue,
+      );
+    });
 
-    test(
-      'groups MCP tools under their group with connection state',
-      () async {
-        final workspaceToolsRepository = fixture.workspaceToolsRepository;
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        workspaceToolsRepository.workspaceTools = [groupedTool];
-        toolsGroupsRepository.groups = [mcpGroup];
+    test('groups MCP tools under their group with connection state', () async {
+      final workspaceToolsRepository = fixture.workspaceToolsRepository;
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      workspaceToolsRepository.workspaceTools = [groupedTool];
+      toolsGroupsRepository.groups = [mcpGroup];
 
-        final result = await container.read(
-          groupedConversationToolsProvider(
-            workspaceId: 'workspace-1',
-            conversationId: 'conv-1',
-          ).future,
-        );
+      final result = await container.read(
+        groupedConversationToolsProvider(
+          workspaceId: 'workspace-1',
+          conversationId: 'conv-1',
+        ).future,
+      );
 
-        expect(result, hasLength(1));
-        expect(result.firstOrNull?.group?.id, 'group-1');
-        expect(result.firstOrNull?.tools, hasLength(1));
-      },
-    );
+      expect(result, hasLength(1));
+      expect(result.firstOrNull?.group?.id, 'group-1');
+      expect(result.firstOrNull?.tools, hasLength(1));
+    });
 
     test('skips empty groups', () async {
       final workspaceToolsRepository = fixture.workspaceToolsRepository;
@@ -142,41 +131,32 @@ void main() {
       toolsGroupsRepository.groups = [mcpGroup];
 
       final result = await container.read(
-        groupedConversationToolsProvider(
-          workspaceId: 'workspace-1',
-        ).future,
+        groupedConversationToolsProvider(workspaceId: 'workspace-1').future,
       );
 
       expect(result, hasLength(1));
       expect(result.firstOrNull?.isDefaultGroup, isTrue);
     });
 
-    test(
-      'reconnectMcp delegates to McpConnectionNotifier',
-      () async {
-        final workspaceToolsRepository = fixture.workspaceToolsRepository;
-        final toolsGroupsRepository = fixture.toolsGroupsRepository;
-        final container = fixture.container;
-        final mcpNotifier = fixture.mcpNotifier;
-        workspaceToolsRepository.workspaceTools = [builtInTool];
-        toolsGroupsRepository.groups = [];
+    test('reconnectMcp delegates to McpConnectionNotifier', () async {
+      final workspaceToolsRepository = fixture.workspaceToolsRepository;
+      final toolsGroupsRepository = fixture.toolsGroupsRepository;
+      final container = fixture.container;
+      final mcpNotifier = fixture.mcpNotifier;
+      workspaceToolsRepository.workspaceTools = [builtInTool];
+      toolsGroupsRepository.groups = [];
 
-        final notifier = container.read(
-          groupedConversationToolsProvider(
-            workspaceId: 'workspace-1',
-          ).notifier,
-        );
-        final _ = await container.read(
-          groupedConversationToolsProvider(
-            workspaceId: 'workspace-1',
-          ).future,
-        );
+      final notifier = container.read(
+        groupedConversationToolsProvider(workspaceId: 'workspace-1').notifier,
+      );
+      final _ = await container.read(
+        groupedConversationToolsProvider(workspaceId: 'workspace-1').future,
+      );
 
-        await notifier.reconnectMcp('server-1');
+      await notifier.reconnectMcp('server-1');
 
-        expect(mcpNotifier.reconnectedServerIds, ['server-1']);
-      },
-    );
+      expect(mcpNotifier.reconnectedServerIds, ['server-1']);
+    });
 
     test(
       'toggleGroupTools with null groupId and defaultGroupType enables tools',
@@ -208,10 +188,7 @@ void main() {
           defaultGroupType: DefaultToolGroupType.builtIn,
         );
 
-        expect(
-          conversationToolsRepository.enabledToolIds,
-          contains('tool-1'),
-        );
+        expect(conversationToolsRepository.enabledToolIds, contains('tool-1'));
       },
     );
   });
@@ -254,15 +231,18 @@ class _GroupedConversationToolsFixture {
     _mcpNotifier = mcpNotifier;
     _container = ProviderContainer(
       overrides: [
-        toolsGroupsRepositoryProvider.overrideWithValue(
-          toolsGroupsRepository,
-        ),
-        workspaceToolsRepositoryProvider.overrideWithValue(
-          workspaceToolsRepository,
-        ),
-        conversationToolsRepositoryProvider.overrideWithValue(
-          conversationToolsRepository,
-        ),
+        toolsGroupsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(toolsGroupsRepository),
+        workspaceToolsRepositoryProvider(
+          const WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+          ),
+        ).overrideWithValue(workspaceToolsRepository),
+        conversationToolsRepositoryProvider('workspace-1')
+            .overrideWithValue(conversationToolsRepository),
         syncSkillToolPermissionsUsecaseProvider.overrideWithValue(
           NoopSyncSkillToolPermissionsUsecase(),
         ),
@@ -513,10 +493,7 @@ class _FakeConversationToolsRepository implements ConversationToolsRepository {
   }
 
   @override
-  Future<bool> isConversationToolEnabled(
-    String conversationId,
-    String toolId,
-  ) {
+  Future<bool> isConversationToolEnabled(String conversationId, String toolId) {
     throw UnimplementedError();
   }
 

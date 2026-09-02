@@ -25,18 +25,13 @@ import 'package:textf/textf.dart';
 
 const _skillToolDescriptionMaxCharacters = 1024;
 
-class SkillToolEditScreen extends ConsumerStatefulWidget {
-  const SkillToolEditScreen({
-    required this.workspaceId,
-    required this.skillId,
-    this.toolId,
-    super.key,
-  });
-
-  final String workspaceId;
-  final String skillId;
-  final String? toolId;
-
+class const SkillToolEditScreen({
+  required final String workspaceId,
+  required final String skillId,
+  final String? toolId,
+  super.key,
+}) extends ConsumerStatefulWidget {
+  static const _maxToolBodyLines = 12;
   @override
   ConsumerState<SkillToolEditScreen> createState() =>
       _SkillToolEditScreenState();
@@ -194,9 +189,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
             onSave: () => _save(context),
           );
         }(),
-        AsyncLoading() => const Center(
-          child: AuraSpinner(),
-        ),
+        AsyncLoading() => const Center(child: AuraSpinner()),
         AsyncError() => const Center(
           child: TextLocale(LocaleKeys.skills_tool_load_error),
         ),
@@ -234,7 +227,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   }
 
   Future<void> _editDescription(BuildContext context) async {
-    final result = await showMarkdownEditor(
+    final result = await MarkdownEditorLauncher.show(
       context,
       initialMarkdown: _descriptionController.text,
       maxCharacters: _skillToolDescriptionMaxCharacters,
@@ -311,9 +304,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       final inputsJson = _buildInputsJson();
       final requiresCredential =
           ref
-                  .read(
-                    skillDetailProvider(widget.workspaceId, widget.skillId),
-                  )
+                  .read(skillDetailProvider(widget.workspaceId, widget.skillId))
                   .value
                   ?.credentialDefinitionId !=
               null &&
@@ -356,7 +347,7 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       Navigator.of(context).pop(true);
     } on Object {
       if (!context.mounted) return;
-      final _ = showAuraSnackBar(
+      final _ = AuraSnackBars.show(
         context: context,
         content: Text(LocaleKeys.skills_tool_save_error.tr(context: context)),
         variant: AuraSnackBarVariant.error,
@@ -384,14 +375,13 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
       }
       query[key] = value;
     }
+    final body = _bodyController.text.trim();
     final template = <String, Object>{
       'url': url,
       'method': _method.value,
       if (query.isNotEmpty) 'query': query,
-      if (_bodyController.text.trim().isNotEmpty)
-        'body': _bodyController.text.trim(),
-      if (_bodyController.text.trim().isNotEmpty)
-        'bodyFormat': _bodyFormat.value,
+      if (body.isNotEmpty) 'body': body,
+      if (body.isNotEmpty) 'bodyFormat': _bodyFormat.value,
     };
 
     return jsonEncode(template);
@@ -419,59 +409,32 @@ class _SkillToolEditScreenState extends ConsumerState<SkillToolEditScreen> {
   }
 }
 
-class _SkillToolForm extends StatelessWidget {
-  const _SkillToolForm({
-    required this.tool,
-    required this.titleController,
-    required this.descriptionController,
-    required this.urlController,
-    required this.bodyController,
-    required this.queryFields,
-    required this.inputFields,
-    required this.method,
-    required this.bodyFormat,
-    required this.requiresCredential,
-    required this.isEnabled,
-    required this.isSaving,
-    required this.skillHasCredentialDefinition,
-    required this.onEditDescription,
-    required this.onMethodChanged,
-    required this.onAddQueryField,
-    required this.onRemoveQueryField,
-    required this.onBodyFormatChanged,
-    required this.onAddInputField,
-    required this.onRemoveInputField,
-    required this.onInputChanged,
-    required this.onRequiresCredentialChanged,
-    required this.onEnabledChanged,
-    required this.onSave,
-  });
-
-  final SkillTemplateToolEntity? tool;
-  final TextEditingController titleController;
-  final TextEditingController descriptionController;
-  final TextEditingController urlController;
-  final TextEditingController bodyController;
-  final List<_KeyValueField> queryFields;
-  final List<_InputField> inputFields;
-  final UrlRequestMethod method;
-  final SkillUrlTemplateBodyFormat bodyFormat;
-  final bool requiresCredential;
-  final bool isEnabled;
-  final bool isSaving;
-  final bool skillHasCredentialDefinition;
-  final VoidCallback onEditDescription;
-  final ValueChanged<UrlRequestMethod> onMethodChanged;
-  final VoidCallback onAddQueryField;
-  final ValueChanged<_KeyValueField> onRemoveQueryField;
-  final ValueChanged<SkillUrlTemplateBodyFormat> onBodyFormatChanged;
-  final VoidCallback onAddInputField;
-  final ValueChanged<_InputField> onRemoveInputField;
-  final VoidCallback onInputChanged;
-  final ValueChanged<bool> onRequiresCredentialChanged;
-  final ValueChanged<bool> onEnabledChanged;
-  final VoidCallback onSave;
-
+class const _SkillToolForm({
+  required final SkillTemplateToolEntity? tool,
+  required final TextEditingController titleController,
+  required final TextEditingController descriptionController,
+  required final TextEditingController urlController,
+  required final TextEditingController bodyController,
+  required final List<_KeyValueField> queryFields,
+  required final List<_InputField> inputFields,
+  required final UrlRequestMethod method,
+  required final SkillUrlTemplateBodyFormat bodyFormat,
+  required final bool requiresCredential,
+  required final bool isEnabled,
+  required final bool isSaving,
+  required final bool skillHasCredentialDefinition,
+  required final VoidCallback onEditDescription,
+  required final ValueChanged<UrlRequestMethod> onMethodChanged,
+  required final VoidCallback onAddQueryField,
+  required final ValueChanged<_KeyValueField> onRemoveQueryField,
+  required final ValueChanged<SkillUrlTemplateBodyFormat> onBodyFormatChanged,
+  required final VoidCallback onAddInputField,
+  required final ValueChanged<_InputField> onRemoveInputField,
+  required final VoidCallback onInputChanged,
+  required final ValueChanged<bool> onRequiresCredentialChanged,
+  required final ValueChanged<bool> onEnabledChanged,
+  required final VoidCallback onSave,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tool = this.tool;
@@ -530,29 +493,30 @@ class _SkillToolForm extends StatelessWidget {
                 onAdd: onAddQueryField,
                 onRemove: onRemoveQueryField,
               ),
-              AuraDropdownSelector<SkillUrlTemplateBodyFormat>(
+              AuraChoicePicker<SkillUrlTemplateBodyFormat>(
                 options: [
-                  AuraDropdownOption(
+                  AuraChoiceOption(
                     value: SkillUrlTemplateBodyFormat.json,
-                    child: Text(
+                    label: Text(
                       LocaleKeys.skills_tool_body_format_json.tr(
                         context: context,
                       ),
                     ),
                   ),
-                  AuraDropdownOption(
+                  AuraChoiceOption(
                     value: SkillUrlTemplateBodyFormat.text,
-                    child: Text(
+                    label: Text(
                       LocaleKeys.skills_tool_body_format_text.tr(
                         context: context,
                       ),
                     ),
                   ),
                 ],
-                value: bodyFormat,
-                onChanged: (value) {
-                  if (value == null) return;
-                  onBodyFormatChanged(value);
+                value: [bodyFormat],
+                onChanged: (values) {
+                  final selected = values.firstOrNull;
+                  if (selected == null) return;
+                  onBodyFormatChanged(selected);
                 },
                 label: Text(
                   LocaleKeys.skills_tool_body_format_label.tr(context: context),
@@ -567,7 +531,7 @@ class _SkillToolForm extends StatelessWidget {
                   LocaleKeys.skills_tool_body_label.tr(context: context),
                 ),
                 minLines: 5,
-                maxLines: 12,
+                maxLines: SkillToolEditScreen._maxToolBodyLines,
               ),
               _InputFieldsSection(
                 fields: inputFields,
@@ -588,15 +552,10 @@ class _SkillToolForm extends StatelessWidget {
                 ),
               AuraRow(
                 children: [
-                  AuraSwitch(
-                    value: isEnabled,
-                    onChanged: onEnabledChanged,
-                  ),
+                  AuraSwitch(value: isEnabled, onChanged: onEnabledChanged),
                   const Expanded(
                     child: AuraText(
-                      child: TextLocale(
-                        LocaleKeys.skills_screen_enabled_label,
-                      ),
+                      child: TextLocale(LocaleKeys.skills_screen_enabled_label),
                     ),
                   ),
                 ],
@@ -620,17 +579,11 @@ class _SkillToolForm extends StatelessWidget {
   }
 }
 
-class _QueryFieldsSection extends StatelessWidget {
-  const _QueryFieldsSection({
-    required this.fields,
-    required this.onAdd,
-    required this.onRemove,
-  });
-
-  final List<_KeyValueField> fields;
-  final VoidCallback onAdd;
-  final ValueChanged<_KeyValueField> onRemove;
-
+class const _QueryFieldsSection({
+  required final List<_KeyValueField> fields,
+  required final VoidCallback onAdd,
+  required final ValueChanged<_KeyValueField> onRemove,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
@@ -639,9 +592,7 @@ class _QueryFieldsSection extends StatelessWidget {
           child: TextLocale(LocaleKeys.skills_tool_query_section_title),
           style: AuraTextStyle.heading4,
         ),
-        const AuraText(
-          child: TextLocale(LocaleKeys.skills_tool_query_hint),
-        ),
+        const AuraText(child: TextLocale(LocaleKeys.skills_tool_query_hint)),
         for (final field in fields)
           Row(
             children: [
@@ -649,9 +600,7 @@ class _QueryFieldsSection extends StatelessWidget {
                 child: AuraInput(
                   controller: field.keyController,
                   label: Text(
-                    LocaleKeys.skills_tool_query_key_label.tr(
-                      context: context,
-                    ),
+                    LocaleKeys.skills_tool_query_key_label.tr(context: context),
                   ),
                 ),
               ),
@@ -695,19 +644,12 @@ class _QueryFieldsSection extends StatelessWidget {
   }
 }
 
-class _InputFieldsSection extends StatelessWidget {
-  const _InputFieldsSection({
-    required this.fields,
-    required this.onAdd,
-    required this.onRemove,
-    required this.onChanged,
-  });
-
-  final List<_InputField> fields;
-  final VoidCallback onAdd;
-  final ValueChanged<_InputField> onRemove;
-  final VoidCallback onChanged;
-
+class const _InputFieldsSection({
+  required final List<_InputField> fields,
+  required final VoidCallback onAdd,
+  required final ValueChanged<_InputField> onRemove,
+  required final VoidCallback onChanged,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
@@ -716,9 +658,7 @@ class _InputFieldsSection extends StatelessWidget {
           child: TextLocale(LocaleKeys.skills_tool_inputs_section_title),
           style: AuraTextStyle.heading4,
         ),
-        const AuraText(
-          child: TextLocale(LocaleKeys.skills_tool_inputs_hint),
-        ),
+        const AuraText(child: TextLocale(LocaleKeys.skills_tool_inputs_hint)),
         for (final field in fields)
           AuraCard(
             child: AuraColumn(
@@ -774,11 +714,7 @@ class _InputFieldsSection extends StatelessWidget {
                     ),
                   ],
                   value: field.type,
-                  onChanged: (value) {
-                    if (value == null) return;
-                    field.type = value;
-                    onChanged();
-                  },
+                  onChanged: (value) => _setFieldType(field, value),
                   label: Text(
                     LocaleKeys.skills_tool_input_type_label.tr(
                       context: context,
@@ -845,15 +781,19 @@ class _InputFieldsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
     );
   }
+
+  void _setFieldType(_InputField field, String? value) {
+    if (value == null) return;
+    field.type = value;
+    onChanged();
+  }
 }
 
-class _KeyValueField {
-  _KeyValueField({String key = '', String value = ''})
-    : keyController = TextEditingController(text: key),
-      valueController = TextEditingController(text: value);
-
-  final TextEditingController keyController;
-  final TextEditingController valueController;
+class _KeyValueField({String key = '', String value = ''}) {
+  final TextEditingController keyController = TextEditingController(text: key);
+  final TextEditingController valueController = TextEditingController(
+    text: value,
+  );
 
   void dispose() {
     keyController.dispose();
@@ -861,39 +801,33 @@ class _KeyValueField {
   }
 }
 
-class _InputField {
-  _InputField({
-    String name = '',
-    this.type = 'string',
-    String description = '',
-    this.optional = false,
-  }) : nameController = TextEditingController(text: name),
-       descriptionController = TextEditingController(text: description);
-
-  final TextEditingController nameController;
-  final TextEditingController descriptionController;
-  String type;
-  bool optional;
-
+class _InputField({
+  String name = '',
+  var String type = 'string',
+  String description = '',
+  var bool optional = false,
+}) {
+  final TextEditingController nameController = TextEditingController(
+    text: name,
+  );
+  final TextEditingController descriptionController = TextEditingController(
+    text: description,
+  );
   void dispose() {
     nameController.dispose();
     descriptionController.dispose();
   }
 }
 
-class _ReadOnlyField extends StatelessWidget {
-  const _ReadOnlyField({required this.labelKey, required this.value});
-
-  final String labelKey;
-  final String value;
-
+class const _ReadOnlyField({
+  required final String labelKey,
+  required final String value,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AuraColumn(
       children: [
-        AuraText(
-          child: TextLocale(labelKey),
-        ),
+        AuraText(child: TextLocale(labelKey)),
         AuraSelectableText(value),
       ],
       spacing: AuraSpacing.xs,

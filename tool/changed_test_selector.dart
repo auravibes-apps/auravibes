@@ -16,11 +16,7 @@ enum SelectionMode { full, affected, none }
 
 /// One file row from a Git change range.
 class ChangedFile {
-  ChangedFile({
-    required this.status,
-    this.oldPath,
-    this.newPath,
-  }) {
+  new({required this.status, this.oldPath, this.newPath}) {
     if (status != 'added' &&
         status != 'modified' &&
         status != 'deleted' &&
@@ -29,22 +25,22 @@ class ChangedFile {
     }
   }
 
-  const ChangedFile.added(String path)
+  const new added(String path)
     : status = 'added',
       oldPath = null,
       newPath = path;
 
-  const ChangedFile.modified(String path)
+  const new modified(String path)
     : status = 'modified',
       oldPath = path,
       newPath = path;
 
-  const ChangedFile.deleted(String path)
+  const new deleted(String path)
     : status = 'deleted',
       oldPath = path,
       newPath = null;
 
-  const ChangedFile.renamed({
+  const new renamed({
     required String this.oldPath,
     required String this.newPath,
   }) : status = 'renamed';
@@ -56,13 +52,13 @@ class ChangedFile {
 
 /// Immutable selector output.
 class SelectionResult {
-  SelectionResult({
+  new({
     required this.mode,
     required Map<String, List<String>> packages,
     required this.reason,
   }) : packages = _freezePackages(packages);
 
-  factory SelectionResult.fromJson(Object? value) {
+  factory fromJson(Object? value) {
     if (value is! Map) {
       throw const FormatException('Manifest must be an object');
     }
@@ -115,10 +111,7 @@ class SelectionResult {
 
   /// Returns values accepted by `jsonEncode`.
   Map<String, Object?> toJson() {
-    final json = <String, Object?>{
-      'mode': mode.name,
-      'reason': reason,
-    };
+    final json = <String, Object?>{'mode': mode.name, 'reason': reason};
     if (packages.isNotEmpty || mode == SelectionMode.affected) {
       json['packages'] = packages;
     }
@@ -290,11 +283,7 @@ SelectionResult selectChangedTests({
     for (final path in selected.toList()..sort()) {
       final root = _packageRootFor(path, roots.values);
       if (root == null) continue;
-      packages
-          .putIfAbsent(root, () => [])
-          .add(
-            path._slice(root.length + 1),
-          );
+      packages.putIfAbsent(root, () => []).add(path._slice(root.length + 1));
     }
     for (final packagePaths in packages.values) {
       packagePaths.sort();
@@ -319,12 +308,70 @@ SelectionResult selectChangedTests({
   }
 }
 
-typedef ProcessLauncher =
-    Future<int> Function({
-      required String executable,
-      required List<String> arguments,
-      required String workingDirectory,
-    });
+typedef ProcessLauncher = Future<int> Function({
+  required String executable,
+  required List<String> arguments,
+  required String workingDirectory,
+});
+
+/// One GitHub Actions matrix row for a selected package test group.
+class TestMatrixEntry {
+  const new({
+    required this.package,
+    required this.shardIndex,
+    required this.totalShards,
+    required this.artifact,
+  });
+
+  final String package;
+  final int shardIndex;
+  final int totalShards;
+  final String artifact;
+
+  Map<String, Object> toJson() => {
+    'package': package,
+    'shardIndex': shardIndex,
+    'totalShards': totalShards,
+    'artifact': artifact,
+  };
+}
+
+/// Builds a GitHub Actions matrix without changing the selection manifest.
+Future<Map<String, Object>> buildTestMatrix(
+  SelectionResult selection, {
+  required String rootPath,
+  required String shardPackage,
+  required int shardCount,
+}) async {
+  if (shardCount < 1) {
+    throw const FormatException('Shard count must be positive');
+  }
+  final normalizedShardPackage = _normalizePath(shardPackage);
+  if (selection.mode == SelectionMode.none) {
+    return const {'include': <Object>[]};
+  }
+
+  final groups = await _testGroups(selection, rootPath: rootPath);
+  final entries = <TestMatrixEntry>[];
+  for (final group in groups) {
+    final totalShards = group.package.relativeRoot == normalizedShardPackage
+        ? shardCount.clamp(1, group.paths.length)
+        : 1;
+    final artifactBase = _artifactBase(group.package.relativeRoot);
+    for (var shardIndex = 0; shardIndex < totalShards; shardIndex++) {
+      entries.add(
+        TestMatrixEntry(
+          package: group.package.relativeRoot,
+          shardIndex: shardIndex,
+          totalShards: totalShards,
+          artifact: '$artifactBase-$shardIndex',
+        ),
+      );
+    }
+  }
+
+  return {'include': entries.map((entry) => entry.toJson()).toList()};
+}
 
 /// Contract entry point for running a selected result.
 Future<int> runSelectedTests(
@@ -332,40 +379,36 @@ Future<int> runSelectedTests(
   required String rootPath,
   ProcessLauncher? launcher,
   bool dryRun = false,
+  String? packageRoot,
+  int? totalShards,
+  int? shardIndex,
+  bool coverage = false,
 }) async {
   if (selection.mode == SelectionMode.none) return 0;
   try {
-    final packages = await _loadPackages(rootPath);
-    final groups = <_TestGroup>[];
-    if (selection.mode == SelectionMode.full) {
-      for (final package in packages) {
-        final paths = await _testFiles(package);
-        if (paths.isNotEmpty) {
-          final _ = groups.add(_TestGroup(package, paths));
-        }
-      }
-    } else {
-      for (final entry in selection.packages.entries) {
-        final package = packages.firstWhere(
-          (candidate) => candidate.relativeRoot == _normalizePath(entry.key),
-          orElse: () => throw FormatException('Unknown package: ${entry.key}'),
-        );
-        final paths = <String>[];
-        for (final path in entry.value) {
-          final _ = paths.add(await _validateTestPath(package, path));
-        }
-        if (paths.isNotEmpty) {
-          final _ = groups.add(_TestGroup(package, paths));
-        }
-      }
+    final groups = await _testGroups(selection, rootPath: rootPath);
+    final selectedGroups = packageRoot == null
+        ? groups
+        : _singlePackageGroup(groups, packageRoot);
+    final shard = _Shard.fromOptions(
+      totalShards: totalShards,
+      shardIndex: shardIndex,
+    );
+    if (shard.total > 1 && selectedGroups.length != 1) {
+      throw const FormatException('Sharding requires one selected package');
     }
     final launch = launcher ?? _launchProcess;
     var firstFailure = 0;
-    for (var index = 0; index < groups.length; index += 2) {
-      final batch = groups.skip(index).take(2);
+    for (var index = 0; index < selectedGroups.length; index += 2) {
+      final batch = selectedGroups.skip(index).take(2);
       final results = await Future.wait(
         batch.map((group) async {
-          final command = _command(group);
+          final command = _command(
+            group,
+            rootPath: rootPath,
+            shard: shard,
+            coverage: coverage,
+          );
           if (dryRun) {
             stdout.writeln(
               [command.executable, ...command.arguments].join(' '),
@@ -374,9 +417,19 @@ Future<int> runSelectedTests(
             return 0;
           }
           try {
-            return await launch(
+            final testExitCode = await launch(
               executable: command.executable,
               arguments: command.arguments,
+              workingDirectory: group.package.absoluteRoot,
+            );
+            if (testExitCode != 0 || !coverage) return testExitCode;
+
+            final coverageCommand = _coverageCommand(group, rootPath: rootPath);
+            if (coverageCommand == null) return 0;
+
+            return await launch(
+              executable: coverageCommand.executable,
+              arguments: coverageCommand.arguments,
               workingDirectory: group.package.absoluteRoot,
             );
           } on Object catch (_) {
@@ -397,6 +450,55 @@ Future<int> runSelectedTests(
   }
 }
 
+Future<List<_TestGroup>> _testGroups(
+  SelectionResult selection, {
+  required String rootPath,
+}) async {
+  final packages = await _loadPackages(rootPath);
+  final groups = <_TestGroup>[];
+  if (selection.mode == SelectionMode.full) {
+    for (final package in packages) {
+      final paths = await _testFiles(package);
+      if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+    }
+
+    return groups;
+  }
+
+  for (final entry in selection.packages.entries) {
+    final package = packages.firstWhere(
+      (candidate) => candidate.relativeRoot == _normalizePath(entry.key),
+      orElse: () => throw FormatException('Unknown package: ${entry.key}'),
+    );
+    final paths = <String>[];
+    for (final path in entry.value) {
+      paths.add(await _validateTestPath(package, path));
+    }
+    if (paths.isNotEmpty) groups.add(_TestGroup(package, paths));
+  }
+
+  return groups;
+}
+
+List<_TestGroup> _singlePackageGroup(
+  List<_TestGroup> groups,
+  String packageRoot,
+) {
+  final normalized = _normalizePath(packageRoot);
+  final group = groups.where(
+    (candidate) => candidate.package.relativeRoot == normalized,
+  );
+  if (group.length != 1) {
+    throw FormatException('Package is not selected: $packageRoot');
+  }
+
+  return group.toList(growable: false);
+}
+
+String _artifactBase(String packageRoot) => packageRoot
+    .replaceAll(RegExp('[^a-zA-Z0-9]+'), '-')
+    .replaceAll(RegExp(r'^-+|-+$'), '');
+
 Future<SelectionResult> selectRepository({
   required String rootPath,
   required String base,
@@ -409,20 +511,17 @@ Future<SelectionResult> selectRepository({
     final headSources = await _workspaceSources(packages);
     // ponytail: graph inputs are limited to package lib/test roots; skip
     // unrelated repository Dart files before loading base contents.
-    final basePaths = await _git(
-      rootPath,
-      [
-        'ls-tree',
-        '-r',
-        '--name-only',
-        base,
-        '--',
-        for (final package in packages) ...[
-          '${package.relativeRoot}/lib',
-          '${package.relativeRoot}/test',
-        ],
+    final basePaths = await _git(rootPath, [
+      'ls-tree',
+      '-r',
+      '--name-only',
+      base,
+      '--',
+      for (final package in packages) ...[
+        '${package.relativeRoot}/lib',
+        '${package.relativeRoot}/test',
       ],
-    );
+    ]);
     final baseSources = <String, String>{};
     for (final path
         in basePaths.split('\n').where((path) => path.endsWith('.dart'))) {
@@ -432,10 +531,13 @@ Future<SelectionResult> selectRepository({
         '$base:$normalized',
       ]);
     }
-    final diff = await _git(
-      rootPath,
-      ['diff', '--name-status', '--find-renames', '-z', '$base...$head'],
-    );
+    final diff = await _git(rootPath, [
+      'diff',
+      '--name-status',
+      '--find-renames',
+      '-z',
+      '$base...$head',
+    ]);
 
     return selectChangedTests(
       changes: parseNameStatus(diff),
@@ -462,16 +564,22 @@ Future<void> main(List<String> args) async {
       case 'select':
         _checkOptions(options, const {'base', 'head', 'output'});
         final result = await selectRepository(
-          rootPath: Directory.current.path,
           base: _requiredOption(options, 'base'),
+          rootPath: Directory.current.path,
           head: _requiredOption(options, 'head'),
         );
-        final _ = await File(
-          _requiredOption(options, 'output'),
-        ).writeAsString(jsonEncode(result.toJson()));
+        final _ = await File(_requiredOption(options, 'output'))
+            .writeAsString(jsonEncode(result.toJson()));
         stderr.writeln('${result.mode.name}: ${result.reason}');
       case 'run':
-        _checkOptions(options, const {'manifest', 'dry-run'});
+        _checkOptions(options, const {
+          'manifest',
+          'dry-run',
+          'package',
+          'total-shards',
+          'shard-index',
+          'coverage',
+        });
         final result = SelectionResult.fromJson(
           jsonDecode(
             await File(_requiredOption(options, 'manifest')).readAsString(),
@@ -481,6 +589,31 @@ Future<void> main(List<String> args) async {
           result,
           rootPath: Directory.current.path,
           dryRun: options.containsKey('dry-run'),
+          packageRoot: options['package'],
+          totalShards: _optionalInt(options, 'total-shards'),
+          shardIndex: _optionalInt(options, 'shard-index'),
+          coverage: options.containsKey('coverage'),
+        );
+      case 'matrix':
+        _checkOptions(options, const {
+          'manifest',
+          'shard-package',
+          'shard-count',
+        });
+        final result = SelectionResult.fromJson(
+          jsonDecode(
+            await File(_requiredOption(options, 'manifest')).readAsString(),
+          ),
+        );
+        stdout.writeln(
+          jsonEncode(
+            await buildTestMatrix(
+              result,
+              rootPath: Directory.current.path,
+              shardPackage: _requiredOption(options, 'shard-package'),
+              shardCount: _requiredInt(options, 'shard-count'),
+            ),
+          ),
         );
       default:
         throw FormatException('Unknown command: ${args.firstOrNull}');
@@ -492,7 +625,7 @@ Future<void> main(List<String> args) async {
 }
 
 class _Package {
-  _Package({
+  new({
     required this.relativeRoot,
     required this.name,
     required this.flutter,
@@ -507,13 +640,34 @@ class _Package {
 }
 
 class _TestGroup {
-  _TestGroup(this.package, this.paths);
+  new(this.package, this.paths);
   final _Package package;
   final List<String> paths;
 }
 
+class _Shard {
+  const new({required this.total, required this.index});
+
+  factory fromOptions({int? totalShards, int? shardIndex}) {
+    if (totalShards == null && shardIndex == null) {
+      return const _Shard(total: 1, index: 0);
+    }
+    if (totalShards == null || shardIndex == null || totalShards < 1) {
+      throw const FormatException('Both valid shard options are required');
+    }
+    if (shardIndex < 0 || shardIndex >= totalShards) {
+      throw const FormatException('Shard index is outside the shard count');
+    }
+
+    return _Shard(total: totalShards, index: shardIndex);
+  }
+
+  final int total;
+  final int index;
+}
+
 class _Command {
-  _Command(this.executable, this.arguments);
+  new(this.executable, this.arguments);
   final String executable;
   final List<String> arguments;
 }
@@ -543,9 +697,8 @@ Future<List<_Package>> _loadPackages(String rootPath) async {
   final packages = <_Package>[];
   for (final member in members) {
     final packageRoot = Directory('${root.path}/$member');
-    final packageLines = await File(
-      '${packageRoot.path}/pubspec.yaml',
-    ).readAsLines();
+    final packageLines = await File('${packageRoot.path}/pubspec.yaml')
+        .readAsLines();
     final nameLine = packageLines.firstWhere(
       (line) => RegExp(r'^name:\s*\S+').hasMatch(line),
       orElse: () => throw FormatException('Package name missing: $member'),
@@ -601,7 +754,10 @@ Future<List<String>> _testFiles(_Package package) async {
   )) {
     if (entity is! File || !entity.path.endsWith('.dart')) continue;
     final relative = _relativePath(package.absoluteRoot, entity.path);
-    if (_allowedTestPath(relative, package.serverpod)) paths.add(relative);
+    if (_isTestEntrypoint(relative) &&
+        _allowedTestPath(relative, package.serverpod)) {
+      paths.add(relative);
+    }
   }
 
   return paths..sort();
@@ -615,7 +771,7 @@ Future<String> _validateTestPath(_Package package, String path) async {
     throw FormatException('Invalid selected test path: $path');
   }
   final relative = _normalizePath(path);
-  if (!relative.endsWith('.dart') ||
+  if (!_isTestEntrypoint(relative) ||
       !_allowedTestPath(relative, package.serverpod)) {
     throw FormatException('Invalid selected test path: $path');
   }
@@ -624,9 +780,8 @@ Future<String> _validateTestPath(_Package package, String path) async {
     throw FormatException('Selected test file is missing: $path');
   }
   final resolved = await file.resolveSymbolicLinks();
-  final packageResolved = await Directory(
-    package.absoluteRoot,
-  ).resolveSymbolicLinks();
+  final packageResolved = await Directory(package.absoluteRoot)
+      .resolveSymbolicLinks();
   final root = packageResolved.endsWith(Platform.pathSeparator)
       ? packageResolved
       : '$packageResolved${Platform.pathSeparator}';
@@ -643,15 +798,54 @@ bool _allowedTestPath(String path, bool serverpod) =>
         path.startsWith('test/features/') ||
         path.startsWith('test/migrations/'));
 
-_Command _command(_TestGroup group) => _Command('fvm', [
-  if (group.package.flutter) 'flutter' else 'dart',
-  'test',
-  '--exclude-tags=integration',
-  '--concurrency=2',
-  '--timeout=30s',
-  '--reporter=compact',
-  ...group.paths,
-]);
+bool _isTestEntrypoint(String path) => path.endsWith('_test.dart');
+
+_Command _command(
+  _TestGroup group, {
+  required String rootPath,
+  required _Shard shard,
+  required bool coverage,
+}) => _Command(
+  _workspaceExecutable(rootPath, group.package.flutter ? 'flutter' : 'dart'),
+  [
+    'test',
+    '--exclude-tags=integration',
+    if (coverage && group.package.flutter) '--coverage',
+    if (coverage && !group.package.flutter) '--coverage=coverage',
+    '--concurrency=2',
+    '--timeout=30s',
+    '--reporter=compact',
+    if (shard.total > 1) '--total-shards=${shard.total}',
+    if (shard.total > 1) '--shard-index=${shard.index}',
+    ...group.paths,
+  ],
+);
+
+_Command? _coverageCommand(_TestGroup group, {required String rootPath}) {
+  if (group.package.flutter) return null;
+
+  return _Command(_workspaceExecutable(rootPath, 'dart'), [
+    'run',
+    'coverage:format_coverage',
+    '--lcov',
+    '--in=coverage',
+    '--out=coverage/lcov.info',
+    '--report-on=lib',
+  ]);
+}
+
+String _workspaceExecutable(String rootPath, String name) {
+  final names = Platform.isWindows ? ['$name.bat', '$name.exe'] : [name];
+  final root = Directory(rootPath);
+  for (final candidate in names) {
+    final file = File.fromUri(
+      root.uri.resolve('.fvm/flutter_sdk/bin/$candidate'),
+    );
+    if (file.existsSync()) return file.path;
+  }
+
+  return name;
+}
 
 Future<int> _launchProcess({
   required String executable,
@@ -695,8 +889,8 @@ Map<String, String> _options(Iterable<String> arguments) {
   final values = arguments.toList();
   for (var index = 0; index < values.length; index++) {
     final argument = values[index];
-    if (argument == '--dry-run') {
-      options['dry-run'] = '';
+    if (argument == '--dry-run' || argument == '--coverage') {
+      options[argument._slice(2)] = '';
     } else if (argument.startsWith('--') && index + 1 < values.length) {
       options[argument._slice(2)] = values[++index];
     } else {
@@ -721,6 +915,22 @@ String _requiredOption(Map<String, String> options, String key) {
   }
 
   return value;
+}
+
+int _requiredInt(Map<String, String> options, String key) {
+  final value = int.tryParse(_requiredOption(options, key));
+  if (value == null) throw FormatException('Invalid option: --$key');
+
+  return value;
+}
+
+int? _optionalInt(Map<String, String> options, String key) {
+  final value = options[key];
+  if (value == null) return null;
+  final parsed = int.tryParse(value);
+  if (parsed == null) throw FormatException('Invalid option: --$key');
+
+  return parsed;
 }
 
 String _relativePath(String root, String path) {
@@ -776,13 +986,11 @@ bool _containsOpaqueRuntimeMarker(String source) =>
     // ponytail: this finite marker list bounds known opaque runtimes; unknown
     // dynamic/reflection behavior remains residual risk until explicit marker
     // coverage is added.
-    RegExp(
-      '''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''',
-    ).hasMatch(source) ||
+    RegExp('''['"]dart:(?:ffi|mirrors|js|js_util|html)['"]''')
+        .hasMatch(source) ||
     RegExp(r'\bDynamicLibrary\b').hasMatch(source) ||
-    RegExp(r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b').hasMatch(
-      source,
-    ) ||
+    RegExp(r'\bIsolate\s*\.\s*(?:spawnUri|resolvePackageUri)\b')
+        .hasMatch(source) ||
     RegExp(r'''@pragma\s*\(\s*['"]vm:entry-point['"]''').hasMatch(source);
 
 Map<String, String> _normalizeSources(Map<String, String> sources) {
@@ -825,12 +1033,7 @@ Map<String, Set<String>> _buildReverseGraph(
     for (final directive in parsed.unit.directives) {
       final uris = _directiveUris(directive);
       for (final uri in uris) {
-        final target = _resolveUri(
-          uri,
-          entry.key,
-          availableSources,
-          roots,
-        );
+        final target = _resolveUri(uri, entry.key, availableSources, roots);
         if (target == null) continue;
         if (!availableSources.containsKey(target)) {
           throw FormatException('Unresolved workspace URI: $uri');
@@ -942,13 +1145,9 @@ Set<String> _currentTestCandidates(
   return candidates;
 }
 
-bool _isCandidateTest(
-  String path,
-  String root, {
-  required bool serverpod,
-}) {
+bool _isCandidateTest(String path, String root, {required bool serverpod}) {
   final prefix = '$root/test/';
-  if (!path.startsWith(prefix) || !path.endsWith('.dart')) return false;
+  if (!path.startsWith(prefix) || !_isTestEntrypoint(path)) return false;
   final relative = path._slice(root.length + 1);
   if (relative.startsWith('test/integration/')) return false;
   if (serverpod) {
@@ -989,13 +1188,8 @@ bool _isSupportedDartPath(String path, Iterable<String> roots) {
 }
 
 String? _packageRootFor(String path, Iterable<String> roots) {
-  final matches =
-      roots
-          .where(
-            (root) => path.startsWith('$root/test/'),
-          )
-          .toList()
-        ..sort((a, b) => b.length.compareTo(a.length));
+  final matches = roots.where((root) => path.startsWith('$root/test/')).toList()
+    ..sort((a, b) => b.length.compareTo(a.length));
 
   return matches.firstOrNull;
 }
