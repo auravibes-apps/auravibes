@@ -53,7 +53,7 @@ void _sendRegistrationCode(
   required Transaction? transaction,
 }) {
   if (session.serverpod.runMode != ServerpodRunMode.development) return;
-  session.log('[EmailIdp] Registration code ($email): $verificationCode');
+  session.log('[EmailIdp] Registration verification code generated');
 }
 
 void _sendPasswordResetCode(
@@ -64,5 +64,5 @@ void _sendPasswordResetCode(
   required Transaction? transaction,
 }) {
   if (session.serverpod.runMode != ServerpodRunMode.development) return;
-  session.log('[EmailIdp] Password reset code ($email): $verificationCode');
+  session.log('[EmailIdp] Password reset verification code generated');
 }

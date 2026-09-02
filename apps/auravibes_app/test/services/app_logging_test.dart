@@ -41,11 +41,12 @@ void main() {
 
       Logger(
         'test.logger',
-      ).severe('failed', StateError('bad'), StackTrace.current);
+      ).severe('failed', StateError('opaque-secret'), StackTrace.current);
       await Future<void>.delayed(Duration.zero);
 
       expect(logs, anyElement(contains('[SEVERE] test.logger: failed')));
-      expect(logs, anyElement(contains('Error: Bad state: bad')));
+      expect(logs, anyElement(contains('Error: StateError')));
+      expect(logs.join('\n'), isNot(contains('opaque-secret')));
       expect(logs, anyElement(contains('StackTrace:')));
     });
 
@@ -83,7 +84,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(forwarded, isTrue);
-      expect(logs, anyElement(contains('Flutter error: Exception: boom')));
+      expect(logs, anyElement(contains('Flutter error')));
     });
 
     test('logs platform errors and keeps them unhandled', () async {

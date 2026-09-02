@@ -192,6 +192,7 @@ class _ErrorBanner extends ConsumerWidget {
     if (errorMessage == null) {
       return const SizedBox.shrink();
     }
+    final localizedErrorMessage = LocaleKeys.tools_screen_mcp_error.tr();
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -209,7 +210,7 @@ class _ErrorBanner extends ConsumerWidget {
           const AuraSizedBox(width: .sm),
           Expanded(
             child: Text(
-              errorMessage,
+              localizedErrorMessage,
               style: TextStyle(color: context.auraColors.error),
             ),
           ),

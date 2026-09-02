@@ -102,6 +102,12 @@ void main() {
         AgentToolResultStatus.toolNotFound,
         AgentToolResultStatus.executionError,
       ]);
+      expect(
+        provider.updates
+            .singleWhere((update) => update.toolCallId == 'tool-3')
+            .responseRaw,
+        'Tool execution failed.',
+      );
       expect(provider.loggedErrors, ['tool-3']);
     },
   );

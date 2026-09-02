@@ -136,7 +136,7 @@ class ConversationWorker {
         'Conversation job provider execution failed: job=${job.id}, '
         'workspace=${job.workspaceId}, turn=${job.turnId}.',
         level: LogLevel.error,
-        exception: error,
+        exception: error.runtimeType,
         stackTrace: stackTrace,
       );
       return true;
@@ -170,7 +170,7 @@ class ConversationWorker {
       session.log(
         'Redis conversation-job wakeup failed; PostgreSQL polling remains active.',
         level: LogLevel.warning,
-        exception: error,
+        exception: error.runtimeType,
         stackTrace: stackTrace,
       );
     }
@@ -1103,7 +1103,7 @@ class ConversationWorker {
               session.log(
                 'Conversation job lease renewal lost: job=$jobId.',
                 level: LogLevel.warning,
-                exception: error,
+                exception: error.runtimeType,
                 stackTrace: stackTrace,
               );
               if (!leaseLost.isCompleted) leaseLost.complete();
@@ -1113,7 +1113,7 @@ class ConversationWorker {
               'Conversation job lease renewal failed; retrying: job=$jobId, '
               'leaseExpiresAt=$lastKnownLeaseExpiry.',
               level: LogLevel.warning,
-              exception: error,
+              exception: error.runtimeType,
               stackTrace: stackTrace,
             );
             if (hasDurableLease()) {

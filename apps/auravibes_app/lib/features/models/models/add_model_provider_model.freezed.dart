@@ -33,10 +33,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,modelId,key,url,authMode);
 
-@override
-String toString() {
-  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
-}
 
 
 }
@@ -237,10 +233,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,modelId,key,url,authMode);
 
-@override
-String toString() {
-  return 'AddModelProviderModel(name: $name, modelId: $modelId, key: $key, url: $url, authMode: $authMode)';
-}
 
 
 }

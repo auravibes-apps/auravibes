@@ -11,6 +11,9 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('cloud_workspace_detail_screen');
 
 class CloudWorkspaceDetailScreen extends ConsumerWidget {
   const CloudWorkspaceDetailScreen({
@@ -270,9 +273,9 @@ Future<void> _runCloudAction(
 ) async {
   try {
     await action();
-  } on Object catch (error) {
+  } on Object catch (error, stackTrace) {
+    _logger.warning('Cloud workspace action failed', error, stackTrace);
     if (!context.mounted) return;
-    debugPrint('Cloud workspace action failed: $error');
     final _ = showAuraSnackBar(
       context: context,
       content: const TextLocale(LocaleKeys.workspace_management_cloud_error),

@@ -1,7 +1,12 @@
 const _redacted = '[REDACTED]';
 
 String redactLogValue(Object? value) {
-  var text = '$value';
+  var text = switch (value) {
+    null => 'null',
+    String() => value,
+    StackTrace() => '$value',
+    _ => '${value.runtimeType}',
+  };
   for (final pattern in _secretPatterns) {
     text = text.replaceAllMapped(pattern, (match) {
       final prefix = match.group(1) ?? '';

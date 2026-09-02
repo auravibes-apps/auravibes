@@ -6,6 +6,7 @@ import 'package:auravibes_app/features/tools/providers/mcp_form_state.dart';
 import 'package:auravibes_app/features/tools/widgets/add_mcp_modal.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/notifiers/mcp_connection_status.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -43,12 +44,7 @@ class _ErrorMcpFormNotifier extends McpFormNotifier {
   @override
   McpFormState build(String workspaceId) {
     return const McpFormState(
-      errorMessage:
-          'OAuth discovery failed. OAuth discovery failed. OAuth '
-          'discovery failed. OAuth discovery failed. OAuth discovery failed. '
-          'OAuth discovery failed. OAuth discovery failed. OAuth discovery '
-          'failed. OAuth discovery failed. OAuth discovery failed. OAuth '
-          'discovery failed. OAuth discovery failed.',
+      errorMessage: 'Unexpected failure: secret-token',
     );
   }
 }
@@ -243,7 +239,9 @@ void main() {
       expect(find.byType(AuraLoadingOverlay), findsOneWidget);
     });
 
-    testWidgets('long error message remains scrollable', (tester) async {
+    testWidgets('unknown error message is replaced with a localized error', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(500, 700);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -296,6 +294,8 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.textContaining('secret-token'), findsNothing);
+      expect(find.text(LocaleKeys.tools_screen_mcp_error.tr()), findsOneWidget);
     });
 
     testWidgets('save shows success message and closes dialog', (tester) async {

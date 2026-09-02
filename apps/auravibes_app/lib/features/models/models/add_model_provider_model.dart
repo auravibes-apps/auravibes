@@ -17,7 +17,7 @@ bool _isLoopbackHost(String host) {
   };
 }
 
-@freezed
+@Freezed(toStringOverride: false)
 abstract class AddModelProviderModel with _$AddModelProviderModel {
   const factory AddModelProviderModel({
     String? name,

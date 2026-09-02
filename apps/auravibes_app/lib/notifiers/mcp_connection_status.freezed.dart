@@ -38,10 +38,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(tools),errorMessage);
 
-@override
-String toString() {
-  return 'McpConnectionState(server: $server, status: $status, client: $client, tools: $tools, errorMessage: $errorMessage)';
-}
 
 
 }
@@ -263,10 +259,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,server,status,client,const DeepCollectionEquality().hash(_tools),errorMessage);
 
-@override
-String toString() {
-  return 'McpConnectionState(server: $server, status: $status, client: $client, tools: $tools, errorMessage: $errorMessage)';
-}
 
 
 }

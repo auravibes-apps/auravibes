@@ -306,10 +306,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,message,type);
 
-@override
-String toString() {
-  return 'AntropicResponseModelsErrorMessage(message: $message, type: $type)';
-}
 
 
 }
@@ -504,10 +500,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,message,type);
 
-@override
-String toString() {
-  return 'AntropicResponseModelsErrorMessage(message: $message, type: $type)';
-}
 
 
 }

@@ -193,7 +193,7 @@ class AgentException implements Exception {
 
   @override
   String toString() {
-    final causedBy = ' (Caused by: $cause)';
+    final causedBy = ' (Caused by: ${cause.runtimeType})';
 
     return 'AgentException: $message${cause != null ? causedBy : ''}';
   }

@@ -113,9 +113,9 @@ class AgentToolExecutionDispatcher<TTool extends Object> {
         stackTrace: stackTrace,
       );
 
-      return AgentToolExecutionResult(
+      return const AgentToolExecutionResult(
         resultStatus: AgentToolResultStatus.executionError,
-        responseRaw: 'Tool execution failed: ${error.message}',
+        responseRaw: 'Tool execution failed.',
       );
     } on Object catch (error, stackTrace) {
       logToolExecutionError(

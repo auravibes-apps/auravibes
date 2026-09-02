@@ -159,11 +159,79 @@ void main() {
       throwsA(isA<GenkitException>()),
     );
   });
+
+  test('provider failures do not expose response bodies', () async {
+    const secret = 'provider-secret-value';
+    final codec = ChatCompletionsCodec(
+      errorLabel: 'Provider',
+      customize: (modelName, config) => (model: modelName, extraBody: {}),
+    );
+
+    try {
+      await codec.complete(
+        (_) async => _response({'error': secret}, statusCode: 500),
+        const {},
+      );
+      fail('Expected provider request to fail');
+    } on GenkitException catch (error) {
+      expect(error.toString(), isNot(contains(secret)));
+    }
+
+    try {
+      const codex = OpenAICodexCodec();
+      await codex.complete(
+        (_) async => _response({'error': secret}, statusCode: 500),
+        const {},
+      );
+      fail('Expected Codex request to fail');
+    } on GenkitException catch (error) {
+      expect(error.toString(), isNot(contains(secret)));
+    }
+  });
+
+  test(
+    'Codex retryability requires an exact structured server error',
+    () async {
+      const codec = OpenAICodexCodec();
+
+      try {
+        await codec.complete(
+          (_) async => _response({
+            'error': {'type': 'server_error', 'message': 'temporary'},
+          }, statusCode: 500),
+          const {},
+        );
+        fail('Expected provider request to fail');
+      } on GenkitException catch (error) {
+        expect(error.details, 'server_error');
+        expect(isRetryableCodexError(error), isTrue);
+      }
+
+      try {
+        await codec.complete(
+          (_) async => _response({
+            'error': {
+              'type': 'invalid_request_error',
+              'message': 'bad request',
+            },
+          }, statusCode: 500),
+          const {},
+        );
+        fail('Expected provider request to fail');
+      } on GenkitException catch (error) {
+        expect(error.details, isNull);
+        expect(isRetryableCodexError(error), isFalse);
+      }
+    },
+  );
 }
 
-ProviderTransportResponse _response(Map<String, Object?> body) {
+ProviderTransportResponse _response(
+  Map<String, Object?> body, {
+  int statusCode = 200,
+}) {
   return ProviderTransportResponse(
-    statusCode: 200,
+    statusCode: statusCode,
     body: Stream.value(utf8.encode(jsonEncode(body))),
   );
 }

@@ -41,7 +41,7 @@ Future<void> runModelCatalogSyncWorker(
     session.log(
       'models.dev catalog sync failed.',
       level: LogLevel.warning,
-      exception: error,
+      exception: error.runtimeType,
       stackTrace: stackTrace,
     );
   }

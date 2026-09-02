@@ -57,7 +57,7 @@ void main() {
         messages,
         equals([
           'Monitoring error [stream_failure]',
-          'Error: Exception: line 1 line 2',
+          'Error: _Exception',
           'StackTrace: frame 1 frame 2',
         ]),
       );

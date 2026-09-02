@@ -33,10 +33,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
 
-@override
-String toString() {
-  return 'McpFormState(name: $name, description: $description, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, useHttp2: $useHttp2, isSubmitting: $isSubmitting, errorMessage: $errorMessage)';
-}
 
 
 }
@@ -245,10 +241,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,description,url,transport,authenticationType,bearerToken,useHttp2,isSubmitting,errorMessage);
 
-@override
-String toString() {
-  return 'McpFormState(name: $name, description: $description, url: $url, transport: $transport, authenticationType: $authenticationType, bearerToken: $bearerToken, useHttp2: $useHttp2, isSubmitting: $isSubmitting, errorMessage: $errorMessage)';
-}
 
 
 }

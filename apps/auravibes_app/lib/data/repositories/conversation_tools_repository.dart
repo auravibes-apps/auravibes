@@ -485,7 +485,7 @@ class ConversationToolsException implements Exception {
 
   @override
   String toString() {
-    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+    final causedBy = cause != null ? ' (Caused by: ${cause.runtimeType})' : '';
 
     return 'ConversationToolsException: $message$causedBy';
   }

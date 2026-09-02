@@ -24,7 +24,7 @@ class AppLogging {
     final previousFlutterError = FlutterError.onError;
     FlutterError.onError = (details) {
       _logger.severe(
-        'Flutter error: ${details.exceptionAsString()}',
+        'Flutter error',
         details.exception,
         details.stack,
       );

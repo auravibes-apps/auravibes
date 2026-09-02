@@ -320,10 +320,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,credentialDefinitionId,name,const DeepCollectionEquality().hash(attributes));
 
-@override
-String toString() {
-  return 'SkillCredentialToCreate(credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes)';
-}
 
 
 }
@@ -526,10 +522,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,credentialDefinitionId,name,const DeepCollectionEquality().hash(_attributes));
 
-@override
-String toString() {
-  return 'SkillCredentialToCreate(credentialDefinitionId: $credentialDefinitionId, name: $name, attributes: $attributes)';
-}
 
 
 }
@@ -1139,10 +1131,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,const DeepCollectionEquality().hash(nonSecretAttributes),const DeepCollectionEquality().hash(secretAttributes),const DeepCollectionEquality().hash(clearSecretAttributeNames));
 
-@override
-String toString() {
-  return 'SkillCredentialToUpdate(name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, clearSecretAttributeNames: $clearSecretAttributeNames)';
-}
 
 
 }
@@ -1359,10 +1347,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,const DeepCollectionEquality().hash(_nonSecretAttributes),const DeepCollectionEquality().hash(_secretAttributes),const DeepCollectionEquality().hash(_clearSecretAttributeNames));
 
-@override
-String toString() {
-  return 'SkillCredentialToUpdate(name: $name, nonSecretAttributes: $nonSecretAttributes, secretAttributes: $secretAttributes, clearSecretAttributeNames: $clearSecretAttributeNames)';
-}
 
 
 }

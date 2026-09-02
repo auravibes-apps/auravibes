@@ -41,10 +41,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
 
-@override
-String toString() {
-  return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, argumentsDigest: $argumentsDigest, turnId: $turnId, turnRevision: $turnRevision, responseRaw: $responseRaw, resultStatus: $resultStatus)';
-}
 
 
 }
@@ -259,10 +255,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,id,name,argumentsRaw,argumentsDigest,turnId,turnRevision,responseRaw,resultStatus);
 
-@override
-String toString() {
-  return 'MessageToolCallEntity(id: $id, name: $name, argumentsRaw: $argumentsRaw, argumentsDigest: $argumentsDigest, turnId: $turnId, turnRevision: $turnRevision, responseRaw: $responseRaw, resultStatus: $resultStatus)';
-}
 
 
 }
@@ -2114,10 +2106,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,tool,id,argumentsRaw);
 
-@override
-String toString() {
-  return 'ToolToCall(tool: $tool, id: $id, argumentsRaw: $argumentsRaw)';
-}
 
 
 }
@@ -2314,10 +2302,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,tool,id,argumentsRaw);
 
-@override
-String toString() {
-  return 'ToolToCall(tool: $tool, id: $id, argumentsRaw: $argumentsRaw)';
-}
 
 
 }

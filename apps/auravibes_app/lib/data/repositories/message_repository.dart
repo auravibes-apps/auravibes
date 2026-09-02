@@ -551,7 +551,7 @@ class MessageException implements Exception {
 
   @override
   String toString() {
-    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+    final causedBy = cause != null ? ' (Caused by: ${cause.runtimeType})' : '';
 
     return 'MessageException: $message$causedBy';
   }

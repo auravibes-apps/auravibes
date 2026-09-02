@@ -153,13 +153,12 @@ class ChatCompletionsCodec {
     };
   }
 
-  void _throwIfRawError(int statusCode, String body) {
+  void _throwIfRawError(int statusCode, String _) {
     if (statusCode >= 200 && statusCode < 300) return;
 
     throw GenkitException(
-      '$errorLabel API error: $body',
+      '$errorLabel API request failed (HTTP $statusCode).',
       status: StatusCodes.fromHttpStatus(statusCode),
-      details: body,
     );
   }
 }

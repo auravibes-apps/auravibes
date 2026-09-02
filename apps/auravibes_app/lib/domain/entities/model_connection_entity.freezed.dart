@@ -320,10 +320,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,workspaceId,modelId,authMode,key,url,oauthToken,oauthMetadata,const DeepCollectionEquality().hash(modelIds));
 
-@override
-String toString() {
-  return 'ModelConnectionToCreate(name: $name, workspaceId: $workspaceId, modelId: $modelId, authMode: $authMode, key: $key, url: $url, oauthToken: $oauthToken, oauthMetadata: $oauthMetadata, modelIds: $modelIds)';
-}
 
 
 }
@@ -550,10 +546,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,workspaceId,modelId,authMode,key,url,oauthToken,oauthMetadata,const DeepCollectionEquality().hash(_modelIds));
 
-@override
-String toString() {
-  return 'ModelConnectionToCreate(name: $name, workspaceId: $workspaceId, modelId: $modelId, authMode: $authMode, key: $key, url: $url, oauthToken: $oauthToken, oauthMetadata: $oauthMetadata, modelIds: $modelIds)';
-}
 
 
 }
@@ -909,10 +901,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,key,url);
 
-@override
-String toString() {
-  return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
-}
 
 
 }
@@ -1109,10 +1097,6 @@ bool operator ==(Object other) {
 @override
 int get hashCode => Object.hash(runtimeType,name,key,url);
 
-@override
-String toString() {
-  return 'ModelConnectionToUpdate(name: $name, key: $key, url: $url)';
-}
 
 
 }

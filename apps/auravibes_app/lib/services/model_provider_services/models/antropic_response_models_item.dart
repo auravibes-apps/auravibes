@@ -18,7 +18,7 @@ abstract class AntropicResponseModelsItem with _$AntropicResponseModelsItem {
       _$AntropicResponseModelsItemFromJson(json);
 }
 
-@Freezed(toJson: false)
+@Freezed(toJson: false, toStringOverride: false)
 abstract class AntropicResponseModelsErrorMessage
     with _$AntropicResponseModelsErrorMessage {
   // ignore: invalid_annotation_target - Required for Freezed JSON annotation.

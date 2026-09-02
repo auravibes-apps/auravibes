@@ -23,13 +23,15 @@ import 'package:auravibes_app/services/chatbot_service/chat_result.dart';
 import 'package:auravibes_app/services/tools/tool_resolver_service.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 export 'conversation_selection_provider.dart';
 
 part 'message_id_list.g.dart';
+
+final _logger = Logger('message_id_list');
 
 extension ChatMessagesFamilyTestOverride on ChatMessagesFamily {
   Override overrideWithValue(Stream<List<MessageEntity>> value) =>
@@ -569,9 +571,9 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
 
   final resolvedWorkspaceId = workspaceId;
   if (resolvedWorkspaceId == null) {
-    debugPrint(
-      '[pendingToolCalls] No workspaceId for conversation $conversationId; '
-      'returning pending tool calls as needing confirmation',
+    _logger.fine(
+      'No workspaceId for conversation $conversationId; returning pending '
+      'tool calls as needing confirmation',
     );
 
     return pendingCalls
@@ -610,8 +612,12 @@ Future<List<PendingToolCall>> _pendingToolCallsForConversation(
           toolCall: toolCall,
           needsConfirmation: decision.needsConfirmation,
         );
-      } on Object catch (error) {
-        debugPrint('[pendingToolCalls] Error resolving $toolCall: $error');
+      } on Object catch (error, stackTrace) {
+        _logger.warning(
+          'Error resolving pending tool call ${toolCall.id}/${toolCall.name}',
+          error,
+          stackTrace,
+        );
 
         return (toolCall: toolCall, needsConfirmation: true);
       }

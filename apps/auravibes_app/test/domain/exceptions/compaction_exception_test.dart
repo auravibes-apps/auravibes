@@ -16,7 +16,8 @@ void main() {
       final inner = Exception('inner');
       final ex = CompactionFailedException(cause: inner);
       expect(ex.cause, same(inner));
-      expect(ex.toString(), contains('Caused by: $inner'));
+      expect(ex.toString(), contains('Caused by: _Exception'));
+      expect(ex.toString(), isNot(contains('inner')));
     });
   });
 

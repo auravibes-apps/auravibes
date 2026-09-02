@@ -17,6 +17,8 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 
+final _logger = Logger('AuraSidebarWrapper');
+
 /// A sidebar widget that handles business logic and navigation state.
 ///
 /// This widget manages the sidebar's expand/collapse state, responsive behavior,
@@ -81,8 +83,6 @@ class AuraSidebarWrapper extends HookConsumerWidget {
     required this.workspaceId,
     super.key,
   });
-
-  static final Logger _logger = Logger('AuraSidebarWrapper');
 
   /// The main content to display next to the sidebar.
   final StatefulNavigationShell navigationShell;
@@ -236,8 +236,8 @@ class _WorkspaceHeader extends ConsumerWidget {
           ),
           height: 48,
         );
-      case AsyncError(:final error):
-        debugPrint('Workspace dropdown stream error: $error');
+      case AsyncError(:final error, :final stackTrace):
+        _logger.warning('Workspace dropdown stream error', error, stackTrace);
         header = const AuraText(
           child: TextLocale(LocaleKeys.workspace_management_unexpected_error),
         );

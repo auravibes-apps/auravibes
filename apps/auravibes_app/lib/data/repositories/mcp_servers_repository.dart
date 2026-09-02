@@ -98,7 +98,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
-          'Failed to add MCP server with tools: $e',
+          'Failed to add MCP server with tools.',
           e,
         ),
         stackTrace,
@@ -133,7 +133,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
-          'Failed to delete MCP server: $e',
+          'Failed to delete MCP server.',
           e,
         ),
         stackTrace,
@@ -202,7 +202,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
-          'Failed to sync MCP tools: $e',
+          'Failed to sync MCP tools.',
           e,
         ),
         stackTrace,
@@ -223,7 +223,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
-          'Failed to get MCP servers for workspace: $e',
+          'Failed to get MCP servers for workspace.',
           e,
         ),
         stackTrace,
@@ -244,7 +244,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
-          'Failed to get enabled MCP servers for workspace: $e',
+          'Failed to get enabled MCP servers for workspace.',
           e,
         ),
         stackTrace,
@@ -262,7 +262,7 @@ class McpServersRepository implements McpServersRepositoryContract {
     } on Exception catch (e, stackTrace) {
       Error.throwWithStackTrace(
         McpServersException(
-          'Failed to get MCP server by ID: $e',
+          'Failed to get MCP server by ID.',
           e,
         ),
         stackTrace,
@@ -306,7 +306,7 @@ class McpServersException implements Exception {
 
   @override
   String toString() {
-    final causedBy = cause != null ? ' (Caused by: $cause)' : '';
+    final causedBy = cause != null ? ' (Caused by: ${cause.runtimeType})' : '';
 
     return 'McpServersException: $message$causedBy';
   }

@@ -161,8 +161,7 @@ class OAuthAuthenticate {
     final error = queryParams.get<String?>('error');
 
     if (error != null) {
-      final errorDescription = queryParams.get<String?>('error_description');
-      throw Exception('OAuth error: $error - $errorDescription');
+      throw Exception('OAuth authorization failed.');
     }
 
     if (queryParams.get<String?>('state') != stateParam) {
@@ -203,10 +202,7 @@ class OAuthAuthenticate {
     );
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'Failed to exchange code for token:'
-        ' ${response.statusCode} - ${response.statusMessage}',
-      );
+      throw Exception('Failed to exchange code for token.');
     }
 
     final data = response.data;

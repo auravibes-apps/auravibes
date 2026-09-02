@@ -67,9 +67,9 @@ class ResolveSkillUrlTemplate {
 
     try {
       return jsonEncode(jsonDecode(rendered));
-    } on FormatException catch (error, stackTrace) {
+    } on FormatException catch (_, stackTrace) {
       Error.throwWithStackTrace(
-        FormatException('Rendered JSON body is invalid: ${error.message}'),
+        const FormatException('Rendered JSON body is invalid.'),
         stackTrace,
       );
     }
@@ -86,9 +86,9 @@ class ResolveSkillUrlTemplate {
   String _render(String source, _TemplateContext context) {
     try {
       return Liquid().parse(source).render(context.values);
-    } on Object catch (error, stackTrace) {
+    } on Object catch (_, stackTrace) {
       Error.throwWithStackTrace(
-        FormatException('Liquid template render failed: $error'),
+        const FormatException('Liquid template render failed.'),
         stackTrace,
       );
     }
@@ -131,9 +131,9 @@ void validateSkillTemplateTool({
   )) {
     try {
       jsonDecode(rendered);
-    } on FormatException catch (error, stackTrace) {
+    } on FormatException catch (_, stackTrace) {
       Error.throwWithStackTrace(
-        FormatException('Rendered JSON body is invalid: ${error.message}'),
+        const FormatException('Rendered JSON body is invalid.'),
         stackTrace,
       );
     }
@@ -280,9 +280,9 @@ String _canonicalizeTemplate(String value) {
 void _parseLiquid(String value) {
   try {
     Liquid().parse(value);
-  } on Object catch (error, stackTrace) {
+  } on Object catch (_, stackTrace) {
     Error.throwWithStackTrace(
-      FormatException('Invalid Liquid template: $error'),
+      const FormatException('Invalid Liquid template.'),
       stackTrace,
     );
   }
@@ -371,9 +371,9 @@ String _renderJsonBodySample(
             entry.key: 'credential-value',
       },
     });
-  } on Object catch (error, stackTrace) {
+  } on Object catch (_, stackTrace) {
     Error.throwWithStackTrace(
-      FormatException('Liquid template render failed: $error'),
+      const FormatException('Liquid template render failed.'),
       stackTrace,
     );
   }

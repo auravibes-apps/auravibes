@@ -17,6 +17,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:logging/logging.dart';
+
+final _logger = Logger('create_workspace_screen');
 
 class CreateWorkspaceScreen extends StatelessWidget {
   const CreateWorkspaceScreen({required this.workspaceId, super.key});
@@ -185,7 +188,7 @@ class _CreateWorkspaceFormState extends ConsumerState<CreateWorkspaceForm> {
     } on WorkspaceException catch (error) {
       if (mounted) setState(() => _errorText = _workspaceError(error));
     } on Object catch (error, stackTrace) {
-      debugPrint('Create workspace failed: $error\n$stackTrace');
+      _logger.warning('Create workspace failed', error, stackTrace);
       if (mounted) {
         setState(
           () => _errorText = LocaleKeys.workspace_management_unexpected_error
