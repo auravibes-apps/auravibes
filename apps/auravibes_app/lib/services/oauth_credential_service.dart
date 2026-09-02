@@ -192,8 +192,11 @@ class OAuthCredentialService {
         );
       }
       rethrow;
-    } on FormatException catch (e) {
-      await markReauthRequired(serviceConnectionId, error: e.message);
+    } on FormatException {
+      await markReauthRequired(
+        serviceConnectionId,
+        error: 'OAuth refresh response was invalid.',
+      );
       rethrow;
     }
   }
