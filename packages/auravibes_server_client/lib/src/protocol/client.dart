@@ -13,7 +13,9 @@
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i1;
 import 'package:serverpod_client/serverpod_client.dart' as _i2;
+
 import 'dart:async' as _i3;
+
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _i4;
 import 'package:auravibes_server_client/src/protocol/features/accounts/models/account_summary.dart'
@@ -189,6 +191,7 @@ import 'package:auravibes_server_client/src/protocol/features/workspaces/models/
 import 'package:auravibes_server_client/src/protocol/features/workspaces/models/delete_cloud_workspace_request.dart'
     as _i90;
 import 'package:http/http.dart' as _i91;
+
 import 'protocol.dart' as _i92;
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints

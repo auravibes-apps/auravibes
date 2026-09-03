@@ -11,8 +11,10 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/mcp_servers/models/mcp_server_health.dart' as _i2;
 import '../../../features/mcp_servers/models/discovered_mcp_tool.dart' as _i3;
+
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
 abstract class DiscoverMcpServerResult implements _i1.SerializableModel {

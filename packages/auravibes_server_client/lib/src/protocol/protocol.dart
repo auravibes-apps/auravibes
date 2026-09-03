@@ -11,6 +11,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import 'features/accounts/models/account_summary.dart' as _i2;
 import 'features/codex_oauth/models/codex_oauth_transaction.dart' as _i3;
 import 'features/codex_oauth/models/complete_codex_oauth_request.dart' as _i4;
@@ -194,6 +195,7 @@ import 'features/workspaces/models/workspace_event.dart' as _i133;
 import 'features/workspaces/models/workspace_invite.dart' as _i134;
 import 'features/workspaces/models/workspace_member.dart' as _i135;
 import 'features/workspaces/models/workspace_mutation_receipt.dart' as _i136;
+
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_summary.dart'
     as _i137;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
@@ -218,6 +220,7 @@ import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _i147;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _i148;
+
 export 'features/accounts/models/account_summary.dart';
 export 'features/codex_oauth/models/codex_oauth_transaction.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_request.dart';
@@ -1457,9 +1460,8 @@ class Protocol extends _i1.SerializationManager {
     }
     if (t == Map<String, String>) {
       return (data as Map).map(
-            (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
-          )
-          as T;
+        (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
+      ) as T;
     }
     if (t == List<_i99.WorkspacePatchOperation>) {
       return (data as List)

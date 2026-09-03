@@ -11,6 +11,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
+
 import '../../../features/workspaces/models/cloud_workspace_error_code.dart'
     as _i2;
 

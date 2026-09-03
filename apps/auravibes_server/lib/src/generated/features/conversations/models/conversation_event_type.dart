@@ -27,8 +27,7 @@ enum ConversationEventType implements _i1.SerializableModel {
   toolCallCreated,
   toolApprovalRequested,
   toolDecisionRecorded,
-  toolResolved
-  ;
+  toolResolved;
 
   static ConversationEventType fromJson(String name) {
     switch (name) {

@@ -11,8 +11,10 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
+
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
     as _i2;
+
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
 abstract class ConversationMessageView implements _i1.SerializableModel {

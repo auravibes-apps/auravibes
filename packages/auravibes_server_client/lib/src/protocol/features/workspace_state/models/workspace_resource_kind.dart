@@ -33,8 +33,7 @@ enum WorkspaceResourceKind implements _i1.SerializableModel {
   conversationToolSelection,
   conversationSkillSelection,
   compactionSetting,
-  workspaceSetting
-  ;
+  workspaceSetting;
 
   static WorkspaceResourceKind fromJson(String name) {
     switch (name) {
