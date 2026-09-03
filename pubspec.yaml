@@ -148,6 +148,11 @@ melos:
         cd apps/auravibes_server
         serverpod generate --force
         cd ../..
+        # ponytail: Serverpod beta output differs by platform; remove when upstream generation is deterministic.
+        find apps/auravibes_server/lib/src/generated \
+          apps/auravibes_server/test/integration/test_tools/serverpod_test_tools.dart \
+          packages/auravibes_server_client/lib/src/protocol \
+          -name '*.dart' -exec perl -0pi -e 's!(// ignore_for_file: no_leading_underscores_for_library_prefixes)\n\n(import )!$1\n$2!g' {} +
         dart format --line-length 80 \
           apps/auravibes_server/lib/src/generated \
           apps/auravibes_server/test/integration/test_tools/serverpod_test_tools.dart \
