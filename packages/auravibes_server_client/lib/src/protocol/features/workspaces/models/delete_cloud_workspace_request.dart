@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DeleteCloudWorkspaceRequest._({
-  required var int workspaceId,
-  required var String confirmationName,
-  required var String requestId,
-  required var int expectedWorkspaceRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DeleteCloudWorkspaceRequest implements _i1.SerializableModel {
+  DeleteCloudWorkspaceRequest._({
+    required this.workspaceId,
+    required this.confirmationName,
+    required this.requestId,
+    required this.expectedWorkspaceRevision,
+  });
+
+  factory DeleteCloudWorkspaceRequest({
     required int workspaceId,
     required String confirmationName,
     required String requestId,
     required int expectedWorkspaceRevision,
   }) = _DeleteCloudWorkspaceRequestImpl;
 
-  factory fromJson(
+  factory DeleteCloudWorkspaceRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DeleteCloudWorkspaceRequest(
@@ -36,6 +38,14 @@ abstract class DeleteCloudWorkspaceRequest._({
           jsonSerialization['expectedWorkspaceRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  String confirmationName;
+
+  String requestId;
+
+  int expectedWorkspaceRevision;
 
   /// Returns a shallow copy of this [DeleteCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
@@ -63,19 +73,18 @@ abstract class DeleteCloudWorkspaceRequest._({
   }
 }
 
-class _DeleteCloudWorkspaceRequestImpl({
-  required int workspaceId,
-  required String confirmationName,
-  required String requestId,
-  required int expectedWorkspaceRevision,
-}) extends DeleteCloudWorkspaceRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        confirmationName: confirmationName,
-        requestId: requestId,
-        expectedWorkspaceRevision: expectedWorkspaceRevision,
-      );
+class _DeleteCloudWorkspaceRequestImpl extends DeleteCloudWorkspaceRequest {
+  _DeleteCloudWorkspaceRequestImpl({
+    required int workspaceId,
+    required String confirmationName,
+    required String requestId,
+    required int expectedWorkspaceRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         confirmationName: confirmationName,
+         requestId: requestId,
+         expectedWorkspaceRevision: expectedWorkspaceRevision,
+       );
 
   /// Returns a shallow copy of this [DeleteCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.

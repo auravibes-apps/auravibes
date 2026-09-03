@@ -12,21 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ObjectUpload._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var int objectId,
-  required var String actorUserId,
-  required var String requestId,
-  required var String requestHash,
-  required var DateTime expiresAt,
-  var DateTime? completedAt,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ObjectUpload implements _i1.SerializableModel {
+  ObjectUpload._({
+    this.id,
+    required this.workspaceId,
+    required this.objectId,
+    required this.actorUserId,
+    required this.requestId,
+    required this.requestHash,
+    required this.expiresAt,
+    this.completedAt,
+    required this.createdAt,
+  });
+
+  factory ObjectUpload({
     int? id,
     required int workspaceId,
     required int objectId,
@@ -38,7 +37,7 @@ abstract class ObjectUpload._({
     required DateTime createdAt,
   }) = _ObjectUploadImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ObjectUpload.fromJson(Map<String, dynamic> jsonSerialization) {
     return ObjectUpload(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -59,6 +58,27 @@ abstract class ObjectUpload._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  int objectId;
+
+  String actorUserId;
+
+  String requestId;
+
+  String requestHash;
+
+  DateTime expiresAt;
+
+  DateTime? completedAt;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [ObjectUpload]
   /// with some or all fields replaced by the given arguments.
@@ -96,31 +116,30 @@ abstract class ObjectUpload._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ObjectUploadImpl({
-  int? id,
-  required int workspaceId,
-  required int objectId,
-  required String actorUserId,
-  required String requestId,
-  required String requestHash,
-  required DateTime expiresAt,
-  DateTime? completedAt,
-  required DateTime createdAt,
-}) extends ObjectUpload {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        objectId: objectId,
-        actorUserId: actorUserId,
-        requestId: requestId,
-        requestHash: requestHash,
-        expiresAt: expiresAt,
-        completedAt: completedAt,
-        createdAt: createdAt,
-      );
+class _ObjectUploadImpl extends ObjectUpload {
+  _ObjectUploadImpl({
+    int? id,
+    required int workspaceId,
+    required int objectId,
+    required String actorUserId,
+    required String requestId,
+    required String requestHash,
+    required DateTime expiresAt,
+    DateTime? completedAt,
+    required DateTime createdAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         objectId: objectId,
+         actorUserId: actorUserId,
+         requestId: requestId,
+         requestHash: requestHash,
+         expiresAt: expiresAt,
+         completedAt: completedAt,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [ObjectUpload]
   /// with some or all fields replaced by the given arguments.

@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DeleteObjectRequest._({
-  required var int workspaceId,
-  required var int objectId,
-  required var String requestId,
-  required var int expectedRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DeleteObjectRequest implements _i1.SerializableModel {
+  DeleteObjectRequest._({
+    required this.workspaceId,
+    required this.objectId,
+    required this.requestId,
+    required this.expectedRevision,
+  });
+
+  factory DeleteObjectRequest({
     required int workspaceId,
     required int objectId,
     required String requestId,
     required int expectedRevision,
   }) = _DeleteObjectRequestImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory DeleteObjectRequest.fromJson(Map<String, dynamic> jsonSerialization) {
     return DeleteObjectRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       objectId: jsonSerialization['objectId'] as int,
@@ -33,6 +35,14 @@ abstract class DeleteObjectRequest._({
       expectedRevision: jsonSerialization['expectedRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  int objectId;
+
+  String requestId;
+
+  int expectedRevision;
 
   /// Returns a shallow copy of this [DeleteObjectRequest]
   /// with some or all fields replaced by the given arguments.
@@ -60,19 +70,18 @@ abstract class DeleteObjectRequest._({
   }
 }
 
-class _DeleteObjectRequestImpl({
-  required int workspaceId,
-  required int objectId,
-  required String requestId,
-  required int expectedRevision,
-}) extends DeleteObjectRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        objectId: objectId,
-        requestId: requestId,
-        expectedRevision: expectedRevision,
-      );
+class _DeleteObjectRequestImpl extends DeleteObjectRequest {
+  _DeleteObjectRequestImpl({
+    required int workspaceId,
+    required int objectId,
+    required String requestId,
+    required int expectedRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         objectId: objectId,
+         requestId: requestId,
+         expectedRevision: expectedRevision,
+       );
 
   /// Returns a shallow copy of this [DeleteObjectRequest]
   /// with some or all fields replaced by the given arguments.

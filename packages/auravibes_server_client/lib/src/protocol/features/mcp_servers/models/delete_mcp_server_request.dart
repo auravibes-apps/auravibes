@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DeleteMcpServerRequest._({
-  required var int workspaceId,
-  required var String mcpServerId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DeleteMcpServerRequest implements _i1.SerializableModel {
+  DeleteMcpServerRequest._({
+    required this.workspaceId,
+    required this.mcpServerId,
+  });
+
+  factory DeleteMcpServerRequest({
     required int workspaceId,
     required String mcpServerId,
   }) = _DeleteMcpServerRequestImpl;
 
-  factory fromJson(
+  factory DeleteMcpServerRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DeleteMcpServerRequest(
@@ -29,6 +31,10 @@ abstract class DeleteMcpServerRequest._({
       mcpServerId: jsonSerialization['mcpServerId'] as String,
     );
   }
+
+  int workspaceId;
+
+  String mcpServerId;
 
   /// Returns a shallow copy of this [DeleteMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
@@ -52,15 +58,14 @@ abstract class DeleteMcpServerRequest._({
   }
 }
 
-class _DeleteMcpServerRequestImpl({
-  required int workspaceId,
-  required String mcpServerId,
-}) extends DeleteMcpServerRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        mcpServerId: mcpServerId,
-      );
+class _DeleteMcpServerRequestImpl extends DeleteMcpServerRequest {
+  _DeleteMcpServerRequestImpl({
+    required int workspaceId,
+    required String mcpServerId,
+  }) : super._(
+         workspaceId: workspaceId,
+         mcpServerId: mcpServerId,
+       );
 
   /// Returns a shallow copy of this [DeleteMcpServerRequest]
   /// with some or all fields replaced by the given arguments.

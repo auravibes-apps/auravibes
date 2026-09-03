@@ -12,18 +12,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ObjectReference._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var int objectId,
-  required var int messageId,
-  required var DateTime createdAt,
-  var DateTime? deletedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ObjectReference implements _i1.SerializableModel {
+  ObjectReference._({
+    this.id,
+    required this.workspaceId,
+    required this.objectId,
+    required this.messageId,
+    required this.createdAt,
+    this.deletedAt,
+  });
+
+  factory ObjectReference({
     int? id,
     required int workspaceId,
     required int objectId,
@@ -32,7 +31,7 @@ abstract class ObjectReference._({
     DateTime? deletedAt,
   }) = _ObjectReferenceImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ObjectReference.fromJson(Map<String, dynamic> jsonSerialization) {
     return ObjectReference(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -46,6 +45,21 @@ abstract class ObjectReference._({
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  int objectId;
+
+  int messageId;
+
+  DateTime createdAt;
+
+  DateTime? deletedAt;
 
   /// Returns a shallow copy of this [ObjectReference]
   /// with some or all fields replaced by the given arguments.
@@ -77,25 +91,24 @@ abstract class ObjectReference._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ObjectReferenceImpl({
-  int? id,
-  required int workspaceId,
-  required int objectId,
-  required int messageId,
-  required DateTime createdAt,
-  DateTime? deletedAt,
-}) extends ObjectReference {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        objectId: objectId,
-        messageId: messageId,
-        createdAt: createdAt,
-        deletedAt: deletedAt,
-      );
+class _ObjectReferenceImpl extends ObjectReference {
+  _ObjectReferenceImpl({
+    int? id,
+    required int workspaceId,
+    required int objectId,
+    required int messageId,
+    required DateTime createdAt,
+    DateTime? deletedAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         objectId: objectId,
+         messageId: messageId,
+         createdAt: createdAt,
+         deletedAt: deletedAt,
+       );
 
   /// Returns a shallow copy of this [ObjectReference]
   /// with some or all fields replaced by the given arguments.

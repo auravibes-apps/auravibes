@@ -12,24 +12,32 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DiscoveredMcpTool._({
-  required var String name,
-  var String? description,
-  required var String inputSchemaJson,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DiscoveredMcpTool implements _i1.SerializableModel {
+  DiscoveredMcpTool._({
+    required this.name,
+    this.description,
+    required this.inputSchemaJson,
+  });
+
+  factory DiscoveredMcpTool({
     required String name,
     String? description,
     required String inputSchemaJson,
   }) = _DiscoveredMcpToolImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory DiscoveredMcpTool.fromJson(Map<String, dynamic> jsonSerialization) {
     return DiscoveredMcpTool(
       name: jsonSerialization['name'] as String,
       description: jsonSerialization['description'] as String?,
       inputSchemaJson: jsonSerialization['inputSchemaJson'] as String,
     );
   }
+
+  String name;
+
+  String? description;
+
+  String inputSchemaJson;
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.
@@ -55,19 +63,18 @@ abstract class DiscoveredMcpTool._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _DiscoveredMcpToolImpl({
-  required String name,
-  String? description,
-  required String inputSchemaJson,
-}) extends DiscoveredMcpTool {
-  this
-    : super._(
-        name: name,
-        description: description,
-        inputSchemaJson: inputSchemaJson,
-      );
+class _DiscoveredMcpToolImpl extends DiscoveredMcpTool {
+  _DiscoveredMcpToolImpl({
+    required String name,
+    String? description,
+    required String inputSchemaJson,
+  }) : super._(
+         name: name,
+         description: description,
+         inputSchemaJson: inputSchemaJson,
+       );
 
   /// Returns a shallow copy of this [DiscoveredMcpTool]
   /// with some or all fields replaced by the given arguments.

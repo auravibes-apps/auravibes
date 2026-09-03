@@ -19,15 +19,17 @@ import '../../../features/workspace_state/models/workspace_resource_kind.dart'
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
-abstract class WorkspacePatchOperation._({
-  required var _i2.WorkspacePatchOperationKind operation,
-  required var _i3.WorkspaceResourceKind resourceKind,
-  required var String resourceId,
-  var String? data,
-  required var List<String> fieldMask,
-  var int? expectedRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspacePatchOperation implements _i1.SerializableModel {
+  WorkspacePatchOperation._({
+    required this.operation,
+    required this.resourceKind,
+    required this.resourceId,
+    this.data,
+    required this.fieldMask,
+    this.expectedRevision,
+  });
+
+  factory WorkspacePatchOperation({
     required _i2.WorkspacePatchOperationKind operation,
     required _i3.WorkspaceResourceKind resourceKind,
     required String resourceId,
@@ -36,7 +38,7 @@ abstract class WorkspacePatchOperation._({
     int? expectedRevision,
   }) = _WorkspacePatchOperationImpl;
 
-  factory fromJson(
+  factory WorkspacePatchOperation.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspacePatchOperation(
@@ -54,6 +56,18 @@ abstract class WorkspacePatchOperation._({
       expectedRevision: jsonSerialization['expectedRevision'] as int?,
     );
   }
+
+  _i2.WorkspacePatchOperationKind operation;
+
+  _i3.WorkspaceResourceKind resourceKind;
+
+  String resourceId;
+
+  String? data;
+
+  List<String> fieldMask;
+
+  int? expectedRevision;
 
   /// Returns a shallow copy of this [WorkspacePatchOperation]
   /// with some or all fields replaced by the given arguments.
@@ -85,25 +99,24 @@ abstract class WorkspacePatchOperation._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspacePatchOperationImpl({
-  required _i2.WorkspacePatchOperationKind operation,
-  required _i3.WorkspaceResourceKind resourceKind,
-  required String resourceId,
-  String? data,
-  required List<String> fieldMask,
-  int? expectedRevision,
-}) extends WorkspacePatchOperation {
-  this
-    : super._(
-        operation: operation,
-        resourceKind: resourceKind,
-        resourceId: resourceId,
-        data: data,
-        fieldMask: fieldMask,
-        expectedRevision: expectedRevision,
-      );
+class _WorkspacePatchOperationImpl extends WorkspacePatchOperation {
+  _WorkspacePatchOperationImpl({
+    required _i2.WorkspacePatchOperationKind operation,
+    required _i3.WorkspaceResourceKind resourceKind,
+    required String resourceId,
+    String? data,
+    required List<String> fieldMask,
+    int? expectedRevision,
+  }) : super._(
+         operation: operation,
+         resourceKind: resourceKind,
+         resourceId: resourceId,
+         data: data,
+         fieldMask: fieldMask,
+         expectedRevision: expectedRevision,
+       );
 
   /// Returns a shallow copy of this [WorkspacePatchOperation]
   /// with some or all fields replaced by the given arguments.

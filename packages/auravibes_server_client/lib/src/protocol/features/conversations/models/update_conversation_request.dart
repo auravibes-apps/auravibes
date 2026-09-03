@@ -12,21 +12,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class UpdateConversationRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var int expectedRevision,
-  var String? title,
-  var bool? isPinned,
-  var String? modelId,
-  required var bool clearModel,
-  var String? agentId,
-  required var bool clearAgent,
-  var String? parentConversationId,
-  required var bool clearParent,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class UpdateConversationRequest implements _i1.SerializableModel {
+  UpdateConversationRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.expectedRevision,
+    this.title,
+    this.isPinned,
+    this.modelId,
+    required this.clearModel,
+    this.agentId,
+    required this.clearAgent,
+    this.parentConversationId,
+    required this.clearParent,
+  });
+
+  factory UpdateConversationRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -41,7 +43,7 @@ abstract class UpdateConversationRequest._({
     required bool clearParent,
   }) = _UpdateConversationRequestImpl;
 
-  factory fromJson(
+  factory UpdateConversationRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return UpdateConversationRequest(
@@ -68,6 +70,30 @@ abstract class UpdateConversationRequest._({
       ),
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  int expectedRevision;
+
+  String? title;
+
+  bool? isPinned;
+
+  String? modelId;
+
+  bool clearModel;
+
+  String? agentId;
+
+  bool clearAgent;
+
+  String? parentConversationId;
+
+  bool clearParent;
 
   /// Returns a shallow copy of this [UpdateConversationRequest]
   /// with some or all fields replaced by the given arguments.
@@ -112,37 +138,36 @@ abstract class UpdateConversationRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _UpdateConversationRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required int expectedRevision,
-  String? title,
-  bool? isPinned,
-  String? modelId,
-  required bool clearModel,
-  String? agentId,
-  required bool clearAgent,
-  String? parentConversationId,
-  required bool clearParent,
-}) extends UpdateConversationRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedRevision: expectedRevision,
-        title: title,
-        isPinned: isPinned,
-        modelId: modelId,
-        clearModel: clearModel,
-        agentId: agentId,
-        clearAgent: clearAgent,
-        parentConversationId: parentConversationId,
-        clearParent: clearParent,
-      );
+class _UpdateConversationRequestImpl extends UpdateConversationRequest {
+  _UpdateConversationRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required int expectedRevision,
+    String? title,
+    bool? isPinned,
+    String? modelId,
+    required bool clearModel,
+    String? agentId,
+    required bool clearAgent,
+    String? parentConversationId,
+    required bool clearParent,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         expectedRevision: expectedRevision,
+         title: title,
+         isPinned: isPinned,
+         modelId: modelId,
+         clearModel: clearModel,
+         agentId: agentId,
+         clearAgent: clearAgent,
+         parentConversationId: parentConversationId,
+         clearParent: clearParent,
+       );
 
   /// Returns a shallow copy of this [UpdateConversationRequest]
   /// with some or all fields replaced by the given arguments.

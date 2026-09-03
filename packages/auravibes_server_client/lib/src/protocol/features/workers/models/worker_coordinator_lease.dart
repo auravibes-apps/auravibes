@@ -12,17 +12,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkerCoordinatorLease._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var String key,
-  required var String ownerId,
-  required var int fencingToken,
-  required var DateTime expiresAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkerCoordinatorLease implements _i1.SerializableModel {
+  WorkerCoordinatorLease._({
+    this.id,
+    required this.key,
+    required this.ownerId,
+    required this.fencingToken,
+    required this.expiresAt,
+  });
+
+  factory WorkerCoordinatorLease({
     int? id,
     required String key,
     required String ownerId,
@@ -30,7 +29,7 @@ abstract class WorkerCoordinatorLease._({
     required DateTime expiresAt,
   }) = _WorkerCoordinatorLeaseImpl;
 
-  factory fromJson(
+  factory WorkerCoordinatorLease.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkerCoordinatorLease(
@@ -43,6 +42,19 @@ abstract class WorkerCoordinatorLease._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  String key;
+
+  String ownerId;
+
+  int fencingToken;
+
+  DateTime expiresAt;
 
   /// Returns a shallow copy of this [WorkerCoordinatorLease]
   /// with some or all fields replaced by the given arguments.
@@ -72,23 +84,22 @@ abstract class WorkerCoordinatorLease._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkerCoordinatorLeaseImpl({
-  int? id,
-  required String key,
-  required String ownerId,
-  required int fencingToken,
-  required DateTime expiresAt,
-}) extends WorkerCoordinatorLease {
-  this
-    : super._(
-        id: id,
-        key: key,
-        ownerId: ownerId,
-        fencingToken: fencingToken,
-        expiresAt: expiresAt,
-      );
+class _WorkerCoordinatorLeaseImpl extends WorkerCoordinatorLease {
+  _WorkerCoordinatorLeaseImpl({
+    int? id,
+    required String key,
+    required String ownerId,
+    required int fencingToken,
+    required DateTime expiresAt,
+  }) : super._(
+         id: id,
+         key: key,
+         ownerId: ownerId,
+         fencingToken: fencingToken,
+         expiresAt: expiresAt,
+       );
 
   /// Returns a shallow copy of this [WorkerCoordinatorLease]
   /// with some or all fields replaced by the given arguments.

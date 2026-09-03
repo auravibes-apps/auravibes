@@ -17,15 +17,17 @@ import '../../../features/mcp_servers/models/discovered_mcp_tool.dart' as _i3;
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
-abstract class DiscoverMcpServerResult._({
-  required var _i2.McpServerHealth health,
-  var String? serverName,
-  var String? serverVersion,
-  var String? protocolVersion,
-  required var List<_i3.DiscoveredMcpTool> tools,
-  var String? errorCode,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DiscoverMcpServerResult implements _i1.SerializableModel {
+  DiscoverMcpServerResult._({
+    required this.health,
+    this.serverName,
+    this.serverVersion,
+    this.protocolVersion,
+    required this.tools,
+    this.errorCode,
+  });
+
+  factory DiscoverMcpServerResult({
     required _i2.McpServerHealth health,
     String? serverName,
     String? serverVersion,
@@ -34,7 +36,7 @@ abstract class DiscoverMcpServerResult._({
     String? errorCode,
   }) = _DiscoverMcpServerResultImpl;
 
-  factory fromJson(
+  factory DiscoverMcpServerResult.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DiscoverMcpServerResult(
@@ -50,6 +52,18 @@ abstract class DiscoverMcpServerResult._({
       errorCode: jsonSerialization['errorCode'] as String?,
     );
   }
+
+  _i2.McpServerHealth health;
+
+  String? serverName;
+
+  String? serverVersion;
+
+  String? protocolVersion;
+
+  List<_i3.DiscoveredMcpTool> tools;
+
+  String? errorCode;
 
   /// Returns a shallow copy of this [DiscoverMcpServerResult]
   /// with some or all fields replaced by the given arguments.
@@ -81,25 +95,24 @@ abstract class DiscoverMcpServerResult._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _DiscoverMcpServerResultImpl({
-  required _i2.McpServerHealth health,
-  String? serverName,
-  String? serverVersion,
-  String? protocolVersion,
-  required List<_i3.DiscoveredMcpTool> tools,
-  String? errorCode,
-}) extends DiscoverMcpServerResult {
-  this
-    : super._(
-        health: health,
-        serverName: serverName,
-        serverVersion: serverVersion,
-        protocolVersion: protocolVersion,
-        tools: tools,
-        errorCode: errorCode,
-      );
+class _DiscoverMcpServerResultImpl extends DiscoverMcpServerResult {
+  _DiscoverMcpServerResultImpl({
+    required _i2.McpServerHealth health,
+    String? serverName,
+    String? serverVersion,
+    String? protocolVersion,
+    required List<_i3.DiscoveredMcpTool> tools,
+    String? errorCode,
+  }) : super._(
+         health: health,
+         serverName: serverName,
+         serverVersion: serverVersion,
+         protocolVersion: protocolVersion,
+         tools: tools,
+         errorCode: errorCode,
+       );
 
   /// Returns a shallow copy of this [DiscoverMcpServerResult]
   /// with some or all fields replaced by the given arguments.

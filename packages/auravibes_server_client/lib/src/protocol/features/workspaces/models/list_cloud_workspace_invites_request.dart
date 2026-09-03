@@ -12,18 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ListCloudWorkspaceInvitesRequest._({
-  required var int workspaceId,
-}) implements _i1.SerializableModel {
-  factory({required int workspaceId}) = _ListCloudWorkspaceInvitesRequestImpl;
+abstract class ListCloudWorkspaceInvitesRequest
+    implements _i1.SerializableModel {
+  ListCloudWorkspaceInvitesRequest._({required this.workspaceId});
 
-  factory fromJson(
+  factory ListCloudWorkspaceInvitesRequest({required int workspaceId}) =
+      _ListCloudWorkspaceInvitesRequestImpl;
+
+  factory ListCloudWorkspaceInvitesRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ListCloudWorkspaceInvitesRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
     );
   }
+
+  int workspaceId;
 
   /// Returns a shallow copy of this [ListCloudWorkspaceInvitesRequest]
   /// with some or all fields replaced by the given arguments.
@@ -43,9 +47,10 @@ abstract class ListCloudWorkspaceInvitesRequest._({
   }
 }
 
-class _ListCloudWorkspaceInvitesRequestImpl({required int workspaceId})
+class _ListCloudWorkspaceInvitesRequestImpl
     extends ListCloudWorkspaceInvitesRequest {
-  this : super._(workspaceId: workspaceId);
+  _ListCloudWorkspaceInvitesRequestImpl({required int workspaceId})
+    : super._(workspaceId: workspaceId);
 
   /// Returns a shallow copy of this [ListCloudWorkspaceInvitesRequest]
   /// with some or all fields replaced by the given arguments.

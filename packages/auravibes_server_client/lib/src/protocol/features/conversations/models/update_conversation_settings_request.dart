@@ -12,15 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class UpdateConversationSettingsRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var int expectedProjectionRevision,
-  var String? modelId,
-  var String? agentId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class UpdateConversationSettingsRequest
+    implements _i1.SerializableModel {
+  UpdateConversationSettingsRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.expectedProjectionRevision,
+    this.modelId,
+    this.agentId,
+  });
+
+  factory UpdateConversationSettingsRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -29,7 +32,7 @@ abstract class UpdateConversationSettingsRequest._({
     String? agentId,
   }) = _UpdateConversationSettingsRequestImpl;
 
-  factory fromJson(
+  factory UpdateConversationSettingsRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return UpdateConversationSettingsRequest(
@@ -42,6 +45,18 @@ abstract class UpdateConversationSettingsRequest._({
       agentId: jsonSerialization['agentId'] as String?,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  int expectedProjectionRevision;
+
+  String? modelId;
+
+  String? agentId;
 
   /// Returns a shallow copy of this [UpdateConversationSettingsRequest]
   /// with some or all fields replaced by the given arguments.
@@ -73,25 +88,25 @@ abstract class UpdateConversationSettingsRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _UpdateConversationSettingsRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required int expectedProjectionRevision,
-  String? modelId,
-  String? agentId,
-}) extends UpdateConversationSettingsRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedProjectionRevision: expectedProjectionRevision,
-        modelId: modelId,
-        agentId: agentId,
-      );
+class _UpdateConversationSettingsRequestImpl
+    extends UpdateConversationSettingsRequest {
+  _UpdateConversationSettingsRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+    String? modelId,
+    String? agentId,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         expectedProjectionRevision: expectedProjectionRevision,
+         modelId: modelId,
+         agentId: agentId,
+       );
 
   /// Returns a shallow copy of this [UpdateConversationSettingsRequest]
   /// with some or all fields replaced by the given arguments.

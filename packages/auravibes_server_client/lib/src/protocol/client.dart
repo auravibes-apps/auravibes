@@ -198,9 +198,8 @@ import 'protocol.dart' as _i92;
 /// are made available on the server and enable the corresponding sign-in widget
 /// on the client.
 /// {@category Endpoint}
-class EndpointEmailIdp(_i2.EndpointCaller caller)
-    extends _i1.EndpointEmailIdpBase {
-  this : super(caller);
+class EndpointEmailIdp extends _i1.EndpointEmailIdpBase {
+  EndpointEmailIdp(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'emailIdp';
@@ -381,9 +380,8 @@ class EndpointEmailIdp(_i2.EndpointCaller caller)
 /// By extending [RefreshJwtTokensEndpoint], the JWT token refresh endpoint
 /// is made available on the server and enables automatic token refresh on the client.
 /// {@category Endpoint}
-class EndpointJwtRefresh(_i2.EndpointCaller caller)
-    extends _i4.EndpointRefreshJwtTokens {
-  this : super(caller);
+class EndpointJwtRefresh extends _i4.EndpointRefreshJwtTokens {
+  EndpointJwtRefresh(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'jwtRefresh';
@@ -418,8 +416,8 @@ class EndpointJwtRefresh(_i2.EndpointCaller caller)
 }
 
 /// {@category Endpoint}
-class EndpointAccount(_i2.EndpointCaller caller) extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointAccount extends _i2.EndpointRef {
+  EndpointAccount(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'account';
@@ -433,8 +431,8 @@ class EndpointAccount(_i2.EndpointCaller caller) extends _i2.EndpointRef {
 }
 
 /// {@category Endpoint}
-class EndpointCodexOAuth(_i2.EndpointCaller caller) extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointCodexOAuth extends _i2.EndpointRef {
+  EndpointCodexOAuth(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'codexOAuth';
@@ -457,8 +455,8 @@ class EndpointCodexOAuth(_i2.EndpointCaller caller) extends _i2.EndpointRef {
 }
 
 /// {@category Endpoint}
-class EndpointConversation(_i2.EndpointCaller caller) extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointConversation extends _i2.EndpointRef {
+  EndpointConversation(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'conversation';
@@ -643,8 +641,8 @@ class EndpointConversation(_i2.EndpointCaller caller) extends _i2.EndpointRef {
 }
 
 /// {@category Endpoint}
-class EndpointMcpServer(_i2.EndpointCaller caller) extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointMcpServer extends _i2.EndpointRef {
+  EndpointMcpServer(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'mcpServer';
@@ -674,9 +672,8 @@ class EndpointMcpServer(_i2.EndpointCaller caller) extends _i2.EndpointRef {
 }
 
 /// {@category Endpoint}
-class EndpointModelConnection(_i2.EndpointCaller caller)
-    extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointModelConnection extends _i2.EndpointRef {
+  EndpointModelConnection(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'modelConnection';
@@ -744,8 +741,8 @@ class EndpointModelConnection(_i2.EndpointCaller caller)
 }
 
 /// {@category Endpoint}
-class EndpointObject(_i2.EndpointCaller caller) extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointObject extends _i2.EndpointRef {
+  EndpointObject(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'object';
@@ -783,9 +780,8 @@ class EndpointObject(_i2.EndpointCaller caller) extends _i2.EndpointRef {
 }
 
 /// {@category Endpoint}
-class EndpointWorkspaceStream(_i2.EndpointCaller caller)
-    extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointWorkspaceStream extends _i2.EndpointRef {
+  EndpointWorkspaceStream(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'workspaceStream';
@@ -805,9 +801,8 @@ class EndpointWorkspaceStream(_i2.EndpointCaller caller)
 }
 
 /// {@category Endpoint}
-class EndpointWorkspaceSecret(_i2.EndpointCaller caller)
-    extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointWorkspaceSecret extends _i2.EndpointRef {
+  EndpointWorkspaceSecret(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'workspaceSecret';
@@ -822,9 +817,8 @@ class EndpointWorkspaceSecret(_i2.EndpointCaller caller)
 }
 
 /// {@category Endpoint}
-class EndpointWorkspaceState(_i2.EndpointCaller caller)
-    extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointWorkspaceState extends _i2.EndpointRef {
+  EndpointWorkspaceState(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'workspaceState';
@@ -855,9 +849,8 @@ class EndpointWorkspaceState(_i2.EndpointCaller caller)
 }
 
 /// {@category Endpoint}
-class EndpointCloudWorkspace(_i2.EndpointCaller caller)
-    extends _i2.EndpointRef {
-  this : super(caller);
+class EndpointCloudWorkspace extends _i2.EndpointRef {
+  EndpointCloudWorkspace(_i2.EndpointCaller caller) : super(caller);
 
   @override
   String get name => 'cloudWorkspace';

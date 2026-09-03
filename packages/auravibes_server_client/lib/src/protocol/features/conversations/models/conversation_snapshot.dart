@@ -23,15 +23,17 @@ import '../../../features/conversations/models/conversation_tool_call_view.dart'
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i6;
 
-abstract class ConversationSnapshot._({
-  required var _i2.ConversationProjectionView conversation,
-  required var List<_i3.ConversationMessageView> messages,
-  required var List<_i3.ConversationMessageView> pendingMessages,
-  var _i4.ConversationExecutionView? activeExecution,
-  required var List<_i5.ConversationToolCallView> toolCalls,
-  required var int sequence,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationSnapshot implements _i1.SerializableModel {
+  ConversationSnapshot._({
+    required this.conversation,
+    required this.messages,
+    required this.pendingMessages,
+    this.activeExecution,
+    required this.toolCalls,
+    required this.sequence,
+  });
+
+  factory ConversationSnapshot({
     required _i2.ConversationProjectionView conversation,
     required List<_i3.ConversationMessageView> messages,
     required List<_i3.ConversationMessageView> pendingMessages,
@@ -40,7 +42,7 @@ abstract class ConversationSnapshot._({
     required int sequence,
   }) = _ConversationSnapshotImpl;
 
-  factory fromJson(
+  factory ConversationSnapshot.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationSnapshot(
@@ -65,6 +67,18 @@ abstract class ConversationSnapshot._({
       sequence: jsonSerialization['sequence'] as int,
     );
   }
+
+  _i2.ConversationProjectionView conversation;
+
+  List<_i3.ConversationMessageView> messages;
+
+  List<_i3.ConversationMessageView> pendingMessages;
+
+  _i4.ConversationExecutionView? activeExecution;
+
+  List<_i5.ConversationToolCallView> toolCalls;
+
+  int sequence;
 
   /// Returns a shallow copy of this [ConversationSnapshot]
   /// with some or all fields replaced by the given arguments.
@@ -96,25 +110,24 @@ abstract class ConversationSnapshot._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationSnapshotImpl({
-  required _i2.ConversationProjectionView conversation,
-  required List<_i3.ConversationMessageView> messages,
-  required List<_i3.ConversationMessageView> pendingMessages,
-  _i4.ConversationExecutionView? activeExecution,
-  required List<_i5.ConversationToolCallView> toolCalls,
-  required int sequence,
-}) extends ConversationSnapshot {
-  this
-    : super._(
-        conversation: conversation,
-        messages: messages,
-        pendingMessages: pendingMessages,
-        activeExecution: activeExecution,
-        toolCalls: toolCalls,
-        sequence: sequence,
-      );
+class _ConversationSnapshotImpl extends ConversationSnapshot {
+  _ConversationSnapshotImpl({
+    required _i2.ConversationProjectionView conversation,
+    required List<_i3.ConversationMessageView> messages,
+    required List<_i3.ConversationMessageView> pendingMessages,
+    _i4.ConversationExecutionView? activeExecution,
+    required List<_i5.ConversationToolCallView> toolCalls,
+    required int sequence,
+  }) : super._(
+         conversation: conversation,
+         messages: messages,
+         pendingMessages: pendingMessages,
+         activeExecution: activeExecution,
+         toolCalls: toolCalls,
+         sequence: sequence,
+       );
 
   /// Returns a shallow copy of this [ConversationSnapshot]
   /// with some or all fields replaced by the given arguments.

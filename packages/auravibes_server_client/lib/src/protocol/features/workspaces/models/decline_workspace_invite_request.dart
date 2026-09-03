@@ -12,18 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DeclineWorkspaceInviteRequest._({
-  required var int inviteId,
-  required var String requestId,
-  required var int expectedInviteRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DeclineWorkspaceInviteRequest implements _i1.SerializableModel {
+  DeclineWorkspaceInviteRequest._({
+    required this.inviteId,
+    required this.requestId,
+    required this.expectedInviteRevision,
+  });
+
+  factory DeclineWorkspaceInviteRequest({
     required int inviteId,
     required String requestId,
     required int expectedInviteRevision,
   }) = _DeclineWorkspaceInviteRequestImpl;
 
-  factory fromJson(
+  factory DeclineWorkspaceInviteRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DeclineWorkspaceInviteRequest(
@@ -33,6 +35,12 @@ abstract class DeclineWorkspaceInviteRequest._({
           jsonSerialization['expectedInviteRevision'] as int,
     );
   }
+
+  int inviteId;
+
+  String requestId;
+
+  int expectedInviteRevision;
 
   /// Returns a shallow copy of this [DeclineWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
@@ -58,17 +66,16 @@ abstract class DeclineWorkspaceInviteRequest._({
   }
 }
 
-class _DeclineWorkspaceInviteRequestImpl({
-  required int inviteId,
-  required String requestId,
-  required int expectedInviteRevision,
-}) extends DeclineWorkspaceInviteRequest {
-  this
-    : super._(
-        inviteId: inviteId,
-        requestId: requestId,
-        expectedInviteRevision: expectedInviteRevision,
-      );
+class _DeclineWorkspaceInviteRequestImpl extends DeclineWorkspaceInviteRequest {
+  _DeclineWorkspaceInviteRequestImpl({
+    required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
+  }) : super._(
+         inviteId: inviteId,
+         requestId: requestId,
+         expectedInviteRevision: expectedInviteRevision,
+       );
 
   /// Returns a shallow copy of this [DeclineWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.

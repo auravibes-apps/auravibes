@@ -400,10 +400,16 @@ class _InternalTestEndpoints extends TestEndpoints
   }
 }
 
-class _EmailIdpEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _EmailIdpEndpoint {
+  _EmailIdpEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i5.AuthSuccess> login(
     _i1.TestSessionBuilder sessionBuilder, {
     required String email,
@@ -654,10 +660,16 @@ class _EmailIdpEndpoint(
   }
 }
 
-class _JwtRefreshEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _JwtRefreshEndpoint {
+  _JwtRefreshEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i5.AuthSuccess> refreshAccessToken(
     _i1.TestSessionBuilder sessionBuilder, {
     required String refreshToken,
@@ -688,10 +700,16 @@ class _JwtRefreshEndpoint(
   }
 }
 
-class _AccountEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _AccountEndpoint {
+  _AccountEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i6.AccountSummary> currentUser(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
@@ -721,10 +739,16 @@ class _AccountEndpoint(
   }
 }
 
-class _CodexOAuthEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _CodexOAuthEndpoint {
+  _CodexOAuthEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i7.StartCodexOAuthResult> start(
     _i1.TestSessionBuilder sessionBuilder,
     _i8.StartCodexOAuthRequest request,
@@ -784,10 +808,16 @@ class _CodexOAuthEndpoint(
   }
 }
 
-class _ConversationEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _ConversationEndpoint {
+  _ConversationEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i11.ConversationSummary> create(
     _i1.TestSessionBuilder sessionBuilder,
     _i12.CreateConversationRequest request,
@@ -1435,10 +1465,16 @@ class _ConversationEndpoint(
   }
 }
 
-class _McpServerEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _McpServerEndpoint {
+  _McpServerEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i40.CreateMcpServerResult> create(
     _i1.TestSessionBuilder sessionBuilder,
     _i41.CreateMcpServerRequest request,
@@ -1527,10 +1563,16 @@ class _McpServerEndpoint(
   }
 }
 
-class _ModelConnectionEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _ModelConnectionEndpoint {
+  _ModelConnectionEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<List<_i45.ApiModelProvider>> listCatalogProviders(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {
@@ -1763,10 +1805,16 @@ class _ModelConnectionEndpoint(
   }
 }
 
-class _ObjectEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _ObjectEndpoint {
+  _ObjectEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i56.BeginUploadResult> beginUpload(
     _i1.TestSessionBuilder sessionBuilder,
     _i57.BeginUploadRequest request,
@@ -1884,10 +1932,16 @@ class _ObjectEndpoint(
   }
 }
 
-class _WorkspaceStreamEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _WorkspaceStreamEndpoint {
+  _WorkspaceStreamEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Stream<_i63.WorkspaceStreamEnvelope> subscribe(
     _i1.TestSessionBuilder sessionBuilder,
     _i64.WorkspaceSubscribeRequest request,
@@ -1926,10 +1980,16 @@ class _WorkspaceStreamEndpoint(
   }
 }
 
-class _WorkspaceSecretEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _WorkspaceSecretEndpoint {
+  _WorkspaceSecretEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i65.PutWorkspaceSecretResponse> put(
     _i1.TestSessionBuilder sessionBuilder,
     _i66.PutWorkspaceSecretRequest request,
@@ -1960,10 +2020,16 @@ class _WorkspaceSecretEndpoint(
   }
 }
 
-class _WorkspaceStateEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _WorkspaceStateEndpoint {
+  _WorkspaceStateEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<_i67.ReadWorkspaceStateResponse> read(
     _i1.TestSessionBuilder sessionBuilder,
     _i68.ReadWorkspaceStateRequest request,
@@ -2052,10 +2118,16 @@ class _WorkspaceStateEndpoint(
   }
 }
 
-class _CloudWorkspaceEndpoint(
-  final _i2.EndpointDispatch _endpointDispatch,
-  final _i2.SerializationManager _serializationManager,
-) {
+class _CloudWorkspaceEndpoint {
+  _CloudWorkspaceEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _i2.EndpointDispatch _endpointDispatch;
+
+  final _i2.SerializationManager _serializationManager;
+
   _i4.Future<List<_i73.CloudWorkspaceSummary>> listAuthorizedWorkspaces(
     _i1.TestSessionBuilder sessionBuilder,
   ) async {

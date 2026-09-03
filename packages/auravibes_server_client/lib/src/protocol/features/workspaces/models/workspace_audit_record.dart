@@ -12,20 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceAuditRecord._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var int sequence,
-  required var String actorUserId,
-  required var String operation,
-  var String? targetKind,
-  var String? targetId,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceAuditRecord implements _i1.SerializableModel {
+  WorkspaceAuditRecord._({
+    this.id,
+    required this.workspaceId,
+    required this.sequence,
+    required this.actorUserId,
+    required this.operation,
+    this.targetKind,
+    this.targetId,
+    required this.createdAt,
+  });
+
+  factory WorkspaceAuditRecord({
     int? id,
     required int workspaceId,
     required int sequence,
@@ -36,7 +35,7 @@ abstract class WorkspaceAuditRecord._({
     required DateTime createdAt,
   }) = _WorkspaceAuditRecordImpl;
 
-  factory fromJson(
+  factory WorkspaceAuditRecord.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceAuditRecord(
@@ -52,6 +51,25 @@ abstract class WorkspaceAuditRecord._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  int sequence;
+
+  String actorUserId;
+
+  String operation;
+
+  String? targetKind;
+
+  String? targetId;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [WorkspaceAuditRecord]
   /// with some or all fields replaced by the given arguments.
@@ -87,29 +105,28 @@ abstract class WorkspaceAuditRecord._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceAuditRecordImpl({
-  int? id,
-  required int workspaceId,
-  required int sequence,
-  required String actorUserId,
-  required String operation,
-  String? targetKind,
-  String? targetId,
-  required DateTime createdAt,
-}) extends WorkspaceAuditRecord {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        sequence: sequence,
-        actorUserId: actorUserId,
-        operation: operation,
-        targetKind: targetKind,
-        targetId: targetId,
-        createdAt: createdAt,
-      );
+class _WorkspaceAuditRecordImpl extends WorkspaceAuditRecord {
+  _WorkspaceAuditRecordImpl({
+    int? id,
+    required int workspaceId,
+    required int sequence,
+    required String actorUserId,
+    required String operation,
+    String? targetKind,
+    String? targetId,
+    required DateTime createdAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         sequence: sequence,
+         actorUserId: actorUserId,
+         operation: operation,
+         targetKind: targetKind,
+         targetId: targetId,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceAuditRecord]
   /// with some or all fields replaced by the given arguments.

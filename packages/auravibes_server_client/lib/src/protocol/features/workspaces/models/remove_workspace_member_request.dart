@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class RemoveWorkspaceMemberRequest._({
-  required var int workspaceId,
-  required var String userId,
-  required var String requestId,
-  required var int expectedMemberRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class RemoveWorkspaceMemberRequest implements _i1.SerializableModel {
+  RemoveWorkspaceMemberRequest._({
+    required this.workspaceId,
+    required this.userId,
+    required this.requestId,
+    required this.expectedMemberRevision,
+  });
+
+  factory RemoveWorkspaceMemberRequest({
     required int workspaceId,
     required String userId,
     required String requestId,
     required int expectedMemberRevision,
   }) = _RemoveWorkspaceMemberRequestImpl;
 
-  factory fromJson(
+  factory RemoveWorkspaceMemberRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return RemoveWorkspaceMemberRequest(
@@ -36,6 +38,14 @@ abstract class RemoveWorkspaceMemberRequest._({
           jsonSerialization['expectedMemberRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  String userId;
+
+  String requestId;
+
+  int expectedMemberRevision;
 
   /// Returns a shallow copy of this [RemoveWorkspaceMemberRequest]
   /// with some or all fields replaced by the given arguments.
@@ -63,19 +73,18 @@ abstract class RemoveWorkspaceMemberRequest._({
   }
 }
 
-class _RemoveWorkspaceMemberRequestImpl({
-  required int workspaceId,
-  required String userId,
-  required String requestId,
-  required int expectedMemberRevision,
-}) extends RemoveWorkspaceMemberRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        userId: userId,
-        requestId: requestId,
-        expectedMemberRevision: expectedMemberRevision,
-      );
+class _RemoveWorkspaceMemberRequestImpl extends RemoveWorkspaceMemberRequest {
+  _RemoveWorkspaceMemberRequestImpl({
+    required int workspaceId,
+    required String userId,
+    required String requestId,
+    required int expectedMemberRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         userId: userId,
+         requestId: requestId,
+         expectedMemberRevision: expectedMemberRevision,
+       );
 
   /// Returns a shallow copy of this [RemoveWorkspaceMemberRequest]
   /// with some or all fields replaced by the given arguments.

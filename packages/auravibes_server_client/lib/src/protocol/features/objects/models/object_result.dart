@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ObjectResult._({
-  required var int objectId,
-  required var int workspaceId,
-  required var String displayName,
-  required var String mimeType,
-  required var int sizeBytes,
-  required var String checksumSha256,
-  required var int revision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ObjectResult implements _i1.SerializableModel {
+  ObjectResult._({
+    required this.objectId,
+    required this.workspaceId,
+    required this.displayName,
+    required this.mimeType,
+    required this.sizeBytes,
+    required this.checksumSha256,
+    required this.revision,
+  });
+
+  factory ObjectResult({
     required int objectId,
     required int workspaceId,
     required String displayName,
@@ -31,7 +33,7 @@ abstract class ObjectResult._({
     required int revision,
   }) = _ObjectResultImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ObjectResult.fromJson(Map<String, dynamic> jsonSerialization) {
     return ObjectResult(
       objectId: jsonSerialization['objectId'] as int,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -42,6 +44,20 @@ abstract class ObjectResult._({
       revision: jsonSerialization['revision'] as int,
     );
   }
+
+  int objectId;
+
+  int workspaceId;
+
+  String displayName;
+
+  String mimeType;
+
+  int sizeBytes;
+
+  String checksumSha256;
+
+  int revision;
 
   /// Returns a shallow copy of this [ObjectResult]
   /// with some or all fields replaced by the given arguments.
@@ -75,25 +91,24 @@ abstract class ObjectResult._({
   }
 }
 
-class _ObjectResultImpl({
-  required int objectId,
-  required int workspaceId,
-  required String displayName,
-  required String mimeType,
-  required int sizeBytes,
-  required String checksumSha256,
-  required int revision,
-}) extends ObjectResult {
-  this
-    : super._(
-        objectId: objectId,
-        workspaceId: workspaceId,
-        displayName: displayName,
-        mimeType: mimeType,
-        sizeBytes: sizeBytes,
-        checksumSha256: checksumSha256,
-        revision: revision,
-      );
+class _ObjectResultImpl extends ObjectResult {
+  _ObjectResultImpl({
+    required int objectId,
+    required int workspaceId,
+    required String displayName,
+    required String mimeType,
+    required int sizeBytes,
+    required String checksumSha256,
+    required int revision,
+  }) : super._(
+         objectId: objectId,
+         workspaceId: workspaceId,
+         displayName: displayName,
+         mimeType: mimeType,
+         sizeBytes: sizeBytes,
+         checksumSha256: checksumSha256,
+         revision: revision,
+       );
 
   /// Returns a shallow copy of this [ObjectResult]
   /// with some or all fields replaced by the given arguments.

@@ -677,7 +677,13 @@ void main() {
     expect(code, 7);
     expect(
       capturedArguments,
-      containsAllInOrder(['test', '--exclude-tags=integration']),
+      containsAllInOrder([
+        'test',
+        '--exclude-tags=integration',
+        '--concurrency=1',
+        '--timeout=30s',
+        '--reporter=expanded',
+      ]),
     );
   });
 

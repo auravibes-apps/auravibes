@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DeleteConversationRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var int expectedRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DeleteConversationRequest implements _i1.SerializableModel {
+  DeleteConversationRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.expectedRevision,
+  });
+
+  factory DeleteConversationRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
     required int expectedRevision,
   }) = _DeleteConversationRequestImpl;
 
-  factory fromJson(
+  factory DeleteConversationRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DeleteConversationRequest(
@@ -35,6 +37,14 @@ abstract class DeleteConversationRequest._({
       expectedRevision: jsonSerialization['expectedRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  int expectedRevision;
 
   /// Returns a shallow copy of this [DeleteConversationRequest]
   /// with some or all fields replaced by the given arguments.
@@ -62,19 +72,18 @@ abstract class DeleteConversationRequest._({
   }
 }
 
-class _DeleteConversationRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required int expectedRevision,
-}) extends DeleteConversationRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedRevision: expectedRevision,
-      );
+class _DeleteConversationRequestImpl extends DeleteConversationRequest {
+  _DeleteConversationRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required int expectedRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         expectedRevision: expectedRevision,
+       );
 
   /// Returns a shallow copy of this [DeleteConversationRequest]
   /// with some or all fields replaced by the given arguments.

@@ -12,20 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ProviderAdmissionReservation._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int jobId,
-  required var int workspaceId,
-  required var String providerId,
-  required var String leaseToken,
-  required var DateTime expiresAt,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ProviderAdmissionReservation implements _i1.SerializableModel {
+  ProviderAdmissionReservation._({
+    this.id,
+    required this.jobId,
+    required this.workspaceId,
+    required this.providerId,
+    required this.leaseToken,
+    required this.expiresAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ProviderAdmissionReservation({
     int? id,
     required int jobId,
     required int workspaceId,
@@ -36,7 +35,7 @@ abstract class ProviderAdmissionReservation._({
     required DateTime updatedAt,
   }) = _ProviderAdmissionReservationImpl;
 
-  factory fromJson(
+  factory ProviderAdmissionReservation.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ProviderAdmissionReservation(
@@ -56,6 +55,25 @@ abstract class ProviderAdmissionReservation._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int jobId;
+
+  int workspaceId;
+
+  String providerId;
+
+  String leaseToken;
+
+  DateTime expiresAt;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ProviderAdmissionReservation]
   /// with some or all fields replaced by the given arguments.
@@ -91,29 +109,28 @@ abstract class ProviderAdmissionReservation._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ProviderAdmissionReservationImpl({
-  int? id,
-  required int jobId,
-  required int workspaceId,
-  required String providerId,
-  required String leaseToken,
-  required DateTime expiresAt,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ProviderAdmissionReservation {
-  this
-    : super._(
-        id: id,
-        jobId: jobId,
-        workspaceId: workspaceId,
-        providerId: providerId,
-        leaseToken: leaseToken,
-        expiresAt: expiresAt,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ProviderAdmissionReservationImpl extends ProviderAdmissionReservation {
+  _ProviderAdmissionReservationImpl({
+    int? id,
+    required int jobId,
+    required int workspaceId,
+    required String providerId,
+    required String leaseToken,
+    required DateTime expiresAt,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         jobId: jobId,
+         workspaceId: workspaceId,
+         providerId: providerId,
+         leaseToken: leaseToken,
+         expiresAt: expiresAt,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ProviderAdmissionReservation]
   /// with some or all fields replaced by the given arguments.

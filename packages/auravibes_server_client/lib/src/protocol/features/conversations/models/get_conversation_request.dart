@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class GetConversationRequest._({
-  required var int workspaceId,
-  required var String conversationId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class GetConversationRequest implements _i1.SerializableModel {
+  GetConversationRequest._({
+    required this.workspaceId,
+    required this.conversationId,
+  });
+
+  factory GetConversationRequest({
     required int workspaceId,
     required String conversationId,
   }) = _GetConversationRequestImpl;
 
-  factory fromJson(
+  factory GetConversationRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return GetConversationRequest(
@@ -29,6 +31,10 @@ abstract class GetConversationRequest._({
       conversationId: jsonSerialization['conversationId'] as String,
     );
   }
+
+  int workspaceId;
+
+  String conversationId;
 
   /// Returns a shallow copy of this [GetConversationRequest]
   /// with some or all fields replaced by the given arguments.
@@ -52,15 +58,14 @@ abstract class GetConversationRequest._({
   }
 }
 
-class _GetConversationRequestImpl({
-  required int workspaceId,
-  required String conversationId,
-}) extends GetConversationRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-      );
+class _GetConversationRequestImpl extends GetConversationRequest {
+  _GetConversationRequestImpl({
+    required int workspaceId,
+    required String conversationId,
+  }) : super._(
+         workspaceId: workspaceId,
+         conversationId: conversationId,
+       );
 
   /// Returns a shallow copy of this [GetConversationRequest]
   /// with some or all fields replaced by the given arguments.

@@ -21,17 +21,20 @@ import '../../../features/workspace_state/models/workspace_secret_scope.dart'
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i5;
 
-abstract class MutateWorkspaceCredentialRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var _i2.WorkspacePatchOperation resourceOperation,
-  required var _i3.WorkspaceSecretKind secretKind,
-  required var _i4.WorkspaceSecretScope scope,
-  var String? secret,
-  required var bool clearSecret,
-  var int? expectedSecretRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class MutateWorkspaceCredentialRequest
+    implements _i1.SerializableModel {
+  MutateWorkspaceCredentialRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.resourceOperation,
+    required this.secretKind,
+    required this.scope,
+    this.secret,
+    required this.clearSecret,
+    this.expectedSecretRevision,
+  });
+
+  factory MutateWorkspaceCredentialRequest({
     required int workspaceId,
     required String requestId,
     required _i2.WorkspacePatchOperation resourceOperation,
@@ -42,7 +45,7 @@ abstract class MutateWorkspaceCredentialRequest._({
     int? expectedSecretRevision,
   }) = _MutateWorkspaceCredentialRequestImpl;
 
-  factory fromJson(
+  factory MutateWorkspaceCredentialRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return MutateWorkspaceCredentialRequest(
@@ -66,6 +69,22 @@ abstract class MutateWorkspaceCredentialRequest._({
           jsonSerialization['expectedSecretRevision'] as int?,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  _i2.WorkspacePatchOperation resourceOperation;
+
+  _i3.WorkspaceSecretKind secretKind;
+
+  _i4.WorkspaceSecretScope scope;
+
+  String? secret;
+
+  bool clearSecret;
+
+  int? expectedSecretRevision;
 
   /// Returns a shallow copy of this [MutateWorkspaceCredentialRequest]
   /// with some or all fields replaced by the given arguments.
@@ -102,29 +121,29 @@ abstract class MutateWorkspaceCredentialRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _MutateWorkspaceCredentialRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required _i2.WorkspacePatchOperation resourceOperation,
-  required _i3.WorkspaceSecretKind secretKind,
-  required _i4.WorkspaceSecretScope scope,
-  String? secret,
-  required bool clearSecret,
-  int? expectedSecretRevision,
-}) extends MutateWorkspaceCredentialRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        resourceOperation: resourceOperation,
-        secretKind: secretKind,
-        scope: scope,
-        secret: secret,
-        clearSecret: clearSecret,
-        expectedSecretRevision: expectedSecretRevision,
-      );
+class _MutateWorkspaceCredentialRequestImpl
+    extends MutateWorkspaceCredentialRequest {
+  _MutateWorkspaceCredentialRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required _i2.WorkspacePatchOperation resourceOperation,
+    required _i3.WorkspaceSecretKind secretKind,
+    required _i4.WorkspaceSecretScope scope,
+    String? secret,
+    required bool clearSecret,
+    int? expectedSecretRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         resourceOperation: resourceOperation,
+         secretKind: secretKind,
+         scope: scope,
+         secret: secret,
+         clearSecret: clearSecret,
+         expectedSecretRevision: expectedSecretRevision,
+       );
 
   /// Returns a shallow copy of this [MutateWorkspaceCredentialRequest]
   /// with some or all fields replaced by the given arguments.

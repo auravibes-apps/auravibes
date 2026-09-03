@@ -12,17 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CreateConversationRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var String title,
-  required var bool isPinned,
-  var String? modelId,
-  var String? agentId,
-  var String? parentConversationId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CreateConversationRequest implements _i1.SerializableModel {
+  CreateConversationRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.title,
+    required this.isPinned,
+    this.modelId,
+    this.agentId,
+    this.parentConversationId,
+  });
+
+  factory CreateConversationRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -33,7 +35,7 @@ abstract class CreateConversationRequest._({
     String? parentConversationId,
   }) = _CreateConversationRequestImpl;
 
-  factory fromJson(
+  factory CreateConversationRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CreateConversationRequest(
@@ -48,6 +50,22 @@ abstract class CreateConversationRequest._({
           jsonSerialization['parentConversationId'] as String?,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  String title;
+
+  bool isPinned;
+
+  String? modelId;
+
+  String? agentId;
+
+  String? parentConversationId;
 
   /// Returns a shallow copy of this [CreateConversationRequest]
   /// with some or all fields replaced by the given arguments.
@@ -84,29 +102,28 @@ abstract class CreateConversationRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CreateConversationRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required String title,
-  required bool isPinned,
-  String? modelId,
-  String? agentId,
-  String? parentConversationId,
-}) extends CreateConversationRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        title: title,
-        isPinned: isPinned,
-        modelId: modelId,
-        agentId: agentId,
-        parentConversationId: parentConversationId,
-      );
+class _CreateConversationRequestImpl extends CreateConversationRequest {
+  _CreateConversationRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required String title,
+    required bool isPinned,
+    String? modelId,
+    String? agentId,
+    String? parentConversationId,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         title: title,
+         isPinned: isPinned,
+         modelId: modelId,
+         agentId: agentId,
+         parentConversationId: parentConversationId,
+       );
 
   /// Returns a shallow copy of this [CreateConversationRequest]
   /// with some or all fields replaced by the given arguments.

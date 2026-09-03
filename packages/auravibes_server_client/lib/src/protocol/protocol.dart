@@ -358,8 +358,10 @@ export 'features/workspaces/models/workspace_member.dart';
 export 'features/workspaces/models/workspace_mutation_receipt.dart';
 export 'client.dart';
 
-class Protocol._() extends _i1.SerializationManager {
-  factory() => _instance;
+class Protocol extends _i1.SerializationManager {
+  Protocol._();
+
+  factory Protocol() => _instance;
 
   static final Protocol _instance = Protocol._().._registerHostProtocols();
 

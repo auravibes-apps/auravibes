@@ -15,21 +15,20 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import '../../../features/workspace_state/models/workspace_resource_kind.dart'
     as _i2;
 
-abstract class WorkspaceResource._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var _i2.WorkspaceResourceKind resourceKind,
-  required var String resourceId,
-  required var String data,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-  var DateTime? deletedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceResource implements _i1.SerializableModel {
+  WorkspaceResource._({
+    this.id,
+    required this.workspaceId,
+    required this.resourceKind,
+    required this.resourceId,
+    required this.data,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+
+  factory WorkspaceResource({
     int? id,
     required int workspaceId,
     required _i2.WorkspaceResourceKind resourceKind,
@@ -41,7 +40,7 @@ abstract class WorkspaceResource._({
     DateTime? deletedAt,
   }) = _WorkspaceResourceImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory WorkspaceResource.fromJson(Map<String, dynamic> jsonSerialization) {
     return WorkspaceResource(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -62,6 +61,27 @@ abstract class WorkspaceResource._({
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  _i2.WorkspaceResourceKind resourceKind;
+
+  String resourceId;
+
+  String data;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
+
+  DateTime? deletedAt;
 
   /// Returns a shallow copy of this [WorkspaceResource]
   /// with some or all fields replaced by the given arguments.
@@ -99,31 +119,30 @@ abstract class WorkspaceResource._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceResourceImpl({
-  int? id,
-  required int workspaceId,
-  required _i2.WorkspaceResourceKind resourceKind,
-  required String resourceId,
-  required String data,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  DateTime? deletedAt,
-}) extends WorkspaceResource {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        resourceKind: resourceKind,
-        resourceId: resourceId,
-        data: data,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        deletedAt: deletedAt,
-      );
+class _WorkspaceResourceImpl extends WorkspaceResource {
+  _WorkspaceResourceImpl({
+    int? id,
+    required int workspaceId,
+    required _i2.WorkspaceResourceKind resourceKind,
+    required String resourceId,
+    required String data,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? deletedAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         resourceKind: resourceKind,
+         resourceId: resourceId,
+         data: data,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         deletedAt: deletedAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceResource]
   /// with some or all fields replaced by the given arguments.

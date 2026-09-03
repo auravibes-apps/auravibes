@@ -13,31 +13,30 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class ApiModel._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var String providerId,
-  required var String modelId,
-  required var String name,
-  required var int limitContext,
-  required var int limitOutput,
-  required var List<String> modalitiesInput,
-  required var List<String> modalitiesOutput,
-  var String? family,
-  required var double costInput,
-  required var double costCacheRead,
-  required var double costOutput,
-  required var bool openWeights,
-  required var bool supportsReasoning,
-  required var bool isCanonical,
-  required var bool supportsPriorityMode,
-  required var bool supportsToolCalls,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ApiModel implements _i1.SerializableModel {
+  ApiModel._({
+    this.id,
+    required this.providerId,
+    required this.modelId,
+    required this.name,
+    required this.limitContext,
+    required this.limitOutput,
+    required this.modalitiesInput,
+    required this.modalitiesOutput,
+    this.family,
+    required this.costInput,
+    required this.costCacheRead,
+    required this.costOutput,
+    required this.openWeights,
+    required this.supportsReasoning,
+    required this.isCanonical,
+    required this.supportsPriorityMode,
+    required this.supportsToolCalls,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ApiModel({
     int? id,
     required String providerId,
     required String modelId,
@@ -59,7 +58,7 @@ abstract class ApiModel._({
     required DateTime updatedAt,
   }) = _ApiModelImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ApiModel.fromJson(Map<String, dynamic> jsonSerialization) {
     return ApiModel(
       id: jsonSerialization['id'] as int?,
       providerId: jsonSerialization['providerId'] as String,
@@ -100,6 +99,47 @@ abstract class ApiModel._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  String providerId;
+
+  String modelId;
+
+  String name;
+
+  int limitContext;
+
+  int limitOutput;
+
+  List<String> modalitiesInput;
+
+  List<String> modalitiesOutput;
+
+  String? family;
+
+  double costInput;
+
+  double costCacheRead;
+
+  double costOutput;
+
+  bool openWeights;
+
+  bool supportsReasoning;
+
+  bool isCanonical;
+
+  bool supportsPriorityMode;
+
+  bool supportsToolCalls;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ApiModel]
   /// with some or all fields replaced by the given arguments.
@@ -157,51 +197,50 @@ abstract class ApiModel._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ApiModelImpl({
-  int? id,
-  required String providerId,
-  required String modelId,
-  required String name,
-  required int limitContext,
-  required int limitOutput,
-  required List<String> modalitiesInput,
-  required List<String> modalitiesOutput,
-  String? family,
-  required double costInput,
-  required double costCacheRead,
-  required double costOutput,
-  required bool openWeights,
-  required bool supportsReasoning,
-  required bool isCanonical,
-  required bool supportsPriorityMode,
-  required bool supportsToolCalls,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ApiModel {
-  this
-    : super._(
-        id: id,
-        providerId: providerId,
-        modelId: modelId,
-        name: name,
-        limitContext: limitContext,
-        limitOutput: limitOutput,
-        modalitiesInput: modalitiesInput,
-        modalitiesOutput: modalitiesOutput,
-        family: family,
-        costInput: costInput,
-        costCacheRead: costCacheRead,
-        costOutput: costOutput,
-        openWeights: openWeights,
-        supportsReasoning: supportsReasoning,
-        isCanonical: isCanonical,
-        supportsPriorityMode: supportsPriorityMode,
-        supportsToolCalls: supportsToolCalls,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ApiModelImpl extends ApiModel {
+  _ApiModelImpl({
+    int? id,
+    required String providerId,
+    required String modelId,
+    required String name,
+    required int limitContext,
+    required int limitOutput,
+    required List<String> modalitiesInput,
+    required List<String> modalitiesOutput,
+    String? family,
+    required double costInput,
+    required double costCacheRead,
+    required double costOutput,
+    required bool openWeights,
+    required bool supportsReasoning,
+    required bool isCanonical,
+    required bool supportsPriorityMode,
+    required bool supportsToolCalls,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         providerId: providerId,
+         modelId: modelId,
+         name: name,
+         limitContext: limitContext,
+         limitOutput: limitOutput,
+         modalitiesInput: modalitiesInput,
+         modalitiesOutput: modalitiesOutput,
+         family: family,
+         costInput: costInput,
+         costCacheRead: costCacheRead,
+         costOutput: costOutput,
+         openWeights: openWeights,
+         supportsReasoning: supportsReasoning,
+         isCanonical: isCanonical,
+         supportsPriorityMode: supportsPriorityMode,
+         supportsToolCalls: supportsToolCalls,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ApiModel]
   /// with some or all fields replaced by the given arguments.

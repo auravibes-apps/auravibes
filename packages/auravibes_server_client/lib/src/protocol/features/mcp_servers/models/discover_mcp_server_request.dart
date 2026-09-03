@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DiscoverMcpServerRequest._({
-  required var int workspaceId,
-  required var String mcpServerId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DiscoverMcpServerRequest implements _i1.SerializableModel {
+  DiscoverMcpServerRequest._({
+    required this.workspaceId,
+    required this.mcpServerId,
+  });
+
+  factory DiscoverMcpServerRequest({
     required int workspaceId,
     required String mcpServerId,
   }) = _DiscoverMcpServerRequestImpl;
 
-  factory fromJson(
+  factory DiscoverMcpServerRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DiscoverMcpServerRequest(
@@ -29,6 +31,10 @@ abstract class DiscoverMcpServerRequest._({
       mcpServerId: jsonSerialization['mcpServerId'] as String,
     );
   }
+
+  int workspaceId;
+
+  String mcpServerId;
 
   /// Returns a shallow copy of this [DiscoverMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
@@ -52,15 +58,14 @@ abstract class DiscoverMcpServerRequest._({
   }
 }
 
-class _DiscoverMcpServerRequestImpl({
-  required int workspaceId,
-  required String mcpServerId,
-}) extends DiscoverMcpServerRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        mcpServerId: mcpServerId,
-      );
+class _DiscoverMcpServerRequestImpl extends DiscoverMcpServerRequest {
+  _DiscoverMcpServerRequestImpl({
+    required int workspaceId,
+    required String mcpServerId,
+  }) : super._(
+         workspaceId: workspaceId,
+         mcpServerId: mcpServerId,
+       );
 
   /// Returns a shallow copy of this [DiscoverMcpServerRequest]
   /// with some or all fields replaced by the given arguments.

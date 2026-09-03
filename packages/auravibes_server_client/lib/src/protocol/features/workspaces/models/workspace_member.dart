@@ -12,20 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceMember._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var String userId,
-  required var String role,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-  var DateTime? removedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceMember implements _i1.SerializableModel {
+  WorkspaceMember._({
+    this.id,
+    required this.workspaceId,
+    required this.userId,
+    required this.role,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+    this.removedAt,
+  });
+
+  factory WorkspaceMember({
     int? id,
     required int workspaceId,
     required String userId,
@@ -36,7 +35,7 @@ abstract class WorkspaceMember._({
     DateTime? removedAt,
   }) = _WorkspaceMemberImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory WorkspaceMember.fromJson(Map<String, dynamic> jsonSerialization) {
     return WorkspaceMember(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -54,6 +53,25 @@ abstract class WorkspaceMember._({
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['removedAt']),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  String userId;
+
+  String role;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
+
+  DateTime? removedAt;
 
   /// Returns a shallow copy of this [WorkspaceMember]
   /// with some or all fields replaced by the given arguments.
@@ -89,29 +107,28 @@ abstract class WorkspaceMember._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceMemberImpl({
-  int? id,
-  required int workspaceId,
-  required String userId,
-  required String role,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  DateTime? removedAt,
-}) extends WorkspaceMember {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        userId: userId,
-        role: role,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        removedAt: removedAt,
-      );
+class _WorkspaceMemberImpl extends WorkspaceMember {
+  _WorkspaceMemberImpl({
+    int? id,
+    required int workspaceId,
+    required String userId,
+    required String role,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? removedAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         userId: userId,
+         role: role,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         removedAt: removedAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceMember]
   /// with some or all fields replaced by the given arguments.

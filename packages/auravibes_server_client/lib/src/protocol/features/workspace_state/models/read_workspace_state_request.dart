@@ -17,20 +17,22 @@ import '../../../features/workspace_state/models/workspace_resource_page_request
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class ReadWorkspaceStateRequest._({
-  required var int workspaceId,
-  required var List<_i2.WorkspaceResourcePageRequest> pages,
-  var int? afterSequence,
-  required var int eventLimit,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ReadWorkspaceStateRequest implements _i1.SerializableModel {
+  ReadWorkspaceStateRequest._({
+    required this.workspaceId,
+    required this.pages,
+    this.afterSequence,
+    required this.eventLimit,
+  });
+
+  factory ReadWorkspaceStateRequest({
     required int workspaceId,
     required List<_i2.WorkspaceResourcePageRequest> pages,
     int? afterSequence,
     required int eventLimit,
   }) = _ReadWorkspaceStateRequestImpl;
 
-  factory fromJson(
+  factory ReadWorkspaceStateRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ReadWorkspaceStateRequest(
@@ -42,6 +44,14 @@ abstract class ReadWorkspaceStateRequest._({
       eventLimit: jsonSerialization['eventLimit'] as int,
     );
   }
+
+  int workspaceId;
+
+  List<_i2.WorkspaceResourcePageRequest> pages;
+
+  int? afterSequence;
+
+  int eventLimit;
 
   /// Returns a shallow copy of this [ReadWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
@@ -69,21 +79,20 @@ abstract class ReadWorkspaceStateRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ReadWorkspaceStateRequestImpl({
-  required int workspaceId,
-  required List<_i2.WorkspaceResourcePageRequest> pages,
-  int? afterSequence,
-  required int eventLimit,
-}) extends ReadWorkspaceStateRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        pages: pages,
-        afterSequence: afterSequence,
-        eventLimit: eventLimit,
-      );
+class _ReadWorkspaceStateRequestImpl extends ReadWorkspaceStateRequest {
+  _ReadWorkspaceStateRequestImpl({
+    required int workspaceId,
+    required List<_i2.WorkspaceResourcePageRequest> pages,
+    int? afterSequence,
+    required int eventLimit,
+  }) : super._(
+         workspaceId: workspaceId,
+         pages: pages,
+         afterSequence: afterSequence,
+         eventLimit: eventLimit,
+       );
 
   /// Returns a shallow copy of this [ReadWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.

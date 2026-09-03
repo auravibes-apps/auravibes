@@ -21,20 +21,22 @@ import '../../../features/conversations/models/conversation_tool_call_view.dart'
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i5;
 
-abstract class TurnSnapshot._({
-  required var _i2.ConversationTurnView turn,
-  required var List<_i3.ConversationMessageView> messages,
-  required var List<_i4.ConversationToolCallView> toolCalls,
-  required var bool terminal,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class TurnSnapshot implements _i1.SerializableModel {
+  TurnSnapshot._({
+    required this.turn,
+    required this.messages,
+    required this.toolCalls,
+    required this.terminal,
+  });
+
+  factory TurnSnapshot({
     required _i2.ConversationTurnView turn,
     required List<_i3.ConversationMessageView> messages,
     required List<_i4.ConversationToolCallView> toolCalls,
     required bool terminal,
   }) = _TurnSnapshotImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory TurnSnapshot.fromJson(Map<String, dynamic> jsonSerialization) {
     return TurnSnapshot(
       turn: _i5.Protocol().deserialize<_i2.ConversationTurnView>(
         jsonSerialization['turn'],
@@ -48,6 +50,14 @@ abstract class TurnSnapshot._({
       terminal: _i1.BoolJsonExtension.fromJson(jsonSerialization['terminal']),
     );
   }
+
+  _i2.ConversationTurnView turn;
+
+  List<_i3.ConversationMessageView> messages;
+
+  List<_i4.ConversationToolCallView> toolCalls;
+
+  bool terminal;
 
   /// Returns a shallow copy of this [TurnSnapshot]
   /// with some or all fields replaced by the given arguments.
@@ -75,19 +85,18 @@ abstract class TurnSnapshot._({
   }
 }
 
-class _TurnSnapshotImpl({
-  required _i2.ConversationTurnView turn,
-  required List<_i3.ConversationMessageView> messages,
-  required List<_i4.ConversationToolCallView> toolCalls,
-  required bool terminal,
-}) extends TurnSnapshot {
-  this
-    : super._(
-        turn: turn,
-        messages: messages,
-        toolCalls: toolCalls,
-        terminal: terminal,
-      );
+class _TurnSnapshotImpl extends TurnSnapshot {
+  _TurnSnapshotImpl({
+    required _i2.ConversationTurnView turn,
+    required List<_i3.ConversationMessageView> messages,
+    required List<_i4.ConversationToolCallView> toolCalls,
+    required bool terminal,
+  }) : super._(
+         turn: turn,
+         messages: messages,
+         toolCalls: toolCalls,
+         terminal: terminal,
+       );
 
   /// Returns a shallow copy of this [TurnSnapshot]
   /// with some or all fields replaced by the given arguments.

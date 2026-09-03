@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ContinueConversationRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var int expectedProjectionRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ContinueConversationRequest implements _i1.SerializableModel {
+  ContinueConversationRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.expectedProjectionRevision,
+  });
+
+  factory ContinueConversationRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
     required int expectedProjectionRevision,
   }) = _ContinueConversationRequestImpl;
 
-  factory fromJson(
+  factory ContinueConversationRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ContinueConversationRequest(
@@ -36,6 +38,14 @@ abstract class ContinueConversationRequest._({
           jsonSerialization['expectedProjectionRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  int expectedProjectionRevision;
 
   /// Returns a shallow copy of this [ContinueConversationRequest]
   /// with some or all fields replaced by the given arguments.
@@ -63,19 +73,18 @@ abstract class ContinueConversationRequest._({
   }
 }
 
-class _ContinueConversationRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required int expectedProjectionRevision,
-}) extends ContinueConversationRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedProjectionRevision: expectedProjectionRevision,
-      );
+class _ContinueConversationRequestImpl extends ContinueConversationRequest {
+  _ContinueConversationRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         expectedProjectionRevision: expectedProjectionRevision,
+       );
 
   /// Returns a shallow copy of this [ContinueConversationRequest]
   /// with some or all fields replaced by the given arguments.

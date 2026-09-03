@@ -15,17 +15,19 @@ import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import '../../../features/conversations/models/conversation_event_type.dart'
     as _i2;
 
-abstract class ConversationStreamEvent._({
-  required var int workspaceId,
-  required var String conversationId,
-  required var int sequence,
-  required var _i2.ConversationEventType kind,
-  required var String actorUserId,
-  required var String payloadJson,
-  var String? transientTextDelta,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationStreamEvent implements _i1.SerializableModel {
+  ConversationStreamEvent._({
+    required this.workspaceId,
+    required this.conversationId,
+    required this.sequence,
+    required this.kind,
+    required this.actorUserId,
+    required this.payloadJson,
+    this.transientTextDelta,
+    required this.createdAt,
+  });
+
+  factory ConversationStreamEvent({
     required int workspaceId,
     required String conversationId,
     required int sequence,
@@ -36,7 +38,7 @@ abstract class ConversationStreamEvent._({
     required DateTime createdAt,
   }) = _ConversationStreamEventImpl;
 
-  factory fromJson(
+  factory ConversationStreamEvent.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationStreamEvent(
@@ -54,6 +56,22 @@ abstract class ConversationStreamEvent._({
       ),
     );
   }
+
+  int workspaceId;
+
+  String conversationId;
+
+  int sequence;
+
+  _i2.ConversationEventType kind;
+
+  String actorUserId;
+
+  String payloadJson;
+
+  String? transientTextDelta;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [ConversationStreamEvent]
   /// with some or all fields replaced by the given arguments.
@@ -89,29 +107,28 @@ abstract class ConversationStreamEvent._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationStreamEventImpl({
-  required int workspaceId,
-  required String conversationId,
-  required int sequence,
-  required _i2.ConversationEventType kind,
-  required String actorUserId,
-  required String payloadJson,
-  String? transientTextDelta,
-  required DateTime createdAt,
-}) extends ConversationStreamEvent {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        sequence: sequence,
-        kind: kind,
-        actorUserId: actorUserId,
-        payloadJson: payloadJson,
-        transientTextDelta: transientTextDelta,
-        createdAt: createdAt,
-      );
+class _ConversationStreamEventImpl extends ConversationStreamEvent {
+  _ConversationStreamEventImpl({
+    required int workspaceId,
+    required String conversationId,
+    required int sequence,
+    required _i2.ConversationEventType kind,
+    required String actorUserId,
+    required String payloadJson,
+    String? transientTextDelta,
+    required DateTime createdAt,
+  }) : super._(
+         workspaceId: workspaceId,
+         conversationId: conversationId,
+         sequence: sequence,
+         kind: kind,
+         actorUserId: actorUserId,
+         payloadJson: payloadJson,
+         transientTextDelta: transientTextDelta,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [ConversationStreamEvent]
   /// with some or all fields replaced by the given arguments.

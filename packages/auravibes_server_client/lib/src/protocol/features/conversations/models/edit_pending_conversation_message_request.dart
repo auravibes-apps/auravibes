@@ -12,15 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class EditPendingConversationMessageRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var int expectedProjectionRevision,
-  required var String messageId,
-  required var String content,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class EditPendingConversationMessageRequest
+    implements _i1.SerializableModel {
+  EditPendingConversationMessageRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.expectedProjectionRevision,
+    required this.messageId,
+    required this.content,
+  });
+
+  factory EditPendingConversationMessageRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -29,7 +32,7 @@ abstract class EditPendingConversationMessageRequest._({
     required String content,
   }) = _EditPendingConversationMessageRequestImpl;
 
-  factory fromJson(
+  factory EditPendingConversationMessageRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return EditPendingConversationMessageRequest(
@@ -42,6 +45,18 @@ abstract class EditPendingConversationMessageRequest._({
       content: jsonSerialization['content'] as String,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  int expectedProjectionRevision;
+
+  String messageId;
+
+  String content;
 
   /// Returns a shallow copy of this [EditPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
@@ -73,23 +88,23 @@ abstract class EditPendingConversationMessageRequest._({
   }
 }
 
-class _EditPendingConversationMessageRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required int expectedProjectionRevision,
-  required String messageId,
-  required String content,
-}) extends EditPendingConversationMessageRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedProjectionRevision: expectedProjectionRevision,
-        messageId: messageId,
-        content: content,
-      );
+class _EditPendingConversationMessageRequestImpl
+    extends EditPendingConversationMessageRequest {
+  _EditPendingConversationMessageRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+    required String messageId,
+    required String content,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         expectedProjectionRevision: expectedProjectionRevision,
+         messageId: messageId,
+         content: content,
+       );
 
   /// Returns a shallow copy of this [EditPendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.

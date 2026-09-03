@@ -108,10 +108,18 @@ jobs:
       - name: Generate code
         run: melos run generate --no-select
 
+      - name: Install matching Serverpod CLI
+        run: |
+          version="$(ruby -ryaml -e 'puts YAML.load_file("apps/auravibes_server/pubspec.yaml").fetch("dependencies").fetch("serverpod")')"
+          dart pub global activate serverpod_cli "$version"
+
+      - name: Generate Serverpod code
+        run: melos run generate:serverpod
+
       - name: Check generated artifact drift
         run: |
           if ! git diff --quiet; then
-            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate', then commit the resulting changes."
+            echo "::error::Generated artifacts are out of date. Run 'fvm dart run melos run generate' and 'fvm dart run melos run generate:serverpod', then commit the resulting changes."
             git diff --name-only
             git diff --stat
             git diff --exit-code

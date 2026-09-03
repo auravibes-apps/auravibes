@@ -12,15 +12,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CreateModelConnectionRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String connectionId,
-  required var String name,
-  required var String providerId,
-  var String? url,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CreateModelConnectionRequest implements _i1.SerializableModel {
+  CreateModelConnectionRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.connectionId,
+    required this.name,
+    required this.providerId,
+    this.url,
+  });
+
+  factory CreateModelConnectionRequest({
     required int workspaceId,
     required String requestId,
     required String connectionId,
@@ -29,7 +31,7 @@ abstract class CreateModelConnectionRequest._({
     String? url,
   }) = _CreateModelConnectionRequestImpl;
 
-  factory fromJson(
+  factory CreateModelConnectionRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CreateModelConnectionRequest(
@@ -41,6 +43,18 @@ abstract class CreateModelConnectionRequest._({
       url: jsonSerialization['url'] as String?,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String connectionId;
+
+  String name;
+
+  String providerId;
+
+  String? url;
 
   /// Returns a shallow copy of this [CreateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
@@ -72,25 +86,24 @@ abstract class CreateModelConnectionRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CreateModelConnectionRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String connectionId,
-  required String name,
-  required String providerId,
-  String? url,
-}) extends CreateModelConnectionRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        connectionId: connectionId,
-        name: name,
-        providerId: providerId,
-        url: url,
-      );
+class _CreateModelConnectionRequestImpl extends CreateModelConnectionRequest {
+  _CreateModelConnectionRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String connectionId,
+    required String name,
+    required String providerId,
+    String? url,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         connectionId: connectionId,
+         name: name,
+         providerId: providerId,
+         url: url,
+       );
 
   /// Returns a shallow copy of this [CreateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.

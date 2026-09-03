@@ -19,20 +19,22 @@ import '../../../features/workspaces/models/cloud_workspace_capabilities.dart'
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
-abstract class CloudWorkspaceDetail._({
-  required var _i2.CloudWorkspaceSummary workspace,
-  required var String ownerUserId,
-  var String? ownerEmail,
-  required var _i3.CloudWorkspaceCapabilities capabilities,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CloudWorkspaceDetail implements _i1.SerializableModel {
+  CloudWorkspaceDetail._({
+    required this.workspace,
+    required this.ownerUserId,
+    this.ownerEmail,
+    required this.capabilities,
+  });
+
+  factory CloudWorkspaceDetail({
     required _i2.CloudWorkspaceSummary workspace,
     required String ownerUserId,
     String? ownerEmail,
     required _i3.CloudWorkspaceCapabilities capabilities,
   }) = _CloudWorkspaceDetailImpl;
 
-  factory fromJson(
+  factory CloudWorkspaceDetail.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceDetail(
@@ -46,6 +48,14 @@ abstract class CloudWorkspaceDetail._({
       ),
     );
   }
+
+  _i2.CloudWorkspaceSummary workspace;
+
+  String ownerUserId;
+
+  String? ownerEmail;
+
+  _i3.CloudWorkspaceCapabilities capabilities;
 
   /// Returns a shallow copy of this [CloudWorkspaceDetail]
   /// with some or all fields replaced by the given arguments.
@@ -73,21 +83,20 @@ abstract class CloudWorkspaceDetail._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CloudWorkspaceDetailImpl({
-  required _i2.CloudWorkspaceSummary workspace,
-  required String ownerUserId,
-  String? ownerEmail,
-  required _i3.CloudWorkspaceCapabilities capabilities,
-}) extends CloudWorkspaceDetail {
-  this
-    : super._(
-        workspace: workspace,
-        ownerUserId: ownerUserId,
-        ownerEmail: ownerEmail,
-        capabilities: capabilities,
-      );
+class _CloudWorkspaceDetailImpl extends CloudWorkspaceDetail {
+  _CloudWorkspaceDetailImpl({
+    required _i2.CloudWorkspaceSummary workspace,
+    required String ownerUserId,
+    String? ownerEmail,
+    required _i3.CloudWorkspaceCapabilities capabilities,
+  }) : super._(
+         workspace: workspace,
+         ownerUserId: ownerUserId,
+         ownerEmail: ownerEmail,
+         capabilities: capabilities,
+       );
 
   /// Returns a shallow copy of this [CloudWorkspaceDetail]
   /// with some or all fields replaced by the given arguments.

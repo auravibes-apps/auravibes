@@ -13,14 +13,16 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class BeginUploadResult._({
-  required var int objectId,
-  required var int revision,
-  required var String uploadUrl,
-  required var Map<String, String> headers,
-  required var DateTime expiresAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class BeginUploadResult implements _i1.SerializableModel {
+  BeginUploadResult._({
+    required this.objectId,
+    required this.revision,
+    required this.uploadUrl,
+    required this.headers,
+    required this.expiresAt,
+  });
+
+  factory BeginUploadResult({
     required int objectId,
     required int revision,
     required String uploadUrl,
@@ -28,7 +30,7 @@ abstract class BeginUploadResult._({
     required DateTime expiresAt,
   }) = _BeginUploadResultImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory BeginUploadResult.fromJson(Map<String, dynamic> jsonSerialization) {
     return BeginUploadResult(
       objectId: jsonSerialization['objectId'] as int,
       revision: jsonSerialization['revision'] as int,
@@ -41,6 +43,16 @@ abstract class BeginUploadResult._({
       ),
     );
   }
+
+  int objectId;
+
+  int revision;
+
+  String uploadUrl;
+
+  Map<String, String> headers;
+
+  DateTime expiresAt;
 
   /// Returns a shallow copy of this [BeginUploadResult]
   /// with some or all fields replaced by the given arguments.
@@ -70,21 +82,20 @@ abstract class BeginUploadResult._({
   }
 }
 
-class _BeginUploadResultImpl({
-  required int objectId,
-  required int revision,
-  required String uploadUrl,
-  required Map<String, String> headers,
-  required DateTime expiresAt,
-}) extends BeginUploadResult {
-  this
-    : super._(
-        objectId: objectId,
-        revision: revision,
-        uploadUrl: uploadUrl,
-        headers: headers,
-        expiresAt: expiresAt,
-      );
+class _BeginUploadResultImpl extends BeginUploadResult {
+  _BeginUploadResultImpl({
+    required int objectId,
+    required int revision,
+    required String uploadUrl,
+    required Map<String, String> headers,
+    required DateTime expiresAt,
+  }) : super._(
+         objectId: objectId,
+         revision: revision,
+         uploadUrl: uploadUrl,
+         headers: headers,
+         expiresAt: expiresAt,
+       );
 
   /// Returns a shallow copy of this [BeginUploadResult]
   /// with some or all fields replaced by the given arguments.

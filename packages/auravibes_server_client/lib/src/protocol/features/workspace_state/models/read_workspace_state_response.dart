@@ -18,14 +18,16 @@ import '../../../features/workspaces/models/workspace_event.dart' as _i3;
 
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
-abstract class ReadWorkspaceStateResponse._({
-  required var List<_i2.WorkspaceResourcePage> pages,
-  required var int currentSequence,
-  required var List<_i3.WorkspaceEvent> events,
-  var int? earliestRetainedSequence,
-  required var bool requiresSnapshot,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ReadWorkspaceStateResponse implements _i1.SerializableModel {
+  ReadWorkspaceStateResponse._({
+    required this.pages,
+    required this.currentSequence,
+    required this.events,
+    this.earliestRetainedSequence,
+    required this.requiresSnapshot,
+  });
+
+  factory ReadWorkspaceStateResponse({
     required List<_i2.WorkspaceResourcePage> pages,
     required int currentSequence,
     required List<_i3.WorkspaceEvent> events,
@@ -33,7 +35,7 @@ abstract class ReadWorkspaceStateResponse._({
     required bool requiresSnapshot,
   }) = _ReadWorkspaceStateResponseImpl;
 
-  factory fromJson(
+  factory ReadWorkspaceStateResponse.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ReadWorkspaceStateResponse(
@@ -51,6 +53,16 @@ abstract class ReadWorkspaceStateResponse._({
       ),
     );
   }
+
+  List<_i2.WorkspaceResourcePage> pages;
+
+  int currentSequence;
+
+  List<_i3.WorkspaceEvent> events;
+
+  int? earliestRetainedSequence;
+
+  bool requiresSnapshot;
 
   /// Returns a shallow copy of this [ReadWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
@@ -81,23 +93,22 @@ abstract class ReadWorkspaceStateResponse._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ReadWorkspaceStateResponseImpl({
-  required List<_i2.WorkspaceResourcePage> pages,
-  required int currentSequence,
-  required List<_i3.WorkspaceEvent> events,
-  int? earliestRetainedSequence,
-  required bool requiresSnapshot,
-}) extends ReadWorkspaceStateResponse {
-  this
-    : super._(
-        pages: pages,
-        currentSequence: currentSequence,
-        events: events,
-        earliestRetainedSequence: earliestRetainedSequence,
-        requiresSnapshot: requiresSnapshot,
-      );
+class _ReadWorkspaceStateResponseImpl extends ReadWorkspaceStateResponse {
+  _ReadWorkspaceStateResponseImpl({
+    required List<_i2.WorkspaceResourcePage> pages,
+    required int currentSequence,
+    required List<_i3.WorkspaceEvent> events,
+    int? earliestRetainedSequence,
+    required bool requiresSnapshot,
+  }) : super._(
+         pages: pages,
+         currentSequence: currentSequence,
+         events: events,
+         earliestRetainedSequence: earliestRetainedSequence,
+         requiresSnapshot: requiresSnapshot,
+       );
 
   /// Returns a shallow copy of this [ReadWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
