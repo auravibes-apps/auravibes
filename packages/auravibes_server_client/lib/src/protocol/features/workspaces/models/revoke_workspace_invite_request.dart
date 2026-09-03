@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class RevokeWorkspaceInviteRequest._({
-  required var int workspaceId,
-  required var int inviteId,
-  required var String requestId,
-  required var int expectedInviteRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class RevokeWorkspaceInviteRequest implements _i1.SerializableModel {
+  RevokeWorkspaceInviteRequest._({
+    required this.workspaceId,
+    required this.inviteId,
+    required this.requestId,
+    required this.expectedInviteRevision,
+  });
+
+  factory RevokeWorkspaceInviteRequest({
     required int workspaceId,
     required int inviteId,
     required String requestId,
     required int expectedInviteRevision,
   }) = _RevokeWorkspaceInviteRequestImpl;
 
-  factory fromJson(
+  factory RevokeWorkspaceInviteRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return RevokeWorkspaceInviteRequest(
@@ -36,6 +38,14 @@ abstract class RevokeWorkspaceInviteRequest._({
           jsonSerialization['expectedInviteRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  int inviteId;
+
+  String requestId;
+
+  int expectedInviteRevision;
 
   /// Returns a shallow copy of this [RevokeWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
@@ -63,19 +73,18 @@ abstract class RevokeWorkspaceInviteRequest._({
   }
 }
 
-class _RevokeWorkspaceInviteRequestImpl({
-  required int workspaceId,
-  required int inviteId,
-  required String requestId,
-  required int expectedInviteRevision,
-}) extends RevokeWorkspaceInviteRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        inviteId: inviteId,
-        requestId: requestId,
-        expectedInviteRevision: expectedInviteRevision,
-      );
+class _RevokeWorkspaceInviteRequestImpl extends RevokeWorkspaceInviteRequest {
+  _RevokeWorkspaceInviteRequestImpl({
+    required int workspaceId,
+    required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         inviteId: inviteId,
+         requestId: requestId,
+         expectedInviteRevision: expectedInviteRevision,
+       );
 
   /// Returns a shallow copy of this [RevokeWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.

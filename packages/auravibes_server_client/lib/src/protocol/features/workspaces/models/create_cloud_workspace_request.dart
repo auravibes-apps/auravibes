@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CreateCloudWorkspaceRequest._({
-  required var String name,
-  required var String requestId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CreateCloudWorkspaceRequest implements _i1.SerializableModel {
+  CreateCloudWorkspaceRequest._({
+    required this.name,
+    required this.requestId,
+  });
+
+  factory CreateCloudWorkspaceRequest({
     required String name,
     required String requestId,
   }) = _CreateCloudWorkspaceRequestImpl;
 
-  factory fromJson(
+  factory CreateCloudWorkspaceRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CreateCloudWorkspaceRequest(
@@ -29,6 +31,10 @@ abstract class CreateCloudWorkspaceRequest._({
       requestId: jsonSerialization['requestId'] as String,
     );
   }
+
+  String name;
+
+  String requestId;
 
   /// Returns a shallow copy of this [CreateCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.
@@ -52,15 +58,14 @@ abstract class CreateCloudWorkspaceRequest._({
   }
 }
 
-class _CreateCloudWorkspaceRequestImpl({
-  required String name,
-  required String requestId,
-}) extends CreateCloudWorkspaceRequest {
-  this
-    : super._(
-        name: name,
-        requestId: requestId,
-      );
+class _CreateCloudWorkspaceRequestImpl extends CreateCloudWorkspaceRequest {
+  _CreateCloudWorkspaceRequestImpl({
+    required String name,
+    required String requestId,
+  }) : super._(
+         name: name,
+         requestId: requestId,
+       );
 
   /// Returns a shallow copy of this [CreateCloudWorkspaceRequest]
   /// with some or all fields replaced by the given arguments.

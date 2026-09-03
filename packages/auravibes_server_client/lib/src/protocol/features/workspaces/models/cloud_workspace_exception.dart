@@ -11,17 +11,17 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import '../../../features/workspaces/models/cloud_workspace_error_code.dart'
     as _i2;
 
-abstract class CloudWorkspaceException._({
-  required var _i2.CloudWorkspaceErrorCode code,
-}) implements _i1.SerializableException, _i1.SerializableModel {
-  factory({required _i2.CloudWorkspaceErrorCode code}) =
+abstract class CloudWorkspaceException
+    implements _i1.SerializableException, _i1.SerializableModel {
+  CloudWorkspaceException._({required this.code});
+
+  factory CloudWorkspaceException({required _i2.CloudWorkspaceErrorCode code}) =
       _CloudWorkspaceExceptionImpl;
 
-  factory fromJson(
+  factory CloudWorkspaceException.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceException(
@@ -30,6 +30,8 @@ abstract class CloudWorkspaceException._({
       ),
     );
   }
+
+  _i2.CloudWorkspaceErrorCode code;
 
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.
@@ -49,9 +51,9 @@ abstract class CloudWorkspaceException._({
   }
 }
 
-class _CloudWorkspaceExceptionImpl({required _i2.CloudWorkspaceErrorCode code})
-    extends CloudWorkspaceException {
-  this : super._(code: code);
+class _CloudWorkspaceExceptionImpl extends CloudWorkspaceException {
+  _CloudWorkspaceExceptionImpl({required _i2.CloudWorkspaceErrorCode code})
+    : super._(code: code);
 
   /// Returns a shallow copy of this [CloudWorkspaceException]
   /// with some or all fields replaced by the given arguments.

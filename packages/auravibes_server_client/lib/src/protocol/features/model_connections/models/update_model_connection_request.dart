@@ -12,15 +12,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class UpdateModelConnectionRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String connectionId,
-  required var int expectedRevision,
-  required var String name,
-  var String? url,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class UpdateModelConnectionRequest implements _i1.SerializableModel {
+  UpdateModelConnectionRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.connectionId,
+    required this.expectedRevision,
+    required this.name,
+    this.url,
+  });
+
+  factory UpdateModelConnectionRequest({
     required int workspaceId,
     required String requestId,
     required String connectionId,
@@ -29,7 +31,7 @@ abstract class UpdateModelConnectionRequest._({
     String? url,
   }) = _UpdateModelConnectionRequestImpl;
 
-  factory fromJson(
+  factory UpdateModelConnectionRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return UpdateModelConnectionRequest(
@@ -41,6 +43,18 @@ abstract class UpdateModelConnectionRequest._({
       url: jsonSerialization['url'] as String?,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String connectionId;
+
+  int expectedRevision;
+
+  String name;
+
+  String? url;
 
   /// Returns a shallow copy of this [UpdateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
@@ -72,25 +86,24 @@ abstract class UpdateModelConnectionRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _UpdateModelConnectionRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String connectionId,
-  required int expectedRevision,
-  required String name,
-  String? url,
-}) extends UpdateModelConnectionRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        connectionId: connectionId,
-        expectedRevision: expectedRevision,
-        name: name,
-        url: url,
-      );
+class _UpdateModelConnectionRequestImpl extends UpdateModelConnectionRequest {
+  _UpdateModelConnectionRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String connectionId,
+    required int expectedRevision,
+    required String name,
+    String? url,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         connectionId: connectionId,
+         expectedRevision: expectedRevision,
+         name: name,
+         url: url,
+       );
 
   /// Returns a shallow copy of this [UpdateModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.

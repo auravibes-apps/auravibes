@@ -12,18 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CompleteCodexOAuthRequest._({
-  required var String transactionId,
-  required var String state,
-  required var String code,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CompleteCodexOAuthRequest implements _i1.SerializableModel {
+  CompleteCodexOAuthRequest._({
+    required this.transactionId,
+    required this.state,
+    required this.code,
+  });
+
+  factory CompleteCodexOAuthRequest({
     required String transactionId,
     required String state,
     required String code,
   }) = _CompleteCodexOAuthRequestImpl;
 
-  factory fromJson(
+  factory CompleteCodexOAuthRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CompleteCodexOAuthRequest(
@@ -32,6 +34,12 @@ abstract class CompleteCodexOAuthRequest._({
       code: jsonSerialization['code'] as String,
     );
   }
+
+  String transactionId;
+
+  String state;
+
+  String code;
 
   /// Returns a shallow copy of this [CompleteCodexOAuthRequest]
   /// with some or all fields replaced by the given arguments.
@@ -57,17 +65,16 @@ abstract class CompleteCodexOAuthRequest._({
   }
 }
 
-class _CompleteCodexOAuthRequestImpl({
-  required String transactionId,
-  required String state,
-  required String code,
-}) extends CompleteCodexOAuthRequest {
-  this
-    : super._(
-        transactionId: transactionId,
-        state: state,
-        code: code,
-      );
+class _CompleteCodexOAuthRequestImpl extends CompleteCodexOAuthRequest {
+  _CompleteCodexOAuthRequestImpl({
+    required String transactionId,
+    required String state,
+    required String code,
+  }) : super._(
+         transactionId: transactionId,
+         state: state,
+         code: code,
+       );
 
   /// Returns a shallow copy of this [CompleteCodexOAuthRequest]
   /// with some or all fields replaced by the given arguments.

@@ -11,24 +11,24 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import '../../../features/workspace_state/models/workspace_patch_operation.dart'
     as _i2;
-
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class PatchWorkspaceStateRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var List<_i2.WorkspacePatchOperation> operations,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class PatchWorkspaceStateRequest implements _i1.SerializableModel {
+  PatchWorkspaceStateRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.operations,
+  });
+
+  factory PatchWorkspaceStateRequest({
     required int workspaceId,
     required String requestId,
     required List<_i2.WorkspacePatchOperation> operations,
   }) = _PatchWorkspaceStateRequestImpl;
 
-  factory fromJson(
+  factory PatchWorkspaceStateRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return PatchWorkspaceStateRequest(
@@ -39,6 +39,12 @@ abstract class PatchWorkspaceStateRequest._({
       ),
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  List<_i2.WorkspacePatchOperation> operations;
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.
@@ -64,17 +70,16 @@ abstract class PatchWorkspaceStateRequest._({
   }
 }
 
-class _PatchWorkspaceStateRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required List<_i2.WorkspacePatchOperation> operations,
-}) extends PatchWorkspaceStateRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        operations: operations,
-      );
+class _PatchWorkspaceStateRequestImpl extends PatchWorkspaceStateRequest {
+  _PatchWorkspaceStateRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required List<_i2.WorkspacePatchOperation> operations,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         operations: operations,
+       );
 
   /// Returns a shallow copy of this [PatchWorkspaceStateRequest]
   /// with some or all fields replaced by the given arguments.

@@ -11,28 +11,26 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import 'dart:typed_data' as _i2;
 
-abstract class CodexOAuthTransaction._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var String transactionId,
-  required var int workspaceId,
-  required var String connectionId,
-  required var String userId,
-  required var String stateHash,
-  required var _i2.ByteData verifierCiphertext,
-  required var _i2.ByteData verifierNonce,
-  required var _i2.ByteData verifierAuthenticationTag,
-  required var String redirectUri,
-  required var DateTime expiresAt,
-  var DateTime? consumedAt,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CodexOAuthTransaction implements _i1.SerializableModel {
+  CodexOAuthTransaction._({
+    this.id,
+    required this.transactionId,
+    required this.workspaceId,
+    required this.connectionId,
+    required this.userId,
+    required this.stateHash,
+    required this.verifierCiphertext,
+    required this.verifierNonce,
+    required this.verifierAuthenticationTag,
+    required this.redirectUri,
+    required this.expiresAt,
+    this.consumedAt,
+    required this.createdAt,
+  });
+
+  factory CodexOAuthTransaction({
     int? id,
     required String transactionId,
     required int workspaceId,
@@ -48,7 +46,7 @@ abstract class CodexOAuthTransaction._({
     required DateTime createdAt,
   }) = _CodexOAuthTransactionImpl;
 
-  factory fromJson(
+  factory CodexOAuthTransaction.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CodexOAuthTransaction(
@@ -79,6 +77,35 @@ abstract class CodexOAuthTransaction._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  String transactionId;
+
+  int workspaceId;
+
+  String connectionId;
+
+  String userId;
+
+  String stateHash;
+
+  _i2.ByteData verifierCiphertext;
+
+  _i2.ByteData verifierNonce;
+
+  _i2.ByteData verifierAuthenticationTag;
+
+  String redirectUri;
+
+  DateTime expiresAt;
+
+  DateTime? consumedAt;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [CodexOAuthTransaction]
   /// with some or all fields replaced by the given arguments.
@@ -124,39 +151,38 @@ abstract class CodexOAuthTransaction._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CodexOAuthTransactionImpl({
-  int? id,
-  required String transactionId,
-  required int workspaceId,
-  required String connectionId,
-  required String userId,
-  required String stateHash,
-  required _i2.ByteData verifierCiphertext,
-  required _i2.ByteData verifierNonce,
-  required _i2.ByteData verifierAuthenticationTag,
-  required String redirectUri,
-  required DateTime expiresAt,
-  DateTime? consumedAt,
-  required DateTime createdAt,
-}) extends CodexOAuthTransaction {
-  this
-    : super._(
-        id: id,
-        transactionId: transactionId,
-        workspaceId: workspaceId,
-        connectionId: connectionId,
-        userId: userId,
-        stateHash: stateHash,
-        verifierCiphertext: verifierCiphertext,
-        verifierNonce: verifierNonce,
-        verifierAuthenticationTag: verifierAuthenticationTag,
-        redirectUri: redirectUri,
-        expiresAt: expiresAt,
-        consumedAt: consumedAt,
-        createdAt: createdAt,
-      );
+class _CodexOAuthTransactionImpl extends CodexOAuthTransaction {
+  _CodexOAuthTransactionImpl({
+    int? id,
+    required String transactionId,
+    required int workspaceId,
+    required String connectionId,
+    required String userId,
+    required String stateHash,
+    required _i2.ByteData verifierCiphertext,
+    required _i2.ByteData verifierNonce,
+    required _i2.ByteData verifierAuthenticationTag,
+    required String redirectUri,
+    required DateTime expiresAt,
+    DateTime? consumedAt,
+    required DateTime createdAt,
+  }) : super._(
+         id: id,
+         transactionId: transactionId,
+         workspaceId: workspaceId,
+         connectionId: connectionId,
+         userId: userId,
+         stateHash: stateHash,
+         verifierCiphertext: verifierCiphertext,
+         verifierNonce: verifierNonce,
+         verifierAuthenticationTag: verifierAuthenticationTag,
+         redirectUri: redirectUri,
+         expiresAt: expiresAt,
+         consumedAt: consumedAt,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [CodexOAuthTransaction]
   /// with some or all fields replaced by the given arguments.

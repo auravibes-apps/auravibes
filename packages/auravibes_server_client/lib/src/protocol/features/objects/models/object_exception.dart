@@ -11,18 +11,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import '../../../features/objects/models/object_error_code.dart' as _i2;
 
-abstract class ObjectException._({required var _i2.ObjectErrorCode code})
+abstract class ObjectException
     implements _i1.SerializableException, _i1.SerializableModel {
-  factory({required _i2.ObjectErrorCode code}) = _ObjectExceptionImpl;
+  ObjectException._({required this.code});
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ObjectException({required _i2.ObjectErrorCode code}) =
+      _ObjectExceptionImpl;
+
+  factory ObjectException.fromJson(Map<String, dynamic> jsonSerialization) {
     return ObjectException(
       code: _i2.ObjectErrorCode.fromJson((jsonSerialization['code'] as String)),
     );
   }
+
+  _i2.ObjectErrorCode code;
 
   /// Returns a shallow copy of this [ObjectException]
   /// with some or all fields replaced by the given arguments.
@@ -42,9 +46,9 @@ abstract class ObjectException._({required var _i2.ObjectErrorCode code})
   }
 }
 
-class _ObjectExceptionImpl({required _i2.ObjectErrorCode code})
-    extends ObjectException {
-  this : super._(code: code);
+class _ObjectExceptionImpl extends ObjectException {
+  _ObjectExceptionImpl({required _i2.ObjectErrorCode code})
+    : super._(code: code);
 
   /// Returns a shallow copy of this [ObjectException]
   /// with some or all fields replaced by the given arguments.

@@ -12,18 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ModelConnectionView._({
-  required var String id,
-  required var String name,
-  required var String providerId,
-  var String? url,
-  required var bool hasSecret,
-  var String? keySuffix,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ModelConnectionView implements _i1.SerializableModel {
+  ModelConnectionView._({
+    required this.id,
+    required this.name,
+    required this.providerId,
+    this.url,
+    required this.hasSecret,
+    this.keySuffix,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ModelConnectionView({
     required String id,
     required String name,
     required String providerId,
@@ -35,7 +37,7 @@ abstract class ModelConnectionView._({
     required DateTime updatedAt,
   }) = _ModelConnectionViewImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ModelConnectionView.fromJson(Map<String, dynamic> jsonSerialization) {
     return ModelConnectionView(
       id: jsonSerialization['id'] as String,
       name: jsonSerialization['name'] as String,
@@ -52,6 +54,24 @@ abstract class ModelConnectionView._({
       ),
     );
   }
+
+  String id;
+
+  String name;
+
+  String providerId;
+
+  String? url;
+
+  bool hasSecret;
+
+  String? keySuffix;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ModelConnectionView]
   /// with some or all fields replaced by the given arguments.
@@ -89,31 +109,30 @@ abstract class ModelConnectionView._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ModelConnectionViewImpl({
-  required String id,
-  required String name,
-  required String providerId,
-  String? url,
-  required bool hasSecret,
-  String? keySuffix,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ModelConnectionView {
-  this
-    : super._(
-        id: id,
-        name: name,
-        providerId: providerId,
-        url: url,
-        hasSecret: hasSecret,
-        keySuffix: keySuffix,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ModelConnectionViewImpl extends ModelConnectionView {
+  _ModelConnectionViewImpl({
+    required String id,
+    required String name,
+    required String providerId,
+    String? url,
+    required bool hasSecret,
+    String? keySuffix,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         name: name,
+         providerId: providerId,
+         url: url,
+         hasSecret: hasSecret,
+         keySuffix: keySuffix,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ModelConnectionView]
   /// with some or all fields replaced by the given arguments.

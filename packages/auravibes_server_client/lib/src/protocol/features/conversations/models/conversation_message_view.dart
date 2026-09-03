@@ -11,28 +11,28 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
     as _i2;
-
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class ConversationMessageView._({
-  required var String id,
-  required var String conversationId,
-  var String? turnId,
-  var int? turnRevision,
-  required var String role,
-  required var String kind,
-  required var String status,
-  required var String content,
-  var String? metadataJson,
-  required var List<_i2.ConversationToolCallView> toolCalls,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationMessageView implements _i1.SerializableModel {
+  ConversationMessageView._({
+    required this.id,
+    required this.conversationId,
+    this.turnId,
+    this.turnRevision,
+    required this.role,
+    required this.kind,
+    required this.status,
+    required this.content,
+    this.metadataJson,
+    required this.toolCalls,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ConversationMessageView({
     required String id,
     required String conversationId,
     String? turnId,
@@ -48,7 +48,7 @@ abstract class ConversationMessageView._({
     required DateTime updatedAt,
   }) = _ConversationMessageViewImpl;
 
-  factory fromJson(
+  factory ConversationMessageView.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationMessageView(
@@ -73,6 +73,32 @@ abstract class ConversationMessageView._({
       ),
     );
   }
+
+  String id;
+
+  String conversationId;
+
+  String? turnId;
+
+  int? turnRevision;
+
+  String role;
+
+  String kind;
+
+  String status;
+
+  String content;
+
+  String? metadataJson;
+
+  List<_i2.ConversationToolCallView> toolCalls;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationMessageView]
   /// with some or all fields replaced by the given arguments.
@@ -118,39 +144,38 @@ abstract class ConversationMessageView._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationMessageViewImpl({
-  required String id,
-  required String conversationId,
-  String? turnId,
-  int? turnRevision,
-  required String role,
-  required String kind,
-  required String status,
-  required String content,
-  String? metadataJson,
-  required List<_i2.ConversationToolCallView> toolCalls,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ConversationMessageView {
-  this
-    : super._(
-        id: id,
-        conversationId: conversationId,
-        turnId: turnId,
-        turnRevision: turnRevision,
-        role: role,
-        kind: kind,
-        status: status,
-        content: content,
-        metadataJson: metadataJson,
-        toolCalls: toolCalls,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ConversationMessageViewImpl extends ConversationMessageView {
+  _ConversationMessageViewImpl({
+    required String id,
+    required String conversationId,
+    String? turnId,
+    int? turnRevision,
+    required String role,
+    required String kind,
+    required String status,
+    required String content,
+    String? metadataJson,
+    required List<_i2.ConversationToolCallView> toolCalls,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         conversationId: conversationId,
+         turnId: turnId,
+         turnRevision: turnRevision,
+         role: role,
+         kind: kind,
+         status: status,
+         content: content,
+         metadataJson: metadataJson,
+         toolCalls: toolCalls,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ConversationMessageView]
   /// with some or all fields replaced by the given arguments.

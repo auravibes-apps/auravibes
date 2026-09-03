@@ -12,18 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CloudWorkspaceCapabilities._({
-  required var bool canViewMembers,
-  required var bool canInviteMembers,
-  required var bool canInviteAdmins,
-  required var bool canManageMembers,
-  required var bool canManageAdmins,
-  required var bool canRename,
-  required var bool canTransferOwnership,
-  required var bool canLeave,
-  required var bool canDelete,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CloudWorkspaceCapabilities implements _i1.SerializableModel {
+  CloudWorkspaceCapabilities._({
+    required this.canViewMembers,
+    required this.canInviteMembers,
+    required this.canInviteAdmins,
+    required this.canManageMembers,
+    required this.canManageAdmins,
+    required this.canRename,
+    required this.canTransferOwnership,
+    required this.canLeave,
+    required this.canDelete,
+  });
+
+  factory CloudWorkspaceCapabilities({
     required bool canViewMembers,
     required bool canInviteMembers,
     required bool canInviteAdmins,
@@ -35,7 +37,7 @@ abstract class CloudWorkspaceCapabilities._({
     required bool canDelete,
   }) = _CloudWorkspaceCapabilitiesImpl;
 
-  factory fromJson(
+  factory CloudWorkspaceCapabilities.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceCapabilities(
@@ -62,6 +64,24 @@ abstract class CloudWorkspaceCapabilities._({
       canDelete: _i1.BoolJsonExtension.fromJson(jsonSerialization['canDelete']),
     );
   }
+
+  bool canViewMembers;
+
+  bool canInviteMembers;
+
+  bool canInviteAdmins;
+
+  bool canManageMembers;
+
+  bool canManageAdmins;
+
+  bool canRename;
+
+  bool canTransferOwnership;
+
+  bool canLeave;
+
+  bool canDelete;
 
   /// Returns a shallow copy of this [CloudWorkspaceCapabilities]
   /// with some or all fields replaced by the given arguments.
@@ -99,29 +119,28 @@ abstract class CloudWorkspaceCapabilities._({
   }
 }
 
-class _CloudWorkspaceCapabilitiesImpl({
-  required bool canViewMembers,
-  required bool canInviteMembers,
-  required bool canInviteAdmins,
-  required bool canManageMembers,
-  required bool canManageAdmins,
-  required bool canRename,
-  required bool canTransferOwnership,
-  required bool canLeave,
-  required bool canDelete,
-}) extends CloudWorkspaceCapabilities {
-  this
-    : super._(
-        canViewMembers: canViewMembers,
-        canInviteMembers: canInviteMembers,
-        canInviteAdmins: canInviteAdmins,
-        canManageMembers: canManageMembers,
-        canManageAdmins: canManageAdmins,
-        canRename: canRename,
-        canTransferOwnership: canTransferOwnership,
-        canLeave: canLeave,
-        canDelete: canDelete,
-      );
+class _CloudWorkspaceCapabilitiesImpl extends CloudWorkspaceCapabilities {
+  _CloudWorkspaceCapabilitiesImpl({
+    required bool canViewMembers,
+    required bool canInviteMembers,
+    required bool canInviteAdmins,
+    required bool canManageMembers,
+    required bool canManageAdmins,
+    required bool canRename,
+    required bool canTransferOwnership,
+    required bool canLeave,
+    required bool canDelete,
+  }) : super._(
+         canViewMembers: canViewMembers,
+         canInviteMembers: canInviteMembers,
+         canInviteAdmins: canInviteAdmins,
+         canManageMembers: canManageMembers,
+         canManageAdmins: canManageAdmins,
+         canRename: canRename,
+         canTransferOwnership: canTransferOwnership,
+         canLeave: canLeave,
+         canDelete: canDelete,
+       );
 
   /// Returns a shallow copy of this [CloudWorkspaceCapabilities]
   /// with some or all fields replaced by the given arguments.

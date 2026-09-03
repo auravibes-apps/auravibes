@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-
 import '../../../features/conversations/models/conversation_projection_view.dart'
     as _i2;
 import '../../../features/conversations/models/conversation_message_view.dart'
@@ -20,7 +19,6 @@ import '../../../features/conversations/models/conversation_execution_view.dart'
     as _i4;
 import '../../../features/conversations/models/conversation_tool_call_view.dart'
     as _i5;
-
 import 'package:auravibes_server/src/generated/protocol.dart' as _i6;
 
 abstract class ConversationSnapshot

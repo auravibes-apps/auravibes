@@ -12,24 +12,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceModelConnection._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var String connectionId,
-  required var String providerId,
-  required var String name,
-  var String? url,
-  var String? keySuffix,
-  required var bool hasSecret,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-  var DateTime? deletedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceModelConnection implements _i1.SerializableModel {
+  WorkspaceModelConnection._({
+    this.id,
+    required this.workspaceId,
+    required this.connectionId,
+    required this.providerId,
+    required this.name,
+    this.url,
+    this.keySuffix,
+    required this.hasSecret,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+
+  factory WorkspaceModelConnection({
     int? id,
     required int workspaceId,
     required String connectionId,
@@ -44,7 +43,7 @@ abstract class WorkspaceModelConnection._({
     DateTime? deletedAt,
   }) = _WorkspaceModelConnectionImpl;
 
-  factory fromJson(
+  factory WorkspaceModelConnection.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceModelConnection(
@@ -68,6 +67,33 @@ abstract class WorkspaceModelConnection._({
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  String connectionId;
+
+  String providerId;
+
+  String name;
+
+  String? url;
+
+  String? keySuffix;
+
+  bool hasSecret;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
+
+  DateTime? deletedAt;
 
   /// Returns a shallow copy of this [WorkspaceModelConnection]
   /// with some or all fields replaced by the given arguments.
@@ -111,37 +137,36 @@ abstract class WorkspaceModelConnection._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceModelConnectionImpl({
-  int? id,
-  required int workspaceId,
-  required String connectionId,
-  required String providerId,
-  required String name,
-  String? url,
-  String? keySuffix,
-  required bool hasSecret,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  DateTime? deletedAt,
-}) extends WorkspaceModelConnection {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        connectionId: connectionId,
-        providerId: providerId,
-        name: name,
-        url: url,
-        keySuffix: keySuffix,
-        hasSecret: hasSecret,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        deletedAt: deletedAt,
-      );
+class _WorkspaceModelConnectionImpl extends WorkspaceModelConnection {
+  _WorkspaceModelConnectionImpl({
+    int? id,
+    required int workspaceId,
+    required String connectionId,
+    required String providerId,
+    required String name,
+    String? url,
+    String? keySuffix,
+    required bool hasSecret,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? deletedAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         connectionId: connectionId,
+         providerId: providerId,
+         name: name,
+         url: url,
+         keySuffix: keySuffix,
+         hasSecret: hasSecret,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         deletedAt: deletedAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceModelConnection]
   /// with some or all fields replaced by the given arguments.

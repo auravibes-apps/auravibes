@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class PendingWorkspaceInviteSummary._({
-  required var int id,
-  required var int workspaceId,
-  required var String workspaceName,
-  required var String email,
-  required var String role,
-  required var int revision,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class PendingWorkspaceInviteSummary implements _i1.SerializableModel {
+  PendingWorkspaceInviteSummary._({
+    required this.id,
+    required this.workspaceId,
+    required this.workspaceName,
+    required this.email,
+    required this.role,
+    required this.revision,
+    required this.createdAt,
+  });
+
+  factory PendingWorkspaceInviteSummary({
     required int id,
     required int workspaceId,
     required String workspaceName,
@@ -31,7 +33,7 @@ abstract class PendingWorkspaceInviteSummary._({
     required DateTime createdAt,
   }) = _PendingWorkspaceInviteSummaryImpl;
 
-  factory fromJson(
+  factory PendingWorkspaceInviteSummary.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return PendingWorkspaceInviteSummary(
@@ -46,6 +48,20 @@ abstract class PendingWorkspaceInviteSummary._({
       ),
     );
   }
+
+  int id;
+
+  int workspaceId;
+
+  String workspaceName;
+
+  String email;
+
+  String role;
+
+  int revision;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [PendingWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.
@@ -79,25 +95,24 @@ abstract class PendingWorkspaceInviteSummary._({
   }
 }
 
-class _PendingWorkspaceInviteSummaryImpl({
-  required int id,
-  required int workspaceId,
-  required String workspaceName,
-  required String email,
-  required String role,
-  required int revision,
-  required DateTime createdAt,
-}) extends PendingWorkspaceInviteSummary {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        workspaceName: workspaceName,
-        email: email,
-        role: role,
-        revision: revision,
-        createdAt: createdAt,
-      );
+class _PendingWorkspaceInviteSummaryImpl extends PendingWorkspaceInviteSummary {
+  _PendingWorkspaceInviteSummaryImpl({
+    required int id,
+    required int workspaceId,
+    required String workspaceName,
+    required String email,
+    required String role,
+    required int revision,
+    required DateTime createdAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         workspaceName: workspaceName,
+         email: email,
+         role: role,
+         revision: revision,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [PendingWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.

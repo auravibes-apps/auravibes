@@ -11,22 +11,22 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import '../../../features/workspace_state/models/workspace_resource.dart'
     as _i2;
-
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i3;
 
-abstract class PatchWorkspaceStateResponse._({
-  required var List<_i2.WorkspaceResource> resources,
-  required var int sequence,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class PatchWorkspaceStateResponse implements _i1.SerializableModel {
+  PatchWorkspaceStateResponse._({
+    required this.resources,
+    required this.sequence,
+  });
+
+  factory PatchWorkspaceStateResponse({
     required List<_i2.WorkspaceResource> resources,
     required int sequence,
   }) = _PatchWorkspaceStateResponseImpl;
 
-  factory fromJson(
+  factory PatchWorkspaceStateResponse.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return PatchWorkspaceStateResponse(
@@ -36,6 +36,10 @@ abstract class PatchWorkspaceStateResponse._({
       sequence: jsonSerialization['sequence'] as int,
     );
   }
+
+  List<_i2.WorkspaceResource> resources;
+
+  int sequence;
 
   /// Returns a shallow copy of this [PatchWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.
@@ -59,15 +63,14 @@ abstract class PatchWorkspaceStateResponse._({
   }
 }
 
-class _PatchWorkspaceStateResponseImpl({
-  required List<_i2.WorkspaceResource> resources,
-  required int sequence,
-}) extends PatchWorkspaceStateResponse {
-  this
-    : super._(
-        resources: resources,
-        sequence: sequence,
-      );
+class _PatchWorkspaceStateResponseImpl extends PatchWorkspaceStateResponse {
+  _PatchWorkspaceStateResponseImpl({
+    required List<_i2.WorkspaceResource> resources,
+    required int sequence,
+  }) : super._(
+         resources: resources,
+         sequence: sequence,
+       );
 
   /// Returns a shallow copy of this [PatchWorkspaceStateResponse]
   /// with some or all fields replaced by the given arguments.

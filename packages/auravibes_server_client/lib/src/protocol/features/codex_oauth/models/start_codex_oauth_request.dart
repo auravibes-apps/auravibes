@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class StartCodexOAuthRequest._({
-  required var int workspaceId,
-  required var String connectionId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class StartCodexOAuthRequest implements _i1.SerializableModel {
+  StartCodexOAuthRequest._({
+    required this.workspaceId,
+    required this.connectionId,
+  });
+
+  factory StartCodexOAuthRequest({
     required int workspaceId,
     required String connectionId,
   }) = _StartCodexOAuthRequestImpl;
 
-  factory fromJson(
+  factory StartCodexOAuthRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return StartCodexOAuthRequest(
@@ -29,6 +31,10 @@ abstract class StartCodexOAuthRequest._({
       connectionId: jsonSerialization['connectionId'] as String,
     );
   }
+
+  int workspaceId;
+
+  String connectionId;
 
   /// Returns a shallow copy of this [StartCodexOAuthRequest]
   /// with some or all fields replaced by the given arguments.
@@ -52,15 +58,14 @@ abstract class StartCodexOAuthRequest._({
   }
 }
 
-class _StartCodexOAuthRequestImpl({
-  required int workspaceId,
-  required String connectionId,
-}) extends StartCodexOAuthRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        connectionId: connectionId,
-      );
+class _StartCodexOAuthRequestImpl extends StartCodexOAuthRequest {
+  _StartCodexOAuthRequestImpl({
+    required int workspaceId,
+    required String connectionId,
+  }) : super._(
+         workspaceId: workspaceId,
+         connectionId: connectionId,
+       );
 
   /// Returns a shallow copy of this [StartCodexOAuthRequest]
   /// with some or all fields replaced by the given arguments.

@@ -12,18 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationSummary._({
-  required var String id,
-  required var String title,
-  required var bool isPinned,
-  var String? modelId,
-  var String? agentId,
-  var String? parentConversationId,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationSummary implements _i1.SerializableModel {
+  ConversationSummary._({
+    required this.id,
+    required this.title,
+    required this.isPinned,
+    this.modelId,
+    this.agentId,
+    this.parentConversationId,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ConversationSummary({
     required String id,
     required String title,
     required bool isPinned,
@@ -35,7 +37,7 @@ abstract class ConversationSummary._({
     required DateTime updatedAt,
   }) = _ConversationSummaryImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ConversationSummary.fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationSummary(
       id: jsonSerialization['id'] as String,
       title: jsonSerialization['title'] as String,
@@ -53,6 +55,24 @@ abstract class ConversationSummary._({
       ),
     );
   }
+
+  String id;
+
+  String title;
+
+  bool isPinned;
+
+  String? modelId;
+
+  String? agentId;
+
+  String? parentConversationId;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.
@@ -91,31 +111,30 @@ abstract class ConversationSummary._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationSummaryImpl({
-  required String id,
-  required String title,
-  required bool isPinned,
-  String? modelId,
-  String? agentId,
-  String? parentConversationId,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ConversationSummary {
-  this
-    : super._(
-        id: id,
-        title: title,
-        isPinned: isPinned,
-        modelId: modelId,
-        agentId: agentId,
-        parentConversationId: parentConversationId,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ConversationSummaryImpl extends ConversationSummary {
+  _ConversationSummaryImpl({
+    required String id,
+    required String title,
+    required bool isPinned,
+    String? modelId,
+    String? agentId,
+    String? parentConversationId,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         title: title,
+         isPinned: isPinned,
+         modelId: modelId,
+         agentId: agentId,
+         parentConversationId: parentConversationId,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.

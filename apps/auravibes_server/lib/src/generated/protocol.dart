@@ -16,7 +16,6 @@ import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _i3;
 import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
     as _i4;
-
 import 'features/accounts/models/account_summary.dart' as _i5;
 import 'features/codex_oauth/models/codex_oauth_transaction.dart' as _i6;
 import 'features/codex_oauth/models/complete_codex_oauth_request.dart' as _i7;
@@ -202,7 +201,6 @@ import 'features/workspaces/models/workspace_event.dart' as _i136;
 import 'features/workspaces/models/workspace_invite.dart' as _i137;
 import 'features/workspaces/models/workspace_member.dart' as _i138;
 import 'features/workspaces/models/workspace_mutation_receipt.dart' as _i139;
-
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
     as _i140;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
@@ -223,7 +221,6 @@ import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_
     as _i148;
 import 'package:auravibes_server/src/generated/features/workspaces/models/cloud_workspace_invite_summary.dart'
     as _i149;
-
 export 'features/accounts/models/account_summary.dart';
 export 'features/codex_oauth/models/codex_oauth_transaction.dart';
 export 'features/codex_oauth/models/complete_codex_oauth_request.dart';
@@ -5145,8 +5142,9 @@ class Protocol extends _i1.DatabaseSerializationManager {
     }
     if (t == Map<String, String>) {
       return (data as Map).map(
-        (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
-      ) as T;
+            (k, v) => MapEntry(deserialize<String>(k), deserialize<String>(v)),
+          )
+          as T;
     }
     if (t == List<_i102.WorkspacePatchOperation>) {
       return (data as List)

@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CompleteUploadRequest._({
-  required var int workspaceId,
-  required var int objectId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CompleteUploadRequest implements _i1.SerializableModel {
+  CompleteUploadRequest._({
+    required this.workspaceId,
+    required this.objectId,
+  });
+
+  factory CompleteUploadRequest({
     required int workspaceId,
     required int objectId,
   }) = _CompleteUploadRequestImpl;
 
-  factory fromJson(
+  factory CompleteUploadRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CompleteUploadRequest(
@@ -29,6 +31,10 @@ abstract class CompleteUploadRequest._({
       objectId: jsonSerialization['objectId'] as int,
     );
   }
+
+  int workspaceId;
+
+  int objectId;
 
   /// Returns a shallow copy of this [CompleteUploadRequest]
   /// with some or all fields replaced by the given arguments.
@@ -52,15 +58,14 @@ abstract class CompleteUploadRequest._({
   }
 }
 
-class _CompleteUploadRequestImpl({
-  required int workspaceId,
-  required int objectId,
-}) extends CompleteUploadRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        objectId: objectId,
-      );
+class _CompleteUploadRequestImpl extends CompleteUploadRequest {
+  _CompleteUploadRequestImpl({
+    required int workspaceId,
+    required int objectId,
+  }) : super._(
+         workspaceId: workspaceId,
+         objectId: objectId,
+       );
 
   /// Returns a shallow copy of this [CompleteUploadRequest]
   /// with some or all fields replaced by the given arguments.

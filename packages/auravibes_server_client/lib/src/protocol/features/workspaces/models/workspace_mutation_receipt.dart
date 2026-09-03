@@ -12,21 +12,20 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceMutationReceipt._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  var int? workspaceId,
-  required var String scopeKey,
-  required var String actorUserId,
-  required var String endpoint,
-  required var String requestId,
-  required var String requestHash,
-  required var String responseJson,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceMutationReceipt implements _i1.SerializableModel {
+  WorkspaceMutationReceipt._({
+    this.id,
+    this.workspaceId,
+    required this.scopeKey,
+    required this.actorUserId,
+    required this.endpoint,
+    required this.requestId,
+    required this.requestHash,
+    required this.responseJson,
+    required this.createdAt,
+  });
+
+  factory WorkspaceMutationReceipt({
     int? id,
     int? workspaceId,
     required String scopeKey,
@@ -38,7 +37,7 @@ abstract class WorkspaceMutationReceipt._({
     required DateTime createdAt,
   }) = _WorkspaceMutationReceiptImpl;
 
-  factory fromJson(
+  factory WorkspaceMutationReceipt.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceMutationReceipt(
@@ -55,6 +54,27 @@ abstract class WorkspaceMutationReceipt._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int? workspaceId;
+
+  String scopeKey;
+
+  String actorUserId;
+
+  String endpoint;
+
+  String requestId;
+
+  String requestHash;
+
+  String responseJson;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [WorkspaceMutationReceipt]
   /// with some or all fields replaced by the given arguments.
@@ -92,31 +112,30 @@ abstract class WorkspaceMutationReceipt._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceMutationReceiptImpl({
-  int? id,
-  int? workspaceId,
-  required String scopeKey,
-  required String actorUserId,
-  required String endpoint,
-  required String requestId,
-  required String requestHash,
-  required String responseJson,
-  required DateTime createdAt,
-}) extends WorkspaceMutationReceipt {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        scopeKey: scopeKey,
-        actorUserId: actorUserId,
-        endpoint: endpoint,
-        requestId: requestId,
-        requestHash: requestHash,
-        responseJson: responseJson,
-        createdAt: createdAt,
-      );
+class _WorkspaceMutationReceiptImpl extends WorkspaceMutationReceipt {
+  _WorkspaceMutationReceiptImpl({
+    int? id,
+    int? workspaceId,
+    required String scopeKey,
+    required String actorUserId,
+    required String endpoint,
+    required String requestId,
+    required String requestHash,
+    required String responseJson,
+    required DateTime createdAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         scopeKey: scopeKey,
+         actorUserId: actorUserId,
+         endpoint: endpoint,
+         requestId: requestId,
+         requestHash: requestHash,
+         responseJson: responseJson,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceMutationReceipt]
   /// with some or all fields replaced by the given arguments.

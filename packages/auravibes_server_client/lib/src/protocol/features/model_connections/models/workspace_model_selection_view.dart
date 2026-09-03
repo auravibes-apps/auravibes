@@ -12,21 +12,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceModelSelectionView._({
-  required var String id,
-  required var String connectionId,
-  required var String connectionName,
-  var String? connectionUrl,
-  required var bool connectionHasSecret,
-  var String? connectionKeySuffix,
-  required var String providerId,
-  required var String modelId,
-  required var String modelName,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceModelSelectionView implements _i1.SerializableModel {
+  WorkspaceModelSelectionView._({
+    required this.id,
+    required this.connectionId,
+    required this.connectionName,
+    this.connectionUrl,
+    required this.connectionHasSecret,
+    this.connectionKeySuffix,
+    required this.providerId,
+    required this.modelId,
+    required this.modelName,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory WorkspaceModelSelectionView({
     required String id,
     required String connectionId,
     required String connectionName,
@@ -41,7 +43,7 @@ abstract class WorkspaceModelSelectionView._({
     required DateTime updatedAt,
   }) = _WorkspaceModelSelectionViewImpl;
 
-  factory fromJson(
+  factory WorkspaceModelSelectionView.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceModelSelectionView(
@@ -65,6 +67,30 @@ abstract class WorkspaceModelSelectionView._({
       ),
     );
   }
+
+  String id;
+
+  String connectionId;
+
+  String connectionName;
+
+  String? connectionUrl;
+
+  bool connectionHasSecret;
+
+  String? connectionKeySuffix;
+
+  String providerId;
+
+  String modelId;
+
+  String modelName;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.
@@ -109,37 +135,36 @@ abstract class WorkspaceModelSelectionView._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceModelSelectionViewImpl({
-  required String id,
-  required String connectionId,
-  required String connectionName,
-  String? connectionUrl,
-  required bool connectionHasSecret,
-  String? connectionKeySuffix,
-  required String providerId,
-  required String modelId,
-  required String modelName,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends WorkspaceModelSelectionView {
-  this
-    : super._(
-        id: id,
-        connectionId: connectionId,
-        connectionName: connectionName,
-        connectionUrl: connectionUrl,
-        connectionHasSecret: connectionHasSecret,
-        connectionKeySuffix: connectionKeySuffix,
-        providerId: providerId,
-        modelId: modelId,
-        modelName: modelName,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _WorkspaceModelSelectionViewImpl extends WorkspaceModelSelectionView {
+  _WorkspaceModelSelectionViewImpl({
+    required String id,
+    required String connectionId,
+    required String connectionName,
+    String? connectionUrl,
+    required bool connectionHasSecret,
+    String? connectionKeySuffix,
+    required String providerId,
+    required String modelId,
+    required String modelName,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         connectionId: connectionId,
+         connectionName: connectionName,
+         connectionUrl: connectionUrl,
+         connectionHasSecret: connectionHasSecret,
+         connectionKeySuffix: connectionKeySuffix,
+         providerId: providerId,
+         modelId: modelId,
+         modelName: modelName,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceModelSelectionView]
   /// with some or all fields replaced by the given arguments.

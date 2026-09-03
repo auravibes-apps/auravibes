@@ -12,14 +12,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CloudWorkspaceMemberSummary._({
-  required var String userId,
-  var String? email,
-  required var String role,
-  required var int revision,
-  required var DateTime createdAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CloudWorkspaceMemberSummary implements _i1.SerializableModel {
+  CloudWorkspaceMemberSummary._({
+    required this.userId,
+    this.email,
+    required this.role,
+    required this.revision,
+    required this.createdAt,
+  });
+
+  factory CloudWorkspaceMemberSummary({
     required String userId,
     String? email,
     required String role,
@@ -27,7 +29,7 @@ abstract class CloudWorkspaceMemberSummary._({
     required DateTime createdAt,
   }) = _CloudWorkspaceMemberSummaryImpl;
 
-  factory fromJson(
+  factory CloudWorkspaceMemberSummary.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceMemberSummary(
@@ -40,6 +42,16 @@ abstract class CloudWorkspaceMemberSummary._({
       ),
     );
   }
+
+  String userId;
+
+  String? email;
+
+  String role;
+
+  int revision;
+
+  DateTime createdAt;
 
   /// Returns a shallow copy of this [CloudWorkspaceMemberSummary]
   /// with some or all fields replaced by the given arguments.
@@ -69,23 +81,22 @@ abstract class CloudWorkspaceMemberSummary._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CloudWorkspaceMemberSummaryImpl({
-  required String userId,
-  String? email,
-  required String role,
-  required int revision,
-  required DateTime createdAt,
-}) extends CloudWorkspaceMemberSummary {
-  this
-    : super._(
-        userId: userId,
-        email: email,
-        role: role,
-        revision: revision,
-        createdAt: createdAt,
-      );
+class _CloudWorkspaceMemberSummaryImpl extends CloudWorkspaceMemberSummary {
+  _CloudWorkspaceMemberSummaryImpl({
+    required String userId,
+    String? email,
+    required String role,
+    required int revision,
+    required DateTime createdAt,
+  }) : super._(
+         userId: userId,
+         email: email,
+         role: role,
+         revision: revision,
+         createdAt: createdAt,
+       );
 
   /// Returns a shallow copy of this [CloudWorkspaceMemberSummary]
   /// with some or all fields replaced by the given arguments.

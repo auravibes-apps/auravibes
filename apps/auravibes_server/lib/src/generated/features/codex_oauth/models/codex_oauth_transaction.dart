@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-
 import 'dart:typed_data' as _i2;
 
 abstract class CodexOAuthTransaction

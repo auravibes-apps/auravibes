@@ -12,16 +12,18 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CloudWorkspaceInviteSummary._({
-  required var int id,
-  required var String email,
-  required var String role,
-  required var String invitedByUserId,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime expiresAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CloudWorkspaceInviteSummary implements _i1.SerializableModel {
+  CloudWorkspaceInviteSummary._({
+    required this.id,
+    required this.email,
+    required this.role,
+    required this.invitedByUserId,
+    required this.revision,
+    required this.createdAt,
+    required this.expiresAt,
+  });
+
+  factory CloudWorkspaceInviteSummary({
     required int id,
     required String email,
     required String role,
@@ -31,7 +33,7 @@ abstract class CloudWorkspaceInviteSummary._({
     required DateTime expiresAt,
   }) = _CloudWorkspaceInviteSummaryImpl;
 
-  factory fromJson(
+  factory CloudWorkspaceInviteSummary.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CloudWorkspaceInviteSummary(
@@ -48,6 +50,20 @@ abstract class CloudWorkspaceInviteSummary._({
       ),
     );
   }
+
+  int id;
+
+  String email;
+
+  String role;
+
+  String invitedByUserId;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime expiresAt;
 
   /// Returns a shallow copy of this [CloudWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.
@@ -81,25 +97,24 @@ abstract class CloudWorkspaceInviteSummary._({
   }
 }
 
-class _CloudWorkspaceInviteSummaryImpl({
-  required int id,
-  required String email,
-  required String role,
-  required String invitedByUserId,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime expiresAt,
-}) extends CloudWorkspaceInviteSummary {
-  this
-    : super._(
-        id: id,
-        email: email,
-        role: role,
-        invitedByUserId: invitedByUserId,
-        revision: revision,
-        createdAt: createdAt,
-        expiresAt: expiresAt,
-      );
+class _CloudWorkspaceInviteSummaryImpl extends CloudWorkspaceInviteSummary {
+  _CloudWorkspaceInviteSummaryImpl({
+    required int id,
+    required String email,
+    required String role,
+    required String invitedByUserId,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime expiresAt,
+  }) : super._(
+         id: id,
+         email: email,
+         role: role,
+         invitedByUserId: invitedByUserId,
+         revision: revision,
+         createdAt: createdAt,
+         expiresAt: expiresAt,
+       );
 
   /// Returns a shallow copy of this [CloudWorkspaceInviteSummary]
   /// with some or all fields replaced by the given arguments.

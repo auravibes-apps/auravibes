@@ -12,15 +12,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class StartTurnResult._({
-  required var String turnId,
-  required var String userMessageId,
-  required var String assistantMessageId,
-  required var int acceptedSequence,
-  required var int turnRevision,
-  required var String status,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class StartTurnResult implements _i1.SerializableModel {
+  StartTurnResult._({
+    required this.turnId,
+    required this.userMessageId,
+    required this.assistantMessageId,
+    required this.acceptedSequence,
+    required this.turnRevision,
+    required this.status,
+  });
+
+  factory StartTurnResult({
     required String turnId,
     required String userMessageId,
     required String assistantMessageId,
@@ -29,7 +31,7 @@ abstract class StartTurnResult._({
     required String status,
   }) = _StartTurnResultImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory StartTurnResult.fromJson(Map<String, dynamic> jsonSerialization) {
     return StartTurnResult(
       turnId: jsonSerialization['turnId'] as String,
       userMessageId: jsonSerialization['userMessageId'] as String,
@@ -39,6 +41,18 @@ abstract class StartTurnResult._({
       status: jsonSerialization['status'] as String,
     );
   }
+
+  String turnId;
+
+  String userMessageId;
+
+  String assistantMessageId;
+
+  int acceptedSequence;
+
+  int turnRevision;
+
+  String status;
 
   /// Returns a shallow copy of this [StartTurnResult]
   /// with some or all fields replaced by the given arguments.
@@ -70,23 +84,22 @@ abstract class StartTurnResult._({
   }
 }
 
-class _StartTurnResultImpl({
-  required String turnId,
-  required String userMessageId,
-  required String assistantMessageId,
-  required int acceptedSequence,
-  required int turnRevision,
-  required String status,
-}) extends StartTurnResult {
-  this
-    : super._(
-        turnId: turnId,
-        userMessageId: userMessageId,
-        assistantMessageId: assistantMessageId,
-        acceptedSequence: acceptedSequence,
-        turnRevision: turnRevision,
-        status: status,
-      );
+class _StartTurnResultImpl extends StartTurnResult {
+  _StartTurnResultImpl({
+    required String turnId,
+    required String userMessageId,
+    required String assistantMessageId,
+    required int acceptedSequence,
+    required int turnRevision,
+    required String status,
+  }) : super._(
+         turnId: turnId,
+         userMessageId: userMessageId,
+         assistantMessageId: assistantMessageId,
+         acceptedSequence: acceptedSequence,
+         turnRevision: turnRevision,
+         status: status,
+       );
 
   /// Returns a shallow copy of this [StartTurnResult]
   /// with some or all fields replaced by the given arguments.

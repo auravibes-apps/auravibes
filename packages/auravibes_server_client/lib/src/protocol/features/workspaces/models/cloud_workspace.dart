@@ -12,20 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CloudWorkspace._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var String name,
-  required var String ownerUserId,
-  required var int revision,
-  required var int sequence,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-  var DateTime? deletedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CloudWorkspace implements _i1.SerializableModel {
+  CloudWorkspace._({
+    this.id,
+    required this.name,
+    required this.ownerUserId,
+    required this.revision,
+    required this.sequence,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  });
+
+  factory CloudWorkspace({
     int? id,
     required String name,
     required String ownerUserId,
@@ -36,7 +35,7 @@ abstract class CloudWorkspace._({
     DateTime? deletedAt,
   }) = _CloudWorkspaceImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory CloudWorkspace.fromJson(Map<String, dynamic> jsonSerialization) {
     return CloudWorkspace(
       id: jsonSerialization['id'] as int?,
       name: jsonSerialization['name'] as String,
@@ -54,6 +53,25 @@ abstract class CloudWorkspace._({
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['deletedAt']),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  String name;
+
+  String ownerUserId;
+
+  int revision;
+
+  int sequence;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
+
+  DateTime? deletedAt;
 
   /// Returns a shallow copy of this [CloudWorkspace]
   /// with some or all fields replaced by the given arguments.
@@ -89,29 +107,28 @@ abstract class CloudWorkspace._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CloudWorkspaceImpl({
-  int? id,
-  required String name,
-  required String ownerUserId,
-  required int revision,
-  required int sequence,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  DateTime? deletedAt,
-}) extends CloudWorkspace {
-  this
-    : super._(
-        id: id,
-        name: name,
-        ownerUserId: ownerUserId,
-        revision: revision,
-        sequence: sequence,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        deletedAt: deletedAt,
-      );
+class _CloudWorkspaceImpl extends CloudWorkspace {
+  _CloudWorkspaceImpl({
+    int? id,
+    required String name,
+    required String ownerUserId,
+    required int revision,
+    required int sequence,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? deletedAt,
+  }) : super._(
+         id: id,
+         name: name,
+         ownerUserId: ownerUserId,
+         revision: revision,
+         sequence: sequence,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         deletedAt: deletedAt,
+       );
 
   /// Returns a shallow copy of this [CloudWorkspace]
   /// with some or all fields replaced by the given arguments.

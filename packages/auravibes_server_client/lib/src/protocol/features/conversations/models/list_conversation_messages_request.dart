@@ -12,18 +12,21 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ListConversationMessagesRequest._({
-  required var int workspaceId,
-  required var String conversationId,
-  required var int limit,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ListConversationMessagesRequest
+    implements _i1.SerializableModel {
+  ListConversationMessagesRequest._({
+    required this.workspaceId,
+    required this.conversationId,
+    required this.limit,
+  });
+
+  factory ListConversationMessagesRequest({
     required int workspaceId,
     required String conversationId,
     required int limit,
   }) = _ListConversationMessagesRequestImpl;
 
-  factory fromJson(
+  factory ListConversationMessagesRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ListConversationMessagesRequest(
@@ -32,6 +35,12 @@ abstract class ListConversationMessagesRequest._({
       limit: jsonSerialization['limit'] as int,
     );
   }
+
+  int workspaceId;
+
+  String conversationId;
+
+  int limit;
 
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
   /// with some or all fields replaced by the given arguments.
@@ -57,17 +66,17 @@ abstract class ListConversationMessagesRequest._({
   }
 }
 
-class _ListConversationMessagesRequestImpl({
-  required int workspaceId,
-  required String conversationId,
-  required int limit,
-}) extends ListConversationMessagesRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        limit: limit,
-      );
+class _ListConversationMessagesRequestImpl
+    extends ListConversationMessagesRequest {
+  _ListConversationMessagesRequestImpl({
+    required int workspaceId,
+    required String conversationId,
+    required int limit,
+  }) : super._(
+         workspaceId: workspaceId,
+         conversationId: conversationId,
+         limit: limit,
+       );
 
   /// Returns a shallow copy of this [ListConversationMessagesRequest]
   /// with some or all fields replaced by the given arguments.

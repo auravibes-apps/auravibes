@@ -12,17 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CreateMcpServerRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String name,
-  required var String url,
-  required var String transport,
-  required var bool useHttp2,
-  var String? description,
-  var String? bearerToken,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CreateMcpServerRequest implements _i1.SerializableModel {
+  CreateMcpServerRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.name,
+    required this.url,
+    required this.transport,
+    required this.useHttp2,
+    this.description,
+    this.bearerToken,
+  });
+
+  factory CreateMcpServerRequest({
     required int workspaceId,
     required String requestId,
     required String name,
@@ -33,7 +35,7 @@ abstract class CreateMcpServerRequest._({
     String? bearerToken,
   }) = _CreateMcpServerRequestImpl;
 
-  factory fromJson(
+  factory CreateMcpServerRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return CreateMcpServerRequest(
@@ -47,6 +49,22 @@ abstract class CreateMcpServerRequest._({
       bearerToken: jsonSerialization['bearerToken'] as String?,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String name;
+
+  String url;
+
+  String transport;
+
+  bool useHttp2;
+
+  String? description;
+
+  String? bearerToken;
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
   /// with some or all fields replaced by the given arguments.
@@ -82,29 +100,28 @@ abstract class CreateMcpServerRequest._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _CreateMcpServerRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String name,
-  required String url,
-  required String transport,
-  required bool useHttp2,
-  String? description,
-  String? bearerToken,
-}) extends CreateMcpServerRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        name: name,
-        url: url,
-        transport: transport,
-        useHttp2: useHttp2,
-        description: description,
-        bearerToken: bearerToken,
-      );
+class _CreateMcpServerRequestImpl extends CreateMcpServerRequest {
+  _CreateMcpServerRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String name,
+    required String url,
+    required String transport,
+    required bool useHttp2,
+    String? description,
+    String? bearerToken,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         name: name,
+         url: url,
+         transport: transport,
+         useHttp2: useHttp2,
+         description: description,
+         bearerToken: bearerToken,
+       );
 
   /// Returns a shallow copy of this [CreateMcpServerRequest]
   /// with some or all fields replaced by the given arguments.

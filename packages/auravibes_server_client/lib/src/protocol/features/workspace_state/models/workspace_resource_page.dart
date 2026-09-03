@@ -11,26 +11,26 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
-
 import '../../../features/workspace_state/models/workspace_resource_kind.dart'
     as _i2;
 import '../../../features/workspace_state/models/workspace_resource.dart'
     as _i3;
-
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i4;
 
-abstract class WorkspaceResourcePage._({
-  required var _i2.WorkspaceResourceKind resourceKind,
-  required var List<_i3.WorkspaceResource> resources,
-  var String? nextResourceId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceResourcePage implements _i1.SerializableModel {
+  WorkspaceResourcePage._({
+    required this.resourceKind,
+    required this.resources,
+    this.nextResourceId,
+  });
+
+  factory WorkspaceResourcePage({
     required _i2.WorkspaceResourceKind resourceKind,
     required List<_i3.WorkspaceResource> resources,
     String? nextResourceId,
   }) = _WorkspaceResourcePageImpl;
 
-  factory fromJson(
+  factory WorkspaceResourcePage.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return WorkspaceResourcePage(
@@ -43,6 +43,12 @@ abstract class WorkspaceResourcePage._({
       nextResourceId: jsonSerialization['nextResourceId'] as String?,
     );
   }
+
+  _i2.WorkspaceResourceKind resourceKind;
+
+  List<_i3.WorkspaceResource> resources;
+
+  String? nextResourceId;
 
   /// Returns a shallow copy of this [WorkspaceResourcePage]
   /// with some or all fields replaced by the given arguments.
@@ -68,19 +74,18 @@ abstract class WorkspaceResourcePage._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceResourcePageImpl({
-  required _i2.WorkspaceResourceKind resourceKind,
-  required List<_i3.WorkspaceResource> resources,
-  String? nextResourceId,
-}) extends WorkspaceResourcePage {
-  this
-    : super._(
-        resourceKind: resourceKind,
-        resources: resources,
-        nextResourceId: nextResourceId,
-      );
+class _WorkspaceResourcePageImpl extends WorkspaceResourcePage {
+  _WorkspaceResourcePageImpl({
+    required _i2.WorkspaceResourceKind resourceKind,
+    required List<_i3.WorkspaceResource> resources,
+    String? nextResourceId,
+  }) : super._(
+         resourceKind: resourceKind,
+         resources: resources,
+         nextResourceId: nextResourceId,
+       );
 
   /// Returns a shallow copy of this [WorkspaceResourcePage]
   /// with some or all fields replaced by the given arguments.

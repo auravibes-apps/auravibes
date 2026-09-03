@@ -12,21 +12,23 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationToolCallView._({
-  required var String id,
-  required var String turnId,
-  required var String messageId,
-  required var String name,
-  required var String argumentsJson,
-  required var String argumentsDigest,
-  required var String status,
-  var String? decision,
-  var String? resultJson,
-  required var int revision,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationToolCallView implements _i1.SerializableModel {
+  ConversationToolCallView._({
+    required this.id,
+    required this.turnId,
+    required this.messageId,
+    required this.name,
+    required this.argumentsJson,
+    required this.argumentsDigest,
+    required this.status,
+    this.decision,
+    this.resultJson,
+    required this.revision,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ConversationToolCallView({
     required String id,
     required String turnId,
     required String messageId,
@@ -41,7 +43,7 @@ abstract class ConversationToolCallView._({
     required DateTime updatedAt,
   }) = _ConversationToolCallViewImpl;
 
-  factory fromJson(
+  factory ConversationToolCallView.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationToolCallView(
@@ -63,6 +65,30 @@ abstract class ConversationToolCallView._({
       ),
     );
   }
+
+  String id;
+
+  String turnId;
+
+  String messageId;
+
+  String name;
+
+  String argumentsJson;
+
+  String argumentsDigest;
+
+  String status;
+
+  String? decision;
+
+  String? resultJson;
+
+  int revision;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationToolCallView]
   /// with some or all fields replaced by the given arguments.
@@ -106,37 +132,36 @@ abstract class ConversationToolCallView._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationToolCallViewImpl({
-  required String id,
-  required String turnId,
-  required String messageId,
-  required String name,
-  required String argumentsJson,
-  required String argumentsDigest,
-  required String status,
-  String? decision,
-  String? resultJson,
-  required int revision,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ConversationToolCallView {
-  this
-    : super._(
-        id: id,
-        turnId: turnId,
-        messageId: messageId,
-        name: name,
-        argumentsJson: argumentsJson,
-        argumentsDigest: argumentsDigest,
-        status: status,
-        decision: decision,
-        resultJson: resultJson,
-        revision: revision,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ConversationToolCallViewImpl extends ConversationToolCallView {
+  _ConversationToolCallViewImpl({
+    required String id,
+    required String turnId,
+    required String messageId,
+    required String name,
+    required String argumentsJson,
+    required String argumentsDigest,
+    required String status,
+    String? decision,
+    String? resultJson,
+    required int revision,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         turnId: turnId,
+         messageId: messageId,
+         name: name,
+         argumentsJson: argumentsJson,
+         argumentsDigest: argumentsDigest,
+         status: status,
+         decision: decision,
+         resultJson: resultJson,
+         revision: revision,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ConversationToolCallView]
   /// with some or all fields replaced by the given arguments.

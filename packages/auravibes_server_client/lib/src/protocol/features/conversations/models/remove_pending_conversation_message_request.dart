@@ -12,14 +12,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class RemovePendingConversationMessageRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String conversationId,
-  required var int expectedProjectionRevision,
-  required var String messageId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class RemovePendingConversationMessageRequest
+    implements _i1.SerializableModel {
+  RemovePendingConversationMessageRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.conversationId,
+    required this.expectedProjectionRevision,
+    required this.messageId,
+  });
+
+  factory RemovePendingConversationMessageRequest({
     required int workspaceId,
     required String requestId,
     required String conversationId,
@@ -27,7 +30,7 @@ abstract class RemovePendingConversationMessageRequest._({
     required String messageId,
   }) = _RemovePendingConversationMessageRequestImpl;
 
-  factory fromJson(
+  factory RemovePendingConversationMessageRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return RemovePendingConversationMessageRequest(
@@ -39,6 +42,16 @@ abstract class RemovePendingConversationMessageRequest._({
       messageId: jsonSerialization['messageId'] as String,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String conversationId;
+
+  int expectedProjectionRevision;
+
+  String messageId;
 
   /// Returns a shallow copy of this [RemovePendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.
@@ -68,21 +81,21 @@ abstract class RemovePendingConversationMessageRequest._({
   }
 }
 
-class _RemovePendingConversationMessageRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String conversationId,
-  required int expectedProjectionRevision,
-  required String messageId,
-}) extends RemovePendingConversationMessageRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        conversationId: conversationId,
-        expectedProjectionRevision: expectedProjectionRevision,
-        messageId: messageId,
-      );
+class _RemovePendingConversationMessageRequestImpl
+    extends RemovePendingConversationMessageRequest {
+  _RemovePendingConversationMessageRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String conversationId,
+    required int expectedProjectionRevision,
+    required String messageId,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         conversationId: conversationId,
+         expectedProjectionRevision: expectedProjectionRevision,
+         messageId: messageId,
+       );
 
   /// Returns a shallow copy of this [RemovePendingConversationMessageRequest]
   /// with some or all fields replaced by the given arguments.

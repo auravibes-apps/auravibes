@@ -13,18 +13,20 @@
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 import 'package:auravibes_server_client/src/protocol/protocol.dart' as _i2;
 
-abstract class ConversationExecutionView._({
-  required var String id,
-  required var String status,
-  required var int attempt,
-  required var List<String> claimedMessageIds,
-  var String? assistantMessageId,
-  required var String createdByUserId,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-  var DateTime? terminalAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationExecutionView implements _i1.SerializableModel {
+  ConversationExecutionView._({
+    required this.id,
+    required this.status,
+    required this.attempt,
+    required this.claimedMessageIds,
+    this.assistantMessageId,
+    required this.createdByUserId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.terminalAt,
+  });
+
+  factory ConversationExecutionView({
     required String id,
     required String status,
     required int attempt,
@@ -36,7 +38,7 @@ abstract class ConversationExecutionView._({
     DateTime? terminalAt,
   }) = _ConversationExecutionViewImpl;
 
-  factory fromJson(
+  factory ConversationExecutionView.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return ConversationExecutionView(
@@ -59,6 +61,24 @@ abstract class ConversationExecutionView._({
           : _i1.DateTimeJsonExtension.fromJson(jsonSerialization['terminalAt']),
     );
   }
+
+  String id;
+
+  String status;
+
+  int attempt;
+
+  List<String> claimedMessageIds;
+
+  String? assistantMessageId;
+
+  String createdByUserId;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
+
+  DateTime? terminalAt;
 
   /// Returns a shallow copy of this [ConversationExecutionView]
   /// with some or all fields replaced by the given arguments.
@@ -96,31 +116,30 @@ abstract class ConversationExecutionView._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationExecutionViewImpl({
-  required String id,
-  required String status,
-  required int attempt,
-  required List<String> claimedMessageIds,
-  String? assistantMessageId,
-  required String createdByUserId,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  DateTime? terminalAt,
-}) extends ConversationExecutionView {
-  this
-    : super._(
-        id: id,
-        status: status,
-        attempt: attempt,
-        claimedMessageIds: claimedMessageIds,
-        assistantMessageId: assistantMessageId,
-        createdByUserId: createdByUserId,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        terminalAt: terminalAt,
-      );
+class _ConversationExecutionViewImpl extends ConversationExecutionView {
+  _ConversationExecutionViewImpl({
+    required String id,
+    required String status,
+    required int attempt,
+    required List<String> claimedMessageIds,
+    String? assistantMessageId,
+    required String createdByUserId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? terminalAt,
+  }) : super._(
+         id: id,
+         status: status,
+         attempt: attempt,
+         claimedMessageIds: claimedMessageIds,
+         assistantMessageId: assistantMessageId,
+         createdByUserId: createdByUserId,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         terminalAt: terminalAt,
+       );
 
   /// Returns a shallow copy of this [ConversationExecutionView]
   /// with some or all fields replaced by the given arguments.

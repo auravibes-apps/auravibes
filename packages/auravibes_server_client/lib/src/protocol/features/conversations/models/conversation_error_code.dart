@@ -20,7 +20,8 @@ enum ConversationErrorCode implements _i1.SerializableModel {
   staleRevision,
   idempotencyConflict,
   turnConflict,
-  toolDecisionConflict;
+  toolDecisionConflict
+  ;
 
   static ConversationErrorCode fromJson(String name) {
     switch (name) {

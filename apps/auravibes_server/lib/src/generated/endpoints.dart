@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-
 import '../auth/email_idp_endpoint.dart' as _i2;
 import '../auth/jwt_refresh_endpoint.dart' as _i3;
 import '../features/accounts/account_endpoint.dart' as _i4;
@@ -24,7 +23,6 @@ import '../features/sync/stream/workspace_stream_endpoint.dart' as _i10;
 import '../features/workspace_state/workspace_secret_endpoint.dart' as _i11;
 import '../features/workspace_state/workspace_state_endpoint.dart' as _i12;
 import '../features/workspaces/cloud_workspace_endpoint.dart' as _i13;
-
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/start_codex_oauth_request.dart'
     as _i14;
 import 'package:auravibes_server/src/generated/features/codex_oauth/models/complete_codex_oauth_request.dart'

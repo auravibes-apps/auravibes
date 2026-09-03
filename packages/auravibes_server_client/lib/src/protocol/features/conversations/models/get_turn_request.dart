@@ -12,21 +12,27 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class GetTurnRequest._({
-  required var int workspaceId,
-  required var String turnId,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class GetTurnRequest implements _i1.SerializableModel {
+  GetTurnRequest._({
+    required this.workspaceId,
+    required this.turnId,
+  });
+
+  factory GetTurnRequest({
     required int workspaceId,
     required String turnId,
   }) = _GetTurnRequestImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory GetTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
     return GetTurnRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       turnId: jsonSerialization['turnId'] as String,
     );
   }
+
+  int workspaceId;
+
+  String turnId;
 
   /// Returns a shallow copy of this [GetTurnRequest]
   /// with some or all fields replaced by the given arguments.
@@ -50,15 +56,14 @@ abstract class GetTurnRequest._({
   }
 }
 
-class _GetTurnRequestImpl({
-  required int workspaceId,
-  required String turnId,
-}) extends GetTurnRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        turnId: turnId,
-      );
+class _GetTurnRequestImpl extends GetTurnRequest {
+  _GetTurnRequestImpl({
+    required int workspaceId,
+    required String turnId,
+  }) : super._(
+         workspaceId: workspaceId,
+         turnId: turnId,
+       );
 
   /// Returns a shallow copy of this [GetTurnRequest]
   /// with some or all fields replaced by the given arguments.

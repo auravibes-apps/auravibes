@@ -11,12 +11,10 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-
 import '../../../features/workspaces/models/cloud_workspace_summary.dart'
     as _i2;
 import '../../../features/workspaces/models/cloud_workspace_capabilities.dart'
     as _i3;
-
 import 'package:auravibes_server/src/generated/protocol.dart' as _i4;
 
 abstract class CloudWorkspaceDetail

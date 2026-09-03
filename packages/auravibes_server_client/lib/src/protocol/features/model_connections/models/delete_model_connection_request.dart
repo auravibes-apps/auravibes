@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class DeleteModelConnectionRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String connectionId,
-  required var int expectedRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class DeleteModelConnectionRequest implements _i1.SerializableModel {
+  DeleteModelConnectionRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.connectionId,
+    required this.expectedRevision,
+  });
+
+  factory DeleteModelConnectionRequest({
     required int workspaceId,
     required String requestId,
     required String connectionId,
     required int expectedRevision,
   }) = _DeleteModelConnectionRequestImpl;
 
-  factory fromJson(
+  factory DeleteModelConnectionRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return DeleteModelConnectionRequest(
@@ -35,6 +37,14 @@ abstract class DeleteModelConnectionRequest._({
       expectedRevision: jsonSerialization['expectedRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String connectionId;
+
+  int expectedRevision;
 
   /// Returns a shallow copy of this [DeleteModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.
@@ -62,19 +72,18 @@ abstract class DeleteModelConnectionRequest._({
   }
 }
 
-class _DeleteModelConnectionRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String connectionId,
-  required int expectedRevision,
-}) extends DeleteModelConnectionRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        connectionId: connectionId,
-        expectedRevision: expectedRevision,
-      );
+class _DeleteModelConnectionRequestImpl extends DeleteModelConnectionRequest {
+  _DeleteModelConnectionRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String connectionId,
+    required int expectedRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         connectionId: connectionId,
+         expectedRevision: expectedRevision,
+       );
 
   /// Returns a shallow copy of this [DeleteModelConnectionRequest]
   /// with some or all fields replaced by the given arguments.

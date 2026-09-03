@@ -12,23 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class WorkspaceEvent._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var String eventId,
-  required var int workspaceId,
-  required var int sequence,
-  required var String actorUserId,
-  required var String kind,
-  required var String resourceKind,
-  var String? resourceId,
-  var String? payloadJson,
-  required var DateTime createdAt,
-  var DateTime? publishedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class WorkspaceEvent implements _i1.SerializableModel {
+  WorkspaceEvent._({
+    this.id,
+    required this.eventId,
+    required this.workspaceId,
+    required this.sequence,
+    required this.actorUserId,
+    required this.kind,
+    required this.resourceKind,
+    this.resourceId,
+    this.payloadJson,
+    required this.createdAt,
+    this.publishedAt,
+  });
+
+  factory WorkspaceEvent({
     int? id,
     required String eventId,
     required int workspaceId,
@@ -42,7 +41,7 @@ abstract class WorkspaceEvent._({
     DateTime? publishedAt,
   }) = _WorkspaceEventImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory WorkspaceEvent.fromJson(Map<String, dynamic> jsonSerialization) {
     return WorkspaceEvent(
       id: jsonSerialization['id'] as int?,
       eventId: jsonSerialization['eventId'] as String,
@@ -63,6 +62,31 @@ abstract class WorkspaceEvent._({
             ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  String eventId;
+
+  int workspaceId;
+
+  int sequence;
+
+  String actorUserId;
+
+  String kind;
+
+  String resourceKind;
+
+  String? resourceId;
+
+  String? payloadJson;
+
+  DateTime createdAt;
+
+  DateTime? publishedAt;
 
   /// Returns a shallow copy of this [WorkspaceEvent]
   /// with some or all fields replaced by the given arguments.
@@ -104,35 +128,34 @@ abstract class WorkspaceEvent._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _WorkspaceEventImpl({
-  int? id,
-  required String eventId,
-  required int workspaceId,
-  required int sequence,
-  required String actorUserId,
-  required String kind,
-  required String resourceKind,
-  String? resourceId,
-  String? payloadJson,
-  required DateTime createdAt,
-  DateTime? publishedAt,
-}) extends WorkspaceEvent {
-  this
-    : super._(
-        id: id,
-        eventId: eventId,
-        workspaceId: workspaceId,
-        sequence: sequence,
-        actorUserId: actorUserId,
-        kind: kind,
-        resourceKind: resourceKind,
-        resourceId: resourceId,
-        payloadJson: payloadJson,
-        createdAt: createdAt,
-        publishedAt: publishedAt,
-      );
+class _WorkspaceEventImpl extends WorkspaceEvent {
+  _WorkspaceEventImpl({
+    int? id,
+    required String eventId,
+    required int workspaceId,
+    required int sequence,
+    required String actorUserId,
+    required String kind,
+    required String resourceKind,
+    String? resourceId,
+    String? payloadJson,
+    required DateTime createdAt,
+    DateTime? publishedAt,
+  }) : super._(
+         id: id,
+         eventId: eventId,
+         workspaceId: workspaceId,
+         sequence: sequence,
+         actorUserId: actorUserId,
+         kind: kind,
+         resourceKind: resourceKind,
+         resourceId: resourceId,
+         payloadJson: payloadJson,
+         createdAt: createdAt,
+         publishedAt: publishedAt,
+       );
 
   /// Returns a shallow copy of this [WorkspaceEvent]
   /// with some or all fields replaced by the given arguments.

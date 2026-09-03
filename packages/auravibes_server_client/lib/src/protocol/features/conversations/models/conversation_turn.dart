@@ -12,27 +12,26 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ConversationTurn._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var int conversationId,
-  required var String requestId,
-  required var String requestHash,
-  required var String initiatorUserId,
-  var int? userMessageId,
-  var int? assistantMessageId,
-  required var String status,
-  required var int revision,
-  required var int acceptedSequence,
-  var DateTime? cancellationRequestedAt,
-  var DateTime? terminalAt,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ConversationTurn implements _i1.SerializableModel {
+  ConversationTurn._({
+    this.id,
+    required this.workspaceId,
+    required this.conversationId,
+    required this.requestId,
+    required this.requestHash,
+    required this.initiatorUserId,
+    this.userMessageId,
+    this.assistantMessageId,
+    required this.status,
+    required this.revision,
+    required this.acceptedSequence,
+    this.cancellationRequestedAt,
+    this.terminalAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ConversationTurn({
     int? id,
     required int workspaceId,
     required int conversationId,
@@ -50,7 +49,7 @@ abstract class ConversationTurn._({
     required DateTime updatedAt,
   }) = _ConversationTurnImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ConversationTurn.fromJson(Map<String, dynamic> jsonSerialization) {
     return ConversationTurn(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -80,6 +79,39 @@ abstract class ConversationTurn._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  int workspaceId;
+
+  int conversationId;
+
+  String requestId;
+
+  String requestHash;
+
+  String initiatorUserId;
+
+  int? userMessageId;
+
+  int? assistantMessageId;
+
+  String status;
+
+  int revision;
+
+  int acceptedSequence;
+
+  DateTime? cancellationRequestedAt;
+
+  DateTime? terminalAt;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ConversationTurn]
   /// with some or all fields replaced by the given arguments.
@@ -130,43 +162,42 @@ abstract class ConversationTurn._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationTurnImpl({
-  int? id,
-  required int workspaceId,
-  required int conversationId,
-  required String requestId,
-  required String requestHash,
-  required String initiatorUserId,
-  int? userMessageId,
-  int? assistantMessageId,
-  required String status,
-  required int revision,
-  required int acceptedSequence,
-  DateTime? cancellationRequestedAt,
-  DateTime? terminalAt,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ConversationTurn {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        conversationId: conversationId,
-        requestId: requestId,
-        requestHash: requestHash,
-        initiatorUserId: initiatorUserId,
-        userMessageId: userMessageId,
-        assistantMessageId: assistantMessageId,
-        status: status,
-        revision: revision,
-        acceptedSequence: acceptedSequence,
-        cancellationRequestedAt: cancellationRequestedAt,
-        terminalAt: terminalAt,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ConversationTurnImpl extends ConversationTurn {
+  _ConversationTurnImpl({
+    int? id,
+    required int workspaceId,
+    required int conversationId,
+    required String requestId,
+    required String requestHash,
+    required String initiatorUserId,
+    int? userMessageId,
+    int? assistantMessageId,
+    required String status,
+    required int revision,
+    required int acceptedSequence,
+    DateTime? cancellationRequestedAt,
+    DateTime? terminalAt,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         conversationId: conversationId,
+         requestId: requestId,
+         requestHash: requestHash,
+         initiatorUserId: initiatorUserId,
+         userMessageId: userMessageId,
+         assistantMessageId: assistantMessageId,
+         status: status,
+         revision: revision,
+         acceptedSequence: acceptedSequence,
+         cancellationRequestedAt: cancellationRequestedAt,
+         terminalAt: terminalAt,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ConversationTurn]
   /// with some or all fields replaced by the given arguments.

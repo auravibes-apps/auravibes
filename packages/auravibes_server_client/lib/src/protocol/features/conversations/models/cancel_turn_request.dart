@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class CancelTurnRequest._({
-  required var int workspaceId,
-  required var String requestId,
-  required var String turnId,
-  required var int expectedTurnRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class CancelTurnRequest implements _i1.SerializableModel {
+  CancelTurnRequest._({
+    required this.workspaceId,
+    required this.requestId,
+    required this.turnId,
+    required this.expectedTurnRevision,
+  });
+
+  factory CancelTurnRequest({
     required int workspaceId,
     required String requestId,
     required String turnId,
     required int expectedTurnRevision,
   }) = _CancelTurnRequestImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory CancelTurnRequest.fromJson(Map<String, dynamic> jsonSerialization) {
     return CancelTurnRequest(
       workspaceId: jsonSerialization['workspaceId'] as int,
       requestId: jsonSerialization['requestId'] as String,
@@ -33,6 +35,14 @@ abstract class CancelTurnRequest._({
       expectedTurnRevision: jsonSerialization['expectedTurnRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  String requestId;
+
+  String turnId;
+
+  int expectedTurnRevision;
 
   /// Returns a shallow copy of this [CancelTurnRequest]
   /// with some or all fields replaced by the given arguments.
@@ -60,19 +70,18 @@ abstract class CancelTurnRequest._({
   }
 }
 
-class _CancelTurnRequestImpl({
-  required int workspaceId,
-  required String requestId,
-  required String turnId,
-  required int expectedTurnRevision,
-}) extends CancelTurnRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        requestId: requestId,
-        turnId: turnId,
-        expectedTurnRevision: expectedTurnRevision,
-      );
+class _CancelTurnRequestImpl extends CancelTurnRequest {
+  _CancelTurnRequestImpl({
+    required int workspaceId,
+    required String requestId,
+    required String turnId,
+    required int expectedTurnRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         requestId: requestId,
+         turnId: turnId,
+         expectedTurnRevision: expectedTurnRevision,
+       );
 
   /// Returns a shallow copy of this [CancelTurnRequest]
   /// with some or all fields replaced by the given arguments.

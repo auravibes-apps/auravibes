@@ -12,20 +12,22 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class RenewWorkspaceInviteRequest._({
-  required var int workspaceId,
-  required var int inviteId,
-  required var String requestId,
-  required var int expectedInviteRevision,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class RenewWorkspaceInviteRequest implements _i1.SerializableModel {
+  RenewWorkspaceInviteRequest._({
+    required this.workspaceId,
+    required this.inviteId,
+    required this.requestId,
+    required this.expectedInviteRevision,
+  });
+
+  factory RenewWorkspaceInviteRequest({
     required int workspaceId,
     required int inviteId,
     required String requestId,
     required int expectedInviteRevision,
   }) = _RenewWorkspaceInviteRequestImpl;
 
-  factory fromJson(
+  factory RenewWorkspaceInviteRequest.fromJson(
     Map<String, dynamic> jsonSerialization,
   ) {
     return RenewWorkspaceInviteRequest(
@@ -36,6 +38,14 @@ abstract class RenewWorkspaceInviteRequest._({
           jsonSerialization['expectedInviteRevision'] as int,
     );
   }
+
+  int workspaceId;
+
+  int inviteId;
+
+  String requestId;
+
+  int expectedInviteRevision;
 
   /// Returns a shallow copy of this [RenewWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.
@@ -63,19 +73,18 @@ abstract class RenewWorkspaceInviteRequest._({
   }
 }
 
-class _RenewWorkspaceInviteRequestImpl({
-  required int workspaceId,
-  required int inviteId,
-  required String requestId,
-  required int expectedInviteRevision,
-}) extends RenewWorkspaceInviteRequest {
-  this
-    : super._(
-        workspaceId: workspaceId,
-        inviteId: inviteId,
-        requestId: requestId,
-        expectedInviteRevision: expectedInviteRevision,
-      );
+class _RenewWorkspaceInviteRequestImpl extends RenewWorkspaceInviteRequest {
+  _RenewWorkspaceInviteRequestImpl({
+    required int workspaceId,
+    required int inviteId,
+    required String requestId,
+    required int expectedInviteRevision,
+  }) : super._(
+         workspaceId: workspaceId,
+         inviteId: inviteId,
+         requestId: requestId,
+         expectedInviteRevision: expectedInviteRevision,
+       );
 
   /// Returns a shallow copy of this [RenewWorkspaceInviteRequest]
   /// with some or all fields replaced by the given arguments.

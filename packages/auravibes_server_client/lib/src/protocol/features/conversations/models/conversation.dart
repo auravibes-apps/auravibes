@@ -12,28 +12,29 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class Conversation._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var int workspaceId,
-  required var String stableId,
-  var String? title,
-  required var bool isPinned,
-  var String? modelId,
-  var String? agentId,
-  var String? parentConversationStableId,
-  required var int revision,
-  int? projectionRevision,
-  int? eventSequence,
-  String? executionState,
-  var int? activeExecutionId,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-  var DateTime? deletedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class Conversation implements _i1.SerializableModel {
+  Conversation._({
+    this.id,
+    required this.workspaceId,
+    required this.stableId,
+    this.title,
+    required this.isPinned,
+    this.modelId,
+    this.agentId,
+    this.parentConversationStableId,
+    required this.revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    this.activeExecutionId,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+  }) : projectionRevision = projectionRevision ?? 1,
+       eventSequence = eventSequence ?? 0,
+       executionState = executionState ?? 'idle';
+
+  factory Conversation({
     int? id,
     required int workspaceId,
     required String stableId,
@@ -52,7 +53,7 @@ abstract class Conversation._({
     DateTime? deletedAt,
   }) = _ConversationImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory Conversation.fromJson(Map<String, dynamic> jsonSerialization) {
     return Conversation(
       id: jsonSerialization['id'] as int?,
       workspaceId: jsonSerialization['workspaceId'] as int,
@@ -80,11 +81,40 @@ abstract class Conversation._({
     );
   }
 
-  int projectionRevision = projectionRevision ?? 1;
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
 
-  int eventSequence = eventSequence ?? 0;
+  int workspaceId;
 
-  String executionState = executionState ?? 'idle';
+  String stableId;
+
+  String? title;
+
+  bool isPinned;
+
+  String? modelId;
+
+  String? agentId;
+
+  String? parentConversationStableId;
+
+  int revision;
+
+  int projectionRevision;
+
+  int eventSequence;
+
+  String executionState;
+
+  int? activeExecutionId;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
+
+  DateTime? deletedAt;
 
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.
@@ -137,45 +167,44 @@ abstract class Conversation._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ConversationImpl({
-  int? id,
-  required int workspaceId,
-  required String stableId,
-  String? title,
-  required bool isPinned,
-  String? modelId,
-  String? agentId,
-  String? parentConversationStableId,
-  required int revision,
-  int? projectionRevision,
-  int? eventSequence,
-  String? executionState,
-  int? activeExecutionId,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-  DateTime? deletedAt,
-}) extends Conversation {
-  this
-    : super._(
-        id: id,
-        workspaceId: workspaceId,
-        stableId: stableId,
-        title: title,
-        isPinned: isPinned,
-        modelId: modelId,
-        agentId: agentId,
-        parentConversationStableId: parentConversationStableId,
-        revision: revision,
-        projectionRevision: projectionRevision,
-        eventSequence: eventSequence,
-        executionState: executionState,
-        activeExecutionId: activeExecutionId,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        deletedAt: deletedAt,
-      );
+class _ConversationImpl extends Conversation {
+  _ConversationImpl({
+    int? id,
+    required int workspaceId,
+    required String stableId,
+    String? title,
+    required bool isPinned,
+    String? modelId,
+    String? agentId,
+    String? parentConversationStableId,
+    required int revision,
+    int? projectionRevision,
+    int? eventSequence,
+    String? executionState,
+    int? activeExecutionId,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    DateTime? deletedAt,
+  }) : super._(
+         id: id,
+         workspaceId: workspaceId,
+         stableId: stableId,
+         title: title,
+         isPinned: isPinned,
+         modelId: modelId,
+         agentId: agentId,
+         parentConversationStableId: parentConversationStableId,
+         revision: revision,
+         projectionRevision: projectionRevision,
+         eventSequence: eventSequence,
+         executionState: executionState,
+         activeExecutionId: activeExecutionId,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+         deletedAt: deletedAt,
+       );
 
   /// Returns a shallow copy of this [Conversation]
   /// with some or all fields replaced by the given arguments.

@@ -11,7 +11,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _i1;
-
 import '../../../features/conversations/models/conversation_event_type.dart'
     as _i2;
 

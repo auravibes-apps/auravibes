@@ -12,20 +12,19 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod_client/serverpod_client.dart' as _i1;
 
-abstract class ApiModelProvider._({
-  /// The database id, set if the object has been inserted into the
-  /// database or if it has been fetched from the database. Otherwise,
-  /// the id will be null.
-  var int? id,
-  required var String providerId,
-  required var String name,
-  var String? type,
-  var String? url,
-  var String? documentationUrl,
-  required var DateTime createdAt,
-  required var DateTime updatedAt,
-}) implements _i1.SerializableModel {
-  factory({
+abstract class ApiModelProvider implements _i1.SerializableModel {
+  ApiModelProvider._({
+    this.id,
+    required this.providerId,
+    required this.name,
+    this.type,
+    this.url,
+    this.documentationUrl,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ApiModelProvider({
     int? id,
     required String providerId,
     required String name,
@@ -36,7 +35,7 @@ abstract class ApiModelProvider._({
     required DateTime updatedAt,
   }) = _ApiModelProviderImpl;
 
-  factory fromJson(Map<String, dynamic> jsonSerialization) {
+  factory ApiModelProvider.fromJson(Map<String, dynamic> jsonSerialization) {
     return ApiModelProvider(
       id: jsonSerialization['id'] as int?,
       providerId: jsonSerialization['providerId'] as String,
@@ -52,6 +51,25 @@ abstract class ApiModelProvider._({
       ),
     );
   }
+
+  /// The database id, set if the object has been inserted into the
+  /// database or if it has been fetched from the database. Otherwise,
+  /// the id will be null.
+  int? id;
+
+  String providerId;
+
+  String name;
+
+  String? type;
+
+  String? url;
+
+  String? documentationUrl;
+
+  DateTime createdAt;
+
+  DateTime updatedAt;
 
   /// Returns a shallow copy of this [ApiModelProvider]
   /// with some or all fields replaced by the given arguments.
@@ -87,29 +105,28 @@ abstract class ApiModelProvider._({
   }
 }
 
-class _Undefined;
+class _Undefined {}
 
-class _ApiModelProviderImpl({
-  int? id,
-  required String providerId,
-  required String name,
-  String? type,
-  String? url,
-  String? documentationUrl,
-  required DateTime createdAt,
-  required DateTime updatedAt,
-}) extends ApiModelProvider {
-  this
-    : super._(
-        id: id,
-        providerId: providerId,
-        name: name,
-        type: type,
-        url: url,
-        documentationUrl: documentationUrl,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+class _ApiModelProviderImpl extends ApiModelProvider {
+  _ApiModelProviderImpl({
+    int? id,
+    required String providerId,
+    required String name,
+    String? type,
+    String? url,
+    String? documentationUrl,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+  }) : super._(
+         id: id,
+         providerId: providerId,
+         name: name,
+         type: type,
+         url: url,
+         documentationUrl: documentationUrl,
+         createdAt: createdAt,
+         updatedAt: updatedAt,
+       );
 
   /// Returns a shallow copy of this [ApiModelProvider]
   /// with some or all fields replaced by the given arguments.
