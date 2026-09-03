@@ -143,6 +143,17 @@ melos:
       packageFilters:
         dependsOn: build_runner
 
+    generate:serverpod:
+      run: |
+        cd apps/auravibes_server
+        serverpod generate --force
+        cd ../..
+        dart format --line-length 80 \
+          apps/auravibes_server/lib/src/generated \
+          apps/auravibes_server/test/integration/test_tools/serverpod_test_tools.dart \
+          packages/auravibes_server_client/lib/src/protocol
+      description: Regenerate and format Serverpod server and client artifacts
+
     generate:watch:
       exec: dart run build_runner watch
       description: Run code generation in watch mode
