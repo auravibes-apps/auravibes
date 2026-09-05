@@ -17,6 +17,41 @@
       "additionalBranchPrefix": ""
     },
     {
+      "description": "Update Serverpod server, client, auth, and tooling packages together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["serverpod", "serverpod_*"],
+      "groupName": "Serverpod",
+      "additionalBranchPrefix": ""
+    },
+    {
+      "description": "Update Drift runtime and code generation packages together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["drift", "drift_dev", "drift_flutter"],
+      "groupName": "Drift",
+      "additionalBranchPrefix": ""
+    },
+    {
+      "description": "Update Freezed generator and annotations together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["freezed", "freezed_annotation"],
+      "groupName": "Freezed",
+      "additionalBranchPrefix": ""
+    },
+    {
+      "description": "Update JSON serialization generator and annotations together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["json_serializable", "json_annotation"],
+      "groupName": "JSON serialization",
+      "additionalBranchPrefix": ""
+    },
+    {
+      "description": "Update GoRouter runtime and builder together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["go_router", "go_router_builder"],
+      "groupName": "GoRouter",
+      "additionalBranchPrefix": ""
+    },
+    {
       "description": "Automerge minor and patch updates",
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
