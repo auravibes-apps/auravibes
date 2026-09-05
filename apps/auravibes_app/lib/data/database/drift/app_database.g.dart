@@ -13821,7 +13821,7 @@ class $$WorkspacesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$WorkspacesTable, WorkspacesTable>(table),
                   $$WorkspacesTableReferences(db, table, e),
                 ),
               )
@@ -14783,7 +14783,9 @@ class $$ServiceConnectionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ServiceConnectionsTable, ServiceConnectionTable>(
+                    table,
+                  ),
                   $$ServiceConnectionsTableReferences(db, table, e),
                 ),
               )
@@ -15253,7 +15255,10 @@ class $$WorkspaceModelSelectionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $WorkspaceModelSelectionsTable,
+                    WorkspaceModelSelectionTable
+                  >(table),
                   $$WorkspaceModelSelectionsTableReferences(db, table, e),
                 ),
               )
@@ -15610,7 +15615,9 @@ class $$ApiModelProvidersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ApiModelProvidersTable, ApiModelProvidersTable>(
+                    table,
+                  ),
                   $$ApiModelProvidersTableReferences(db, table, e),
                 ),
               )
@@ -16153,7 +16160,7 @@ class $$ApiModelsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ApiModelsTable, ApiModelsTable>(table),
                   $$ApiModelsTableReferences(db, table, e),
                 ),
               )
@@ -16754,8 +16761,10 @@ class $$AgentsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$AgentsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$AgentsTable, AgentsTable>(table),
+                  $$AgentsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -17680,7 +17689,7 @@ class $$ConversationsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ConversationsTable, ConversationsTable>(table),
                   $$ConversationsTableReferences(db, table, e),
                 ),
               )
@@ -18247,7 +18256,10 @@ class $$SkillCredentialDefinitionsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $SkillCredentialDefinitionsTable,
+                    SkillCredentialDefinitionsTable
+                  >(table),
                   $$SkillCredentialDefinitionsTableReferences(db, table, e),
                 ),
               )
@@ -19055,8 +19067,10 @@ class $$SkillsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$SkillsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$SkillsTable, SkillsTable>(table),
+                  $$SkillsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -19555,7 +19569,7 @@ class $$AgentSkillsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$AgentSkillsTable, AgentSkillsTable>(table),
                   $$AgentSkillsTableReferences(db, table, e),
                 ),
               )
@@ -20125,7 +20139,7 @@ class $$McpServersTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$McpServersTable, McpServersTable>(table),
                   $$McpServersTableReferences(db, table, e),
                 ),
               )
@@ -20690,7 +20704,7 @@ class $$ToolsGroupsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ToolsGroupsTable, ToolsGroupsTable>(table),
                   $$ToolsGroupsTableReferences(db, table, e),
                 ),
               )
@@ -21385,8 +21399,10 @@ class $$ToolsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$ToolsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$ToolsTable, ToolsTable>(table),
+                  $$ToolsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback:
@@ -21861,7 +21877,7 @@ class $$AgentToolsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$AgentToolsTable, AgentToolsTable>(table),
                   $$AgentToolsTableReferences(db, table, e),
                 ),
               )
@@ -22345,7 +22361,7 @@ class $$MessagesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$MessagesTable, MessagesTable>(table),
                   $$MessagesTableReferences(db, table, e),
                 ),
               )
@@ -22796,7 +22812,10 @@ class $$MessageAttachmentsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $MessageAttachmentsTable,
+                    MessageAttachmentsTable
+                  >(table),
                   $$MessageAttachmentsTableReferences(db, table, e),
                 ),
               )
@@ -23241,7 +23260,9 @@ class $$ConversationToolsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ConversationToolsTable, ConversationToolsTable>(
+                    table,
+                  ),
                   $$ConversationToolsTableReferences(db, table, e),
                 ),
               )
@@ -23636,7 +23657,10 @@ class $$WorkspaceCompactionSettingsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $WorkspaceCompactionSettingsTable,
+                    WorkspaceCompactionSettingsTable
+                  >(table),
                   $$WorkspaceCompactionSettingsTableReferences(db, table, e),
                 ),
               )
@@ -24120,7 +24144,10 @@ class $$SkillTemplateToolsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $SkillTemplateToolsTable,
+                    SkillTemplateToolsTable
+                  >(table),
                   $$SkillTemplateToolsTableReferences(db, table, e),
                 ),
               )
@@ -24563,7 +24590,10 @@ class $$ConversationSkillsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $ConversationSkillsTable,
+                    ConversationSkillsTable
+                  >(table),
                   $$ConversationSkillsTableReferences(db, table, e),
                 ),
               )
@@ -24938,7 +24968,10 @@ class $$AppSkillWorkspaceSettingsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<
+                    $AppSkillWorkspaceSettingsTable,
+                    AppSkillWorkspaceSettingsTable
+                  >(table),
                   $$AppSkillWorkspaceSettingsTableReferences(db, table, e),
                 ),
               )
