@@ -4,13 +4,17 @@
   "additionalBranchPrefix": "{{parentDir}}-",
   "packageRules": [
     {
-      "description": "Skip local monorepo packages in packages/ and apps/",
-      "matchFileNames": [
-        "packages/**",
-        "apps/**",
-        "widgetbook/**"
-      ],
+      "description": "Skip internal workspace packages only",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["auravibes_*"],
       "enabled": false
+    },
+    {
+      "description": "Update coupled Riverpod packages across the workspace together",
+      "matchManagers": ["pub"],
+      "matchPackageNames": ["riverpod", "flutter_riverpod", "hooks_riverpod", "riverpod_annotation", "riverpod_generator", "riverpod_lint", "riverpod_analyzer_utils"],
+      "groupName": "Riverpod",
+      "additionalBranchPrefix": ""
     },
     {
       "description": "Automerge minor and patch updates",
